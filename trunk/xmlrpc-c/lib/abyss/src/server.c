@@ -705,6 +705,7 @@ void ServerRun(TServer *srv)
 	TSocket s,ns;
 	TIPAddr ip;
 	TConn *c;
+	TIPAddr emptyIp = {0};
 
 	/* Connection array from Heap. Small systems might not
 	 * have the "stack_size" required to have the array of
@@ -745,15 +746,20 @@ void ServerRun(TServer *srv)
 
 		if (SocketAccept(&s,&ns,&ip))
 		{
-			if (ConnCreate(c+i,&ns,&ServerFunc))
+			c[i].peerip=ip;
+			c[i].connected=TRUE;
+			c[i].inUse = TRUE;
+			if (ConnCreate(&c[i],&ns,&ServerFunc))
 			{
-				c[i].peerip=ip;
-				c[i].connected=TRUE;
-				c[i].inUse = TRUE;
-				ConnProcess(c+i);
+				ConnProcess(&c[i]);
 			}
 			else
+			{
+				c[i].peerip = emptyIp;
+				c[i].connected=FALSE;
+				c[i].inUse = FALSE;
 				SocketClose(&ns);
+			}
 		}
 		else
 			TraceMsg("Socket Error=%d\n", SocketError());
@@ -843,6 +849,9 @@ bool SessionLog(TSession *s)
 {
 	char z[1024];
 	uint32 n;
+
+	if (s->requestline == NULL)
+		return FALSE;
 
 	if (strlen(s->requestline)>1024-26-50)
 		s->requestline[1024-26-50]='\0';
