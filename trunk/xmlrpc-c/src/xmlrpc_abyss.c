@@ -513,11 +513,21 @@ static void
 sigterm(int const sig) {
     TraceExit("Signal %d received. Exiting...\n",sig);
 }
+#endif
 
 
-
+#ifdef _UNIX
 static void 
 sigchld(int const sig ATTR_UNUSED) {
+/*----------------------------------------------------------------------------
+   This is a signal handler for a SIGCHLD signal (which informs us that
+   one of our child processes has terminated).
+
+   We respond by reaping the zombie process.
+
+   Implementation note: In some systems, just setting the signal handler
+   to SIG_IGN (ignore signal) does this.  In others, it doesn't.
+-----------------------------------------------------------------------------*/
     pid_t pid;
     int status;
     
@@ -565,23 +575,41 @@ xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED,
 
 
 
+
+static void
+setupSignalHandlers(void) {
+#ifdef _UNIX
+    struct sigaction mysigaction;
+    
+    sigemptyset(&mysigaction.sa_mask);
+    mysigaction.sa_flags = 0;
+
+    /* These signals abort the program, with tracing */
+    mysigaction.sa_handler = sigterm;
+    sigaction(SIGTERM, &mysigaction, NULL);
+    sigaction(SIGINT,  &mysigaction, NULL);
+    sigaction(SIGHUP,  &mysigaction, NULL);
+    sigaction(SIGUSR1, &mysigaction, NULL);
+
+    /* This signal indicates connection closed in the middle */
+    mysigaction.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &mysigaction, NULL);
+    
+    /* This signal indicates a child process (request handler) has died */
+    mysigaction.sa_handler = sigchld;
+    sigaction(SIGCHLD, &mysigaction, NULL);
+#endif
+}    
+
+
+
 void 
 xmlrpc_server_abyss_run_first(void (runfirst(void *)),
                               void * const runfirstArg) {
 
-#ifdef _UNIX
-    /* Catch various termination signals. */
-    signal(SIGTERM, sigterm);
-    signal(SIGINT,  sigterm);
-    signal(SIGHUP,  sigterm);
-    signal(SIGUSR1, sigterm);
+    setupSignalHandlers();
 
-    /* Catch connection closed in the middle */
-    signal(SIGPIPE,SIG_IGN);
-    
-    /* Catch defunct children. */
-    signal(SIGCHLD,sigchld);
-    
+#ifdef _UNIX
     /* Become a daemon */
     switch (fork()) {
     case 0:
