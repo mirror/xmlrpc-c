@@ -1,9 +1,8 @@
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 
-1.1 - not yet
+1.1 - January 8, 2005
 
-  * BJH: Examples/Makefile uses new xmlrpc-c-config.test so as to be a
-    better example.
+  * Steve Bone: Windows works again; new build strategy.
 
   * BJH: Abyss:  Add ConnCreate2() with foreground capability.
 
@@ -13,12 +12,15 @@
 
   * BJH: Add xmlrpc_server_abyss().
 
-  * BJH: Clean up client transport multiplexor
-
   * BJH: Abyss pthreads is default
+
+  * BJH: Clean up client transport multiplexor
 
   * BJH: Separate out server registry stuff into new libxml_server.
   
+  * BJH: Examples/Makefile uses new xmlrpc-c-config.test so as to be a
+    better example.
+
   * BJH: Fail when structure format specifier does not end in
     "*" instead of just asserting that it does.
 
@@ -26,6 +28,8 @@
     instead of just asserting that it is.
 
 1.0 - October 25, 2004
+  * New modular client XML transport structure.  Curl and Wininet transports
+    (in addition to existing libwww).
   * Bryan Henderson: create Makefile.config; make examples/ directory use
     static make file.
   * Bryan Henderson: replace Makefile.am with already built Makefile.in.

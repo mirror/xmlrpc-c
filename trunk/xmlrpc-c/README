@@ -1,31 +1,43 @@
-WARNING: I've received several reports of potential security problems with
-Abyss, but nothing specific and replicable.  Please see SECURITY for
-details, and use a CGI-based server if at all possible.
+This is the source code for XML-RPC for C/C++, or Xmlrpc-c for short.
 
----
+XML-RPC for C/C++ is programming libraries and related tools to help you
+write an XML-RPC server or client in C or C++.
 
-This is a development release of an XML-RPC library for C and C++
-programmers. As such, it still has a few rough edges.
+Documentation for the package is at
 
-This library has been released under an extremely generous license, but it
-comes with ABSOLUTELY NO WARRANTY. Please see the file COPYING for the
-appropriate terms and disclaimers.
+  http://xmlrpc-c.sourceforge.net/doc
 
-You can find the official xmlrpc-c website at:
+See the Xmlrpc-c website at:
 
   http://xmlrpc-c.sourceforge.net/
 
-To build this library, you'll need to have w3c-libwww 5.2.8 or newer.
-Please see the following file:
 
-  GETTING_LIBWWW        How to get a copy of w3c-libwww
+PREREQUISITES
+-------------
+
+To build a useful XML-RPC client library, you'll need to have at least
+one HTTP library.  The standard configuration uses the W3C Libwww library
+(Version 5.3.2 or newer).  You can also configure the build to use
+Curl or Wininet.
+
+There are some old instructions on getting W3C Libwww in the file
+GETTING_LIBWWW.  I haven't checked them recently, so I don't know how
+valid they are.
+
+The libraries need an XML parser/builder library.  An old version of
+Expat is included in the package and used by default, so there's no
+actual prerequisite here.  But if you separately obtain Libxml2, you can
+configure the build to use that instead.  There's no really pressing
+reason to do that, though.
 
 Once that's done, you can type:
 
   $ ./configure
   $ make
-  $ make check
   $ make install
+
+(There's supposed to be a 'make check' step in there too, to validate
+that everything built OK, but it's broken right now - 2005.01.07).
 
 You may want to pass a '--prefix' argument to configure. See './configure
 --help' for details.
@@ -41,23 +53,6 @@ Then run a client that does an RPC to this server:
 Also try other sample servers and clients, described in examples/README.
 
 
-To get started, have a look at the following files:
-
-  SECURITY                    Important security information
-  doc/overview.txt            Compiling XML-RPC programs; API documentation
-  examples/*.c                Sample programs
-  src/xmlrpc.h                API documentation
-  src/xmlrpc_client.h         API documentation
-  src/xmlrpc_abyss.h          API documentation
-  src/XmlRpcCpp.h             Experimental C++ API documentation
-  src/validatee.c             A more complex XML-RPC server
-  doc/gpg-signature-info.txt  Verifying GPG signatures on xmlrpc-c
-
-Also of interest are:
-
-  BUGS                        Known issues
-  REFACTORINGS                Suggested code reorganizations
-  TESTING                     Notes on testing this library
 
 Funding for the project that created the original Xmlrpc-c was
 provided in part by the good folks at First Peer, Inc., producers of
@@ -65,3 +60,5 @@ P2P applications.
 
 Eric Kidd developed the original Xmlrpc-c and maintained it up through
 January 2001.
+
+Bryan Henderson took over as maintainer in October 2004.
