@@ -1,3 +1,5 @@
+SUBDIRS = testdata
+
 # Turn on warnings, if asked to do so.
 CFLAGS = @CFLAGS@ @CC_WARN_FLAGS@
 CPPFLAGS = @CPPFLAGS@ @CPP_WARN_FLAGS@

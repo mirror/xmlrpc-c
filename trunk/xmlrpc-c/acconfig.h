@@ -13,3 +13,6 @@
 
 /* The kind of system we're allegedly running on.  Used for diagnostics. */
 #undef XMLRPC_HOST_TYPE
+
+/* The path separator used by the host operating system. */
+#undef PATH_SEPARATOR

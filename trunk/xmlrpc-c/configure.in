@@ -267,6 +267,15 @@ fi
 
 
 dnl =======================================================================
+dnl Checks for operating system features.
+dnl =======================================================================
+
+dnl Non-Unix systems will need to set up their platform configuration file
+dnl by hand.
+AC_DEFINE(PATH_SEPARATOR, "/")
+
+
+dnl =======================================================================
 dnl ABYSS Configuration
 dnl =======================================================================
 dnl Abyss doesn't pay any attention to xmlrpc_config.h, so we need to
@@ -413,6 +422,7 @@ AC_OUTPUT(xmlrpc-c-config \
           xmlrpc-c.lsm \
           xmlrpc-c.spec \
           src/Makefile \
+          src/testdata/Makefile \
           examples/Makefile \
           examples/interop-client/Makefile \
           doc/Makefile \

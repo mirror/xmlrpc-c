@@ -28,6 +28,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef HAVE_WIN32_CONFIG_H
+#include "xmlrpc_config.h"
+#else
+#include "xmlrpc_win32_config.h"
+#endif
+
 #include "xmlrpc.h"
 #include "xmlrpc_xmlparser.h"
 
@@ -57,10 +63,11 @@ int total_tests = 0;
 int total_failures = 0;
 
 /* This is a good place to set a breakpoint. */
-static void test_failure (char* file, int line, char* statement)
+static void test_failure (char *file, int line, char *label, char *statement)
 {
     total_failures++;
-    printf("\n%s:%d: test failure: expected (%s)\n", file, line, statement);
+    printf("\n%s:%d: test failure: %s (%s)\n", file, line, label, statement);
+    exit(1);
 }
 
 #define TEST(statement) \
@@ -69,7 +76,18 @@ static void test_failure (char* file, int line, char* statement)
         if ((statement)) { \
             printf("."); \
 	} else { \
-            test_failure(__FILE__, __LINE__, #statement); \
+            test_failure(__FILE__, __LINE__, "expected", #statement); \
+        } \
+    } while (0)
+
+#define TEST_NO_FAULT(env) \
+    do { \
+        total_tests++; \
+        if (!(env)->fault_occurred) { \
+            printf("."); \
+	} else { \
+            test_failure(__FILE__, __LINE__, "fault occurred", \
+                         (env)->fault_string); \
         } \
     } while (0)
 
@@ -355,20 +373,20 @@ static void test_mem_block (void)
 
     /* Allocate a zero-size block. */
     block = xmlrpc_mem_block_new(&env, 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(block != NULL);
     TEST(xmlrpc_mem_block_size(block) == 0);
 
     /* Grow the block a little bit. */
     xmlrpc_mem_block_resize(&env, block, strlen(test_string_1) + 1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(xmlrpc_mem_block_size(block) == strlen(test_string_1) + 1);
     
     /* Insert a string into the block, and resize it by large amount.
     ** We want to cause a reallocation and copy of the block contents. */
     strcpy(xmlrpc_mem_block_contents(block), test_string_1);
     xmlrpc_mem_block_resize(&env, block, 10000);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(xmlrpc_mem_block_size(block) == 10000);
     TEST(strcmp(xmlrpc_mem_block_contents(block), test_string_1) == 0);
 
@@ -377,7 +395,7 @@ static void test_mem_block (void)
     
     /* Allocate a bigger block. */
     block = xmlrpc_mem_block_new(&env, 128);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(block != NULL);
     TEST(xmlrpc_mem_block_size(block) == 128);
 
@@ -386,7 +404,7 @@ static void test_mem_block (void)
 
     /* Allocate a "typed" memory block. */
     typed_heap_block = XMLRPC_TYPED_MEM_BLOCK_NEW(void*, &env, 20);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(typed_heap_block != NULL);
     TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, typed_heap_block) == 20);
     typed_contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(void*, typed_heap_block);
@@ -394,7 +412,7 @@ static void test_mem_block (void)
 
     /* Resize a typed memory block. */
     XMLRPC_TYPED_MEM_BLOCK_RESIZE(void*, &env, typed_heap_block, 100);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, typed_heap_block) == 100);
 
     /* Test cleanup code (with help from memprof). */
@@ -407,7 +425,7 @@ static void test_mem_block (void)
 
     /* Test xmlrpc_mem_block_append. */
     block = XMLRPC_TYPED_MEM_BLOCK_NEW(int, &env, 5);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     memcpy(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(int, block),
 	   test_int_array_1, sizeof(test_int_array_1));
     XMLRPC_TYPED_MEM_BLOCK_APPEND(int, &env, block, test_int_array_2, 3);
@@ -450,7 +468,7 @@ static void test_base64_conversion (void)
 	output = xmlrpc_base64_encode(&env,
 				      (unsigned char*) bin_data,
 				      strlen(bin_data));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	TEST(output != NULL);
 	TEST(xmlrpc_mem_block_size(output) == strlen(ascii_data));
 	TEST(memcmp(xmlrpc_mem_block_contents(output), ascii_data,
@@ -462,7 +480,7 @@ static void test_base64_conversion (void)
 	    xmlrpc_base64_encode_without_newlines(&env,
 						  (unsigned char*) bin_data,
 						  strlen(bin_data));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	TEST(output != NULL);
 	TEST(xmlrpc_mem_block_size(output) == strlen(nocrlf_ascii_data));
 	TEST(memcmp(xmlrpc_mem_block_contents(output), nocrlf_ascii_data,
@@ -471,7 +489,7 @@ static void test_base64_conversion (void)
 
 	/* Test our decoding routine. */
 	output = xmlrpc_base64_decode(&env, ascii_data, strlen(ascii_data));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	TEST(output != NULL);
 	TEST(xmlrpc_mem_block_size(output) == strlen(bin_data));
 	TEST(memcmp(xmlrpc_mem_block_contents(output), bin_data,
@@ -514,7 +532,7 @@ static void test_value (void)
 
     /* Test allocation and deallocation (w/memprof). */
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v != NULL);
     xmlrpc_INCREF(v);
     xmlrpc_DECREF(v);
@@ -522,55 +540,55 @@ static void test_value (void)
 
     /* Test integers. */
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 10);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(XMLRPC_TYPE_INT == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "i", &i);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i == 10);
     xmlrpc_DECREF(v);
 
     /* Test booleans. */
     v = xmlrpc_build_value(&env, "b", (xmlrpc_bool) 1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(XMLRPC_TYPE_BOOL == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "b", &b);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(b);
     xmlrpc_DECREF(v);
 
     /* Test doubles. */
     v = xmlrpc_build_value(&env, "d", 1.0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(XMLRPC_TYPE_DOUBLE == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "d", &d);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(d == 1.0);
     xmlrpc_DECREF(v);
 
     /* Test strings (without '\0' bytes). */
     v = xmlrpc_build_value(&env, "s", test_string_1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "s", &str);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(strcmp(str, test_string_1) == 0);
     xmlrpc_parse_value(&env, v, "s#", &str, &len);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(memcmp(str, test_string_1, strlen(test_string_1)) == 0);
     TEST(strlen(str) == strlen(test_string_1));
     xmlrpc_DECREF(v);
 
     /* Test a string with a '\0' byte. */
     v = xmlrpc_build_value(&env, "s#", "foo\0bar", (size_t) 7);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "s#", &str, &len);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(memcmp(str, "foo\0bar", 7) == 0);
     TEST(len == 7);
 
@@ -587,7 +605,7 @@ static void test_value (void)
     ** if one of these typechecks works, the rest work fine. */
     xmlrpc_env_init(&env2);
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env2, v, "s", &str);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
@@ -596,22 +614,22 @@ static void test_value (void)
 
     /* Test 'V' with building and parsing. */
     v2 = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     v = xmlrpc_build_value(&env, "V", v2);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v == v2);
     xmlrpc_parse_value(&env, v2, "V", &v3);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v2 == v3);
     xmlrpc_DECREF(v);
     xmlrpc_DECREF(v2);
 
     /* Basic array-building test. */
     v = xmlrpc_build_value(&env, "()");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
     len = xmlrpc_array_size(&env, v);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(len == 0);
     xmlrpc_DECREF(v);
 
@@ -619,49 +637,49 @@ static void test_value (void)
     v = xmlrpc_build_value(&env, "(i(ii)i)",
 			   (xmlrpc_int32) 10, (xmlrpc_int32) 20,
 			   (xmlrpc_int32) 30, (xmlrpc_int32) 40);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
     len = xmlrpc_array_size(&env, v);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(len == 3);
     item = xmlrpc_array_get_item(&env, v, 1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     len = xmlrpc_array_size(&env, item);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(len == 2);
     item = xmlrpc_array_get_item(&env, item, 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env, item, "i", &i);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i == 20);
     xmlrpc_parse_value(&env, v, "(i(ii)i)", &i1, &i2, &i3, &i4);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i1 == 10 && i2 == 20 && i3 == 30 && i4 == 40);
     xmlrpc_parse_value(&env, v, "(i(i*)i)", &i1, &i2, &i3);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i1 == 10 && i2 == 20 && i3 == 40);
     xmlrpc_parse_value(&env, v, "(i(ii*)i)", &i1, &i2, &i3, &i4);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_DECREF(v);
 
     /* Test parsing of 'A' and 'S'. */
     v = xmlrpc_build_value(&env, "((){})");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env, v, "(AS)", &v2, &v3);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v2));
     TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(v3));
     len = xmlrpc_array_size(&env, v2);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(len == 0);
     len = xmlrpc_struct_size(&env, v3);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(len == 0);
     xmlrpc_DECREF(v);
 
     /* Test typechecks for 'A' and 'S'. */
     v = xmlrpc_build_value(&env, "s", "foo");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_env_init(&env2);
     xmlrpc_parse_value(&env2, v, "A", &v2);
     TEST(env2.fault_occurred);
@@ -677,19 +695,19 @@ static void test_value (void)
     /* Test C pointer storage using 'p'.
     ** We don't support cleanup functions (yet). */
     v = xmlrpc_build_value(&env, "p", (void*) 0x00000017);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_C_PTR == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "p", &ptr);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(ptr == (void*) 0x00000017);
     xmlrpc_DECREF(v);
 
     /* Test <base64> data. */
     v = xmlrpc_build_value(&env, "6", "a\0b", (size_t) 3);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "6", &data, &len);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(len == 3);
     TEST(memcmp(data, "a\0b", len) == 0);
     xmlrpc_DECREF(v);
@@ -706,7 +724,7 @@ static void test_bounds_checks (void)
     /* Get an array to work with. */
     xmlrpc_env_init(&env);
     array = xmlrpc_build_value(&env, "(iii)", 100, 200, 300);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_env_clean(&env);
     
     /* Test bounds check on xmlrpc_array_get_item. */
@@ -749,66 +767,66 @@ static void test_struct (void)
 
     /* Create a struct. */
     s = xmlrpc_struct_new(&env);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(s != NULL);
     TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(s));
     size = xmlrpc_struct_size(&env, s);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(size == 0);
 
     /* Create some elements to insert into our struct. */
     i1 = xmlrpc_build_value(&env, "s", "Item #1");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     i2 = xmlrpc_build_value(&env, "s", "Item #2");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     i3 = xmlrpc_build_value(&env, "s", "Item #3");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Insert a single item. */
     xmlrpc_struct_set_value(&env, s, "foo", i1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(size == 1);
 
     /* Insert two more items with conflicting hash codes. (We assume that
     ** nobody has changed the hash function.) */
     xmlrpc_struct_set_value(&env, s, "bar", i2);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_struct_set_value(&env, s, "aas", i3);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(size == 3);
 
     /* Replace an existing element with a different element. */
     xmlrpc_struct_set_value(&env, s, "aas", i1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(size == 3);
 
     /* Get an element. */
     i = xmlrpc_struct_get_value(&env, s, "aas");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i == i1);
 
     /* Replace an existing element with the same element (tricky). */
     xmlrpc_struct_set_value(&env, s, "aas", i1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(size == 3);
     i = xmlrpc_struct_get_value(&env, s, "aas");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i == i1);
 
     /* Test for the presence and absence of elements. */
     present = xmlrpc_struct_has_key(&env, s, "aas");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(present);
     present = xmlrpc_struct_has_key(&env, s, "bogus");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(!present);
 
     /* Make sure our typechecks work correctly. */
@@ -857,31 +875,31 @@ static void test_struct (void)
 			   "foo", "Hello!",
 			   "bar", (xmlrpc_int32) 1,
 			   "baz", (xmlrpc_bool) 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(s != NULL);
     TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(s));
     size = xmlrpc_struct_size(&env, s);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(size == 3);
     present = xmlrpc_struct_has_key(&env, s, "foo");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(present);
     present = xmlrpc_struct_has_key(&env, s, "bar");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(present);
     present = xmlrpc_struct_has_key(&env, s, "baz");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(present);
     i = xmlrpc_struct_get_value(&env, s, "baz");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env, i, "b", &bval);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(!bval);
 
     /* Extract keys and values. */
     for (index = 0; index < 3; index++) {
 	xmlrpc_struct_get_key_and_value(&env, s, index, &key, &value);
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	TEST(key != NULL);
 	TEST(value != NULL);
     }
@@ -891,7 +909,7 @@ static void test_struct (void)
 		       "baz", &bval,
 		       "foo", &sval,
 		       "bar", &ival);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(ival == 1);
     TEST(!bval);
     TEST(strcmp(sval, "Hello!") == 0);
@@ -964,13 +982,13 @@ static void test_serialize (void)
 			   "Hello, world! <&>",
 			   "base64 data", (size_t) 11,
 			   "19980717T14:08:55");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     
     /* Serialize the value. */
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_serialize_value(&env, output, v);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Make sure we serialized the correct value. */
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
@@ -980,7 +998,7 @@ static void test_serialize (void)
     
     /* (Debugging code to display the value.) */
     /* XMLRPC_TYPED_MEM_BLOCK_APPEND(char, &env, output, "\0", 1);
-    ** TEST(!env.fault_occurred);
+    ** TEST_NO_FAULT(&env);
     ** printf("%s\n", XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output)); */
 
     /* Clean up our value. */
@@ -989,11 +1007,11 @@ static void test_serialize (void)
 
     /* Serialize a simple struct. */
     v = xmlrpc_build_value(&env, "{s:i}", "<&>", (xmlrpc_int32) 10);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_serialize_value(&env, output, v);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Make sure we serialized the correct value. */
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
@@ -1007,11 +1025,11 @@ static void test_serialize (void)
 
     /* Serialize a methodResponse. */
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 30);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_serialize_response(&env, output, v);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Make sure we serialized the correct value. */
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
@@ -1025,11 +1043,11 @@ static void test_serialize (void)
 
     /* Serialize a methodCall. */
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     v = xmlrpc_build_value(&env, "(ii)", (xmlrpc_int32) 10, (xmlrpc_int32) 20);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_serialize_call(&env, output, "gloom&doom", v);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Make sure we serialized the correct value. */
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
@@ -1043,11 +1061,11 @@ static void test_serialize (void)
 
     /* Serialize a fault. */
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_env_init(&fault);
     xmlrpc_env_set_fault(&fault, 6, "A fault occurred");
     xmlrpc_serialize_fault(&env, output, &fault);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Make sure we serialized the correct value. */
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
@@ -1073,7 +1091,7 @@ static void test_expat (void)
 
     /* Parse a moderately complex XML document. */
     elem = xml_parse(&env, expat_data, strlen(expat_data));
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(elem != NULL);
 
     /* Verify our results. */
@@ -1127,7 +1145,7 @@ static void test_parse_xml_value (void)
     /* Parse a correctly-formed response. */
     val = xmlrpc_parse_response(&env, correct_value,
 				strlen(correct_value));
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(val != NULL);
     
     /* Analyze it and make sure it contains the correct values. */
@@ -1135,7 +1153,7 @@ static void test_parse_xml_value (void)
 		       &bool_false, &bool_true, &str_hello,
 		       &b64_data, &b64_len, &datetime,
 		       &int_one, &negone, &zero, &one, &s, &str_untagged);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(int_max == INT_MAX);
     TEST(int_min == INT_MIN);
     TEST(!bool_false);
@@ -1154,17 +1172,17 @@ static void test_parse_xml_value (void)
     /* Analyze the contents of our struct. */
     TEST(s != NULL);
     size = xmlrpc_struct_size(&env, s);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(size == 2);
     sval = xmlrpc_struct_get_value(&env, s, "ten <&>");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env, sval, "i", &sval_int);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(sval_int == 10);
     sval = xmlrpc_struct_get_value(&env, s, "twenty");
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env, sval, "i", &sval_int);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(sval_int == 20);
     
     /* Test cleanup code (w/memprof). */
@@ -1190,7 +1208,7 @@ static void test_parse_xml_value (void)
 	/* First, check to make sure that our test case is well-formed XML.
 	** (It's easy to make mistakes when writing the test cases!) */
 	elem = xml_parse(&env, *bad_value, strlen(*bad_value));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	xml_element_free(elem);
 	
 	/* Now, make sure the higher-level routine barfs appropriately. */
@@ -1218,10 +1236,10 @@ static void test_parse_xml_response (void)
     /* Parse a valid response. */
     v = xmlrpc_parse_response(&env, serialized_response,
 			      strlen(serialized_response));
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(v != NULL);
     xmlrpc_parse_value(&env, v, "i", &i1);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i1 == 30);
     xmlrpc_DECREF(v);
 
@@ -1244,7 +1262,7 @@ static void test_parse_xml_response (void)
 	/* First, check to make sure that our test case is well-formed XML.
 	** (It's easy to make mistakes when writing the test cases!) */
 	elem = xml_parse(&env, *bad_resp, strlen(*bad_resp));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	xml_element_free(elem);
 	
 	/* Now, make sure the higher-level routine barfs appropriately. */
@@ -1273,10 +1291,10 @@ static void test_parse_xml_call (void)
     /* Parse a valid call. */
     xmlrpc_parse_call(&env, serialized_call, strlen(serialized_call),
 		      &method_name, &params);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(params != NULL);
     xmlrpc_parse_value(&env, params, "(ii)", &i1, &i2);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(strcmp(method_name, "gloom&doom") == 0);
     TEST(i1 == 10 && i2 == 20);
     free(method_name);
@@ -1298,7 +1316,7 @@ static void test_parse_xml_call (void)
        /* First, check to make sure that our test case is well-formed XML.
        ** (It's easy to make mistakes when writing the test cases!) */
        elem = xml_parse(&env, *bad_call, strlen(*bad_call));
-       TEST(!env.fault_occurred);
+       TEST_NO_FAULT(&env);
        xml_element_free(elem);
 
        /* Now, make sure the higher-level routine barfs appropriately. */
@@ -1329,12 +1347,12 @@ static xmlrpc_value *test_foo (xmlrpc_env *env,
 {
     xmlrpc_int32 x, y;
 
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     TEST(param_array != NULL);
     TEST(user_data == FOO_USER_DATA);
 
     xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     TEST(x == 25);
     TEST(y == 17);
 
@@ -1347,12 +1365,12 @@ static xmlrpc_value *test_bar (xmlrpc_env *env,
 {
     xmlrpc_int32 x, y;
 
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     TEST(param_array != NULL);
     TEST(user_data == BAR_USER_DATA);
 
     xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     TEST(x == 25);
     TEST(y == 17);
 
@@ -1368,12 +1386,12 @@ static xmlrpc_value *test_default (xmlrpc_env *env,
 {
     xmlrpc_int32 x, y;
 
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     TEST(param_array != NULL);
     TEST(user_data == FOO_USER_DATA);
 
     xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     TEST(x == 25);
     TEST(y == 17);
 
@@ -1391,13 +1409,13 @@ process_call_helper (xmlrpc_env *env,
 
     /* Build a call, and tell the registry to handle it. */
     call = xmlrpc_mem_block_new(env, 0);
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     xmlrpc_serialize_call(env, call, method_name, arg_array);
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     response = xmlrpc_registry_process_call(env, registry, NULL,
 					    xmlrpc_mem_block_contents(call),
 					    xmlrpc_mem_block_size(call));
-    TEST(!env->fault_occurred);
+    TEST_NO_FAULT(env);
     TEST(response != NULL);
 
     /* Parse the response. */
@@ -1428,27 +1446,27 @@ static void test_method_registry (void)
     /* Create a new registry. */
     registry = xmlrpc_registry_new(&env);
     TEST(registry != NULL);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Add some test methods. */
     xmlrpc_registry_add_method(&env, registry, NULL, "test.foo",
 			       test_foo, FOO_USER_DATA);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_registry_add_method(&env, registry, NULL, "test.bar",
 			       test_bar, BAR_USER_DATA);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Build an argument array for our calls. */
     arg_array = xmlrpc_build_value(&env, "(ii)",
 				   (xmlrpc_int32) 25, (xmlrpc_int32) 17); 
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
 
     /* Call test.foo and check the result. */
     value = process_call_helper(&env, registry, "test.foo", arg_array);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(value != NULL);
     xmlrpc_parse_value(&env, value, "i", &i);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i == 42);
     xmlrpc_DECREF(value);
 
@@ -1483,9 +1501,9 @@ static void test_method_registry (void)
 			       "bogus_entry",
 			       "methodName", "test.foo",
 			       "params", arg_array);
-    TEST(!env.fault_occurred);    
+    TEST_NO_FAULT(&env);    
     value = process_call_helper(&env, registry, "system.multicall", multi);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env, value,
 		       "((i){s:i,s:s,*}{s:i,s:s,*}"
 		       "{s:i,s:s,*}{s:i,s:s,*}{s:i,s:s,*}(i))",
@@ -1501,7 +1519,7 @@ static void test_method_registry (void)
 		       "faultCode", &bogus2_code,
 		       "faultString", &bogus2_string,
 		       &foo2_result);
-    TEST(!env.fault_occurred);    
+    TEST_NO_FAULT(&env);    
     TEST(foo1_result == 42);
     TEST(bar_code == 123);
     TEST(strcmp(bar_string, "Test fault") == 0);
@@ -1518,7 +1536,7 @@ static void test_method_registry (void)
     response = xmlrpc_registry_process_call(&env, registry, NULL,
 					    expat_error_data,
 					    strlen(expat_error_data));
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(response != NULL);
     value = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(response),
 				  xmlrpc_mem_block_size(response));
@@ -1531,19 +1549,19 @@ static void test_method_registry (void)
     /* Test default method support. */
     xmlrpc_registry_set_default_method(&env, registry, &test_default,
 				       FOO_USER_DATA);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     value = process_call_helper(&env, registry, "test.nosuch", arg_array);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(value != NULL);
     xmlrpc_parse_value(&env, value, "i", &i);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(i == 84);
     xmlrpc_DECREF(value);
 
     /* Change the default method. */
     xmlrpc_registry_set_default_method(&env, registry, &test_default,
 				       BAR_USER_DATA);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     
     /* Test cleanup code (w/memprof). */
     xmlrpc_registry_free(registry);
@@ -1562,7 +1580,7 @@ static void test_nesting_limit (void)
     /* Test with an adequate limit for (...(...()...)...). */
     xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 2);
     val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(val != NULL);
     xmlrpc_DECREF(val);
 
@@ -1615,6 +1633,80 @@ static void test_xml_size_limit (void)
 
     /* Reset the default limit. */
     xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, XMLRPC_XML_SIZE_LIMIT_DEFAULT);
+}
+
+
+/*=========================================================================
+**  test_sample_files
+**=========================================================================
+**  Read in a bunch of sample test files and make sure we get plausible
+**  results.
+**
+**  We use these files to test strange-but-legal encodings, illegal-but-
+**  supported encodings, etc.
+*/
+
+#define FILE_PREFIX "testdata" PATH_SEPARATOR
+
+static char *good_requests[] = {
+    FILE_PREFIX "req_out_of_order.xml",
+    NULL
+};
+
+#define MAX_SAMPLE_FILE_LEN (16 * 1024)
+
+static char file_buff [MAX_SAMPLE_FILE_LEN];
+
+static void
+read_file (char *path, char **out_data, size_t *out_size)
+{
+    FILE *f;
+    size_t bytes_read;
+
+    /* Open the file. */
+    f = fopen(path, "r");
+    if (f == NULL) {
+	/* Since this error is fairly likely to happen, give an
+	** informative error message... */
+	perror("\n" __FILE__);
+	fprintf(stderr, "Could not open file \"%s\".\n", path);
+	exit(1);
+    }
+    
+    /* Read in one buffer full of data, and make sure that everything
+    ** fit.  (We perform a lazy error/no-eof/zero-length-file test using
+    ** bytes_read.) */
+    bytes_read = fread(file_buff, sizeof(char), MAX_SAMPLE_FILE_LEN, f);
+    TEST(0 < bytes_read && bytes_read < MAX_SAMPLE_FILE_LEN);
+
+    /* Close the file and return our data. */
+    fclose(f);
+    *out_data = file_buff;
+    *out_size = bytes_read;
+}
+
+static void test_sample_files (void)
+{
+    xmlrpc_env env;
+    char **paths, *path;
+    char *data;
+    size_t data_len;
+    char *method_name;
+    xmlrpc_value *params;
+
+    xmlrpc_env_init(&env);
+
+    /* Test our good requests. */
+    for (paths = good_requests; *paths != NULL; paths++) {
+	path = *paths;
+	read_file(path, &data, &data_len);
+	xmlrpc_parse_call(&env, data, data_len, &method_name, &params);
+	TEST_NO_FAULT(&env);
+	free(method_name);
+	xmlrpc_DECREF(params);
+    }
+
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -1748,11 +1840,11 @@ static void test_utf8_coding (void)
 
 	/* Attempt to validate the UTF-8 string. */
 	xmlrpc_validate_utf8(&env, utf8, strlen(utf8));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 
 	/* Attempt to decode the UTF-8 string. */
 	output = xmlrpc_utf8_to_wcs(&env, utf8, strlen(utf8));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	TEST(output != NULL);
 	TEST(wcslen(wcs) == XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, output));
 	TEST(0 ==
@@ -1762,7 +1854,7 @@ static void test_utf8_coding (void)
 
 	/* Test the UTF-8 encoder, too. */
 	output = xmlrpc_wcs_to_utf8(&env, wcs, wcslen(wcs));
-	TEST(!env.fault_occurred);
+	TEST_NO_FAULT(&env);
 	TEST(output != NULL);
 	TEST(strlen(utf8) == XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output));
 	TEST(0 ==
@@ -1810,12 +1902,12 @@ static void test_wchar_support (void)
 
     /* Build a string from UTF-8 data. */
     val = xmlrpc_build_value(&env, "s#", utf8_data, (size_t) 5);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(val != NULL);
 
     /* Extract it as a wchar_t string. */
     xmlrpc_parse_value(&env, val, "w#", &wcs, &len);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(wcs != NULL);
     TEST(len == 4);
     TEST(wcs[len] == '\0');
@@ -1824,12 +1916,12 @@ static void test_wchar_support (void)
 
     /* Build a string from wchar_t data. */
     val = xmlrpc_build_value(&env, "w#", wcs_data, 4);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(val != NULL);
 
     /* Extract it as a wchar_t string. */
     xmlrpc_parse_value(&env, val, "w#", &wcs, &len);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(wcs != NULL);
     TEST(len == 4);
     TEST(wcs[len] == '\0');
@@ -1837,7 +1929,7 @@ static void test_wchar_support (void)
 
     /* Extract it as a UTF-8 string. */
     xmlrpc_parse_value(&env, val, "s#", &str, &len);
-    TEST(!env.fault_occurred);
+    TEST_NO_FAULT(&env);
     TEST(str != NULL);
     TEST(len == 5);
     TEST(str[len] == '\0');
@@ -1872,6 +1964,7 @@ int main (int argc, char** argv)
     test_method_registry();
     test_nesting_limit();
     test_xml_size_limit();
+    test_sample_files();
 
 #ifdef HAVE_UNICODE_WCHAR
     test_utf8_coding();

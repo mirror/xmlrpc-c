@@ -86,6 +86,25 @@
                          xml_element_children_size(elem)); \
     while (0)
 
+static xml_element *
+get_child_by_name (xmlrpc_env *env, xml_element *parent, char *name)
+{
+    size_t child_count, i;
+    xml_element **children;
+
+    children = xml_element_children(parent);
+    child_count = xml_element_children_size(parent);
+    for (i = 0; i < child_count; i++) {
+	if (0 == strcmp(xml_element_name(children[i]), name))
+	    return children[i];
+    }
+	
+    xmlrpc_env_set_fault_formatted(env, XMLRPC_PARSE_ERROR,
+				   "Expected <%s> to have child <%s>",
+				   xml_element_name(parent), name);
+    return NULL;
+}
+
 
 /*=========================================================================
 **  Number-Parsing Functions
@@ -556,12 +575,13 @@ void xmlrpc_parse_call (xmlrpc_env *env,
     /* Pick apart and verify our structure. */
     CHECK_NAME(env, call_elem, "methodCall");
     CHECK_CHILD_COUNT(env, call_elem, 2);
-    name_elem = xml_element_children(call_elem)[0];
-    params_elem = xml_element_children(call_elem)[1];
+    name_elem = get_child_by_name(env, call_elem, "methodName");
+    XMLRPC_FAIL_IF_FAULT(env);
+    params_elem = get_child_by_name(env, call_elem, "params");
+    XMLRPC_FAIL_IF_FAULT(env);
 
     /* Extract the method name.
     ** SECURITY: We make sure the method name is valid UTF-8. */
-    CHECK_NAME(env, name_elem, "methodName");
     CHECK_CHILD_COUNT(env, name_elem, 0);
     cdata = xml_element_cdata(name_elem);
 #ifdef HAVE_UNICODE_WCHAR
