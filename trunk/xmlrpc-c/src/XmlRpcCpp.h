@@ -10,26 +10,22 @@
 #ifndef  _XMLRPCCPP_H_
 #define  _XMLRPCCPP_H_ 1
 
-// The C++ standard says we should either include <string.h> (which gets
-// us the wrong header), or say 'using namespace std;' (which doesn't
-// work with our version of g++). So this header name is technically wrong.
-// Tell me what your compiler does; I can provide some autoconf magic to the
-// Right Thing on most platforms.
+// There used to be a "using namespace std" here and some confusing old
+// comments about it having something to do with what header file you
+// include to get string functions.
 //
-// 2004.12.22 Bryan: This looks like a problem with whatever g++ he was
-// using, so if anything, the special case should be for that.  In any case,
-// we've already added using namespace std to other files, without knowing
-// there was an issue, so I'm just going to do the "using namespace" 
-// unconditionally and see who complains.  If there are complaints, we can
-// improve the documentation here.
-//
-// Formerly, the "using namespace std" was under
-// "#if defined(__GNUC__) && (__GNUC__ >= 3)".
+// "using namespace std" was under "#if defined(__GNUC__) && (__GNUC__ >= 3)"
+// until December 2003, and then unconditional until Release 1.1 (March 2005).
+// 
+// But "using namespace std" is a bad idea.  This is an interface header
+// file, and we don't want to suck all of namespace std into the user's
+// namespace just because he's using Xmlrpc-c.  So we took it out.
+// If we're using a std name anywhere in this file, we should specify it
+// explicitly like std::cout.
+// -Bryan 2005.03.12.
 
 
 #include <string>
-
-using namespace std;
 
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
