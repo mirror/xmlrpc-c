@@ -9,6 +9,8 @@ SUBDIR = src
 
 include $(SRCDIR)/Makefile.config
 
+default: all
+
 WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
 CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
 LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
@@ -69,8 +71,30 @@ INCLUDES = -I. -I$(SRCDIR) -I $(SRCDIR)/lib/util/include \
 	   $(TRANSPORT_INCLUDES) \
 	   $(LIBXML_INCLUDES) \
 
+TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_client.la libxmlrpc_server.la \
+     libxmlrpc_server_abyss.la
+
+ifeq ($(ENABLE_CGI_SERVER),yes)
+  TARGET_LTLIBRARIES += libxmlrpc_cgi.la
+endif
+
+# We always statically-link our C++ code because it's tiny, and C++ is
+# no good at shared libraries, anyway.
+TARGET_LIBRARIES = libxmlrpc_cpp.a
+
+TARGET_TESTPROGS = rpctest cpptest
+
+ifeq ($(ENABLE_EFENCE),yes)
+  TARGET_TESTPROGS += efrpctest efrpctest_wrapper
+endif
+
+all: $(TARGET_LTLIBRARIES) $(TARGET_LIBRARIES) $(TARGET_TESTPROGS)
+
 rpctest:%:%.o libxmlrpc.la libxmlrpc_server.la $(LIBXML)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
+
+efrpctest: rpctest.o libxmlrpc.la libxmlrpc_server.la $(LIBXML)
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^ -lefence
 
 cpptest:%:%.o XmlRpcCpp.o libxmlrpc_cpp.a libxmlrpc.la libxmlrpc_server.la \
   $(LIBXML)
@@ -90,14 +114,21 @@ libxmlrpc_server.la: xmlrpc_registry.lo
 libxmlrpc_server_abyss.la: xmlrpc_server_abyss.lo
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
+libxmlrpc_cgi.la: xmlrpc_cgi.lo
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+
+libxmlrpc_cpp.a: XmlRpcCpp.o
+	-rm -f $@
+	$(AR) cru $@ $^ $(libxmlrpc_cpp_a_LIBADD)
+	$(RANLIB) $@
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 rpctest.o:%.o:%.c
 	$(CC) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
 
-cpptest.o:%.o:%.cc
-	$(CC) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
+cpptest.o:%.o:%.cpp
+	$(CXX) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
 
 $(LIB_OBJS):%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
@@ -110,8 +141,15 @@ $(LIBXMLRPC_SERVER_ABYSS_OBJS):%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(ABYSS_INCLUDES) \
 	  $(CFLAGS) $<
 
+xmlrpc_cgi.lo:%.lo:%.c
+	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) \
+	  $(CFLAGS) $<
+
 $(TRANSPORT_OBJS): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
+
+XmlRpcCpp.o:%.o:%.cpp
+	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
 transport_config.h: $(SRCDIR)/Makefile.config
 	rm -f $@
@@ -146,9 +184,31 @@ else
   endif
 endif
 
+efrpctest_wrapper: efrpctest_wrapper.sh
+	cp $< $@
+	chmod +x $@
+
+LTLIBRARIES_TO_INSTALL = $(TARGET_LTLIBRARIES)
+LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
+HEADERS_TO_INSTALL = xmlrpc.h xmlrpc_server.h xmlrpc_client.h \
+	             xmlrpc_server_abyss.h XmlRpcCpp.h
+ifeq ($(ENABLE_CGI_SERVER),yes)
+  HEADERS_TO_INSTALL += xmlrpc_cgi.h
+endif
+
+check: rpctest cpptest
+	for tst in $^; do \
+	  ./$$tst; \
+	done;
+
+install: install-common
+
 clean: clean-common clean-local
 clean-local:
 	rm -f transport_config.h
+	rm -f $(TARGET_TESTPROGS)
+
+dep: dep-common
 
 include $(SRCDIR)/Makefile.common
 

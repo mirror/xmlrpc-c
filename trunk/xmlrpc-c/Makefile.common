@@ -68,8 +68,54 @@ $(SRCDIR)/lib/util/casprintf.lo:
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
-.PHONY: install-common
-install-common:
+MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
+
+.PHONY: install-common install-libraries install-headers
+install-common: install-ltlibraries install-libraries install-headers
+
+INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
+RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
+
+install-libraries: $(LIBRARIES_TO_INSTALL)
+	@$(NORMAL_INSTALL)
+	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
+	@list='$(LIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_LIB_CMD)"; \
+	    $(INSTALL_LIB_CMD); \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(LIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB_CMD)"; \
+	    $(RANLIB_CMD); \
+	  else :; fi; \
+	done
+
+LIBTOOL_INSTALL_CMD = $(LIBTOOL) --mode=install \
+  $(INSTALL) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
+
+install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
+	@$(NORMAL_INSTALL)
+	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
+	@list='$(LTLIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(LIBTOOL_INSTALL_CMD)"; \
+	    $(LIBTOOL_INSTALL_CMD); \
+	  else :; fi; \
+	done
+
+INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(DESTDIR)$(HEADERINST_DIR)/$$p 
+
+install-headers: $(HEADERS_TO_INSTALL)
+	@$(NORMAL_INSTALL)
+	$(MKINSTALLDIRS) $(DESTDIR)$(HEADERINST_DIR)
+	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  echo " $(INSTALL_HDR_CMD)"; \
+	  $(INSTALL_HDR_CMD); \
+	done
 
 .PHONY: clean-common
 clean-common:
@@ -109,7 +155,7 @@ TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
 	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
-DEP_SOURCES = $(wildcard *.c *.cc)
+DEP_SOURCES = $(wildcard *.c *.cpp *.cc)
 
 .PHONY: dep-common
 dep-common: FORCE

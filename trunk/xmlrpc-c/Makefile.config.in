@@ -22,6 +22,7 @@ ENABLE_ABYSS_SERVER    = @ENABLE_ABYSS_SERVER@
 ENABLE_CPLUSPLUS       = @ENABLE_CPLUSPLUS@
 ENABLE_CGI_SERVER      = @ENABLE_CGI_SERVER@
 ENABLE_LIBXML2_BACKEND = @ENABLE_LIBXML2_BACKEND@
+ENABLE_EFENCE          = @ENABLE_EFENCE@
 
 MUST_BUILD_WININET_CLIENT = @MUST_BUILD_WININET_CLIENT@
 MUST_BUILD_CURL_CLIENT    = @MUST_BUILD_CURL_CLIENT@
@@ -34,9 +35,28 @@ CC = @CC@
 CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
+AR = ar
+RANLIB = @RANLIB@
 LN_S = @LN_S@
+INSTALL = @INSTALL@
 
 C_COMPILER_GNU = @C_COMPILER_GNU@
 CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
 
+# Here are the commands 'make install' uses to install various kinds of files:
+
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+
+# Here are the locations at which 'make install' puts files:
+
+# DESTDIR is designed to be overriden at make time in order to relocate
+# the entire install into a subdirectory.
+DESTDIR =
+
+exec_prefix = @exec_prefix@
+prefix = @prefix@
 LIBINST_DIR = @libdir@
+HEADERINST_DIR = @includedir@
+
