@@ -62,6 +62,7 @@ struct xmlrpc_client {
    This represents a client object.
 -----------------------------------------------------------------------------*/
     struct clientTransport * transportP;
+    struct clientTransportOps clientTransportOps;
 };
 
 
@@ -89,8 +90,6 @@ static bool clientInitialized = FALSE;
 **  Initialization and Shutdown
 **=========================================================================
 */
-
-static struct clientTransportOps clientTransportOps;
 
 static struct xmlrpc_client client;
     /* Some day, we need to make this dynamically allocated, so there can
@@ -137,15 +136,15 @@ setupTransport(xmlrpc_env * const envP,
     }
 #if MUST_BUILD_WININET_CLIENT
     else if (strcmp(transportName, "wininet") == 0)
-        clientTransportOps = xmlrpc_wininet_transport_ops;
+        client.clientTransportOps = xmlrpc_wininet_transport_ops;
 #endif
 #if MUST_BUILD_CURL_CLIENT
     else if (strcmp(transportName, "curl") == 0)
-        clientTransportOps = xmlrpc_curl_transport_ops;
+        client.clientTransportOps = xmlrpc_curl_transport_ops;
 #endif
 #if MUST_BUILD_LIBWWW_CLIENT
     else if (strcmp(transportName, "libwww") == 0)
-        clientTransportOps = xmlrpc_libwww_transport_ops;
+        client.clientTransportOps = xmlrpc_libwww_transport_ops;
 #endif
     else
         xmlrpc_env_set_fault_formatted(
@@ -239,9 +238,10 @@ xmlrpc_client_init2(xmlrpc_env *                      const envP,
         if (!envP->fault_occurred) {
             setupTransport(envP, transportName);
             if (!envP->fault_occurred) {
-                clientTransportOps.create(envP, flags, appname, appversion,
-                                          transportparmsP, transportparm_size,
-                                          &client.transportP);
+                client.clientTransportOps.create(
+                    envP, flags, appname, appversion,
+                    transportparmsP, transportparm_size,
+                    &client.transportP);
                 if (!envP->fault_occurred)
                     clientInitialized = TRUE;
             }
@@ -256,128 +256,113 @@ xmlrpc_client_cleanup() {
 
     XMLRPC_ASSERT(clientInitialized);
 
-    clientTransportOps.destroy(client.transportP);
+    client.clientTransportOps.destroy(client.transportP);
     
     clientInitialized = FALSE;
 }
 
 
 
-static void 
-call_info_free(call_info * const callInfoP) {
-
-    /* Assume the worst.. That only parts of the call_info are valid. */
-
-    XMLRPC_ASSERT_PTR_OK(callInfoP);
-
-    /* If this has been allocated, we're responsible for destroying it. */
-    if (callInfoP->_asynch_data_holder)
-        xmlrpc_DECREF(callInfoP->_asynch_data_holder);
-
-    /* Now we can blow away the XML data. */
-    if (callInfoP->serialized_xml)
-         xmlrpc_mem_block_free(callInfoP->serialized_xml);
-
-    free(callInfoP);
-}
-
-
-
 static void
-call_info_new(xmlrpc_env *               const envP,
-              const xmlrpc_server_info * const server,
-              const char *               const methodName,
-              xmlrpc_value *             const argP,
-              call_info **               const callInfoPP) {
-/*----------------------------------------------------------------------------
-   Create a call_info object.  A call_info object represents an XML-RPC
-   call.
------------------------------------------------------------------------------*/
-    call_info * callInfoP;
+makeCallXml(xmlrpc_env *               const envP,
+            const xmlrpc_server_info * const serverP,
+            const char *               const methodName,
+            xmlrpc_value *             const paramArrayP,
+            xmlrpc_mem_block **        const callXmlPP) {
 
-    XMLRPC_ASSERT_PTR_OK(argP);
-    XMLRPC_ASSERT_PTR_OK(callInfoPP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(callXmlPP);
 
     if (methodName == NULL)
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INTERNAL_ERROR,
             "method name argument is NULL pointer");
-    else if (server == NULL)
+    else if (serverP == NULL)
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INTERNAL_ERROR,
             "server info argument is NULL pointer");
     else {
-        MALLOCVAR(callInfoP);
-        if (callInfoP == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR,
-                "Couldn't allocate memory for xmlrpc_call_info");
-        else {
-            xmlrpc_mem_block * callXmlP;
+        xmlrpc_mem_block * callXmlP;
 
-        /* Clear contents. */
-            memset(callInfoP, 0, sizeof(*callInfoP));
-        
-            /* Make the XML for our call */
-            callXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
-            if (!envP->fault_occurred) {
-                xmlrpc_serialize_call(envP, callXmlP, methodName, argP);
-                if (!envP->fault_occurred) {
-                    xmlrpc_traceXml("XML-RPC CALL", 
-                                    XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
-                                    XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
-        
-                    callInfoP->serialized_xml = callXmlP;
+        callXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
+        if (!envP->fault_occurred) {
+            xmlrpc_serialize_call(envP, callXmlP, methodName, paramArrayP);
 
-                    *callInfoPP = callInfoP;
-                }
-                if (envP->fault_occurred)
-                    XMLRPC_MEMBLOCK_FREE(char, callXmlP);
-            }
+            *callXmlPP = callXmlP;
+
             if (envP->fault_occurred)
-                free(callInfoP);
+                XMLRPC_MEMBLOCK_FREE(char, callXmlP);
         }
-    }
+    }    
 }
 
 
 
-static void
-clientCallServerParams(xmlrpc_env *               const envP,
-                       struct clientTransport *   const transportP,
-                       const xmlrpc_server_info * const serverP,
-                       const char *               const methodName,
-                       xmlrpc_value *             const paramArrayP,
-                       xmlrpc_value **            const resultPP) {
+void
+xmlrpc_client_transport_call(
+    xmlrpc_env *               const envP,
+    void *                     const reserved ATTR_UNUSED, 
+        /* for client handle */
+    const xmlrpc_server_info * const serverP,
+    xmlrpc_mem_block *         const callXmlP,
+    xmlrpc_mem_block **        const respXmlPP) {
 
-    call_info * callInfoP;
-    
     if (!clientInitialized)
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INTERNAL_ERROR, 
             "Xmlrpc-c client instance has not been initialized "
             "(need to call xmlrpc_client_init2()).");
     else {
-        call_info_new(envP, serverP, methodName, paramArrayP, &callInfoP);
-        if (!envP->fault_occurred) {
-            xmlrpc_mem_block * respXmlP;
+        struct xmlrpc_client * const clientP = &client;
+            /* Some day, the library will be re-entrant and this will be
+               passed in.
+            */
+
+        XMLRPC_ASSERT_PTR_OK(serverP);
+        XMLRPC_ASSERT_PTR_OK(callXmlP);
+        XMLRPC_ASSERT_PTR_OK(respXmlPP);
+
+        clientP->clientTransportOps.call(
+            envP, clientP->transportP, serverP, callXmlP,
+            respXmlPP);
+    }    
+}
+                             
+
+
+static void
+clientCallServerParams(xmlrpc_env *               const envP,
+                       struct xmlrpc_client *     const clientP,
+                       const xmlrpc_server_info * const serverP,
+                       const char *               const methodName,
+                       xmlrpc_value *             const paramArrayP,
+                       xmlrpc_value **            const resultPP) {
+
+    xmlrpc_mem_block * callXmlP;
+
+    makeCallXml(envP, serverP, methodName, paramArrayP, &callXmlP);
+    
+    if (!envP->fault_occurred) {
+        xmlrpc_mem_block * respXmlP;
         
-            clientTransportOps.call(envP, transportP, serverP, 
-                                    callInfoP->serialized_xml,
-                                    &respXmlP);
-            if (!envP->fault_occurred) {
-                xmlrpc_traceXml("XML-RPC RESPONSE", 
-                                XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
-                                XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
+        xmlrpc_traceXml("XML-RPC CALL", 
+                        XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
+                        XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
+        
+        clientP->clientTransportOps.call(
+            envP, clientP->transportP, serverP, callXmlP, &respXmlP);
+        if (!envP->fault_occurred) {
+            xmlrpc_traceXml("XML-RPC RESPONSE", 
+                            XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
+                            XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
             
-                *resultPP = xmlrpc_parse_response(
-                    envP,
-                    XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
-                    XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
-                XMLRPC_MEMBLOCK_FREE(char, respXmlP);
-            }                    
-            call_info_free(callInfoP);
+            *resultPP = xmlrpc_parse_response(
+                envP,
+                XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
+                XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
+            XMLRPC_MEMBLOCK_FREE(char, respXmlP);
         }
+        XMLRPC_MEMBLOCK_FREE(char, callXmlP);
     }
 }
 
@@ -400,12 +385,17 @@ xmlrpc_client_call_params(xmlrpc_env *   const envP,
             "Xmlrpc-c client instance has not been initialized "
             "(need to call xmlrpc_client_init2()).");
     else {
+        struct xmlrpc_client * const clientP = &client;
+            /* Some day, the library will be re-entrant and this will be
+               passed in.
+            */
+            
         xmlrpc_server_info * serverP;
         
         /* Build a server info object and make our call. */
         serverP = xmlrpc_server_info_new(envP, serverUrl);
         if (!envP->fault_occurred) {
-            clientCallServerParams(envP, client.transportP, serverP, 
+            clientCallServerParams(envP, clientP, serverP, 
                                    methodName, paramArrayP,
                                    &retval);
 
@@ -439,8 +429,12 @@ xmlrpc_client_call_server_params(
             "Xmlrpc-c client instance has not been initialized "
             "(need to call xmlrpc_client_init2()).");
     else {
-        clientCallServerParams(envP, client.transportP, serverP, 
-                               methodName, paramArrayP,
+        struct xmlrpc_client * const clientP = &client;
+            /* Some day, the library will be re-entrant and this will be
+               passed in.
+            */
+            
+        clientCallServerParams(envP, clientP, serverP, methodName, paramArrayP,
                                &retval);
     }
     if (!envP->fault_occurred)
@@ -536,23 +530,35 @@ xmlrpc_client_call_server(xmlrpc_env *               const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(format);
 
-    /* Build our argument */
-    va_start(args, format);
-    xmlrpc_build_value_va(envP, format, args, &paramArrayP, &suffix);
-    va_end(args);
-
-    if (!envP->fault_occurred) {
-        if (*suffix != '\0')
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-                "specifier: '%s'.  There must be exactly one arument.",
-                suffix);
-        else
-            clientCallServerParams(envP, client.transportP, serverP, 
-                                   methodName, paramArrayP, 
-                                   &retval);
-
-        xmlrpc_DECREF(paramArrayP);
+    if (!clientInitialized)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR, 
+            "Xmlrpc-c client instance has not been initialized "
+            "(need to call xmlrpc_client_init2()).");
+    else {
+        struct xmlrpc_client * const clientP = &client;
+            /* Some day, the library will be re-entrant and this will be
+               passed in.
+            */
+            
+        /* Build our argument */
+        va_start(args, format);
+        xmlrpc_build_value_va(envP, format, args, &paramArrayP, &suffix);
+        va_end(args);
+        
+        if (!envP->fault_occurred) {
+            if (*suffix != '\0')
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
+                    "specifier: '%s'.  There must be exactly one arument.",
+                    suffix);
+            else
+                clientCallServerParams(envP, clientP, serverP, 
+                                       methodName, paramArrayP, 
+                                       &retval);
+            
+            xmlrpc_DECREF(paramArrayP);
+        }
     }
     return retval;
 }
@@ -561,7 +567,8 @@ xmlrpc_client_call_server(xmlrpc_env *               const envP,
 void 
 xmlrpc_client_event_loop_finish_asynch(void) {
     XMLRPC_ASSERT(clientInitialized);
-    clientTransportOps.finish_asynch(client.transportP, timeout_no, 0);
+    client.clientTransportOps.finish_asynch(
+        client.transportP, timeout_no, 0);
 }
 
 
@@ -569,7 +576,8 @@ xmlrpc_client_event_loop_finish_asynch(void) {
 void 
 xmlrpc_client_event_loop_finish_asynch_timeout(timeout_t const timeout) {
     XMLRPC_ASSERT(clientInitialized);
-    clientTransportOps.finish_asynch(client.transportP, timeout_yes, timeout);
+    client.clientTransportOps.finish_asynch(
+        client.transportP, timeout_yes, timeout);
 }
 
 
@@ -732,6 +740,71 @@ void xmlrpc_server_info_free (xmlrpc_server_info *server)
 **  xmlrpc_client_call_asynch
 **=========================================================================
 */
+
+static void 
+call_info_free(call_info * const callInfoP) {
+
+    /* Assume the worst.. That only parts of the call_info are valid. */
+
+    XMLRPC_ASSERT_PTR_OK(callInfoP);
+
+    /* If this has been allocated, we're responsible for destroying it. */
+    if (callInfoP->_asynch_data_holder)
+        xmlrpc_DECREF(callInfoP->_asynch_data_holder);
+
+    /* Now we can blow away the XML data. */
+    if (callInfoP->serialized_xml)
+         xmlrpc_mem_block_free(callInfoP->serialized_xml);
+
+    free(callInfoP);
+}
+
+
+
+static void
+call_info_new(xmlrpc_env *               const envP,
+              const xmlrpc_server_info * const serverP,
+              const char *               const methodName,
+              xmlrpc_value *             const paramArrayP,
+              call_info **               const callInfoPP) {
+/*----------------------------------------------------------------------------
+   Create a call_info object.  A call_info object represents an XML-RPC
+   call.
+-----------------------------------------------------------------------------*/
+    call_info * callInfoP;
+
+    XMLRPC_ASSERT_PTR_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(callInfoPP);
+
+    MALLOCVAR(callInfoP);
+    if (callInfoP == NULL)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR,
+            "Couldn't allocate memory for xmlrpc_call_info");
+    else {
+        xmlrpc_mem_block * callXmlP;
+
+        /* Clear contents. */
+        memset(callInfoP, 0, sizeof(*callInfoP));
+        
+        makeCallXml(envP, serverP, methodName, paramArrayP, &callXmlP);
+
+        if (!envP->fault_occurred) {
+            xmlrpc_traceXml("XML-RPC CALL", 
+                            XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
+                            XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
+            
+            callInfoP->serialized_xml = callXmlP;
+            
+            *callInfoPP = callInfoP;
+
+            if (envP->fault_occurred)
+                free(callInfoP);
+        }
+    }
+}
+
+
 
 void 
 xmlrpc_client_call_asynch(const char * const serverUrl,
@@ -932,7 +1005,7 @@ asynchComplete(call_info *        const callInfoP,
 
 static void
 sendRequest(xmlrpc_env *             const envP,
-            struct clientTransport * const transportP,
+            struct xmlrpc_client *   const clientP,
             xmlrpc_server_info *     const serverP,
             const char *             const methodName,
             xmlrpc_response_handler        responseHandler,
@@ -947,8 +1020,8 @@ sendRequest(xmlrpc_env *             const envP,
                                   serverP->_server_url, methodName,
                                   argP, responseHandler, userData);
         if (!envP->fault_occurred)
-            clientTransportOps.send_request(
-                envP, transportP, serverP, callInfoP->serialized_xml,
+            clientP->clientTransportOps.send_request(
+                envP, clientP->transportP, serverP, callInfoP->serialized_xml,
                 &asynchComplete, callInfoP);
 
         if (envP->fault_occurred)
@@ -993,11 +1066,17 @@ xmlrpc_client_call_server_asynch_params(
             &env, XMLRPC_INTERNAL_ERROR, 
             "Xmlrpc-c client instance has not been initialized "
             "(need to call xmlrpc_client_init2()).");
-    else
-        sendRequest(&env, client.transportP, serverP, 
+    else {
+        struct xmlrpc_client * const clientP = &client;
+            /* Some day, the library will be re-entrant and this will be
+               passed in.
+            */
+            
+        sendRequest(&env, clientP, serverP, 
                     methodName, responseHandler, userData, 
                     argP);
 
+    }
     xmlrpc_env_clean(&env);
 }
 

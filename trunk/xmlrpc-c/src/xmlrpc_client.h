@@ -7,8 +7,8 @@
   Copyright information is at the end of the file.
 ============================================================================*/
 
-#ifndef  _XMLRPC_CLIENT_H_
-#define  _XMLRPC_CLIENT_H_ 1
+#ifndef  XMLRPC_CLIENT_H_INCLUDED
+#define  XMLRPC_CLIENT_H_INCLUDED
 
 #include <xmlrpc.h>
 
@@ -174,6 +174,14 @@ xmlrpc_client_call_server_params(
     const xmlrpc_server_info * const serverP,
     const char *               const method_name,
     xmlrpc_value *             const paramArrayP);
+
+void
+xmlrpc_client_transport_call(
+    xmlrpc_env *               const envP,
+    void *                     const reserved,  /* for client handle */
+    const xmlrpc_server_info * const serverP,
+    xmlrpc_mem_block *         const callXmlP,
+    xmlrpc_mem_block **        const respXmlPP);
 
 
 /*=========================================================================
