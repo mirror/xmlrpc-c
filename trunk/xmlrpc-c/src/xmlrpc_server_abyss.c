@@ -34,6 +34,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 
 #include "abyss.h"
 
@@ -115,17 +116,15 @@ send_xml_data (TSession * const r,
 /*=========================================================================
 **  send_error
 **=========================================================================
-**  Send an error back to the client. We always return true, so we can
-**  be called as the last statement in a handler.
+**  Send an error back to the client.
 */
 
-static bool 
+static void
 send_error(TSession * const r, 
            uint16     const status) {
 
     ResponseStatus(r, status);
     ResponseError(r);
-    return TRUE;
 }
 
 
@@ -189,7 +188,8 @@ get_body(xmlrpc_env * const env,
     XMLRPC_FAIL_IF_FAULT(env);
 
     while (bytes_read < content_size) {
-    
+        abyss_bool succeeded;
+
         /* Reset our read buffer & flush data from previous reads. */
         ConnReadInit(r->conn);
 
@@ -199,9 +199,10 @@ get_body(xmlrpc_env * const env,
         ** full timeout per network read, which would allow somebody to
         ** keep a connection alive nearly indefinitely. But it's hard to do
         ** anything intelligent here without very complicated code. */
-        if (!(ConnRead(r->conn, r->server->timeout)))
+        succeeded = ConnRead(r->conn, r->server->timeout);
+        if (!succeeded) {
             XMLRPC_FAIL(env, XMLRPC_TIMEOUT_ERROR, "POST timed out");
-
+        }
         /* Get the next chunk of data from the buffer. */
         get_buffer_data(r, content_size - bytes_read, &chunk_ptr, &chunk_len);
         bytes_read += chunk_len;
@@ -258,6 +259,8 @@ validateContentType(TSession *     const httpRequestP,
         RequestHeaderValue(httpRequestP, "content-type");
     if (content_type == NULL || strcmp(content_type, "text/xml") != 0)
         *httpErrorP = 400;
+    else
+        *httpErrorP = 0;
 }
 
 
@@ -296,6 +299,63 @@ processContentLength(TSession *     const httpRequestP,
 ** been started, it must be treated as read-only. */
 static xmlrpc_registry *global_registryP;
 
+static const char * trace_abyss;
+
+static void
+processCall(TSession * const r,
+            int        const input_len) {
+/*----------------------------------------------------------------------------
+   Handle an RPC request.  This is an HTTP request that has the proper form
+   to be one of our RPCs.
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    if (trace_abyss)
+        fprintf(stderr, "xmlrpc_server_abyss RPC2 handler processing RPC.\n");
+
+    xmlrpc_env_init(&env);
+
+    /* SECURITY: Make sure our content length is legal.
+       XXX - We can cast 'input_len' because we know it's >= 0, yes? 
+    */
+    if ((size_t) input_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+        xmlrpc_env_set_fault_formatted(
+            &env, XMLRPC_LIMIT_EXCEEDED_ERROR,
+            "XML-RPC request too large (%d bytes)", input_len);
+    else {
+        xmlrpc_mem_block *body;
+        /* Read XML data off the wire. */
+        body = get_body(&env, r, input_len);
+        if (!env.fault_occurred) {
+            xmlrpc_mem_block * output;
+            /* Process the RPC. */
+            output = xmlrpc_registry_process_call(
+                &env, global_registryP, NULL, 
+                XMLRPC_MEMBLOCK_CONTENTS(char, body),
+                XMLRPC_MEMBLOCK_SIZE(char, body));
+            if (!env.fault_occurred) {
+            /* Send our the result. */
+                send_xml_data(r, 
+                              XMLRPC_MEMBLOCK_CONTENTS(char, output),
+                              XMLRPC_MEMBLOCK_SIZE(char, output));
+                
+                XMLRPC_MEMBLOCK_FREE(char, output);
+            }
+            XMLRPC_MEMBLOCK_FREE(char, body);
+        }
+    }
+    if (env.fault_occurred) {
+        if (env.fault_code == XMLRPC_TIMEOUT_ERROR)
+            send_error(r, 408); /* 408 Request Timeout */
+        else
+            send_error(r, 500); /* 500 Internal Server Error */
+    }
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 /*=========================================================================
 **  xmlrpc_server_abyss_rpc2_handler
 **=========================================================================
@@ -306,84 +366,50 @@ static xmlrpc_registry *global_registryP;
 xmlrpc_bool 
 xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
 
-    unsigned int httpError;
-    int input_len;
-    xmlrpc_env env;
-    xmlrpc_mem_block *body, *output;
-    char *data;
-    size_t size;
+    xmlrpc_bool retval;
 
-    /* We only handle requests to /RPC2, the default XML-RPC URL.
+    if (trace_abyss)
+        fprintf(stderr, "xmlrpc_server_abyss RPC2 handler called.\n");
+
+    /* We handle only requests to /RPC2, the default XML-RPC URL.
        Everything else we pass through to other handlers. 
     */
     if (strcmp(r->uri, "/RPC2") != 0)
-        return FALSE;
+        retval = FALSE;
+    else {
+        retval = TRUE;
 
-    /* We only support the POST method. For anything else, return
-       "405 Method Not Allowed". 
-    */
-    if (r->method != m_post)
-        return send_error(r, 405);
+        /* We understand only the POST HTTP method.  For anything else, return
+           "405 Method Not Allowed". 
+        */
+        if (r->method != m_post)
+            send_error(r, 405);
+        else {
+            unsigned int httpError;
+            storeCookies(r, &httpError);
+            if (httpError)
+                send_error(r, httpError);
+            else {
+                unsigned int httpError;
+                validateContentType(r, &httpError);
+                if (httpError)
+                    send_error(r, httpError);
+                else {
+                    unsigned int httpError;
+                    int input_len;
 
-    storeCookies(r, &httpError);
-    if (httpError)
-        return send_error(r, httpError);
+                    processContentLength(r, &input_len, &httpError);
+                    if (httpError)
+                        send_error(r, httpError);
 
-    validateContentType(r, &httpError);
-    if (httpError)
-        return send_error(r, httpError);
-
-    processContentLength(r, &input_len, &httpError);
-    if (httpError)
-        return send_error(r, httpError);
-
-    /*---------------------------------------------------------------------
-      We've made it far enough into this function to set up an error-
-      handling context and our error-handling preconditions. 
-    */
-    xmlrpc_env_init(&env);
-    body = output = NULL;
-
-    /* SECURITY: Make sure our content length is legal.
-       XXX - We can cast 'input_len' because we know it's >= 0, yes? 
-    */
-    if ((size_t) input_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
-        XMLRPC_FAIL(&env, XMLRPC_LIMIT_EXCEEDED_ERROR,
-                    "XML-RPC request too large");
-
-    /* Read XML data off the wire. */
-    body = get_body(&env, r, input_len);
-    XMLRPC_FAIL_IF_FAULT(&env);
-    
-    /* Process the function call. */
-    data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, body);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, body);
-    output = xmlrpc_registry_process_call(&env, global_registryP, NULL, 
-                                          data, size);
-    XMLRPC_FAIL_IF_FAULT(&env);
-
-    /* Send our the result. */
-    data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
-    send_xml_data(r, data, size);
-
- cleanup:
-    if (env.fault_occurred) {
-        if (env.fault_code == XMLRPC_TIMEOUT_ERROR)
-            /* 408 Request Timeout */
-            send_error(r, 408);
-        else
-            /* 500 Internal Server Error */
-            send_error(r, 500);
+                    processCall(r, input_len);
+                }
+            }
+        }
     }
-
-    if (body)
-        xmlrpc_mem_block_free(body);
-    if (output)
-        xmlrpc_mem_block_free(output);
-
-    xmlrpc_env_clean(&env);
-    return TRUE;
+    if (trace_abyss)
+        fprintf(stderr, "xmlrpc_server_abyss RPC2 handler returning.\n");
+    return retval;
 }
 
 
@@ -397,7 +423,9 @@ xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
 
 xmlrpc_bool 
 xmlrpc_server_abyss_default_handler (TSession * const r) {
-    return send_error(r, 404);
+    send_error(r, 404);
+
+    return TRUE;
 }
 
 
@@ -639,6 +667,8 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
        a thing in Abyss, so we use the global variable 'global_registryP'.
     */
     global_registryP = registryP;
+
+    trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
                                  
     ServerAddHandler(srvP, xmlrpc_server_abyss_rpc2_handler);
     ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
