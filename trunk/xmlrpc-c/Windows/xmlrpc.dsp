@@ -40,10 +40,10 @@ RSC=rc.exe
 # PROP Output_Dir "Release\xmlrpc"
 # PROP Intermediate_Dir "Release\xmlrpc"
 # PROP Target_Dir ""
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../src" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /FR /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../src" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -65,10 +65,10 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmlrpc"
 # PROP Intermediate_Dir "Debug\xmlrpc"
 # PROP Target_Dir ""
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../src" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../src" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -87,6 +87,10 @@ LIB32=link.exe -lib
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;cc"
+# Begin Source File
+
+SOURCE=..\lib\util\casprintf.c
+# End Source File
 # Begin Source File
 
 SOURCE=..\src\win32_pthreads.c
@@ -113,6 +117,11 @@ SOURCE=..\src\xmlrpc_cgi.c
 
 SOURCE=..\src\xmlrpc_client.c
 # ADD CPP /I "../lib/util/include"
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -217,6 +226,10 @@ SOURCE=..\src\xmlrpc_client_int.h
 # Begin Source File
 
 SOURCE=..\xmlrpc_config.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.h
 # End Source File
 # Begin Source File
 

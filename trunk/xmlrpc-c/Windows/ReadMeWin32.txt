@@ -45,6 +45,8 @@ Changes from the 1.1 -> 1.2 release for Win32:
    http://www.microsoft.com/msdownload/platformsdk/sdkupdate/
    Be sure after installation to choose the program to "register the PSDK
    directories with Visual Studio" so the newer headers are found.
+6) Better support for libcurl.  Updated project files, transport_config_win32.h,
+   added documentation UsingCURLinWin32.txt.   
 
 Suggested testing for evaluation of the library involves a few projects.  
 Here is a quick getting started guide:
