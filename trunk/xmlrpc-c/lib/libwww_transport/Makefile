@@ -4,12 +4,13 @@ endif
 
 include $(SRCDIR)/Makefile.config
 
-LIBWWW_CFLAGS := $(shell libwww-config --cflags)
+LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 
-CFLAGS = $(CFLAGS_COMMON) $(LIBWWW_CFLAGS) $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = -lpthread $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/util/include
+INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/util/include \
+  $(LIBWWW_INCLUDES)
 
 default: all
 
