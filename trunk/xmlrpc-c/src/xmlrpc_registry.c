@@ -479,8 +479,7 @@ system_listMethods (xmlrpc_env *env,
 */
 
 static char *methodHelp_help =
-"Given the name of a method, return a help string (which may contain "
-"HTML markup).";
+"Given the name of a method, return a help string.";
 
 static xmlrpc_value *
 system_methodHelp (xmlrpc_env *env,
