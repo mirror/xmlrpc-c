@@ -26,20 +26,21 @@ You may want to pass a '--prefix' argument to configure. See './configure
 
 To get started, have a look at the following files:
 
-  SECURITY              Important security information
-  doc/overview.txt      Compiling XML-RPC programs; API documentation
-  examples/*.c          Sample programs
-  src/xmlrpc.h          API documentation
-  src/xmlrpc_client.h   API documentation
-  src/xmlrpc_abyss.h    API documentation
-  src/XmlRpcCpp.h       Experimental C++ API documentation
-  src/validatee.c       A more complex XML-RPC server
+  SECURITY                    Important security information
+  doc/overview.txt            Compiling XML-RPC programs; API documentation
+  examples/*.c                Sample programs
+  src/xmlrpc.h                API documentation
+  src/xmlrpc_client.h         API documentation
+  src/xmlrpc_abyss.h          API documentation
+  src/XmlRpcCpp.h             Experimental C++ API documentation
+  src/validatee.c             A more complex XML-RPC server
+  doc/gpg-signature-info.txt  Verifying GPG signatures on xmlrpc-c
 
 Also of interest are:
 
-  BUGS                  Known issues
-  REFACTORINGS          Suggested code reorganizations
-  TESTING               Notes on testing this library
+  BUGS                        Known issues
+  REFACTORINGS                Suggested code reorganizations
+  TESTING                     Notes on testing this library
 
 To run the various server applications, you can type one of the following:
 

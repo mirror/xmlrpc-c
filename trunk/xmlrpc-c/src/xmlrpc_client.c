@@ -488,7 +488,7 @@ static void call_info_free (call_info *info)
     HTRequest_delete(info->request);
     info->request = XMLRPC_BAD_POINTER;
     HTChunk_delete(info->response_data);
-    info->request = XMLRPC_BAD_POINTER;
+    info->response_data = XMLRPC_BAD_POINTER;
 
     /* This anchor points to private data, so we're allowed to delete it.  */
     delete_source_anchor(info->source_anchor);

@@ -1,5 +1,9 @@
 AUTOMAKE_OPTIONS = foreign
 
+# You can change this using 'make GPG_KEY="mykeyid" ...'.
+# You will also need to set up your .rpmmacros file correctly.
+GPG_KEY = "software validation key"
+
 RPM_TOPDIR = =rpm_topdir
 
 SUBDIRS = lib src examples doc tools
@@ -39,5 +43,15 @@ fulldist: distcheck xmlrpc-c.spec xmlrpc-c.lsm
 	echo "$$banner"; \
 	echo "$$dashes"
 
+fulldistsig:
+	rpm --addsign fulldist/$(VERSION)/*.rpm
+	gpg --default-key $(GPG_KEY) --detach-sign \
+            fulldist/$(VERSION)/xmlrpc-c-$(VERSION).tar.gz 
+	echo
+	@banner="fulldist/$(VERSION) has been signed with GPG"; \
+	dashes=`echo "$$banner" | sed s/./=/g`; \
+	echo "$$dashes"; \
+	echo "$$banner"; \
+	echo "$$dashes"
 
-.PHONY: fulldist
+.PHONY: fulldist fulldistsig
