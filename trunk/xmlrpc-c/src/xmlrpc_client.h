@@ -53,6 +53,55 @@ xmlrpc_client_cleanup();
 
 
 /*=========================================================================
+**  xmlrpc_server_info
+**=========================================================================
+**  We normally refer to servers by URL. But sometimes we need to do extra
+**  setup for particular servers. In that case, we can create an
+**  xmlrpc_server_info object, configure it in various ways, and call the
+**  remote server.
+**
+**  (This interface is also designed to discourage further multiplication
+**  of xmlrpc_client_call APIs. We have enough of those already. Please
+**  add future options and flags using xmlrpc_server_info.)
+*/
+
+#ifndef XMLRPC_WANT_INTERNAL_DECLARATIONS
+
+typedef struct _xmlrpc_server_info xmlrpc_server_info;
+
+#else /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
+
+typedef struct _xmlrpc_server_info {
+    char *_server_url;
+    char *_http_basic_auth;
+} xmlrpc_server_info;
+
+#endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
+
+/* Create a new server info record, pointing to the specified server. */
+extern xmlrpc_server_info *
+xmlrpc_server_info_new (xmlrpc_env *env,
+			char *server_url);
+
+/* Delete a server info record. */
+extern void
+xmlrpc_server_info_free (xmlrpc_server_info *server);
+
+/* We support rudimentary basic authentication. This lets us talk to Zope
+** servers and similar critters. When called, this routine makes a copy
+** of all the authentication information and passes it to future requests.
+** Only the most-recently-set authentication information is used.
+** (In general, you shouldn't write XML-RPC servers which require this
+** kind of authentication--it confuses many client implementations.)
+** If we fail, leave the xmlrpc_server_info record unchanged. */
+extern void
+xmlrpc_server_info_set_basic_auth (xmlrpc_env *env,
+				   xmlrpc_server_info *server,
+				   char *username,
+				   char *password);
+
+
+/*=========================================================================
 **  xmlrpc_client_call
 **=========================================================================
 **  A synchronous XML-RPC client. Do not attempt to call any of these
@@ -72,6 +121,19 @@ xmlrpc_client_call_params (xmlrpc_env *env,
 			   char *method_name,
 			   xmlrpc_value *param_array);
 
+extern xmlrpc_value *
+xmlrpc_client_call_server (xmlrpc_env *env,
+			   xmlrpc_server_info *server,
+			   char *method_name,
+			   char *args_format,
+			   ...);
+
+extern xmlrpc_value *
+xmlrpc_client_call_server_params (xmlrpc_env *env,
+				  xmlrpc_server_info *server,
+				  char *method_name,
+				  xmlrpc_value *param_array);
+
 
 /*=========================================================================
 **  xmlrpc_client_call_asynch
@@ -87,7 +149,9 @@ typedef unsigned long timeout_t;
 ** arguments except 'user_data' will be deallocated internally; please do
 ** not free any of them yourself.
 ** WARNING: param_array may (or may not) be NULL if fault->fault_occurred
-** is true, and you set up the call using xmlrpc_client_call_asynch. */
+** is true, and you set up the call using xmlrpc_client_call_asynch.
+** WARNING: If asynchronous calls are still pending when the library is
+** shut down, your handler may (or may not) be called with a fault. */
 typedef void (*xmlrpc_response_handler) (char *server_url,
 					 char *method_name,
 					 xmlrpc_value *param_array,
@@ -109,6 +173,16 @@ xmlrpc_client_call_asynch (char *server_url,
 			   char *args_format,
 			   ...);
 
+/* As above, but use an xmlrpc_server_info object. The server object can be
+** safely destroyed as soon as this function returns. */
+extern void
+xmlrpc_client_call_server_asynch (xmlrpc_server_info *server,
+				  char *method_name,
+				  xmlrpc_response_handler callback,
+				  void *user_data,
+				  char *args_format,
+				  ...);
+
 /* As above, but the parameter list is supplied as an xmlrpc_value
 ** containing an array. We make our own reference to the param_array,
 ** so you can DECREF yours as soon as this function returns. */
@@ -118,6 +192,15 @@ xmlrpc_client_call_asynch_params (char *server_url,
 				  xmlrpc_response_handler callback,
 				  void *user_data,
 				  xmlrpc_value *param_array);
+
+/* As above, but use an xmlrpc_server_info object. The server object can be
+** safely destroyed as soon as this function returns. */
+extern void
+xmlrpc_client_call_server_asynch_params (xmlrpc_server_info *server,
+					 char *method_name,
+					 xmlrpc_response_handler callback,
+					 void *user_data,
+					 xmlrpc_value *param_array);
 
 /* Return true iff there are uncompleted asynchronous calls.
 ** The exact value of this during a response callback is undefined. */

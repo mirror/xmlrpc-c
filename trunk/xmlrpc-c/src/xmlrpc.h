@@ -596,11 +596,21 @@ xmlrpc_registry_process_call (xmlrpc_env *env,
 **  decode Base64 data. These are exported mainly for testing purposes.
 */
 
+/* This routine inserts newlines every 76 characters, as required by the
+** Base64 specification. */
 extern xmlrpc_mem_block *
 xmlrpc_base64_encode (xmlrpc_env *env,
 		      unsigned char *bin_data,
 		      size_t bin_len);
 
+/* This routine encodes everything in one line. This is needed for HTTP
+** authentication and similar tasks. */
+extern xmlrpc_mem_block *
+xmlrpc_base64_encode_without_newlines (xmlrpc_env *env,
+				       unsigned char *bin_data,
+				       size_t bin_len);
+
+/* This decodes Base64 data with or without newlines. */
 extern xmlrpc_mem_block *
 xmlrpc_base64_decode (xmlrpc_env *env,
 		      unsigned char *ascii_data,

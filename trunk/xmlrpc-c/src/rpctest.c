@@ -24,6 +24,7 @@
 ** SUCH DAMAGE. */
 
 
+#include <stdlib.h>
 #include <stdio.h>
 #include "xmlrpc.h"
 #include "xmlrpc_expat.h"
@@ -335,7 +336,6 @@ void test_mem_block (void)
 {
     xmlrpc_env env;
     xmlrpc_mem_block* block;
-    void* contents;
 
     xmlrpc_mem_block* typed_heap_block;
     xmlrpc_mem_block typed_auto_block;
@@ -409,13 +409,15 @@ void test_mem_block (void)
     xmlrpc_env_clean(&env);
 }
 
-static char *(base64_pairs[]) = {
-    "", CRLF,
-    "a", "YQ=="CRLF,
-    "aa", "YWE="CRLF,
-    "aaa", "YWFh"CRLF,
+static char *(base64_triplets[]) = {
+    "", "", CRLF,
+    "a", "YQ==", "YQ=="CRLF,
+    "aa", "YWE=", "YWE="CRLF,
+    "aaa", "YWFh", "YWFh"CRLF,
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY"
+    "2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=",
     "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY"
     "2Rl"CRLF
     "ZmdoaWprbG1ub3BxcnN0dXZ3eHl6QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo="CRLF,
@@ -424,15 +426,15 @@ static char *(base64_pairs[]) = {
 void test_base64_conversion (void)
 {
     xmlrpc_env env, env2;
-    char **pair, *bin_data, *ascii_data;
-    size_t bin_len, ascii_len;
+    char **triplet, *bin_data, *nocrlf_ascii_data, *ascii_data;
     xmlrpc_mem_block *output;
 
     xmlrpc_env_init(&env);
 
-    for (pair = base64_pairs; *pair != NULL; pair += 2) {
-	bin_data = *pair;
-	ascii_data = *(pair + 1);
+    for (triplet = base64_triplets; *triplet != NULL; triplet += 3) {
+	bin_data = *triplet;
+	nocrlf_ascii_data = *(triplet + 1);
+	ascii_data = *(triplet + 2);
 
 	/* Test our encoding routine. */
 	output = xmlrpc_base64_encode(&env, bin_data, strlen(bin_data));
@@ -441,6 +443,16 @@ void test_base64_conversion (void)
 	TEST(xmlrpc_mem_block_size(output) == strlen(ascii_data));
 	TEST(memcmp(xmlrpc_mem_block_contents(output), ascii_data,
 		    strlen(ascii_data)) == 0);
+	xmlrpc_mem_block_free(output);
+
+	/* Test our newline-free encoding routine. */
+	output = xmlrpc_base64_encode_without_newlines(&env, bin_data,
+						       strlen(bin_data));
+	TEST(!env.fault_occurred);
+	TEST(output != NULL);
+	TEST(xmlrpc_mem_block_size(output) == strlen(nocrlf_ascii_data));
+	TEST(memcmp(xmlrpc_mem_block_contents(output), nocrlf_ascii_data,
+		    strlen(nocrlf_ascii_data)) == 0);
 	xmlrpc_mem_block_free(output);
 
 	/* Test our decoding routine. */

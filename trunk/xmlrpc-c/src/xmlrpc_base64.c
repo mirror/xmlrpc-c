@@ -73,9 +73,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-static unsigned char table_b2a_hqx[] =
-"!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr";
-
 static char table_a2b_base64[] = {
 	-1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 	-1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
@@ -94,9 +91,11 @@ static char table_a2b_base64[] = {
 static unsigned char table_b2a_base64[] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-
-xmlrpc_mem_block *
-xmlrpc_base64_encode (xmlrpc_env *env, unsigned char *bin_data, size_t bin_len)
+static xmlrpc_mem_block *
+xmlrpc_base64_encode_internal (xmlrpc_env *env,
+			       unsigned char *bin_data,
+			       size_t bin_len,
+			       int want_newlines)
 {
     size_t chunk_start, chunk_left;
     unsigned char *ascii_data;
@@ -112,7 +111,8 @@ xmlrpc_base64_encode (xmlrpc_env *env, unsigned char *bin_data, size_t bin_len)
 
     /* Deal with empty data blocks gracefully. Yuck. */
     if (bin_len == 0) {
-	XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, CRLF, 2);
+	if (want_newlines)
+	    XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, CRLF, 2);
 	goto cleanup;
     }
 
@@ -149,8 +149,10 @@ xmlrpc_base64_encode (xmlrpc_env *env, unsigned char *bin_data, size_t bin_len)
 	} 
 
 	/* Append a courtesy CRLF. */
-	*ascii_data++ = CR;
-	*ascii_data++ = LF;
+	if (want_newlines) {
+	    *ascii_data++ = CR;
+	    *ascii_data++ = LF;
+	}
 	
 	/* Save our line. */
 	XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, line_buffer,
@@ -165,6 +167,22 @@ xmlrpc_base64_encode (xmlrpc_env *env, unsigned char *bin_data, size_t bin_len)
 	return NULL;
     }
     return output;
+}
+
+
+xmlrpc_mem_block *
+xmlrpc_base64_encode (xmlrpc_env *env, unsigned char *bin_data, size_t bin_len)
+{
+    return xmlrpc_base64_encode_internal(env, bin_data, bin_len, 1);
+}
+
+
+xmlrpc_mem_block *
+xmlrpc_base64_encode_without_newlines (xmlrpc_env *env,
+				       unsigned char *bin_data,
+				       size_t bin_len)
+{
+    return xmlrpc_base64_encode_internal(env, bin_data, bin_len, 0);
 }
 
 

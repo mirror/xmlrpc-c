@@ -50,8 +50,10 @@
 **=========================================================================
 */
 
+#if 0
 static int printer (const char * fmt, va_list pArgs);
 static int tracer (const char * fmt, va_list pArgs);
+#endif
 
 static int saved_flags;
 static HTList *xmlrpc_conversions;
@@ -110,6 +112,8 @@ void xmlrpc_client_cleanup()
 **=========================================================================
 */
 
+#if 0
+
 static int printer (const char * fmt, va_list pArgs)
 {
     return (vfprintf(stdout, fmt, pArgs));
@@ -119,6 +123,8 @@ static int tracer (const char * fmt, va_list pArgs)
 {
     return (vfprintf(stderr, fmt, pArgs));
 }
+
+#endif
 
 
 /*=========================================================================
@@ -136,12 +142,11 @@ static int tracer (const char * fmt, va_list pArgs)
         } \
     } while (0)
 
-static set_fault_from_http_request (xmlrpc_env *env,
-				    int status,
-				    HTRequest *request)
+static void set_fault_from_http_request (xmlrpc_env *env,
+					 int status,
+					 HTRequest *request)
 {
     HTList *err_stack;
-    HTError *error;
     char *msg;
 
     XMLRPC_ASSERT_PTR_OK(request);
@@ -168,10 +173,134 @@ static set_fault_from_http_request (xmlrpc_env *env,
 
 
 /*=========================================================================
+**  xmlrpc_server_info
+**=========================================================================
+*/
+
+xmlrpc_server_info *xmlrpc_server_info_new (xmlrpc_env *env,
+					    char *server_url)
+{
+    xmlrpc_server_info *server;
+    char *url_copy;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(server_url);
+
+    /* Error-handling preconditions. */
+    server = NULL;
+    url_copy = NULL;
+
+    /* Allocate our memory blocks. */
+    server = (xmlrpc_server_info*) malloc(sizeof(xmlrpc_server_info));
+    XMLRPC_FAIL_IF_NULL(server, env, XMLRPC_INTERNAL_ERROR,
+			"Couldn't allocate memory for xmlrpc_server_info");
+    url_copy = (char*) malloc(strlen(server_url) + 1);
+    XMLRPC_FAIL_IF_NULL(url_copy, env, XMLRPC_INTERNAL_ERROR,
+			"Couldn't allocate memory for server URL");
+
+    /* Build our object. */
+    strcpy(url_copy, server_url);
+    server->_server_url = url_copy;
+    server->_http_basic_auth = NULL;
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (url_copy)
+	    free(url_copy);
+	if (server)
+	    free(server);
+	return NULL;
+    }
+    return server;
+}
+
+void xmlrpc_server_info_free (xmlrpc_server_info *server)
+{
+    XMLRPC_ASSERT_PTR_OK(server);
+    XMLRPC_ASSERT(server->_server_url != XMLRPC_BAD_POINTER);
+
+    if (server->_http_basic_auth)
+	free(server->_http_basic_auth);
+    free(server->_server_url);
+    server->_server_url = XMLRPC_BAD_POINTER;
+    free(server);
+}
+
+void xmlrpc_server_info_set_basic_auth (xmlrpc_env *env,
+					xmlrpc_server_info *server,
+					char *username,
+					char *password)
+{
+    size_t username_len, password_len, raw_token_len;
+    char *raw_token;
+    xmlrpc_mem_block *token;
+    char *token_data, *auth_type, *auth_header;
+    size_t token_len, auth_type_len, auth_header_len;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(server);
+    XMLRPC_ASSERT_PTR_OK(username);
+    XMLRPC_ASSERT_PTR_OK(password);
+
+    /* Error-handling preconditions. */
+    raw_token = NULL;
+    token = NULL;
+    auth_header = NULL;
+
+    /* Calculate some lengths. */
+    username_len = strlen(username);
+    password_len = strlen(password);
+    raw_token_len = username_len + password_len + 1;
+
+    /* Build a raw token of the form 'username:password'. */
+    raw_token = (char*) malloc(raw_token_len + 1);
+    XMLRPC_FAIL_IF_NULL(raw_token, env, XMLRPC_INTERNAL_ERROR,
+			"Couldn't allocate memory for auth token");
+    strcpy(raw_token, username);
+    raw_token[username_len] = ':';
+    strcpy(&raw_token[username_len + 1], password);
+
+    /* Encode our raw token using Base64. */
+    token = xmlrpc_base64_encode_without_newlines(env, raw_token,
+						  raw_token_len);
+    XMLRPC_FAIL_IF_FAULT(env);
+    token_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, token);
+    token_len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, token);
+
+    /* Build our actual header value. (I hate string processing in C.) */
+    auth_type = "Basic ";
+    auth_type_len = strlen(auth_type);
+    auth_header_len = auth_type_len + token_len;
+    auth_header = (char*) malloc(auth_header_len + 1);
+    XMLRPC_FAIL_IF_NULL(auth_header, env, XMLRPC_INTERNAL_ERROR,
+			"Couldn't allocate memory for auth header");
+    memcpy(auth_header, auth_type, auth_type_len);
+    memcpy(&auth_header[auth_type_len], token_data, token_len);
+    auth_header[auth_header_len] = '\0';
+
+    /* Clean up any pre-existing authentication information, and install
+    ** the new value. */
+    if (server->_http_basic_auth)
+	free(server->_http_basic_auth);
+    server->_http_basic_auth = auth_header;
+
+ cleanup:
+    if (raw_token)
+	free(raw_token);
+    if (token)
+	xmlrpc_mem_block_free(token);
+    if (env->fault_occurred) {
+	if (auth_header)
+	    free(auth_header);	
+    }
+}
+
+
+/*=========================================================================
 **  call_info
 **=========================================================================
 **  This data structure holds all the information about a particular call,
-**  include the XML-RPC information and the lower-level HTTP information.
+**  including the XML-RPC information and the lower-level HTTP information.
 */
 
 typedef struct {
@@ -220,14 +349,13 @@ static void delete_source_anchor (HTParentAnchor *anchor)
 }
 
 static call_info *call_info_new (xmlrpc_env *env,
-				 char *server_url,
+				 xmlrpc_server_info *server,
 				 char *method_name,
 				 xmlrpc_value *param_array)
 {
     call_info *retval;
     HTRqHd request_headers;
     HTStream *target_stream;
-    int serialized_xml_valid;
 
     /* Allocate our structure. */
     retval = (call_info*) malloc(sizeof(call_info));
@@ -257,6 +385,11 @@ static call_info *call_info_new (xmlrpc_env *env,
     request_headers = request_headers & ~HT_C_EXPECT;
     HTRequest_setRqHd(retval->request, request_headers);
 
+    /* Send an authorization header if we need one. */
+    if (server->_http_basic_auth)
+	HTRequest_addCredentials(retval->request, "Authorization",
+				 server->_http_basic_auth);
+    
     /* Make sure there is no XML conversion handler to steal our data.
     ** The 'override' parameter is currently ignored by libwww, so our
     ** list of conversions must be designed to co-exist with the built-in
@@ -290,7 +423,7 @@ static call_info *call_info_new (xmlrpc_env *env,
 		       xmlrpc_mem_block_size(retval->serialized_xml));
 
     /* Get our destination anchor. */
-    retval->dest_anchor = HTAnchor_findAddress(server_url);
+    retval->dest_anchor = HTAnchor_findAddress(server->_server_url);
     XMLRPC_FAIL_IF_NULL(retval->dest_anchor, env, XMLRPC_INTERNAL_ERROR,
 			"Could not build destination anchor");
     
@@ -415,6 +548,9 @@ static int synch_terminate_handler (HTRequest *request,
 				    HTResponse *response,
 				    void *param,
 				    int status);
+static xmlrpc_value *parse_response_chunk (xmlrpc_env *env,
+					   call_info *info);
+
 
 xmlrpc_value * xmlrpc_client_call (xmlrpc_env *env,
 				   char *server_url,
@@ -453,10 +589,80 @@ xmlrpc_value * xmlrpc_client_call (xmlrpc_env *env,
     return retval;
 }
 
+xmlrpc_value * xmlrpc_client_call_server (xmlrpc_env *env,
+					  xmlrpc_server_info *server,
+					  char *method_name,
+					  char *format,
+					  ...)
+{
+    va_list args;
+    xmlrpc_value *arg_array, *retval;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(format);
+
+    /* Error-handling preconditions. */
+    arg_array = retval = NULL;
+
+    /* Build our argument array. */
+    va_start(args, format);
+    arg_array = xmlrpc_build_value_va(env, format, args);
+    va_end(args);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Perform the actual XML-RPC call. */
+    retval = xmlrpc_client_call_server_params(env, server, method_name,
+					      arg_array);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
+    if (arg_array)
+	xmlrpc_DECREF(arg_array);
+    if (env->fault_occurred) {
+	if (retval)
+	    xmlrpc_DECREF(retval);
+	return NULL;
+    }
+    return retval;
+}
+
 xmlrpc_value * xmlrpc_client_call_params (xmlrpc_env *env,
 					  char *server_url,
 					  char *method_name,
 					  xmlrpc_value *param_array)
+{
+    xmlrpc_server_info *server;
+    xmlrpc_value *retval;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(server_url);
+
+    /* Error-handling preconditions. */
+    server = NULL;
+    retval = NULL;
+
+    /* Build a server info object and make our call. */
+    server = xmlrpc_server_info_new(env, server_url);
+    XMLRPC_FAIL_IF_FAULT(env);
+    retval = xmlrpc_client_call_server_params(env, server, method_name,
+					      param_array);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
+    if (server)
+	xmlrpc_server_info_free(server);
+    if (env->fault_occurred) {
+	if (retval)
+	    xmlrpc_DECREF(retval);
+	return NULL;
+    }
+    return retval;
+}
+
+xmlrpc_value *xmlrpc_client_call_server_params (xmlrpc_env *env,
+						xmlrpc_server_info *server,
+						char *method_name,
+						xmlrpc_value *param_array)
 {
     call_info *info;
     xmlrpc_value *retval;
@@ -467,7 +673,7 @@ xmlrpc_value * xmlrpc_client_call_params (xmlrpc_env *env,
     int ok;
 
     XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(server_url);
+    XMLRPC_ASSERT_PTR_OK(server);
     XMLRPC_ASSERT_PTR_OK(method_name);
     XMLRPC_ASSERT_VALUE_OK(param_array);
 
@@ -476,7 +682,7 @@ xmlrpc_value * xmlrpc_client_call_params (xmlrpc_env *env,
     retval = NULL;
 
     /* Create our call_info structure. */
-    info = call_info_new(env, server_url, method_name, param_array);
+    info = call_info_new(env, server, method_name, param_array);
     XMLRPC_FAIL_IF_FAULT(env);
     request = info->request;
     src = info->source_anchor;
@@ -504,8 +710,7 @@ xmlrpc_value * xmlrpc_client_call_params (xmlrpc_env *env,
     /* XXX - Check to make sure response type is text/xml here. */
     
     /* Parse our response. */
-    retval = xmlrpc_parse_response(env, HTChunk_data(info->response_data),
-				   HTChunk_size(info->response_data));
+    retval = parse_response_chunk(env, info);
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:
@@ -541,6 +746,43 @@ static int synch_terminate_handler (HTRequest *request,
 
     HTEventList_stopLoop();
     return HT_OK;
+}
+
+
+/*=========================================================================
+**  parse_response_chunk
+**=========================================================================
+**  Extract the data from the response buffer, make sure we actually got
+**  something, and parse it as an XML-RPC response.
+*/
+
+static xmlrpc_value *parse_response_chunk (xmlrpc_env *env, call_info *info)
+{
+    xmlrpc_value *retval;
+
+    /* Error-handling preconditions. */
+    retval = NULL;
+
+    /* Check to make sure that w3c-libwww actually sent us some data.
+    ** XXX - This may happen if libwww is shut down prematurely, believe it
+    ** or not--we'll get a 200 OK and no data. Gag me with a bogus design
+    ** decision. This may also fail if some naughty libwww converter
+    ** ate our data unexpectedly. */
+    if (!HTChunk_data(info->response_data))
+	XMLRPC_FAIL(env, XMLRPC_NETWORK_ERROR, "w3c-libwww returned no data");
+    
+    /* Parse the response. */
+    retval = xmlrpc_parse_response(env, HTChunk_data(info->response_data),
+				   HTChunk_size(info->response_data));
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (retval)
+	    xmlrpc_DECREF(retval);
+	return NULL;
+    }
+    return retval;
 }
 
 
@@ -581,6 +823,10 @@ static int timer_callback (HTTimer *timer, void *user_data, HTEventType event)
     XMLRPC_ASSERT(event == HTEvent_TIMEOUT);
     timer_called = 1;
     HTEventList_stopLoop();
+    
+    /* XXX - The meaning of this return value is undocumented, but close
+    ** inspection of libwww's source suggests that we want to return HT_OK. */
+    return HT_OK;
 }
 
 void xmlrpc_client_event_loop_run_general (int flags, timeout_t milliseconds)
@@ -660,6 +906,12 @@ void xmlrpc_client_event_loop_run_timeout (timeout_t milliseconds)
 **  An asynchronous XML-RPC client.
 */
 
+static int asynch_terminate_handler (HTRequest *request,
+				     HTResponse *response,
+				     void *param,
+				     int status);
+
+
 void xmlrpc_client_call_asynch (char *server_url,
 				char *method_name,
 				xmlrpc_response_handler callback,
@@ -698,16 +950,84 @@ void xmlrpc_client_call_asynch (char *server_url,
     xmlrpc_env_clean(&env);
 }
 
-static int asynch_terminate_handler (HTRequest *request,
-				     HTResponse *response,
-				     void *param,
-				     int status);
+
+void xmlrpc_client_call_server_asynch (xmlrpc_server_info *server,
+				       char *method_name,
+				       xmlrpc_response_handler callback,
+				       void *user_data,
+				       char *format,
+				       ...)
+{
+    xmlrpc_env env;
+    va_list args;
+    xmlrpc_value *param_array;
+
+    XMLRPC_ASSERT_PTR_OK(format);
+
+    /* Error-handling preconditions. */
+    xmlrpc_env_init(&env);
+    param_array = NULL;
+
+    /* Build our argument array. */
+    va_start(args, format);
+    param_array = xmlrpc_build_value_va(&env, format, args);
+    va_end(args);
+    XMLRPC_FAIL_IF_FAULT(&env);
+
+    /* Perform the actual XML-RPC call. */
+    xmlrpc_client_call_server_asynch_params(server, method_name,
+					    callback, user_data, param_array);
+
+ cleanup:
+    if (env.fault_occurred) {
+	(*callback)(server->_server_url, method_name, param_array, user_data,
+		    &env, NULL);
+    }
+
+    if (param_array)
+	xmlrpc_DECREF(param_array);
+    xmlrpc_env_clean(&env);
+}
+
 
 void xmlrpc_client_call_asynch_params (char *server_url,
 				       char *method_name,
 				       xmlrpc_response_handler callback,
 				       void *user_data,
 				       xmlrpc_value *param_array)
+{
+    xmlrpc_env env;
+    xmlrpc_server_info *server;
+
+    XMLRPC_ASSERT_PTR_OK(server_url);
+
+    /* Error-handling preconditions. */
+    xmlrpc_env_init(&env);
+    server = NULL;
+
+    /* Build a server info object and make our call. */
+    server = xmlrpc_server_info_new(&env, server_url);
+    XMLRPC_FAIL_IF_FAULT(&env);
+    xmlrpc_client_call_server_asynch_params(server, method_name,
+					    callback, user_data,
+					    param_array);
+
+ cleanup:
+    if (server)
+	xmlrpc_server_info_free(server);
+
+    if (env.fault_occurred) {
+	(*callback)(server_url, method_name, param_array, user_data,
+		    &env, NULL);
+    }
+}
+
+
+void xmlrpc_client_call_server_asynch_params (xmlrpc_server_info *server,
+					      char *method_name,
+					      xmlrpc_response_handler callback,
+					      void *user_data,
+					      xmlrpc_value *param_array)
 {
     xmlrpc_env env;
     call_info *info;
@@ -717,7 +1037,7 @@ void xmlrpc_client_call_asynch_params (char *server_url,
     HTAnchor *dst;
     int ok;
 
-    XMLRPC_ASSERT_PTR_OK(server_url);
+    XMLRPC_ASSERT_PTR_OK(server);
     XMLRPC_ASSERT_PTR_OK(method_name);
     XMLRPC_ASSERT_PTR_OK(callback);
     XMLRPC_ASSERT_VALUE_OK(param_array);
@@ -727,15 +1047,15 @@ void xmlrpc_client_call_asynch_params (char *server_url,
     info = NULL;
 
     /* Create our call_info structure. */
-    info = call_info_new(&env, server_url, method_name, param_array);
+    info = call_info_new(&env, server, method_name, param_array);
     XMLRPC_FAIL_IF_FAULT(&env);
     request = info->request;
     src = info->source_anchor;
     dst = info->dest_anchor;
 
     /* Add some more data to our call_info struct. */
-    call_info_set_asynch_data(&env, info, server_url, method_name, param_array,
-			      callback, user_data);
+    call_info_set_asynch_data(&env, info, server->_server_url, method_name,
+			      param_array, callback, user_data);
     XMLRPC_FAIL_IF_FAULT(&env);
 
     /* Install our request handler. */
@@ -762,7 +1082,7 @@ void xmlrpc_client_call_asynch_params (char *server_url,
 	call_info_free(info);
     if (env.fault_occurred) {
 	/* Report the error immediately. */
-	(*callback)(server_url, method_name, param_array, user_data,
+	(*callback)(server->_server_url, method_name, param_array, user_data,
 		    &env, NULL);
     }
     xmlrpc_env_clean(&env);
@@ -806,8 +1126,7 @@ static int asynch_terminate_handler (HTRequest *request,
     /* XXX - Check to make sure response type is text/xml here. */
     
     /* Parse our response. */
-    value = xmlrpc_parse_response(&env, HTChunk_data(info->response_data),
-				  HTChunk_size(info->response_data));
+    value = parse_response_chunk(&env, info);
     XMLRPC_FAIL_IF_FAULT(&env);
 
     /* Pass the response to our callback function. */
