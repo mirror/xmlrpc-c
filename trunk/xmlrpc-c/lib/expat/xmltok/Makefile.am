@@ -12,3 +12,5 @@ BUILT_SOURCES = nametab.h
 nametab.h:
 	rm -f $@
 	../gennmtab/gennmtab >$@
+
+xmltok.c: nametab.h
