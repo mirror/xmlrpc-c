@@ -558,8 +558,7 @@ xmlrpc_struct_set_value_n(xmlrpc_env *    const env,
                           xmlrpc_value *  const value);
 
 /* The same as above, but the key must be an XML-RPC string.
-** Increments the reference count of keyval if it gets stored.
-** Sets XMLRPC_TYPE_ERROR if 'keyval' is not a string. */
+** Fails with XMLRPC_TYPE_ERROR if 'keyval' is not a string. */
 void 
 xmlrpc_struct_set_value_v(xmlrpc_env *   const env,
                           xmlrpc_value * const strct,
@@ -567,10 +566,23 @@ xmlrpc_struct_set_value_v(xmlrpc_env *   const env,
                           xmlrpc_value * const value);
 
 /* Given a zero-based index, return the matching key and value. This
-** is normally used in conjuction with xmlrpc_struct_size.
-** Does not create new references to the returned key or value.
-** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct.
-** Sets XMLRPC_INDEX_ERROR if 'index' is out of bounds. */
+** is normally used in conjunction with xmlrpc_struct_size.
+** Fails with XMLRPC_TYPE_ERROR if 'struct' is not a struct.
+** Fails with XMLRPC_INDEX_ERROR if 'index' is out of bounds. */
+
+void 
+xmlrpc_struct_read_member(xmlrpc_env *    const envP,
+                          xmlrpc_value *  const structP,
+                          unsigned int    const index,
+                          xmlrpc_value ** const keyvalP,
+                          xmlrpc_value ** const valueP);
+
+/* The same as above, but does not increment the reference count of the
+   two values it returns, and return NULL for both if it fails, and
+   takes a signed integer for the index (but fails if it is negative).
+
+   Deprecated.
+*/
 void
 xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
                                 xmlrpc_value *  strct,

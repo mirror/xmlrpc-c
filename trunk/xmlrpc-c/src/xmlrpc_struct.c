@@ -517,46 +517,75 @@ cleanup:
 
 
 
-/*=========================================================================
-**  xmlrpc_struct_get_key_and_value
-**=========================================================================
-**  Given an index, look up the corresponding key and value. This code is
-**  used to help serialize structs. The order of keys and values is
-**  undefined, and may change after a call to xmlrpc_struct_set_value*.
-**
-**  If the specified index does not exist, set the key and value to NULL.
-**  As usual, we do *not* increment reference counts for the returned
-**  values.
+/* Note that the order of keys and values is undefined, and may change
+   when you modify the struct.
 */
 
 void 
+xmlrpc_struct_read_member(xmlrpc_env *    const envP,
+                          xmlrpc_value *  const structP,
+                          unsigned int    const index,
+                          xmlrpc_value ** const keyvalP,
+                          xmlrpc_value ** const valueP) {
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(structP);
+    XMLRPC_ASSERT_PTR_OK(keyvalP);
+    XMLRPC_ASSERT_PTR_OK(valueP);
+
+    if (structP->_type != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Attempt to read a struct member "
+            "of something that is not a struct");
+    else {
+        _struct_member * const members =
+            XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+        size_t const size = 
+            XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
+
+        if (index >= size)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INDEX_ERROR, "Index %u is beyond the end of "
+                "the %u-member structure", index, (unsigned int)size);
+        else {
+            _struct_member * const memberP = &members[index];
+            *keyvalP = memberP->key;
+            xmlrpc_INCREF(memberP->key);
+            *valueP = memberP->value;
+            xmlrpc_INCREF(memberP->value);
+        }
+    }
+}
+
+
+
+void 
 xmlrpc_struct_get_key_and_value(xmlrpc_env *    const envP,
-                                xmlrpc_value *  const strctP,
+                                xmlrpc_value *  const structP,
                                 int             const index,
                                 xmlrpc_value ** const keyvalP,
                                 xmlrpc_value ** const valueP) {
+/*----------------------------------------------------------------------------
+   Same as xmlrpc_struct_read_member(), except doesn't take a reference
+   to the returned value.
 
-    _struct_member *members, *member;
-    size_t size;
-
+   This is obsolete.
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_VALUE_OK(strctP);
-    XMLRPC_ASSERT(keyvalP != NULL && valueP != NULL);
+    XMLRPC_ASSERT_VALUE_OK(structP);
+    XMLRPC_ASSERT_PTR_OK(keyvalP);
+    XMLRPC_ASSERT_PTR_OK(valueP);
 
-    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
-
-    members = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
-    size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strctP->_block);
-
-    /* BREAKME: 'index' should be a parameter of type size_t. */
-    if (index < 0 || (size_t) index >= size)
-        XMLRPC_FAIL(envP, XMLRPC_INDEX_ERROR, "Invalid index into struct");
-    
-    member = &members[index];
-    *keyvalP = member->key;
-    *valueP = member->value;
-
- cleanup:
+    if (index < 0)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.");
+    else {
+        xmlrpc_struct_read_member(envP, structP, index, keyvalP, valueP);
+        if (!envP->fault_occurred) {
+            xmlrpc_DECREF(*keyvalP);
+            xmlrpc_DECREF(*valueP);
+        }
+    }
     if (envP->fault_occurred) {
         *keyvalP = NULL;
         *valueP = NULL;
