@@ -95,7 +95,7 @@ fi
 
 dnl Get our libwww version.
 dnl Adapted from a macro which called gtk-config.
-AC_MSG_CHECKING(for w3c-libwww version >= 5.3.2)
+AC_MSG_CHECKING(for w3c-libwww version >= 5.2.8)
 W3VER=`$LIBWWW_CONFIG --version`
 LIBWWW_MAJOR=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
 LIBWWW_MINOR=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
@@ -107,26 +107,17 @@ LIBWWW_VERSION_OK=yes
 if test $LIBWWW_MAJOR -lt 5; then
     LIBWWW_VERSION_OK=no
 else
-    if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -lt 3; then
+    if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -lt 2; then
         LIBWWW_VERSION_OK=no
     else
-        if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -eq 3 \
-            -a $LIBWWW_MICRO -lt 2; then
+        if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -eq 2 \
+            -a $LIBWWW_MICRO -lt 8; then
             LIBWWW_VERSION_OK=no
         fi
     fi
 fi
 if test "x$LIBWWW_VERSION_OK" = "xno"; then
-    AC_MSG_ERROR(w3c-libwww version >= 5.3.2 required)
-fi
-
-dnl Make sure the libwww has a fighting chance of working.
-AC_MSG_CHECKING(whether libwww will work)
-if $LIBWWW_CONFIG --libs | grep xmltok >& /dev/null; then
-    AC_MSG_RESULT(no)
-    AC_MSG_ERROR(w3c-libww configured without '--disable-expat'; please see GETTING_LIBWWW for more information)
-else
-    AC_MSG_RESULT(probably)
+    AC_MSG_ERROR(w3c-libwww version >= 5.2.8 required)
 fi
 
 dnl Get the necessary CFLAGS, and merge them into our master list.

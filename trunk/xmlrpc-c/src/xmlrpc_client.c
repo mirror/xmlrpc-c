@@ -54,6 +54,7 @@ static int printer (const char * fmt, va_list pArgs);
 static int tracer (const char * fmt, va_list pArgs);
 
 static int saved_flags;
+static HTList *xmlrpc_conversions;
 
 void xmlrpc_client_init(int flags,
 			char *appname,
@@ -86,6 +87,14 @@ void xmlrpc_client_init(int flags,
 	** HTPrint_setCallback(printer);
 	** HTTrace_setCallback(tracer); */
     }
+
+    /* Set up our list of conversions for XML-RPC requests. This is a
+    ** massively stripped-down version of the list in libwww's HTInit.c.
+    ** XXX - This is hackish; 10.0 is an arbitrary, large quality factor
+    ** designed to override the built-in converter for XML. */
+    xmlrpc_conversions = HTList_new();
+    HTConversion_add(xmlrpc_conversions, "text/xml", "*/*",
+		     HTThroughLine, 10.0, 0.0, 0.0);
 }
 
 void xmlrpc_client_cleanup()
@@ -247,6 +256,12 @@ static call_info *call_info_new (xmlrpc_env *env,
     request_headers = HTRequest_rqHd(retval->request);
     request_headers = request_headers & ~HT_C_EXPECT;
     HTRequest_setRqHd(retval->request, request_headers);
+
+    /* Make sure there is no XML conversion handler to steal our data.
+    ** The 'override' parameter is currently ignored by libwww, so our
+    ** list of conversions must be designed to co-exist with the built-in
+    ** conversions. */
+    HTRequest_setConversion(retval->request, xmlrpc_conversions, NO);
 
     /* Set up our response buffer. */
     target_stream = HTStreamToChunk(retval->request,
