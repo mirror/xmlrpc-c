@@ -70,6 +70,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_prefix}/bin/xmlrpc-c-config
 %{_prefix}/bin/xml-rpc-api2txt
+%{_prefix}/bin/xml-rpc-api2cpp
 %{_prefix}/lib/lib*.a
 %{_prefix}/lib/lib*.la
 %{_prefix}/lib/lib*.so
@@ -81,6 +82,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_prefix}/bin/meerkat-app-list
 
 %changelog
+* Sun Apr 03 2001 Eric Kidd <eric.kidd@pobox.com>
+- Added xml-rpc-api2cpp.
+
 * Sun Jan 14 2001 Eric Kidd <eric.kidd@pobox.com>
 - Removed dependency on w3c-libwww-xmlrpc.
 

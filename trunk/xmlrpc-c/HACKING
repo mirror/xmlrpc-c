@@ -5,11 +5,10 @@ But first, here are some ground rules:
 
   * For security reasons, only Eric Kidd <eric.kidd@pobox.com> applies
     patches to the CVS HEAD branch. Everybody else sends patches to Eric,
-    at least for now. (Frequent contributors will eventually get their own
-    branches in CVS, once SourceForge fixes CVS.)
+    at least for now. Frequent contributors get their own branches in CVS.
 
   * When writing new code, please immitate the style of the existing code.
-    For the XML-RPC core, this means 8-space tabs, 4-space indentation
+    For the XML-RPC core, this means 8-space tabs, 4-space indentation.
 
   * Patches must be in 'diff -u' format (unified diffs).
 

@@ -1,18 +1,23 @@
-CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
+0.9.9 - Eric Kidd <eric.kidd@pobox.com> - 03 April 2001
 
   * xml-rpc-api2cpp now generates usable proxy classes.
   * Luke Howard: Default method support.
   * Abstract XML parser API (but you'll need to edit makefiles to use it).
-  * Integrated Electric Fence into build system (optional).
+  * Implemented a configurable size limit for XML data off the network.
+
   * Support for building and parsing XML-RPC values using wchar_t strings.
   * Basic UTF-8 handling: Refuse to process invalid UTF-8 from network,
     print warnings when sending invalid UTF-8 *to* network.
   * Highly robust UTF-8 validator, decoder, encoder.
-  * RedHat 7 warning fixes.
+
   * Modularized the build system--build only what you need.
-  * Implemented a configurable size limit for XML data off the network.
+  * Integrated Electric Fence into build system (optional).
+
   * Fixed all recent, reproducible bugs in CVS. These were generally
     Windows build bugs.
+  * Andy Maloney: Build fixes for Windows.
+  * Mike Bytnar: Build fixes for Solaris.
+  * RedHat 7 warning fixes.
 
 0.9.8 - Eric Kidd <eric.kidd@pobox.com> - 19 February 2001
 
