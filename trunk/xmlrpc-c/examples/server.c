@@ -1,4 +1,4 @@
-/* A simple XML-RPC server written in C. */
+/* A simple standalone XML-RPC server written in C. */
 
 #include <stdio.h>
 
@@ -24,8 +24,6 @@ sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 
 int main (int argc, char **argv)
 {
-    xmlrpc_env env;
-
     if (argc != 2) {
 	fprintf(stderr, "Usage: servertest abyss.conf\n");
 	exit(1);
