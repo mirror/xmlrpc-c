@@ -920,11 +920,24 @@ parsestruct(xmlrpc_env *   const env,
         xmlrpc_DECREF(key);
         key = NULL;
     }
-    XMLRPC_ASSERT(**format == '*');
-    (*format)++;
-    XMLRPC_ASSERT(**format == delimiter);
+    if (**format == '*') {
+        (*format)++;
+        if (**format != delimiter && **format != '\0')
+            XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, 
+                        "* can appear only at the end "
+                        "of a structure format specifier");
+    } else {
+        /* Here we're supposed to fail if he didn't extract all the
+           members.  But we don't know how to determine whether he
+           specified all the members, so we always fail.
+        */
+        XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, "You must specify '*' as the "
+                    "last member of a structure in a format specifier "
+                    "used for parsing an xmlrpc_value"); 
+    }
+    XMLRPC_ASSERT(**format == delimiter || **format == '\0');
 
-            cleanup:
+cleanup:
     if (key)
         xmlrpc_DECREF(key);
 }
@@ -1080,8 +1093,7 @@ parsevalue(xmlrpc_env *   const env,
         XMLRPC_FATAL_ERROR("Unknown type code when parsing value");
     }
 
-           cleanup:
-    return;
+cleanup:
 }
 
 
@@ -1106,8 +1118,7 @@ xmlrpc_parse_value_va(xmlrpc_env *   const envP,
 
     XMLRPC_ASSERT(*format_copy == '\0');
 
-                      cleanup:
-    return;
+cleanup:
 }
 
 
