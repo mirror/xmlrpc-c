@@ -337,7 +337,7 @@ typedef struct {
 #define XMLRPC_TYPE_CHECK(env,v,t) \
     do \
         if ((v)->_type != (t)) \
-            XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Expected " ## #t); \
+            XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Expected " #t); \
     while (0)
 
 /* Increment the reference count of an xmlrpc_value. */

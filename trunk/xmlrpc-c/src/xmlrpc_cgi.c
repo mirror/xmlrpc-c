@@ -28,6 +28,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "xmlrpc.h"
 #include "xmlrpc_cgi.h"
@@ -41,10 +42,12 @@
 
 static void send_xml (char *xml_data, size_t xml_len)
 {
-    /* Send our CGI headers back to the server. */
+    /* Send our CGI headers back to the server.
+    ** XXX - Coercing 'size_t' to 'unsigned long' might be unsafe under
+    ** really weird circumstances. */
     fprintf(stdout, "Status: 200 OK\n");
     fprintf(stdout, "Content-type: text/xml\n");
-    fprintf(stdout, "Content-length: %zd\n\n", xml_len);
+    fprintf(stdout, "Content-length: %ld\n\n", (unsigned long) xml_len);
 
     /* Blast out our data. */
     fwrite(xml_data, sizeof(char), xml_len, stdout);
@@ -167,11 +170,14 @@ static xmlrpc_mem_block *get_body (xmlrpc_env *env, size_t length)
     XMLRPC_FAIL_IF_FAULT(env);
     contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, result);
 
-    /* Get our data off the network. */
+    /* Get our data off the network.
+    ** XXX - Coercing 'size_t' to 'unsigned long' might be unsafe under
+    ** really weird circumstances. */
     count = fread(contents, sizeof(char), length, stdin);
     if (count < length)
 	XMLRPC_FAIL2(env, XMLRPC_INTERNAL_ERROR,
-		     "Expected %zd bytes, received %zd", length, count);
+		     "Expected %ld bytes, received %ld",
+		     (unsigned long) length, (unsigned long) count);
 
  cleanup:
     if (env->fault_occurred) {
