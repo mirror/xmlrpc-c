@@ -389,7 +389,6 @@ void xmlrpc_struct_get_key_and_value (xmlrpc_env *env,
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(strct);
     XMLRPC_ASSERT(keyval != NULL && value != NULL);
-    XMLRPC_ASSERT(index >= 0);
 
     XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
 
@@ -397,7 +396,7 @@ void xmlrpc_struct_get_key_and_value (xmlrpc_env *env,
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(_struct_member, &strct->_block);
 
     /* BREAKME: 'index' should be a parameter of type size_t. */
-    if ((size_t) index < 0 || (size_t) index >= size)
+    if (index < 0 || (size_t) index >= size)
 	XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Invalid index into struct");
     
     member = &members[index];

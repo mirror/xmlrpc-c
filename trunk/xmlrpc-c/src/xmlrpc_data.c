@@ -863,13 +863,12 @@ xmlrpc_value* xmlrpc_array_get_item (xmlrpc_env* env,
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(array);
     XMLRPC_TYPE_CHECK(env, array, XMLRPC_TYPE_ARRAY);
-    XMLRPC_ASSERT(index >= 0);
 
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(xmlrpc_value*, &array->_block);
     contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xmlrpc_value*, &array->_block);
 
     /* BREAKME: 'index' should be a parameter of type size_t. */
-    if ((size_t) index >= size)
+    if (index < 0 || (size_t) index >= size)
 	XMLRPC_FAIL1(env, XMLRPC_INDEX_ERROR, "Index %d out of bounds", index);
     retval = contents[index];
 
