@@ -17,9 +17,7 @@
 
 #define NAME       "XML-RPC C Auth Client"
 #define VERSION    "1.0"
-#ifndef SERVER_URL
-#define SERVER_URL "http://xmlrpc-c.sourceforge.net/api/sample.php"
-#endif
+#define SERVER_URL "http://localhost:8080/RPC2"
 
 static void die_if_fault_occurred (xmlrpc_env *env)
 {
@@ -38,6 +36,7 @@ main(int           const argc,
     xmlrpc_server_info *server;
     xmlrpc_value *result;    
     char *user, *password;
+	int sum;
     
     if (argc-1 > 0) {
         fprintf(stderr, "No arguments");
@@ -57,20 +56,18 @@ main(int           const argc,
     die_if_fault_occurred(&env);
 
     /* Ask the server to show us all our authentication information. */
-    result = xmlrpc_client_call_server(&env, server, "debug.authInfo", "()");
+    //result = xmlrpc_client_call_server(&env, server, "debug.authInfo", "()");
+	result = xmlrpc_client_call_server(&env, server, "sample.add",
+            "(ii)", (xmlrpc_int32) 5, (xmlrpc_int32) 7);
     die_if_fault_occurred(&env);
 
     /* Dispose of our server object. */
     xmlrpc_server_info_free(server);
     
     /* Get the authentication information and print it out. */
-    xmlrpc_parse_value(&env, result, "{s:s,s:s,*}",
-		       "user", &user,
-		       "password", &password);
+    xmlrpc_parse_value(&env, result, "i", &sum);
     die_if_fault_occurred(&env);
-    printf("You sent the following HTTP authentication information:\n");
-    printf("  User:     %s\n", user);
-    printf("  Password: %s\n", password);
+    printf("The sum  is %d\n", sum);
     
     /* Dispose of our result value. */
     xmlrpc_DECREF(result);
