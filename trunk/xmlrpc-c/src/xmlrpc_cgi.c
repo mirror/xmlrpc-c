@@ -43,22 +43,28 @@ static void send_xml (char *xml_data, size_t xml_len)
 {
     /* Send our CGI headers back to the server. */
     fprintf(stdout, "Status: 200 OK\n");
-    fprintf(stdout, "Content-type: text/plain\n\n");
+    fprintf(stdout, "Content-type: text/xml\n");
+    fprintf(stdout, "Content-length: %z\n\n", xml_len);
 
     /* Blast out our data. */
     fwrite(xml_data, sizeof(char), xml_len, stdout);
 }
 
-static void send_internal_error ()
+static void send_error (int code, char *message, xmlrpc_env *env)
 {
     /* Send an error header. */
-    fprintf(stdout, "Status: 500 Internal Server Error\n");
+    fprintf(stdout, "Status: %d %s\n", code, message);
     fprintf(stdout, "Content-type: text/html\n\n");
     
     /* Send an error message. */
-    fprintf(stdout, "<title>500 Internal Server Error</title>\n");
-    fprintf(stdout, "<h1>500 Internal Server Error</h1>\n");
-    fprintf(stdout, "<p>Unexpected error processing XML-RPC request.</p>\n");
+    fprintf(stdout, "<title>%d %s</title>\n", code, message);
+    fprintf(stdout, "<h1>%d %s</h1>\n", code, message);
+    fprintf(stdout, "<p>An error occurred processing your request.</p>\n");
+
+    /* Print out the XML-RPC fault, if present. */
+    if (env && env->fault_occurred)
+	fprintf(stdout, "<p>XML-RPC Fault #%d: %s</p>\n",
+		env->fault_code, env->fault_string);
 }
 
 
@@ -75,7 +81,7 @@ static void die_if_fault_occurred (xmlrpc_env *env)
     if (env->fault_occurred) {
         fprintf(stderr, "Unexpected XML-RPC fault: %s (%d)\n",
                 env->fault_string, env->fault_code);
-	send_internal_error();
+	send_error(500, "Internal Server Error", env);
         exit(1);
     }
 }
@@ -173,10 +179,15 @@ void xmlrpc_cgi_process_call (void)
     xmlrpc_mem_block *input, *output;
     char *input_data, *output_data;
     size_t input_size, output_size;
+    int code;
+    char *message;
 
     /* Error-handling preconditions. */
     xmlrpc_env_init(&env);
     input = output = NULL;
+
+    /* Set up a default error message. */
+    code = 500; message = "Internal Server Error";
 
     /* Get our HTTP information from the environment. */
     method = getenv("REQUEST_METHOD");
@@ -184,17 +195,25 @@ void xmlrpc_cgi_process_call (void)
     length_str = getenv("CONTENT_LENGTH");
 
     /* Perform some sanity checks. */
-    if (!method || 0 != strcmp(method, "POST"))
+    if (!method || 0 != strcmp(method, "POST")) {
+	code = 405; message = "Method Not Allowed";
 	XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Expected HTTP method POST");
-    if (!type || 0 != strcmp(type, "text/xml"))
+    }
+    if (!type || 0 != strcmp(type, "text/xml")) {
+	code = 400; message = "Bad Request";
 	XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Expected text/xml content");
-    if (!length_str)
+    }
+    if (!length_str) {
+	code = 411; message = "Length Required";
 	XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Content-length required");
+    }
 
     /* Get our content length. */
     length = atoi(length_str);
-    if (length <= 0)
+    if (length <= 0) {
+	code = 400; message = "Bad Request";
 	XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Content-length must be > 0");
+    }
 
     /* Get our body. */
     input = get_body(&env, length);
@@ -218,10 +237,8 @@ void xmlrpc_cgi_process_call (void)
     if (output)
 	xmlrpc_mem_block_free(output);
     
-    if (env.fault_occurred) {
-	/* XXX - We should return better HTTP error codes than this does. */
-	die_if_fault_occurred(&env);
-    }
+    if (env.fault_occurred)
+	send_error(code, message, &env);
 
-    xmlrpc_env_clean(&env);    
+    xmlrpc_env_clean(&env);
 }
