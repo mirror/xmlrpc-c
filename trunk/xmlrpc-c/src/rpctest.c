@@ -1722,9 +1722,56 @@ void test_utf8_coding (void)
     xmlrpc_env_clean(&env);
 }
 
+static char utf8_data[] = "[\302\251\0]";
+static wchar_t wcs_data[] = {0x005B, 0x00A9, 0, 0x005D, 0};
+
 void test_wchar_support (void)
 {
-    /* XXX - Not yet tested. */
+    xmlrpc_env env;
+    xmlrpc_value *val;
+    wchar_t *wcs;
+    char *str;
+    size_t len;
+
+    xmlrpc_env_init(&env);
+
+    /* Build a string from UTF-8 data. */
+    val = xmlrpc_build_value(&env, "s#", utf8_data, (size_t) 5);
+    TEST(!env.fault_occurred);
+    TEST(val != NULL);
+
+    /* Extract it as a wchar_t string. */
+    xmlrpc_parse_value(&env, val, "w#", &wcs, &len);
+    TEST(!env.fault_occurred);
+    TEST(wcs != NULL);
+    TEST(len == 4);
+    TEST(wcs[len] == '\0');
+    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    xmlrpc_DECREF(val);
+
+    /* Build a string from wchar_t data. */
+    val = xmlrpc_build_value(&env, "w#", wcs_data, 4);
+    TEST(!env.fault_occurred);
+    TEST(val != NULL);
+
+    /* Extract it as a wchar_t string. */
+    xmlrpc_parse_value(&env, val, "w#", &wcs, &len);
+    TEST(!env.fault_occurred);
+    TEST(wcs != NULL);
+    TEST(len == 4);
+    TEST(wcs[len] == '\0');
+    TEST(0 == wcsncmp(wcs, wcs_data, len));
+
+    /* Extract it as a UTF-8 string. */
+    xmlrpc_parse_value(&env, val, "s#", &str, &len);
+    TEST(!env.fault_occurred);
+    TEST(str != NULL);
+    TEST(len == 5);
+    TEST(str[len] == '\0');
+    TEST(0 == strncmp(str, utf8_data, len));
+    xmlrpc_DECREF(val);
+    
+    xmlrpc_env_clean(&env);
 }
 
 
