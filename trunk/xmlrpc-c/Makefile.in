@@ -116,7 +116,7 @@ bin_SCRIPTS = xmlrpc-c-config
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = xmlrpc_amconfig.h
-CONFIG_CLEAN_FILES =  xmlrpc-c-config xmlrpc-c.spec
+CONFIG_CLEAN_FILES =  xmlrpc-c-config xmlrpc-c-config.test xmlrpc-c.spec
 SCRIPTS =  $(bin_SCRIPTS)
 
 DIST_COMMON =  README ./stamp-h.in COPYING INSTALL \
