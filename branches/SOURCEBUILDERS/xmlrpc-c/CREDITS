@@ -1,0 +1,38 @@
+This file contains credits for people who have worked on the XML-RPC C
+library. It follows the same format as the Linux kernel credits file, as
+described by Linus:
+
+	This is at least a partial credits-file of people that have
+	contributed to the linux project.  It is sorted by name, and
+	formatted in a format that allows for easy grepping and
+	beautification by scripts.  The fields are: name (N), email (E),
+	web-address (W), PGP key ID and fingerprint (P), description (D)
+	and snail-mail address (S). 
+
+----------
+
+N: Rick Blair
+E: rblair@photoaccess.com
+D: Tracked down and fixed two-second delay per libwww request.
+
+N: James Clark
+W: http://www.jclark.com/
+D: Author of expat XML parser (included with the library).
+
+N: First Peer, Inc.
+W: http://www.firstpeer.com/
+D: Funded half of initial release.
+D: Lots of valuable API feedback.
+
+N: Jack Jansen
+D: Python Base64 code (modified for use with library).
+
+N: Eric Kidd
+E: eric.kidd@pobox.com
+W: http://www.sourcebuilders.com/
+D: Initial design and implementation of library.
+D: Support for libwww and Abyss.
+
+N: Moez Mahfoudh
+E: mmoez@bigfoot.com
+D: Author of Abyss web server (included with the library).

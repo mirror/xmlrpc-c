@@ -1,0 +1,30 @@
+noinst_PROGRAMS = synch_client asynch_client server
+bin_PROGRAMS = query-meerkat meerkat-app-list
+
+INCLUDES = -I$(srcdir)/../src
+
+LIBEXPAT  = ../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
+            ../lib/expat/xmltok/libxmlrpc_xmltok.la
+LIBABYSS  = ../lib/abyss/src/libxmlrpc_abyss.la
+LIBXMLRPC = ../src/libxmlrpc.la $(LIBEXPAT)
+LIBCLIENT = ../src/libxmlrpc_client.la @LIBWWW_LDADD@ $(LIBXMLRPC)
+LIBSERVER = ../src/libxmlrpc_abyss_server.la $(LIBABYSS) $(LIBXMLRPC)
+
+synch_client_SOURCES     = synch_client.c
+synch_client_LDADD       = $(LIBCLIENT)
+synch_client_LDFLAGS     = @LIBWWW_RPATH@
+
+asynch_client_SOURCES    = asynch_client.c
+asynch_client_LDADD      = $(LIBCLIENT)
+asynch_client_LDFLAGS    = @LIBWWW_RPATH@
+
+server_SOURCES           = server.c
+server_LDADD             = $(LIBSERVER)
+
+query_meerkat_SOURCES    = query-meerkat.c
+query_meerkat_LDADD      = $(LIBCLIENT)
+query_meerkat_LDFLAGS    = @LIBWWW_RPATH@
+
+meerkat_app_list_SOURCES = meerkat-app-list.cc
+meerkat_app_list_LDADD   = ../src/libxmlrpc_cpp.a $(LIBCLIENT)
+meerkat_app_list_LDFLAGS = @LIBWWW_RPATH@

@@ -1,0 +1,31 @@
+Here are some possible ideas for useful refactorings. These might simplify
+later work on the program. Then again, they might not.
+---
+
+Create individual constructor functions for various xmlrpc_value types, so
+we don't always need to call xmlrpc_build_value.
+
+Use function pointers to access cleanup code in xmlrpc_DECREF?
+
+Or even better: Should we create some kind of class-like system to declare
+XML-RPC types, with a per-type dispatch table?
+
+Fix abstract XML parser API to access children via functions named
+xml_element_child(env,elem,index) and xml_element_child_count(env,elem).
+Clean up corresponding client code.
+
+Disambiguate the two uses of 'parse' in the the API:
+  1) To parse an XML document into an xml_value.
+  2) To parse an xml_value into regular C variables.
+
+Change the argument order of asynchronous response callbacks to be more
+consistent with the xmlrpc_client_call_asynch function. Also take a look at
+the server method callback.
+
+Decide on a standard indentation scheme for function prototypes, and
+enforce it globally.
+
+Make the various xmlrpc*.h headers idempotent.
+
+Give XMLRPC_TYPE_C_PTR support for an optional destructor function?
+

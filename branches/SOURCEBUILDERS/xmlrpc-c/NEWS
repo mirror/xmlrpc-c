@@ -1,0 +1,8 @@
+0.9.1 - Eric Kidd <eric.kidd@pobox.com> - 9 January 2000
+
+  * Integrated Rick Blair's fix to speed up libwww client.
+  * Added informative URLs to Meerkat example programs.
+  * Hid the implementation details of xmlrpc_value, just to keep
+    people honest. (No more dangerous allocation on the stack!)
+  * Minor C++ code cleanup after buying modern C++ books.
+  * Documentation improvements.
