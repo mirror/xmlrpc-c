@@ -32,8 +32,12 @@ int
 main (int           const argc, 
       const char ** const argv) {
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: servertest abyss.conf\n");
+    if (argc-1 != 1) {
+        fprintf(stderr, "You must specify 1 argument:  The Abyss " 
+                "configuration file name.  You specified %d.\n",  argc-1);
+        fprintf(stderr, "A suitable example Abyss configuration file is "
+                "abyss.conf in the examples/ directory of the Xmlrpc-c "
+                "source tree\n");
         exit(1);
     }
 
