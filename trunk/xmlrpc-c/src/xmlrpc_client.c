@@ -396,6 +396,7 @@ call_info_new(xmlrpc_env *         const envP,
    Create a call_info object.  A call_info object represents an XML-RPC
    call.
 -----------------------------------------------------------------------------*/
+    xmlrpc_mem_block * xmlP;
     call_info *retval;
 
     /* Allocate our structure. */
@@ -405,12 +406,17 @@ call_info_new(xmlrpc_env *         const envP,
     /* Clear contents. */
     memset(retval, 0, sizeof(call_info));
 
-    /* Serialize our call. */
-    retval->serialized_xml = xmlrpc_mem_block_new(envP, 0);
+    /* Make the XML for our call */
+    xmlP = xmlrpc_mem_block_new(envP, 0);
     XMLRPC_FAIL_IF_FAULT(envP);
-    xmlrpc_serialize_call(envP, retval->serialized_xml,
-                          method_name, argP);
+    xmlrpc_serialize_call(envP, xmlP, method_name, argP);
     XMLRPC_FAIL_IF_FAULT(envP);
+
+    xmlrpc_traceXml("XML-RPC CALL", 
+                    XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+                    XMLRPC_MEMBLOCK_SIZE(char, xmlP));
+                                                             
+    retval->serialized_xml = xmlP;
 
     XMLRPC_FAIL_IF_NULL(g_transport_info_new, envP, XMLRPC_INTERNAL_ERROR,
                         "Transport uninitialized.");
