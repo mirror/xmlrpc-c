@@ -28,7 +28,7 @@ mallocProduct(void **      const resultP,
    nobody really needs to allocate more than 4GB of memory.
 -----------------------------------------------------------------------------*/
     if (UINT_MAX / factor2 < factor1) 
-        *resultP = NULL; \
+        *resultP = NULL;
     else 
         *resultP = malloc(factor1 * factor2); 
 }
@@ -41,15 +41,18 @@ reallocProduct(void **      const blockP,
                unsigned int const factor2) {
     
     if (UINT_MAX / factor2 < factor1) 
-        *blockP = NULL; \
+        *blockP = NULL;
     else 
         *blockP = realloc(*blockP, factor1 * factor2); 
 }
 
 
 
-#define MALLOCARRAY(arrayName, nElements) \
-    mallocProduct((void **)&arrayName, nElements, sizeof(arrayName[0]))
+#define MALLOCARRAY(arrayName, nElements) do { \
+    void * array; \
+    mallocProduct(&array, nElements, sizeof(arrayName[0])); \
+    arrayName = array; \
+} while (0)
 
 #define REALLOCARRAY(arrayName, nElements) \
     reallocProduct((void **)&arrayName, nElements, sizeof(arrayName[0]))
