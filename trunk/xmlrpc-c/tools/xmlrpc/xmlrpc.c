@@ -719,11 +719,11 @@ doCall(xmlrpc_env *               const envP,
         struct xmlrpc_curl_xportparms * curlXportParmsP;
         MALLOCVAR(curlXportParmsP);
 
-        curlXportParmsP->interface = curlinterface;
+        curlXportParmsP->interfaceId = curlinterface;
         
         clientparms.transportparmsP = (struct xmlrpc_xportparms *) 
             curlXportParmsP;
-        clientparms.transportparm_size = XMLRPC_CXPSIZE(interface);
+        clientparms.transportparm_size = XMLRPC_CXPSIZE(interfaceId);
     } else {
         clientparms.transportparmsP = NULL;
         clientparms.transportparm_size = 0;
