@@ -1,6 +1,8 @@
 CVS -
 
   * Bernhard Herzog: const fixes
+  * Stephen Blackheath: ./configure support for building Abyss
+    with pthreads.
 
 0.9.10 - Eric Kidd <eric.kidd@pobox.com> - 30 June 2001
 

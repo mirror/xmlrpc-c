@@ -60,7 +60,8 @@ while test $# -gt 0; do
       the_libs="-lxmlrpc_cgi $the_libs"
       ;;
     abyss-server)
-      the_libs="-lxmlrpc_abyss_server -lxmlrpc_abyss $the_libs"
+      the_libs=\
+"-lxmlrpc_abyss_server -lxmlrpc_abyss @LIBABYSS_LDADD@ $the_libs"
       ;;
     libwww-client)
       the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"

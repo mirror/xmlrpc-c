@@ -15,7 +15,7 @@ INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../src
 
 LIBEXPAT  = ../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
             ../lib/expat/xmltok/libxmlrpc_xmltok.la
-LIBABYSS  = ../lib/abyss/src/libxmlrpc_abyss.la
+LIBABYSS  = ../lib/abyss/src/libxmlrpc_abyss.la @LIBABYSS_LDADD@
 LIBXMLRPC = ../src/libxmlrpc.la $(LIBEXPAT)
 LIBCLIENT = ../src/libxmlrpc_client.la @LIBWWW_LDADD@ $(LIBXMLRPC)
 LIBSERVER = ../src/libxmlrpc_abyss_server.la $(LIBABYSS) $(LIBXMLRPC)

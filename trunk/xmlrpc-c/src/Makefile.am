@@ -38,7 +38,7 @@ INCLUDES = -I.. -I$(srcdir)/../lib/expat/xmlparse -I$(srcdir)/../lib/abyss/src
 
 LIBEXPAT = ../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
            ../lib/expat/xmltok/libxmlrpc_xmltok.la
-LIBABYSS = ../lib/abyss/src/libxmlrpc_abyss.la
+LIBABYSS = ../lib/abyss/src/libxmlrpc_abyss.la @LIBABYSS_LDADD@
 
 # A library containing just the XML-RPC core.
 libxmlrpc_la_SOURCES = xmlrpc_support.c xmlrpc_data.c xmlrpc_struct.c \

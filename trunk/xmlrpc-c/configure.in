@@ -284,7 +284,23 @@ dnl =======================================================================
 dnl Abyss doesn't pay any attention to xmlrpc_config.h, so we need to
 dnl pass it some flags on the command-line.
 
-CFLAGS="$CFLAGS -D_UNIX -D_FORK" 
+AC_MSG_CHECKING(whether to use experimental Abyss pthread support)
+AC_ARG_ENABLE(abyss-threads, [\
+  --enable-abyss-threads  Use threads in Abyss instead of the default
+                          fork() implementation.  Thread support in Abyss
+                          is considered unstable--see lib/abyss/readme.txt.], ,
+enable_abyss_threads=no)
+AC_MSG_RESULT($enable_abyss_threads)
+
+CFLAGS="$CFLAGS -D_UNIX" 
+
+if test x"$enable_abyss_threads" != xno; then
+    CFLAGS="$CFLAGS -D_THREAD"
+    LIBABYSS_LDADD="-lpthread"
+else
+    CFLAGS="$CFLAGS -D_FORK"
+fi
+AC_SUBST(LIBABYSS_LDADD)
 
 
 dnl =======================================================================
