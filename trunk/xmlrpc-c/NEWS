@@ -1,5 +1,6 @@
 CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
 
+  * Luke Howard: Default method support.
   * Abstract XML parser API (but you'll need to edit makefiles to use it).
   * Integrated Electric Fence into build system (optional).
   * Support for building and parsing XML-RPC values using wchar_t strings.

@@ -632,6 +632,7 @@ void ServerFree(TServer *srv);
 
 void ServerInit(TServer *srv);
 void ServerRun(TServer *srv);
+void ServerRunOnce(TServer *srv);
 
 bool ServerAddHandler(TServer *srv,URIHandler handler);
 void ServerDefaultHandler(TServer *srv,URIHandler handler);

@@ -1,4 +1,6 @@
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
+** Copyright (C) 2001 by Eric Kidd. All rights reserved.
+** Copyright (C) 2001 by Luke Howard. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions
@@ -65,6 +67,7 @@ xmlrpc_registry *xmlrpc_registry_new (xmlrpc_env *env)
     /* Set everything up. */
     registry->_introspection_enabled = 1;
     registry->_methods = methods;
+    registry->_default_method = NULL;
     registry_valid = 1;
 
     /* Install our system methods. */
@@ -93,6 +96,8 @@ void xmlrpc_registry_free (xmlrpc_registry *registry)
 
     xmlrpc_DECREF(registry->_methods);
     registry->_methods = XMLRPC_BAD_POINTER;
+    if (registry->_default_method != NULL)
+	xmlrpc_DECREF(registry->_default_method);
     free(registry);
 }
 
@@ -163,6 +168,43 @@ void xmlrpc_registry_add_method_w_doc (xmlrpc_env *env,
 
 
 /*=========================================================================
+**  xmlrpc_registry_set_default_method
+**=========================================================================
+**  See xmlrpc.h for more documentation.
+*/
+
+void xmlrpc_registry_set_default_method (xmlrpc_env *env,
+					 xmlrpc_registry *registry,
+					 xmlrpc_default_method handler,
+					 void *user_data)
+{
+    xmlrpc_value *method_info;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(registry);
+    XMLRPC_ASSERT_PTR_OK(handler);
+
+    /* Error-handling preconditions. */
+    method_info = NULL;
+
+    /* Store our method and user data into our hash table. */
+    method_info = xmlrpc_build_value(env, "(pp)", (void*) handler, user_data);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Dispose of any pre-existing default method and install ours. */
+    if (registry->_default_method)
+	xmlrpc_DECREF(registry->_default_method);
+    registry->_default_method = method_info;
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (method_info)
+	    xmlrpc_DECREF(method_info);
+    }
+}
+
+
+/*=========================================================================
 **  dispatch_call
 **=========================================================================
 **  An internal method which actually does the dispatch. This may get
@@ -176,6 +218,7 @@ dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
     xmlrpc_value *method_info, *result;
     void *method_ptr, *user_data;
     xmlrpc_method method;
+    xmlrpc_default_method default_method;
 
     /* Error-handling preconditions. */
     result = NULL;
@@ -183,22 +226,44 @@ dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
     /* Look up the method info for the specified method. */
     method_info = xmlrpc_struct_get_value(env, registry->_methods,
 					  method_name);
-    if (env->fault_occurred)
-	XMLRPC_FAIL1(env, XMLRPC_NO_SUCH_METHOD_ERROR,
-		     "Method %s not defined", method_name);
+    if (env->fault_occurred) {
+	if (registry->_default_method != NULL) {
 
-    /* Extract our method information. */
-    xmlrpc_parse_value(env, method_info, "(pp*)", &method_ptr, &user_data);
-    XMLRPC_FAIL_IF_FAULT(env);
-    method = (xmlrpc_method) method_ptr;
+	    /* Clean up after the fault. */
+	    xmlrpc_env_clean(env);
+	    xmlrpc_env_init(env);
 
-    /* Call the method. */
-    result = (*method)(env, param_array, user_data);
-    XMLRPC_ASSERT((result && !env->fault_occurred) ||
-		  (!result && env->fault_occurred));
-    XMLRPC_FAIL_IF_FAULT(env);
+	    /* Get our default method. */
+	    xmlrpc_parse_value(env, registry->_default_method, "(pp)",
+			       &method_ptr, &user_data);
+	    XMLRPC_FAIL_IF_FAULT(env);
+	    default_method = (xmlrpc_default_method) method_ptr;
+
+	    /* Call our default method. */
+	    result = (*default_method)(env, NULL, method_name,
+				       param_array, user_data);
+	    XMLRPC_FAIL_IF_FAULT(env);
+	} else {
+	    /* No matching method, and no default. */
+	    XMLRPC_FAIL1(env, XMLRPC_NO_SUCH_METHOD_ERROR,
+			 "Method %s not defined", method_name);
+	}
+    } else {
+
+	/* Extract our method information for the matching method. */
+	xmlrpc_parse_value(env, method_info, "(pp*)", &method_ptr, &user_data);
+	XMLRPC_FAIL_IF_FAULT(env);
+	method = (xmlrpc_method) method_ptr;
+
+	/* Call the method. */
+	result = (*method)(env, param_array, user_data);
+	XMLRPC_FAIL_IF_FAULT(env);
+    }
 
  cleanup:
+    XMLRPC_ASSERT((result && !env->fault_occurred) ||
+		  (!result && env->fault_occurred));
+
     if (env->fault_occurred) {
 	if (result)
 	    xmlrpc_DECREF(result);

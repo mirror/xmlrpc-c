@@ -32,6 +32,11 @@ N: Ilya Goldberg
 E: igg@mit.edu
 D: Client-side support for SSL.
 
+N: Luke Howard
+E: lukeh@PADL.COM
+D: Build patches.
+D: Default method support for registry.
+
 N: Jack Jansen
 D: Python Base64 code (modified for use with library).
 

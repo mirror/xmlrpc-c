@@ -1348,6 +1348,26 @@ static xmlrpc_value *test_bar (xmlrpc_env *env,
     return NULL;
 }
 
+static xmlrpc_value *test_default (xmlrpc_env *env,
+				   char *host,
+				   char *method_name,
+				   xmlrpc_value *param_array,
+				   void *user_data)
+{
+    xmlrpc_int32 x, y;
+
+    TEST(!env->fault_occurred);
+    TEST(param_array != NULL);
+    TEST(user_data == FOO_USER_DATA);
+
+    xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
+    TEST(!env->fault_occurred);
+    TEST(x == 25);
+    TEST(y == 17);
+
+    return xmlrpc_build_value(env, "i", 2 * (x + y));
+}
+
 xmlrpc_value *process_call_helper (xmlrpc_env *env,
 				   xmlrpc_registry *registry,
 				   char *method_name,
@@ -1495,6 +1515,23 @@ void test_method_registry (void)
     xmlrpc_mem_block_free(response);
     xmlrpc_env_clean(&env2);
 
+    /* Test default method support. */
+    xmlrpc_registry_set_default_method(&env, registry, &test_default,
+				       FOO_USER_DATA);
+    TEST(!env.fault_occurred);
+    value = process_call_helper(&env, registry, "test.nosuch", arg_array);
+    TEST(!env.fault_occurred);
+    TEST(value != NULL);
+    xmlrpc_parse_value(&env, value, "i", &i);
+    TEST(!env.fault_occurred);
+    TEST(i == 84);
+    xmlrpc_DECREF(value);
+
+    /* Change the default method. */
+    xmlrpc_registry_set_default_method(&env, registry, &test_default,
+				       BAR_USER_DATA);
+    TEST(!env.fault_occurred);
+    
     /* Test cleanup code (w/memprof). */
     xmlrpc_registry_free(registry);
     xmlrpc_DECREF(arg_array);

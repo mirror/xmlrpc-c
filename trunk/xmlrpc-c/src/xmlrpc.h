@@ -566,8 +566,7 @@ typedef xmlrpc_value *
 		  xmlrpc_value *param_array,
 		  void *user_data);
 
-/* A default method to call if no method can be found.
-** This has not yet been implemented, although it is easy to add. */
+/* A default method to call if no method can be found. */
 typedef xmlrpc_value *
 (*xmlrpc_default_method) (xmlrpc_env *env,
 			  char *host,
@@ -585,6 +584,7 @@ typedef struct _xmlrpc_registry xmlrpc_registry;
 typedef struct _xmlrpc_registry {
     int _introspection_enabled;
     xmlrpc_value *_methods;
+    xmlrpc_value *_default_method;
 } xmlrpc_registry;
 
 #endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
@@ -653,7 +653,16 @@ xmlrpc_registry_process_call (xmlrpc_env *env,
 			      char *xml_data,
 			      size_t xml_len);
 
+/* Define a default method for the specified registry.  This will be invoked
+** if no other method matches.  The user_data pointer is property of the
+** application, and will not be freed or manipulated by the registry. */
+extern void
+xmlrpc_registry_set_default_method (xmlrpc_env *env,
+				    xmlrpc_registry *registry,
+				    xmlrpc_default_method handler,
+				    void *user_data);
 
+				    
 /*=========================================================================
 **  XML-RPC Base64 Utilities
 **=========================================================================

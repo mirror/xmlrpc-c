@@ -764,8 +764,32 @@ void ServerRun(TServer *srv)
 }
 #endif	/* _FORK */
 
+/* This function supplied by Brian Quinlan of ActiveState. */
+void ServerRunOnce(TServer *srv)
+{
+      TConn connection;
+      TSocket s,ns;
+      TIPAddr ip;
 
+      srv->keepalivemaxconn = 1;
 
+      connection.connected=FALSE;
+      connection.server=srv;
+
+      s=srv->listensock;
+
+      if (SocketAccept(&s,&ns,&ip))
+      {
+              if (ConnCreate(&connection,&ns,&ServerFunc))
+              {
+                      ServerFunc( &connection );
+              }
+              else
+                      SocketClose(&ns);
+      }
+      else
+              TraceMsg("Socket Error=%d\n", SocketError());
+}
 
 bool ServerAddHandler(TServer *srv,URIHandler handler)
 {
