@@ -1,3 +1,10 @@
+CVS - Eric Kidd <eric.kidd@pobox.com> - 23 January 2000
+
+  * Fixed lots of gcc warnings.
+  * Added a new 'xmlrpc_server_info' class, which allows you to
+    set options on a per-server basis.
+  * Added support for HTTP Basic authentication.
+
 0.9.5 - Eric Kidd <eric.kidd@pobox.com> - 20 January 2000
 
   * Bug fix: Make sure CGI-based servers send correct content-length.
