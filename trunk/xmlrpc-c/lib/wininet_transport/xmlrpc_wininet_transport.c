@@ -4,15 +4,19 @@
    WinInet-based client transport for Xmlrpc-c.  Copyright information at
    the bottom of this file.
    
-   Changelog:
+   Changelog (changes by Steven A. Bone - sbone@pobox.com unless otherwise noted):
    05.01.01 - Significant refactoring of the transport layer due to internal
               changes of the xmlrpc-c transports.  Modeled after the CURL
-              based transport changes by Bryan Henderson.
-              Steven A. Bone, sbone@pobox.com  
+              based transport changes by Bryan Henderson.              
+   05.02.03 - Fixed Authorization header - thanks yamer.
+   05.03.20 - Supports xmlrpc_xportparms, xmlrpc_wininet_xportparms added
+              *potential breaking change* - now by default we fail on invalid
+			  SSL certs, use the xmlrpc_wininet_xportparms option to enable old
+			  behavior.
    
 =============================================================================*/
 
-#	include "xmlrpc_config.h"
+#include "xmlrpc_config.h"
 
 #include "bool.h"
 #include "mallocvar.h"
@@ -58,6 +62,13 @@ struct clientTransport {
            from the time the user requests it until the time the user 
            acknowledges it is done.
         */
+    int allowInvalidSSLCerts;
+        /* Flag to specify if we ignore invalid SSL Certificates.  If this
+		   is set to zero, calling a XMLRPC server with an invalid SSL
+		   certificate will fail.  This is the default behavior of the other
+		   transports, but invalid certificates were allowed in pre 1.2 
+		   wininet xmlrpc-c transports.
+        */
 };
 
 typedef struct {
@@ -88,11 +99,12 @@ typedef struct {
         */
     struct call_info * callInfoP;
         /* User's identifier for this RPC */
+	struct clientTransport * clientTransportP;
 } rpc;
 
 static void
 createWinInetHeaderList( xmlrpc_env *         const envP,
-						 xmlrpc_server_info * const serverP,
+						 const xmlrpc_server_info * const serverP,
 						 char ** const headerListP) {
 
     char *szHeaderList = NULL;
@@ -100,20 +112,18 @@ createWinInetHeaderList( xmlrpc_env *         const envP,
 
     /* Send an authorization header if we need one. */
     if (serverP->_http_basic_auth) {
-        /* Make the authentication header "Authorization: " */
-        /* we need 15 + length of _http_basic_auth + 1 for null */
-		/* plus strlen(szContentType) */
-
-        szHeaderList = malloc(strlen(serverP->_http_basic_auth) + 15 + 1 + strlen(szContentType));
+        /* Make the header with content type and authorization   */
+        /* NOTE: A newline is required between each added header */
+		szHeaderList = malloc(strlen(szContentType) + 17 + strlen(serverP->_http_basic_auth) + 1 );
         
         if (szHeaderList == NULL)
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_INTERNAL_ERROR,
-                "Couldn't allocate memory for authentication header");
+                "Couldn't allocate memory for authorization header");
         else {
-			memcpy(szHeaderList,"Authorization: ", 15);
-            memcpy(szHeaderList + 15,szContentType, strlen(szContentType));
-            memcpy(szHeaderList + 15 + strlen(szContentType), serverP->_http_basic_auth,
+            memcpy(szHeaderList,szContentType, strlen(szContentType));
+			memcpy(szHeaderList + strlen(szContentType),"\r\nAuthorization: ", 17);
+			memcpy(szHeaderList + strlen(szContentType) + 17, serverP->_http_basic_auth,
                    strlen(serverP->_http_basic_auth) + 1);
         }
     }
@@ -134,7 +144,7 @@ createWinInetHeaderList( xmlrpc_env *         const envP,
 
 static void
 createWinInetTransaction(xmlrpc_env *         const envP,
-                      xmlrpc_server_info * const serverP,
+                      const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *   const callXmlP,
                       xmlrpc_mem_block *   const responseXmlP,
                       winInetTransaction **   const winInetTransactionPP) {
@@ -331,7 +341,8 @@ static void get_wininet_response (	xmlrpc_env *      const envP,
 
 static void
 performWinInetTransaction(xmlrpc_env *      const envP,
-                       winInetTransaction * const winInetTransactionP) {
+                       winInetTransaction * const winInetTransactionP,
+					   struct clientTransport * const clientTransportP) {
 	LPTSTR pMsg = NULL;
 	LPVOID pMsgMem = NULL;
 
@@ -400,43 +411,58 @@ Again:
 
 			/* HOWTO: Handle Invalid Certificate Authority Error with WinInet (Q182888) */
 			case ERROR_INTERNET_INVALID_CA:
-				OutputDebugString ("Sync HttpSendRequest failed: "
-					"The function is unfamiliar with the certificate "
-					"authority that generated the server's certificate. ");
-				reqFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA;
+				if (clientTransportP->allowInvalidSSLCerts){
+					OutputDebugString ("Sync HttpSendRequest failed: "
+						"The function is unfamiliar with the certificate "
+						"authority that generated the server's certificate. ");
+					reqFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA;
 
-				InternetSetOption (winInetTransactionP->hHttpRequest, INTERNET_OPTION_SECURITY_FLAGS,
-									&reqFlags, sizeof (reqFlags));
+					InternetSetOption (winInetTransactionP->hHttpRequest, INTERNET_OPTION_SECURITY_FLAGS,
+										&reqFlags, sizeof (reqFlags));
 
-				goto Again;
+					goto Again;
+				}
+				else{
+					pMsg = "Invalid or unknown/untrusted SSL Certificate Authority.";
+				}
 				break;
 
 			/* HOWTO: Make SSL Requests Using WinInet (Q168151) */
 			case ERROR_INTERNET_SEC_CERT_CN_INVALID:
-				OutputDebugString ("Sync HttpSendRequest failed: "
-					"The SSL certificate common name (host name field) is incorrect\r\n "
-					"for example, if you entered www.server.com and the common name "
-					"on the certificate says www.different.com. ");
-				
-				reqFlags = INTERNET_FLAG_IGNORE_CERT_CN_INVALID;
+				if (clientTransportP->allowInvalidSSLCerts){
+					OutputDebugString ("Sync HttpSendRequest failed: "
+						"The SSL certificate common name (host name field) is incorrect\r\n "
+						"for example, if you entered www.server.com and the common name "
+						"on the certificate says www.different.com. ");
+					
+					reqFlags = INTERNET_FLAG_IGNORE_CERT_CN_INVALID;
 
-				InternetSetOption (winInetTransactionP->hHttpRequest, INTERNET_OPTION_SECURITY_FLAGS,
-									&reqFlags, sizeof (reqFlags));
+					InternetSetOption (winInetTransactionP->hHttpRequest, INTERNET_OPTION_SECURITY_FLAGS,
+										&reqFlags, sizeof (reqFlags));
 
-				goto Again;
+					goto Again;
+				}
+				else{
+					pMsg = "The SSL certificate common name (host name field) is incorrect.";
+				}
 				break;
 
 			case INTERNET_FLAG_IGNORE_CERT_DATE_INVALID:
-				OutputDebugString ("Sync HttpSendRequest failed: "
-					"The SSL certificate date that was received from the server is "
-					"bad. The certificate is expired. ");
+				if (clientTransportP->allowInvalidSSLCerts){
+					OutputDebugString ("Sync HttpSendRequest failed: "
+						"The SSL certificate date that was received from the server is "
+						"bad. The certificate is expired. ");
 
-				reqFlags = INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
+					reqFlags = INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
 
-				InternetSetOption (winInetTransactionP->hHttpRequest, INTERNET_OPTION_SECURITY_FLAGS,
-									&reqFlags, sizeof (reqFlags));
+					InternetSetOption (winInetTransactionP->hHttpRequest, INTERNET_OPTION_SECURITY_FLAGS,
+										&reqFlags, sizeof (reqFlags));
 
-				goto Again;
+					goto Again;
+				}
+				else{
+					pMsg = "The SSL certificate date that was received from the server is invalid.";
+				}
 				break;
 
 			default:
@@ -507,7 +533,7 @@ doAsyncRpc(void * arg) {
     rpc * const rpcP = arg;
     xmlrpc_env env;
     xmlrpc_env_init(&env);
-    performWinInetTransaction(&env, rpcP->winInetTransactionP);
+    performWinInetTransaction(&env, rpcP->winInetTransactionP, rpcP->clientTransportP );
     rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
     xmlrpc_env_clean(&env);
     return 0;
@@ -551,7 +577,7 @@ createRpcThread(xmlrpc_env *              const envP,
 static void
 rpcCreate(xmlrpc_env *             const envP,
           struct clientTransport * const clientTransportP,
-          xmlrpc_server_info *     const serverP,
+          const xmlrpc_server_info * const serverP,
           xmlrpc_mem_block *       const callXmlP,
           xmlrpc_mem_block *       const responseXmlP,
           transport_asynch_complete      complete, 
@@ -713,11 +739,16 @@ create(xmlrpc_env *              const envP,
        int                       const flags ATTR_UNUSED,
        const char *              const appname ATTR_UNUSED,
        const char *              const appversion ATTR_UNUSED,
+	   const struct xmlrpc_xportparms * const transportparmsP,
+       size_t                    const parm_size,
        struct clientTransport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a WinInet client transport.
 -----------------------------------------------------------------------------*/
     struct clientTransport * transportP;
+
+	struct xmlrpc_wininet_xportparms * const wininetXportParmsP = 
+		(struct xmlrpc_wininet_xportparms *) transportparmsP;
 
     MALLOCVAR(transportP);
     if (transportP == NULL)
@@ -732,6 +763,11 @@ create(xmlrpc_env *              const envP,
 		if (hSyncInternetSession == NULL)
 			hSyncInternetSession = InternetOpen ("xmlrpc-c wininet transport",
 				INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+
+		if (!wininetXportParmsP || parm_size < XMLRPC_WXPSIZE(allowInvalidSSLCerts))
+		    transportP->allowInvalidSSLCerts = 0;
+		else
+            transportP->allowInvalidSSLCerts = wininetXportParmsP->allowInvalidSSLCerts;
 
         *handlePP = transportP;
     }
@@ -760,7 +796,7 @@ destroy(struct clientTransport * const clientTransportP) {
 static void 
 sendRequest(xmlrpc_env *             const envP, 
             struct clientTransport * const clientTransportP,
-            xmlrpc_server_info *     const serverP,
+            const xmlrpc_server_info * const serverP,
             xmlrpc_mem_block *       const callXmlP,
             transport_asynch_complete      complete,
             struct call_info *       const callInfoP) {
@@ -815,7 +851,7 @@ finishAsynch(struct clientTransport * const clientTransportP,
 static void
 call(xmlrpc_env *             const envP,
      struct clientTransport * const clientTransportP,
-     xmlrpc_server_info *     const serverP,
+     const xmlrpc_server_info * const serverP,
      xmlrpc_mem_block *       const callXmlP,
      xmlrpc_mem_block **      const responsePP) {
 
@@ -833,7 +869,7 @@ call(xmlrpc_env *             const envP,
         rpcCreate(envP, clientTransportP, serverP, callXmlP, responseXmlP,
                   NULL, NULL, &rpcP);
         if (!envP->fault_occurred) {
-            performWinInetTransaction(envP, rpcP->winInetTransactionP);
+            performWinInetTransaction(envP, rpcP->winInetTransactionP, clientTransportP);
             
             *responsePP = responseXmlP;
             
