@@ -36,7 +36,15 @@
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
-#include "xmlrpc_expat.h"
+#include "xmlrpc_xmlparser.h"
+
+/* Define the contents of our internal structure. */
+struct _xml_element {
+    struct _xml_element *_parent;
+    char *_name;
+    xmlrpc_mem_block _cdata;    /* char */
+    xmlrpc_mem_block _children; /* xml_element* */
+};
 
 /* Check that we're using expat in UTF-8 mode, not wchar_t mode.
 ** If you need to use expat in wchar_t mode, write a subroutine to

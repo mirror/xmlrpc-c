@@ -44,12 +44,8 @@
 **  the xml_element has been destroyed.
 */
 
-typedef struct _xml_element {
-    struct _xml_element *_parent;
-    char *_name;
-    xmlrpc_mem_block _cdata;    /* char */
-    xmlrpc_mem_block _children; /* xml_element* */
-} xml_element;
+/* You'll need to finish defining struct _xml_element elsewhere. */
+typedef struct _xml_element xml_element;
 
 /* Destroy an xml_element. */
 void xml_element_free (xml_element *elem);

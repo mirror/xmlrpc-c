@@ -29,7 +29,7 @@
 #include <string.h>
 
 #include "xmlrpc.h"
-#include "xmlrpc_expat.h"
+#include "xmlrpc_xmlparser.h"
 
 #define CRLF    "\015\012"
 #define INT_MAX	(2147483647)
