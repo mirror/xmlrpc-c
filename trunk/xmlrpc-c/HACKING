@@ -1,0 +1,48 @@
+Greetings! So you want to hack on xmlrpc-c, and add some cool new features.
+This is good news.
+
+But first, here are some ground rules:
+
+  * For security reasons, only Eric Kidd <eric.kidd@pobox.com> applies
+    patches to the CVS HEAD branch. Everybody else sends patches to Eric,
+    at least for now. (Frequent contributors will eventually get their own
+    branches in CVS, once SourceForge fixes CVS.)
+
+  * When writing new code, please immitate the style of the existing code.
+    For the XML-RPC core, this means 8-space tabs, 4-space indentation
+
+  * Patches must be in 'diff -u' format (unified diffs).
+
+
+Using CVS
+---------
+
+Your life will be much easier if you use CVS.  You can find everything you
+need at:
+
+  http://xmlrpc-c.sourceforge.net/cvs.php
+
+Once you've checked out a source tree, you can update it by typing:
+
+  $ cvs -z3 update
+
+To create properly formatted diff files, you can type:
+
+  $ cvs -z3 diff -u > my-changes.diff
+
+Mail the resulting file to eric.kidd@pobox.com with a short description.
+You can send the file either in the body of the message, or as a plain text
+attachment.  Either is fine.
+
+If you want to keep track of updates to the master source tree, you can
+subscribe to the xmlrpc-c-cvs mailing list:
+
+  http://xmlrpc-c.sourceforge.net/lists.php
+
+
+How to Install CVS
+------------------
+
+The online CVS manual has an excellent section on setting up CVS on a variety oof different platforms:
+
+  http://xmlrpc-c.sourceforge.net/lists.php
