@@ -1,4 +1,5 @@
 CVS -
+  test
 
   * Bernhard Herzog: const fixes
   * Stephen Blackheath: ./configure support for building Abyss
