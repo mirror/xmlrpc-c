@@ -288,7 +288,7 @@ dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
 
 xmlrpc_mem_block *xmlrpc_registry_process_call (xmlrpc_env *env2,
 						xmlrpc_registry *registry,
-						char *host,
+						char *host ATTR_UNUSED,
 						char *xml_data,
 						size_t xml_len)
 {

@@ -280,7 +280,7 @@ bool xmlrpc_server_abyss_rpc2_handler (TSession *r)
     if (content_length == NULL)
 	return send_error(r, 411);
     input_len = atoi(content_length);
-    if (input_len == 0)
+    if (input_len <= 0)
 	return send_error(r, 400);
 
     /*---------------------------------------------------------------------
@@ -289,8 +289,9 @@ bool xmlrpc_server_abyss_rpc2_handler (TSession *r)
     xmlrpc_env_init(&env);
     body = output = NULL;
 
-    /* SECURITY: Make sure our content length is legal. */
-    if (input_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+    /* SECURITY: Make sure our content length is legal.
+    ** XXX - We can cast 'input_len' because we know it's >= 0, yes? */
+    if ((size_t) input_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
 	XMLRPC_FAIL(&env, XMLRPC_LIMIT_EXCEEDED_ERROR,
 		    "XML-RPC request too large");
 
@@ -400,7 +401,7 @@ static void sigterm(int sig)
     TraceExit("Signal %d received. Exiting...\n",sig);
 }
 
-static void sigchld(int sig)
+static void sigchld(int sig ATTR_UNUSED)
 {
     pid_t pid;
     int status;
@@ -422,11 +423,11 @@ static void sigchld(int sig)
 	}
     }
 }
-#endif _UNIX
+#endif /* _UNIX */
 
 static TServer srv;
 
-void xmlrpc_server_abyss_init (int flags, char *config_file)
+void xmlrpc_server_abyss_init (int flags ATTR_UNUSED, char *config_file)
 {
     xmlrpc_server_abyss_init_registry();
 

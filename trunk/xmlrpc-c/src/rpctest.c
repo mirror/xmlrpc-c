@@ -57,7 +57,7 @@ int total_tests = 0;
 int total_failures = 0;
 
 /* This is a good place to set a breakpoint. */
-void test_failure (char* file, int line, char* statement)
+static void test_failure (char* file, int line, char* statement)
 {
     total_failures++;
     printf("\n%s:%d: test failure: expected (%s)\n", file, line, statement);
@@ -289,7 +289,7 @@ static char *(bad_calls[]) =
 **=========================================================================
 */
 
-void test_env(void)
+static void test_env(void)
 {
     xmlrpc_env env, env2;
     char *s;
@@ -334,7 +334,7 @@ void test_env(void)
     xmlrpc_env_clean(&env2);
 }
 
-void test_mem_block (void)
+static void test_mem_block (void)
 {
     xmlrpc_env env;
     xmlrpc_mem_block* block;
@@ -425,7 +425,7 @@ static char *(base64_triplets[]) = {
     "ZmdoaWprbG1ub3BxcnN0dXZ3eHl6QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo="CRLF,
     NULL};
 
-void test_base64_conversion (void)
+static void test_base64_conversion (void)
 {
     xmlrpc_env env, env2;
     char **triplet, *bin_data, *nocrlf_ascii_data, *ascii_data;
@@ -439,7 +439,9 @@ void test_base64_conversion (void)
 	ascii_data = *(triplet + 2);
 
 	/* Test our encoding routine. */
-	output = xmlrpc_base64_encode(&env, bin_data, strlen(bin_data));
+	output = xmlrpc_base64_encode(&env,
+				      (unsigned char*) bin_data,
+				      strlen(bin_data));
 	TEST(!env.fault_occurred);
 	TEST(output != NULL);
 	TEST(xmlrpc_mem_block_size(output) == strlen(ascii_data));
@@ -448,8 +450,10 @@ void test_base64_conversion (void)
 	xmlrpc_mem_block_free(output);
 
 	/* Test our newline-free encoding routine. */
-	output = xmlrpc_base64_encode_without_newlines(&env, bin_data,
-						       strlen(bin_data));
+	output =
+	    xmlrpc_base64_encode_without_newlines(&env,
+						  (unsigned char*) bin_data,
+						  strlen(bin_data));
 	TEST(!env.fault_occurred);
 	TEST(output != NULL);
 	TEST(xmlrpc_mem_block_size(output) == strlen(nocrlf_ascii_data));
@@ -486,7 +490,7 @@ void test_base64_conversion (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_value (void)
+static void test_value (void)
 {
     xmlrpc_env env, env2;
     xmlrpc_value *v, *v2, *v3, *item;
@@ -685,7 +689,7 @@ void test_value (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_bounds_checks (void)
+static void test_bounds_checks (void)
 {
     xmlrpc_env env;
     xmlrpc_value *array;
@@ -722,7 +726,7 @@ void test_bounds_checks (void)
     xmlrpc_DECREF(array);
 }
 
-void test_struct (void)
+static void test_struct (void)
 {
     xmlrpc_env env, env2;
     xmlrpc_value *s, *i, *i1, *i2, *i3, *key, *value;
@@ -934,7 +938,7 @@ void test_struct (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_serialize (void)
+static void test_serialize (void)
 {
     xmlrpc_env env, fault;
     xmlrpc_value *v;
@@ -1050,7 +1054,7 @@ void test_serialize (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_expat (void)
+static void test_expat (void)
 {
     xmlrpc_env env;
     xml_element *elem, *array, *data, *value1, *i4;
@@ -1096,7 +1100,7 @@ void test_expat (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_parse_xml_value (void)
+static void test_parse_xml_value (void)
 {
     xmlrpc_env env, env2;
     xmlrpc_value *val, *s, *sval;
@@ -1193,7 +1197,7 @@ void test_parse_xml_value (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_parse_xml_response (void)
+static void test_parse_xml_response (void)
 {
     xmlrpc_env env, env2, fault;
     xmlrpc_value *v;
@@ -1247,7 +1251,7 @@ void test_parse_xml_response (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_parse_xml_call (void)
+static void test_parse_xml_call (void)
 {
     xmlrpc_env env, env2;
     char *method_name;
@@ -1368,10 +1372,11 @@ static xmlrpc_value *test_default (xmlrpc_env *env,
     return xmlrpc_build_value(env, "i", 2 * (x + y));
 }
 
-xmlrpc_value *process_call_helper (xmlrpc_env *env,
-				   xmlrpc_registry *registry,
-				   char *method_name,
-				   xmlrpc_value *arg_array)
+static xmlrpc_value *
+process_call_helper (xmlrpc_env *env,
+		     xmlrpc_registry *registry,
+		     char *method_name,
+		     xmlrpc_value *arg_array)
 {
     xmlrpc_mem_block *call, *response;
     xmlrpc_value *value;
@@ -1396,7 +1401,7 @@ xmlrpc_value *process_call_helper (xmlrpc_env *env,
     return value;
 }
 
-void test_method_registry (void)
+static void test_method_registry (void)
 {
     xmlrpc_env env, env2;
     xmlrpc_value *arg_array, *value;
@@ -1539,7 +1544,7 @@ void test_method_registry (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_nesting_limit (void)
+static void test_nesting_limit (void)
 {
     xmlrpc_env env;
     xmlrpc_value *val;
@@ -1568,7 +1573,7 @@ void test_nesting_limit (void)
     xmlrpc_env_clean(&env);
 }
 
-void test_xml_size_limit (void)
+static void test_xml_size_limit (void)
 {
     xmlrpc_env env;
     char *method_name;
@@ -1646,7 +1651,7 @@ static utf8_and_wcs good_utf8[] = {
     {"abc", {0x0061, 0x0062, 0x0063, 0}},
     {"[\302\251]", {0x005B, 0x00A9, 0x005D, 0}},
     
-    {NULL, {}}
+    {NULL, {0}}
 };
 
 static char *(bad_utf8[]) = {
@@ -1715,7 +1720,7 @@ int wcsncmp(wchar_t *wcs1, wchar_t* wcs2, size_t len)
 #endif /* HAVE_WCSNCMP */
 #endif
 
-void test_utf8_coding (void)
+static void test_utf8_coding (void)
 {
     xmlrpc_env env, env2;
     utf8_and_wcs *good_data;
@@ -1783,7 +1788,7 @@ void test_utf8_coding (void)
 static char utf8_data[] = "[\302\251\0]";
 static wchar_t wcs_data[] = {0x005B, 0x00A9, 0, 0x005D, 0};
 
-void test_wchar_support (void)
+static void test_wchar_support (void)
 {
     xmlrpc_env env;
     xmlrpc_value *val;

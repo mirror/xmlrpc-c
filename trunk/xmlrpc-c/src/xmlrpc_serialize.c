@@ -126,7 +126,7 @@ static void sanity_check_utf8 (char *str, size_t len)
 static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
 {
     xmlrpc_mem_block *retval;
-    int i, needed;
+    size_t i, needed;
     char *out;
 
     XMLRPC_ASSERT_ENV_OK(env);
@@ -272,7 +272,7 @@ static void xmlrpc_serialize_struct (xmlrpc_env *env,
 				     xmlrpc_value *strct)
 {
     size_t size;
-    int i;
+    size_t i;
     xmlrpc_value *key, *value;
 
     format_out(env, output, "<struct>"CRLF);
@@ -316,7 +316,7 @@ void xmlrpc_serialize_value (xmlrpc_env *env,
     xmlrpc_value *item;
     size_t size;
     unsigned char* contents;
-    int i;
+    size_t i;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(output != NULL);

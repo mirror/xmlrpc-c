@@ -287,7 +287,8 @@ void xmlrpc_server_info_set_basic_auth (xmlrpc_env *env,
     strcpy(&raw_token[username_len + 1], password);
 
     /* Encode our raw token using Base64. */
-    token = xmlrpc_base64_encode_without_newlines(env, raw_token,
+    token = xmlrpc_base64_encode_without_newlines(env,
+						  (unsigned char*) raw_token,
 						  raw_token_len);
     XMLRPC_FAIL_IF_FAULT(env);
     token_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, token);
@@ -758,8 +759,8 @@ xmlrpc_value *xmlrpc_client_call_server_params (xmlrpc_env *env,
 */
 
 static int synch_terminate_handler (HTRequest *request,
-				    HTResponse *response,
-				    void *param,
+				    HTResponse *response ATTR_UNUSED,
+				    void *param ATTR_UNUSED,
 				    int status)
 {
     call_info *info;
@@ -844,7 +845,9 @@ int xmlrpc_client_asynch_calls_are_unfinished (void)
 }
 
 /* A handy timer callback which cancels the running event loop. */
-static int timer_callback (HTTimer *timer, void *user_data, HTEventType event)
+static int timer_callback (HTTimer *timer ATTR_UNUSED,
+			   void *user_data ATTR_UNUSED,
+			   HTEventType event)
 {
     XMLRPC_ASSERT(event == HTEvent_TIMEOUT);
     timer_called = 1;
@@ -1122,8 +1125,8 @@ void xmlrpc_client_call_server_asynch_params (xmlrpc_server_info *server,
 */
 
 static int asynch_terminate_handler (HTRequest *request,
-				     HTResponse *response,
-				     void *param,
+				     HTResponse *response ATTR_UNUSED,
+				     void *param ATTR_UNUSED,
 				     int status)
 {
     xmlrpc_env env;

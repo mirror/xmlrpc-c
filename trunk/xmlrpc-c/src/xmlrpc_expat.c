@@ -248,7 +248,8 @@ typedef struct {
 **=========================================================================
 */
 
-static void start_element (void *user_data, XML_Char *name, XML_Char **atts)
+static void
+start_element (void *user_data, XML_Char *name, XML_Char **atts ATTR_UNUSED)
 {
     parse_context *context;
     xml_element *elem, *new_current;

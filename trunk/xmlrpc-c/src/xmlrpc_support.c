@@ -242,7 +242,7 @@ void xmlrpc_mem_block_resize (xmlrpc_env* env,
 			      xmlrpc_mem_block* block,
 			      size_t size)
 {
-    int proposed_alloc;
+    size_t proposed_alloc;
     void* new_block;
 
     XMLRPC_ASSERT_ENV_OK(env);

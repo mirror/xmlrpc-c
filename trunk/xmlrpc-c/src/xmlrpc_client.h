@@ -49,7 +49,7 @@ xmlrpc_client_init(int flags,
 		   char *appversion);
 
 extern void
-xmlrpc_client_cleanup();
+xmlrpc_client_cleanup(void);
 
 
 /*=========================================================================

@@ -66,7 +66,8 @@ class XmlRpcFault {
 private:
     xmlrpc_env   mFault;
 
-    XmlRpcFault& operator= (const XmlRpcFault& f) { XMLRPC_NO_ASSIGNMENT }
+    XmlRpcFault& operator= (const XmlRpcFault& f)
+                     { (void) f; XMLRPC_NO_ASSIGNMENT }
 
 public:
                  XmlRpcFault (const XmlRpcFault &fault);
@@ -103,7 +104,8 @@ private:
     xmlrpc_env   mEnv;
 
     void         throwMe (void) const;
-    XmlRpcEnv&   operator= (const XmlRpcEnv& e) { XMLRPC_NO_ASSIGNMENT }
+    XmlRpcEnv&   operator= (const XmlRpcEnv& e)
+                     { (void) e; XMLRPC_NO_ASSIGNMENT }
 
 public:
                  XmlRpcEnv (const XmlRpcEnv &env);

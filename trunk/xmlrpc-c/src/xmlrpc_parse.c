@@ -186,8 +186,7 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 		return xmlrpc_build_value(env, "8", cdata);
 	    } else if (strcmp(child_name, "base64") == 0) {
 		/* No more tail calls once we do this! */
-		decoded = xmlrpc_base64_decode(env, (unsigned char*) cdata,
-					       cdata_size);
+		decoded = xmlrpc_base64_decode(env, cdata, cdata_size);
 		XMLRPC_FAIL_IF_FAULT(env);
 		ascii_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char,
 							     decoded);

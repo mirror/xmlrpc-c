@@ -193,14 +193,14 @@ xmlrpc_base64_encode_without_newlines (xmlrpc_env *env,
 
 xmlrpc_mem_block *
 xmlrpc_base64_decode (xmlrpc_env *env,
-		      unsigned char *ascii_data,
+		      char *ascii_data,
 		      size_t ascii_len)
 {
     unsigned char *bin_data;
     int leftbits;
     unsigned char this_ch;
     unsigned int leftchar;
-    int npad;
+    size_t npad;
     size_t bin_len, buffer_size;
     xmlrpc_mem_block *output;
 
@@ -214,7 +214,7 @@ xmlrpc_base64_decode (xmlrpc_env *env,
     leftbits = 0;
     leftchar = 0;
     npad = 0;
-    bin_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
+    bin_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char, output);
     bin_len = 0;
 
     for( ; ascii_len > 0 ; ascii_len--, ascii_data++ ) {

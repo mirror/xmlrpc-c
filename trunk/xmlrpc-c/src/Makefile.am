@@ -1,5 +1,6 @@
-# Turn on warnings.
-CFLAGS = @CFLAGS@ -Wall
+# Turn on warnings, if asked to do so.
+CFLAGS = @CFLAGS@ @CC_WARN_FLAGS@
+CPPFLAGS = @CPPFLAGS@ @CPP_WARN_FLAGS@
 
 # Declare our libraries.
 lib_LTLIBRARIES   = libxmlrpc.la \

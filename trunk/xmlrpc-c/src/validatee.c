@@ -49,7 +49,7 @@
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 array_of_structs (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     xmlrpc_value *array, *strct;
@@ -82,7 +82,7 @@ array_of_structs (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 count_entities (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     char *str;
@@ -100,7 +100,7 @@ count_entities (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 	    case '&': amp++; break;
 	    case '\'': apos++; break;
 	    case '\"': quote++; break;
-	    default:
+	    default: break;
 	}
     }
 
@@ -118,7 +118,7 @@ count_entities (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 easy_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     xmlrpc_int32 larry, moe, curly;
@@ -140,7 +140,7 @@ easy_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 echo_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     xmlrpc_value *s;
@@ -160,7 +160,7 @@ echo_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 many_types (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     /* Create another reference to our argument array and return it as is. */
@@ -174,7 +174,7 @@ many_types (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 moderate_array (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     xmlrpc_value *array, *item, *result;
@@ -223,7 +223,7 @@ moderate_array (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 nested_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     xmlrpc_value *years;
@@ -252,7 +252,7 @@ nested_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 **=========================================================================
 */
 
-xmlrpc_value *
+static xmlrpc_value *
 struct_return (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     xmlrpc_int32 i;

@@ -62,7 +62,7 @@
 ** Fredrik Lundh's UTF-8 decoder Python 2.0 uses a similar table.  But
 ** since Python 2.0 has the icky CNRI license, I regenerated this
 ** table from scratch and wrote my own decoder. */
-static char utf8_seq_length[256] = {
+static unsigned char utf8_seq_length[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -140,7 +140,7 @@ static void decode_utf8 (xmlrpc_env *env,
 			 wchar_t *io_buff,
 			 size_t *out_buff_len)
 {
-    int i, length, out_pos;
+    size_t i, length, out_pos;
     char init, con1, con2;
     wchar_t wc;
 

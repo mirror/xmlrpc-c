@@ -98,7 +98,7 @@ static void die_if_fault_occurred (xmlrpc_env *env)
 
 static xmlrpc_registry *registry;
 
-void xmlrpc_cgi_init (int flags)
+void xmlrpc_cgi_init (int flags ATTR_UNUSED)
 {
     xmlrpc_env env;
 
@@ -240,8 +240,9 @@ void xmlrpc_cgi_process_call (void)
 	XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Content-length must be > 0");
     }
 
-    /* SECURITY: Make sure our content length is legal. */
-    if (length > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID)) {
+    /* SECURITY: Make sure our content length is legal.
+    ** XXX - We can cast 'input_len' because we know it's >= 0, yes? */
+    if ((size_t) length > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID)) {
 	code = 400; message = "Bad Request";
 	XMLRPC_FAIL(&env, XMLRPC_LIMIT_EXCEEDED_ERROR,
 		    "XML-RPC request too large");

@@ -121,7 +121,6 @@ XmlRpcValue XmlRpcValue::makeDateTime (const string& dateTime) {
     XmlRpcEnv env;
     xmlrpc_value *value;
     const char *data = dateTime.c_str(); // Make sure we're not using wchar_t.
-    size_t size = dateTime.size();
     value = xmlrpc_build_value(env, "8", data);
     env.throwIfFaultOccurred();
     return XmlRpcValue(value, CONSUME_REFERENCE);    
@@ -235,7 +234,6 @@ void XmlRpcValue::getBase64 (const unsigned char *& out_data,
 			     size_t& out_len) const
 {
     XmlRpcEnv env;
-    xmlrpc_value *result;
     xmlrpc_parse_value(env, mValue, "6", &out_data, &out_len);
     env.throwIfFaultOccurred();
 }
