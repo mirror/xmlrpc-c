@@ -1645,7 +1645,9 @@ static void test_xml_size_limit (void)
 **  supported encodings, etc.
 */
 
-#define FILE_PREFIX "testdata" PATH_SEPARATOR
+#define FILE_PREFIX \
+    ".." PATH_SEPARATOR TOP_SRCDIR PATH_SEPARATOR \
+    "src" PATH_SEPARATOR "testdata" PATH_SEPARATOR
 
 static char *good_requests[] = {
     FILE_PREFIX "req_out_of_order.xml",
@@ -1669,6 +1671,7 @@ read_file (char *path, char **out_data, size_t *out_size)
     if (f == NULL) {
 	/* Since this error is fairly likely to happen, give an
 	** informative error message... */
+	fflush(stdout);
 	perror("\n" __FILE__);
 	fprintf(stderr, "Could not open file \"%s\".\n", path);
 	exit(1);

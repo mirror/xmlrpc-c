@@ -24,6 +24,9 @@ dnl Get our host type.
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(XMLRPC_HOST_TYPE,"$host")
 
+dnl Get our source directory (so our test suites will work).
+AC_DEFINE_UNQUOTED(TOP_SRCDIR,"$srcdir")
+
 
 dnl =======================================================================
 dnl Decide What To Build
