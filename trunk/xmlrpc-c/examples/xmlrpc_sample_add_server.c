@@ -58,8 +58,7 @@ main (int           const argc,
 
     printf("Starting XML-RPC server...\n");
 
-    xmlrpc_server_abyss(&env, serverparm, XMLRPC_APSIZE(registryP));
+    xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(registryP));
 
-    /* We never reach this point. */
     return 0;
 }

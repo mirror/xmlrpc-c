@@ -629,9 +629,9 @@ xmlrpc_server_abyss_run(void) {
 
 
 
-static void
-setXmlrpcRegistryHandlers(TServer *         const srvP,
-                          xmlrpc_registry * const registryP) {
+void
+xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
+                                 xmlrpc_registry * const registryP) {
 
     /* Abyss ought to have a way to register with a handler an argument
        that gets passed to the handler every time it is called.  That's
@@ -647,17 +647,10 @@ setXmlrpcRegistryHandlers(TServer *         const srvP,
 
 
 void
-xmlrpc_server_abyss_set_handlers(xmlrpc_registry * const registryP) {
-    setXmlrpcRegistryHandlers(&globalSrv, registryP);
-}
-
-
-
-void
-xmlrpc_server_abyss(xmlrpc_env *              const envP,
-                    xmlrpc_abyss_server_parms const parms,
-                    unsigned int              const parm_size) {
-
+xmlrpc_server_abyss(xmlrpc_env *                      const envP,
+                    const xmlrpc_abyss_server_parms * const parmsP,
+                    unsigned int                      const parm_size) {
+ 
     XMLRPC_ASSERT_ENV_OK(envP);
 
     if (parm_size < XMLRPC_APSIZE(registryP))
@@ -678,15 +671,15 @@ xmlrpc_server_abyss(xmlrpc_env *              const envP,
         
         ServerCreate(&srv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
         
-        ConfReadServerFile(parms.config_file_name, &srv);
+        ConfReadServerFile(parmsP->config_file_name, &srv);
         
-        setXmlrpcRegistryHandlers(&srv, parms.registryP);
+        xmlrpc_server_abyss_set_handlers(&srv, parmsP->registryP);
         
         ServerInit(&srv);
 
         if (parm_size >= XMLRPC_APSIZE(runfirst_arg)) {
-            runfirst    = parms.runfirst;
-            runfirstArg = parms.runfirst_arg;
+            runfirst    = parmsP->runfirst;
+            runfirstArg = parmsP->runfirst_arg;
         } else {
             runfirst    = NULL;
             runfirstArg = NULL;
@@ -726,7 +719,7 @@ xmlrpc_server_abyss_init_registry(void) {
     die_if_fault_occurred(&env);
     xmlrpc_env_clean(&env);
 
-    xmlrpc_server_abyss_set_handlers(builtin_registryP);
+    xmlrpc_server_abyss_set_handlers(&globalSrv, builtin_registryP);
 }
 
 

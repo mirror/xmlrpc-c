@@ -31,6 +31,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+struct _TServer;
 
 /*=========================================================================
 **  XML-RPC Server (based on Abyss)
@@ -75,12 +76,13 @@ typedef struct {
 */
 
 void
-xmlrpc_server_abyss(xmlrpc_env *              const envP,
-                    xmlrpc_abyss_server_parms const parms,
-                    unsigned int              const parm_size);
+xmlrpc_server_abyss(xmlrpc_env *                      const envP,
+                    const xmlrpc_abyss_server_parms * const parms,
+                    unsigned int                      const parm_size);
 
 void
-xmlrpc_server_abyss_set_handlers(xmlrpc_registry * const registryP);
+xmlrpc_server_abyss_set_handlers(struct _TServer * const srvP,
+                                 xmlrpc_registry * const registryP);
 
 
 /*=========================================================================
