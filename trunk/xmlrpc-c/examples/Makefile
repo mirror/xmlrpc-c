@@ -32,7 +32,7 @@ CLIENTPROGS_C = \
   xmlrpc_sample_add_client \
   query-meerkat \
 
-CLIENTPROGS_CC = \
+CLIENTPROGS_CPP = \
   meerkat-app-list \
   interop-client \
 
@@ -44,7 +44,14 @@ SERVERPROGS = \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee
 
-PROGS = $(CLIENTPROGS_C) $(CLIENTPROGS_CC) $(CGICLIENTPROGS) $(SERVERPROGS)
+PROGS = $(CLIENTPROGS_C) $(SERVERPROGS)
+
+ifeq ($(ENABLE_CPLUSPLUS),yes)
+  PROGS += $(CLIENTPROGS_CPP) 
+endif
+ifeq ($(ENABLE_CGI_SERVER),yes)
+  PROGS += $(CGICLIENTPROGS) 
+endif
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
 
@@ -58,7 +65,7 @@ endif
 LIBABYSS = $(SRCDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
 LIBXMLRPC = $(SRCDIR)/src/.libs/libxmlrpc.a $(LIBXML)
 LIBXMLRPC_CPP = $(SRCDIR)/src/libxmlrpc_cpp.a
-LIBCLIENT = $(SRCDIR)/src/.libs/libxmlrpc_client.a ../src/libxmlrpc_cpp.a \
+LIBCLIENT = $(SRCDIR)/src/.libs/libxmlrpc_client.a \
   $(LIBWWW_LDADD) $(LIBXMLRPC)
 LIBSERVER = $(SRCDIR)/src/.libs/libxmlrpc_abyss_server.a \
   $(LIBABYSS) $(LIBXMLRPC)
@@ -69,7 +76,7 @@ all: $(PROGS)
 $(CLIENTPROGS_C):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCLIENT)
 
-$(CLIENTPROGS_CC):%:%.o
+$(CLIENTPROGS_CPP):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC_CPP) $(LIBCLIENT)
 
 $(CGICLIENTPROGS):%.cgi:%.o

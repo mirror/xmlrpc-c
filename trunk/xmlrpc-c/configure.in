@@ -162,6 +162,8 @@ AC_ARG_ENABLE(cgi-server,
   [  --disable-cgi-server    Don't build the CGI server module], ,
 enable_cgi_server=yes)
 AC_MSG_RESULT($enable_cgi_server)
+ENABLE_CGI_SERVER=$enable_cgi_server
+AC_SUBST(ENABLE_CGI_SERVER)
 
 dnl Set up the appropriate Makefile substitutions.
 LIBXMLRPC_CGI_LA=
@@ -186,6 +188,8 @@ AC_ARG_ENABLE(cplusplus,
   [  --disable-cplusplus     Don't build the C++ wrapper classes or tools], ,
 enable_cplusplus=yes)
 AC_MSG_RESULT($enable_cplusplus)
+ENABLE_CPLUSPLUS=$enable_cplusplus
+AC_SUBST(ENABLE_CPLUSPLUS)
 
 dnl Set up the appropriate Makefile substitutions.
 LIBXMLRPC_CPP_A=
