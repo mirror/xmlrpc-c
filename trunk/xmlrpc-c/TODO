@@ -7,6 +7,11 @@ be useful to anyone proposing changes of any kind.
 FUNCTIONAL CHANGES
 ------------------
 
+Make xmlrpc_server_abyss() catch a SIGTERM and terminate cleanly.
+
+Make a system.shutdown XML-RPC method to send SIGTERM to its server.
+Don't know what kind of security.
+
 Provide an interface for Abyss servers where the user accepts the TCP
 connection and passes to Xmlrpc-c the open socket.  This would be
 useful for inetd servers, among others.
@@ -23,13 +28,6 @@ doesn't see reference counts.
 
 Make clients and servers reentrant (this requires getting or making
 reentrant HTTP libraries).
-
-Create individual constructor functions for various xmlrpc_value types, so
-we don't always need to call xmlrpc_build_value.
-
-Disambiguate the two uses of 'parse' in the the API:
-  1) To parse an XML document into an xml_value.
-  2) To parse an xml_value into regular C variables.
 
 Change the argument order of asynchronous response callbacks to be more
 consistent with the xmlrpc_client_call_asynch function. Also take a look at
