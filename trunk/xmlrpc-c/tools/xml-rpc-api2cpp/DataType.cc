@@ -169,13 +169,13 @@ VoidDataType voidType;
 const DataType& findDataType (const string& name) {
     if (name == "int" || name == "i4")
 	return intType;
-    else if (name == "bool")
+    else if (name == "boolean")
 	return boolType;
     else if (name == "double")
 	return doubleType;
     else if (name == "string")
 	return stringType;
-    else if (name == "dateTime")
+    else if (name == "dateTime.iso8601")
 	return dateTimeType;
     else if (name == "base64")
 	return base64Type;
