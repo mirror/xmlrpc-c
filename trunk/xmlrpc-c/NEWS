@@ -2,7 +2,9 @@
 
   * SECURITY: Configurable nesting limits (see advisory 1) to prevent
     denial-of-service attacks and stack overflow.
-  * Added Binmode RPC developer's kit.
+  * Win32 build fixes from Alex Olugbile.
+  * Function name fix from Luke Howard.
+  * Binmode RPC Developer's Kit 0.1.
 
 0.9.6w - Eric Kidd <eric.kidd@pobox.com> - 02 February 2001
 
