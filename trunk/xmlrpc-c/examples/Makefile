@@ -44,14 +44,14 @@ SERVERPROGS_ABYSS = \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
-PROGS = $(CLIENTPROGS_C) $(SERVERPROGS_ABYSS) $(SERVERPROGS_CGI) \
+PROGS = $(CLIENTPROGS_C) $(SERVERPROGS_ABYSS) \
   gen_sample_add_xml
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   PROGS += $(CLIENTPROGS_CPP) 
 endif
 ifeq ($(ENABLE_CGI_SERVER),yes)
-  PROGS += $(CGIPROGS_SERVER) 
+  PROGS += $(SERVERPROGS_CGI) 
 endif
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(BUILDDIR)/lib/abyss/src
@@ -79,7 +79,7 @@ $(CLIENTPROGS_C):%:%.o
 $(CLIENTPROGS_CPP):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT_CPP)
 
-$(CGISERVERPROGS):%.cgi:%.o
+$(SERVERPROGS_CGI):%.cgi:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_CGI)
 
 $(SERVERPROGS_ABYSS):%:%.o
