@@ -57,6 +57,34 @@
 
 
 /*=========================================================================
+**  Tracing
+**=======================================================================*/
+
+static void
+traceResponseXml(const char * const xml,
+                 unsigned int const xmlLength) {
+
+    if (getenv("XMLRPC_TRACE_XML")) {
+        unsigned int nonPrintableCount;
+        unsigned int i;
+
+        nonPrintableCount = 0;  /* Initial value */
+
+        for (i = 0; i < xmlLength; ++i) {
+            if (!isprint(xml[i]) && xml[i] != '\n' && xml[i] != '\r')
+                ++nonPrintableCount;
+        }
+        if (nonPrintableCount > 0)
+            fprintf(stderr, "XML RESPONSE contains %u nonprintable "
+                    "characters.\n", nonPrintableCount);
+
+        fprintf(stderr, "XML RESPONSE:\n %*s\n", xmlLength, xml);
+    }
+}
+
+
+
+/*=========================================================================
 **  Initialization and Shutdown
 **=========================================================================
 */
@@ -207,7 +235,7 @@ set_fault_from_http_request(xmlrpc_env * const envP,
                 */
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_NETWORK_ERROR,
-                    "HTTP error #%d occurred.  %s", status, msg);
+                    "HTTP error #%d occurred.  libwww says %s", status, msg);
                 
                 xmlrpc_strfree(msg);
             }
@@ -303,8 +331,8 @@ static void delete_source_anchor (HTParentAnchor *anchor)
 }
 
 void *libwww_transport_info_new (xmlrpc_env *env,
-                 xmlrpc_server_info *server,
-                 call_info *info)
+                                 xmlrpc_server_info *server,
+                                 call_info *info)
 {
     libwww_transport_info *retval;
     HTRqHd request_headers;
@@ -330,7 +358,7 @@ void *libwww_transport_info_new (xmlrpc_env *env,
     /* Create a HTRequest object. */
     retval->request = HTRequest_new();
     XMLRPC_FAIL_IF_NULL(retval, env, XMLRPC_INTERNAL_ERROR,
-            "HTRequest_new failed");
+                        "HTRequest_new failed");
     
     /* Install ourselves as the request context. */
     HTRequest_setContext(retval->request, info);
@@ -342,8 +370,8 @@ void *libwww_transport_info_new (xmlrpc_env *env,
 
     /* Send an authorization header if we need one. */
     if (server->_http_basic_auth)
-    HTRequest_addCredentials(retval->request, "Authorization",
-                 server->_http_basic_auth);
+        HTRequest_addCredentials(retval->request, "Authorization",
+                                 server->_http_basic_auth);
     
     /* Make sure there is no XML conversion handler to steal our data.
     ** The 'override' parameter is currently ignored by libwww, so our
@@ -353,9 +381,9 @@ void *libwww_transport_info_new (xmlrpc_env *env,
 
     /* Set up our response buffer. */
     target_stream = HTStreamToChunk(retval->request,
-                    &retval->response_data, 0);
+                                    &retval->response_data, 0);
     XMLRPC_FAIL_IF_NULL(retval->response_data, env, XMLRPC_INTERNAL_ERROR,
-            "HTStreamToChunk failed");
+                        "HTStreamToChunk failed");
     XMLRPC_ASSERT(target_stream != NULL);
     HTRequest_setOutputStream(retval->request, target_stream);
     HTRequest_setOutputFormat(retval->request, WWW_SOURCE);
@@ -427,23 +455,91 @@ void libwww_transport_info_free (void *transport_info)
     free(info);
 }
 
+
+
+/*=========================================================================
+**  parse_response_chunk
+**=========================================================================
+**  Extract the data from the response buffer, make sure we actually got
+**  something, and parse it as an XML-RPC response.
+*/
+
+static xmlrpc_value *
+parse_response_chunk(xmlrpc_env * const envP, 
+                     call_info *  const infoP) {
+
+    xmlrpc_value *retval;
+    libwww_transport_info *t_info;
+    t_info = (libwww_transport_info *)infoP->transport_info;
+
+    /* Error-handling preconditions. */
+    retval = NULL;
+
+    /* Check to make sure that w3c-libwww actually sent us some data.
+    ** XXX - This may happen if libwww is shut down prematurely, believe it
+    ** or not--we'll get a 200 OK and no data. Gag me with a bogus design
+    ** decision. This may also fail if some naughty libwww converter
+    ** ate our data unexpectedly. */
+    if (!HTChunk_data(t_info->response_data))
+        XMLRPC_FAIL(envP, XMLRPC_NETWORK_ERROR, "w3c-libwww returned no data");
+
+    traceResponseXml(HTChunk_data(t_info->response_data),
+                     HTChunk_size(t_info->response_data));
+    
+    /* Parse the response. */
+    retval = xmlrpc_parse_response(envP, HTChunk_data(t_info->response_data),
+                                   HTChunk_size(t_info->response_data));
+    XMLRPC_FAIL_IF_FAULT(envP);
+
+ cleanup:
+    if (envP->fault_occurred) {
+        if (retval)
+            xmlrpc_DECREF(retval);
+        return NULL;
+    }
+    return retval;
+}
+
+
+
 /*=========================================================================
 **  xmlrpc_client_call
 **=========================================================================
 **  A synchronous XML-RPC client.
 */
 
-static int synch_terminate_handler (HTRequest *request,
-                    HTResponse *response,
-                    void *param,
-                    int status);
-static xmlrpc_value *parse_response_chunk (xmlrpc_env *env,
-                       call_info *info);
+
+/*=========================================================================
+**  synch_terminate_handler
+**=========================================================================
+**  This handler gets called when a synchronous request is completed.
+*/
+
+static int 
+synch_terminate_handler (HTRequest *  const request,
+                         HTResponse * const response ATTR_UNUSED,
+                         void *       const param ATTR_UNUSED,
+                         int          const status) {
+
+    call_info *info;
+    libwww_transport_info *t_info;
+
+    /* Fetch the call_info structure describing this call. */
+    info = (call_info*) HTRequest_context(request);
+
+    t_info = (libwww_transport_info *)info->transport_info;
+    t_info->is_done = 1;
+    t_info->http_status = status;
+
+    HTEventList_stopLoop();
+
+    return HT_OK;
+}
 
 
 xmlrpc_value *
 libwww_transport_client_call_server_params(
-    xmlrpc_env *         const env,
+    xmlrpc_env *         const envP,
     xmlrpc_server_info * const server,
     const char *         const method_name,
     xmlrpc_value *       const param_array) {
@@ -457,7 +553,7 @@ libwww_transport_client_call_server_params(
     HTAnchor *dst;
     int ok;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(server);
     XMLRPC_ASSERT_PTR_OK(method_name);
     XMLRPC_ASSERT_VALUE_OK(param_array);
@@ -467,8 +563,8 @@ libwww_transport_client_call_server_params(
     retval = NULL;
 
     /* Create our call_info structure. */
-    info = call_info_new(env, server, method_name, param_array);
-    XMLRPC_FAIL_IF_FAULT(env);
+    info = call_info_new(envP, server, method_name, param_array);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Setup our transport-specific data. */
     t_info = (libwww_transport_info *)info->transport_info;
@@ -478,98 +574,33 @@ libwww_transport_client_call_server_params(
 
     /* Install our request handler. */
     HTRequest_addAfter(request, &synch_terminate_handler, NULL, NULL, HT_ALL,
-               HT_FILTER_LAST, NO);
+                       HT_FILTER_LAST, NO);
 
     /* Start our request running. */
     ok = HTPostAnchor(src, dst, request);
     if (!ok)
-    XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR,
-            "Could not start POST request");
+        XMLRPC_FAIL(envP, XMLRPC_INTERNAL_ERROR,
+                    "Could not start POST request");
 
     /* Run our event-processing loop. This will exit when we've downloaded
     ** our data, or when the event loop gets exited for another reason.
     ** We re-run the event loop until it exits for the *right* reason. */
     while (!t_info->is_done)
-    HTEventList_newLoop();
+        HTEventList_newLoop();
 
     /* Make sure we got a "200 OK" message from the remote server. */
-    FAIL_IF_NOT_200_OK(t_info->http_status, env, request);
+    FAIL_IF_NOT_200_OK(t_info->http_status, envP, request);
 
     /* XXX - Check to make sure response type is text/xml here. */
     
     /* Parse our response. */
-    retval = parse_response_chunk(env, info);
-    XMLRPC_FAIL_IF_FAULT(env);
+    retval = parse_response_chunk(envP, info);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
  cleanup:
     if (info)
     call_info_free(info);
-    if (env->fault_occurred) {
-    if (retval)
-        xmlrpc_DECREF(retval);
-    return NULL;
-    }
-    return retval;
-}
-
-
-/*=========================================================================
-**  synch_terminate_handler
-**=========================================================================
-**  This handler gets called when a synchronous request is completed.
-*/
-
-static int synch_terminate_handler (HTRequest *request,
-                    HTResponse *response ATTR_UNUSED,
-                    void *param ATTR_UNUSED,
-                    int status)
-{
-    call_info *info;
-    libwww_transport_info *t_info;
-
-    /* Fetch the call_info structure describing this call. */
-    info = (call_info*) HTRequest_context(request);
-
-    t_info = (libwww_transport_info *)info->transport_info;
-    t_info->is_done = 1;
-    t_info->http_status = status;
-
-    HTEventList_stopLoop();
-    return HT_OK;
-}
-
-
-/*=========================================================================
-**  parse_response_chunk
-**=========================================================================
-**  Extract the data from the response buffer, make sure we actually got
-**  something, and parse it as an XML-RPC response.
-*/
-
-static xmlrpc_value *parse_response_chunk (xmlrpc_env *env, call_info *info)
-{
-    xmlrpc_value *retval;
-    libwww_transport_info *t_info;
-    t_info = (libwww_transport_info *)info->transport_info;
-
-    /* Error-handling preconditions. */
-    retval = NULL;
-
-    /* Check to make sure that w3c-libwww actually sent us some data.
-    ** XXX - This may happen if libwww is shut down prematurely, believe it
-    ** or not--we'll get a 200 OK and no data. Gag me with a bogus design
-    ** decision. This may also fail if some naughty libwww converter
-    ** ate our data unexpectedly. */
-    if (!HTChunk_data(t_info->response_data))
-    XMLRPC_FAIL(env, XMLRPC_NETWORK_ERROR, "w3c-libwww returned no data");
-    
-    /* Parse the response. */
-    retval = xmlrpc_parse_response(env, HTChunk_data(t_info->response_data),
-                   HTChunk_size(t_info->response_data));
-    XMLRPC_FAIL_IF_FAULT(env);
-
- cleanup:
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
     if (retval)
         xmlrpc_DECREF(retval);
     return NULL;
@@ -713,70 +744,12 @@ void xmlrpc_client_event_loop_run_timeout (timeout_t milliseconds)
 }
 
 
+
 /*=========================================================================
 **  xmlrpc_client_call_asynch
 **=========================================================================
 **  An asynchronous XML-RPC client.
 */
-
-static int asynch_terminate_handler (HTRequest *request,
-                     HTResponse *response,
-                     void *param,
-                     int status);
-
-/* This is where we initiate an asynchronous request.
-**/
-void libwww_transport_send_request(xmlrpc_env *env, call_info *info)
-{
-    libwww_transport_info *t_info;
-
-    HTRequest *request;
-    HTParentAnchor *src;
-    HTAnchor *dst;
-    int ok;
-
-    XMLRPC_ASSERT_PTR_OK(env);
-    XMLRPC_ASSERT_PTR_OK(info);
-
-    t_info = (libwww_transport_info *)info->transport_info;
-    XMLRPC_ASSERT_PTR_OK(t_info);
-
-    request = t_info->request;
-    src = t_info->source_anchor;
-    dst = t_info->dest_anchor;
-
-    /* Install our request handler. */
-    HTRequest_addAfter(request, &asynch_terminate_handler, NULL, NULL, HT_ALL,
-               HT_FILTER_LAST, NO);
-
-    /* Start our request running. Under certain pathological conditions,
-    ** this may invoke asynch_terminate_handler immediately, regardless of
-    ** the result code returned. So we have to be careful about who
-    ** frees our call_info structure. */
-    ok = HTPostAnchor(src, dst, request);
-    if (!ok)
-    XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR,
-            "Could not start POST request");
-
-    /* Register our asynchronous call with the event loop. Once this
-    ** is done, we are no longer responsible for freeing the call_info
-    ** structure. */
-    register_asynch_call();
-
-    /* This is now set by the caller of this function. */
-    /* info->asynch_call_is_registered = 1; */
-
- cleanup:
-    if (env->fault_occurred) {
-    /* Report the error immediately. */
-    (*info->callback)(info->server_url, info->method_name,
-                    info->param_array, info->user_data,
-            env, NULL);
-    }
-    //xmlrpc_env_clean(env);
-}
-
-
 
 static int 
 asynch_terminate_handler(HTRequest *  const request,
@@ -844,3 +817,60 @@ cleanup:
     xmlrpc_env_clean(&env);
     return HT_OK;
 }
+
+
+
+/* This is where we initiate an asynchronous request.
+**/
+void libwww_transport_send_request(xmlrpc_env *env, call_info *info)
+{
+    libwww_transport_info *t_info;
+
+    HTRequest *request;
+    HTParentAnchor *src;
+    HTAnchor *dst;
+    int ok;
+
+    XMLRPC_ASSERT_PTR_OK(env);
+    XMLRPC_ASSERT_PTR_OK(info);
+
+    t_info = (libwww_transport_info *)info->transport_info;
+    XMLRPC_ASSERT_PTR_OK(t_info);
+
+    request = t_info->request;
+    src = t_info->source_anchor;
+    dst = t_info->dest_anchor;
+
+    /* Install our request handler. */
+    HTRequest_addAfter(request, &asynch_terminate_handler, NULL, NULL, HT_ALL,
+               HT_FILTER_LAST, NO);
+
+    /* Start our request running. Under certain pathological conditions,
+    ** this may invoke asynch_terminate_handler immediately, regardless of
+    ** the result code returned. So we have to be careful about who
+    ** frees our call_info structure. */
+    ok = HTPostAnchor(src, dst, request);
+    if (!ok)
+    XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR,
+            "Could not start POST request");
+
+    /* Register our asynchronous call with the event loop. Once this
+    ** is done, we are no longer responsible for freeing the call_info
+    ** structure. */
+    register_asynch_call();
+
+    /* This is now set by the caller of this function. */
+    /* info->asynch_call_is_registered = 1; */
+
+ cleanup:
+    if (env->fault_occurred) {
+    /* Report the error immediately. */
+    (*info->callback)(info->server_url, info->method_name,
+                    info->param_array, info->user_data,
+            env, NULL);
+    }
+    //xmlrpc_env_clean(env);
+}
+
+
+
