@@ -19,6 +19,10 @@ N: James Clark
 W: http://www.jclark.com/
 D: Author of expat XML parser (included with the library).
 
+N: Rosimildo daSIlva
+E: rosimildo@yahoo.com
+D: CygWin port of Abyss.
+
 N: First Peer, Inc.
 W: http://www.firstpeer.com/
 D: Funded half of initial release.
@@ -31,10 +35,6 @@ D: Client-side support for SSL.
 N: Jack Jansen
 D: Python Base64 code (modified for use with library).
 
-N: Adrian Likins
-E: alikins@redhat.com
-D: Lots of good, real-world suggestions for improvement.
-
 N: Eric Kidd
 E: eric.kidd@pobox.com
 W: http://www.sourcebuilders.com/
@@ -42,6 +42,18 @@ D: Current maintainer.
 D: Initial design and implementation of library.
 D: Support for libwww and Abyss.
 
+N: Adrian Likins
+E: alikins@redhat.com
+D: Lots of good, real-world suggestions for improvement.
+
+N: Ian MacLean
+E: ianm@ActiveState.com
+D: Made patches from Alex's Windows port.
+
 N: Moez Mahfoudh
 E: mmoez@bigfoot.com
 D: Author of Abyss web server (included with the library).
+
+N: Alex Olugbile
+E: aoo@home.com
+D: Win32 port.
