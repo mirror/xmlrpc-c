@@ -1,50 +1,14 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)
-endif
-SUBDIR = .
+# The make files for this pacakge exploit features of GNU Make that
+# other Makes do not have.  Because it is a common mistake for users
+# to try to build with a different Make, we have this make file that
+# does nothing but tell the user to use GNU Make.
 
-include $(SRCDIR)/Makefile.config
+# If the user were using GNU Make now, this file would not get used because
+# GNU Make uses a make file named "GNUmakefile" in preference to "Makefile"
+# if it exists.  This package contains a "GNUmakefile".
 
-SUBDIRS = src lib tools examples
-
-PROGRAMS_TO_INSTALL = xmlrpc-c-config
-
-# We're in a transition between the bloated, complex GNU
-# Autoconf/Automake style of build, in which 'configure' creates all
-# the make files, to simpler static make files.  Some directories have
-# been converted; some haven't.  So we have the hack of putting
-# 'xmlrpc_config.h' as the first dependency of 'all' to make sure
-# 'configure runs before anything in the case that the user neglects
-# to run 'configure' before doing 'make'.
-
-default: xmlrpc_config.h all
-
-.PHONY: all
-all: xmlrpc-c-config xmlrpc-c-config.test $(SUBDIRS:%=%/all)
-
-.PHONY: clean
-clean: $(SUBDIRS:%=%/clean) clean-common
-
-.PHONY: distclean
-distclean: $(SUBDIRS:%=%/distclean) distclean-common
-
-.PHONY: tags
-tags: $(SUBDIRS:%=%/tags) TAGS
-
-DISTFILES = 
-
-.PHONY: distdir
-distdir: distdir-common
-
-.PHONY: install
-install: $(SUBDIRS:%=%/install) install-common
-
-.PHONY: dep
-dep: $(SUBDIRS:%=%/dep)
-
-xmlrpc-c-config xmlrpc-c-config.test xmlrpc_config.h xmlrpc_amconfig.h \
-	:%:%.in $(SRCDIR)/configure
-	$(SRCDIR)/configure
-
-include $(SRCDIR)/Makefile.common
-
+all install clean dep depend:
+	@echo "You must use GNU Make to build this.  You are running some "
+	@echo "other Make.  GNU Make may be installed on your system with "
+	@echo "the name 'gmake'.  If not, see http://www.gnu.org/software ."
+	@echo
