@@ -18,3 +18,5 @@ Makefile
 xmlrpc_config.h
 xmlrpc-c-*.tar.gz
 fulldist
+xmlrpc-c.spec
+xmlrpc-c.lsm
