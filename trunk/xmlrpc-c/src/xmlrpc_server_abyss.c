@@ -470,27 +470,19 @@ xmlrpc_server_abyss_default_handler (TSession * const r) {
 #ifdef _WIN32
 #include <io.h>
 #else
-/* Must check this
-#include <sys/io.h>
-*/
-#endif  /* _WIN32 */
-
-#ifdef _UNIX
 #include <sys/signal.h>
 #include <sys/wait.h>
 #include <grp.h>
-#endif
+#endif  /* _WIN32 */
 
 
-#ifdef _UNIX
+
 static void 
 sigterm(int const sig) {
     TraceExit("Signal %d received. Exiting...\n",sig);
 }
-#endif
 
 
-#ifdef _UNIX
 static void 
 sigchld(int const sig ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
@@ -502,6 +494,7 @@ sigchld(int const sig ATTR_UNUSED) {
    Implementation note: In some systems, just setting the signal handler
    to SIG_IGN (ignore signal) does this.  In others, it doesn't.
 -----------------------------------------------------------------------------*/
+#ifndef _WIN32
     pid_t pid;
     int status;
     
@@ -521,8 +514,8 @@ sigchld(int const sig ATTR_UNUSED) {
             break;
         }
     }
+#endif /* _WIN32 */
 }
-#endif /* _UNIX */
 
 static TServer globalSrv;
     /* When you use the old interface (xmlrpc_server_abyss_init(), etc.),
@@ -554,7 +547,7 @@ xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED,
 
 static void
 setupSignalHandlers(void) {
-#ifdef _UNIX
+#ifndef _WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);
@@ -580,13 +573,30 @@ setupSignalHandlers(void) {
 
 
 static void
-runServer(TServer *  const srvP,
-          runfirstFn const runfirst,
-          void *     const runfirstArg) {
+setGroups(void) {
 
-    setupSignalHandlers();
+#ifdef HAVE_SETGROUPS   
+    if (setgroups(0, NULL) == (-1))
+        TraceExit("Failed to setup the group.");
+#endif
+}
 
-#ifdef _UNIX
+
+
+static void
+daemonize(TServer * const srvP) {
+/*----------------------------------------------------------------------------
+   Turn Caller into a daemon (i.e. fork a child, then exit; the child
+   returns to Caller).
+
+   NOTE: It's ridiculous, but conventional, for us to do this.  It's
+   ridiculous because the task of daemonizing is not something
+   particular to Xmlrpc-c.  It ought to be done by a higher level.  In
+   fact, it should be done before the Xmlrpc-c server program is even
+   execed.  The user should run a "daemonize" program that creates a
+   daemon which execs the Xmlrpc-c server program.
+-----------------------------------------------------------------------------*/
+#ifndef _WIN32
     /* Become a daemon */
     switch (fork()) {
     case 0:
@@ -594,6 +604,7 @@ runServer(TServer *  const srvP,
     case -1:
         TraceExit("Unable to become a daemon");
     default:
+        /* We are the parent */
         exit(0);
     };
     
@@ -606,13 +617,12 @@ runServer(TServer *  const srvP,
                       "Please add a User option in your "
                       "Abyss configuration file.");
 
-#ifdef HAVE_SETGROUPS   
-        if (setgroups(0,NULL)==(-1))
-            TraceExit("Failed to setup the group.");
+        setGroups();
+
         if (srvP->gid != (gid_t)-1)
             if (setgid(srvP->gid)==(-1))
                 TraceExit("Failed to change the group.");
-#endif
+
         
         if (setuid(srvP->uid) == -1)
             TraceExit("Failed to change the user.");
@@ -625,7 +635,19 @@ runServer(TServer *  const srvP,
         FileWrite(&srvP->pidfile,z,strlen(z));
         FileClose(&srvP->pidfile);
     };
-#endif
+#endif  /* _WIN32 */
+}
+
+
+
+static void
+runServer(TServer *  const srvP,
+          runfirstFn const runfirst,
+          void *     const runfirstArg) {
+
+    setupSignalHandlers();
+
+    daemonize(srvP);
     
     /* We run the user supplied runfirst after forking, but before accepting
        connections (helpful when running with threads)

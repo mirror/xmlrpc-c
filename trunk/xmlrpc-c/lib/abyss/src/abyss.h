@@ -458,7 +458,7 @@ typedef struct _TServer
 	TList defaultfilenames;
 	void *defaulthandler;
 	abyss_bool advertise;
-#ifdef _UNIX
+#ifndef _WIN32
 	uid_t uid;
 	gid_t gid;
 	TFile pidfile;
