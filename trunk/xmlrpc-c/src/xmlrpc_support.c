@@ -25,6 +25,7 @@
 
 
 #include "xmlrpc_config.h"
+#include <stdlib.h>
 #include <stdio.h>
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
@@ -252,7 +253,6 @@ void xmlrpc_mem_block_append (xmlrpc_env* env,
 			      void *data, size_t len)
 {
     int size;
-    void *contents;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(block != NULL);

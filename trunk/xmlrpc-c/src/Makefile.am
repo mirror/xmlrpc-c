@@ -1,3 +1,6 @@
+# Turn on warnings.
+CFLAGS = @CFLAGS@ -Wall
+
 # Declare our libraries.
 lib_LTLIBRARIES = libxmlrpc.la libxmlrpc_client.la libxmlrpc_abyss_server.la \
 		  libxmlrpc_cgi.la

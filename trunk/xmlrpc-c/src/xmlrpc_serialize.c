@@ -27,6 +27,7 @@
 #include "xmlrpc_config.h"
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"

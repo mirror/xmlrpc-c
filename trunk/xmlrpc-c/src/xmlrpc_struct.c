@@ -26,6 +26,7 @@
 
 #include "xmlrpc_config.h"
 #include <stddef.h>
+#include <stdlib.h>
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
@@ -88,6 +89,9 @@ xmlrpc_value *xmlrpc_struct_new (xmlrpc_env* env)
 int xmlrpc_struct_size (xmlrpc_env* env, xmlrpc_value* strct)
 {
     int retval;
+
+    /* Suppress a compiler warning about uninitialized variables. */
+    retval = 0;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(strct);
@@ -179,6 +183,9 @@ int xmlrpc_struct_has_key_n (xmlrpc_env* env,
 {
     int index;
 
+    /* Suppress a compiler warning about uninitialized variables. */
+    index = 0;
+
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(strct);
     XMLRPC_ASSERT(key != NULL);
@@ -215,6 +222,9 @@ xmlrpc_value* xmlrpc_struct_get_value_n (xmlrpc_env* env,
     int index;
     _struct_member *members;
     xmlrpc_value *retval;
+
+    /* Suppress a compiler warning about uninitialized variables. */
+    retval = NULL;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(strct);

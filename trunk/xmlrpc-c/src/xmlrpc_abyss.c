@@ -361,6 +361,7 @@ bool xmlrpc_server_abyss_default_handler (TSession *r)
 #ifdef _UNIX
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include <grp.h>
 #endif
 
 

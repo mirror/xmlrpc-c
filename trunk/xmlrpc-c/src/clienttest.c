@@ -69,23 +69,22 @@ static void print_state_name_callback (char *server_url,
 int main (int argc, char** argv)
 {
     xmlrpc_env env;
-    xmlrpc_value *result;
-    char *state_name;
     int i;
     
     /* Start up our XML-RPC client library. */
     xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION);
     xmlrpc_env_init(&env);
 
-    /* Make a whole bunch of synchronous calls. */
-    for (i = 0; i < 5; i++) {
-	result = xmlrpc_client_call(&env, "http://localhost:8080/RPC2",
-				    "sample.add", "(ii)",
-				    (xmlrpc_int32) 17,
-				    (xmlrpc_int32) 25);
-	die_if_fault_occurred(&env);
-	xmlrpc_DECREF(result);
+    /* Make a whole bunch of asynchronous calls. */
+    for (i = 40; i < 45; i++) {
+	xmlrpc_client_call_asynch("http://betty.userland.com/RPC2",
+				  "examples.getStateName",
+				  print_state_name_callback, NULL,
+				  "(i)", (xmlrpc_int32) i);
     }
+
+    /* Wait for all calls to complete. */
+    xmlrpc_client_event_loop_finish_asynch();    
 
     /* Shutdown our XML-RPC client library. */
     xmlrpc_env_clean(&env);

@@ -121,7 +121,6 @@ count_entities (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 xmlrpc_value *
 easy_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
-    xmlrpc_value *s;
     xmlrpc_int32 larry, moe, curly;
 
     /* Parse our argument array and get the stooges. */
@@ -227,7 +226,7 @@ moderate_array (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 xmlrpc_value *
 nested_struct (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
-    xmlrpc_value *years, *months, *days, *day, *value;
+    xmlrpc_value *years;
     xmlrpc_int32 larry, moe, curly;
 
     /* Parse our argument array. */
@@ -275,8 +274,6 @@ struct_return (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 
 int main (int argc, char **argv)
 {
-    xmlrpc_env env;
-
     if (argc != 2) {
 	fprintf(stderr, "Usage: validatee abyss.conf\n");
 	exit(1);
@@ -302,4 +299,7 @@ int main (int argc, char **argv)
 				   &struct_return, NULL);
 
     xmlrpc_server_abyss_run();
+
+    /* This never gets executed. */
+    return 0;
 }

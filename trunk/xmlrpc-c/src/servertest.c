@@ -48,8 +48,6 @@ sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 
 int main (int argc, char **argv)
 {
-    xmlrpc_env env;
-
     if (argc != 2) {
 	fprintf(stderr, "Usage: servertest abyss.conf\n");
 	exit(1);
@@ -58,4 +56,6 @@ int main (int argc, char **argv)
     xmlrpc_server_abyss_init(XMLRPC_SERVER_ABYSS_NO_FLAGS, argv[1]);
     xmlrpc_server_abyss_add_method("sample.add", &sample_add, NULL);
     xmlrpc_server_abyss_run();
+
+    return 0;
 }

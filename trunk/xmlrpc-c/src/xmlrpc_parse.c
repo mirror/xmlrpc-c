@@ -93,7 +93,7 @@ static xmlrpc_value *convert_value (xmlrpc_env *env, xml_element *elem)
 {
     xml_element *child;
     int child_count;
-    char *name, *cdata, *child_name;
+    char *cdata, *child_name;
     size_t cdata_size, ascii_len;
     xmlrpc_mem_block *decoded;
     unsigned char *ascii_data;
@@ -437,7 +437,6 @@ xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
 {
     xml_element *response, *child, *value;
     xmlrpc_value *params, *retval, *fault;
-    size_t size;
     int retval_incremented;
 
     xmlrpc_value *fault_code_value, *fault_str_value;

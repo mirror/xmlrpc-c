@@ -24,6 +24,7 @@
 ** SUCH DAMAGE. */
 
 #include "xmlrpc_config.h"
+#include <stdlib.h>
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"

@@ -27,6 +27,7 @@
 
 #include "xmlrpc_config.h"
 #include <stddef.h>
+#include <stdlib.h>
 #include <stdarg.h>
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
@@ -684,6 +685,9 @@ int xmlrpc_array_size (xmlrpc_env* env, xmlrpc_value* array)
 {
     int retval;
 
+    /* Suppress a compiler warning about uninitialized variables. */
+    retval = 0;
+
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(array);
     XMLRPC_TYPE_CHECK(env, array, XMLRPC_TYPE_ARRAY);
@@ -725,6 +729,9 @@ xmlrpc_value* xmlrpc_array_get_item (xmlrpc_env* env,
 {
     size_t size;
     xmlrpc_value **contents, *retval;
+
+    /* Suppress a compiler warning about uninitialized variables. */
+    retval = NULL;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(array);
