@@ -43,7 +43,7 @@ struct xmlrpc_clientparms {
   (XMLRPC_CP_MEMBER_OFFSET(mbrname) + XMLRPC_CP_MEMBER_SIZE(mbrname))
 
 /* XMLRPC_CPSIZE(xyz) is the minimum size a struct xmlrpc_clientparms
-   must be to include the 'xyx' member.  This is essential to forward and
+   must be to include the 'xyz' member.  This is essential to forward and
    backward compatbility, as new members will be added to the end of the
    struct in future releases.  This is how the callee knows whether or
    not the caller is new enough to have supplied a certain parameter.

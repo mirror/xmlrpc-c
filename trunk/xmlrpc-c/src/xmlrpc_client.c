@@ -388,34 +388,37 @@ void call_info_free (call_info *info)
 
 
 call_info * 
-call_info_new (xmlrpc_env *         const env,
-               xmlrpc_server_info * const server,
-               const char *         const method_name,
-               xmlrpc_value *       const argP) {
-
+call_info_new(xmlrpc_env *         const envP,
+              xmlrpc_server_info * const server,
+              const char *         const method_name,
+              xmlrpc_value *       const argP) {
+/*----------------------------------------------------------------------------
+   Create a call_info object.  A call_info object represents an XML-RPC
+   call.
+-----------------------------------------------------------------------------*/
     call_info *retval;
 
     /* Allocate our structure. */
     retval = (call_info*) malloc(sizeof(call_info));
-    XMLRPC_FAIL_IF_NULL(server, env, XMLRPC_INTERNAL_ERROR,
+    XMLRPC_FAIL_IF_NULL(server, envP, XMLRPC_INTERNAL_ERROR,
                         "Couldn't allocate memory for xmlrpc_call_info");
     /* Clear contents. */
     memset(retval, 0, sizeof(call_info));
 
     /* Serialize our call. */
-    retval->serialized_xml = xmlrpc_mem_block_new(env, 0);
-    XMLRPC_FAIL_IF_FAULT(env);
-    xmlrpc_serialize_call(env, retval->serialized_xml,
+    retval->serialized_xml = xmlrpc_mem_block_new(envP, 0);
+    XMLRPC_FAIL_IF_FAULT(envP);
+    xmlrpc_serialize_call(envP, retval->serialized_xml,
                           method_name, argP);
-    XMLRPC_FAIL_IF_FAULT(env);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
-    XMLRPC_FAIL_IF_NULL(g_transport_info_new, env, XMLRPC_INTERNAL_ERROR,
+    XMLRPC_FAIL_IF_NULL(g_transport_info_new, envP, XMLRPC_INTERNAL_ERROR,
                         "Transport uninitialized.");
-    retval->transport_info = g_transport_info_new(env, server, retval);
-    XMLRPC_FAIL_IF_FAULT(env);
+    retval->transport_info = g_transport_info_new(envP, server, retval);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
  cleanup:
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         if (retval)
             call_info_free(retval);
         retval = NULL;

@@ -37,8 +37,8 @@ extern "C" {
 **  XML-RPC Server Method Registry
 **=========================================================================
 **  A method registry maintains a list of functions, and handles
-**  dispatching. To build an XML-RPC server, just add a communications
-**  protocol. :-)
+**  dispatching. To build an XML-RPC server, just add an XML-RPC protocol
+**  driver.
 **
 **  Methods are C functions which take some combination of the following
 **  parameters. All pointers except user_data belong to the library, and

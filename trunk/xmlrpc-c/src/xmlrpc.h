@@ -65,6 +65,25 @@ typedef double xmlrpc_double;
 #define XMLRPC_INT32_MIN (-XMLRPC_INT32_MAX - 1)
 
 
+
+/*=========================================================================
+**  C struct size computations
+**=======================================================================*/
+
+/* Use XMLRPC_STRUCT_MEMBER_SIZE() to determine how big a structure is
+   up to and including a specified member.  E.g. if you have
+   struct mystruct {int red; int green; int blue};, then
+   XMLRPC_STRUCT_MEMBER_SIZE(mystruct, green) is (8).
+*/
+
+#define _XMLRPC_STRUCT_MEMBER_OFFSET(TYPE, MBRNAME) \
+  ((unsigned int)(char*)&((TYPE *)0)->MBRNAME)
+#define _XMLRPC_STRUCT_MEMBER_SIZE(TYPE, MBRNAME) \
+  sizeof(((TYPE *)0)->MBRNAME)
+#define XMLRPC_STRUCTSIZE(TYPE, MBRNAME) \
+  (_XMLRPC_STRUCT_MEMBER_OFFSET(TYPE, MBRNAME) + \
+  _XMLRPC_STRUCT_MEMBER_SIZE(TYPE, MBRNAME))
+
 /*=========================================================================
 **  Assertions and Debugging
 **=========================================================================

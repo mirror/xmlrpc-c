@@ -33,6 +33,10 @@ int
 main (int           const argc, 
       const char ** const argv) {
 
+    xmlrpc_abyss_server_parms serverparm;
+    xmlrpc_registry * registryP;
+    xmlrpc_env env;
+
     if (argc-1 != 1) {
         fprintf(stderr, "You must specify 1 argument:  The Abyss " 
                 "configuration file name.  You specified %d.\n",  argc-1);
@@ -41,12 +45,20 @@ main (int           const argc,
                 "source tree\n");
         exit(1);
     }
+    
+    xmlrpc_env_init(&env);
 
-    xmlrpc_server_abyss_init(XMLRPC_SERVER_ABYSS_NO_FLAGS, argv[1]);
-    xmlrpc_server_abyss_add_method("sample.add", &sample_add, NULL);
+    registryP = xmlrpc_registry_new(&env);
 
-    printf("server: switching to background.\n");
-    xmlrpc_server_abyss_run();
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "sample.add", &sample_add, NULL);
+
+    serverparm.config_file_name = argv[1];
+    serverparm.registryP = registryP;
+
+    printf("Starting XML-RPC server...\n");
+
+    xmlrpc_server_abyss(&env, serverparm, XMLRPC_APSIZE(registryP));
 
     /* We never reach this point. */
     return 0;

@@ -35,14 +35,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "abyss.h"
+
 #include "xmlrpc.h"
 #include "xmlrpc_server.h"
 #include "xmlrpc_int.h"
-
-#include "abyss.h"
-#define  XMLRPC_SERVER_WANT_ABYSS_HANDLERS
 #include "xmlrpc_abyss.h"
-
+#include "xmlrpc_abyss_int.h"
 
 
 /*=========================================================================
@@ -58,69 +57,6 @@ static void die_if_fault_occurred(xmlrpc_env *env) {
                 env->fault_string, env->fault_code);
         exit(1);
     }
-}
-
-
-
-/*=========================================================================
-**  XML-RPC Server Method Registry
-**=========================================================================
-**  A simple front-end to our method registry.
-*/
-
-/* XXX - This variable is *not* currently threadsafe. Once the server has
-** been started, it must be treated as read-only. */
-static xmlrpc_registry *registry;
-
-void 
-xmlrpc_server_abyss_init_registry(void) {
-
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-    registry = xmlrpc_registry_new(&env);
-    die_if_fault_occurred(&env);
-    xmlrpc_env_clean(&env);
-}
-
-
-
-xmlrpc_registry *
-xmlrpc_server_abyss_registry(void) {
-    return registry;
-}
-
-
-
-/* A quick & easy shorthand for adding a method. */
-void 
-xmlrpc_server_abyss_add_method (char *        const method_name,
-                                xmlrpc_method const method,
-                                void *        const user_data) {
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-    xmlrpc_registry_add_method(&env, registry, NULL, method_name,
-                               method, user_data);
-    die_if_fault_occurred(&env);
-    xmlrpc_env_clean(&env);
-}
-
-
-
-void
-xmlrpc_server_abyss_add_method_w_doc (char *        const method_name,
-                                      xmlrpc_method const method,
-                                      void *        const user_data,
-                                      char *        const signature,
-                                      char *        const help) {
-
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-    xmlrpc_registry_add_method_w_doc(&env, registry, NULL, method_name,
-                                     method, user_data, signature, help);
-    die_if_fault_occurred(&env);
-    xmlrpc_env_clean(&env);    
 }
 
 
@@ -352,6 +288,13 @@ processContentLength(TSession *     const httpRequestP,
 }
 
 
+/****************************************************************************
+    Abyss handlers (to be registered with and called by Abyss)
+****************************************************************************/
+
+/* XXX - This variable is *not* currently threadsafe. Once the server has
+** been started, it must be treated as read-only. */
+static xmlrpc_registry *global_registryP;
 
 /*=========================================================================
 **  xmlrpc_server_abyss_rpc2_handler
@@ -415,7 +358,8 @@ xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
     /* Process the function call. */
     data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, body);
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, body);
-    output = xmlrpc_registry_process_call(&env, registry, NULL, data, size);
+    output = xmlrpc_registry_process_call(&env, global_registryP, NULL, 
+                                          data, size);
     XMLRPC_FAIL_IF_FAULT(&env);
 
     /* Send our the result. */
@@ -552,29 +496,31 @@ sigchld(int const sig ATTR_UNUSED) {
 }
 #endif /* _UNIX */
 
-static TServer srv;
-
+static TServer globalSrv;
+    /* When you use the old interface (xmlrpc_server_abyss_init(), etc.),
+       this is the Abyss server to which they refer.  Obviously, there can be
+       only one Abyss server per program using this interface.
+    */
 
 
 void 
 xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED, 
                          const char * const config_file) {
 
-    xmlrpc_server_abyss_init_registry();
-
     DateInit();
     MIMETypeInit();
 
-    ServerCreate(&srv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+    ServerCreate(&globalSrv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
     
-    ConfReadServerFile(config_file, &srv);
-    
-    ServerAddHandler(&srv, xmlrpc_server_abyss_rpc2_handler);
-    ServerDefaultHandler(&srv, xmlrpc_server_abyss_default_handler);
-    
-    ServerInit(&srv);
-}
+    ConfReadServerFile(config_file, &globalSrv);
 
+    xmlrpc_server_abyss_init_registry();
+        /* Installs /RPC2 handler and default handler that use the
+           built-in registry.
+        */
+
+    ServerInit(&globalSrv);
+}
 
 
 
@@ -605,9 +551,10 @@ setupSignalHandlers(void) {
 
 
 
-void 
-xmlrpc_server_abyss_run_first(void (runfirst(void *)),
-                              void * const runfirstArg) {
+static void
+runServer(TServer *  const srvP,
+          runfirstFn const runfirst,
+          void *     const runfirstArg) {
 
     setupSignalHandlers();
 
@@ -626,7 +573,7 @@ xmlrpc_server_abyss_run_first(void (runfirst(void *)),
 
     /* Change the current user if we are root */
     if (getuid()==0) {
-        if (srv.uid == (uid_t)-1)
+        if (srvP->uid == (uid_t)-1)
             TraceExit("Can't run under root privileges.  "
                       "Please add a User option in your "
                       "Abyss configuration file.");
@@ -634,21 +581,21 @@ xmlrpc_server_abyss_run_first(void (runfirst(void *)),
 #ifdef HAVE_SETGROUPS   
         if (setgroups(0,NULL)==(-1))
             TraceExit("Failed to setup the group.");
-        if (srv.gid != (gid_t)-1)
-            if (setgid(srv.gid)==(-1))
+        if (srvP->gid != (gid_t)-1)
+            if (setgid(srvP->gid)==(-1))
                 TraceExit("Failed to change the group.");
 #endif
         
-        if (setuid(srv.uid) == -1)
+        if (setuid(srvP->uid) == -1)
             TraceExit("Failed to change the user.");
     };
     
-    if (srv.pidfile!=(-1)) {
+    if (srvP->pidfile!=(-1)) {
         char z[16];
     
         sprintf(z,"%d",getpid());
-        FileWrite(&srv.pidfile,z,strlen(z));
-        FileClose(&srv.pidfile);
+        FileWrite(&srvP->pidfile,z,strlen(z));
+        FileClose(&srvP->pidfile);
     };
 #endif
     
@@ -658,15 +605,172 @@ xmlrpc_server_abyss_run_first(void (runfirst(void *)),
     if (runfirst)
         runfirst(runfirstArg);
 
-    ServerRun(&srv);
+    ServerRun(srvP);
 
     /* We can't exist here because ServerRun doesn't return */
-    XMLRPC_ASSERT(0);
+    XMLRPC_ASSERT(FALSE);
+}
+
+
+
+void 
+xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
+                              void *     const runfirstArg) {
+    
+    runServer(&globalSrv, runfirst, runfirstArg);
 }
 
 
 
 void 
 xmlrpc_server_abyss_run(void) {
-    xmlrpc_server_abyss_run_first(NULL, NULL);
+    runServer(&globalSrv, NULL, NULL);
+}
+
+
+
+static void
+setXmlrpcRegistryHandlers(TServer *         const srvP,
+                          xmlrpc_registry * const registryP) {
+
+    /* Abyss ought to have a way to register with a handler an argument
+       that gets passed to the handler every time it is called.  That's
+       where we should put the registry handle.  But we don't find such
+       a thing in Abyss, so we use the global variable 'global_registryP'.
+    */
+    global_registryP = registryP;
+                                 
+    ServerAddHandler(srvP, xmlrpc_server_abyss_rpc2_handler);
+    ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
+}
+
+
+
+void
+xmlrpc_server_abyss_set_handlers(xmlrpc_registry * const registryP) {
+    setXmlrpcRegistryHandlers(&globalSrv, registryP);
+}
+
+
+
+void
+xmlrpc_server_abyss(xmlrpc_env *              const envP,
+                    xmlrpc_abyss_server_parms const parms,
+                    unsigned int              const parm_size) {
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+
+    if (parm_size < XMLRPC_APSIZE(registryP))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR,
+            "You must specify members at least up through "
+            "'registryP' in the server parameters argument.  "
+            "That would mean the parameter size would be >= %u "
+            "but you specified a size of %u",
+            XMLRPC_APSIZE(registryP), parm_size);
+    else {
+        TServer srv;
+        runfirstFn runfirst;
+        void * runfirstArg;
+
+        DateInit();
+        MIMETypeInit();
+        
+        ServerCreate(&srv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+        
+        ConfReadServerFile(parms.config_file_name, &srv);
+        
+        setXmlrpcRegistryHandlers(&srv, parms.registryP);
+        
+        ServerInit(&srv);
+
+        if (parm_size >= XMLRPC_APSIZE(runfirst_arg)) {
+            runfirst    = parms.runfirst;
+            runfirstArg = parms.runfirst_arg;
+        } else {
+            runfirst    = NULL;
+            runfirstArg = NULL;
+        }
+        runServer(&srv, runfirst, runfirstArg);
+    }
+}
+
+
+
+/*=========================================================================
+**  XML-RPC Server Method Registry
+**=========================================================================
+**  A simple front-end to our method registry.
+*/
+
+/* XXX - This variable is *not* currently threadsafe. Once the server has
+** been started, it must be treated as read-only. */
+static xmlrpc_registry *builtin_registryP;
+
+void 
+xmlrpc_server_abyss_init_registry(void) {
+
+    /* This used to just create the registry and Caller would be
+       responsible for adding the handlers that use it.
+
+       But that isn't very modular -- the handlers and registry go
+       together; there's no sense in using the built-in registry and
+       not the built-in handlers because if you're custom building
+       something, you can just make your own regular registry.  So now
+       we tie them together, and we don't export our handlers.  
+    */
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+    builtin_registryP = xmlrpc_registry_new(&env);
+    die_if_fault_occurred(&env);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_server_abyss_set_handlers(builtin_registryP);
+}
+
+
+
+xmlrpc_registry *
+xmlrpc_server_abyss_registry(void) {
+
+    /* This is highly deprecated.  If you want to mess with a registry,
+       make your own with xmlrpc_registry_new() -- don't mess with the
+       internal one.
+    */
+    return builtin_registryP;
+}
+
+
+
+/* A quick & easy shorthand for adding a method. */
+void 
+xmlrpc_server_abyss_add_method (char *        const method_name,
+                                xmlrpc_method const method,
+                                void *        const user_data) {
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+    xmlrpc_registry_add_method(&env, builtin_registryP, NULL, method_name,
+                               method, user_data);
+    die_if_fault_occurred(&env);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+void
+xmlrpc_server_abyss_add_method_w_doc (char *        const method_name,
+                                      xmlrpc_method const method,
+                                      void *        const user_data,
+                                      char *        const signature,
+                                      char *        const help) {
+
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+    xmlrpc_registry_add_method_w_doc(
+        &env, builtin_registryP, NULL, method_name,
+        method, user_data, signature, help);
+    die_if_fault_occurred(&env);
+    xmlrpc_env_clean(&env);    
 }
