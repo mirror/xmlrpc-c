@@ -1,0 +1,728 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "Win32ServerTest"="..\examples\Win32ServerTest\Win32ServerTest.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    Win32ServerTest
+    ..\examples\win32servertest
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "gennmtab"="..\lib\expat\gennmtab\gennmtab.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    gennmtab
+    ..\lib\expat\gennmtab
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "win32ClientTest"="..\EXAMPLES\win32ClientTest\win32ClientTest.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    win32ClientTest
+    ..
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "wwwapp"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwapp.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwapp
+    ..\lib\w3c-libwww-5.3.2\library
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwhttp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwstream
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwfile
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwcache"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwcache.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwcache
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwtrans
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwcore"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwcore.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwcore
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwdir"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwdir.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwdir
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwhtml
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwfile
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwdll"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwdll.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwdll
+    ..\lib\w3c-libwww-5.3.2\library\src\windows
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "wwwfile"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwfile.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwfile
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwtrans
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwftp"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwftp.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwftp
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdir
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwfile
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwgophe"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwgophe.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwgophe
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwhtml
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdir
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwhtml"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwhtml.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwhtml
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwhttp"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwhttp.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwhttp
+    ..\lib\w3c-libwww-5.3.2
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwmime
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwstream
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwinit"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwinit.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwinit
+    ..\lib\w3c-libwww-5.3.2\library
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwmime
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwtrans
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwgophe
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwhttp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwnews
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwapp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwcache
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwxml
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwfile
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwftp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwzip
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwstream
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdir
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwhtml
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwtelnt
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwmime"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwmime.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwmime
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwcache
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwstream
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwmux"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwmux.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwmux
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwstream
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwtrans
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwnews"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwnews.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwnews
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwhtml
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwmime
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwstream
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwstream"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwstream.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwstream
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwfile
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwtelnt"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwtelnt.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwtelnt
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwtrans"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwtrans.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwtrans
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwutils"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwutils.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwutils
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwwais"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwwais.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwwais
+    ..\lib\w3c-libwww-5.3.2\library\src
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "wwwxml"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwxml.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwxml
+    ..\lib\w3c-libwww-5.3.2\library
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wwwzip"="..\lib\w3c-libwww-5.3.2\Library\src\windows\wwwzip.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    wwwzip
+    ..\lib\w3c-libwww-5.3.2\library
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwdll
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wwwcore
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlparse"="..\lib\expat\xmlparse\xmlparse.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    xmlparse
+    ..\lib\expat
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmltok
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpc"=".\xmlrpc.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    xmlrpc
+    ..
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name wwwinit
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlparse
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmltok"="..\lib\expat\xmltok\xmltok.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    xmltok
+    ..\lib\expat
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gennmtab
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+
