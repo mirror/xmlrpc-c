@@ -94,7 +94,7 @@ static int test_int_array_3[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 "<value><i4>-2147483648</i4></value>"CRLF \
 "<value><boolean>0</boolean></value>"CRLF \
 "<value><boolean>1</boolean></value>"CRLF \
-"<value><string>Hello, world! &lt;&amp;></string></value>"CRLF \
+"<value><string>Hello, world! &lt;&amp;&gt;</string></value>"CRLF \
 "<value><base64>"CRLF \
 "YmFzZTY0IGRhdGE="CRLF \
 "</base64></value>"CRLF \
@@ -107,7 +107,7 @@ static char serialized_data[] = RAW_STRING_DATA;
 
 static char serialized_struct[] = \
 "<value><struct>"CRLF \
-"<member><name>&lt;&amp;></name>"CRLF \
+"<member><name>&lt;&amp;&gt;</name>"CRLF \
 "<value><i4>10</i4></value></member>"CRLF \
 "</struct></value>";
 
@@ -159,7 +159,7 @@ RAW_STRING_DATA CRLF \
 "<value><double>0.0</double></value>"CRLF \
 "<value><double>1.0</double></value>"CRLF \
 "<value><struct>"CRLF \
-"<member><name>ten &lt;&amp;></name>"CRLF \
+"<member><name>ten &lt;&amp;&gt;</name>"CRLF \
 "<value><i4>10</i4></value></member>"CRLF \
 "<member><name>twenty</name>"CRLF \
 "<value><i4>20</i4></value></member>"CRLF \

@@ -145,6 +145,8 @@ static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
     for (i = 0; i < len; i++) {
 	if (str[i] == '<')
 	    needed += 4; /* &lt; */
+	else if (str[i] == '>')
+	    needed += 4; /* &gt; */
 	else if (str[i] == '&')
 	    needed += 5; /* &amp; */
 	else
@@ -161,6 +163,11 @@ static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
 	if (str[i] == '<') {
 	    *out++ = '&';
 	    *out++ = 'l';
+	    *out++ = 't';
+	    *out++ = ';';
+	} else if (str[i] == '>') {
+	    *out++ = '&';
+	    *out++ = 'g';
 	    *out++ = 't';
 	    *out++ = ';';
 	} else if (str[i] == '&') {
