@@ -12,7 +12,8 @@ EXTRA_DIST = NEWS BUGS CREDITS PORTING REFACTORINGS TESTING SECURITY \
 
 bin_SCRIPTS = xmlrpc-c-config
 
-dist-hook:
+dist-hook: xmlrpc-c.spec
+	cp $(srcdir)/xmlrpc-c.spec $(distdir)/
 	cp -r $(srcdir)/conf $(distdir)/
 	rm -f $(distdir)/conf/log/abyss.pid
 	rm -f $(distdir)/conf/log/access.log
@@ -20,7 +21,7 @@ dist-hook:
 	cp -r $(srcdir)/examples/Win32ClientTest $(distdir)/examples/
 	cp -r $(srcdir)/examples/Win32ServerTest $(distdir)/examples/
 
-fulldist: distcheck xmlrpc-c.spec xmlrpc-c.lsm
+fulldist: distcheck xmlrpc-c.lsm
 	rm -rf fulldist/$(VERSION)
 	rm -rf $(RPM_TOPDIR)
 	mkdir $(RPM_TOPDIR)

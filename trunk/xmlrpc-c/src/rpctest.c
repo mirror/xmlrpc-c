@@ -1694,6 +1694,27 @@ static char *(bad_utf8[]) = {
     NULL
 };
 
+/* This routine is missing on certain platforms.  This implementation
+** *appears* to be correct. */
+#if 0
+#ifndef HAVE_WCSNCMP
+int wcsncmp(wchar_t *wcs1, wchar_t* wcs2, size_t len)
+{
+    size_t i;
+    /* XXX - 'unsigned long' should be 'uwchar_t'. */
+    unsigned long c1, c2;
+    for (i=0; i < len; i++) {
+	c1 = wcs1[i];
+	c2 = wcs2[i];
+	/* This clever comparison borrowed from the GNU C Library. */
+	if (c1 == 0 || c1 != c2)
+	    return c1 - c2;
+    }
+    return 0;
+}
+#endif /* HAVE_WCSNCMP */
+#endif
+
 void test_utf8_coding (void)
 {
     xmlrpc_env env, env2;

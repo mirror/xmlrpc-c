@@ -222,6 +222,9 @@ AC_MSG_ERROR(your C library does not provide vsnprintf)
 dnl CygWin looks like Unix, but doesn't provide setgroups.
 AC_CHECK_FUNCS(setgroups)
 
+dnl Unicode function needed by test suites.
+AC_CHECK_FUNCS(wcsncmp)
+
 
 dnl =======================================================================
 dnl ABYSS Configuration
