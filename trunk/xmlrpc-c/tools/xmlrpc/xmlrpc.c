@@ -54,6 +54,8 @@
 
 struct cmdlineInfo {
     const char *  url;
+    const char *  username;
+    const char *  password;
     const char *  methodName;
     unsigned int  paramCount;
     const char ** params;
@@ -95,16 +97,40 @@ setError(xmlrpc_env * const envP, const char format[], ...) {
 
 
 static void
+processArguments(xmlrpc_env *         const envP,
+                 cmdlineParser        const cp,
+                 struct cmdlineInfo * const cmdlineP) {
+
+    if (cmd_argumentCount(cp) < 2)
+        setError(envP, "Not enough arguments.  Need at least a URL and "
+                 "method name.");
+    else {
+        unsigned int i;
+        
+        cmdlineP->url        = cmd_getArgument(cp, 0);
+        cmdlineP->methodName = cmd_getArgument(cp, 1);
+        cmdlineP->paramCount = cmd_argumentCount(cp) - 2;
+        MALLOCARRAY(cmdlineP->params, cmdlineP->paramCount);
+        for (i = 0; i < cmdlineP->paramCount; ++i)
+            cmdlineP->params[i] = cmd_getArgument(cp, i+2);
+    }
+}
+
+
+
+static void
 parseCommandLine(xmlrpc_env *         const envP,
                  int                  const argc,
                  const char **        const argv,
                  struct cmdlineInfo * const cmdlineP) {
 
-    cmdlineParser cp = cmd_createOptionParser();
+    cmdlineParser const cp = cmd_createOptionParser();
 
     const char * error;
 
     cmd_defineOption(cp, "transport", OPTTYPE_STRING);
+    cmd_defineOption(cp, "username",  OPTTYPE_STRING);
+    cmd_defineOption(cp, "password",  OPTTYPE_STRING);
 
     cmd_processOptions(cp, argc, argv, &error);
 
@@ -114,19 +140,14 @@ parseCommandLine(xmlrpc_env *         const envP,
     } else {
         cmdlineP->transport = cmd_getOptionValueString(cp, "transport");
 
-        if (cmd_argumentCount(cp) < 2)
-            setError(envP, "Not enough arguments.  Need at least a URL and "
-                     "method name.");
-        else {
-            unsigned int i;
+        cmdlineP->username  = cmd_getOptionValueString(cp, "username");
+        cmdlineP->password  = cmd_getOptionValueString(cp, "password");
 
-            cmdlineP->url        = cmd_getArgument(cp, 0);
-            cmdlineP->methodName = cmd_getArgument(cp, 1);
-            cmdlineP->paramCount = cmd_argumentCount(cp) - 2;
-            MALLOCARRAY(cmdlineP->params, cmdlineP->paramCount);
-            for (i = 0; i < cmdlineP->paramCount; ++i)
-                cmdlineP->params[i] = cmd_getArgument(cp, i+2);
-        }
+        if (cmdlineP->username && !cmdlineP->password)
+            setError(envP, "When you specify -username, you must also "
+                     "specify -password.");
+        else
+            processArguments(envP, cp, cmdlineP);
     }
     cmd_destroyOptionParser(cp);
 }
@@ -568,12 +589,12 @@ dumpResult(xmlrpc_value * const resultP) {
 
 
 static void
-doCall(xmlrpc_env *    const envP,
-       const char *    const transport,
-       const char *    const url,
-       const char *    const methodName,
-       xmlrpc_value *  const paramArrayP,
-       xmlrpc_value ** const resultPP) {
+doCall(xmlrpc_env *               const envP,
+       const char *               const transport,
+       const xmlrpc_server_info * const serverInfoP,
+       const char *               const methodName,
+       xmlrpc_value *             const paramArrayP,
+       xmlrpc_value **            const resultPP) {
     
     struct xmlrpc_clientparms clientparms;
 
@@ -584,11 +605,32 @@ doCall(xmlrpc_env *    const envP,
     xmlrpc_client_init2(envP, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, 
                         &clientparms, XMLRPC_CPSIZE(transport));
     if (!envP->fault_occurred) {
-        *resultPP = xmlrpc_client_call_params(
-            envP, url, methodName, paramArrayP);
+        *resultPP = xmlrpc_client_call_server_params(
+            envP, serverInfoP, methodName, paramArrayP);
     
         xmlrpc_client_cleanup();
     }
+}
+
+
+
+static void
+createServerInfo(xmlrpc_env *          const envP,
+                 const char *          const serverUrl,
+                 const char *          const userName,
+                 const char *          const password,
+                 xmlrpc_server_info ** const serverInfoPP) {
+
+    xmlrpc_server_info * serverInfoP;
+
+    serverInfoP = xmlrpc_server_info_new(envP, serverUrl);
+    if (!envP->fault_occurred) {
+        if (userName) {
+            xmlrpc_server_info_set_basic_auth(
+                envP, serverInfoP, userName, password);
+        }
+    }
+    *serverInfoPP = serverInfoP;
 }
 
 
@@ -602,6 +644,7 @@ main(int           const argc,
     xmlrpc_value * paramArrayP;
     xmlrpc_value * resultP;
     const char * url;
+    xmlrpc_server_info * serverInfoP;
 
     xmlrpc_env_init(&env);
 
@@ -613,7 +656,12 @@ main(int           const argc,
     computeParamArray(&env, cmdline.paramCount, cmdline.params, &paramArrayP);
     die_if_fault_occurred(&env);
 
-    doCall(&env, cmdline.transport, url, cmdline.methodName, paramArrayP, 
+    createServerInfo(&env, url, cmdline.username, cmdline.password,
+                     &serverInfoP);
+    die_if_fault_occurred(&env);
+
+    doCall(&env, cmdline.transport, serverInfoP, 
+           cmdline.methodName, paramArrayP, 
            &resultP);
     die_if_fault_occurred(&env);
 
