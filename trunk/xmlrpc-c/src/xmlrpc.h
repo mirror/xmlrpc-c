@@ -305,25 +305,44 @@ void xmlrpc_mem_block_resize
 void xmlrpc_mem_block_append
     (xmlrpc_env* env, xmlrpc_mem_block* block, void *data, size_t len);
 
-/* A very lightweight "template" system for creating typed blocks of
-** memory.  This is not part of the normal public API, but users are
-** welcome to use it if they wish. */
-#define XMLRPC_TYPED_MEM_BLOCK_NEW(type,env,size) \
+#define XMLRPC_MEMBLOCK_NEW(type,env,size) \
     xmlrpc_mem_block_new((env), sizeof(type) * (size))
-#define XMLRPC_TYPED_MEM_BLOCK_FREE(type,block) \
+#define XMLRPC_MEMBLOCK_FREE(type,block) \
     xmlrpc_mem_block_free(block)
-#define XMLRPC_TYPED_MEM_BLOCK_INIT(type,env,block,size) \
+#define XMLRPC_MEMBLOCK_INIT(type,env,block,size) \
     xmlrpc_mem_block_init((env), (block), sizeof(type) * (size))
-#define XMLRPC_TYPED_MEM_BLOCK_CLEAN(type,block) \
+#define XMLRPC_MEMBLOCK_CLEAN(type,block) \
     xmlrpc_mem_block_clean(block)
-#define XMLRPC_TYPED_MEM_BLOCK_SIZE(type,block) \
+#define XMLRPC_MEMBLOCK_SIZE(type,block) \
     (xmlrpc_mem_block_size(block) / sizeof(type))
-#define XMLRPC_TYPED_MEM_BLOCK_CONTENTS(type,block) \
+#define XMLRPC_MEMBLOCK_CONTENTS(type,block) \
     ((type*) xmlrpc_mem_block_contents(block))
-#define XMLRPC_TYPED_MEM_BLOCK_RESIZE(type,env,block,size) \
+#define XMLRPC_MEMBLOCK_RESIZE(type,env,block,size) \
     xmlrpc_mem_block_resize(env, block, sizeof(type) * (size))
-#define XMLRPC_TYPED_MEM_BLOCK_APPEND(type,env,block,data,size) \
+#define XMLRPC_MEMBLOCK_APPEND(type,env,block,data,size) \
     xmlrpc_mem_block_append(env, block, data, sizeof(type) * (size))
+
+/* Here are some backward compatibility definitions.  These longer names
+   used to be the only ones and typed memory blocks were considered
+   special.
+*/
+#define XMLRPC_TYPED_MEM_BLOCK_NEW(type,env,size) \
+    XMLRPC_MEMBLOCK_NEW(type,env,size)
+#define XMLRPC_TYPED_MEM_BLOCK_FREE(type,block) \
+    XMLRPC_MEMBLOCK_FREE(type,block)
+#define XMLRPC_TYPED_MEM_BLOCK_INIT(type,env,block,size) \
+    XMLRPC_MEMBLOCK_INIT(type,env,block,size)
+#define XMLRPC_TYPED_MEM_BLOCK_CLEAN(type,block) \
+    XMLRPC_MEMBLOCK_CLEAN(type,block)
+#define XMLRPC_TYPED_MEM_BLOCK_SIZE(type,block) \
+    XMLRPC_MEMBLOCK_SIZE(type,block)
+#define XMLRPC_TYPED_MEM_BLOCK_CONTENTS(type,block) \
+    XMLRPC_MEMBLOCK_CONTENTS(type,block)
+#define XMLRPC_TYPED_MEM_BLOCK_RESIZE(type,env,block,size) \
+    XMLRPC_MEMBLOCK_RESIZE(type,env,block,size)
+#define XMLRPC_TYPED_MEM_BLOCK_APPEND(type,env,block,data,size) \
+    XMLRPC_MEMBLOCK_APPEND(type,env,block,data,size)
+
 
 
 /*=========================================================================
