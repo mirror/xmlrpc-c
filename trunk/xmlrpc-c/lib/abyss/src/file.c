@@ -49,7 +49,7 @@
 ** File
 *********************************************************************/
 
-bool FileOpen(TFile *f, const char *name,uint32 attrib)
+abyss_bool FileOpen(TFile *f, const char *name,uint32 attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib))!=(-1));
@@ -58,7 +58,7 @@ bool FileOpen(TFile *f, const char *name,uint32 attrib)
 #endif
 }
 
-bool FileOpenCreate(TFile *f, char *name,uint32 attrib)
+abyss_bool FileOpenCreate(TFile *f, char *name,uint32 attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
@@ -67,7 +67,7 @@ bool FileOpenCreate(TFile *f, char *name,uint32 attrib)
 #endif
 }
 
-bool FileWrite(TFile *f, void *buffer, uint32 len)
+abyss_bool FileWrite(TFile *f, void *buffer, uint32 len)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_write(*f,buffer,len)==(int32)len);
@@ -85,7 +85,7 @@ int32 FileRead(TFile *f, void *buffer, uint32 len)
 #endif
 }
 
-bool FileSeek(TFile *f, uint64 pos, uint32 attrib)
+abyss_bool FileSeek(TFile *f, uint64 pos, uint32 attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_lseek(*f,pos,attrib)!=(-1));
@@ -106,7 +106,7 @@ uint64 FileSize(TFile *f)
 #endif	
 }
 
-bool FileClose(TFile *f)
+abyss_bool FileClose(TFile *f)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_close(*f)!=(-1));
@@ -115,7 +115,7 @@ bool FileClose(TFile *f)
 #endif
 }
 
-bool FileStat(char *filename,TFileStat *filestat)
+abyss_bool FileStat(char *filename,TFileStat *filestat)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_stati64(filename,filestat)!=(-1));
@@ -124,10 +124,10 @@ bool FileStat(char *filename,TFileStat *filestat)
 #endif
 }
 
-bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo)
+abyss_bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo)
 {
 #ifdef ABYSS_WIN32
-	bool ret;
+	abyss_bool ret;
 	char *p=path+strlen(path);
 
 	*p='\\';
@@ -161,14 +161,14 @@ bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo)
 #endif
 }
 
-bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
+abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
 {
 #ifdef ABYSS_WIN32
 
 #ifndef __BORLANDC__
 	return (_findnext(*filefind,fileinfo)!=(-1));
 #else
-   bool ret = FindNextFile( *filefind, &fileinfo->data );
+   abyss_bool ret = FindNextFile( *filefind, &fileinfo->data );
    if( ret )
    {
       LARGE_INTEGER li;

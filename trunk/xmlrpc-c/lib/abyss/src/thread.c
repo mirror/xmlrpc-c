@@ -44,7 +44,7 @@
 ** Thread
 *********************************************************************/
 
-bool ThreadCreate(TThread *t, TThreadProc func, void *arg )
+abyss_bool ThreadCreate(TThread *t, TThreadProc func, void *arg )
 {
 #ifdef ABYSS_WIN32
 	DWORD z;
@@ -90,7 +90,7 @@ bool ThreadCreate(TThread *t, TThreadProc func, void *arg )
 #endif	/* ABYSS_WIN32 */
 }
 
-bool ThreadRun(TThread *t)
+abyss_bool ThreadRun(TThread *t)
 {
 #ifdef ABYSS_WIN32
 	return (ResumeThread(*t)!=0xFFFFFFFF);
@@ -98,7 +98,7 @@ bool ThreadRun(TThread *t)
 	return TRUE;	
 #endif	/* ABYSS_WIN32 */
 }
-bool ThreadStop(TThread *t)
+abyss_bool ThreadStop(TThread *t)
 {
 #ifdef ABYSS_WIN32
 	return (SuspendThread(*t)!=0xFFFFFFFF);
@@ -107,7 +107,7 @@ bool ThreadStop(TThread *t)
 #endif	/* ABYSS_WIN32 */
 }
 
-bool ThreadKill(TThread *t)
+abyss_bool ThreadKill(TThread *t)
 {
 #ifdef ABYSS_WIN32
 	return (TerminateThread(*t,0)!=0);
@@ -150,7 +150,7 @@ void ThreadClose( TThread *t )
 ** Mutex
 *********************************************************************/
 
-bool MutexCreate(TMutex *m)
+abyss_bool MutexCreate(TMutex *m)
 {
 #if defined(ABYSS_WIN32)
 	return ((*m=CreateMutex(NULL,FALSE,NULL))!=NULL);
@@ -161,7 +161,7 @@ bool MutexCreate(TMutex *m)
 #endif	
 }
 
-bool MutexLock(TMutex *m)
+abyss_bool MutexLock(TMutex *m)
 {
 #if defined(ABYSS_WIN32)
 	return (WaitForSingleObject(*m,INFINITE)!=WAIT_TIMEOUT);
@@ -172,7 +172,7 @@ bool MutexLock(TMutex *m)
 #endif
 }
 
-bool MutexUnlock(TMutex *m)
+abyss_bool MutexUnlock(TMutex *m)
 {
 #if defined(ABYSS_WIN32)
 	return ReleaseMutex(*m);
@@ -183,7 +183,7 @@ bool MutexUnlock(TMutex *m)
 #endif
 }
 
-bool MutexTryLock(TMutex *m)
+abyss_bool MutexTryLock(TMutex *m)
 {
 #if defined(ABYSS_WIN32)
 	return (WaitForSingleObject(*m,0)!=WAIT_TIMEOUT);

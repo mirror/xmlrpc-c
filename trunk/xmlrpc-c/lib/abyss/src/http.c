@@ -124,7 +124,7 @@ char *GetMultiLine(char **p)
 		};
 }
 
-bool Eol(char *p)
+abyss_bool Eol(char *p)
 {
 	NextToken(&p);
 
@@ -208,11 +208,11 @@ void RequestFree(TSession *r)
 	StringFree(&(r->header));
 }
 
-bool RequestRead(TSession *r)
+abyss_bool RequestRead(TSession *r)
 {
 	char *n,*t,*p;
 	uint32 vmin,vmaj;
-	bool ret,singleline=FALSE;
+	abyss_bool ret,singleline=FALSE;
 
 	/* Ignore CRLFs in the beginning of the request (RFC2068-P30) */
 	do
@@ -384,7 +384,7 @@ char *RequestHeaderValue(TSession *r,char *name)
 	return (TableFind(&r->request_headers,name));
 }
 
-bool RequestUnescapeURI(TSession *r)
+abyss_bool RequestUnescapeURI(TSession *r)
 {
 	char *x,*y,c,d;
 
@@ -424,7 +424,7 @@ bool RequestUnescapeURI(TSession *r)
 		};
 };
 
-bool RequestValidURI(TSession *r)
+abyss_bool RequestValidURI(TSession *r)
 {
 	char *p;
 
@@ -494,7 +494,7 @@ bool RequestValidURI(TSession *r)
 }
 
 
-bool RequestValidURIPath(TSession *r)
+abyss_bool RequestValidURIPath(TSession *r)
 {
 	uint32 i=0;
 	char *p=r->uri;
@@ -528,7 +528,7 @@ bool RequestValidURIPath(TSession *r)
 	return ((*p==0) && (i>0));
 }
 
-bool RequestAuth(TSession *r,char *credential,char *user,char *pass)
+abyss_bool RequestAuth(TSession *r,char *credential,char *user,char *pass)
 {
 	char *p,*x;
 	char z[80],t[80];
@@ -563,7 +563,7 @@ bool RequestAuth(TSession *r,char *credential,char *user,char *pass)
 ** Range
 *********************************************************************/
 
-bool RangeDecode(char *str,uint64 filesize,uint64 *start,uint64 *end)
+abyss_bool RangeDecode(char *str,uint64 filesize,uint64 *start,uint64 *end)
 {
 	char *ss;
 
@@ -661,7 +661,7 @@ int32 HTTPRead(TSession *s,char *buffer,uint32 len)
 	return 0;
 }
 
-bool HTTPWrite(TSession *s,char *buffer,uint32 len)
+abyss_bool HTTPWrite(TSession *s,char *buffer,uint32 len)
 {
 	if (s->chunkedwrite && s->chunkedwritemode)
 	{
@@ -677,7 +677,7 @@ bool HTTPWrite(TSession *s,char *buffer,uint32 len)
 	return ConnWrite(s->conn,buffer,len);
 }
 
-bool HTTPWriteEnd(TSession *s)
+abyss_bool HTTPWriteEnd(TSession *s)
 {
 	if (!s->chunkedwritemode)
 		return TRUE;
@@ -714,7 +714,7 @@ void ResponseError(TSession *r)
 	ConnWrite(r->conn,z,strlen(z));	
 }
 
-bool ResponseChunked(TSession *r)
+abyss_bool ResponseChunked(TSession *r)
 {
 	/* This is only a hope, things will be real only after a call of ResponseWrite */
 	r->chunkedwrite=(r->versionmajor>=1) && (r->versionminor>=1);
@@ -747,14 +747,14 @@ void ResponseStatusErrno(TSession *r)
 	ResponseStatus(r,code);
 }
 
-bool ResponseAddField(TSession *r,char *name,char *value)
+abyss_bool ResponseAddField(TSession *r,char *name,char *value)
 {
 	return TableAdd(&r->response_headers,name,value);
 }
 
 void ResponseWrite(TSession *r)
 {
-	bool connclose=TRUE;
+	abyss_bool connclose=TRUE;
 	char z[64];
 	TTableItem *ti;
 	uint16 i;
@@ -823,12 +823,12 @@ void ResponseWrite(TSession *r)
 	ConnWrite(r->conn,CRLF,2);	
 }
 
-bool ResponseContentType(TSession *r,char *type)
+abyss_bool ResponseContentType(TSession *r,char *type)
 {
 	return ResponseAddField(r,"Content-type",type);
 }
 
-bool ResponseContentLength(TSession *r,uint64 len)
+abyss_bool ResponseContentLength(TSession *r,uint64 len)
 {
 	char z[32];
 
@@ -851,7 +851,7 @@ void MIMETypeInit()
 	PoolCreate(&_MIMEPool,1024);
 }
 
-bool MIMETypeAdd(char *type,char *ext)
+abyss_bool MIMETypeAdd(char *type,char *ext)
 {
 	uint16 index;
 
@@ -956,7 +956,7 @@ static char *_DateMonth[12]=
 static int32 _DateTimeBias=0;
 static char _DateTimeBiasStr[6]="";
 
-bool DateToString(TDate *tm,char *s)
+abyss_bool DateToString(TDate *tm,char *s)
 {
 	if (mktime(tm)==(time_t)(-1))
 	{
@@ -970,7 +970,7 @@ bool DateToString(TDate *tm,char *s)
 	return TRUE;
 }
 
-bool DateToLogString(TDate *tm,char *s)
+abyss_bool DateToLogString(TDate *tm,char *s)
 {
 	time_t t;
 	TDate d;
@@ -988,7 +988,7 @@ bool DateToLogString(TDate *tm,char *s)
 	return FALSE;
 }
 
-bool DateDecode(char *s,TDate *tm)
+abyss_bool DateDecode(char *s,TDate *tm)
 {
 	uint32 n=0;
 
@@ -1054,7 +1054,7 @@ int32 DateCompare(TDate *d1,TDate *d2)
 	return x;
 }
 
-bool DateFromGMT(TDate *d,time_t t)
+abyss_bool DateFromGMT(TDate *d,time_t t)
 {
 	TDate *dx;
 
@@ -1067,12 +1067,12 @@ bool DateFromGMT(TDate *d,time_t t)
 	return FALSE;
 }
 
-bool DateFromLocal(TDate *d,time_t t)
+abyss_bool DateFromLocal(TDate *d,time_t t)
 {
 	return DateFromGMT(d,t+_DateTimeBias*2);
 }
 
-bool DateInit()
+abyss_bool DateInit()
 {
 	time_t t;
 	TDate gmt,local,*d;

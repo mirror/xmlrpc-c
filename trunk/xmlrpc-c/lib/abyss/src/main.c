@@ -71,7 +71,7 @@ void Answer(TSession *r, uint16 statuscode, char *buffer)
 	HTTPWriteEnd(r);
 }
 
-bool HandleTime(TSession *r)
+abyss_bool HandleTime(TSession *r)
 {
 	char z[50];
 	time_t ltime;
@@ -95,7 +95,7 @@ bool HandleTime(TSession *r)
 	return TRUE;
 }
 
-bool HandleDump(TSession *r)
+abyss_bool HandleDump(TSession *r)
 {
 	char z[50];
 
@@ -108,7 +108,7 @@ bool HandleDump(TSession *r)
 	return TRUE;
 }
 
-bool HandleStatus(TSession *r)
+abyss_bool HandleStatus(TSession *r)
 {
 	uint32 status;
 
@@ -120,7 +120,7 @@ bool HandleStatus(TSession *r)
 	return TRUE;
 }
 
-bool HandleMIMEType(TSession *r)
+abyss_bool HandleMIMEType(TSession *r)
 {
 	char *m;
 
@@ -183,7 +183,7 @@ int main(int argc,char **argv)
 {
 	TServer srv;
 	char *p,*conffile=DEFAULT_CONF_FILE;
-	bool err=FALSE;
+	abyss_bool err=FALSE;
 	char *name=argv[0];
 
 	while (p=*(++argv))

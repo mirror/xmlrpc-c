@@ -136,9 +136,7 @@ typedef unsigned char byte;
 typedef unsigned char uint8;
 typedef char int8;
 
-#ifndef __cplusplus
-typedef int bool;
-#endif
+typedef int abyss_bool;
 
 /*********************************************************************
 ** Buffer
@@ -151,8 +149,8 @@ typedef struct
 	uint32 staticid;
 } TBuffer;
 
-bool BufferAlloc(TBuffer *buf,uint32 memsize);
-bool BufferRealloc(TBuffer *buf,uint32 memsize);
+abyss_bool BufferAlloc(TBuffer *buf,uint32 memsize);
+abyss_bool BufferRealloc(TBuffer *buf,uint32 memsize);
 void BufferFree(TBuffer *buf);
 
 
@@ -166,9 +164,9 @@ typedef struct
 	uint32 size;
 } TString;
 
-bool StringAlloc(TString *s);
-bool StringConcat(TString *s,char *s2);
-bool StringBlockConcat(TString *s,char *s2,char **ref);
+abyss_bool StringAlloc(TString *s);
+abyss_bool StringConcat(TString *s,char *s2);
+abyss_bool StringBlockConcat(TString *s,char *s2,char **ref);
 void StringFree(TString *s);
 char *StringData(TString *s);
 
@@ -181,15 +179,15 @@ typedef struct
 {
 	void **item;
 	uint16 size,maxsize;
-	bool autofree;
+	abyss_bool autofree;
 } TList;
 
 void ListInit(TList *sl);
 void ListInitAutoFree(TList *sl);
 void ListFree(TList *sl);
-bool ListAdd(TList *sl,void *str);
-bool ListAddFromString(TList *list,char *c);
-bool ListFindString(TList *sl,char *str,uint16 *index);
+abyss_bool ListAdd(TList *sl,void *str);
+abyss_bool ListAddFromString(TList *list,char *c);
+abyss_bool ListFindString(TList *sl,char *str,uint16 *index);
 
 
 /*********************************************************************
@@ -210,9 +208,9 @@ typedef struct
 
 void TableInit(TTable *t);
 void TableFree(TTable *t);
-bool TableAdd(TTable *t,char *name,char *value);
-bool TableAddReplace(TTable *t,char *name,char *value);
-bool TableFindIndex(TTable *t,char *name,uint16 *index);
+abyss_bool TableAdd(TTable *t,char *name,char *value);
+abyss_bool TableAddReplace(TTable *t,char *name,char *value);
+abyss_bool TableFindIndex(TTable *t,char *name,uint16 *index);
 char *TableFind(TTable *t,char *name);
 
 
@@ -236,10 +234,10 @@ typedef pthread_t TThread;
 typedef void* (*PTHREAD_START_ROUTINE)(void *);
 #endif	/* ABYSS_WIN32 */
 
-bool ThreadCreate(TThread *t,TThreadProc func,void *arg);
-bool ThreadRun(TThread *t);
-bool ThreadStop(TThread *t);
-bool ThreadKill(TThread *t);
+abyss_bool ThreadCreate(TThread *t,TThreadProc func,void *arg);
+abyss_bool ThreadRun(TThread *t);
+abyss_bool ThreadStop(TThread *t);
+abyss_bool ThreadKill(TThread *t);
 void ThreadWait(uint32 ms);
 void ThreadExit( TThread *t, int ret_value );
 void ThreadClose( TThread *t );
@@ -254,10 +252,10 @@ typedef HANDLE TMutex;
 typedef pthread_mutex_t TMutex;
 #endif	/* ABYSS_WIN32 */
 
-bool MutexCreate(TMutex *m);
-bool MutexLock(TMutex *m);
-bool MutexUnlock(TMutex *m);
-bool MutexTryLock(TMutex *m);
+abyss_bool MutexCreate(TMutex *m);
+abyss_bool MutexLock(TMutex *m);
+abyss_bool MutexUnlock(TMutex *m);
+abyss_bool MutexTryLock(TMutex *m);
 void MutexFree(TMutex *m);
 
 
@@ -280,7 +278,7 @@ typedef struct
 	TMutex mutex;
 } TPool;
 
-bool PoolCreate(TPool *p,uint32 zonesize);
+abyss_bool PoolCreate(TPool *p,uint32 zonesize);
 void PoolFree(TPool *p);
 
 void *PoolAlloc(TPool *p,uint32 size);
@@ -329,26 +327,26 @@ typedef struct in_addr TIPAddr;
 #define IPB3(x)	(((unsigned char *)(&x))[2])
 #define IPB4(x)	(((unsigned char *)(&x))[3])
 
-bool SocketInit();
+abyss_bool SocketInit();
 
-bool SocketCreate(TSocket *s);
-bool SocketClose(TSocket *s);
+abyss_bool SocketCreate(TSocket *s);
+abyss_bool SocketClose(TSocket *s);
 
 uint32 SocketWrite(TSocket *s, char *buffer, uint32 len);
 uint32 SocketRead(TSocket *s, char *buffer, uint32 len);
 uint32 SocketPeek(TSocket *s, char *buffer, uint32 len);
 
-bool SocketConnect(TSocket *s, TIPAddr *addr, uint16 port);
-bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port);
+abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16 port);
+abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port);
 
-bool SocketListen(TSocket *s, uint32 backlog);
-bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip);
+abyss_bool SocketListen(TSocket *s, uint32 backlog);
+abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip);
 
 uint32 SocketError();
 
-uint32 SocketWait(TSocket *s,bool rd,bool wr,uint32 timems);
+uint32 SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32 timems);
 
-bool SocketBlocking(TSocket *s, bool b);
+abyss_bool SocketBlocking(TSocket *s, abyss_bool b);
 uint32 SocketAvailableReadBytes(TSocket *s);
 
 
@@ -434,20 +432,20 @@ typedef struct
 
 typedef int TFile;
 
-bool FileOpen(TFile *f, const char *name,uint32 attrib);
-bool FileOpenCreate(TFile *f, char *name, uint32 attrib);
-bool FileClose(TFile *f);
+abyss_bool FileOpen(TFile *f, const char *name,uint32 attrib);
+abyss_bool FileOpenCreate(TFile *f, char *name, uint32 attrib);
+abyss_bool FileClose(TFile *f);
 
-bool FileWrite(TFile *f, void *buffer, uint32 len);
+abyss_bool FileWrite(TFile *f, void *buffer, uint32 len);
 int32 FileRead(TFile *f, void *buffer, uint32 len);
 
-bool FileSeek(TFile *f, uint64 pos, uint32 attrib);
+abyss_bool FileSeek(TFile *f, uint64 pos, uint32 attrib);
 uint64 FileSize(TFile *f);
 
-bool FileStat(char *filename,TFileStat *filestat);
+abyss_bool FileStat(char *filename,TFileStat *filestat);
 
-bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo);
-bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo);
+abyss_bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo);
+abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo);
 void FileFindClose(TFileFind *filefind);
 
 /*********************************************************************
@@ -466,7 +464,7 @@ typedef struct
 	TList handlers;
 	TList defaultfilenames;
 	void *defaulthandler;
-	bool advertise;
+	abyss_bool advertise;
 #ifdef _UNIX
 	uid_t uid;
 	gid_t gid;
@@ -489,8 +487,8 @@ typedef struct _TConn
 	TSocket socket;
 	TIPAddr peerip;
 	TThread thread;
-	bool connected;
-	bool inUse;
+	abyss_bool connected;
+	abyss_bool inUse;
 	void (*job)(struct _TConn *);
 	char buffer[BUFFER_SIZE];
 } TConn;
@@ -498,16 +496,16 @@ typedef struct _TConn
 TConn *ConnAlloc();
 void ConnFree(TConn *c);
 
-bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *));
-bool ConnProcess(TConn *c);
-bool ConnKill(TConn *c);
+abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *));
+abyss_bool ConnProcess(TConn *c);
+abyss_bool ConnKill(TConn *c);
 
-bool ConnWrite(TConn *c,void *buffer,uint32 size);
-bool ConnRead(TConn *c, uint32 timems);
+abyss_bool ConnWrite(TConn *c,void *buffer,uint32 size);
+abyss_bool ConnRead(TConn *c, uint32 timems);
 void ConnReadInit(TConn *c);
-bool ConnReadLine(TConn *c,char **z,uint32 timems);
+abyss_bool ConnReadLine(TConn *c,char **z,uint32 timems);
 
-bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
+abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
 			void *buffer,uint32 buffersize,uint32 rate);
 
 
@@ -515,7 +513,7 @@ bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
 ** Range
 *********************************************************************/
 
-bool RangeDecode(char *str,uint64 filesize,uint64 *start,uint64 *end);
+abyss_bool RangeDecode(char *str,uint64 filesize,uint64 *start,uint64 *end);
 
 /*********************************************************************
 ** Date
@@ -525,17 +523,17 @@ bool RangeDecode(char *str,uint64 filesize,uint64 *start,uint64 *end);
 
 typedef struct tm TDate;
 
-bool DateToString(TDate *tm,char *s);
-bool DateToLogString(TDate *tm,char *s);
+abyss_bool DateToString(TDate *tm,char *s);
+abyss_bool DateToLogString(TDate *tm,char *s);
 
-bool DateDecode(char *s,TDate *tm);
+abyss_bool DateDecode(char *s,TDate *tm);
 
 int32 DateCompare(TDate *d1,TDate *d2);
 
-bool DateFromGMT(TDate *d,time_t t);
-bool DateFromLocal(TDate *d,time_t t);
+abyss_bool DateFromGMT(TDate *d,time_t t);
+abyss_bool DateFromLocal(TDate *d,time_t t);
 
-bool DateInit();
+abyss_bool DateInit();
 
 /*********************************************************************
 ** Base64
@@ -571,8 +569,8 @@ typedef struct
 	uint16 status;
 	TString header;
 
-	bool keepalive,cankeepalive;
-	bool done;
+	abyss_bool keepalive,cankeepalive;
+	abyss_bool done;
 
 	TServer *server;
 	TConn *conn;
@@ -583,7 +581,7 @@ typedef struct
 
 	TDate date;
 
-	bool chunkedwrite,chunkedwritemode;
+	abyss_bool chunkedwrite,chunkedwritemode;
 } TSession;
 
 /*********************************************************************
@@ -594,32 +592,32 @@ typedef struct
 #define LF		'\n'
 #define CRLF	"\r\n"
 
-bool RequestValidURI(TSession *r);
-bool RequestValidURIPath(TSession *r);
-bool RequestUnescapeURI(TSession *r);
+abyss_bool RequestValidURI(TSession *r);
+abyss_bool RequestValidURIPath(TSession *r);
+abyss_bool RequestUnescapeURI(TSession *r);
 
 char *RequestHeaderValue(TSession *r,char *name);
 
-bool RequestRead(TSession *r);
+abyss_bool RequestRead(TSession *r);
 void RequestInit(TSession *r,TConn *c);
 void RequestFree(TSession *r);
 
-bool RequestAuth(TSession *r,char *credential,char *user,char *pass);
+abyss_bool RequestAuth(TSession *r,char *credential,char *user,char *pass);
 
 /*********************************************************************
 ** Response
 *********************************************************************/
 
-bool ResponseAddField(TSession *r,char *name,char *value);
+abyss_bool ResponseAddField(TSession *r,char *name,char *value);
 void ResponseWrite(TSession *r);
 
-bool ResponseChunked(TSession *s);
+abyss_bool ResponseChunked(TSession *s);
 
 void ResponseStatus(TSession *r,uint16 code);
 void ResponseStatusErrno(TSession *r);
 
-bool ResponseContentType(TSession *r,char *type);
-bool ResponseContentLength(TSession *r,uint64 len);
+abyss_bool ResponseContentType(TSession *r,char *type);
+abyss_bool ResponseContentLength(TSession *r,uint64 len);
 
 void ResponseError(TSession *r);
 
@@ -632,16 +630,16 @@ char *HTTPReasonByStatus(uint16 status);
 
 int32 HTTPRead(TSession *s,char *buffer,uint32 len);
 
-bool HTTPWrite(TSession *s,char *buffer,uint32 len);
-bool HTTPWriteEnd(TSession *s);
+abyss_bool HTTPWrite(TSession *s,char *buffer,uint32 len);
+abyss_bool HTTPWriteEnd(TSession *s);
 
 /*********************************************************************
 ** Server (2/2)
 *********************************************************************/
 
-typedef bool (*URIHandler) (TSession *);
+typedef abyss_bool (*URIHandler) (TSession *);
 
-bool ServerCreate(TServer *srv,char *name,uint16 port,char *filespath,
+abyss_bool ServerCreate(TServer *srv,char *name,uint16 port,char *filespath,
 				  char *logfilename);
 void ServerFree(TServer *srv);
 
@@ -649,10 +647,10 @@ void ServerInit(TServer *srv);
 void ServerRun(TServer *srv);
 void ServerRunOnce(TServer *srv);
 
-bool ServerAddHandler(TServer *srv,URIHandler handler);
+abyss_bool ServerAddHandler(TServer *srv,URIHandler handler);
 void ServerDefaultHandler(TServer *srv,URIHandler handler);
 
-bool LogOpen(TServer *srv, char *filename);
+abyss_bool LogOpen(TServer *srv, char *filename);
 void LogWrite(TServer *srv,char *c);
 void LogClose(TServer *srv);
 
@@ -662,7 +660,7 @@ void LogClose(TServer *srv);
 *********************************************************************/
 
 void MIMETypeInit();
-bool MIMETypeAdd(char *type,char *ext);
+abyss_bool MIMETypeAdd(char *type,char *ext);
 char *MIMETypeFromExt(char *ext);
 char *MIMETypeFromFileName(char *filename);
 char *MIMETypeGuessFromFile(char *filename);
@@ -672,8 +670,8 @@ char *MIMETypeGuessFromFile(char *filename);
 ** Conf
 *********************************************************************/
 
-bool ConfReadMIMETypes(char *filename);
-bool ConfReadServerFile(const char *filename,TServer *srv);
+abyss_bool ConfReadMIMETypes(char *filename);
+abyss_bool ConfReadServerFile(const char *filename,TServer *srv);
 
 
 /*********************************************************************
@@ -688,7 +686,7 @@ void TraceExit(char *fmt,...);
 ** Session
 *********************************************************************/
 
-bool SessionLog(TSession *s);
+abyss_bool SessionLog(TSession *s);
 
 
 #ifdef __cplusplus

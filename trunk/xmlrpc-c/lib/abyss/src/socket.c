@@ -42,7 +42,7 @@
 ** Socket
 *********************************************************************/
 
-bool SocketInit()
+abyss_bool SocketInit()
 {
 #ifdef ABYSS_WIN32
 	WORD wVersionRequested;
@@ -60,7 +60,7 @@ bool SocketInit()
 
 #define RET(x)	return ((x)!=(-1))
 
-bool SocketCreate(TSocket *s)
+abyss_bool SocketCreate(TSocket *s)
 {
 	int32 n=1;
 
@@ -70,7 +70,7 @@ bool SocketCreate(TSocket *s)
 	RET(setsockopt(*s,SOL_SOCKET,SO_REUSEADDR,(char*)&n,sizeof(n)));
 }
 
-bool SocketClose(TSocket *s)
+abyss_bool SocketClose(TSocket *s)
 {
 #ifdef ABYSS_WIN32
 	RET(closesocket(*s));
@@ -104,7 +104,7 @@ uint32 SocketPeek(TSocket *s, char *buffer, uint32 len)
 	return r;
 }
 
-bool SocketConnect(TSocket *s, TIPAddr *addr, uint16 port)
+abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16 port)
 {
 	struct sockaddr_in name;
 
@@ -115,7 +115,7 @@ bool SocketConnect(TSocket *s, TIPAddr *addr, uint16 port)
 	RET(connect(*s,(struct sockaddr *)&name,sizeof(name)));
 }
 
-bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port)
+abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port)
 {
 	struct sockaddr_in name;
 
@@ -129,7 +129,7 @@ bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port)
 	RET(bind(*s,(struct sockaddr *)&name,sizeof(name)));
 }
 
-bool SocketListen(TSocket *s, uint32 backlog)
+abyss_bool SocketListen(TSocket *s, uint32 backlog)
 {
 	int32 n=-1;
 
@@ -139,7 +139,7 @@ bool SocketListen(TSocket *s, uint32 backlog)
 	RET(listen(*s,backlog));
 }
 
-bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
+abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
 {
 	struct sockaddr_in sa;
 	uint32 size=sizeof(sa);
@@ -157,7 +157,7 @@ bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
 	RET(*ns);
 }
 
-uint32 SocketWait(TSocket *s,bool rd,bool wr,uint32 timems)
+uint32 SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32 timems)
 {
 	fd_set rfds,wfds;
 #ifdef ABYSS_WIN32
@@ -201,7 +201,7 @@ uint32 SocketWait(TSocket *s,bool rd,bool wr,uint32 timems)
 		};
 }
 
-bool SocketBlocking(TSocket *s, bool b)
+abyss_bool SocketBlocking(TSocket *s, abyss_bool b)
 {
 	uint32 x=b;
 

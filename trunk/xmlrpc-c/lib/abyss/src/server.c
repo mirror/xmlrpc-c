@@ -70,7 +70,7 @@ int cmpfiledates(const TFileInfo **f1,const TFileInfo **f2)
 	return ((*f1)->time_write-(*f2)->time_write);
 }
 
-bool ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate)
+abyss_bool ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate)
 {
 	TFileInfo fileinfo,*fi;
 	TFileFind findhandle;
@@ -78,8 +78,8 @@ bool ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate)
 	TList list;
 	int16 i;
 	uint32 k;
-	bool text=FALSE;
-	bool ascending=TRUE;
+	abyss_bool text=FALSE;
+	abyss_bool ascending=TRUE;
 	uint16 sort=1;	/* 1=by name, 2=by date */
 	struct tm ftm;
 	TPool pool;
@@ -323,7 +323,7 @@ bool ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate)
 	return TRUE;
 }
 
-bool ServerFileHandler(TSession *r,char *z,TDate *filedate)
+abyss_bool ServerFileHandler(TSession *r,char *z,TDate *filedate)
 {
 	char *mediatype;
 	TFile file;
@@ -428,12 +428,12 @@ bool ServerFileHandler(TSession *r,char *z,TDate *filedate)
 	return TRUE;
 }
 
-bool ServerDefaultHandlerFunc(TSession *r)
+abyss_bool ServerDefaultHandlerFunc(TSession *r)
 {
 	char *p,z[4096];
 	TFileStat fs;
 	uint16 i;
-	bool endingslash=FALSE;
+	abyss_bool endingslash=FALSE;
 	TDate objdate;
 
 	if (!RequestValidURIPath(r))
@@ -543,7 +543,7 @@ bool ServerDefaultHandlerFunc(TSession *r)
 			return ServerFileHandler(r,z,NULL);
 }
 
-bool ServerCreate(TServer *srv,char *name,uint16 port,char *filespath,
+abyss_bool ServerCreate(TServer *srv,char *name,uint16 port,char *filespath,
 				  char *logfilename)
 {
 	srv->name=strdup(name);
@@ -583,7 +583,7 @@ void ServerFunc(TConn *c)
 {
 	TSession r;
 	uint32 i,ka;
-	bool treated;
+	abyss_bool treated;
 	URIHandler *hl=(URIHandler *)(c->server)->handlers.item;
 
 	ka=c->server->keepalivemaxconn;
@@ -797,7 +797,7 @@ void ServerRunOnce(TServer *srv)
               TraceMsg("Socket Error=%d\n", SocketError());
 }
 
-bool ServerAddHandler(TServer *srv,URIHandler handler)
+abyss_bool ServerAddHandler(TServer *srv,URIHandler handler)
 {
 	return ListAdd(&srv->handlers,handler);
 }
@@ -807,7 +807,7 @@ void ServerDefaultHandler(TServer *srv,URIHandler handler)
 	srv->defaulthandler=handler;
 }
 
-bool LogOpen(TServer *srv, char *filename)
+abyss_bool LogOpen(TServer *srv, char *filename)
 {
 	if (FileOpenCreate(&(srv->logfile),filename,O_WRONLY | O_APPEND))
 		if (MutexCreate(&(srv->logmutex)))
@@ -845,7 +845,7 @@ void LogClose(TServer *srv)
 	MutexFree(&(srv->logmutex));
 }
 
-bool SessionLog(TSession *s)
+abyss_bool SessionLog(TSession *s)
 {
 	char z[1024];
 	uint32 n;

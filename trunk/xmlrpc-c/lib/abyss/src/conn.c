@@ -59,7 +59,7 @@ uint32 THREAD_ENTRYTYPE ConnJob(TConn *c)
 	return 0;
 }
 
-bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *))
+abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *))
 {
 	c->socket=*s;
 	c->buffersize=c->bufferpos=0;
@@ -69,7 +69,7 @@ bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *))
 	return ThreadCreate(&(c->thread),(TThreadProc)ConnJob,c);
 }
 
-bool ConnProcess(TConn *c)
+abyss_bool ConnProcess(TConn *c)
 {
 /******* Must check this undef *****/
 #ifndef ABYSS_WIN32
@@ -80,7 +80,7 @@ bool ConnProcess(TConn *c)
 	return ThreadRun(&(c->thread));
 }
 
-bool ConnKill(TConn *c)
+abyss_bool ConnKill(TConn *c)
 {
 	c->connected=FALSE;
 	return ThreadKill(&(c->thread));
@@ -100,7 +100,7 @@ void ConnReadInit(TConn *c)
 	c->inbytes=c->outbytes=0;
 }
 
-bool ConnRead(TConn *c,uint32 timeout)
+abyss_bool ConnRead(TConn *c,uint32 timeout)
 {
 	while (SocketWait(&(c->socket),TRUE,FALSE,timeout*1000)==1)
 	{
@@ -141,13 +141,13 @@ bool ConnRead(TConn *c,uint32 timeout)
 	return FALSE;
 }
 			
-bool ConnWrite(TConn *c,void *buffer,uint32 size)
+abyss_bool ConnWrite(TConn *c,void *buffer,uint32 size)
 {
 	c->outbytes+=size;
 	return SocketWrite(&(c->socket),buffer,size);
 }
 
-bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
+abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
 			void *buffer,uint32 buffersize,uint32 rate)
 {
 	uint64 y,bytesread=0;
@@ -188,10 +188,10 @@ bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
 	return (bytesread>end-start);
 }
 
-bool ConnReadLine(TConn *c,char **z,uint32 timeout)
+abyss_bool ConnReadLine(TConn *c,char **z,uint32 timeout)
 {
 	char *p,*t;
-	bool first=TRUE;
+	abyss_bool first=TRUE;
 	uint32 to,start;
 
 	p=*z=c->buffer+c->bufferpos;
