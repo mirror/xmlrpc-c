@@ -269,92 +269,96 @@ xmlrpc_registry_set_preinvoke_method(xmlrpc_env *env,
 */
 
 static void
+callPreinvokeMethodIfAny(xmlrpc_env *      const envP,
+                         xmlrpc_registry * const registryP,
+                         const char *      const methodName,
+                         xmlrpc_value *    const paramArrayP) {
+
+    /* Get the preinvoke method, if it is set. */
+    if (registryP->_preinvoke_method) {
+        xmlrpc_preinvoke_method preinvoke_method;
+        void * user_data;
+
+        xmlrpc_parse_value(envP, registryP->_preinvoke_method, "(pp)",
+                           &preinvoke_method, &user_data);
+        if (!envP->fault_occurred)
+            (*preinvoke_method)(envP, methodName,
+                                paramArrayP, user_data);
+    }
+}
+
+
+
+static void
+callDefaultMethod(xmlrpc_env *    const envP,
+                  xmlrpc_value *  const defaultMethodInfo,
+                  const char *    const methodName,
+                  xmlrpc_value *  const paramArrayP,
+                  xmlrpc_value ** const resultPP) {
+
+    xmlrpc_default_method default_method;
+    void * user_data;
+
+    xmlrpc_parse_value(envP, defaultMethodInfo, "(pp)",
+                       &default_method, &user_data);
+
+    if (!envP->fault_occurred)
+        *resultPP = (*default_method)(envP, NULL, methodName,
+                                      paramArrayP, user_data);
+}
+    
+
+
+static void
+callNamedMethod(xmlrpc_env *    const envP,
+                xmlrpc_value *  const methodInfo,
+                xmlrpc_value *  const paramArrayP,
+                xmlrpc_value ** const resultPP) {
+
+    xmlrpc_method method;
+    void * user_data;
+    
+    xmlrpc_parse_value(envP, methodInfo, "(pp*)", &method, &user_data);
+    if (!envP->fault_occurred)
+        *resultPP = (*method)(envP, paramArrayP, user_data);
+}
+
+
+
+static void
 dispatch_call(xmlrpc_env *      const envP, 
               xmlrpc_registry * const registryP,
               const char *      const methodName, 
-              xmlrpc_value *    const paramArray,
+              xmlrpc_value *    const paramArrayP,
               xmlrpc_value **   const resultPP) {
 
-    xmlrpc_value * method_info;
-    xmlrpc_value * resultP;
-    void * method_ptr;
-    void * user_data;
-    xmlrpc_preinvoke_method preinvoke_method;
-    xmlrpc_method method;
-    xmlrpc_default_method default_method;
+    callPreinvokeMethodIfAny(envP, registryP, methodName, paramArrayP);
+    if (!envP->fault_occurred) {
+        xmlrpc_value * method_info;
 
-    /* Error-handling preconditions. */
-    resultP = NULL;
-
-    /* Get the preinvoke method, if it is set. */
-    if (registryP->_preinvoke_method != NULL) {
-        xmlrpc_parse_value(envP, registryP->_preinvoke_method, "(pp)",
-               &method_ptr, &user_data);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        preinvoke_method = (xmlrpc_preinvoke_method) method_ptr;
-    } else
-        preinvoke_method = NULL;
-    
-    /* Look up the method info for the specified method. */
-    method_info = xmlrpc_struct_get_value(envP, registryP->_methods,
-                                          methodName);
-    if (envP->fault_occurred) {
-        if (registryP->_default_method != NULL) {
-            
-            /* Clean up after the fault. */
-            xmlrpc_env_clean(envP);
-            xmlrpc_env_init(envP);
-            
-            /* Call our preinvoke method, if it's set */
-            if (preinvoke_method) {
-                (*preinvoke_method)(envP, methodName,
-                                    paramArray, user_data);
-                XMLRPC_FAIL_IF_FAULT(envP);
-            }
-            
-            /* Get our default method. */
-            xmlrpc_parse_value(envP, registryP->_default_method, "(pp)",
-                               &method_ptr, &user_data);
-            XMLRPC_FAIL_IF_FAULT(envP);
-            default_method = (xmlrpc_default_method) method_ptr;
-        
-            /* Call our default method. */
-            resultP = (*default_method)(envP, NULL, methodName,
-                                       paramArray, user_data);
-            XMLRPC_FAIL_IF_FAULT(envP);
-        } else {
-            /* No matching method, and no default. */
-            XMLRPC_FAIL1(envP, XMLRPC_NO_SUCH_METHOD_ERROR,
-                         "Method %s not defined", methodName);
+        /* Look up the method info for the named method. */
+        xmlrpc_struct_find_value(envP, registryP->_methods,
+                                 methodName, &method_info);
+        if (!envP->fault_occurred) {
+            if (method_info)
+                callNamedMethod(envP, method_info, paramArrayP, resultPP);
+            else {
+                if (registryP->_default_method)
+                    callDefaultMethod(envP, registryP->_default_method, 
+                                      methodName, paramArrayP,
+                                      resultPP);
+                else {
+                    /* No matching method, and no default. */
+                    xmlrpc_env_set_fault_formatted(
+                        envP, XMLRPC_NO_SUCH_METHOD_ERROR,
+                        "Method %s not defined", methodName);
+                }
+            } 
         }
-    } else {
-        /* Call our preinvoke method, if it's set */
-        if (preinvoke_method) {
-            (*preinvoke_method)(envP, methodName,
-                                paramArray, user_data);
-            XMLRPC_FAIL_IF_FAULT(envP);
-        }
-        
-        /* Extract our method information for the matching method. */
-        xmlrpc_parse_value(envP, method_info, "(pp*)", 
-                           &method_ptr, &user_data);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        method = (xmlrpc_method) method_ptr;
-        
-        /* Call the method. */
-        resultP = (*method)(envP, paramArray, user_data);
-        XMLRPC_FAIL_IF_FAULT(envP);
     }
-
- cleanup:
-    XMLRPC_ASSERT((resultP && !envP->fault_occurred) ||
-                  (!resultP && envP->fault_occurred));
-    
-    if (envP->fault_occurred) {
-        if (resultP)
-            xmlrpc_DECREF(resultP);
-    }
-    *resultPP = resultP;
+    /* For backward compatibility, for sloppy users: */
+    if (envP->fault_occurred)
+        *resultPP = NULL;
 }
 
 
@@ -362,9 +366,7 @@ dispatch_call(xmlrpc_env *      const envP,
 /*=========================================================================
 **  xmlrpc_registry_process_call
 **=========================================================================
-**  See xmlrpc.h for more documentation.
 **
-**  We should really add support for default handlers and other niftyness.
 */
 
 xmlrpc_mem_block *
@@ -393,7 +395,7 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
 
         xmlrpc_parse_call(&fault, xml_data, xml_len, 
                           &methodName, &paramArray);
-        
+
         if (!fault.fault_occurred) {
             xmlrpc_value * result;
             

@@ -194,8 +194,11 @@ xmlrpc_env_set_fault(xmlrpc_env * const env,
                      const char * const faultDescription);
 
 /* The same as the above, but using a printf-style format string. */
-void xmlrpc_env_set_fault_formatted (xmlrpc_env* env, int code,
-                     char *format, ...);
+void 
+xmlrpc_env_set_fault_formatted (xmlrpc_env * const envP, 
+                                int          const code,
+                                const char * const format, 
+                                ...);
 
 /* A simple debugging assertion. */
 #define XMLRPC_ASSERT_ENV_OK(env) \
@@ -351,18 +354,18 @@ void xmlrpc_mem_block_append
 **  An XML-RPC value (of any type).
 */
 
-#define XMLRPC_TYPE_INT      (0)
-#define XMLRPC_TYPE_BOOL     (1)
-#define XMLRPC_TYPE_DOUBLE   (2)
-#define XMLRPC_TYPE_DATETIME (3)
-#define XMLRPC_TYPE_STRING   (4)
-#define XMLRPC_TYPE_BASE64   (5)
-#define XMLRPC_TYPE_ARRAY    (6)
-#define XMLRPC_TYPE_STRUCT   (7)
-#define XMLRPC_TYPE_C_PTR    (8)
-#define XMLRPC_TYPE_DEAD     (0xDEAD)
-
-typedef int xmlrpc_type;
+typedef enum {
+    XMLRPC_TYPE_INT      = 0,
+    XMLRPC_TYPE_BOOL     = 1,
+    XMLRPC_TYPE_DOUBLE   = 2,
+    XMLRPC_TYPE_DATETIME = 3,
+    XMLRPC_TYPE_STRING   = 4,
+    XMLRPC_TYPE_BASE64   = 5,
+    XMLRPC_TYPE_ARRAY    = 6,
+    XMLRPC_TYPE_STRUCT   = 7,
+    XMLRPC_TYPE_C_PTR    = 8,
+    XMLRPC_TYPE_DEAD     = 0xDEAD,
+} xmlrpc_type;
 
 /* These are *always* allocated on the heap. No exceptions. */
 typedef struct _xmlrpc_value xmlrpc_value;
@@ -491,10 +494,34 @@ xmlrpc_struct_has_key_v(xmlrpc_env *   env,
 #endif
 
 
-/* Returns the value in 'strct' associated with 'key'.
-** Does not increment the reference count of the returned value.
-** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct.
-** Sets XMLRPC_INDEX_ERROR if 'key' is not in 'strct'. */
+void
+xmlrpc_struct_find_value(xmlrpc_env *    const envP,
+                         xmlrpc_value *  const structP,
+                         const char *    const key,
+                         xmlrpc_value ** const valuePP);
+
+
+void
+xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
+                           xmlrpc_value *  const structP,
+                           xmlrpc_value *  const keyP,
+                           xmlrpc_value ** const valuePP);
+
+void
+xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
+                           xmlrpc_value *  const structP,
+                           xmlrpc_value *  const keyP,
+                           xmlrpc_value ** const valuePP);
+
+void
+xmlrpc_struct_read_value(xmlrpc_env *    const envP,
+                         xmlrpc_value *  const strctP,
+                         const char *    const key,
+                         xmlrpc_value ** const valuePP);
+
+/* The "get_value" functions are deprecated.  Use the "find_value"
+   and "read_value" functions instead.
+*/
 xmlrpc_value * 
 xmlrpc_struct_get_value(xmlrpc_env *   const envP,
                         xmlrpc_value * const strctP,
@@ -509,15 +536,6 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                           xmlrpc_value * const strctP,
                           const char *   const key, 
                           size_t         const key_len);
-
-#if 0
-/* Not implemented yet, but needed for completeness. */
-xmlrpc_value *
-xmlrpc_struct_get_value_v(xmlrpc_env *   env, 
-                          xmlrpc_value * strct,
-                          xmlrpc_value * const keyval);
-#endif
-
 
 /* Set the value associated with 'key' in 'strct' to 'value'.
 ** Increments the reference count of value.

@@ -221,11 +221,181 @@ xmlrpc_struct_has_key_n(xmlrpc_env   * const envP,
 
 
 /*=========================================================================
-**  xmlrpc_struct_get_value
+**  xmlrpc_struct_find_value...
 **=========================================================================
-**  Given a key, retrieve a value from the struct. If the key is not
-**  present, set a fault and return NULL.
+**  These functions look up a specified key value in a specified struct.
+**  If it exists, they return the value of the struct member.  If not,
+**  they return a NULL to indicate such.
 */
+
+/* It would be a nice extension to be able to look up a key that is
+   not a text string.
+*/
+
+void
+xmlrpc_struct_find_value(xmlrpc_env *    const envP,
+                         xmlrpc_value *  const structP,
+                         const char *    const key,
+                         xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+  Given a key, retrieve a value from the struct.  If the key is not
+  present, return NULL as *valuePP.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(structP);
+    XMLRPC_ASSERT_PTR_OK(key);
+    
+    if (structP->_type != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Value is not a struct.  It is type #%d",
+            structP->_type);
+    else {
+        int index;
+
+        /* Get our member index. */
+        index = find_member(structP, key, strlen(key));
+        if (index < 0)
+            *valuePP = NULL;
+        else {
+            _struct_member * const members =
+                XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+            *valuePP = members[index].value;
+            
+            XMLRPC_ASSERT_VALUE_OK(*valuePP);
+            
+            xmlrpc_INCREF(*valuePP);
+        }
+    }
+}
+
+
+
+void
+xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
+                           xmlrpc_value *  const structP,
+                           xmlrpc_value *  const keyP,
+                           xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+  Given a key, retrieve a value from the struct.  If the key is not
+  present, return NULL as *valuePP.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(structP);
+    XMLRPC_ASSERT_VALUE_OK(keyP);
+    
+    if (structP->_type != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Value is not a struct.  It is type #%d",
+            structP->_type);
+    else {
+        if (keyP->_type != XMLRPC_TYPE_STRING)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_TYPE_ERROR, "Key value is not a string.  "
+                "It is type #%d",
+                keyP->_type);
+        else {
+            int index;
+
+            /* Get our member index. */
+            index = find_member(structP, 
+                                XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block),
+                                XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block));
+            if (index < 0)
+                *valuePP = NULL;
+            else {
+                _struct_member * const members =
+                    XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+                *valuePP = members[index].value;
+                
+                XMLRPC_ASSERT_VALUE_OK(*valuePP);
+                
+                xmlrpc_INCREF(*valuePP);
+            }
+        }
+    }
+}
+
+
+
+/*=========================================================================
+**  xmlrpc_struct_read_value...
+**=========================================================================
+**  These fail if no member with the specified key exists.
+**  Otherwise, they are the same as xmlrpc_struct_find_value...
+*/
+
+void
+xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
+                           xmlrpc_value *  const structP,
+                           xmlrpc_value *  const keyP,
+                           xmlrpc_value ** const valuePP) {
+
+    xmlrpc_struct_find_value_v(envP, structP, keyP, valuePP);
+
+    if (*valuePP == NULL) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
+            XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
+            XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block));
+    }
+}
+
+
+
+void
+xmlrpc_struct_read_value(xmlrpc_env *    const envP,
+                         xmlrpc_value *  const structP,
+                         const char *    const key,
+                         xmlrpc_value ** const valuePP) {
+
+    xmlrpc_struct_find_value(envP, structP, key, valuePP);
+    
+    if (*valuePP == NULL) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%s'",
+            key);
+        /* We should fix the error message to format the key for display */
+    }
+}
+
+
+
+/*=========================================================================
+**  xmlrpc_struct_get_value...
+**=========================================================================
+**  These are for backward compatibility.  They used to be the only ones.
+**  They're deprecated because they don't acquire a reference to the
+**  value they return.
+*/
+
+xmlrpc_value * 
+xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
+                          xmlrpc_value * const structP,
+                          const char *   const key, 
+                          size_t         const keyLen) {
+
+    xmlrpc_value * retval;
+    xmlrpc_value * keyP;
+    
+    keyP = xmlrpc_build_value(envP, "s#", key, keyLen);
+    if (!envP->fault_occurred) {
+        xmlrpc_struct_find_value_v(envP, structP, keyP, &retval);
+
+        if (retval == NULL) {
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
+                keyLen, key);
+            /* We should fix the error message to format the key for display */
+        } else
+            /* For backward compatibility.  */
+            xmlrpc_DECREF(retval);
+
+        xmlrpc_DECREF(keyP);
+    }
+    return retval;
+}
+
+
 
 xmlrpc_value * 
 xmlrpc_struct_get_value(xmlrpc_env *   const envP,
@@ -236,52 +406,6 @@ xmlrpc_struct_get_value(xmlrpc_env *   const envP,
     return xmlrpc_struct_get_value_n(envP, strctP, key, strlen(key));
 }
 
-
-
-xmlrpc_value * 
-xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
-                          xmlrpc_value * const strctP,
-                          const char *   const key, 
-                          size_t         const key_len) {
-
-    int index;
-    _struct_member *members;
-    xmlrpc_value *retval;
-
-    /* Suppress a compiler warning about uninitialized variables. */
-    retval = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_VALUE_OK(strctP);
-    XMLRPC_ASSERT(key != NULL);
-    
-    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
-    
-    /* Get our member index. */
-    index = find_member(strctP, key, key_len);
-    if (index < 0) {
-        /* Report the error.
-        ** XXX - This is dangerous code (because some cases happen so
-        ** infrequently that they're hard to test), but the debugging help
-        ** is invaluable. So we really need it; just be very careful if you
-        ** change it.
-        ** XXX - We report a misleading error message if the key contains
-        ** '\0' characters.) */
-        XMLRPC_FAIL2(envP, XMLRPC_INDEX_ERROR,
-                     "No struct member %.*s...", key_len, key);
-    }
-
-    /* Recover our actual value. */
-    members = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
-    retval = members[index].value;
-
-    XMLRPC_ASSERT_VALUE_OK(retval);
-
-cleanup:
-    if (envP->fault_occurred)
-        return NULL;
-    return retval;
-}
 
 
 /*=========================================================================
