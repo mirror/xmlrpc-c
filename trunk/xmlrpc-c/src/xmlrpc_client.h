@@ -134,9 +134,9 @@ xmlrpc_server_info_set_basic_auth (xmlrpc_env *env,
 
 xmlrpc_value * 
 xmlrpc_client_call(xmlrpc_env * const envP,
-                   const char *       const server_url,
-                   const char *       const method_name,
-                   const char *       const format,
+                   const char * const server_url,
+                   const char * const method_name,
+                   const char * const format,
                    ...);
 
 xmlrpc_value * 

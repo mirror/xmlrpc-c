@@ -36,7 +36,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
 
 /*=========================================================================
@@ -46,8 +46,20 @@ extern "C" {
 **  to platform.
 */
 
+typedef signed int xmlrpc_int;  
+    /* An integer of the type defined by XML-RPC <int>; i.e. 32 bit */
 typedef signed int xmlrpc_int32;
+    /* An integer of the type defined by XML-RPC <int4>; i.e. 32 bit */
 typedef int xmlrpc_bool;
+    /* A boolean (of the type defined by XML-RPC <boolean>, but there's
+       really only one kind)
+    */
+typedef double xmlrpc_double;
+    /* A double precision floating point number as defined by
+       XML-RPC <float>.  But the C "double" type is universally the same,
+       so it's probably clearer just to use that.  This typedef is here 
+       for mathematical completeness.
+    */
 
 #define XMLRPC_INT32_MAX (2147483647)
 #define XMLRPC_INT32_MIN (-XMLRPC_INT32_MAX - 1)
@@ -274,8 +286,8 @@ void xmlrpc_mem_block_resize
 void xmlrpc_mem_block_append
     (xmlrpc_env* env, xmlrpc_mem_block* block, void *data, size_t len);
 
-/* A very lighweight "template" system for creating typed blocks of
-** memory. This is not part of the normal public API, but users are
+/* A very lightweight "template" system for creating typed blocks of
+** memory.  This is not part of the normal public API, but users are
 ** welcome to use it if they wish. */
 #define XMLRPC_TYPED_MEM_BLOCK_NEW(type,env,size) \
     xmlrpc_mem_block_new((env), sizeof(type) * (size))
@@ -403,7 +415,9 @@ int index,
                                   xmlrpc_value* value);
 */
 
-/* Create a new struct. */
+/* Create a new struct.  Deprecated.  xmlrpc_build_value() is the
+   general way to create an xmlrpc_value, including an empty struct.
+*/
 xmlrpc_value *
 xmlrpc_struct_new(xmlrpc_env * env);
 
@@ -420,12 +434,24 @@ xmlrpc_struct_has_key(xmlrpc_env   * env,
                       xmlrpc_value * strct, 
                       char *         key);
 
-/* The same as the above, but the key may contain zero bytes. */
+/* The same as the above, but the key may contain zero bytes.
+   Deprecated.  xmlrpc_struct_get_value_v() is more general, and this
+   case is not common enough to warrant a shortcut.
+*/
 int
 xmlrpc_struct_has_key_n(xmlrpc_env   * env,
                         xmlrpc_value * strct,
                         char         * key, 
                         size_t         key_len);
+
+#if 0
+/* Not implemented yet, but needed for completeness. */
+int
+xmlrpc_struct_has_key_v(xmlrpc_env *   env, 
+                        xmlrpc_value * strct,
+                        xmlrpc_value * const keyval);
+#endif
+
 
 /* Returns the value in 'strct' associated with 'key'.
 ** Does not increment the reference count of the returned value.
@@ -436,12 +462,24 @@ xmlrpc_struct_get_value(xmlrpc_env   * env,
                         xmlrpc_value * strct,
                         char *         key);
 
-/* The same as above, but the key may contain zero bytes. */
+/* The same as above, but the key may contain zero bytes. 
+   Deprecated.  xmlrpc_struct_get_value_v() is more general, and this
+   case is not common enough to warrant a shortcut.
+*/
 xmlrpc_value *
 xmlrpc_struct_get_value_n(xmlrpc_env *   env, 
                           xmlrpc_value * strct,
                           char *         key, 
                           size_t         key_len);
+
+#if 0
+/* Not implemented yet, but needed for completeness. */
+xmlrpc_value *
+xmlrpc_struct_get_value_v(xmlrpc_env *   env, 
+                          xmlrpc_value * strct,
+                          xmlrpc_value * const keyval);
+#endif
+
 
 /* Set the value associated with 'key' in 'strct' to 'value'.
 ** Increments the reference count of value.
@@ -452,7 +490,10 @@ xmlrpc_struct_set_value(xmlrpc_env *   const env,
                         const char *   const key,
                         xmlrpc_value * const value);
 
-/* The same as above, but the key may contain zero bytes. */
+/* The same as above, but the key may contain zero bytes.  Deprecated.
+   The general way to set a structure value is xmlrpc_struct_set_value_v(),
+   and this case is not common enough to deserve a shortcut.
+*/
 void 
 xmlrpc_struct_set_value_n(xmlrpc_env *    const env,
                           xmlrpc_value *  const strct,
@@ -483,14 +524,8 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
 
 
 /*=========================================================================
-**  Serialization
-**=========================================================================
-**  These routines convert xmlrpc_values into various kinds of strings.
-**  You are responsible for allocating the 'output' block before you call
-**  these functions, and deallocating it afterward.
-**  You are, of course, responsible for deallocating any xmlrpc_values
-**  which you pass to these functions.
-*/
+**  Encoding XML
+**=======================================================================*/
 
 /* Serialize an XML value without any XML header. This is primarily used
 ** for testing purposes. */
@@ -527,10 +562,8 @@ xmlrpc_serialize_fault(xmlrpc_env *       env,
 
 
 /*=========================================================================
-**  Parsing
-**=========================================================================
-**  These routines convert XML into requests and responses.
-*/
+**  Decoding XML
+**=======================================================================*/
 
 /* Parse an XML-RPC call. If an error occurs, set a fault and set
 ** the output variables to NULL.
@@ -552,145 +585,6 @@ xmlrpc_parse_response(xmlrpc_env * env,
                       size_t       xml_len);
 
 
-/*=========================================================================
-**  XML-RPC Server Method Registry
-**=========================================================================
-**  A method registry maintains a list of functions, and handles
-**  dispatching. To build an XML-RPC server, just add a communications
-**  protocol. :-)
-**
-**  Methods are C functions which take some combination of the following
-**  parameters. All pointers except user_data belong to the library, and
-**  must not be freed by the callback or used after the callback returns.
-**
-**  env:          An XML-RPC error-handling environment. No faults will be
-**                set when the function is called. If an error occurs,
-**                set an appropriate fault and return NULL. (If a fault is
-**                set, the NULL return value will be enforced!)
-**  host:         The 'Host:' header passed by the XML-RPC client, or NULL,
-**                if no 'Host:' header has been provided.
-**  method_name:  The name used to call this method.
-**  user_data:    The user_data used to register this method.
-**  param_array:  The parameters passed to this function, stored in an
-**                XML-RPC array. You are *not* responsible for calling
-**                xmlrpc_DECREF on this array.
-**
-**  Return value: If no fault has been set, the function must return a
-**                valid xmlrpc_value. This will be serialized, returned
-**                to the caller, and xmlrpc_DECREF'd.
-*/
-
-/* A function to call before invoking a method for doing things like access
-** control or sanity checks.  If a fault is set from this function, the
-** method will not be called and the fault will be returned. */
-typedef void
-(*xmlrpc_preinvoke_method)(xmlrpc_env *   env,
-                           char *         method_name,
-                           xmlrpc_value * param_array,
-                           void *         user_data);
-
-/* An ordinary method. */
-typedef xmlrpc_value *
-(*xmlrpc_method)(xmlrpc_env *   env,
-                 xmlrpc_value * param_array,
-                 void *         user_data);
-
-/* A default method to call if no method can be found. */
-typedef xmlrpc_value *
-(*xmlrpc_default_method)(xmlrpc_env *   env,
-                         char *         host,
-                         char *         method_name,
-                         xmlrpc_value * param_array,
-                         void *         user_data);
-
-/* Our registry structure. This has no public members. */
-typedef struct _xmlrpc_registry xmlrpc_registry;
-
-/* Create a new method registry. */
-xmlrpc_registry *
-xmlrpc_registry_new(xmlrpc_env * env);
-
-/* Delete a method registry. */
-void
-xmlrpc_registry_free(xmlrpc_registry * registry);
-
-/* Disable introspection. By default, the xmlrpc_registry has built-in
-** support for introspection. If like to make nosy people work harder,
-** your can turn this off. */
-void
-xmlrpc_registry_disable_introspection(xmlrpc_registry * registry);
-
-/* Register a method. The host parameter must be NULL (for now). You
-** are responsible for owning and managing user_data. The registry
-** will make internal copies of any other pointers it needs to
-** keep around. */
-void
-xmlrpc_registry_add_method(xmlrpc_env *      env,
-                           xmlrpc_registry * registry,
-                           const char *      host,
-                           const char *      method_name,
-                           xmlrpc_method     method,
-                           void *            user_data);
-
-/* As above, but allow the user to supply introspection information. 
-**
-** Signatures use their own little description language. It consists
-** of one-letter type code (similar to the ones used in xmlrpc_parse_value)
-** for the result, a colon, and zero or more one-letter type codes for
-** the parameters. For example:
-**   i:ibdsAS86
-** If a function has more than one possible prototype, separate them with
-** commas:
-**   i:,i:s,i:ii
-** If the function signature can't be represented using this language,
-** pass a single question mark:
-**   ?
-** Help strings are ASCII text, and may contain HTML markup. */
-void
-xmlrpc_registry_add_method_w_doc(xmlrpc_env *      env,
-                                 xmlrpc_registry * registry,
-                                 const char *      host,
-                                 const char *      method_name,
-                                 xmlrpc_method     method,
-                                 void *            user_data,
-                                 const char *      signature,
-                                 const char *      help);
-
-/* Given a registry, a host name, and XML data; parse the <methodCall>,
-** find the appropriate method, call it, serialize the response, and
-** return it as an xmlrpc_mem_block. Most errors will be serialized
-** as <fault> responses. If a *really* bad error occurs, set a fault and
-** return NULL. (Actually, we currently give up with a fatal error,
-** but that should change eventually.)
-** The caller is responsible for destroying the memory block. */
-xmlrpc_mem_block *
-xmlrpc_registry_process_call(xmlrpc_env *      env,
-                             xmlrpc_registry * registry,
-                             char *            host,
-                             char *            xml_data,
-                             size_t            xml_len);
-
-/* Define a default method for the specified registry.  This will be invoked
-** if no other method matches.  The user_data pointer is property of the
-** application, and will not be freed or manipulated by the registry. */
-void
-xmlrpc_registry_set_default_method(xmlrpc_env *          env,
-                                   xmlrpc_registry *     registry,
-                                   xmlrpc_default_method handler,
-                                   void *                user_data);
-
-/* Define a preinvoke method for the specified registry.  This function will
-** be called before any method (either the default or a registered one) is
-** invoked.  Applications can use this to do things like access control or
-** sanity checks.  The user_data pointer is property of the application,
-** and will not be freed or manipulated by the registry. */
-void
-xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            env,
-                                     xmlrpc_registry *       registry,
-                                     xmlrpc_preinvoke_method method,
-                                     void *                  user_data);
-
-                    
 /*=========================================================================
 **  XML-RPC Base64 Utilities
 **=========================================================================
@@ -773,7 +667,13 @@ char *xmlrpc_authcookie(void);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif
 
-#endif /* _XMLRPC_H_ */
+/* In the days before xmlrpc_server.h existed, some of what's in it was
+   in here.  For backward compatibility, we need to include it here, even
+   though it really isn't logical to do so.
+*/
+#include <xmlrpc_server.h>
+
+#endif
 

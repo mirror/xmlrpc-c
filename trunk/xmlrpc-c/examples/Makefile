@@ -27,16 +27,16 @@ LDFLAGS = $(LADD)
 
 CLIENTPROGS_C = \
   synch_client \
-  asynch_client \
   auth_client \
   xmlrpc_sample_add_client \
+  xmlrpc_asynch_client \
   query-meerkat \
 
-CLIENTPROGS_CPP = \
+PROGS_CPP = \
   meerkat-app-list \
   interop-client \
 
-CGICLIENTPROGS = \
+CGISERVERPROGS = \
   sample-cgi.cgi \
   interop-cgi.cgi \
 
@@ -47,10 +47,10 @@ SERVERPROGS = \
 PROGS = $(CLIENTPROGS_C) $(SERVERPROGS)
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
-  PROGS += $(CLIENTPROGS_CPP) 
+  PROGS += $(PROGS_CPP) 
 endif
 ifeq ($(ENABLE_CGI_SERVER),yes)
-  PROGS += $(CGICLIENTPROGS) 
+  PROGS += $(CGISERVERPROGS) 
 endif
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
@@ -67,8 +67,11 @@ LIBXMLRPC = $(SRCDIR)/src/.libs/libxmlrpc.a $(LIBXML)
 LIBXMLRPC_CPP = $(SRCDIR)/src/libxmlrpc_cpp.a
 LIBCLIENT = $(SRCDIR)/src/.libs/libxmlrpc_client.a \
   $(LIBWWW_LDADD) $(LIBXMLRPC)
-LIBSERVER = $(SRCDIR)/src/.libs/libxmlrpc_abyss_server.a \
-  $(LIBABYSS) $(LIBXMLRPC)
+LIBSERVER = \
+  $(SRCDIR)/src/.libs/libxmlrpc_abyss_server.a \
+  $(LIBABYSS) \
+  $(SRCDIR)/src/.libs/libxmlrpc_server.a \
+  $(LIBXMLRPC)
 LIBCGI = $(SRCDIR)/src/.libs/libxmlrpc_cgi.a $(LIBXMLRPC)
 
 all: $(PROGS)
@@ -76,11 +79,14 @@ all: $(PROGS)
 $(CLIENTPROGS_C):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCLIENT)
 
-$(CLIENTPROGS_CPP):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC_CPP) $(LIBCLIENT)
+$(PROGS_CPP):%:%.o
+# Unfortunately, there is just one C++ library for both client and server,
+# so we have to link all client and server libraries to all C++ programs,
+# whether client or server.
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC_CPP) $(LIBCLIENT) $(LIBSERVER)
 
-$(CGICLIENTPROGS):%.cgi:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCGI)
+$(CGISERVERPROGS):%.cgi:%.o
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCGI) $(LIBSERVER)
 
 $(SERVERPROGS):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBSERVER)

@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include "xmlrpc.h"
+#include "xmlrpc_server.h"
 #include "xmlrpc_int.h"
 
 /*=========================================================================

@@ -47,12 +47,19 @@ INCLUDES = -I. -I$(SRCDIR) \
 	   $(TRANSPORT_INCLUDES) \
 	   $(LIBXML_INCLUDES) \
 
-rpctest:%:%.o libxmlrpc.la $(LIBXML)
+rpctest:%:%.o libxmlrpc.la libxmlrpc_server.la $(LIBXML)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
+
+cpptest:%:%.o XmlRpcCpp.o libxmlrpc_cpp.a libxmlrpc.la libxmlrpc_server.la \
+  $(LIBXML)
+	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR)
 
 libxmlrpc_client.la: xmlrpc_client.lo $(TRANSPORT_OBJS)
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+
+libxmlrpc_server.la: xmlrpc_registry.lo
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
 
@@ -62,6 +69,9 @@ rpctest.o:%.o:%.c
 	$(CC) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
 
 xmlrpc_client.lo:%.lo:%.c
+	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+
+xmlrpc_registry.lo:%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
 
 $(TRANSPORT_OBJS): FORCE

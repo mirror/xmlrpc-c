@@ -37,6 +37,7 @@
 #endif 
 
 #include "xmlrpc.h"
+#include "xmlrpc_server.h"
 #include "xmlrpc_cgi.h"
 
 

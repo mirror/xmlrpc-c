@@ -10,7 +10,6 @@
 #
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
 
-CCLD = $(CC)
 LIBTOOL = $(SRCDIR)/libtool
 LINK = $(LIBTOOL) --mode=link $(CCLD)
 

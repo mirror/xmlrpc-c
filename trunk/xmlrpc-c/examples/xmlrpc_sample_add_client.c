@@ -1,7 +1,7 @@
 /* A simple synchronous XML-RPC client written in C, as an example of
-  an xmlrpc-c client.  This invokes the sample.add procedure that the
-  xmlrpc-c example server.c server provides.  I.e. it adds to numbers
-  together, the hard way.
+   an Xmlrpc-c client.  This invokes the sample.add procedure that the
+   Xmlrpc-c example server.c server provides.  I.e. it adds to numbers
+   together, the hard way.
 */
 
 #include <stdio.h>
@@ -11,7 +11,7 @@
 
 #include "config.h"  /* information about this build environment */
 
-#define NAME "XML-RPC C Test Client"
+#define NAME "Xmlrpc-c Test Client"
 #define VERSION "1.0"
 
 static void 
@@ -28,6 +28,7 @@ die_if_fault_occurred (xmlrpc_env *env) {
 int 
 main(int           const argc, 
      const char ** const argv ATTR_UNUSED) {
+
     xmlrpc_env env;
     xmlrpc_value *result;
     int sum;
@@ -55,7 +56,7 @@ main(int           const argc,
                 "(ii)", (xmlrpc_int32) 5, (xmlrpc_int32) 7);
     die_if_fault_occurred(&env);
     
-    /* Get our state name and print it out. */
+    /* Get our sum and print it out. */
     xmlrpc_parse_value(&env, result, "i", &sum);
     die_if_fault_occurred(&env);
     printf("The sum  is %d\n", sum);

@@ -1,4 +1,16 @@
-CVS -
+(BJH means Bryan Henderson <bryanh@giraffe-data.com>)
+
+1.1 - not yet
+
+  * BJH: Separate out server registry stuff into new libxml_server.
+  
+  * BJH: Fail when structure format specifier does not end in
+    "*" instead of just asserting that it does.
+
+  * BJH: Fail when structure format specifier is not closed by "}"
+    instead of just asserting that it is.
+
+1.0 - October 25, 2004
   * Bryan Henderson: create Makefile.config; make examples/ directory use
     static make file.
   * Bryan Henderson: replace Makefile.am with already built Makefile.in.

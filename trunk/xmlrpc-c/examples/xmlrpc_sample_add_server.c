@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <xmlrpc.h>
+#include <xmlrpc_server.h>
 #include <xmlrpc_abyss.h>
 
 #include "config.h"  /* information about this build environment */

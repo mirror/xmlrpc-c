@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "xmlrpc.h"
+#include "xmlrpc_server.h"
 #include "xmlrpc_int.h"
 
 #include "abyss.h"

@@ -1,7 +1,7 @@
 query-meerkat
 meerkat-app-list
 synch_client
-asynch_client
+xmlrpc_asynch_client
 auth_client
 xmlrpc_sample_add_client
 xmlrpc_sample_add_server
