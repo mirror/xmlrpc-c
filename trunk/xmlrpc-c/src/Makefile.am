@@ -92,7 +92,7 @@ validatee_LDADD    = libxmlrpc_abyss_server.la $(LIBABYSS) \
 
 # Handle our wrapper script.
 efrpctest_wrapper: $(srcdir)/efrpctest_wrapper.sh
-	cp $< $@
+	cp efrpctest_wrapper $@
 	chmod +x $@
 EXTRA_DIST = efrpctest_wrapper.sh
 MOSTLYCLEANFILES = efrpctest_wrapper

@@ -1,3 +1,12 @@
+CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
+
+  * wchar_t support can now be disabled.
+  * New interop server.
+  * Parts of an interop client.
+  * Lots of interop fixes.
+  * Mike Bytnar: Solaris build fixes.  Thanks!
+  * Other stuff.
+
 0.9.9 - Eric Kidd <eric.kidd@pobox.com> - 03 April 2001
 
   * xml-rpc-api2cpp now generates usable proxy classes.
