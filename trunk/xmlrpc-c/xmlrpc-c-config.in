@@ -26,17 +26,15 @@ MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
 MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
 MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
 
-usage="Usage: xmlrpc-c-config <module>... <flag>
+usage="Usage: xmlrpc-c-config <feature> ... <option> ...
 
-You may optionally specify one or more features you want to exploit:
+The features are:
   c++            C++ wrapper code
-  libwww-client  libwww-based client
-  curl-client    cURL-based client
-  wininet-client WinInet-based client
-  cgi-server     CGI-based server
-  abyss-server   ABYSS-based server
+  client         client functions
+  cgi-server     CGI-based server functions
+  abyss-server   ABYSS-based server functions
 
-Available flags include:
+Options are:
   --version      The version number of the package
   --features     List all features (aka modules) currently installed
   --cflags       C compiler flags to use when '#include'ing package headers

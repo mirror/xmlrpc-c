@@ -2,7 +2,19 @@
 
 1.2 - not yet
 
-  * BJH: Add basic authentication to 'xmlrpc' program
+  * BJH: Fix usage message in xmlrpc-c-config.
+
+  * BJH: Curl transport: check for failure of Winsock startup.
+
+  * BJH: Add 'interface' option to Curl transport.
+
+  * BJH: Add transport-specific options.
+
+  * BJH: Add basic authentication to 'xmlrpc' program.
+
+  * BJH: Fix memory leak in Curl - not freeing curlTransaction.
+
+  * BJH: Add nil (<nil/>, XMLRPC_TYPE_NIL) capability.
 
 1.1 - January 8, 2005
 
