@@ -26,6 +26,8 @@ CFG=xmltok - Win32 Release
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
+# PROP Scc_ProjName "xmltok"
+# PROP Scc_LocalPath ".."
 
 !IF  "$(CFG)" == "xmltok - Win32 Release"
 
@@ -39,11 +41,11 @@ CFG=xmltok - Win32 Release
 # PROP Output_Dir "Release\xmltok"
 # PROP Intermediate_Dir "Release\xmltok"
 # PROP Target_Dir "."
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\.." /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /c
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
@@ -66,11 +68,11 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmltok"
 # PROP Intermediate_Dir "Debug\xmltok"
 # PROP Target_Dir "."
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "XML_NS" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\..\.." /D "_DEBUG" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "XML_NS" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
@@ -96,7 +98,7 @@ LIB32=link.exe -lib
 # PROP Target_Dir "."
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\.." /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -126,7 +128,7 @@ LINK32=link.exe
 # PROP Target_Dir "."
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "XML_NS" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\.." /D "_DEBUG" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "XML_NS" /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -177,26 +179,10 @@ SOURCE=..\gennmtab\gennmtab.c
 !IF  "$(CFG)" == "xmltok - Win32 Release"
 
 # PROP Ignore_Default_Tool 1
-# Begin Custom Build - Creating nametab.h
-ProjDir=.
-InputPath=..\gennmtab\gennmtab.c
-
-"$(ProjDir)\nametab.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	..\..\..\bin\gennmtab >$(ProjDir)\nametab.h
-
-# End Custom Build
 
 !ELSEIF  "$(CFG)" == "xmltok - Win32 Debug"
 
 # PROP Ignore_Default_Tool 1
-# Begin Custom Build - Creating nametab.h
-ProjDir=.
-InputPath=..\gennmtab\gennmtab.c
-
-"$(ProjDir)\nametab.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	..\..\..\bin\gennmtabD >$(ProjDir)\nametab.h
-
-# End Custom Build
 
 !ELSEIF  "$(CFG)" == "xmltok - Win32 Release DLL"
 

@@ -27,8 +27,8 @@ CFG=xmlparse - Win32 Release
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""
-# PROP Scc_LocalPath ""
+# PROP Scc_ProjName "xmlparse"
+# PROP Scc_LocalPath ".."
 
 !IF  "$(CFG)" == "xmlparse - Win32 Release"
 
@@ -42,11 +42,11 @@ CFG=xmlparse - Win32 Release
 # PROP Output_Dir "Release\xmlparse"
 # PROP Intermediate_Dir "Release\xmlparse"
 # PROP Target_Dir "."
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\xmltok" /I "..\xmlwf" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\xmltok" /I "..\xmlwf" /I "..\..\.." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /c
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
@@ -69,11 +69,11 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmlparse"
 # PROP Intermediate_Dir "Debug\xmlparse"
 # PROP Target_Dir "."
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\xmltok" /I "..\xmlwf" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\xmltok" /I "..\xmlwf" /I "..\..\.." /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
@@ -99,7 +99,7 @@ LIB32=link.exe -lib
 # PROP Target_Dir "."
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\xmltok" /I "..\xmlwf" /D XMLTOKAPI=__declspec(dllimport) /D XMLPARSEAPI=__declspec(dllexport) /D "NDEBUG" /D "XML_NS" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\xmltok" /I "..\xmlwf" /I "..\..\.." /D XMLTOKAPI=__declspec(dllimport) /D XMLPARSEAPI=__declspec(dllexport) /D "NDEBUG" /D "XML_NS" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -129,7 +129,7 @@ LINK32=link.exe
 # PROP Target_Dir "."
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\xmltok" /I "..\xmlwf" /D "_DEBUG" /D XMLTOKAPI=__declspec(dllimport) /D XMLPARSEAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\xmltok" /I "..\xmlwf" /I "..\..\.." /D "_DEBUG" /D XMLTOKAPI=__declspec(dllimport) /D XMLPARSEAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -159,7 +159,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 CPP=cl.exe
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /I "..\xmltok" /I "..\xmlwf" /D XMLTOKAPI=__declspec(dllimport) /D XMLPARSEAPI=__declspec(dllexport) /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\xmltok" /I "..\xmlwf" /D "XML_MIN_SIZE" /D "XML_WINLIB" /D XMLPARSEAPI=__declspec(dllexport) /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "..\xmltok" /I "..\xmlwf" /I "..\..\.." /D "XML_MIN_SIZE" /D "XML_WINLIB" /D XMLPARSEAPI=__declspec(dllexport) /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
