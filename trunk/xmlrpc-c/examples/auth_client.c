@@ -1,7 +1,7 @@
 /* A demonstration of using HTTP basic authentication with XML-RPC.
 **
 ** In general, you shouldn't write XML-RPC servers which require basic
-** authenticaion. (Few XML-RPC clients support this, and it's not part of
+** authenticaion. (Few XML-RPC clients are capable of it, and it's not part of
 ** any standard.) Instead, you should pass any authentication information
 ** as a regular XML-RPC parameter (or look into using SSL).
 **
