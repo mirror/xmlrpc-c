@@ -33,6 +33,7 @@
 #undef VERSION
 
 #include <stddef.h>
+#include <stdio.h>
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
@@ -108,12 +109,12 @@ void xmlrpc_client_init(int flags,
 	HTAlert_setInteractive(NO);
 
 	/* Here are some alternate setup calls which will help greatly
-	** with debugging, should the need arise.
-	**
-	** HTProfile_newNoCacheClient(appname, appversion);
-	** HTAlert_setInteractive(YES);
-	** HTPrint_setCallback(printer);
-	** HTTrace_setCallback(tracer); */
+	** with debugging, should the need arise. */
+#if 0
+	HTSetTraceMessageMask("sop");
+	HTPrint_setCallback(printer);
+	HTTrace_setCallback(tracer);
+#endif
     }
 
     /* Set up our list of conversions for XML-RPC requests. This is a
