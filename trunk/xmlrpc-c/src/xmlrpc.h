@@ -380,8 +380,11 @@ typedef struct _xmlrpc_value xmlrpc_value;
             XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Expected " #t); \
     while (0)
 
+void
+xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
+
 #define XMLRPC_ASSERT_ARRAY_OK(val) \
-    XMLRPC_ASSERT((val) != NULL && (val)->_type != XMLRPC_TYPE_ARRAY)
+    xmlrpc_abort_if_array_bad(val)
 
 /* Increment the reference count of an xmlrpc_value. */
 extern void xmlrpc_INCREF (xmlrpc_value* value);

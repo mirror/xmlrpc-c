@@ -46,7 +46,7 @@ destroyValue(xmlrpc_value * const valueP) {
         break;
         
     case XMLRPC_TYPE_ARRAY:
-        xmlrpc_destroyArray(valueP);
+        xmlrpc_destroyArrayContents(valueP);
         break;
         
     case XMLRPC_TYPE_STRING:

@@ -18,27 +18,58 @@
 #include "xmlrpc_int.h"
 
 
+void
+xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP) {
+
+    if (arrayP == NULL)
+        abort();
+    else if (arrayP->_type != XMLRPC_TYPE_ARRAY)
+        abort();
+    else {
+        unsigned int const arraySize =
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value*, &arrayP->_block);
+        xmlrpc_value ** const contents = 
+            XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
+        
+        if (contents == NULL)
+            abort();
+        else {
+            unsigned int index;
+            
+            for (index = 0; index < arraySize; ++index) {
+                xmlrpc_value * const itemP = contents[index];
+                if (itemP == NULL)
+                    abort();
+                else if (itemP->_refcount < 1)
+                    abort();
+            }
+        }
+    }
+}
+
+
 
 void
-xmlrpc_destroyArray(xmlrpc_value * const arrayP) {
+xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP) {
+/*----------------------------------------------------------------------------
+   Dispose of the contents of an array (but not the array value itself).
+   The value is not valid after this.
+-----------------------------------------------------------------------------*/
+    unsigned int const arraySize =
+        XMLRPC_MEMBLOCK_SIZE(xmlrpc_value*, &arrayP->_block);
+    xmlrpc_value ** const contents = 
+        XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
 
-    xmlrpc_env env;
-    int size, i;
+    unsigned int index;
     
-    /* Dispose of the contents of the array.
-    ** No errors should *ever* occur when this code is running,
-    ** so we use assertions instead of regular error checks. */
-    xmlrpc_env_init(&env);
-    size = xmlrpc_array_size(&env, arrayP);
-    XMLRPC_ASSERT(!env.fault_occurred);
-    for (i = 0; i < size; i++) {
-        xmlrpc_value *item;
-        item = xmlrpc_array_get_item(&env, arrayP, i);
-            XMLRPC_ASSERT(!env.fault_occurred);
-            xmlrpc_DECREF(item);
+    XMLRPC_ASSERT_ARRAY_OK(arrayP);
+
+    /* Release our reference to each item in the array */
+    for (index = 0; index < arraySize; ++index) {
+        xmlrpc_value * const itemP = contents[index];
+        xmlrpc_DECREF(itemP);
     }
-    xmlrpc_env_clean(&env);
-    xmlrpc_mem_block_clean(&arrayP->_block);
+    XMLRPC_MEMBLOCK_CLEAN(xmlrpc_value *, &arrayP->_block);
 }
 
 
@@ -68,26 +99,29 @@ xmlrpc_array_size(xmlrpc_env *         const env,
 
 
 void 
-xmlrpc_array_append_item (xmlrpc_env *   const env,
-                          xmlrpc_value * const array,
-                          xmlrpc_value * const value) {
-    size_t size;
-    xmlrpc_value **contents;
+xmlrpc_array_append_item(xmlrpc_env *   const envP,
+                         xmlrpc_value * const arrayP,
+                         xmlrpc_value * const valueP) {
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(array);
-    XMLRPC_TYPE_CHECK(env, array, XMLRPC_TYPE_ARRAY);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(arrayP);
+    
+    if (xmlrpc_value_type(arrayP) != XMLRPC_TYPE_ARRAY)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Value is not an array");
+    else {
+        size_t const size = 
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &arrayP->_block);
 
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(xmlrpc_value*, &array->_block);
-    XMLRPC_TYPED_MEM_BLOCK_RESIZE(xmlrpc_value*, env, &array->_block, size+1);
-    XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_MEMBLOCK_RESIZE(xmlrpc_value *, envP, &arrayP->_block, size+1);
 
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xmlrpc_value*, &array->_block);
-    xmlrpc_INCREF(value);
-    contents[size] = value;
-
-                          cleanup:    
-    return;
+        if (!envP->fault_occurred) {
+            xmlrpc_value ** const contents =
+                XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
+            xmlrpc_INCREF(valueP);
+            contents[size] = valueP;
+        }
+    }
 }
 
 

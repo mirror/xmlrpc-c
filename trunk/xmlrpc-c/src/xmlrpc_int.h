@@ -70,7 +70,7 @@ void
 xmlrpc_destroyStruct(xmlrpc_value * const structP);
 
 void
-xmlrpc_destroyArray(xmlrpc_value * const arrayP);
+xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
 
 const char * 
 xmlrpc_makePrintable(const char * const input);
