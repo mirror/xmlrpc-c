@@ -69,9 +69,20 @@ xmlrpc_server_abyss_init(int          const flags,
 ** This routine never returns.
 **
 ** Once you call this routine, it is illegal to register any more methods. */
-extern void
+void
 xmlrpc_server_abyss_run (void);
 
+
+
+/* Same as xmlrpc_server_abyss_run(), except you get to specify a "runfirst"
+** function.  The server runs this just before executing the actual server
+** function, after any daemonizing.  NULL for 'runfirst' means no runfirst
+** function.  'runfirstArg' is the argument the server passes to the runfirst
+** function.
+**/
+void 
+xmlrpc_server_abyss_run_first(void (runfirst(void *)),
+                              void * const runfirstArg);
 
 /*=========================================================================
 **  Content Handlers

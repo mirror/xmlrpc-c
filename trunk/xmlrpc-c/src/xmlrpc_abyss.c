@@ -566,14 +566,15 @@ xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED,
 
 
 void 
-xmlrpc_server_abyss_run(void) {
+xmlrpc_server_abyss_run_first(void (runfirst(void *)),
+                              void * const runfirstArg) {
 
 #ifdef _UNIX
     /* Catch various termination signals. */
-    signal(SIGTERM,sigterm);
-    signal(SIGINT,sigterm);
-    signal(SIGHUP,sigterm);
-    signal(SIGUSR1,sigterm);
+    signal(SIGTERM, sigterm);
+    signal(SIGINT,  sigterm);
+    signal(SIGHUP,  sigterm);
+    signal(SIGUSR1, sigterm);
 
     /* Catch connection closed in the middle */
     signal(SIGPIPE,SIG_IGN);
@@ -582,8 +583,7 @@ xmlrpc_server_abyss_run(void) {
     signal(SIGCHLD,sigchld);
     
     /* Become a daemon */
-    switch (fork())
-    {
+    switch (fork()) {
     case 0:
         break;
     case -1:
@@ -595,8 +595,7 @@ xmlrpc_server_abyss_run(void) {
     setsid();
 
     /* Change the current user if we are root */
-    if (getuid()==0)
-    {
+    if (getuid()==0) {
         if (srv.uid == (uid_t)-1)
             TraceExit("Can't run under root privileges.  "
                       "Please add a User option in your "
@@ -609,13 +608,12 @@ xmlrpc_server_abyss_run(void) {
             if (setgid(srv.gid)==(-1))
                 TraceExit("Failed to change the group.");
 #endif
-    
+        
         if (setuid(srv.uid) == -1)
             TraceExit("Failed to change the user.");
     };
     
-    if (srv.pidfile!=(-1))
-    {
+    if (srv.pidfile!=(-1)) {
         char z[16];
     
         sprintf(z,"%d",getpid());
@@ -624,8 +622,21 @@ xmlrpc_server_abyss_run(void) {
     };
 #endif
     
+    /* We run the user supplied runfirst after forking, but before accepting
+       connections (helpful when running with threads)
+    */
+    if (runfirst)
+        runfirst(runfirstArg);
+
     ServerRun(&srv);
 
-    /* We should never get to here. */
+    /* We can't exist here because ServerRun doesn't return */
     XMLRPC_ASSERT(0);
+}
+
+
+
+void 
+xmlrpc_server_abyss_run(void) {
+    xmlrpc_server_abyss_run_first(NULL, NULL);
 }
