@@ -10,6 +10,7 @@ Makefile.in
 configure
 config.log
 stamp-h
+stamp-h1
 config.cache
 libtool
 config.status
