@@ -241,6 +241,55 @@ xmlrpc_server_info *xmlrpc_server_info_new (xmlrpc_env *env,
     return server;
 }
 
+xmlrpc_server_info * xmlrpc_server_info_copy(xmlrpc_env *env,
+                                             xmlrpc_server_info *src_server)
+{
+    xmlrpc_server_info *new_server;
+    char *url_copy, *auth_copy;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(src_server);
+
+    /* Error-handling preconditions. */
+    new_server = NULL;
+    url_copy = NULL;
+    auth_copy = NULL;
+
+    /* Allocate our memory blocks. */
+    new_server = (xmlrpc_server_info*) malloc(sizeof(xmlrpc_server_info));
+    XMLRPC_FAIL_IF_NULL(new_server, env, XMLRPC_INTERNAL_ERROR,
+                        "Couldn't allocate memory for xmlrpc_server_info");
+    url_copy = (char*) malloc(strlen(src_server->_server_url) + 1);
+    XMLRPC_FAIL_IF_NULL(url_copy, env, XMLRPC_INTERNAL_ERROR,
+                        "Couldn't allocate memory for server URL");
+    if (src_server->_http_basic_auth) {
+	auth_copy = (char*) malloc(strlen(src_server->_http_basic_auth) + 1);
+	XMLRPC_FAIL_IF_NULL(auth_copy, env, XMLRPC_INTERNAL_ERROR,
+			    "Couldn't allocate memory for auth info");
+    }
+    
+    /* Build our object. */
+    strcpy(url_copy, src_server->_server_url);
+    new_server->_server_url = url_copy;
+    if (src_server->_http_basic_auth) {
+	strcpy(auth_copy, src_server->_http_basic_auth);
+	new_server->_http_basic_auth = auth_copy;
+    }
+
+ cleanup:
+    if (env->fault_occurred) {
+        if (url_copy)
+            free(url_copy);
+        if (auth_copy)
+            free(auth_copy);
+        if (new_server)
+            free(new_server);
+        return NULL;
+    }
+    return new_server;
+
+}
+
 void xmlrpc_server_info_free (xmlrpc_server_info *server)
 {
     XMLRPC_ASSERT_PTR_OK(server);

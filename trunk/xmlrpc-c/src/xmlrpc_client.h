@@ -83,6 +83,10 @@ extern xmlrpc_server_info *
 xmlrpc_server_info_new (xmlrpc_env *env,
 			char *server_url);
 
+/* Create a new server info record, with a copy of the old server. */
+extern xmlrpc_server_info * 
+xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *src_server);
+
 /* Delete a server info record. */
 extern void
 xmlrpc_server_info_free (xmlrpc_server_info *server);
