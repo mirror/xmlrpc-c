@@ -40,8 +40,8 @@
 #include "xmlrpc.h"
 #include "xmlrpc_server.h"
 #include "xmlrpc_int.h"
-#include "xmlrpc_abyss.h"
-#include "xmlrpc_abyss_int.h"
+#include "xmlrpc_server_abyss.h"
+#include "xmlrpc_server_abyss_int.h"
 
 
 /*=========================================================================
@@ -648,7 +648,7 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
 
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
-                    const xmlrpc_abyss_server_parms * const parmsP,
+                    const xmlrpc_server_abyss_parms * const parmsP,
                     unsigned int                      const parm_size) {
  
     XMLRPC_ASSERT_ENV_OK(envP);

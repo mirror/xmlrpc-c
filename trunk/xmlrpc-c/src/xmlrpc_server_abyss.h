@@ -24,8 +24,8 @@
 ** SUCH DAMAGE. */
 
 
-#ifndef  _XMLRPC_ABYSS_H_
-#define  _XMLRPC_ABYSS_H_ 1
+#ifndef  _XMLRPC_SERVER_ABYSS_H_
+#define  _XMLRPC_SERVER_ABYSS_H_ 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,13 +62,13 @@ typedef struct {
     xmlrpc_registry * registryP;
     runfirstFn        runfirst;
     void *            runfirst_arg;
-} xmlrpc_abyss_server_parms;
+} xmlrpc_server_abyss_parms;
 
 
 #define XMLRPC_APSIZE(MBRNAME) \
-    XMLRPC_STRUCTSIZE(xmlrpc_abyss_server_parms, MBRNAME)
+    XMLRPC_STRUCTSIZE(xmlrpc_server_abyss_parms, MBRNAME)
 
-/* XMLRPC_APSIZE(xyz) is the minimum size a struct xmlrpc_abyss_server_parms
+/* XMLRPC_APSIZE(xyz) is the minimum size a struct xmlrpc_server_abyss_parms
    must be to include the 'xyz' member.  This is essential to forward and
    backward compatbility, as new members will be added to the end of the
    struct in future releases.  This is how the callee knows whether or
@@ -77,7 +77,7 @@ typedef struct {
 
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
-                    const xmlrpc_abyss_server_parms * const parms,
+                    const xmlrpc_server_abyss_parms * const parms,
                     unsigned int                      const parm_size);
 
 void
@@ -118,10 +118,10 @@ xmlrpc_server_abyss_run_first(void (runfirst(void *)),
 /*=========================================================================
 **  Method Registry
 **=========================================================================
-   These functions are for the built-in xmlrpc_abyss registry.
+   These functions are for the built-in xmlrpc_server_abyss registry.
    It's usually simpler to skip all this and use the regular method
    registry services (from xmlrpc_server.h) to build a registry and
-   pass it to xmlrpc_abyss.
+   pass it to xmlrpc_server_abyss.
 */
 
 /* Call this function to create a new Abyss webserver with the default
@@ -179,4 +179,4 @@ xmlrpc_server_abyss_add_method_w_doc (char *method_name,
 }
 #endif /* __cplusplus */
 
-#endif /* _XMLRPC_ABYSS_H_ */
+#endif

@@ -1,17 +1,17 @@
 /*============================================================================
-                         xmlrpc_abyss_int.h
+                         xmlrpc_server_abyss_int.h
 ==============================================================================
   This header file defines the interface between client modules inside
   xmlrpc-c.
 
-  Use this in addition to xmlrpc_abyss.h, which defines the external
+  Use this in addition to xmlrpc_server_abyss.h, which defines the external
   interface.
 
   Copyright information is at the end of the file.
 ============================================================================*/
 
-#ifndef  _XMLRPC_ABYSS_INT_H_
-#define  _XMLRPC_ABYSS_INT_H_ 1
+#ifndef  _XMLRPC_SERVER_ABYSS_INT_H_
+#define  _XMLRPC_SERVER_ABYSS_INT_H_ 1
 
 #include "abyss.h"
 
@@ -75,5 +75,5 @@ xmlrpc_server_abyss_default_handler (TSession *r);
 }
 #endif /* __cplusplus */
 
-#endif /* _XMLRPC_ABYSS_H_ */
+#endif
 

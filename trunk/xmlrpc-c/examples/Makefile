@@ -68,7 +68,7 @@ LIBXMLRPC_CPP = $(SRCDIR)/src/libxmlrpc_cpp.a
 LIBCLIENT = $(SRCDIR)/src/.libs/libxmlrpc_client.a \
   $(LIBWWW_LDADD) $(LIBXMLRPC)
 LIBSERVER = \
-  $(SRCDIR)/src/.libs/libxmlrpc_abyss_server.a \
+  $(SRCDIR)/src/.libs/libxmlrpc_server_abyss.a \
   $(LIBABYSS) \
   $(SRCDIR)/src/.libs/libxmlrpc_server.a \
   $(LIBXMLRPC)

@@ -4,7 +4,7 @@
 
 #include <xmlrpc.h>
 #include <xmlrpc_server.h>
-#include <xmlrpc_abyss.h>
+#include <xmlrpc_server_abyss.h>
 
 #include "config.h"  /* information about this build environment */
 
@@ -33,7 +33,7 @@ int
 main (int           const argc, 
       const char ** const argv) {
 
-    xmlrpc_abyss_server_parms serverparm;
+    xmlrpc_server_abyss_parms serverparm;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
 
