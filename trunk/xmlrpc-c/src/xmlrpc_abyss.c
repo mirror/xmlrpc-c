@@ -100,7 +100,7 @@ void xmlrpc_server_abyss_add_method (char *method_name,
 }
 
 extern void
-xmlrpc_abyss_server_add_method_w_doc (char *method_name,
+xmlrpc_server_abyss_add_method_w_doc (char *method_name,
 				      xmlrpc_method method,
 				      void *user_data,
 				      char *signature,
