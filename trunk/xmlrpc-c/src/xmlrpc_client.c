@@ -364,15 +364,15 @@ void xmlrpc_client_event_loop_finish_asynch (void)
 }
 
 /* Assume the worst.. That only parts of the call_info are valid. */
-void call_info_free (call_info *info)
-{
+void 
+call_info_free (call_info * const info) {
+
     XMLRPC_ASSERT_PTR_OK(info);
 
     /* Free any transport related info. */
-    if (g_transport_info_free)
-    {
-        g_transport_info_free(info->transport_info);
-    }
+    if (info->transport_info)
+        if (g_transport_info_free)
+            g_transport_info_free(info->transport_info);
 
     /* If this has been allocated, we're responsible for destroying it. */
     if (info->_asynch_data_holder)
