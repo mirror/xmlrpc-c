@@ -40,15 +40,19 @@ endif
 #                             RULES                                          #
 ##############################################################################
 
+$(SUBDIRS:%=%/all): %/all: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/install): %/install: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
 $(SUBDIRS:%=%/clean): %/clean: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
 $(SUBDIRS:%=%/distclean): %/distclean: $(CURDIR)/%
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
-	    $(notdir $@) 
-
-$(SUBDIRS:%=%/all): %/all: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
@@ -59,6 +63,9 @@ $(SUBDIRS:%=%/distdir): %/distdir: $(CURDIR)/%
 $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
+
+.PHONY: install-common
+install-common:
 
 .PHONY: clean-common
 clean-common:

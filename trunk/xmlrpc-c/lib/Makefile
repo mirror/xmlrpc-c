@@ -42,7 +42,7 @@ DISTFILES =
 distdir: distdir-common
 
 .PHONY: install
-install: install-common
+install: $(SUBDIRS:%=%/install)
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep)
