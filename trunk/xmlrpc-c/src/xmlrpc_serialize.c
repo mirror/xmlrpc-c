@@ -38,7 +38,7 @@
 
 #define CRLF "\015\012"
 #define SMALL_BUFFER_SZ (128)
-#define XML_PROLOGUE "<?xml version=\"1.0\"?>"CRLF
+#define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"CRLF
 
 
 /*=========================================================================

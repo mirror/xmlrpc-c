@@ -468,13 +468,14 @@ void xmlrpc_server_abyss_run (void)
     {
 	if (srv.uid==(-1))
 	    TraceExit("Can't run under root privileges. Please add a User option in your configuration file.");
-	
+
+#ifdef HAVE_SETGROUPS	
 	if (setgroups(0,NULL)==(-1))
 	    TraceExit("Failed to setup the group.");
-	
 	if (srv.gid!=(-1))
 	    if (setgid(srv.gid)==(-1))
 		TraceExit("Failed to change the group.");
+#endif
 	
 	if (setuid(srv.uid)==(-1))
 	    TraceExit("Failed to change the user.");

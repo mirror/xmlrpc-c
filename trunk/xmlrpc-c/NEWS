@@ -1,3 +1,8 @@
+0.9.8 - Eric Kidd <eric.kidd@pobox.com> - 19 February 2001
+
+  * Luke Howard, Rosimildo daSIlva: Build fixes.
+  * Send 'encoding="UTF-8"' in XML prologue
+
 0.9.7 - Eric Kidd <eric.kidd@pobox.com> - 14 February 2001
 
   * SECURITY: Configurable nesting limits (see advisory 1) to prevent

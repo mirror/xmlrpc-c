@@ -10,6 +10,12 @@
 /* Define if va_list is actually an array. */
 /* #undef VA_LIST_IS_ARRAY */
   
+/* Define if we're using a copy of libwww with built-in SSL support. */
+/* #undef HAVE_LIBWWW_SSL */
+
+/* Define if you have the setgroups function.  */
+/* #undef HAVE_SETGROUPS */
+
 /* Define if you have the <stdarg.h> header file.  */
 #define HAVE_STDARG_H 1
   
@@ -17,7 +23,7 @@
 #define PACKAGE "xmlrpc-c"
   
 /* Version number of package */
-#define VERSION "0.9.7"
+#define VERSION "0.9.8"
 
 /* Windows-specific includes. */  
 #include <stdio.h>

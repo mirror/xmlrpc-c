@@ -8,12 +8,12 @@ dnl Version Numbering
 dnl =======================================================================
 
 dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.7)
+AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.8)
 
 dnl This version number needs to be changed in several *different* tricky
 dnl ways for each release. Please read the libtool documentation very
 dnl closely before touching this or making a release!
-VERSION_INFO="-version-info 5:0:2"
+VERSION_INFO="-version-info 5:1:2"
 AC_SUBST(VERSION_INFO)
 
 dnl Get the date for use in our LSM file.
@@ -71,6 +71,9 @@ dnl =======================================================================
 AC_CHECK_FUNC(vsnprintf, , [
 AC_MSG_ERROR(your C library does not provide vsnprintf)
 ])
+
+dnl CygWin looks like Unix, but doesn't provide setgroups.
+AC_CHECK_FUNCS(setgroups)
 
 
 dnl =======================================================================
@@ -137,7 +140,7 @@ dnl Oh, such massive brain damage! Because there may be another copy
 dnl of libwww in the default dynamic loader search path, we need to
 dnl adjust the search patch manually. Just gag me with a backquote, OK?
 AC_MSG_CHECKING(for libwww library directory)
-if $LIBWWW_CONFIG --rpath-dir >& /dev/null; then
+if $LIBWWW_CONFIG --rpath-dir > /dev/null 2>&1; then
    dnl Yay! We're using our smart version of libwww.
    LIBWWW_LIBDIR="`$LIBWWW_CONFIG --rpath-dir`"
 else

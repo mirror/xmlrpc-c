@@ -37,3 +37,13 @@ To install your copy of w3c-libwww in a non-standard location, you can type:
 You'll also need to set up the PATH so configure can find libwww-config:
 
   $ PATH=/opt/xmlrpc_libwww/bin:$PATH
+
+
+Troubleshooting
+---------------
+
+xmlrpc-c can be tricky to compile on non-Unix systems (especially CygWin).
+If you encounter problems, you might want to try searching the
+xmlrpc-c-devel archive:
+
+  http://www.geocrawler.com/redir-sf.php3?list=xmlrpc-c-devel

@@ -111,7 +111,7 @@ static char serialized_struct[] = \
 "<value><i4>10</i4></value></member>"CRLF \
 "</struct></value>";
 
-#define XML_PROLOGUE "<?xml version=\"1.0\"?>"CRLF
+#define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"CRLF
 
 static char serialized_call[] =
 XML_PROLOGUE

@@ -1,6 +1,8 @@
 # Turn on warnings.
 CFLAGS = @CFLAGS@ -Wall
 
+INCLUDES = -I$(srcdir)/../../src
+
 EXTRA_DIST = README
 
 noinst_PROGRAMS = xml-rpc-api2cpp
