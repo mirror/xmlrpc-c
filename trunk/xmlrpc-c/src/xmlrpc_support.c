@@ -121,13 +121,15 @@ xmlrpc_env_set_fault(xmlrpc_env * const env,
 
 
 
-void xmlrpc_env_set_fault_formatted (xmlrpc_env* env, int code,
-                                     char *format, ...)
-{
+void 
+xmlrpc_env_set_fault_formatted (xmlrpc_env * const envP, 
+                                int          const code,
+                                const char * const format, 
+                                ...) {
     va_list args;
     char buffer[ERROR_BUFFER_SZ];
 
-    XMLRPC_ASSERT(env != NULL);
+    XMLRPC_ASSERT(envP != NULL);
     XMLRPC_ASSERT(format != NULL);
 
     /* Print our error message to the buffer. */
@@ -139,8 +141,10 @@ void xmlrpc_env_set_fault_formatted (xmlrpc_env* env, int code,
     buffer[ERROR_BUFFER_SZ - 1] = '\0';
 
     /* Set the fault. */
-    xmlrpc_env_set_fault(env, code, buffer);
+    xmlrpc_env_set_fault(envP, code, buffer);
 }
+
+
 
 void xmlrpc_fatal_error (char* file, int line, char* msg)
 {
