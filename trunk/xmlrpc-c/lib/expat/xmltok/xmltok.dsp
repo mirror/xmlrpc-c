@@ -41,8 +41,8 @@ CFG=xmltok - Win32 Release
 # PROP Output_Dir "Release\xmltok"
 # PROP Intermediate_Dir "Release\xmltok"
 # PROP Target_Dir "."
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\.." /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /c
@@ -68,8 +68,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmltok"
 # PROP Intermediate_Dir "Debug\xmltok"
 # PROP Target_Dir "."
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\..\.." /D "_DEBUG" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "XML_NS" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
