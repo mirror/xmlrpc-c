@@ -5,7 +5,7 @@ INCLUDES = -I$(srcdir)/../../src
 
 EXTRA_DIST = README
 
-noinst_PROGRAMS = xml-rpc-api2cpp
+bin_PROGRAMS = xml-rpc-api2cpp
 
 LIBEXPAT  = ../../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
             ../../lib/expat/xmltok/libxmlrpc_xmltok.la
