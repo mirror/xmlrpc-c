@@ -66,7 +66,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc NEWS BUGS COPYING CREDITS README SECURITY 
 %doc doc/*.txt examples/*.c examples/*.cc
 %doc conf
-%{_prefix}/share/man/man7/xmlrpc-c.7
+%{_prefix}/share/man/man7/xmlrpc-c.7*
 
 %files devel
 %defattr(-,root,root)
@@ -77,16 +77,16 @@ rm -rf $RPM_BUILD_ROOT
 %{_prefix}/lib/lib*.la
 %{_prefix}/lib/lib*.so
 %{_prefix}/include/*.h
-%{_prefix}/share/man/man1/xmlrpc-c-config.1
-%{_prefix}/share/man/man1/xml-rpc-api2txt.1
-%{_prefix}/share/man/man1/xml-rpc-api2cpp.1
+%{_prefix}/share/man/man1/xmlrpc-c-config.1*
+%{_prefix}/share/man/man1/xml-rpc-api2txt.1*
+%{_prefix}/share/man/man1/xml-rpc-api2cpp.1*
 
 %files apps
 %defattr(-,root,root)
 %{_prefix}/bin/query-meerkat
 %{_prefix}/bin/meerkat-app-list
-%{_prefix}/share/man/man1/query-meerkat.1
-%{_prefix}/share/man/man1/meerkat-app-list.1
+%{_prefix}/share/man/man1/query-meerkat.1*
+%{_prefix}/share/man/man1/meerkat-app-list.1*
 
 %changelog
 * Wed Jun 27 2001 Eric Kidd <eric.kidd@pobox.com>

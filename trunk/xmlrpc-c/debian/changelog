@@ -1,9 +1,15 @@
+xmlrpc-c (0.9.10-1) unstable; urgency=low
+
+  * Updated from new upstream release.
+
+ -- Eric Kidd <eric.kidd@pobox.com>  Sun,  1 Jul 2001 10:45:51 -0400
+
 xmlrpc-c (0.9.9-2) unstable; urgency=low
 
   * Added man pages.
   * Improved depends for xmlrpc-c-dev.
 
- -- Eric Kidd <emk@zathras>  Wed, 27 Jun 2001 12:25:52 -0400
+ -- Eric Kidd <eric.kidd@pobox.com>  Wed, 27 Jun 2001 12:25:52 -0400
 
 xmlrpc-c (0.9.9-1) unstable; urgency=low
 

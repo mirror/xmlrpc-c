@@ -21,7 +21,9 @@ dist-hook: xmlrpc-c.spec
 	cp -r $(srcdir)/Windows $(distdir)/
 	cp -r $(srcdir)/examples/Win32ClientTest $(distdir)/examples/
 	cp -r $(srcdir)/examples/Win32ServerTest $(distdir)/examples/
-	find $(distdir)/ -name CVS -type d -exec rm -rf {} \;
+	find $(distdir)/ -type d -name CVS -prune -exec rm -rf {} \;
+	find $(distdir)/ -type f -name \*~ -exec rm -rf {} \;
+	chmod +x $(distdir)/debian/rules
 
 fulldist: distcheck xmlrpc-c.lsm
 	rm -rf fulldist/$(VERSION)
@@ -32,7 +34,7 @@ fulldist: distcheck xmlrpc-c.lsm
 	done
 	cp xmlrpc-c.spec $(RPM_TOPDIR)/SPECS
 	cp xmlrpc-c-$(VERSION).tar.gz $(RPM_TOPDIR)/SOURCES
-	rpm -ba --define "_topdir `pwd`/$(RPM_TOPDIR)" xmlrpc-c.spec
+	rpm -ba --define "_topdir `pwd`/$(RPM_TOPDIR)" --clean xmlrpc-c.spec
 	-mkdir fulldist
 	mkdir fulldist/$(VERSION)
 	cp xmlrpc-c.lsm fulldist/$(VERSION)
@@ -57,4 +59,7 @@ fulldistsig:
 	echo "$$banner"; \
 	echo "$$dashes"
 
-.PHONY: fulldist fulldistsig
+debiandist:
+	dpkg-buildpackage -k$(GPG_KEY) -rfakeroot
+
+.PHONY: fulldist fulldistsig debiandist
