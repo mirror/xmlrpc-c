@@ -1,10 +1,26 @@
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
-1.2 - not yet
+1.2 - April 4, 2005
 
+  * SAB: Win32 http.sys server: Add new project and sample as 
+    an alternative to Abyss on current Win32 platforms.  Does
+    basic authentication and SSL.  Requires recent Platform SDK to
+    build.
+  
   * BJH: Add xmlrpc_int_new(), xmlrpc_read_int(), etc., 
     xmlrpc_decompose_value()
+
+  * BJH: Add nil (<nil/>, XMLRPC_TYPE_NIL) capability.
+  
+  * SAB: WinInet Transport: Add Ignore Invalid SSL certs option.
+  
+  * BJH: Add 'network_interface' option to Curl transport.
+
+  * BJH: Add basic authentication to 'xmlrpc' program.
+
+  * SAB: Improve use of libCurl in Win32.  Add documentation
+    and alter some project and configuration files.
 
   * BJH: Use GNUmakefile to catch non-GNU make
 
@@ -12,27 +28,12 @@
 
   * BJH: Curl transport: check for failure of Winsock startup.
 
-  * BJH: Add 'network_interface' option to Curl transport.
-
   * BJH: Add transport-specific options.
-
-  * BJH: Add basic authentication to 'xmlrpc' program.
 
   * BJH: Fix memory leak in Curl - not freeing curlTransaction.
 
-  * BJH: Add nil (<nil/>, XMLRPC_TYPE_NIL) capability.
-  
   * SAB: WinInet Transport: Fix bad authentication header.
   
-  * SAB: WinInet Transport: Add Ignore Invalid SSL certs option.
-  
-  * SAB: Win32 http.sys server: Added new project and sample as 
-    an alternative to Abyss on current Win32 platforms. Does
-    basic authentication and SSL.  Requires recent Platform SDK to
-    build.
-  
-  * SAB: Better use of libCurl in Win32.  Added documentation
-    and altered some project and configuration files.
 
 1.1 - January 8, 2005
 
@@ -73,7 +74,7 @@
   * Stephen Blackheath: ./configure support for building Abyss
     with pthreads.
   * Jeff Dubrule: Removed C++ comments from expat.
-  * Patrick Boykin: Support for copying xmlrpc_server_info structs.
+  * Patrick Boykin: Facility to copy xmlrpc_server_info structs.
 
 0.9.10 - Eric Kidd <eric.kidd@pobox.com> - 30 June 2001
 
@@ -86,7 +87,7 @@
 
   * No more 'CVS' directories lurking in the dist tarball.
   * Disabled rpath stuff so we comply with Debian policy.
-  * wchar_t support can now be disabled.
+  * wchar_t code can now be disabled.
   * New interop server.
   * Parts of an interop client.
   * Lots of interop fixes.
@@ -95,11 +96,11 @@
 0.9.9 - Eric Kidd <eric.kidd@pobox.com> - 03 April 2001
 
   * xml-rpc-api2cpp now generates usable proxy classes.
-  * Luke Howard: Default method support.
+  * Luke Howard: Default method capability.
   * Abstract XML parser API (but you'll need to edit makefiles to use it).
   * Implemented a configurable size limit for XML data off the network.
 
-  * Support for building and parsing XML-RPC values using wchar_t strings.
+  * Ability to build and parse XML-RPC values using wchar_t strings.
   * Basic UTF-8 handling: Refuse to process invalid UTF-8 from network,
     print warnings when sending invalid UTF-8 *to* network.
   * Highly robust UTF-8 validator, decoder, encoder.
@@ -135,7 +136,7 @@
   * Fixed lots of gcc warnings.
   * Added a new 'xmlrpc_server_info' class, which allows you to
     set options on a per-server basis.
-  * Added support for HTTP Basic authentication.
+  * HTTP Basic authentication.
   * Added internal implementation of system.multicall, lots of brutal test
     cases, and stubs for other system.* commands.
   * Added APIs for accessing CGI and Abyss method registries.
@@ -143,7 +144,7 @@
   * Fixed stupid bug in parsing of "(ss*)"-style array descriptions
     where there were no extra elements.
   * Added highly experimental hacked copy of mod_gzip into the
-    tools/turbocharger directory. This version supports gzip *and* deflate!
+    tools/turbocharger directory. This version does gzip *and* deflate!
   * Added xml-rpc-api2txt, since XML-RPC doesn't have any IDL language.
   * Merged in Ilya Goldberg's libwww/SSL setup code.
 
@@ -153,11 +154,11 @@
 
 0.9.4 - Eric Kidd <eric.kidd@pobox.com> - 18 January 2001
 
-  * Support for CGI-based servers.
+  * Services for CGI-based servers.
 
 0.9.3 - Eric Kidd <eric.kidd@pobox.com> - 14 January 2001
 
-  * Added support for libwww 5.2.8, even when linked against expat.
+  * Works with Libwww 5.2.8, even when linked against expat.
   * Added xmlrpc_value_type and XmlRpcValue::getType functions.
   * Miscellaneous API tweaks to discourage writing of incorrect programs.
     Should not affect any correct programs.
