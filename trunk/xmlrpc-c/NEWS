@@ -1,3 +1,8 @@
+CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
+
+  * Fixed all recent, reproducible bugs in CVS. These were generally
+    Windows build bugs.
+
 0.9.8 - Eric Kidd <eric.kidd@pobox.com> - 19 February 2001
 
   * J. Alan Eldridge, Rosimildo daSIlva: Build fixes.

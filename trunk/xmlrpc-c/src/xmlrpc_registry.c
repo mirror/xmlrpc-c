@@ -647,7 +647,7 @@ system_methodSignature (xmlrpc_env *env,
 
 
 /*=========================================================================
-**  xmlrpc_registry_install_system_methods
+**  install_system_methods
 **=========================================================================
 **  Install the standard methods under system.*.
 **  This particular function is highly experimental, and may disappear
@@ -679,4 +679,5 @@ install_system_methods (xmlrpc_env *env, xmlrpc_registry *registry)
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:
+    return;
 }

@@ -130,7 +130,7 @@ void xmlrpc_fatal_error (char* file, int line, char* msg)
 **=========================================================================
 */ 
 
-static size_t limits[XMLRPC_LAST_LIMIT_ID] = {
+static size_t limits[XMLRPC_LAST_LIMIT_ID + 1] = {
     XMLRPC_NESTING_LIMIT_DEFAULT
 };
 
