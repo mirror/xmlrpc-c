@@ -1,7 +1,11 @@
-﻿(BJH means Bryan Henderson <bryanh@giraffe-data.com>)
+(BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
 1.2 - not yet
+
+  * BJH: Add xmlrpc_int_new(), etc.
+
+  * BJH: Use GNUmakefile to catch non-GNU make
 
   * BJH: Fix usage message in xmlrpc-c-config.
 
@@ -22,11 +26,11 @@
   * SAB: WinInet Transport: Add Ignore Invalid SSL certs option.
   
   * SAB: Win32 http.sys server: Added new project and sample as 
-    an alternative to Abyss on current Win32 platforms.  Supports
+    an alternative to Abyss on current Win32 platforms. Does
     basic authentication and SSL.  Requires recent Platform SDK to
     build.
   
-  * SAB: Better support for libCurl in Win32.  Added documentation
+  * SAB: Better use of libCurl in Win32.  Added documentation
     and altered some project and configuration files.
 
 1.1 - January 8, 2005
