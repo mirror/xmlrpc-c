@@ -663,7 +663,6 @@ AC_OUTPUT(xmlrpc-c-config \
           xmlrpc-c-config.test \
           Makefile.config \
           xmlrpc_config.h \
-          Makefile \
           xmlrpc-c.spec \
           src/testdata/Makefile \
           doc/Makefile \

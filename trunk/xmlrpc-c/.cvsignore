@@ -8,7 +8,6 @@ stamp-h1
 config.cache
 libtool
 config.status
-Makefile
 xmlrpc_config.h
 xmlrpc_amconfig.h
 xmlrpc-c-config
