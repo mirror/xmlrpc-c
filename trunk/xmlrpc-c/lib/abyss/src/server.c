@@ -543,8 +543,11 @@ abyss_bool ServerDefaultHandlerFunc(TSession *r)
 			return ServerFileHandler(r,z,NULL);
 }
 
-abyss_bool ServerCreate(TServer *srv,char *name,uint16 port,char *filespath,
-				  char *logfilename)
+abyss_bool ServerCreate(TServer *srv,
+                        const char *name,
+                        uint16 port,
+                        const char *filespath,
+                        const char *logfilename)
 {
 	srv->name=strdup(name);
 	srv->port=port;
@@ -771,31 +774,45 @@ void ServerRun(TServer *srv)
 #endif	/* _FORK */
 
 /* This function supplied by Brian Quinlan of ActiveState. */
+
+/* Bryan Henderson found this to be completely wrong on 2001.11.29
+   and changed it so it does the same thing as ServerRun(), but only
+   once.
+
+   The biggest problem it had was that when it forked the child (via
+   ConnCreate(), both the parent and the child read the socket and
+   processed the request!
+*/
+
 void ServerRunOnce(TServer *srv)
 {
       TConn connection;
-      TSocket s,ns;
-      TIPAddr ip;
+      TSocket listenSocket;
+      TSocket connectedSocket;
+      TIPAddr remoteAddr;
+      abyss_bool succeeded;
 
       srv->keepalivemaxconn = 1;
 
-      connection.connected=FALSE;
-      connection.server=srv;
+      connection.connected = FALSE;
+      connection.inUse = FALSE;
+      connection.server = srv;
 
-      s=srv->listensock;
-
-      if (SocketAccept(&s,&ns,&ip))
-      {
-              if (ConnCreate(&connection,&ns,&ServerFunc))
-              {
-                      ServerFunc( &connection );
-              }
-              else
-                      SocketClose(&ns);
-      }
-      else
-              TraceMsg("Socket Error=%d\n", SocketError());
+      listenSocket = srv->listensock;
+      
+      succeeded = SocketAccept(&listenSocket, &connectedSocket, &remoteAddr);
+      if (succeeded) {
+          abyss_bool parent;
+          parent = ConnCreate(&connection, &connectedSocket, &ServerFunc);
+          if (parent)
+              ConnProcess(&connection);
+          else
+              SocketClose(&connectedSocket);
+      } else
+          TraceMsg("Socket Error=%d\n", SocketError());
 }
+
+
 
 abyss_bool ServerAddHandler(TServer *srv,URIHandler handler)
 {
@@ -807,7 +824,7 @@ void ServerDefaultHandler(TServer *srv,URIHandler handler)
 	srv->defaulthandler=handler;
 }
 
-abyss_bool LogOpen(TServer *srv, char *filename)
+abyss_bool LogOpen(TServer *srv, const char *filename)
 {
 	if (FileOpenCreate(&(srv->logfile),filename,O_WRONLY | O_APPEND))
 		if (MutexCreate(&(srv->logmutex)))

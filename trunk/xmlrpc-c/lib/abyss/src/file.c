@@ -58,7 +58,7 @@ abyss_bool FileOpen(TFile *f, const char *name,uint32 attrib)
 #endif
 }
 
-abyss_bool FileOpenCreate(TFile *f, char *name,uint32 attrib)
+abyss_bool FileOpenCreate(TFile *f, const char *name, uint32 attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));

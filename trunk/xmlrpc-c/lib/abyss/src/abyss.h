@@ -426,7 +426,7 @@ typedef struct
 typedef int TFile;
 
 abyss_bool FileOpen(TFile *f, const char *name,uint32 attrib);
-abyss_bool FileOpenCreate(TFile *f, char *name, uint32 attrib);
+abyss_bool FileOpenCreate(TFile *f, const char *name, uint32 attrib);
 abyss_bool FileClose(TFile *f);
 
 abyss_bool FileWrite(TFile *f, void *buffer, uint32 len);
@@ -632,8 +632,12 @@ abyss_bool HTTPWriteEnd(TSession *s);
 
 typedef abyss_bool (*URIHandler) (TSession *);
 
-abyss_bool ServerCreate(TServer *srv,char *name,uint16 port,char *filespath,
-				  char *logfilename);
+abyss_bool ServerCreate(TServer *srv,
+                        const char *name,
+                        uint16 port,
+                        const char *filespath,
+                        const char *logfilename);
+
 void ServerFree(TServer *srv);
 
 void ServerInit(TServer *srv);
@@ -643,7 +647,7 @@ void ServerRunOnce(TServer *srv);
 abyss_bool ServerAddHandler(TServer *srv,URIHandler handler);
 void ServerDefaultHandler(TServer *srv,URIHandler handler);
 
-abyss_bool LogOpen(TServer *srv, char *filename);
+abyss_bool LogOpen(TServer *srv, const char *filename);
 void LogWrite(TServer *srv,char *c);
 void LogClose(TServer *srv);
 
