@@ -37,9 +37,10 @@
 */
 #if defined(__GNUC__)
   #if (!defined(__inline__))
-  #if (defined(__sgi) || defined(_AIX))
-    #define __inline__ __inline
-  #else   
-    #define __inline__
+    #if (defined(__sgi) || defined(_AIX))
+      #define __inline__ __inline
+    #else   
+      #define __inline__
+    #endif
   #endif
 #endif
