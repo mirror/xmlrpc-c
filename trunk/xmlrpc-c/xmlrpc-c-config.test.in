@@ -9,7 +9,7 @@
 
 
 BUILDDIR="@BUILDDIR@"
-ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND"
+ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND@"
 MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
 MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
 MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
@@ -19,18 +19,22 @@ if test $# -eq 0; then
       exit 1
 fi
 
+sopath=
 
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
   LIBXML="@LIBXML2_LIBS@"
 else
   LIBXML="${BUILDDIR}/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a"
+  sopath="${BUILDDIR}/lib/expat/xmlparse/.libs:$sopath"
   LIBXML="${LIBXML} ${BUILDDIR}/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a"
+  sopath="${BUILDDIR}/lib/expat/xmltok/.libs:$sopath"
 fi
 
 needCpp=no
 
 the_libs="${BUILDDIR}/src/.libs/libxmlrpc.a ${LIBXML}"
 the_includes="-I ${BUILDDIR}"
+sopath="${BUILDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do
   case $1 in
@@ -47,6 +51,7 @@ while test $# -gt 0; do
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
       the_includes="-I${BUILDDIR}/lib/abyss/src $the_includes"
+      sopath="${BUILDDIR}/lib/abyss/src/.libs:$sopath"
       ;;
     client)
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
@@ -103,6 +108,10 @@ while test $# -gt 0; do
       ;;
     --ldflags)
       echo "$the_rpath"
+      exit 0
+      ;;
+    --sopath)
+      echo "$sopath"
       exit 0
       ;;
     --prefix)
