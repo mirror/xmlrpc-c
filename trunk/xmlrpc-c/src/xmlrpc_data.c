@@ -1,28 +1,4 @@
-/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
-** Copyright (C) 2001 by Eric Kidd. All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE. */
+/* Copyright information is at end of file */
 
 #ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
@@ -58,6 +34,56 @@ typedef double va_double;
 #endif
 
 
+static void
+destroyValue(xmlrpc_value * const valueP) {
+
+    /* First, we need to destroy this value's contents, if any. */
+    switch (valueP->_type) {
+    case XMLRPC_TYPE_INT:
+    case XMLRPC_TYPE_BOOL:
+    case XMLRPC_TYPE_DOUBLE:
+        break;
+        
+    case XMLRPC_TYPE_ARRAY:
+        xmlrpc_destroyArray(valueP);
+        break;
+        
+    case XMLRPC_TYPE_STRING:
+#ifdef HAVE_UNICODE_WCHAR
+        if (valueP->_wcs_block)
+            xmlrpc_mem_block_free(valueP->_wcs_block);
+#endif /* HAVE_UNICODE_WCHAR */
+        /* Fall through. */
+
+    case XMLRPC_TYPE_DATETIME:
+    case XMLRPC_TYPE_BASE64:
+        xmlrpc_mem_block_clean(&valueP->_block);
+        break;
+
+    case XMLRPC_TYPE_STRUCT:
+        xmlrpc_destroyStruct(valueP);
+        break;
+
+    case XMLRPC_TYPE_C_PTR:
+        break;
+
+    case XMLRPC_TYPE_DEAD:
+        XMLRPC_ASSERT(FALSE); /* Can't happen, per entry conditions */
+
+    default:
+        XMLRPC_ASSERT(FALSE); /* There are no other possible values */
+    }
+
+    /* Next, we mark this value as invalid, to help catch refcount
+        ** errors. */
+    valueP->_type = XMLRPC_TYPE_DEAD;
+
+    /* Finally, we destroy the value itself. */
+    free(valueP);
+}
+
+
+
 /*=========================================================================
 **  Reference Counting
 **=========================================================================
@@ -65,99 +91,31 @@ typedef double va_double;
 **  charge of destroying values when their reference count equals zero.
 */
 
-void xmlrpc_INCREF (xmlrpc_value* value)
-{
-    XMLRPC_ASSERT_VALUE_OK(value);
-    XMLRPC_ASSERT(value->_refcount > 0);
+void 
+xmlrpc_INCREF (xmlrpc_value * const valueP) {
 
-    value->_refcount++;
+    XMLRPC_ASSERT_VALUE_OK(valueP);
+    XMLRPC_ASSERT(valueP->_refcount > 0);
+
+    valueP->_refcount++;
 }
 
-void xmlrpc_DECREF (xmlrpc_value* value)
-{
-    xmlrpc_env env;
-    int size, i;
-    xmlrpc_value *item;
-    _struct_member *members;
 
-    XMLRPC_ASSERT_VALUE_OK(value);
-    XMLRPC_ASSERT(value->_refcount > 0);
-    XMLRPC_ASSERT(value->_type != XMLRPC_TYPE_DEAD);
 
-    value->_refcount--;
+void 
+xmlrpc_DECREF (xmlrpc_value * const valueP) {
+
+    XMLRPC_ASSERT_VALUE_OK(valueP);
+    XMLRPC_ASSERT(valueP->_refcount > 0);
+    XMLRPC_ASSERT(valueP->_type != XMLRPC_TYPE_DEAD);
+
+    valueP->_refcount--;
 
     /* If we have no more refs, we need to deallocate this value. */
-    if (value->_refcount == 0) {
-
-        /* First, we need to destroy this value's contents, if any. */
-        switch (value->_type) {
-        case XMLRPC_TYPE_INT:
-        case XMLRPC_TYPE_BOOL:
-        case XMLRPC_TYPE_DOUBLE:
-            break;
-        
-        case XMLRPC_TYPE_ARRAY:
-            /* Dispose of the contents of the array.
-            ** No errors should *ever* occur when this code is running,
-            ** so we use assertions instead of regular error checks. */
-            xmlrpc_env_init(&env);
-            size = xmlrpc_array_size(&env, value);
-            XMLRPC_ASSERT(!env.fault_occurred);
-            for (i = 0; i < size; i++) {
-                item = xmlrpc_array_get_item(&env, value, i);
-                XMLRPC_ASSERT(!env.fault_occurred);
-                xmlrpc_DECREF(item);
-            }
-            xmlrpc_env_clean(&env);
-            xmlrpc_mem_block_clean(&value->_block);
-            break;
-
-        case XMLRPC_TYPE_STRING:
-#ifdef HAVE_UNICODE_WCHAR
-            if (value->_wcs_block)
-                xmlrpc_mem_block_free(value->_wcs_block);
-#endif /* HAVE_UNICODE_WCHAR */
-            /* Fall through. */
-
-        case XMLRPC_TYPE_DATETIME:
-        case XMLRPC_TYPE_BASE64:
-            xmlrpc_mem_block_clean(&value->_block);
-            break;
-
-        case XMLRPC_TYPE_STRUCT:
-            /* Dispose of the contents of the struct.
-            ** No errors should *ever* occur when this code is running,
-            ** so we use assertions instead of regular error checks. */
-            size = XMLRPC_TYPED_MEM_BLOCK_SIZE(_struct_member,
-                                               &value->_block);
-            members = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(_struct_member,
-                                                      &value->_block);
-            for (i = 0; i < size; i++) {
-                xmlrpc_DECREF(members[i].key);
-                xmlrpc_DECREF(members[i].value);
-            }
-            xmlrpc_mem_block_clean(&value->_block);
-            break;
-
-
-        case XMLRPC_TYPE_C_PTR:
-            break;
-
-        case XMLRPC_TYPE_DEAD:
-            XMLRPC_ASSERT(FALSE); /* Can't happen, per entry conditions */
-
-        default:
-            XMLRPC_ASSERT(FALSE); /* There are no other possible values */
-        }
-
-        /* Next, we mark this value as invalid, to help catch refcount
-        ** errors. */
-        value->_type = XMLRPC_TYPE_DEAD;
-
-        /* Finally, we destroy the value itself. */
-        free(value);
-    }
+    if (valueP->_refcount == 0)
+        destroyValue(valueP);
 }
+
 
 
 /*=========================================================================
@@ -1218,85 +1176,28 @@ xmlrpc_parse_value(xmlrpc_env *   const envP,
 
 
 
-/*=========================================================================
-**  XML-RPC Array Functions
-**=========================================================================
-*/
-
-int 
-xmlrpc_array_size(xmlrpc_env *         const env, 
-                  const xmlrpc_value * const array) {
-
-    int retval;
-
-    /* Suppress a compiler warning about uninitialized variables. */
-    retval = 0;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(array);
-    XMLRPC_TYPE_CHECK(env, array, XMLRPC_TYPE_ARRAY);
-
-    retval = XMLRPC_TYPED_MEM_BLOCK_SIZE(xmlrpc_value*, &array->_block);
-
-                  cleanup:
-    if (env->fault_occurred)
-        return -1;
-    else
-        return retval;
-}
-
-
-
-void 
-xmlrpc_array_append_item (xmlrpc_env *   const env,
-                          xmlrpc_value * const array,
-                          xmlrpc_value * const value) {
-    size_t size;
-    xmlrpc_value **contents;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(array);
-    XMLRPC_TYPE_CHECK(env, array, XMLRPC_TYPE_ARRAY);
-
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(xmlrpc_value*, &array->_block);
-    XMLRPC_TYPED_MEM_BLOCK_RESIZE(xmlrpc_value*, env, &array->_block, size+1);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xmlrpc_value*, &array->_block);
-    xmlrpc_INCREF(value);
-    contents[size] = value;
-
-                          cleanup:    
-    return;
-}
-
-
-
-xmlrpc_value * 
-xmlrpc_array_get_item(xmlrpc_env *         const env,
-                      const xmlrpc_value * const array,
-                      int                  const index) {
-
-    size_t size;
-    xmlrpc_value **contents, *retval;
-
-    /* Suppress a compiler warning about uninitialized variables. */
-    retval = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(array);
-    XMLRPC_TYPE_CHECK(env, array, XMLRPC_TYPE_ARRAY);
-
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(xmlrpc_value*, &array->_block);
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xmlrpc_value*, &array->_block);
-
-    /* BREAKME: 'index' should be a parameter of type size_t. */
-    if (index < 0 || (size_t) index >= size)
-        XMLRPC_FAIL1(env, XMLRPC_INDEX_ERROR, "Index %d out of bounds", index);
-    retval = contents[index];
-
-                      cleanup:    
-    if (env->fault_occurred)
-        return NULL;
-    return retval;
-}
+/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
+** Copyright (C) 2001 by Eric Kidd. All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission. 
+**  
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE. */

@@ -439,6 +439,12 @@ xmlrpc_array_append_item (xmlrpc_env*   env,
                           xmlrpc_value* array,
                           xmlrpc_value* value);
 
+void
+xmlrpc_array_read_item(xmlrpc_env *         const envP,
+                       const xmlrpc_value * const arrayP,
+                       unsigned int         const index,
+                       xmlrpc_value **      const valuePP);
+
 /* Get an item from an XML-RPC array.
 ** Does not increment the reference count of the returned value.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array.

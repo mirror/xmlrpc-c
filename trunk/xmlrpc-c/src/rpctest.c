@@ -80,7 +80,7 @@ static void test_failure (char *file, int line, char *label, char *statement)
 
 #define TEST(statement) \
 do { \
-    total_tests++; \
+    ++total_tests; \
     if ((statement)) { \
         printf("."); \
     } else { \
@@ -90,7 +90,7 @@ do { \
 
 #define TEST_NO_FAULT(env) \
     do { \
-        total_tests++; \
+        ++total_tests; \
         if (!(env)->fault_occurred) { \
             printf("."); \
         } else { \
@@ -98,6 +98,18 @@ do { \
             (env)->fault_string); \
         } \
        } while (0)
+
+#define TEST_FAULT(env, code) \
+do { \
+    ++total_tests; \
+    if ((env)->fault_occurred && (env)->fault_code == (code)) { \
+        printf("."); \
+    } else { \
+            test_failure(__FILE__, __LINE__, "wrong/no fault occurred", \
+            (env)->fault_string); \
+    } \
+   } while (0)
+        
 
 
 /*=========================================================================
@@ -501,20 +513,19 @@ static void test_base64_conversion (void)
     xmlrpc_env_init(&env2);
     output = xmlrpc_base64_decode(&env2, "====", 4);
     TEST(output == NULL);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
     xmlrpc_env_clean(&env2);
 
     /* Now for something broken in a really sneaky way... */
     xmlrpc_env_init(&env2);
     output = xmlrpc_base64_decode(&env2, "a==", 4);
     TEST(output == NULL);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
     xmlrpc_env_clean(&env2);
 
     xmlrpc_env_clean(&env);
 }
+
 
 
 static void
@@ -667,8 +678,7 @@ test_value_string_null(void) {
     ** regular C string. */
     xmlrpc_env_init(&env2);
     xmlrpc_parse_value(&env2, v, "s", &str);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
     xmlrpc_DECREF(v);
 
@@ -775,13 +785,11 @@ test_value_AS_typecheck(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_env_init(&env2);
     xmlrpc_parse_value(&env2, v, "A", &v2);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
     xmlrpc_env_init(&env2);
     xmlrpc_parse_value(&env2, v, "S", &v2);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
     xmlrpc_DECREF(v);
     xmlrpc_env_clean(&env);
@@ -792,43 +800,78 @@ test_value_AS_typecheck(void) {
 static void
 test_value_array2(void) {
 
-    xmlrpc_value *v;
+    xmlrpc_value * arrayP;
     xmlrpc_env env;
     xmlrpc_int32 i, i1, i2, i3, i4;
-    xmlrpc_value * item;
+    xmlrpc_value * itemP;
+    xmlrpc_value * subarrayP;
     size_t len;
 
     /* A more complex array. */
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "(i(ii)i)",
-                           (xmlrpc_int32) 10, (xmlrpc_int32) 20,
-                           (xmlrpc_int32) 30, (xmlrpc_int32) 40);
+    arrayP = xmlrpc_build_value(&env, "(i(ii)i)",
+                                (xmlrpc_int32) 10, (xmlrpc_int32) 20,
+                                (xmlrpc_int32) 30, (xmlrpc_int32) 40);
     TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
-    len = xmlrpc_array_size(&env, v);
+    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(arrayP));
+
+    len = xmlrpc_array_size(&env, arrayP);
     TEST_NO_FAULT(&env);
     TEST(len == 3);
-    item = xmlrpc_array_get_item(&env, v, 1);
+
+    xmlrpc_array_read_item(&env, arrayP, 1, &subarrayP);
     TEST_NO_FAULT(&env);
-    len = xmlrpc_array_size(&env, item);
+
+    len = xmlrpc_array_size(&env, subarrayP);
     TEST_NO_FAULT(&env);
     TEST(len == 2);
-    item = xmlrpc_array_get_item(&env, item, 0);
+
+    xmlrpc_array_read_item(&env, subarrayP, 0, &itemP);
     TEST_NO_FAULT(&env);
-    xmlrpc_parse_value(&env, item, "i", &i);
+    xmlrpc_parse_value(&env, itemP, "i", &i);
     TEST_NO_FAULT(&env);
     TEST(i == 20);
-    xmlrpc_parse_value(&env, v, "(i(ii)i)", &i1, &i2, &i3, &i4);
+
+    xmlrpc_DECREF(itemP);
+    xmlrpc_DECREF(subarrayP);
+
+    itemP = xmlrpc_array_get_item(&env, arrayP, 0);
+    TEST_NO_FAULT(&env);
+    xmlrpc_parse_value(&env, itemP, "i", &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == 10);
+
+    xmlrpc_parse_value(&env, arrayP, "(i(ii)i)", &i1, &i2, &i3, &i4);
     TEST_NO_FAULT(&env);
     TEST(i1 == 10 && i2 == 20 && i3 == 30 && i4 == 40);
-    xmlrpc_parse_value(&env, v, "(i(i*)i)", &i1, &i2, &i3);
+
+    xmlrpc_parse_value(&env, arrayP, "(i(i*)i)", &i1, &i2, &i3);
     TEST_NO_FAULT(&env);
     TEST(i1 == 10 && i2 == 20 && i3 == 40);
-    xmlrpc_parse_value(&env, v, "(i(ii*)i)", &i1, &i2, &i3, &i4);
+
+    xmlrpc_parse_value(&env, arrayP, "(i(ii*)i)", &i1, &i2, &i3, &i4);
     TEST_NO_FAULT(&env);
-    xmlrpc_DECREF(v);
+
+
+    /* Test bounds check on xmlrpc_array_get_item. */
+    xmlrpc_array_read_item(&env, arrayP, 3, &itemP);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    xmlrpc_array_get_item(&env, arrayP, 3);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    xmlrpc_array_get_item(&env, arrayP, -1);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    xmlrpc_DECREF(arrayP);
 
     xmlrpc_env_clean(&env);
 }
@@ -852,8 +895,7 @@ test_value_type_mismatch(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_env_init(&env2);
     xmlrpc_parse_value(&env2, v, "s", &str);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_DECREF(v);
     xmlrpc_env_clean(&env2);
 
@@ -924,8 +966,7 @@ test_value_invalid_type(void) {
     xmlrpc_env_init(&env);
 
     v = xmlrpc_build_value(&env, "Q");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
 }
@@ -942,14 +983,12 @@ test_value_missing_array_delim(void) {
 
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "(");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "(i");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 }
 
@@ -965,20 +1004,17 @@ test_value_missing_struct_delim(void) {
 
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{s:i", "key1", 7);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{s:i,s:i", "key1", 9, "key2", -4);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 }
 
@@ -992,20 +1028,17 @@ test_value_invalid_struct(void) {
     
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{s:ii");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{si:");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 
     xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{s");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 }
 
@@ -1051,25 +1084,16 @@ static void test_bounds_checks (void)
     TEST_NO_FAULT(&env);
     xmlrpc_env_clean(&env);
     
-    /* Test bounds check on xmlrpc_array_get_item. */
-    xmlrpc_env_init(&env);
-    xmlrpc_array_get_item(&env, array, 3);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-
     /* Test xmlrpc_parse_value with too few values. */
     xmlrpc_env_init(&env);
     xmlrpc_parse_value(&env, array, "(iiii)", &i1, &i2, &i3, &i4);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
     xmlrpc_env_clean(&env);
 
     /* Test xmlrpc_parse_value with too many values. */
     xmlrpc_env_init(&env);
     xmlrpc_parse_value(&env, array, "(ii)", &i1, &i2, &i3, &i4);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
     xmlrpc_env_clean(&env);
 
     /* Dispose of our array. */
@@ -1118,8 +1142,7 @@ test_struct_get_element(xmlrpc_value * const structP,
     TEST(valueP == NULL);
 
     xmlrpc_struct_find_value(&env, i1, "aas", &valueP);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env);
     xmlrpc_env_init(&env);
             
@@ -1131,8 +1154,7 @@ test_struct_get_element(xmlrpc_value * const structP,
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value(&env, structP, "doesn't_exist", &valueP);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
     xmlrpc_env_clean(&env);
     xmlrpc_env_init(&env);
             
@@ -1142,14 +1164,12 @@ test_struct_get_element(xmlrpc_value * const structP,
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value_v(&env, structP, bogusKeyStringP, &valueP);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
     xmlrpc_env_clean(&env);
     xmlrpc_env_init(&env);
 
     xmlrpc_struct_read_value(&env, i1, "aas", &valueP);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env);
     xmlrpc_env_init(&env);
             
@@ -1160,14 +1180,12 @@ test_struct_get_element(xmlrpc_value * const structP,
     TEST(valueP == i1);
 
     valueP = xmlrpc_struct_get_value(&env, structP, "doesn't_exist");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
     xmlrpc_env_clean(&env);
     xmlrpc_env_init(&env);
 
     valueP = xmlrpc_struct_get_value(&env, i1, "foo");
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env);
     xmlrpc_env_init(&env);
 
@@ -1185,8 +1203,41 @@ test_struct_get_element(xmlrpc_value * const structP,
 
 
 
-static void test_struct (void)
-{
+static void
+testStructReadout(xmlrpc_value * const structP,
+                  size_t         const expectedSize) {
+
+    xmlrpc_env env;
+    xmlrpc_value * keyP;
+    xmlrpc_value * valueP;
+
+    unsigned int index;
+
+    xmlrpc_env_init(&env);
+
+    for (index = 0; index < expectedSize; ++index) {
+        xmlrpc_struct_read_member(&env, structP, index, &keyP, &valueP);
+        TEST_NO_FAULT(&env);
+        xmlrpc_DECREF(keyP);
+        xmlrpc_DECREF(valueP);
+    }
+
+    xmlrpc_struct_read_member(&env, structP, expectedSize, &keyP, &valueP);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    for (index = 0; index < expectedSize; ++index) {
+        xmlrpc_struct_get_key_and_value(&env, structP, index, &keyP, &valueP);
+        TEST_NO_FAULT(&env);
+    }
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void test_struct (void) {
+
     xmlrpc_env env, env2;
     xmlrpc_value *s, *i, *i1, *i2, *i3, *key, *value;
     size_t size;
@@ -1194,7 +1245,6 @@ static void test_struct (void)
     xmlrpc_int32 ival;
     xmlrpc_bool bval;
     char *sval;
-    int index;
     char const weirdKey[] = {'f', 'o', 'o', '\0', 'b', 'a', 'r'};
 
     xmlrpc_env_init(&env);
@@ -1270,26 +1320,22 @@ static void test_struct (void)
     /* Make sure our typechecks work correctly. */
     xmlrpc_env_init(&env2);
     xmlrpc_struct_size(&env2, i1);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
 
     xmlrpc_env_init(&env2);
     xmlrpc_struct_has_key(&env2, i1, "foo");
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
 
     xmlrpc_env_init(&env2);
     xmlrpc_struct_set_value(&env2, i1, "foo", i2);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
 
     xmlrpc_env_init(&env2);
     xmlrpc_struct_set_value_v(&env2, s, s, i2);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
 
     /* Test cleanup code (w/memprof). */
@@ -1321,13 +1367,7 @@ static void test_struct (void)
     TEST_NO_FAULT(&env);
     TEST(!bval);
 
-    /* Extract keys and values. */
-    for (index = 0; index < 3; index++) {
-        xmlrpc_struct_get_key_and_value(&env, s, index, &key, &value);
-        TEST_NO_FAULT(&env);
-        TEST(key != NULL);
-        TEST(value != NULL);
-    }
+    testStructReadout(s, 3);
 
     /* Test our automagic struct parser. */
     xmlrpc_parse_value(&env, s, "{s:b,s:s,s:i,*}",
@@ -1344,8 +1384,7 @@ static void test_struct (void)
     xmlrpc_parse_value(&env2, s, "{s:b,s:i,*}",
                        "baz", &bval,
                        "foo", &sval);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
 
     /* Test automagic struct parser with bad key. */
@@ -1353,30 +1392,26 @@ static void test_struct (void)
     xmlrpc_parse_value(&env2, s, "{s:b,s:i,*}",
                        "baz", &bval,
                        "nosuch", &sval);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env2, XMLRPC_INDEX_ERROR);
     xmlrpc_env_clean(&env2);
 
     /* Test type check. */
     xmlrpc_env_init(&env2);
     xmlrpc_struct_get_key_and_value(&env2, i1, 0, &key, &value);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
     TEST(key == NULL && value == NULL);
     xmlrpc_env_clean(&env2);
     
     /* Test bounds checks. */
     xmlrpc_env_init(&env2);
     xmlrpc_struct_get_key_and_value(&env2, s, -1, &key, &value);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env2, XMLRPC_INDEX_ERROR);
     TEST(key == NULL && value == NULL);
     xmlrpc_env_clean(&env2);
 
     xmlrpc_env_init(&env2);
     xmlrpc_struct_get_key_and_value(&env2, s, 3, &key, &value);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_INDEX_ERROR);
+    TEST_FAULT(&env2, XMLRPC_INDEX_ERROR);
     TEST(key == NULL && value == NULL);
     xmlrpc_env_clean(&env2);
     
@@ -1773,8 +1808,7 @@ static void test_parse_xml_value (void)
     xmlrpc_env_init(&env2);
     val = xmlrpc_parse_response(&env2, unparseable_value,
                                 strlen(unparseable_value));
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
     TEST(val == NULL);
     xmlrpc_env_clean(&env2);
     
@@ -1791,8 +1825,7 @@ static void test_parse_xml_value (void)
         /* Now, make sure the higher-level routine barfs appropriately. */
         xmlrpc_env_init(&env2);
         val = xmlrpc_parse_response(&env2, *bad_value, strlen(*bad_value));
-        TEST(env2.fault_occurred);
-        TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+        TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
         TEST(val == NULL);
         xmlrpc_env_clean(&env2);
     }
@@ -1881,8 +1914,7 @@ static void test_parse_xml_call (void)
     xmlrpc_env_init(&env2);
     xmlrpc_parse_call(&env2, unparseable_value, strlen(unparseable_value),
                       &method_name, &params);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
     TEST(method_name == NULL && params == NULL);
     xmlrpc_env_clean(&env2);
 
@@ -1900,8 +1932,7 @@ static void test_parse_xml_call (void)
         xmlrpc_env_init(&env2);
         xmlrpc_parse_call(&env2, *bad_call, strlen(*bad_call),
                           &method_name, &params);
-        TEST(env2.fault_occurred);
-        TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+        TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
         TEST(method_name == NULL && params == NULL);
         xmlrpc_env_clean(&env2);
     }
@@ -2051,8 +2082,7 @@ static void test_method_registry (void)
     /* Call test.bar and check the result. */
     xmlrpc_env_init(&env2);
     value = process_call_helper(&env2, registry, "test.bar", arg_array);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == 123);
+    TEST_FAULT(&env2, 123);
     TEST(env2.fault_string && strcmp(env2.fault_string, "Test fault") == 0);
     xmlrpc_env_clean(&env2);
 
@@ -2060,8 +2090,7 @@ static void test_method_registry (void)
     xmlrpc_env_init(&env2);
     value = process_call_helper(&env2, registry, "test.nosuch", arg_array);
     TEST(value == NULL);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_NO_SUCH_METHOD_ERROR);
+    TEST_FAULT(&env2, XMLRPC_NO_SUCH_METHOD_ERROR);
     xmlrpc_env_clean(&env2);
 
     /* Test system.multicall. */
@@ -2119,8 +2148,7 @@ static void test_method_registry (void)
     value = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(response),
                                   xmlrpc_mem_block_size(response));
     TEST(value == NULL);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
     xmlrpc_mem_block_free(response);
     xmlrpc_env_clean(&env2);
 
@@ -2165,8 +2193,7 @@ static void test_nesting_limit (void)
     /* Test with an inadequate limit. */
     xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 1);
     val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_PARSE_ERROR); /* BREAKME - Will change. */
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR); /* BREAKME - Will change. */
     TEST(val == NULL);
 
     /* Reset the default limit. */
@@ -2195,8 +2222,7 @@ static void test_xml_size_limit (void)
     xmlrpc_env_init(&env);
     xmlrpc_parse_call(&env, serialized_call, strlen(serialized_call),
                       &method_name, &params);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_LIMIT_EXCEEDED_ERROR);
+    TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
     TEST(method_name == NULL);
     TEST(params == NULL);
     xmlrpc_env_clean(&env);
@@ -2204,8 +2230,7 @@ static void test_xml_size_limit (void)
     /* Attempt to parse a response. */
     xmlrpc_env_init(&env);
     val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_LIMIT_EXCEEDED_ERROR);
+    TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
     TEST(val == NULL);
     xmlrpc_env_clean(&env);
 
@@ -2449,16 +2474,14 @@ static void test_utf8_coding (void)
         /* Attempt to validate the UTF-8 string. */
         xmlrpc_env_init(&env2);
         xmlrpc_validate_utf8(&env2, utf8, strlen(utf8));
-        TEST(env2.fault_occurred);
-        TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
+        TEST_FAULT(&env2, XMLRPC_INVALID_UTF8_ERROR);
         /* printf("Fault: %s\n", env2.fault_string); --Hand-checked */
         xmlrpc_env_clean(&env2);
 
         /* Attempt to decode the UTF-8 string. */
         xmlrpc_env_init(&env2);
         output = xmlrpc_utf8_to_wcs(&env2, utf8, strlen(utf8));
-        TEST(env2.fault_occurred);
-        TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
+        TEST_FAULT(&env2, XMLRPC_INVALID_UTF8_ERROR);
         TEST(output == NULL);
         xmlrpc_env_clean(&env2);
     }
