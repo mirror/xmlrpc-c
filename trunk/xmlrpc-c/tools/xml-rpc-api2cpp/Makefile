@@ -1,10 +1,11 @@
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
+BUILDDIR= $(SRCDIR)
 endif
 
 default: all
 
-include $(SRCDIR)/Makefile.config
+include $(BUILDDIR)/Makefile.config
 
 include ../Makefile.common
 
