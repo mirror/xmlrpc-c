@@ -34,7 +34,7 @@
   #endif
 #include <time.h>
 #include <WINSOCK.h>
-#include <DIRECT.h>   /* for _chdir() */c
+#include <DIRECT.h>   /* for _chdir() */
 
 /* Required for compatability with libWWW headers
 ** Define if you have the memcpy function.  */
