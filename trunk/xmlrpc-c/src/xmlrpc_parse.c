@@ -435,8 +435,8 @@ convert_struct (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 	CHECK_CHILD_COUNT(env, member, 2);
 
 	/* Get our key. */
-	name_elem = xml_element_children(member)[0];
-	CHECK_NAME(env, name_elem, "name");
+	name_elem = get_child_by_name(env, member, "name");
+	XMLRPC_FAIL_IF_FAULT(env);
 	CHECK_CHILD_COUNT(env, name_elem, 0);
 	cdata = xml_element_cdata(name_elem);
 	cdata_size = xml_element_cdata_size(name_elem);
@@ -444,7 +444,8 @@ convert_struct (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 	XMLRPC_FAIL_IF_FAULT(env);
 
 	/* Get our value. */
-	value_elem = xml_element_children(member)[1];
+	value_elem = get_child_by_name(env, member, "value");
+	XMLRPC_FAIL_IF_FAULT(env);
 	value = convert_value(env, depth, value_elem);
 	XMLRPC_FAIL_IF_FAULT(env);
 
@@ -550,6 +551,7 @@ void xmlrpc_parse_call (xmlrpc_env *env,
     xml_element *call_elem, *name_elem, *params_elem;
     char *cdata;
     unsigned depth;
+    size_t call_child_count;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(xml_data != NULL);
@@ -574,14 +576,16 @@ void xmlrpc_parse_call (xmlrpc_env *env,
 
     /* Pick apart and verify our structure. */
     CHECK_NAME(env, call_elem, "methodCall");
-    CHECK_CHILD_COUNT(env, call_elem, 2);
-    name_elem = get_child_by_name(env, call_elem, "methodName");
-    XMLRPC_FAIL_IF_FAULT(env);
-    params_elem = get_child_by_name(env, call_elem, "params");
-    XMLRPC_FAIL_IF_FAULT(env);
+    call_child_count = xml_element_children_size(call_elem);
+    if (call_child_count != 2 && call_child_count != 1)
+	XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
+		     "Expected <methodCall> to have 1 or 2 children, found %d",
+		     call_child_count);
 
     /* Extract the method name.
     ** SECURITY: We make sure the method name is valid UTF-8. */
+    name_elem = get_child_by_name(env, call_elem, "methodName");
+    XMLRPC_FAIL_IF_FAULT(env);
     CHECK_CHILD_COUNT(env, name_elem, 0);
     cdata = xml_element_cdata(name_elem);
 #ifdef HAVE_UNICODE_WCHAR
@@ -594,10 +598,18 @@ void xmlrpc_parse_call (xmlrpc_env *env,
     strcpy(*out_method_name, cdata);
     
     /* Convert our parameters. */
-    depth = 0;
-    *out_param_array = convert_params(env, &depth, params_elem);
-    XMLRPC_ASSERT(depth == 0);
-    XMLRPC_FAIL_IF_FAULT(env);
+    if (call_child_count == 1) {
+	/* Workaround for Ruby XML-RPC and old versions of xmlrpc-epi. */
+	*out_param_array = xmlrpc_build_value(env, "()");
+	XMLRPC_FAIL_IF_FAULT(env);
+    } else {
+	params_elem = get_child_by_name(env, call_elem, "params");
+	XMLRPC_FAIL_IF_FAULT(env);
+	depth = 0;
+	*out_param_array = convert_params(env, &depth, params_elem);
+	XMLRPC_ASSERT(depth == 0);
+	XMLRPC_FAIL_IF_FAULT(env);
+    }
 
  cleanup:
     if (call_elem)

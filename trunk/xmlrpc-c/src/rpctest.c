@@ -220,7 +220,6 @@ static char *(bad_values[]) = \
  MEMBER_HEADER MEMBER_FOOTER,
  MEMBER_HEADER"<name>a</name>"MEMBER_FOOTER,
  MEMBER_HEADER"<name>a</name>"ARBITRARY_VALUE"<f></f>"MEMBER_FOOTER,
- MEMBER_HEADER ARBITRARY_VALUE"<name>a</name>"MEMBER_FOOTER,
  MEMBER_HEADER"<foo></foo>"ARBITRARY_VALUE MEMBER_FOOTER,
  MEMBER_HEADER"<name>a</name><foo></foo>"MEMBER_FOOTER,
  MEMBER_HEADER"<name><foo></foo></name>"ARBITRARY_VALUE MEMBER_FOOTER,
@@ -1650,6 +1649,8 @@ static void test_xml_size_limit (void)
 
 static char *good_requests[] = {
     FILE_PREFIX "req_out_of_order.xml",
+    FILE_PREFIX "req_no_params.xml",
+    FILE_PREFIX "req_value_name.xml",
     NULL
 };
 
