@@ -28,7 +28,6 @@
 #include <stdio.h>
 
 /* We want xmlrpc_registry_install_system_methods. */
-#define XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
 #include "xmlrpc_expat.h"
 
@@ -1396,10 +1395,6 @@ void test_method_registry (void)
     /* Create a new registry. */
     registry = xmlrpc_registry_new(&env);
     TEST(registry != NULL);
-    TEST(!env.fault_occurred);
-
-    /* Install the system methods. */
-    xmlrpc_registry_install_system_methods(&env, registry);
     TEST(!env.fault_occurred);
 
     /* Add some test methods. */

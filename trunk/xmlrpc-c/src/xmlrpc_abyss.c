@@ -95,6 +95,21 @@ void xmlrpc_server_abyss_add_method (char *method_name,
     xmlrpc_env_clean(&env);
 }
 
+extern void
+xmlrpc_abyss_server_add_method_w_doc (char *method_name,
+				      xmlrpc_method method,
+				      void *user_data,
+				      char *signature,
+				      char *help)
+{
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+    xmlrpc_registry_add_method_w_doc(&env, registry, NULL, method_name,
+				     method, user_data, signature, help);
+    die_if_fault_occurred(&env);
+    xmlrpc_env_clean(&env);    
+}
+
 
 /*=========================================================================
 **  send_xml_data

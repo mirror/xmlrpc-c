@@ -584,6 +584,7 @@ xmlrpc_registry_add_method (xmlrpc_env *env,
 			    void *user_data);
 
 /* As above, but allow the user to supply introspection information. 
+**
 ** Signatures use their own little description language. It consists
 ** of one-letter type code (similar to the ones used in xmlrpc_parse_value)
 ** for the result, a colon, and zero or more one-letter type codes for
@@ -597,14 +598,14 @@ xmlrpc_registry_add_method (xmlrpc_env *env,
 **   ?
 ** Help strings are ASCII text, and may contain HTML markup. */
 extern void
-xmlrpc_registry_add_method_doc (xmlrpc_env *env,
-				xmlrpc_registry *registry,
-				char *host,
-				char *method_name,
-				xmlrpc_method method,
-				void *user_data,
-				char *signature,
-				char *help);
+xmlrpc_registry_add_method_w_doc (xmlrpc_env *env,
+				  xmlrpc_registry *registry,
+				  char *host,
+				  char *method_name,
+				  xmlrpc_method method,
+				  void *user_data,
+				  char *signature,
+				  char *help);
 
 /* Given a registry, a host name, and XML data; parse the <methodCall>,
 ** find the appropriate method, call it, serialize the response, and
@@ -619,15 +620,6 @@ xmlrpc_registry_process_call (xmlrpc_env *env,
 			      char *host,
 			      char *xml_data,
 			      size_t xml_len);
-
-#ifdef XMLRPC_WANT_INTERNAL_DECLARATIONS
-/* Install the standard methods under system.* prefix.
-** This particular function is highly experimental, and may disappear
-** without warning. */
-extern void
-xmlrpc_registry_install_system_methods (xmlrpc_env *env,
-					xmlrpc_registry *registry);
-#endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
 
 
 /*=========================================================================

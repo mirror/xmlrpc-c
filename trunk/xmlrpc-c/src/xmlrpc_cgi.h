@@ -53,6 +53,15 @@ xmlrpc_cgi_add_method (char *method_name,
 		       xmlrpc_method method,
 		       void *user_data);
 
+/* As above, but provide documentation (see xmlrpc_registry_add_method_w_doc
+** for more information). You should really use this one. */
+extern void
+xmlrpc_cgi_add_method_w_doc (char *method_name,
+			     xmlrpc_method method,
+			     void *user_data,
+			     char *signature,
+			     char *help);
+
 /* Parse the XML-RPC call, invoke the appropriate method, and send the
 ** response over the network. In future releases, we reserve the right to
 ** time out when reading data. For now, we rely on the webserver to blow us

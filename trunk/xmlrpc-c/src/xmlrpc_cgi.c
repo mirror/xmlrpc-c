@@ -120,10 +120,24 @@ void xmlrpc_cgi_add_method (char *method_name,
 			    void *user_data)
 {
     xmlrpc_env env;
-
     xmlrpc_env_init(&env);
     xmlrpc_registry_add_method(&env, registry, NULL, method_name,
 			       method, user_data);
+    die_if_fault_occurred(&env);
+    xmlrpc_env_clean(&env);    
+}
+
+extern void
+xmlrpc_cgi_add_method_w_doc (char *method_name,
+			     xmlrpc_method method,
+			     void *user_data,
+			     char *signature,
+			     char *help)
+{
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+    xmlrpc_registry_add_method_w_doc(&env, registry, NULL, method_name,
+				     method, user_data, signature, help);
     die_if_fault_occurred(&env);
     xmlrpc_env_clean(&env);    
 }

@@ -7,7 +7,7 @@ CVS - Eric Kidd <eric.kidd@pobox.com> - 25 January 2000
   * Added internal implementation of system.multicall, lots of brutal test
     cases, and stubs for other system.* commands.
   * Added APIs for accessing CGI and Abyss method registries.
-  * Implemented system.listMethods, system.methodHelp.
+  * Implemented system.listMethods, system.methodHelp, system.methodSignature.
   * Fixed stupid bug in parsing of "(ss*)"-style array descriptions
     where there were no extra elements.
 

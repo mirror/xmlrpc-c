@@ -121,6 +121,14 @@ void xmlrpc_server_abyss_add_method (char *method_name,
 				     xmlrpc_method method,
 				     void *user_data);
 
+/* As above, but provide documentation (see xmlrpc_registry_add_method_w_doc
+** for more information). You should really use this one. */
+extern void
+xmlrpc_server_abyss_add_method_w_doc (char *method_name,
+				      xmlrpc_method method,
+				      void *user_data,
+				      char *signature,
+				      char *help);
 
 #ifdef __cplusplus
 }
