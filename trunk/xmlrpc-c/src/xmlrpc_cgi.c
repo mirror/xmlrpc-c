@@ -46,7 +46,7 @@ static void send_xml (char *xml_data, size_t xml_len)
     ** XXX - Coercing 'size_t' to 'unsigned long' might be unsafe under
     ** really weird circumstances. */
     fprintf(stdout, "Status: 200 OK\n");
-    fprintf(stdout, "Content-type: text/xml\n");
+    fprintf(stdout, "Content-type: text/xml; charset=\"utf-8\"\n");
     fprintf(stdout, "Content-length: %ld\n\n", (unsigned long) xml_len);
 
     /* Blast out our data. */

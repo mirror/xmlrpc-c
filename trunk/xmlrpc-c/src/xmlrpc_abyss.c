@@ -130,7 +130,7 @@ static void send_xml_data (TSession *r, char *buffer, uint64 len)
 
     ResponseStatus(r, 200);
     
-    ResponseContentType(r, "text/xml");
+    ResponseContentType(r, "text/xml; charset=\"utf-8\"");
     ResponseContentLength(r, len);
     
     ResponseWrite(r);

@@ -43,6 +43,28 @@ static char whichToolkit_help[] =
 
 
 /*=========================================================================
+**  noInParams
+**=========================================================================
+**  Test a method with no parameters.
+*/
+
+static xmlrpc_value *
+noInParams (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+    /* Parse our argument array. */
+    xmlrpc_parse_value(env, param_array, "()");
+    if (env->fault_occurred)
+	return NULL;
+
+    /* Assemble our result. */
+    return xmlrpc_build_value(env, "i", (xmlrpc_int32) 0);
+}
+
+static char noInParams_help[] =
+"A method with no parameters.  Returns an arbitrary int.";
+
+
+/*=========================================================================
 **  Echo Tests
 **=========================================================================
 **  We're lazy--we only implement one actual echo method, but we hook it
@@ -75,6 +97,9 @@ static char echoString_help[] =
 
 static char echoInteger_help[] =
 "Echo an arbitrary XML-RPC integer.";
+
+static char echoBoolean_help[] =
+"Echo an arbitrary XML-RPC boolean value.";
 
 static char echoFloat_help[] =
 "Echo an arbitrary XML-RPC float.";
@@ -118,6 +143,9 @@ int main (int argc, char **argv)
 				"S:", whichToolkit_help);
 
     /* Add a whole bunch of test methods. */
+    xmlrpc_cgi_add_method_w_doc("interopEchoTests.noInParams",
+				&noInParams, NULL,
+				"i:", noInParams_help);
     xmlrpc_cgi_add_method_w_doc("interopEchoTests.echoValue",
 				&echoValue, NULL,
 				"?", echoValue_help);
@@ -127,6 +155,9 @@ int main (int argc, char **argv)
     xmlrpc_cgi_add_method_w_doc("interopEchoTests.echoInteger",
 				&echoValue, NULL,
 				"i:i", echoInteger_help);
+    xmlrpc_cgi_add_method_w_doc("interopEchoTests.echoBoolean",
+				&echoValue, NULL,
+				"b:b", echoBoolean_help);
     xmlrpc_cgi_add_method_w_doc("interopEchoTests.echoFloat",
 				&echoValue, NULL,
 				"d:d", echoFloat_help);
