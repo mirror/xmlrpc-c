@@ -72,6 +72,12 @@ xmlrpc_destroyStruct(xmlrpc_value * const structP);
 void
 xmlrpc_destroyArray(xmlrpc_value * const arrayP);
 
+const char * 
+xmlrpc_makePrintable(const char * const input);
+
+const char *
+xmlrpc_makePrintableChar(char const input);
+
 
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
