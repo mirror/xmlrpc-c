@@ -175,8 +175,6 @@ size_t xmlrpc_limit_get (int limit_id)
 /*=========================================================================
 **  xmlrpc_mem_block
 **=========================================================================
-**  We support resizable blocks of memory. We need these just about
-**  everywhere.
 */
 
 xmlrpc_mem_block * 
