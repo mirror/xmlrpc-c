@@ -41,6 +41,8 @@ void XmlRpcClass::addFunction (const XmlRpcFunction& function)
 
 void XmlRpcClass::printDeclaration (ostream& out)
 {
+    ostream& warningKiller ATTR_UNUSED = out;
+
     cout << "class " << mClassName << " {" << endl;
     cout << "    XmlRpcClient mClient;" << endl;
     cout << endl;
@@ -68,6 +70,8 @@ void XmlRpcClass::printDeclaration (ostream& out)
 
 void XmlRpcClass::printDefinition (ostream& out)
 {
+    ostream& warningKiller ATTR_UNUSED = out;
+    
     vector<XmlRpcFunction>::iterator f;
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
 	f->printDefinitions(cout, mClassName);
