@@ -31,6 +31,7 @@ You may optionally specify one or more modules:
 
 Available flags include:
   --version      The version number of the package
+  --modules      List all modules currently installed
   --cflags       C compiler flags to use when '#include'ing package headers
   --libs         Libraries and flags to use when linking programs normally
   --ldadd        Libraries to use with automake
@@ -69,6 +70,10 @@ while test $# -gt 0; do
       ;;
     --version)
       echo "@VERSION@"
+      exit 0
+      ;;
+    --modules)
+      echo "@AVAILABLE_MODULES@"
       exit 0
       ;;
     --cflags)

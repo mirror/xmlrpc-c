@@ -1,1 +1,1 @@
-SUBDIRS = expat abyss
+SUBDIRS = expat @ABYSS_SUBDIR@

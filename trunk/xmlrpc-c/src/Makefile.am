@@ -2,22 +2,30 @@
 CFLAGS = @CFLAGS@ -Wall
 
 # Declare our libraries.
-lib_LTLIBRARIES = libxmlrpc.la libxmlrpc_client.la libxmlrpc_abyss_server.la \
-		  libxmlrpc_cgi.la
+lib_LTLIBRARIES   = libxmlrpc.la \
+                    @LIBXMLRPC_CLIENT_LA@ \
+                    @LIBXMLRPC_ABYSS_SERVER_LA@ \
+		    @LIBXMLRPC_CGI_LA@
+EXTRA_LTLIBRARIES = libxmlrpc_client.la \
+		    libxmlrpc_abyss_server.la \
+		    libxmlrpc_cgi.la
 
 # We always statically-link our C++ code because it's tiny, and C++ is
 # no good at shared libraries, anyway.
-lib_LIBRARIES = libxmlrpc_cpp.a
+lib_LIBRARIES   = @LIBXMLRPC_CPP_A@
+EXTRA_LIBRARIES = libxmlrpc_cpp.a
 
 # Declare our programs.
-noinst_PROGRAMS = rpctest cpptest clienttest servertest validatee
+noinst_PROGRAMS = rpctest @CPPTEST@ @CLIENTTEST@ @SERVERTEST@ @VALIDATEE@
+EXTRA_PROGRAMS = cpptest clienttest servertest validatee
 
 # Declare our headers (installed ones only!).
-include_HEADERS = xmlrpc.h xmlrpc_client.h xmlrpc_abyss.h xmlrpc_cgi.h \
-                  XmlRpcCpp.h
+include_HEADERS = xmlrpc.h @XMLRPC_CLIENT_H@ @XMLRPC_ABYSS_H@ @XMLRPC_CGI_H@ \
+                  @XMLRPCCPP_H@
+EXTRA_HEADERS = xmlrpc_client.h xmlrpc_abyss.h xmlrpc_cgi.h XmlRpcCpp.h
 
 # Our test programs.
-TESTS = rpctest cpptest
+TESTS = rpctest @CPPTEST@
 
 INCLUDES = -I.. -I$(srcdir)/../lib/expat/xmlparse -I$(srcdir)/../lib/abyss/src
 
@@ -33,15 +41,15 @@ libxmlrpc_la_LDFLAGS = @VERSION_INFO@
 
 # A library containing the client-related components.
 libxmlrpc_client_la_SOURCES = xmlrpc_client.c 
-libxmlrpc_client_la_LDFLAGS = @VERSION_INFO@
+libxmlrpc_client_la_LDFLAGS = @VERSION_INFO@ -rpath $(libdir)
 
 # A library containing the server-related components.
 libxmlrpc_abyss_server_la_SOURCES = xmlrpc_abyss.c
-libxmlrpc_abyss_server_la_LDFLAGS = @VERSION_INFO@
+libxmlrpc_abyss_server_la_LDFLAGS = @VERSION_INFO@ -rpath $(libdir)
 
 # A library supporting CGI-based servers.
 libxmlrpc_cgi_la_SOURCES = xmlrpc_cgi.c
-libxmlrpc_cgi_la_LDFLAGS = @VERSION_INFO@
+libxmlrpc_cgi_la_LDFLAGS = @VERSION_INFO@ -rpath $(libdir)
 
 # A library containing our C++ wrappers.
 libxmlrpc_cpp_a_SOURCES = XmlRpcCpp.cc

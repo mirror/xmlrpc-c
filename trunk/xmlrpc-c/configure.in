@@ -22,11 +22,140 @@ AC_SUBST(CONFIGURE_DATE)
 
 
 dnl =======================================================================
+dnl Decide What To Build
+dnl =======================================================================
+dnl We have a fully modular build system. Automake deals with this in a
+dnl semi-competent fashion--everything works OK, but we must declare
+dnl zillions of Makefile substitution variables.
+
+AVAILABLE_MODULES=
+
+dnl Check to see if we should build our w3c-libwww module.
+AC_MSG_CHECKING(whether to build w3c-libwww client module)
+AC_ARG_ENABLE(libwww-client, [\
+  --disable-libwww-client Don't build the w3c-libwww client module], ,
+enable_libwww_client=yes)
+AC_MSG_RESULT($enable_libwww_client)
+
+dnl Set up the appropriate Makefile substitutions.
+LIBXMLRPC_CLIENT_LA=
+CLIENTTEST=
+XMLRPC_CLIENT_H=
+SYNCH_CLIENT=
+ASYNCH_CLIENT=
+AUTH_CLIENT=
+QUERY_MEERKAT=
+if test x"$enable_libwww_client" != xno; then
+    AVAILABLE_MODULES="libwww-client $AVAILABLE_MODULES"
+    LIBXMLRPC_CLIENT_LA=libxmlrpc_client.la
+    CLIENTTEST=clienttest
+    XMLRPC_CLIENT_H=xmlrpc_client.h
+    SYNCH_CLIENT=synch_client
+    ASYNCH_CLIENT=asynch_client
+    AUTH_CLIENT=auth_client
+    QUERY_MEERKAT=query-meerkat
+fi
+AC_SUBST(LIBXMLRPC_CLIENT_LA)
+AC_SUBST(CLIENTTEST)
+AC_SUBST(XMLRPC_CLIENT_H)
+AC_SUBST(SYNCH_CLIENT)
+AC_SUBST(ASYNCH_CLIENT)
+AC_SUBST(AUTH_CLIENT)
+AC_SUBST(QUERY_MEERKAT)
+
+dnl Check to see if we should build our Abyss server module.
+AC_MSG_CHECKING(whether to build Abyss server module)
+AC_ARG_ENABLE(abyss-server, [\
+  --disable-abyss-server  Don't build the Abyss server module], ,
+enable_abyss_server=yes)
+AC_MSG_RESULT($enable_abyss_server)
+
+dnl Set up the appropriate Makefile substitutions.
+ABYSS_SUBDIR=
+LIBXMLRPC_ABYSS_SERVER_LA=
+SERVERTEST=
+VALIDATEE=
+XMLRPC_ABYSS_H=
+SERVER=
+if test x"$enable_abyss_server" != xno; then
+    AVAILABLE_MODULES="abyss-server $AVAILABLE_MODULES"
+    ABYSS_SUBDIR=abyss
+    LIBXMLRPC_ABYSS_SERVER_LA=libxmlrpc_abyss_server.la
+    SERVERTEST=servertest
+    VALIDATEE=validatee
+    XMLRPC_ABYSS_H=xmlrpc_abyss.h
+    SERVER=server
+fi
+AC_SUBST(ABYSS_SUBDIR)
+AC_SUBST(LIBXMLRPC_ABYSS_SERVER_LA)
+AC_SUBST(SERVERTEST)
+AC_SUBST(VALIDATEE)
+AC_SUBST(XMLRPC_ABYSS_H)
+AC_SUBST(SERVER)
+
+dnl Check to see if we should build our CGI server module.
+AC_MSG_CHECKING(whether to build CGI server module)
+AC_ARG_ENABLE(cgi-server, [\
+  --disable-cgi-server    Don't build the CGI server module], ,
+enable_cgi_server=yes)
+AC_MSG_RESULT($enable_cgi_server)
+
+dnl Set up the appropriate Makefile substitutions.
+LIBXMLRPC_CGI_LA=
+XMLRPC_CGI_H=
+SAMPLE_CGI_CGI=
+if test x"$enable_cgi_server" != xno; then
+    AVAILABLE_MODULES="cgi-server $AVAILABLE_MODULES"
+    LIBXMLRPC_CGI_LA=libxmlrpc_cgi.la
+    XMLRPC_CGI_H=xmlrpc_cgi.h
+    SAMPLE_CGI_CGI=sample-cgi.cgi
+fi
+AC_SUBST(LIBXMLRPC_CGI_LA)
+AC_SUBST(XMLRPC_CGI_H)
+AC_SUBST(SAMPLE_CGI_CGI)
+
+dnl Check to see if we should build our C++ stuff.
+AC_MSG_CHECKING(whether to build C++ wrappers and tools)
+AC_ARG_ENABLE(cplusplus, [\
+  --disable-cplusplus     Don't build the C++ wrapper classes or tools], ,
+enable_cplusplus=yes)
+AC_MSG_RESULT($enable_cplusplus)
+
+dnl Set up the appropriate Makefile substitutions.
+LIBXMLRPC_CPP_A=
+CPPTEST=
+XMLRPCCPP_H=
+XML_RPC_API2CPP_SUBDIR=
+MEERKAT_APP_LIST=
+if test x"$enable_cplusplus" != xno; then
+    AVAILABLE_MODULES="c++ $AVAILABLE_MODULES"
+    LIBXMLRPC_CPP_A=libxmlrpc_cpp.a
+    CPPTEST=cpptest
+    XMLRPCCPP_H=XmlRpcCpp.h
+
+    dnl Some stuff requires both libwww *and* C++.
+    if test x"$enable_libwww_client" != xno; then
+        XML_RPC_API2CPP_SUBDIR=xml-rpc-api2cpp
+	MEERKAT_APP_LIST=meerkat-app-list
+    fi
+fi
+AC_SUBST(LIBXMLRPC_CPP_A)
+AC_SUBST(CPPTEST)
+AC_SUBST(XMLRPCCPP_H)
+AC_SUBST(XML_RPC_API2CPP_SUBDIR)
+AC_SUBST(MEERKAT_APP_LIST)
+
+AC_SUBST(AVAILABLE_MODULES)
+
+
+dnl =======================================================================
 dnl Checks for programs.
 dnl =======================================================================
 
 AC_PROG_CC
-AC_PROG_CXX
+if test x"$enable_cplusplus" != xno; then
+    AC_PROG_CXX
+fi
 AC_PROG_INSTALL
 AM_PROG_LIBTOOL
 
@@ -93,66 +222,73 @@ dnl co-exist with the system copy of libwww. We have some vestigal support
 dnl for keeping track of libwww's rpath, although this is no longer really
 dnl necessary.
 
-dnl First of all, locate the semi-broken libwww config program.
-dnl You can control which of these gets chosen by fooling around with PATH.
-AC_PATH_PROGS(LIBWWW_CONFIG, libwww-xmlrpc-config libwww-config, no)
-if test "x$LIBWWW_CONFIG" = "xno"; then
-    AC_MSG_ERROR(w3c-libwww required to build xmlrpc-c)
-fi
+if test x"$enable_libwww_client" != xno; then
 
-dnl Get our libwww version.
-dnl Adapted from a macro which called gtk-config.
-AC_MSG_CHECKING(for w3c-libwww version >= 5.2.8)
-W3VER=`$LIBWWW_CONFIG --version`
-LIBWWW_MAJOR=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
-LIBWWW_MINOR=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
-LIBWWW_MICRO=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
-AC_MSG_RESULT($LIBWWW_MAJOR.$LIBWWW_MINOR.$LIBWWW_MICRO)
+    dnl First of all, locate the semi-broken libwww config program.
+    dnl You can control which of these gets chosen by fooling around with PATH.
+    AC_PATH_PROGS(LIBWWW_CONFIG, libwww-xmlrpc-config libwww-config, no)
+    if test "x$LIBWWW_CONFIG" = "xno"; then
+        AC_MSG_ERROR(w3c-libwww not found; see './configure --help')
+    fi
 
-dnl Check to make sure our version is OK.
-LIBWWW_VERSION_OK=yes
-if test $LIBWWW_MAJOR -lt 5; then
-    LIBWWW_VERSION_OK=no
-else
-    if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -lt 2; then
+    dnl Get our libwww version.
+    dnl Adapted from a macro which called gtk-config.
+    AC_MSG_CHECKING(for w3c-libwww version >= 5.2.8)
+    W3VER=`$LIBWWW_CONFIG --version`
+    LIBWWW_MAJOR=\
+`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+    LIBWWW_MINOR=\
+`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+    LIBWWW_MICRO=\
+`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+    AC_MSG_RESULT($LIBWWW_MAJOR.$LIBWWW_MINOR.$LIBWWW_MICRO)
+
+    dnl Check to make sure our version is OK.
+    LIBWWW_VERSION_OK=yes
+    if test $LIBWWW_MAJOR -lt 5; then
         LIBWWW_VERSION_OK=no
     else
-        if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -eq 2 \
-            -a $LIBWWW_MICRO -lt 8; then
+        if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -lt 2; then
             LIBWWW_VERSION_OK=no
+        else
+            if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -eq 2 \
+                -a $LIBWWW_MICRO -lt 8; then
+                LIBWWW_VERSION_OK=no
+            fi
         fi
     fi
-fi
-if test "x$LIBWWW_VERSION_OK" = "xno"; then
-    AC_MSG_ERROR(w3c-libwww version >= 5.2.8 required)
-fi
+    if test "x$LIBWWW_VERSION_OK" = "xno"; then
+        AC_MSG_ERROR(w3c-libwww version >= 5.2.8 required)
+    fi
 
-dnl Get the necessary CFLAGS, and merge them into our master list.
-LIBWWW_CFLAGS="`$LIBWWW_CONFIG --cflags`"
-AC_SUBST(LIBWWW_CFLAGS)
-CFLAGS="$CFLAGS $LIBWWW_CFLAGS" 
+    dnl Get the necessary CFLAGS, and merge them into our master list.
+    LIBWWW_CFLAGS="`$LIBWWW_CONFIG --cflags`"
+    AC_SUBST(LIBWWW_CFLAGS)
+    CFLAGS="$CFLAGS $LIBWWW_CFLAGS" 
 
-dnl Get the huge list of libraries we need to link against.
-LIBWWW_LDADD="`$LIBWWW_CONFIG --libs`"
-AC_SUBST(LIBWWW_LDADD)
+    dnl Get the huge list of libraries we need to link against.
+    LIBWWW_LDADD="`$LIBWWW_CONFIG --libs`"
+    AC_SUBST(LIBWWW_LDADD)
 
-dnl Oh, such massive brain damage! Because there may be another copy
-dnl of libwww in the default dynamic loader search path, we need to
-dnl adjust the search patch manually. Just gag me with a backquote, OK?
-AC_MSG_CHECKING(for libwww library directory)
-if $LIBWWW_CONFIG --rpath-dir > /dev/null 2>&1; then
-   dnl Yay! We're using our smart version of libwww.
-   LIBWWW_LIBDIR="`$LIBWWW_CONFIG --rpath-dir`"
-else
-   dnl Yawn. We're using the regular boring version.
-   LIBWWW_LIBDIR="`$LIBWWW_CONFIG --prefix`/lib"
-fi
-AC_MSG_RESULT($LIBWWW_LIBDIR)
-AC_SUBST(LIBWWW_LIBDIR)
-LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
-AC_SUBST(LIBWWW_RPATH)
-LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
-AC_SUBST(LIBWWW_WL_RPATH)
+    dnl Oh, such massive brain damage! Because there may be another copy
+    dnl of libwww in the default dynamic loader search path, we need to
+    dnl adjust the search patch manually. Just gag me with a backquote, OK?
+    AC_MSG_CHECKING(for libwww library directory)
+    if $LIBWWW_CONFIG --rpath-dir > /dev/null 2>&1; then
+       dnl Yay! We're using our smart version of libwww.
+       LIBWWW_LIBDIR="`$LIBWWW_CONFIG --rpath-dir`"
+    else
+       dnl Yawn. We're using the regular boring version.
+       LIBWWW_LIBDIR="`$LIBWWW_CONFIG --prefix`/lib"
+    fi
+    AC_MSG_RESULT($LIBWWW_LIBDIR)
+    AC_SUBST(LIBWWW_LIBDIR)
+    LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
+    AC_SUBST(LIBWWW_RPATH)
+    LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
+    AC_SUBST(LIBWWW_WL_RPATH)
+
+fi # enable_libwww_client
 
 
 dnl =======================================================================
@@ -163,12 +299,15 @@ AC_ARG_WITH(libwww-ssl, [\
   --with-libwww-ssl       Include experimental support for libwww/SSL.
                           Please read doc/libwww-ssl.txt before trying this,
                           or it probably won't work.])
-AC_MSG_CHECKING(whether to use SSL with libwww)
-if test x"$with_libwww_ssl" = xyes; then
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_LIBWWW_SSL)
-else
-    AC_MSG_RESULT(no)
+
+if test x"$enable_libwww_client" != xno; then
+    AC_MSG_CHECKING(whether to use SSL with libwww)
+    if test x"$with_libwww_ssl" = xyes; then
+        AC_MSG_RESULT(yes)
+        AC_DEFINE(HAVE_LIBWWW_SSL)
+    else
+        AC_MSG_RESULT(no)
+    fi
 fi
 
 

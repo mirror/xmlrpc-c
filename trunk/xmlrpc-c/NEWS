@@ -1,5 +1,6 @@
 CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
 
+  * Modularized the build system--build only what you need.
   * Implemented a configurable size limit for XML data off the network.
   * Fixed all recent, reproducible bugs in CVS. These were generally
     Windows build bugs.

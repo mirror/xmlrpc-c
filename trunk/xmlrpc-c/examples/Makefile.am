@@ -1,8 +1,12 @@
 # Turn on warnings.
 CFLAGS = @CFLAGS@ -Wall
 
-noinst_PROGRAMS = synch_client asynch_client auth_client server sample-cgi.cgi
-bin_PROGRAMS = query-meerkat meerkat-app-list
+noinst_PROGRAMS = @SYNCH_CLIENT@ @ASYNCH_CLIENT@ @AUTH_CLIENT@ \
+                  @SERVER@ @SAMPLE_CGI_CGI@
+bin_PROGRAMS    = @QUERY_MEERKAT@ @MEERKAT_APP_LIST@
+EXTRA_PROGRAMS  = synch_client asynch_client auth_client \
+                  server sample-cgi.cgi \
+		  query-meerkat meerkat-app-list
 
 INCLUDES = -I$(srcdir)/../src
 
