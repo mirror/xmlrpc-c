@@ -33,15 +33,16 @@ XmlRpcClass get_class_info (string server_url,
     for (size_t i = 0; i < end; i++) {
 
 	// Break the method name into two pieces.
+	string method_prefix;
+	string function_name;
 	string method_name = methods.arrayGetItem(i).getString();
 	size_t last_dot = method_name.rfind('.');
 	if (last_dot == string::npos) {
-	    cerr << "WARNING: Unqualified method name '" << method_name
-		 << "'" << endl;
-	    continue;
+	    function_name = method_name;
+	} else {
+	    method_prefix = string(method_name, 0, last_dot);
+	    function_name = string(method_name, last_dot + 1);
 	}
-	string method_prefix(method_name, 0, last_dot);
-	string function_name(method_name, last_dot + 1);
 
 	// Decide whether we care about this function.
 	if (method_prefix == class_prefix) {
