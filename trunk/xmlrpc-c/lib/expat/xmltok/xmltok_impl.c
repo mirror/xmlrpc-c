@@ -173,7 +173,10 @@ int PREFIX(scanDecl)(const ENCODING *enc, const char *ptr, const char *end,
 }
 
 static
-int PREFIX(checkPiTarget)(const ENCODING *enc, const char *ptr, const char *end, int *tokPtr)
+int PREFIX(checkPiTarget)(const ENCODING * enc ATTR_UNUSED, 
+                          const char *     ptr, 
+                          const char *     end, 
+                          int *            tokPtr)
 {
   int upper = 0;
   *tokPtr = XML_TOK_PI;
@@ -280,8 +283,10 @@ int PREFIX(scanPi)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 static
-int PREFIX(scanCdataSection)(const ENCODING *enc, const char *ptr, const char *end,
-			     const char **nextTokPtr)
+int PREFIX(scanCdataSection)(const ENCODING * enc ATTR_UNUSED, 
+                             const char *     ptr, 
+                             const char *     end,
+                             const char **    nextTokPtr)
 {
   static const char CDATA_LSQB[] = { ASCII_C, ASCII_D, ASCII_A, ASCII_T, ASCII_A, ASCII_LSQB };
   int i;
@@ -1510,7 +1515,7 @@ int PREFIX(getAtts)(const ENCODING *enc, const char *ptr,
 }
 
 static
-int PREFIX(charRefNumber)(const ENCODING *enc, const char *ptr)
+int PREFIX(charRefNumber)(const ENCODING *enc ATTR_UNUSED, const char *ptr)
 {
   int result = 0;
   /* skip &# */
@@ -1550,7 +1555,9 @@ int PREFIX(charRefNumber)(const ENCODING *enc, const char *ptr)
 }
 
 static
-int PREFIX(predefinedEntityName)(const ENCODING *enc, const char *ptr, const char *end)
+int PREFIX(predefinedEntityName)(const ENCODING * enc ATTR_UNUSED, 
+                                 const char *     ptr, 
+                                 const char *     end)
 {
   switch ((end - ptr)/MINBPC(enc)) {
   case 2:
@@ -1667,8 +1674,10 @@ int PREFIX(sameName)(const ENCODING *enc, const char *ptr1, const char *ptr2)
 }
 
 static
-int PREFIX(nameMatchesAscii)(const ENCODING *enc, const char *ptr1,
-			     const char *end1, const char *ptr2)
+int PREFIX(nameMatchesAscii)(const ENCODING * enc ATTR_UNUSED, 
+                             const char *     ptr1,
+                             const char *     end1, 
+                             const char *     ptr2)
 {
   for (; *ptr2; ptr1 += MINBPC(enc), ptr2++) {
     if (ptr1 == end1)

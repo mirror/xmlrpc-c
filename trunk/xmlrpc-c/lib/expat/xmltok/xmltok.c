@@ -3,6 +3,7 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
+#include "xmlrpc_config.h"
 #include "xmldef.h"
 #include "xmltok.h"
 #include "nametab.h"
@@ -71,19 +72,19 @@ We need 8 bits to index into pages, 3 bits to add to that index and
 #define UTF8_INVALID4(p) ((*p) == 0xF4 && ((p)[1] & 0x30) != 0)
 
 static
-int isNever(const ENCODING *enc, const char *p)
+int isNever(const ENCODING *enc ATTR_UNUSED, const char *p ATTR_UNUSED)
 {
   return 0;
 }
 
 static
-int utf8_isName2(const ENCODING *enc, const char *p)
+int utf8_isName2(const ENCODING *enc ATTR_UNUSED, const char *p)
 {
   return UTF8_GET_NAMING2(namePages, (const unsigned char *)p);
 }
 
 static
-int utf8_isName3(const ENCODING *enc, const char *p)
+int utf8_isName3(const ENCODING *enc ATTR_UNUSED, const char *p)
 {
   return UTF8_GET_NAMING3(namePages, (const unsigned char *)p);
 }
@@ -91,13 +92,13 @@ int utf8_isName3(const ENCODING *enc, const char *p)
 #define utf8_isName4 isNever
 
 static
-int utf8_isNmstrt2(const ENCODING *enc, const char *p)
+int utf8_isNmstrt2(const ENCODING *enc ATTR_UNUSED, const char *p)
 {
   return UTF8_GET_NAMING2(nmstrtPages, (const unsigned char *)p);
 }
 
 static
-int utf8_isNmstrt3(const ENCODING *enc, const char *p)
+int utf8_isNmstrt3(const ENCODING *enc ATTR_UNUSED, const char *p)
 {
   return UTF8_GET_NAMING3(nmstrtPages, (const unsigned char *)p);
 }
@@ -107,13 +108,13 @@ int utf8_isNmstrt3(const ENCODING *enc, const char *p)
 #define utf8_isInvalid2 isNever
 
 static
-int utf8_isInvalid3(const ENCODING *enc, const char *p)
+int utf8_isInvalid3(const ENCODING *enc ATTR_UNUSED, const char *p)
 {
   return UTF8_INVALID3((const unsigned char *)p);
 }
 
 static
-int utf8_isInvalid4(const ENCODING *enc, const char *p)
+int utf8_isInvalid4(const ENCODING *enc ATTR_UNUSED, const char *p)
 {
   return UTF8_INVALID4((const unsigned char *)p);
 }
@@ -164,6 +165,9 @@ struct normal_encoding {
  E ## isInvalid2, \
  E ## isInvalid3, \
  E ## isInvalid4
+
+#define NULL_NORMAL_VTABLE \
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 
 static int checkCharRefNumber(int);
 
@@ -260,7 +264,7 @@ enum {  /* UTF8_cvalN is value of masked first byte of N byte sequence */
 };
 
 static
-void utf8_toUtf8(const ENCODING *enc,
+void utf8_toUtf8(const ENCODING * enc ATTR_UNUSED,
 		 const char **fromP, const char *fromLim,
 		 char **toP, const char *toLim)
 {
@@ -364,7 +368,7 @@ static const struct normal_encoding internal_utf8_encoding = {
 };
 
 static
-void latin1_toUtf8(const ENCODING *enc,
+void latin1_toUtf8(const ENCODING *enc ATTR_UNUSED,
 		   const char **fromP, const char *fromLim,
 		   char **toP, const char *toLim)
 {
@@ -389,7 +393,7 @@ void latin1_toUtf8(const ENCODING *enc,
 }
 
 static
-void latin1_toUtf16(const ENCODING *enc,
+void latin1_toUtf16(const ENCODING *enc ATTR_UNUSED,
 		    const char **fromP, const char *fromLim,
 		    unsigned short **toP, const unsigned short *toLim)
 {
@@ -405,7 +409,7 @@ static const struct normal_encoding latin1_encoding_ns = {
 #include "asciitab.h"
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(sb_)
+  STANDARD_VTABLE(sb_) NULL_NORMAL_VTABLE
 };
 
 #endif
@@ -418,11 +422,11 @@ static const struct normal_encoding latin1_encoding = {
 #undef BT_COLON
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(sb_)
+  STANDARD_VTABLE(sb_) NULL_NORMAL_VTABLE
 };
 
 static
-void ascii_toUtf8(const ENCODING *enc,
+void ascii_toUtf8(const ENCODING *enc ATTR_UNUSED,
 		  const char **fromP, const char *fromLim,
 		  char **toP, const char *toLim)
 {
@@ -451,7 +455,7 @@ static const struct normal_encoding ascii_encoding = {
 #undef BT_COLON
 /* BT_NONXML == 0 */
   },
-  STANDARD_VTABLE(sb_)
+  STANDARD_VTABLE(sb_) NULL_NORMAL_VTABLE
 };
 
 static int unicode_byte_type(char hi, char lo)
@@ -474,7 +478,7 @@ static int unicode_byte_type(char hi, char lo)
 
 #define DEFINE_UTF16_TO_UTF8(E) \
 static \
-void E ## toUtf8(const ENCODING *enc, \
+void E ## toUtf8(const ENCODING *enc ATTR_UNUSED, \
 		 const char **fromP, const char *fromLim, \
 		 char **toP, const char *toLim) \
 { \
@@ -537,7 +541,7 @@ void E ## toUtf8(const ENCODING *enc, \
 
 #define DEFINE_UTF16_TO_UTF16(E) \
 static \
-void E ## toUtf16(const ENCODING *enc, \
+void E ## toUtf16(const ENCODING *enc ATTR_UNUSED, \
 		  const char **fromP, const char *fromLim, \
 		  unsigned short **toP, const unsigned short *toLim) \
 { \
@@ -661,7 +665,7 @@ static const struct normal_encoding little2_encoding_ns = {
 #include "asciitab.h"
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(little2_)
+  STANDARD_VTABLE(little2_) NULL_NORMAL_VTABLE
 };
 
 #endif
@@ -680,7 +684,7 @@ static const struct normal_encoding little2_encoding = {
 #undef BT_COLON
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(little2_)
+  STANDARD_VTABLE(little2_) NULL_NORMAL_VTABLE
 };
 
 #if XML_BYTE_ORDER != 21
@@ -693,7 +697,7 @@ static const struct normal_encoding internal_little2_encoding_ns = {
 #include "iasciitab.h"
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(little2_)
+  STANDARD_VTABLE(little2_) NULL_NORMAL_VTABLE
 };
 
 #endif
@@ -706,7 +710,7 @@ static const struct normal_encoding internal_little2_encoding = {
 #undef BT_COLON
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(little2_)
+  STANDARD_VTABLE(little2_) NULL_NORMAL_VTABLE
 };
 
 #endif
@@ -800,7 +804,7 @@ static const struct normal_encoding big2_encoding_ns = {
 #include "asciitab.h"
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(big2_)
+  STANDARD_VTABLE(big2_) NULL_NORMAL_VTABLE
 };
 
 #endif
@@ -819,7 +823,7 @@ static const struct normal_encoding big2_encoding = {
 #undef BT_COLON
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(big2_)
+  STANDARD_VTABLE(big2_) NULL_NORMAL_VTABLE
 };
 
 #if XML_BYTE_ORDER != 12
@@ -845,7 +849,7 @@ static const struct normal_encoding internal_big2_encoding = {
 #undef BT_COLON
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(big2_)
+  STANDARD_VTABLE(big2_) NULL_NORMAL_VTABLE
 };
 
 #endif
@@ -871,7 +875,7 @@ int streqci(const char *s1, const char *s2)
 }
 
 static
-void initUpdatePosition(const ENCODING *enc, const char *ptr,
+void initUpdatePosition(const ENCODING *enc ATTR_UNUSED, const char *ptr,
 			const char *end, POSITION *pos)
 {
   normal_updatePosition(&utf8_encoding.enc, ptr, end, pos);
