@@ -130,3 +130,10 @@ install: $(PROGS)
 
 .PHONY: check
 check:
+
+.PHONY: dep depend
+dep depend:
+# We don't do dependencies in this directory, because it's supposed to be
+# an example of what a program outside this package would do, so we can't
+# go weaving it into the rest of the package.  Ergo, a developer must
+# carefully clean and remake examples as he updates other parts of the tree.
