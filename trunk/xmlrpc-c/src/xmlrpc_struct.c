@@ -38,6 +38,26 @@
 
 #define KEY_ERROR_BUFFER_SZ (32)
 
+
+void
+xmlrpc_destroyStruct(xmlrpc_value * const structP) {
+
+    _struct_member * const members = 
+        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+    size_t const size = 
+        XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
+
+    unsigned int i;
+
+    for (i = 0; i < size; ++i) {
+        xmlrpc_DECREF(members[i].key);
+        xmlrpc_DECREF(members[i].value);
+    }
+    XMLRPC_MEMBLOCK_CLEAN(_struct_member, &structP->_block);
+}
+
+
+
 /*=========================================================================
 **  xmlrpc_struct_new
 **=========================================================================

@@ -80,6 +80,13 @@ xmlrpc_traceXml(const char * const label,
                 const char * const xml,
                 unsigned int const xmlLength);
 
+void
+xmlrpc_destroyStruct(xmlrpc_value * const structP);
+
+void
+xmlrpc_destroyArray(xmlrpc_value * const arrayP);
+
+
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 **
@@ -111,6 +118,3 @@ xmlrpc_traceXml(const char * const label,
 #endif /* __cplusplus */
 
 #endif
-
-
-
