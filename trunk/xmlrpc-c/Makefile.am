@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 
 RPM_TOPDIR = =rpm_topdir
 
-SUBDIRS = lib src examples doc
+SUBDIRS = lib src examples doc tools
 EXTRA_DIST = NEWS BUGS CREDITS PORTING REFACTORINGS TESTING SECURITY \
 	     GETTING_LIBWWW PATCHING_ABYSS 
 

@@ -7,6 +7,9 @@ lib/expat, the ABYSS Web Server License applies to the contents of the
 directory lib/abyss and parts of the file src/xmlrpc_abyss.c, and the
 Python 1.5.2 license applies to parts of the file src/xmlrpc_base64.c.
 
+And as for the tools/ directory, you'll have to examine the licenses on
+your own.
+
 
                      XML-RPC C Library License
                      -------------------------

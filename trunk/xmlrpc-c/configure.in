@@ -173,4 +173,6 @@ AC_OUTPUT(xmlrpc-c-config \
           lib/abyss/Makefile \
           lib/abyss/htdocs/Makefile \
           lib/abyss/conf/Makefile \
-          lib/abyss/src/Makefile )
+          lib/abyss/src/Makefile \
+          tools/Makefile \
+          tools/turbocharger/Makefile )
