@@ -141,6 +141,47 @@ xmlrpc_atoi (xmlrpc_env *env, char *str, size_t strlen,
     return (xmlrpc_int32) i;
 }
 
+static double
+xmlrpc_atod (xmlrpc_env *env, char *str, size_t strlen)
+{
+    double d;
+    char *end;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(str);
+
+    /* Suppress compiler warnings. */
+    d = 0.0;
+
+    /* Check for leading white space. */
+    if (isspace(str[0]))
+	XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
+		     "\"%s\" must not contain whitespace", str);
+
+    /* Convert the value. */
+    end = str + strlen;
+    errno = 0;
+    d = strtod(str, &end);
+
+    /* Look for ERANGE. */
+    if (errno != 0)
+	/* XXX - Do all operating systems have thread-safe strerror? */
+	XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR,
+		     "error parsing \"%s\": %s (%d)",
+		     str, strerror(errno), errno);
+
+    /* Check for unused characters. */
+    if (end != str + strlen)
+	XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
+		     "\"%s\" contained trailing data", str);
+
+ cleanup:
+    errno = 0;
+    if (env->fault_occurred)
+	return 0.0;
+    return d;
+}
+
 
 /*=========================================================================
 **  make_string
@@ -194,6 +235,7 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
     unsigned char *ascii_data;
     xmlrpc_value *retval;
     xmlrpc_int32 i;
+    double d;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(elem != NULL);
@@ -248,7 +290,9 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 		XMLRPC_FAIL_IF_FAULT(env);
 		return xmlrpc_build_value(env, "b", (xmlrpc_bool) i);
 	    } else if (strcmp(child_name, "double") == 0) {
-		return xmlrpc_build_value(env, "d", atof(cdata));
+		d = xmlrpc_atod(env, cdata, strlen(cdata));
+		XMLRPC_FAIL_IF_FAULT(env);
+		return xmlrpc_build_value(env, "d", d);
 	    } else if (strcmp(child_name, "dateTime.iso8601") == 0) {
 		return xmlrpc_build_value(env, "8", cdata);
 	    } else if (strcmp(child_name, "base64") == 0) {
