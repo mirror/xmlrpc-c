@@ -117,25 +117,38 @@ static wchar_t utf8_min_char_for_length[4] = {
 
 
 /*=========================================================================
-**  xmlrpc_validate_utf8
+**  decode_utf8
 **=========================================================================
-**  Make sure that a UTF-8 string is valid.
+**  Internal routine which decodes (or validates) a UTF-8 string.
+**  To validate, set io_buff and out_buff_len to NULL.  To decode, allocate
+**  a sufficiently large buffer, pass it as io_buff, and pass a pointer as
+**  as out_buff_len.  The data will be written to the buffer, and the
+**  length to out_buff_len.
 **
-**  XXX - This routine has not been tested yet.
+**  We assume that wchar_t holds a single UCS-2 character in native-endian
+**  byte ordering.
 */
 
-void xmlrpc_validate_utf8 (xmlrpc_env *env,
-			   char *utf8_data,
-			   size_t utf8_len)
+static void decode_utf8 (xmlrpc_env *env,
+			 char *utf8_data,
+			 size_t utf8_len,
+			 wchar_t *io_buff,
+			 size_t *out_buff_len)
 {
-    int i, length;
+    int i, length, out_pos;
     char init, con1, con2;
     wchar_t wc;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(utf8_data);
+    XMLRPC_ASSERT((!io_buff && !out_buff_len) ||
+		  (io_buff && out_buff_len));
 
     /* Suppress GCC warning about possibly undefined variable. */
     wc = 0;
 
     i = 0;
+    out_pos = 0;
     while (i < utf8_len) {
 	init = utf8_data[i];
 	if ((init & 0x80) == 0x00) {
@@ -211,8 +224,79 @@ void xmlrpc_validate_utf8 (xmlrpc_env *env,
 		XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
 			    "Overlong UTF-8 sequence not allowed");
 	}
+
+	/* If we have a buffer, write our character to it. */
+	if (io_buff) {
+	    io_buff[out_pos++] = wc;
+	}
     }
 
+    /* Record the number of characters we found. */
+    if (out_buff_len)
+	*out_buff_len = out_pos;
+
  cleanup:
+    if (env->fault_occurred) {
+	if (out_buff_len)
+	    *out_buff_len = 0;
+    }
     return;
+}
+
+
+/*=========================================================================
+**  xmlrpc_validate_utf8
+**=========================================================================
+**  Make sure that a UTF-8 string is valid.
+*/
+
+void xmlrpc_validate_utf8 (xmlrpc_env *env,
+			   char *utf8_data,
+			   size_t utf8_len)
+{
+    decode_utf8(env, utf8_data, utf8_len, NULL, NULL);
+}
+
+
+/*=========================================================================
+**  xmlrpc_utf8_to_wcs
+**=========================================================================
+**  Decode UTF-8 string to a "wide character string".  This function
+**  returns an xmlrpc_mem_block with an element type of wchar_t.  Don't
+**  try to intepret the block in a bytewise fashion--it won't work in
+**  any useful or portable fashion.
+*/
+
+xmlrpc_mem_block *xmlrpc_utf8_to_wcs (xmlrpc_env *env,
+				      char *utf8_data,
+				      size_t utf8_len)
+{
+    xmlrpc_mem_block *output;
+    size_t wcs_length;
+
+    /* Error-handling preconditions. */
+    output = NULL;
+
+    /* Allocate a memory block large enough to hold any possible output.
+    ** We assume that each byte of the input may decode to a whcar_t. */
+    output = XMLRPC_TYPED_MEM_BLOCK_NEW(wchar_t, env, utf8_len);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Decode the UTF-8 data. */
+    decode_utf8(env, utf8_data, utf8_len,
+		XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, output),
+		&wcs_length);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Correct the length of the memory block. */
+    XMLRPC_TYPED_MEM_BLOCK_RESIZE(wchar_t, env, output, wcs_length);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (output)
+	    xmlrpc_mem_block_free(output);
+	return NULL;
+    }
+    return output;
 }

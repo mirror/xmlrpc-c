@@ -26,8 +26,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-/* We want xmlrpc_registry_install_system_methods. */
 #include "xmlrpc.h"
 #include "xmlrpc_expat.h"
 
@@ -1569,6 +1569,151 @@ void test_xml_size_limit (void)
 
 
 /*=========================================================================
+**  test_utf8_coding
+**=========================================================================
+**  We need to test our UTF-8 decoder thoroughly.  Most of these test
+**  cases are taken from the UTF-8-test.txt file by Markus Kuhn
+**  <mkuhn@acm.org>:
+**      http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+*/
+
+typedef struct {
+    char *utf8;
+    wchar_t wcs[16];
+} utf8_and_wcs;
+
+static utf8_and_wcs good_utf8[] = {
+
+    /* Greek 'kosme'. */
+    {"\316\272\341\275\271\317\203\316\274\316\265",
+     {0x03BA, 0x1F79, 0x03C3, 0x03BC, 0x03B5, 0}},
+
+    /* First sequences of a given length. */
+    /* '\000' is not a legal C string. */
+    {"\302\200", {0x0080, 0}},
+    {"\340\240\200", {0x0800, 0}},
+
+    /* Last sequences of a given length. */
+    {"\177", {0x007F, 0}},
+    {"\337\277", {0x07FF, 0}},
+    /* 0xFFFF is not a legal Unicode character. */
+
+    /* Other boundry conditions. */
+    {"\001", {0x0001, 0}},
+    {"\355\237\277", {0xD7FF, 0}},
+    {"\356\200\200", {0xE000, 0}},
+    {"\357\277\275", {0xFFFD, 0}},
+
+    /* Other random test cases. */
+    {"", {0}},
+    {"abc", {0x0061, 0x0062, 0x0063, 0}},
+    {"[\302\251]", {0x005B, 0x00A9, 0x005D, 0}},
+    
+    {NULL, {}}
+};
+
+static char *(bad_utf8[]) = {
+
+    /* Continuation bytes. */
+    "\200", "\277",
+
+    /* Lonely start characters. */
+    "\300", "\300x", "\300xx",
+    "\340", "\340x", "\340xx", "\340xxx",
+
+    /* Last byte missing. */
+    "\340\200", "\340\200x", "\340\200xx",
+    "\357\277", "\357\277x", "\357\277xx",
+
+    /* Illegal bytes. */
+    "\376", "\377",
+
+    /* Overlong '/'. */
+    "\300\257", "\340\200\257",
+
+    /* Overlong ASCII NUL. */
+    "\300\200", "\340\200\200",
+
+    /* Maximum overlong sequences. */
+    "\301\277", "\340\237\277",
+
+    /* Illegal code positions. */
+    "\357\277\276", /* U+FFFE */
+    "\357\277\277", /* U+FFFF */
+
+    /* UTF-16 surrogates (unpaired and paired). */
+    "\355\240\200",
+    "\355\277\277",
+    "\355\240\200\355\260\200",
+    "\355\257\277\355\277\277",
+
+    /* Valid UCS-4 characters (not supported yet).
+    ** On systems with UCS-4 or UTF-16 wchar_t values, these
+    ** may eventually be supported in some fashion. */
+    "\360\220\200\200",
+    "\370\210\200\200\200",
+    "\374\204\200\200\200\200",
+
+    NULL
+};
+
+void test_utf8_coding (void)
+{
+    xmlrpc_env env, env2;
+    utf8_and_wcs *good_data;
+    char **bad_data;
+    char *utf8;
+    wchar_t *wcs;
+    xmlrpc_mem_block *output;
+
+    xmlrpc_env_init(&env);
+
+    /* Test each of our valid UTF-8 sequences. */
+    for (good_data = good_utf8; good_data->utf8 != NULL; good_data++) {
+	utf8 = good_data->utf8;
+	wcs = good_data->wcs;
+
+	/* Attempt to validate the UTF-8 string. */
+	xmlrpc_validate_utf8(&env, utf8, strlen(utf8));
+	TEST(!env.fault_occurred);
+
+	/* Attempt to decode the UTF-8 string. */
+	output = xmlrpc_utf8_to_wcs(&env, utf8, strlen(utf8));
+	TEST(!env.fault_occurred);
+	TEST(output != NULL);
+	TEST(wcslen(wcs) == XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, output));
+	TEST(0 ==
+	     wcsncmp(wcs, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, output),
+		     wcslen(wcs)));
+	xmlrpc_mem_block_free(output);
+    }
+
+    /* Test each of our illegal UTF-8 sequences. */
+    for (bad_data = bad_utf8; *bad_data != NULL; bad_data++) {
+	utf8 = *bad_data;
+	
+	/* Attempt to validate the UTF-8 string. */
+	xmlrpc_env_init(&env2);
+	xmlrpc_validate_utf8(&env2, utf8, strlen(utf8));
+	TEST(env2.fault_occurred);
+	TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
+	/* printf("Fault: %s\n", env2.fault_string); --Hand-checked */
+	xmlrpc_env_clean(&env2);
+
+	/* Attempt to decode the UTF-8 string. */
+	xmlrpc_env_init(&env2);
+	output = xmlrpc_utf8_to_wcs(&env2, utf8, strlen(utf8));
+	TEST(env2.fault_occurred);
+	TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
+	TEST(output == NULL);
+	xmlrpc_env_clean(&env2);
+    }
+
+    xmlrpc_env_clean(&env);
+}
+
+
+/*=========================================================================
 **  Test Driver
 **=========================================================================
 */
@@ -1590,6 +1735,7 @@ int main (int argc, char** argv)
     test_method_registry();
     test_nesting_limit();
     test_xml_size_limit();
+    test_utf8_coding();
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",
