@@ -1,40 +1,10 @@
-// -*- C++ -*-
+// -*- C++ -*-   <-- an Emacs control
 
-// Copyright (C) 2001 by Eric Kidd. All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-// 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-// 3. The name of the author may not be used to endorse or promote products
-//    derived from this software without specific prior written permission. 
-//  
-// THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-// SUCH DAMAGE.
-
+// Copyright information is at the bottom of the file.
 
 //=========================================================================
 //  XML-RPC C++ API
 //=========================================================================
-//  This is a highly experimental XML-RPC C++ API. Some details may
-//  change in future releases. Please send your feedback!
-//
-//  (The C++ XML-RPC library should be linked statically into your
-//  application, so your binaries won't have to depend on a rapidly changing
-//  library. Instead, they'll depend on the much more stable C API.)
 
 
 #ifndef  _XMLRPCCPP_H_
@@ -45,11 +15,21 @@
 // work with our version of g++). So this header name is technically wrong.
 // Tell me what your compiler does; I can provide some autoconf magic to the
 // Right Thing on most platforms.
+//
+// 2004.12.22 Bryan: This looks like a problem with whatever g++ he was
+// using, so if anything, the special case should be for that.  In any case,
+// we've already added using namespace std to other files, without knowing
+// there was an issue, so I'm just going to do the "using namespace" 
+// unconditionally and see who complains.  If there are complaints, we can
+// improve the documentation here.
+//
+// Formerly, the "using namespace std" was under
+// "#if defined(__GNUC__) && (__GNUC__ >= 3)".
+
+
 #include <string>
 
-#if defined(__GNUC__) && (__GNUC__ >= 3)        // g++ 3.0+ needs this
 using namespace std;
-#endif // __GNUC__
 
 #include <xmlrpc_config.h>
 #include <xmlrpc.h>
@@ -57,7 +37,7 @@ using namespace std;
 #include <xmlrpc_server.h>
 
 #define XMLRPC_NO_ASSIGNMENT \
-    XMLRPC_FATAL_ERROR("Assignment operator not supported"); return *this;
+    XMLRPC_FATAL_ERROR("Assignment operator not available"); return *this;
 
 
 //=========================================================================
@@ -402,5 +382,32 @@ inline xmlrpc_registry* XmlRpcGenSrv::getRegistry () const {
 }
 
 #undef XMLRPC_NO_ASSIGNMENT
+
+
+// Copyright (C) 2001 by Eric Kidd. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+// 3. The name of the author may not be used to endorse or promote products
+//    derived from this software without specific prior written permission. 
+//  
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+// SUCH DAMAGE.
+
 
 #endif /* _XMLRPCCPP_H_ */
