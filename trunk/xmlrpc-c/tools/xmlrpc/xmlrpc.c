@@ -21,12 +21,6 @@
 
      $ xmlrpc http://www.oreillynet.com/meerkat/xml-rpc/server.php \
          meerkat.getItems \
-         struct/(search:linux,descriptions:i/76,time_period:12hour)
-     Result:
-       String: 
-
-     $ xmlrpc http://www.oreillynet.com/meerkat/xml-rpc/server.php \
-         meerkat.getItems \
          struct/{search:linux,descriptions:i/76,time_period:12hour}
      Result:
        Array:
@@ -375,6 +369,8 @@ dumpArray(const char *   const prefix,
 
     xmlrpc_env_init(&env);
 
+    XMLRPC_ASSERT_ARRAY_OK(arrayP);
+
     arraySize = xmlrpc_array_size(&env, arrayP);
     if (env.fault_occurred)
         printf("Unable to get array size.  %s\n", env.fault_string);
@@ -391,7 +387,7 @@ dumpArray(const char *   const prefix,
         for (i = 0; i < arraySize; ++i) {
             xmlrpc_value * valueP;
 
-            valueP = xmlrpc_array_get_item(&env, arrayP, i);
+            xmlrpc_array_read_item(&env, arrayP, i, &valueP);
 
             if (env.fault_occurred)
                 printf("Unable to get array item %u\n", i);
@@ -424,7 +420,7 @@ dumpStructMember(const char *   const prefix,
     
     xmlrpc_env_init(&env);
 
-    xmlrpc_struct_get_key_and_value(&env, structP, index, &keyP, &valueP);
+    xmlrpc_struct_read_member(&env, structP, index, &keyP, &valueP);
 
     if (env.fault_occurred)
         printf("Unable to get struct member %u\n", index);
