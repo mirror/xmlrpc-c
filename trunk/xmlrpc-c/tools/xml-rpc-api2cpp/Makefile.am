@@ -1,6 +1,8 @@
 # Turn on warnings.
 CFLAGS = @CFLAGS@ -Wall
 
+EXTRA_DIST = README
+
 noinst_PROGRAMS = xml-rpc-api2cpp
 
 LIBEXPAT  = ../../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
