@@ -320,12 +320,16 @@ AC_MSG_RESULT($enable_unicode)
 
 dnl Do all the work...
 if test x"$enable_unicode" != xno; then
+    ENABLE_UNICODE=1
     AC_DEFINE(HAVE_UNICODE_WCHAR)
 
     dnl Unicode function needed by test suites.
     AC_CHECK_FUNCS(wcsncmp)
+else
+    ENABLE_UNICODE=0
 fi
 
+AC_SUBST(ENABLE_UNICODE)
 
 dnl =======================================================================
 dnl Checks for operating system features.

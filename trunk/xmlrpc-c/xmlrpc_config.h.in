@@ -1,9 +1,6 @@
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 #undef size_t
 
-/* Define if you have the ANSI C header files.  */
-#undef STDC_HEADERS
-
 /* Define if va_list is actually an array. */
 #undef VA_LIST_IS_ARRAY
 
