@@ -23,12 +23,7 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
-#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
-#include <unistd.h> /* for usleep */
-#else
-#include "xmlrpc_win32_config.h"
-#endif
 
 #undef PACKAGE
 #undef VERSION
@@ -767,7 +762,7 @@ xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverP,
            of the original asynch design, but now we have to be as
            backward compatible as possible, so we do this:
         */
-        (*callback)(serverP->server_url, methodName, NULL, userData, 
+        (*callback)(serverP->_server_url, methodName, NULL, userData, 
                     &env, NULL);
     } else {
         if (*suffix != '\0')

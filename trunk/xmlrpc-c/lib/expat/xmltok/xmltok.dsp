@@ -3,6 +3,7 @@
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
+# TARGTYPE "Win32 (x86) Static Library" 0x0104
 
 CFG=xmltok - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
@@ -17,17 +18,14 @@ CFG=xmltok - Win32 Release
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "xmltok - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "xmltok - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "xmltok - Win32 Release" (based on "Win32 (x86) Static Library")
+!MESSAGE "xmltok - Win32 Debug" (based on "Win32 (x86) Static Library")
+!MESSAGE "xmltok - Win32 Release DLL" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "xmltok - Win32 Debug DLL" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "xmltok"
-# PROP Scc_LocalPath ".."
-CPP=cl.exe
-MTL=midl.exe
-RSC=rc.exe
 
 !IF  "$(CFG)" == "xmltok - Win32 Release"
 
@@ -38,23 +36,23 @@ RSC=rc.exe
 # PROP BASE Target_Dir "."
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "..\..\..\bin\Release\xmltok"
-# PROP Intermediate_Dir "..\..\..\bin\Release\xmltok"
-# PROP Ignore_Export_Lib 0
+# PROP Output_Dir "Release\xmltok"
+# PROP Intermediate_Dir "Release\xmltok"
 # PROP Target_Dir "."
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0x809 /d "NDEBUG"
-# ADD RSC /l 0x809 /d "NDEBUG"
+LINK32=link.exe -lib
+MTL=midl.exe
+CPP=cl.exe
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /c
+RSC=rc.exe
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /entry:"DllMain" /subsystem:windows /dll /machine:I386 /out:"..\..\xmltok.dll" /link50compat
-# SUBTRACT LINK32 /pdb:none
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
 
 !ELSEIF  "$(CFG)" == "xmltok - Win32 Debug"
 
@@ -65,14 +63,74 @@ LINK32=link.exe
 # PROP BASE Target_Dir "."
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "..\..\..\bin\Debug\xmltok"
-# PROP Intermediate_Dir "..\..\..\bin\Debug\xmltok"
+# PROP Output_Dir "Debug\xmltok"
+# PROP Intermediate_Dir "Debug\xmltok"
+# PROP Target_Dir "."
+LINK32=link.exe -lib
+MTL=midl.exe
+CPP=cl.exe
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "XML_NS" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+RSC=rc.exe
+# ADD BASE RSC /l 0x409 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
+
+!ELSEIF  "$(CFG)" == "xmltok - Win32 Release DLL"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir ".\ReleaseDLL"
+# PROP BASE Intermediate_Dir ".\ReleaseDLL"
+# PROP BASE Target_Dir "."
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "ReleaseDLL\xmltok"
+# PROP Intermediate_Dir "ReleaseDLL\xmltok"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir "."
+CPP=cl.exe
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "XML_NS" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /YX /FD /c
+MTL=midl.exe
+# ADD BASE MTL /nologo /D "NDEBUG" /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+RSC=rc.exe
+# ADD BASE RSC /l 0x809 /d "NDEBUG"
+# ADD RSC /l 0x809 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /entry:"DllMain" /subsystem:windows /dll /machine:I386 /out:"..\..\xmltok.dll" /link50compat
+# SUBTRACT LINK32 /pdb:none
+
+!ELSEIF  "$(CFG)" == "xmltok - Win32 Debug DLL"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir ".\DebugDLL"
+# PROP BASE Intermediate_Dir ".\DebugDLL"
+# PROP BASE Target_Dir "."
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "DebugDLL\xmltok"
+# PROP Intermediate_Dir "DebugDLL\xmltok"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir "."
+CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D XMLTOKAPI=__declspec(dllexport) /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "XML_NS" /YX /FD /c
+MTL=midl.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+RSC=rc.exe
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
 # ADD RSC /l 0x809 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -80,7 +138,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"..\..\xmltok.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"..\..\xmltokD.dll"
 
 !ENDIF 
 
@@ -88,12 +146,29 @@ LINK32=link.exe
 
 # Name "xmltok - Win32 Release"
 # Name "xmltok - Win32 Debug"
+# Name "xmltok - Win32 Release DLL"
+# Name "xmltok - Win32 Debug DLL"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
 # Begin Source File
 
 SOURCE=.\dllmain.c
+
+!IF  "$(CFG)" == "xmltok - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "xmltok - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "xmltok - Win32 Release DLL"
+
+!ELSEIF  "$(CFG)" == "xmltok - Win32 Debug DLL"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -123,6 +198,10 @@ InputPath=..\gennmtab\gennmtab.c
 
 # End Custom Build
 
+!ELSEIF  "$(CFG)" == "xmltok - Win32 Release DLL"
+
+!ELSEIF  "$(CFG)" == "xmltok - Win32 Debug DLL"
+
 !ENDIF 
 
 # End Source File
@@ -133,6 +212,17 @@ SOURCE=.\xmlrole.c
 # Begin Source File
 
 SOURCE=.\xmltok.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\xmltok_impl.c
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\xmltok_ns.c
+# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -172,18 +262,7 @@ SOURCE=.\xmltok.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\xmltok_impl.c
-# PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\xmltok_impl.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\xmltok_ns.c
-# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "Resource Files"

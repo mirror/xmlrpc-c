@@ -120,11 +120,11 @@ send_xml_data (TSession * const r,
 */
 
 static void
-send_error(TSession * const r, 
-           uint16     const status) {
+send_error(TSession *   const abyssSessionP, 
+           unsigned int const status) {
 
-    ResponseStatus(r, status);
-    ResponseError(r);
+    ResponseStatus(abyssSessionP, (uint16) status);
+    ResponseError(abyssSessionP);
 }
 
 

@@ -36,9 +36,9 @@
 #include <stdio.h>
 #include <string.h>
 
-/*  Check this
+#if defined(ABYSS_WIN32) && !defined(__BORLANDC__)
 #include <direct.h>
-*/
+#endif
 
 #ifdef _UNIX
 #include <pwd.h>

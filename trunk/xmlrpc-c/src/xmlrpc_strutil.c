@@ -5,6 +5,8 @@
 
 #include "xmlrpc.h"
 #include "xmlrpc_int.h"
+#include "xmlrpc_config.h"
+
 
 
 const char * 
