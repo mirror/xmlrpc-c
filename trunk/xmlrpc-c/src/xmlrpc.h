@@ -373,52 +373,55 @@ extern void xmlrpc_DECREF (xmlrpc_value* value);
 /* Get the type of an XML-RPC value. */
 extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* value);
 
-/* Build an xmlrpc_value from a format string.
-** Increments the reference counts of input arguments if necessary.
-** See the xmlrpc-c documentation for more information. */
-xmlrpc_value * 
-xmlrpc_build_value(xmlrpc_env * const env,
-                   const char * const format, 
-                   ...);
-
-/* The same as the above, but using a va_list and more general */
-void
-xmlrpc_build_value_va(xmlrpc_env *    const env,
-                      const char *    const format,
-                      va_list               args,
-                      xmlrpc_value ** const valPP,
-                      const char **   const tailP);
-
-/* Extract values from an xmlrpc_value and store them into C variables.
-** Does not increment the reference counts of output values.
-** See the xmlrpc-c documentation for more information. */
-void 
-xmlrpc_parse_value(xmlrpc_env *   const envP,
-                   xmlrpc_value * const value,
-                   const char *   const format, 
-                   ...);
-
-/* The same as the above, but using a va_list. */
-void 
-xmlrpc_parse_value_va(xmlrpc_env *   const envP,
-                      xmlrpc_value * const value,
-                      const char *   const format,
-                      va_list              args);
+xmlrpc_value *
+xmlrpc_int_new(xmlrpc_env * const envP,
+               int          const intValue);
 
 void 
 xmlrpc_read_int(xmlrpc_env *         const envP,
                 const xmlrpc_value * const valueP,
                 int *                const intValueP);
 
-void
-xmlrpc_read_double(xmlrpc_env *         const envP,
-                   const xmlrpc_value * const valueP,
-                   xmlrpc_double *      const doubleValueP);
+xmlrpc_value *
+xmlrpc_bool_new(xmlrpc_env * const envP,
+                xmlrpc_bool  const boolValue);
 
 void
 xmlrpc_read_bool(xmlrpc_env *         const envP,
                  const xmlrpc_value * const valueP,
                  xmlrpc_bool *        const boolValueP);
+
+xmlrpc_value *
+xmlrpc_double_new(xmlrpc_env * const envP,
+                  double       const doubleValue);
+
+void
+xmlrpc_read_double(xmlrpc_env *         const envP,
+                   const xmlrpc_value * const valueP,
+                   xmlrpc_double *      const doubleValueP);
+
+#if 0
+/* This is not implemented yet.  We also need a version that takes
+   the datetime in struct timespec format
+*/
+xmlrpc_value *
+xmlrpc_datetime_new(xmlrpc_env * const envP,
+                    time_t       const timeValue);
+
+void
+xmlrpc_read_datetime(xmlrpc_env *         const envP,
+                     const xmlrpc_value * const valueP,
+                     time_t *             const timeValueP);
+#endif
+
+xmlrpc_value *
+xmlrpc_string_new(xmlrpc_env * const envP,
+                  const char * const stringValue);
+
+xmlrpc_value *
+xmlrpc_string_new_lp(xmlrpc_env * const envP,
+                     unsigned int const length,
+                     const char * const stringValue);
 
 void
 xmlrpc_read_string(xmlrpc_env *         const envP,
@@ -431,6 +434,20 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
                       const xmlrpc_value * const valueP,
                       unsigned int *       const lengthP,
                       const char **        const stringValueP);
+
+xmlrpc_value *
+xmlrpc_base64_new(xmlrpc_env *          const envP,
+                  unsigned int          const length,
+                  const unsigned char * const bytestringValue);
+
+void
+xmlrpc_read_base64(xmlrpc_env *           const envP,
+                   const xmlrpc_value *   const valueP,
+                   unsigned int *         const lengthP,
+                   const unsigned char ** const bytestringValueP);
+
+xmlrpc_value *
+xmlrpc_array_new(xmlrpc_env * const envP);
 
 /* Return the number of elements in an XML-RPC array.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
@@ -469,9 +486,6 @@ int index,
                                   xmlrpc_value* value);
 */
 
-/* Create a new struct.  Deprecated.  xmlrpc_build_value() is the
-   general way to create an xmlrpc_value, including an empty struct.
-*/
 xmlrpc_value *
 xmlrpc_struct_new(xmlrpc_env * env);
 
@@ -603,6 +617,40 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
                                 xmlrpc_value ** out_keyval,
                                 xmlrpc_value ** out_value);
 
+xmlrpc_value *
+xmlrpc_nil_new(xmlrpc_env * const envP);
+
+
+/* Build an xmlrpc_value from a format string. */
+
+xmlrpc_value * 
+xmlrpc_build_value(xmlrpc_env * const env,
+                   const char * const format, 
+                   ...);
+
+/* The same as the above, but using a va_list and more general */
+void
+xmlrpc_build_value_va(xmlrpc_env *    const env,
+                      const char *    const format,
+                      va_list               args,
+                      xmlrpc_value ** const valPP,
+                      const char **   const tailP);
+
+/* Extract values from an xmlrpc_value and store them into C variables.
+** Does not increment the reference counts of output values.
+** See the xmlrpc-c documentation for more information. */
+void 
+xmlrpc_parse_value(xmlrpc_env *   const envP,
+                   xmlrpc_value * const value,
+                   const char *   const format, 
+                   ...);
+
+/* The same as the above, but using a va_list. */
+void 
+xmlrpc_parse_value_va(xmlrpc_env *   const envP,
+                      xmlrpc_value * const value,
+                      const char *   const format,
+                      va_list              args);
 
 /*=========================================================================
 **  Encoding XML

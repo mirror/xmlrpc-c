@@ -250,7 +250,9 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    const char **        const stringValueP) {
 /*----------------------------------------------------------------------------
-   Read the value of an XML-RPC string an ASCIIZ string.
+   Read the value of an XML-RPC string as an ASCIIZ string.
+
+   Return the string in newly malloc'ed storage that Caller must free.
 
    Fail if the string contains null characters (which means it wasn't
    really a string, but XML-RPC doesn't seem to understand what a string
@@ -262,12 +264,14 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
             XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
         const char * const contents = 
             XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+        unsigned int const len = size - 1;
+            /* The memblock has a null character added to the end */
 
-        verifyNoNulls(envP, contents, size);
+        verifyNoNulls(envP, contents, len);
         if (!envP->fault_occurred) {
             char * stringValue;
             
-            stringValue = malloc(size+1);
+            stringValue = malloc(len+1);
             if (stringValue == NULL)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate space "
@@ -315,8 +319,38 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
 
 
 
+void
+xmlrpc_read_base64(xmlrpc_env *           const envP,
+                   const xmlrpc_value *   const valueP,
+                   unsigned int *         const lengthP,
+                   const unsigned char ** const byteStringValueP) {
+
+    validateType(envP, valueP, XMLRPC_TYPE_BASE64);
+    if (!envP->fault_occurred) {
+        unsigned int const size = 
+            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+        const char * const contents = 
+            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+
+        char * byteStringValue;
+
+        byteStringValue = malloc(size);
+        if (byteStringValue == NULL)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate %u bytes "
+                "for byte string.", size);
+        else {
+            memcpy(byteStringValue, contents, size);
+            *byteStringValueP = byteStringValue;
+            *lengthP = size;
+        }
+    }
+}
+
+
+
 /*=========================================================================
-**  Building XML-RPC values.
+**  Creating XML-RPC values.
 **=========================================================================
 **  Build new XML-RPC values from a format string. This code is heavily
 **  inspired by Py_BuildValue from Python 1.5.2. In particular, our
@@ -442,6 +476,26 @@ mkString(xmlrpc_env *    const envP,
             free(valP);
     }
     *valPP = valP;
+}
+
+
+
+static void
+mkEmptyArray(xmlrpc_env *    const envP,
+             xmlrpc_value ** const arrayPP) {
+/*----------------------------------------------------------------------------
+   Create an empty array xmlrpc_value.
+-----------------------------------------------------------------------------*/
+    xmlrpc_value * arrayP;
+
+    createXmlrpcValue(envP, &arrayP);
+    if (!envP->fault_occurred) {
+        arrayP->_type = XMLRPC_TYPE_ARRAY;
+        XMLRPC_TYPED_MEM_BLOCK_INIT(xmlrpc_value*, envP, &arrayP->_block, 0);
+        if (envP->fault_occurred)
+            free(arrayP);
+    }
+    *arrayPP = arrayP;
 }
 
 
@@ -697,31 +751,115 @@ mkStructFromVal(xmlrpc_env *    const envP,
 
 
 
+xmlrpc_value *
+xmlrpc_int_new(xmlrpc_env * const envP,
+               int          const value) {
+
+    xmlrpc_value * valP;
+    
+    mkInt(envP, value, &valP);
+
+    return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_bool_new(xmlrpc_env * const envP,
+                xmlrpc_bool  const value) {
+
+    xmlrpc_value * valP;
+    
+    mkBool(envP, value, &valP);
+
+    return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_double_new(xmlrpc_env * const envP,
+                  double       const value) {
+
+    xmlrpc_value * valP;
+    
+    mkDouble(envP, value, &valP);
+
+    return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_string_new(xmlrpc_env * const envP,
+                  const char * const value) {
+
+    xmlrpc_value * valP;
+    
+    mkString(envP, value, strlen(value), &valP);
+
+    return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_string_new_lp(xmlrpc_env * const envP,
+                     unsigned int const length,
+                     const char * const value) {
+
+    xmlrpc_value * valP;
+    
+    mkString(envP, value, length, &valP);
+
+    return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_base64_new(xmlrpc_env *          const envP,
+                  unsigned int          const length,
+                  const unsigned char * const value) {
+
+    xmlrpc_value * valP;
+    
+    mkBase64(envP, value, length, &valP);
+
+    return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_array_new(xmlrpc_env * const envP) {
+
+    xmlrpc_value * valP;
+    
+    mkEmptyArray(envP, &valP);
+
+    return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_nil_new(xmlrpc_env * const envP) {
+
+    xmlrpc_value * valP;
+    
+    mkNil(envP, &valP);
+
+    return valP;
+}
+
+
+
 static void
 getValue(xmlrpc_env *    const envP, 
          const char**    const format, 
          va_list *             args,
          xmlrpc_value ** const valPP);
-
-
-
-static void
-createXmlrpcArray(xmlrpc_env *    const envP,
-                  xmlrpc_value ** const arrayPP) {
-/*----------------------------------------------------------------------------
-   Create an empty array xmlrpc_value.
------------------------------------------------------------------------------*/
-    xmlrpc_value * arrayP;
-
-    createXmlrpcValue(envP, &arrayP);
-    if (!envP->fault_occurred) {
-        arrayP->_type = XMLRPC_TYPE_ARRAY;
-        XMLRPC_TYPED_MEM_BLOCK_INIT(xmlrpc_value*, envP, &arrayP->_block, 0);
-        if (envP->fault_occurred)
-            free(arrayP);
-    }
-    *arrayPP = arrayP;
-}
 
 
 
@@ -734,7 +872,7 @@ getArray(xmlrpc_env *    const envP,
 
     xmlrpc_value * arrayP;
 
-    createXmlrpcArray(envP, &arrayP);
+    mkEmptyArray(envP, &arrayP);
 
     /* Add items to the array until we hit our delimiter. */
     
