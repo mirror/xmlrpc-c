@@ -5,3 +5,4 @@ meerkat-app-list
 synch_client
 asynch_client
 server
+*.cgi

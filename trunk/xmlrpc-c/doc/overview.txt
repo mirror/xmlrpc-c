@@ -1,6 +1,6 @@
 This is some simple, preliminary documentation. You can find more
-documentation in the files 'xmlrpc.h', 'xmlrpc_client.h' and
-'xmlrpc_abyss.h'.
+documentation in the files 'xmlrpc.h', 'xmlrpc_client.h', 'xmlrpc_cgi.h'
+and 'xmlrpc_abyss.h'.
 
 
 Compiling
@@ -13,6 +13,10 @@ xmlrpc-c-config:
   $ CLIENT_CFLAGS=`xmlrpc-c-config libwww-client --cflags`
   $ CLIENT_LIBS=`xmlrpc-c-config libwww-client --libs`
   $ gcc $CLIENT_CFLAGS -o myclient myclient.c $CLIENT_LIBS
+
+  $ CGI_CFLAGS=`xmlrpc-c-config cgi-server --cflags`
+  $ CGI_LIBS=`xmlrpc-c-config cgi-server --libs`
+  $ gcc $CGI_CFLAGS -o mycgi.cgi mycgi.c $CGI_LIBS
 
   $ SERVER_CFLAGS=`xmlrpc-c-config abyss-server --cflags`
   $ SERVER_LIBS=`xmlrpc-c-config abyss-server --libs`
@@ -29,7 +33,7 @@ To compile a C++ client, use the following flags:
 
 The C++ API is still highly experimental, and subject to change. For now,
 xmlrpc-c-config will always link a static version of the C++ client into
-your application, to prevent you against future changes.
+your application, to protect you against future changes.
 
 
 Reference Counting

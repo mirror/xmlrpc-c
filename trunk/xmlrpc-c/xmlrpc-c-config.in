@@ -26,6 +26,7 @@ usage="Usage: xmlrpc-c-config <module>... <flag>
 You may optionally specify one or more modules:
   c++            C++ wrapper code
   libwww-client  libwww-based client
+  cgi-server     CGI-based server
   abyss-server   ABYSS-based server
 
 Available flags include:
@@ -53,6 +54,9 @@ while test $# -gt 0; do
   case $1 in
     c++)
       cpp_libs="-lxmlrpc_cpp "
+      ;;
+    cgi-server)
+      the_libs="-lxmlrpc_cgi $the_libs"
       ;;
     abyss-server)
       the_libs="-lxmlrpc_abyss_server -lxmlrpc_abyss $the_libs"

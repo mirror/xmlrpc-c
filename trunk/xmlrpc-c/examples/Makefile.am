@@ -1,4 +1,4 @@
-noinst_PROGRAMS = synch_client asynch_client server
+noinst_PROGRAMS = synch_client asynch_client server sample-cgi.cgi
 bin_PROGRAMS = query-meerkat meerkat-app-list
 
 INCLUDES = -I$(srcdir)/../src
@@ -9,6 +9,7 @@ LIBABYSS  = ../lib/abyss/src/libxmlrpc_abyss.la
 LIBXMLRPC = ../src/libxmlrpc.la $(LIBEXPAT)
 LIBCLIENT = ../src/libxmlrpc_client.la @LIBWWW_LDADD@ $(LIBXMLRPC)
 LIBSERVER = ../src/libxmlrpc_abyss_server.la $(LIBABYSS) $(LIBXMLRPC)
+LIBCGI    = ../src/libxmlrpc_cgi.la $(LIBXMLRPC)
 
 synch_client_SOURCES     = synch_client.c
 synch_client_LDADD       = $(LIBCLIENT)
@@ -20,6 +21,10 @@ asynch_client_LDFLAGS    = @LIBWWW_RPATH@
 
 server_SOURCES           = server.c
 server_LDADD             = $(LIBSERVER)
+
+sample_cgi_cgi_SOURCES   = sample-cgi.c
+sample_cgi_cgi_LDADD     = $(LIBCGI)
+sample_cgi_cgi_LDFLAGS   = -static
 
 query_meerkat_SOURCES    = query-meerkat.c
 query_meerkat_LDADD      = $(LIBCLIENT)

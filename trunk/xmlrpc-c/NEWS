@@ -1,3 +1,7 @@
+0.9.4 - Eric Kidd <eric.kidd@pobox.com> - 18 January 2000
+
+  * Support for CGI-based servers.
+
 0.9.3 - Eric Kidd <eric.kidd@pobox.com> - 14 January 2000
 
   * Added support for libwww 5.2.8, even when linked against expat.
