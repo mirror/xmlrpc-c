@@ -4,12 +4,16 @@ endif
 
 include $(SRCDIR)/Makefile.config
 
-CURL_CFLAGS := $(shell curl-config --cflags)
+CURL_INCLUDES := $(shell curl-config --cflags)
+# We expect that curl-config --cflags just gives us -I options, because
+# we need just the -I options for 'make dep'.  Plus, it's scary to think
+# of what any other compiler flag would do to our compile.
 
-CFLAGS = $(CFLAGS_COMMON) $(CURL_CFLAGS) $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = -lpthread $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/util/include
+INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/util/include \
+  $(CURL_INCLUDES)
 
 default: all
 
