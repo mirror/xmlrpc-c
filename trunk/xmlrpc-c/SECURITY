@@ -1,3 +1,6 @@
+Background
+==========
+
 A substantial effort has been made to eliminate buffer overflows and other
 bugs in the XML-RPC core (please see the file TESTING for details).
 However, this code has not yet been extensively audited by third parties.
@@ -10,6 +13,23 @@ security problems.
 If you're extremely security-conscious, you may want to carefully audit the
 XML-RPC core, and supply your own HTTP code.
 
+
+Security Advisories
+===================
+
+Security advisories related to xmlrpc-c will normally be posted to
+xmlrpc-c-announce and xmlrpc-c-devel.  You can subscribe to either or both
+mailing lists using the web:
+
+  http://xmlrpc-c.sourceforge.net/lists.php
+
+We also plan to add a section to the website listing all security
+advisories and their current status.
+
+
+XML-RPC Security
+================
+
 In addition, there are some security issues inherent in XML-RPC:
 
   1) All XML-RPC calls are sent over the network unencrypted. This means
@@ -19,6 +39,9 @@ In addition, there are some security issues inherent in XML-RPC:
      This is especially dangerous because XML-RPC is a stateless protocol.
      If you include reusable authentication tokens in an XML-RPC call, they
      can probably be sniffed and used by attackers.
+
+     You can solve this problem by using SSL.  Recent versions of xmlrpc-c
+     should support SSL, but it's still hard to set up.
 
   2) The is no security built into XML-RPC by default--any client can call
      any function on any visible server. It is the server's responsibility

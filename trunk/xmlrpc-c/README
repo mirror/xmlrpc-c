@@ -1,3 +1,9 @@
+WARNING: I've received several reports of potential security problems with
+Abyss, but nothing specific and replicable.  Please see SECURITY for
+details, and use a CGI-based server if at all possible.
+
+---
+
 This is a development release of an XML-RPC library for C and C++
 programmers. As such, it still has a few rough edges.
 
@@ -42,7 +48,8 @@ Also of interest are:
   REFACTORINGS                Suggested code reorganizations
   TESTING                     Notes on testing this library
 
-To run the various server applications, you can type one of the following:
+To run the various Abyss-based server applications, you can type one of the
+following:
 
   $ examples/server conf/abyss_root/conf/abyss.conf 
   $ src/servertest conf/abyss_root/conf/abyss.conf 
