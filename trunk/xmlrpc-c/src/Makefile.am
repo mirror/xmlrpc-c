@@ -16,16 +16,20 @@ lib_LIBRARIES   = @LIBXMLRPC_CPP_A@
 EXTRA_LIBRARIES = libxmlrpc_cpp.a
 
 # Declare our programs.
-noinst_PROGRAMS = rpctest @CPPTEST@ @CLIENTTEST@ @SERVERTEST@ @VALIDATEE@
-EXTRA_PROGRAMS = cpptest clienttest servertest validatee
+noinst_PROGRAMS = rpctest @EFRPCTEST@ @CPPTEST@ \
+                  @CLIENTTEST@ @SERVERTEST@ @VALIDATEE@
+EXTRA_PROGRAMS  = cpptest efrpctest clienttest servertest validatee
 
 # Declare our headers (installed ones only!).
 include_HEADERS = xmlrpc.h @XMLRPC_CLIENT_H@ @XMLRPC_ABYSS_H@ @XMLRPC_CGI_H@ \
                   @XMLRPCCPP_H@
 EXTRA_HEADERS = xmlrpc_client.h xmlrpc_abyss.h xmlrpc_cgi.h XmlRpcCpp.h
 
+# Our scripts.
+noinst_SCRIPTS = efrpctest_wrapper
+
 # Our test programs.
-TESTS = rpctest @CPPTEST@
+TESTS = rpctest @EFRPCTEST_WRAPPER@ @CPPTEST@
 
 INCLUDES = -I.. -I$(srcdir)/../lib/expat/xmlparse -I$(srcdir)/../lib/abyss/src
 
@@ -59,6 +63,10 @@ libxmlrpc_cpp_a_SOURCES = XmlRpcCpp.cc
 rpctest_SOURCES = rpctest.c 
 rpctest_LDADD   = libxmlrpc.la $(LIBEXPAT)
 
+# The test suites for the XML-RPC core w/Electric Fence.
+efrpctest_SOURCES = rpctest.c 
+efrpctest_LDADD   = libxmlrpc.la $(LIBEXPAT) -lefence
+
 # The test suites for our C++ core.
 cpptest_SOURCES = cpptest.cc XmlRpcCpp.cc XmlRpcCpp.h
 cpptest_LDADD   = libxmlrpc_cpp.a libxmlrpc.la $(LIBEXPAT)
@@ -78,3 +86,10 @@ servertest_LDADD   = libxmlrpc_abyss_server.la $(LIBABYSS) \
 validatee_SOURCES  = validatee.c
 validatee_LDADD    = libxmlrpc_abyss_server.la $(LIBABYSS) \
                      libxmlrpc.la $(LIBEXPAT)
+
+# Handle our wrapper script.
+efrpctest_wrapper: $(srcdir)/efrpctest_wrapper.sh
+	cp $< $@
+	chmod +x $@
+EXTRA_DIST = efrpctest_wrapper.sh
+MOSTLYCLEANFILES = efrpctest_wrapper

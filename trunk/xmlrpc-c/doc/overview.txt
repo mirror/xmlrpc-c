@@ -149,6 +149,8 @@ Here's a complete table of all supported codes:
   d             double          double*
   s             char*           char**          string encoded as UTF-8
   s#            char*,size_t    char**,size_t*  string encoded as UTF-8
+  w             wchar_t*        wchar_t**       string encoded as wchar_t
+  w#            wchar_t*,size_t wchar_t**,size_t*
   6             uchar*,size_t   uchar**,size_t* "uchar" is unsigned char 
   8             char*           char**          Raw ISO8601 date format
   p             void*           void**          C pointer w/o cleanup

@@ -314,6 +314,22 @@ if test x"$enable_libwww_client" != xno; then
     fi
 fi
 
+AC_ARG_ENABLE(efence, [\
+  --enable-efence         Enable malloc/free debugging with Bruce Perens\'
+                          Electric Fence library (test suites only).])
+AC_MSG_CHECKING(whether to test with Electric Fence)
+if test x"$enable_efence" = xyes; then
+    AC_MSG_RESULT(yes)
+    EFRPCTEST=efrpctest
+    EFRPCTEST_WRAPPER=efrpctest_wrapper
+else
+    AC_MSG_RESULT(no)
+    EFRPCTEST=
+    EFRPCTEST_WRAPPER=
+fi
+AC_SUBST(EFRPCTEST)
+AC_SUBST(EFRPCTEST_WRAPPER)
+
 
 dnl =======================================================================
 dnl Output our results.

@@ -1,5 +1,7 @@
 CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
 
+  * Integrated Electric Fence into build system (optional).
+  * Support for building and parsing XML-RPC values using wchar_t strings.
   * Basic UTF-8 handling: Refuse to process invalid UTF-8 from network,
     print warnings when sending invalid UTF-8 *to* network.
   * Highly robust UTF-8 validator, decoder, encoder.
