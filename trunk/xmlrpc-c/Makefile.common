@@ -148,7 +148,7 @@ distclean-common:
 #
 # Other projects have 'make distclean' _remove_ Makefile.depend and then
 # have 'make' automatically build Makefile.depend.  We have
-# found that to be an utter disaster -- it's way to complicated and prone
+# found that to be an utter disaster -- it's way too complicated and prone
 # to failure, especially with built .h files.  Better not to burden the user,
 # who gains nothing from it, with that.
 #
@@ -186,10 +186,20 @@ TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 
 DEP_SOURCES = $(wildcard *.c *.cpp *.cc)
 
+# This is a filter to turn "foo.o:" rules into "foo.o foo.lo:" because Libtool
+# uses .lo for object files.  I'd like to purge the build of Libtool some day
+# and eliminate this complication.
+
+LIBTOOL_DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo:}'
+
+
+
 .PHONY: dep-common
 dep-common: FORCE
 ifneq ($(DEP_SOURCES)x,x)
-	-$(CC) -MM -MG -I. $(INCLUDES) $(DEP_SOURCES) >Makefile.depend
+	-$(CC) -MM -MG -I. $(INCLUDES) $(DEP_SOURCES) | \
+	  $(LIBTOOL_DEPEND_MASSAGER) \
+	  >Makefile.depend
 endif
 
 Makefile.depend:
