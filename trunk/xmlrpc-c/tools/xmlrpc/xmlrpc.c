@@ -253,6 +253,25 @@ buildInt(xmlrpc_env *    const envP,
 
 
 static void
+buildBool(xmlrpc_env *    const envP,
+          const char *    const valueString,
+          xmlrpc_value ** const paramPP) {
+
+    if (strcmp(valueString, "t") == 0 ||
+        strcmp(valueString, "true") == 0)
+        *paramPP = xmlrpc_build_value(envP, "b", 1);
+    else if (strcmp(valueString, "f") == 0 ||
+        strcmp(valueString, "false") == 0)
+        *paramPP = xmlrpc_build_value(envP, "b", 0);
+    else
+        setError(envP, "Boolean argument has unrecognized value '%s'.  "
+                 "recognized values are 't', 'f', 'true', and 'false'.",
+                 valueString);
+} 
+
+
+
+static void
 buildNil(xmlrpc_env *    const envP,
          const char *    const valueString,
          xmlrpc_value ** const paramPP) {
@@ -275,6 +294,8 @@ computeParameter(xmlrpc_env *    const envP,
         buildString(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "i/", 2) == 0) 
         buildInt(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "b/", 2) == 0)
+        buildBool(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "n/", 2) == 0)
         buildNil(envP, &paramArg[2], paramPP);
     else {
