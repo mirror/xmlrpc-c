@@ -10,13 +10,13 @@ include $(BUILDDIR)/Makefile.config
 include $(SRCDIR)/Makefile.common
 
 .PHONY: all
-all: casprintf.o cmdline_parser.o
+all: casprintf.lo cmdline_parser.lo
 
 INCLUDES = -Iinclude -I$(BUILDDIR)
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
-%.o:%.c
+%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $<
 
 include Makefile.depend

@@ -3,8 +3,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "xmlrpc_config.h"  /* For HAVE_ASPRINTF */
+#include "xmlrpc_config.h"  /* For HAVE_ASPRINTF, __inline__ */
 #include "casprintf.h"
+
+
+
+static __inline__ void
+simpleVasprintf(const char ** const retvalP,
+                const char *  const fmt,
+                va_list             varargs) {
+/*----------------------------------------------------------------------------
+   This is a poor man's implementation of vasprintf(), of GNU fame.
+-----------------------------------------------------------------------------*/
+    size_t const initialSize = 4096;
+    char * result;
+
+    result = malloc(initialSize);
+    if (result != NULL) {
+        size_t bytesNeeded;
+        bytesNeeded = vsnprintf(result, initialSize, fmt, varargs);
+        if (bytesNeeded > initialSize) {
+            free(result);
+            result = malloc(bytesNeeded);
+            if (result != NULL)
+                vsnprintf(result, bytesNeeded, fmt, varargs);
+        } else if (bytesNeeded == initialSize) {
+            if (result[initialSize-1] != '\0') {
+                /* This is one of those old systems where vsnprintf()
+                   returns the number of bytes it used, instead of the
+                   number that it needed, and it in fact needed more than
+                   we gave it.  Rather than mess with this highly unlikely
+                   case (old system and string > 4095 characters), we just
+                   treat this like an out of memory failure.
+                */
+                free(result);
+                result = NULL;
+            }
+        }
+    }
+    *retvalP = result;
+}
+
+
 
 void GNU_PRINTF_ATTR(2,3)
 casprintf(const char ** const retvalP, const char * const fmt, ...) {
@@ -18,8 +58,7 @@ casprintf(const char ** const retvalP, const char * const fmt, ...) {
 #if HAVE_ASPRINTF
     vasprintf(&retval, fmt, varargs);
 #else
-    retval = malloc(8192);
-    vsnprintf(retval, 8192, fmt, varargs);
+    simpleVasprintf(&retval, fmt, varargs);
 #endif
     *retvalP = retval;
 }
