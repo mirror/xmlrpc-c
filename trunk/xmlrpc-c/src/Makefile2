@@ -1,6 +1,6 @@
 # -*-makefile-*-    <-- an Emacs control
 
-# This is the beginnngs of what will eventually replace Makefile.
+# This is the beginnings of what will eventually replace Makefile.
 
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/..
@@ -37,6 +37,22 @@ else
   LIBXML_FILES = xmlrpc_expat.c
 endif
 
+LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo
+LIBXMLRPC_SERVER_OBJS = xmlrpc_registry.lo
+
+ifeq ($(ENABLE_LIBXML2),yes)
+  XMLRPC_XML_PARSER = xmlrpc_libxml2.lo
+else
+  XMLRPC_XML_PARSER = xmlrpc_expat.lo
+endif
+
+LIBXMLRPC_OBJS = xmlrpc_support.lo xmlrpc_data.lo xmlrpc_struct.lo \
+	         $(XMLRPC_XML_PARSER) xmlrpc_parse.lo \
+                 xmlrpc_serialize.lo xmlrpc_base64.lo \
+		 xmlrpc_utf8.lo xmlrpc_authcookie.lo
+
+LIB_OBJS = $(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS)
+
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \
   -I$(CURL_TRANSPORT_DIR) \
@@ -56,6 +72,9 @@ cpptest:%:%.o XmlRpcCpp.o libxmlrpc_cpp.a libxmlrpc.la libxmlrpc_server.la \
 
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR)
 
+libxmlrpc.la: $(LIBXMLRPC_OBJS)
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+
 libxmlrpc_client.la: xmlrpc_client.lo $(TRANSPORT_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
@@ -68,17 +87,18 @@ CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 rpctest.o:%.o:%.c
 	$(CC) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
 
-xmlrpc_client.lo:%.lo:%.c
+cpptest.o:%.o:%.cc
+	$(CC) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
+
+$(LIB_OBJS):%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
 
-xmlrpc_registry.lo:%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+$(LIBXMLRPC_OBJS):%.lo:%.c
+	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(LIBXML_INCLUDES) \
+	  $(CFLAGS) $<
 
 $(TRANSPORT_OBJS): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
-
-libxmlrpc.la: FORCE
-	$(MAKE) $@
 
 transport_config.h: $(SRCDIR)/Makefile.config
 	rm -f $@

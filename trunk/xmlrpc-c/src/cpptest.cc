@@ -243,6 +243,10 @@ void test_errors (void) {
 
 int main (int argc, char** argv)
 {
+    if (argc-1 > 0) {
+        cout << "Program takes no arguments" << endl;
+        if (argv) {};  // defeat compiler warning about unused parm
+    }
     try {
 
 	// Add your test suites here.
