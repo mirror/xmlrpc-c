@@ -185,7 +185,6 @@ getBody(xmlrpc_env *        const envP,
                             &chunkPtr, &chunkLen);
             bytesRead += chunkLen;
 
-            printf("get_buffer_data() got '%*s'\n", chunkLen, chunkPtr);
             XMLRPC_TYPED_MEM_BLOCK_APPEND(char, envP, body, 
                                           chunkPtr, chunkLen);
             
