@@ -24,8 +24,10 @@
 // SUCH DAMAGE.
 
 
+#include <string>
 #include "XmlRpcCpp.h"
 
+using std::string;
 
 //=========================================================================
 //  XmlRpcFault Methods
