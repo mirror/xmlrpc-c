@@ -9,6 +9,10 @@
 
 use strict;
 
+# One global variable for use with Perl's format routines, and one for
+# use inside an 'exec' block.
+use vars qw/$helptext $method_list/;
+
 # Try to load our Perl XML-RPC bindings, but fail gracefully.
 eval {
     require Frontier::Client;
@@ -25,9 +29,7 @@ EOD
     exit 1;
 }
 
-# One global variable for use with Perl's format routines.
-use vars qw/$helptext/;
-
+# Parse our command-line arguments.
 if (@ARGV != 1 || $ARGV[0] eq "--help") {
     print STDERR "Usage: xml-rpc-api2txt serverURL\n";
     exit 1;
@@ -35,8 +37,28 @@ if (@ARGV != 1 || $ARGV[0] eq "--help") {
 
 my $server = Frontier::Client->new(url => $ARGV[0]);
 
-# Get a list of methods, and enter them into a hashtable.
-my $method_list = $server->call('system.listMethods');
+# Try (very carefully) to get our a list of methods from the server.
+local $method_list;
+eval {
+    $method_list = $server->call('system.listMethods');
+};
+if ($@) {
+    print STDERR <<"EOD";
+An error occurred while trying to talk to the XML-RPC server:
+
+  $@
+
+This may have been caused by several things--the server might not support
+introspection, it might not be an XML-RPC server, or your network might be
+down. Try the following:
+
+  xml-rpc-api2txt http://xmlrpc-c.sourceforge.net/api/sample.php
+
+EOD
+    exit 1;
+}
+
+# Enter the methods into a hashtable.
 my @methods = sort @$method_list;
 my %method_table;
 foreach my $method (@methods) {
