@@ -385,6 +385,8 @@ destroyCurlTransaction(curlTransaction * const curlTransactionP) {
     curl_slist_free_all(curlTransactionP->headerList);
     strfree(curlTransactionP->serverUrl);
     curl_easy_cleanup(curlTransactionP->curlSessionP);
+
+    free(curlTransactionP);
 }
 
 
