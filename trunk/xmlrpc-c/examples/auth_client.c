@@ -17,7 +17,9 @@
 
 #define NAME       "XML-RPC C Auth Client"
 #define VERSION    "1.0"
+#ifndef SERVER_URL
 #define SERVER_URL "http://xmlrpc-c.sourceforge.net/api/sample.php"
+#endif
 
 static void die_if_fault_occurred (xmlrpc_env *env)
 {
