@@ -1,5 +1,7 @@
 CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
 
+  * Highly robust UTF-8 validator, decoder, encoder.
+  * RedHat 7 warning fixes.
   * Modularized the build system--build only what you need.
   * Implemented a configurable size limit for XML data off the network.
   * Fixed all recent, reproducible bugs in CVS. These were generally

@@ -1686,6 +1686,16 @@ void test_utf8_coding (void)
 	     wcsncmp(wcs, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, output),
 		     wcslen(wcs)));
 	xmlrpc_mem_block_free(output);
+
+	/* Test the UTF-8 encoder, too. */
+	output = xmlrpc_wcs_to_utf8(&env, wcs, wcslen(wcs));
+	TEST(!env.fault_occurred);
+	TEST(output != NULL);
+	TEST(strlen(utf8) == XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output));
+	TEST(0 ==
+	     strncmp(utf8, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
+		     strlen(utf8)));
+	xmlrpc_mem_block_free(output);
     }
 
     /* Test each of our illegal UTF-8 sequences. */

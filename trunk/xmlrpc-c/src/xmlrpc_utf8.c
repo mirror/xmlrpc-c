@@ -27,13 +27,11 @@
 /*=========================================================================
 **  XML-RPC UTF-8 Utilities
 **=========================================================================
-**  This code was inspired by Fredrik Lundh's Unicode object for Python
-**  2.0.  All the code, however, is new.  Thanks to the icky CNRI license
-**  on Python 2.0, I decided to reimplement this code from scratch using
-**  similar algorithms.
+**  Routines for validating, encoding and decoding UTF-8 data.  We try to
+**  be very, very strict about invalid UTF-8 data.
 **
 **  All of the code in this file assumes that your machine represents
-**  wchar_t as a 16-bit or wider character containing UCS-2 data.  If this
+**  wchar_t as a 16-bit (or wider) character containing UCS-2 data.  If this
 **  assumption is incorrect, you may need to replace this file.
 **
 **  For lots of information on Unicode and UTF-8 decoding, see:
@@ -59,7 +57,11 @@
 /* The number of bytes in a UTF-8 sequence starting with the character used
 ** as the array index.  A zero entry indicates an illegal initial byte.
 ** This table was generated using a Perl script and information from the
-** UTF-8 standard. */
+** UTF-8 standard.
+**
+** Fredrik Lundh's UTF-8 decoder Python 2.0 uses a similar table.  But
+** since Python 2.0 has the icky CNRI license, I regenerated this
+** table from scratch and wrote my own decoder. */
 static char utf8_seq_length[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -114,6 +116,9 @@ static wchar_t utf8_min_char_for_length[4] = {
 
 /* Is the character 'c' a UTF-8 continuation character? */
 #define IS_CONTINUATION(c) (((c) & 0xC0) == 0x80)
+
+/* Maximum number of bytes needed to encode a supported character. */
+#define MAX_ENCODED_BYTES (3)
 
 
 /*=========================================================================
@@ -288,8 +293,77 @@ xmlrpc_mem_block *xmlrpc_utf8_to_wcs (xmlrpc_env *env,
 		&wcs_length);
     XMLRPC_FAIL_IF_FAULT(env);
 
+    /* Make sure we didn't overrun our buffer. */
+    XMLRPC_ASSERT(wcs_length <= utf8_len);
+
     /* Correct the length of the memory block. */
     XMLRPC_TYPED_MEM_BLOCK_RESIZE(wchar_t, env, output, wcs_length);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (output)
+	    xmlrpc_mem_block_free(output);
+	return NULL;
+    }
+    return output;
+}
+
+
+/*=========================================================================
+**  xmlrpc_utf8_to_wcs
+**=========================================================================
+**  Encode a "wide character string" as UTF-8.
+*/
+
+xmlrpc_mem_block *xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
+				      wchar_t *wcs_data,
+				      size_t wcs_len)
+{
+    size_t estimate, bytes_used, i;
+    xmlrpc_mem_block *output;
+    unsigned char *buffer;
+    wchar_t wc;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(wcs_data);
+
+    /* Error-handling preconditions. */
+    output = NULL;
+
+    /* Allocate a memory block large enough to hold any possible output.
+    ** We assume that every wchar might encode to the maximum length. */
+    estimate = wcs_len * MAX_ENCODED_BYTES;
+    output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, env, estimate);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Output our characters. */
+    buffer = (unsigned char*) XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
+    bytes_used = 0;
+    for (i = 0; i < wcs_len; i++) {
+	wc = wcs_data[i];
+	if (wc <= 0x007F) {
+	    buffer[bytes_used++] = wc & 0x7F;
+	} else if (wc <= 0x07FF) {
+	    /* 110xxxxx 10xxxxxx */
+	    buffer[bytes_used++] = 0xC0 | (wc >> 6);
+	    buffer[bytes_used++] = 0x80 | (wc & 0x3F);
+	} else if (wc <= 0xFFFF) {
+	    /* 1110xxxx 10xxxxxx 10xxxxxx */
+	    buffer[bytes_used++] = 0xE0 | (wc >> 12);
+	    buffer[bytes_used++] = 0x80 | ((wc >> 6) & 0x3F);
+	    buffer[bytes_used++] = 0x80 | (wc & 0x3F);
+	} else {
+	    XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR,
+			"Don't know how to encode UCS-4 characters yet");
+	}
+    }
+
+    /* Make sure we didn't overrun our buffer. */
+    XMLRPC_ASSERT(bytes_used <= estimate);
+
+    /* Correct the length of the memory block. */
+    XMLRPC_TYPED_MEM_BLOCK_RESIZE(char, env, output, bytes_used);
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:
