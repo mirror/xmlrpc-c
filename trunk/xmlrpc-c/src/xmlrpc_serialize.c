@@ -86,6 +86,39 @@ cleanup:
 
 
 /*=========================================================================
+**  Warnings About Invalid UTF-8
+**=========================================================================
+**  We claim to send UTF-8 data to the network.  But we rely on application
+**  programs to pass us correctly-formed UTF-8 data, which is very naive
+**  and optimistic.
+**
+**  In debudding mode, we call this routine to issue dire-sounding
+**  warnings.  For the sake of safety, this routine never exits the
+**  program or does anything else drastic.
+**
+**  This routine almost certainly slows down our output.
+*/
+
+#ifndef NDEBUG
+
+static void sanity_check_utf8 (char *str, size_t len)
+{
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+    xmlrpc_validate_utf8(&env, str, len);
+    if (env.fault_occurred)
+	fprintf(stderr, "*** xmlrpc-c WARNING ***: %s (%s)\n",
+		"Application sending corrupted UTF-8 data to network",
+		env.fault_string);
+    xmlrpc_env_clean(&env);
+}
+
+#endif
+
+
+
+/*=========================================================================
 **  Escaping Strings
 **=========================================================================
 */
@@ -101,6 +134,11 @@ static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
 
     /* Set up our error-handling preconditions. */
     retval = NULL;
+
+    /* Sanity-check this string before we print it. */
+#ifndef NDEBUG
+    sanity_check_utf8(str, len);
+#endif    
 
     /* Calculate the amount of space we'll need. */
     needed = 0;

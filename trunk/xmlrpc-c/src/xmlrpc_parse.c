@@ -86,6 +86,31 @@
 
 
 /*=========================================================================
+**  make_string
+**=========================================================================
+**  Make an XML-RPC string.
+**
+** SECURITY: We validate our UTF-8 first.  This incurs a performance
+** penalty, but ensures that we will never pass maliciously malformed
+** UTF-8 data back up to the user layer, where it could wreak untold
+** damange. Don't comment out this check unless you know *exactly* what
+** you're doing.
+**
+** XXX - This validation is redundant if the user chooses to convert
+** UTF-8 data into a wchar_t string.
+*/
+
+static xmlrpc_value *
+make_string(xmlrpc_env *env, char *cdata, size_t cdata_size)
+{
+    xmlrpc_validate_utf8(env, cdata, cdata_size);
+    if (env->fault_occurred)
+	return NULL;
+    return xmlrpc_build_value(env, "s#", cdata, cdata_size);
+}
+
+
+/*=========================================================================
 **  convert_value
 **=========================================================================
 **  Convert an XML element representing a value into an xmlrpc_value.
@@ -129,7 +154,7 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 	/* We have no type element, so treat the value as a string. */
 	cdata = xml_element_cdata(elem);
 	cdata_size = xml_element_cdata_size(elem);
-	return xmlrpc_build_value(env, "s#", cdata, cdata_size);
+	return make_string(env, cdata, cdata_size);
     } else {
 	/* We should have a type tag inside our value tag. */
 	CHECK_CHILD_COUNT(env, elem, 1);
@@ -152,7 +177,7 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 		return xmlrpc_build_value(env, "i",
 					  (xmlrpc_int32) atoi(cdata));
 	    } else if (strcmp(child_name, "string") == 0) {
-		return xmlrpc_build_value(env, "s#", cdata, cdata_size);
+		return make_string(env, cdata, cdata_size);
 	    } else if (strcmp(child_name, "boolean") == 0) {
 		return xmlrpc_build_value(env, "b", (xmlrpc_bool) atoi(cdata));
 	    } else if (strcmp(child_name, "double") == 0) {
@@ -286,7 +311,7 @@ convert_struct (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 	CHECK_CHILD_COUNT(env, name_elem, 0);
 	cdata = xml_element_cdata(name_elem);
 	cdata_size = xml_element_cdata_size(name_elem);
-	key = xmlrpc_build_value(env, "s#", cdata, cdata_size);
+	key = make_string(env, cdata, cdata_size);
 	XMLRPC_FAIL_IF_FAULT(env);
 
 	/* Get our value. */
@@ -424,10 +449,13 @@ void xmlrpc_parse_call (xmlrpc_env *env,
     name_elem = xml_element_children(call_elem)[0];
     params_elem = xml_element_children(call_elem)[1];
 
-    /* Extract the method name. */
+    /* Extract the method name.
+    ** SECURITY: We make sure the method name is valid UTF-8. */
     CHECK_NAME(env, name_elem, "methodName");
     CHECK_CHILD_COUNT(env, name_elem, 0);
     cdata = xml_element_cdata(name_elem);
+    xmlrpc_validate_utf8(env, cdata, strlen(cdata));
+    XMLRPC_FAIL_IF_FAULT(env);
     *out_method_name = (char*) malloc(strlen(cdata) + 1);
     XMLRPC_FAIL_IF_NULL(*out_method_name, env, XMLRPC_INTERNAL_ERROR,
 			"Could not allocate memory for method name");
