@@ -16,17 +16,16 @@
 //
 // "using namespace std" was under "#if defined(__GNUC__) && (__GNUC__ >= 3)"
 // until December 2003, and then unconditional until Release 1.1 (March 2005).
+// Older GNU Compilers apparently imply namespace std, so they don't need it.
 // 
 // But "using namespace std" is a bad idea.  This is an interface header
 // file, and we don't want to suck all of namespace std into the user's
 // namespace just because he's using Xmlrpc-c.  So we took it out.
-// If we're using a std name anywhere in this file, we should specify it
-// explicitly like std::cout.
+// We refer to std names like std::string.
 // -Bryan 2005.03.12.
 
 
 #include <string>
-
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
 #include <xmlrpc_server.h>
@@ -47,12 +46,12 @@ private:
 
 public:
     XmlRpcFault (const XmlRpcFault &fault);
-    XmlRpcFault (const int faultCode, const string faultString);
+    XmlRpcFault (const int faultCode, const std::string faultString);
     XmlRpcFault (const xmlrpc_env *env);
     ~XmlRpcFault (void);
 
     int          getFaultCode (void) const;
-    string       getFaultString (void) const;
+    std::string  getFaultString (void) const;
     xmlrpc_env  *getFaultEnv (void);
 };
 
@@ -93,7 +92,7 @@ public:
         /* hasFaultOccurred() is for backward compatibility.
            faultOccurred() is a superior name for this.
         */
-    string       getFaultString() const { return mEnv.fault_string; };
+    std::string  getFaultString() const { return mEnv.fault_string; };
     XmlRpcFault  getFault (void) const;
 
     void         throwIfFaultOccurred (void) const;
@@ -162,8 +161,8 @@ public:
     static XmlRpcValue makeInt      (const XmlRpcValue::int32 i);
     static XmlRpcValue makeBool     (const bool b);
     static XmlRpcValue makeDouble   (const double d);
-    static XmlRpcValue makeDateTime (const string& dateTime);
-    static XmlRpcValue makeString   (const string& str);
+    static XmlRpcValue makeDateTime (const std::string& dateTime);
+    static XmlRpcValue makeString   (const std::string& str);
     static XmlRpcValue makeString   (const char *const str);
     static XmlRpcValue makeString   (const char *const str, size_t len);
     static XmlRpcValue makeArray    (void);
@@ -180,8 +179,8 @@ public:
     XmlRpcValue::int32 getInt   (void) const;
     bool         getBool        (void) const;
     double       getDouble      (void) const;
-    string       getRawDateTime (void) const;
-    string       getString      (void) const;
+    std::string  getRawDateTime (void) const;
+    std::string  getString      (void) const;
     XmlRpcValue  getArray       (void) const;
     XmlRpcValue  getStruct      (void) const;
 
@@ -204,11 +203,12 @@ public:
     // Struct functions. These will throw an XmlRpcFault if the value
     // isn't a struct.
     size_t       structSize (void) const;
-    bool         structHasKey (const string& key) const;
-    XmlRpcValue  structGetValue (const string& key) const;
-    void         structSetValue (const string& key, const XmlRpcValue& value);
+    bool         structHasKey (const std::string& key) const;
+    XmlRpcValue  structGetValue (const std::string& key) const;
+    void         structSetValue (const std::string& key, 
+                                 const XmlRpcValue& value);
     void         structGetKeyAndValue (const int index,
-                                       string& out_key,
+                                       std::string& out_key,
                                        XmlRpcValue& out_value) const;
 };
 
@@ -259,27 +259,27 @@ inline xmlrpc_value *XmlRpcValue::borrowReference (void) const {
 class XmlRpcClient {
 
 private:
-    string mServerUrl;
+    std::string mServerUrl;
 
 public:
-    static void Initialize (string appname, string appversion);
+    static void Initialize (std::string appname, std::string appversion);
     static void Terminate (void);
 
-    XmlRpcClient (const string& server_url) : mServerUrl(server_url) {}
+    XmlRpcClient (const std::string& server_url) : mServerUrl(server_url) {}
     ~XmlRpcClient (void) {}
 
     XmlRpcClient (const XmlRpcClient& client);
     XmlRpcClient& operator= (const XmlRpcClient& client);
 
-    XmlRpcValue call (string method_name, XmlRpcValue param_array);
-    void call_asynch (string method_name,
+    XmlRpcValue call (std::string method_name, XmlRpcValue param_array);
+    void call_asynch (std::string method_name,
                       XmlRpcValue param_array,
                       xmlrpc_response_handler callback,
                       void* user_data);
     void event_loop_asynch (unsigned long milliseconds);
 };
 
-inline void XmlRpcClient::call_asynch(string method_name,
+inline void XmlRpcClient::call_asynch(std::string method_name,
                                       XmlRpcValue param_array,
                                       xmlrpc_response_handler callback,
                                       void* user_data)
@@ -315,7 +315,8 @@ inline XmlRpcClient& XmlRpcClient::operator= (const XmlRpcClient& client) {
     return *this;
 }
 
-inline void XmlRpcClient::Initialize (string appname, string appversion) {
+inline void XmlRpcClient::Initialize (std::string appname, 
+                                      std::string appversion) {
     xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS,
                        appname.c_str(),
                        appversion.c_str());
@@ -325,8 +326,8 @@ inline void XmlRpcClient::Terminate (void) {
     xmlrpc_client_cleanup();
 }
 
-inline XmlRpcValue XmlRpcClient::call (string method_name,
-                       XmlRpcValue param_array)
+inline XmlRpcValue XmlRpcClient::call (std::string method_name,
+                                       XmlRpcValue param_array)
 {
     XmlRpcEnv env;
     xmlrpc_value *result =
@@ -348,7 +349,7 @@ private:
 
     xmlrpc_registry*    mRegistry;
 
-    xmlrpc_mem_block* alloc (XmlRpcEnv& env, const string& body) const; 
+    xmlrpc_mem_block* alloc (XmlRpcEnv& env, const std::string& body) const; 
 
 public:
 
@@ -357,16 +358,16 @@ public:
 
     xmlrpc_registry* getRegistry (void) const;
 
-    XmlRpcGenSrv&   addMethod (const string& name,
+    XmlRpcGenSrv&   addMethod (const std::string& name,
                                xmlrpc_method method,
                                void *data);
-    XmlRpcGenSrv&   addMethod (const string& name,
+    XmlRpcGenSrv&   addMethod (const std::string& name,
                                xmlrpc_method method,
                                void* data,
-                               const string& signature,
-                               const string& help);
-
-    string handle (const string& body) const;
+                               const std::string& signature,
+                               const std::string& help);
+    
+    std::string handle (const std::string& body) const;
 };
 
 inline XmlRpcGenSrv::XmlRpcGenSrv (int flags) {
