@@ -122,14 +122,6 @@ static int test_int_array_3[8] = {1, 2, 3, 4, 5, 6, 7, 8};
     "</data></array></value>"CRLF \
     "</data></array></value>"
 
-static char serialized_data[] = RAW_STRING_DATA;
-
-static char serialized_struct[] = 
-    "<value><struct>"CRLF \
-"<member><name>&lt;&amp;&gt;</name>"CRLF \
-"<value><i4>10</i4></value></member>"CRLF \
-"</struct></value>";
-
 #define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"CRLF
 
 static char serialized_call[] =
@@ -517,18 +509,13 @@ static void test_base64_conversion (void)
     xmlrpc_env_clean(&env);
 }
 
-static void test_value (void)
-{
-    xmlrpc_env env, env2;
-    xmlrpc_value *v, *v2, *v3, *item;
-    xmlrpc_int32 i, i1, i2, i3, i4;
-    xmlrpc_bool b;
-    double d;
-    char *str;
-    size_t len;
-    void *ptr;
-    unsigned char* data;
-    
+
+static void
+test_value_alloc_dealloc(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+
     xmlrpc_env_init(&env);
 
     /* Test allocation and deallocation (w/memprof). */
@@ -538,6 +525,19 @@ static void test_value (void)
     xmlrpc_INCREF(v);
     xmlrpc_DECREF(v);
     xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+static void
+test_value_integer(void) { 
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_int32 i;
+
+    xmlrpc_env_init(&env);
 
     /* Test integers. */
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 10);
@@ -549,7 +549,22 @@ static void test_value (void)
     TEST(i == 10);
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_bool(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_bool b;
+
     /* Test booleans. */
+
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "b", (xmlrpc_bool) 1);
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
@@ -559,7 +574,22 @@ static void test_value (void)
     TEST(b);
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_double(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    double d;
+
     /* Test doubles. */
+
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "d", 1.0);
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
@@ -569,8 +599,24 @@ static void test_value (void)
     TEST(d == 1.0);
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_string_no_null(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    char * str;
+    size_t len;
+
     /* Test strings (without '\0' bytes). */
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "s", test_string_1);
+
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
@@ -583,7 +629,24 @@ static void test_value (void)
     TEST(strlen(str) == strlen(test_string_1));
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_string_null(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_env env2;
+    char * str;
+    size_t len;
+
     /* Test a string with a '\0' byte. */
+
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "s#", "foo\0bar", (size_t) 7);
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
@@ -602,18 +665,21 @@ static void test_value (void)
     xmlrpc_env_clean(&env2);
     xmlrpc_DECREF(v);
 
-    /* Test for one, simple kind of type mismatch error. We assume that
-    ** if one of these typechecks works, the rest work fine. */
-    xmlrpc_env_init(&env2);
-    v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
-    TEST_NO_FAULT(&env);
-    xmlrpc_parse_value(&env2, v, "s", &str);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
-    xmlrpc_DECREF(v);
-    xmlrpc_env_clean(&env2);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_value(void) {
+
+    xmlrpc_value *v, *v2, *v3;
+    xmlrpc_env env;
 
     /* Test 'V' with building and parsing. */
+
+    xmlrpc_env_init(&env);
+
     v2 = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
     TEST_NO_FAULT(&env);
     v = xmlrpc_build_value(&env, "V", v2);
@@ -625,7 +691,22 @@ static void test_value (void)
     xmlrpc_DECREF(v);
     xmlrpc_DECREF(v2);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_array(void) {
+
+    xmlrpc_value *v;
+    xmlrpc_env env;
+    size_t len;
+
     /* Basic array-building test. */
+
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "()");
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
@@ -634,7 +715,86 @@ static void test_value (void)
     TEST(len == 0);
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_AS(void) {
+
+    xmlrpc_value *v;
+    xmlrpc_value *v2;
+    xmlrpc_value *v3;
+    xmlrpc_env env;
+    size_t len;
+
+    /* Test parsing of 'A' and 'S'. */
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_build_value(&env, "((){})");
+    TEST_NO_FAULT(&env);
+    xmlrpc_parse_value(&env, v, "(AS)", &v2, &v3);
+    TEST_NO_FAULT(&env);
+    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v2));
+    TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(v3));
+    len = xmlrpc_array_size(&env, v2);
+    TEST_NO_FAULT(&env);
+    TEST(len == 0);
+    len = xmlrpc_struct_size(&env, v3);
+    TEST_NO_FAULT(&env);
+    TEST(len == 0);
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_AS_typecheck(void) {
+
+    xmlrpc_env env;
+    xmlrpc_env env2;
+    xmlrpc_value *v;
+    xmlrpc_value *v2;
+
+    /* Test typechecks for 'A' and 'S'. */
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_build_value(&env, "s", "foo");
+    TEST_NO_FAULT(&env);
+    xmlrpc_env_init(&env2);
+    xmlrpc_parse_value(&env2, v, "A", &v2);
+    TEST(env2.fault_occurred);
+    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    xmlrpc_env_clean(&env2);
+    xmlrpc_env_init(&env2);
+    xmlrpc_parse_value(&env2, v, "S", &v2);
+    TEST(env2.fault_occurred);
+    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
+    xmlrpc_env_clean(&env2);
+    xmlrpc_DECREF(v);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_array2(void) {
+
+    xmlrpc_value *v;
+    xmlrpc_env env;
+    xmlrpc_int32 i, i1, i2, i3, i4;
+    xmlrpc_value * item;
+    size_t len;
+
     /* A more complex array. */
+
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "(i(ii)i)",
                            (xmlrpc_int32) 10, (xmlrpc_int32) 20,
                            (xmlrpc_int32) 30, (xmlrpc_int32) 40);
@@ -663,38 +823,50 @@ static void test_value (void)
     TEST_NO_FAULT(&env);
     xmlrpc_DECREF(v);
 
-    /* Test parsing of 'A' and 'S'. */
-    v = xmlrpc_build_value(&env, "((){})");
-    TEST_NO_FAULT(&env);
-    xmlrpc_parse_value(&env, v, "(AS)", &v2, &v3);
-    TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v2));
-    TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(v3));
-    len = xmlrpc_array_size(&env, v2);
-    TEST_NO_FAULT(&env);
-    TEST(len == 0);
-    len = xmlrpc_struct_size(&env, v3);
-    TEST_NO_FAULT(&env);
-    TEST(len == 0);
-    xmlrpc_DECREF(v);
+    xmlrpc_env_clean(&env);
+}
 
-    /* Test typechecks for 'A' and 'S'. */
-    v = xmlrpc_build_value(&env, "s", "foo");
+
+
+static void
+test_value_type_mismatch(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_env env2;
+    char * str;
+
+    /* Test for one, simple kind of type mismatch error. We assume that
+    ** if one of these typechecks works, the rest work fine. */
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
     TEST_NO_FAULT(&env);
     xmlrpc_env_init(&env2);
-    xmlrpc_parse_value(&env2, v, "A", &v2);
+    xmlrpc_parse_value(&env2, v, "s", &str);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
-    xmlrpc_env_init(&env2);
-    xmlrpc_parse_value(&env2, v, "S", &v2);
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
     xmlrpc_DECREF(v);
+    xmlrpc_env_clean(&env2);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_cptr(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    void * ptr;
 
     /* Test C pointer storage using 'p'.
     ** We don't support cleanup functions (yet). */
+
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "p", (void*) 0x00000017);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_C_PTR == xmlrpc_value_type(v));
@@ -703,7 +875,23 @@ static void test_value (void)
     TEST(ptr == (void*) 0x00000017);
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_base64(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    unsigned char* data;
+    size_t len;
+
     /* Test <base64> data. */
+
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "6", "a\0b", (size_t) 3);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
@@ -715,6 +903,134 @@ static void test_value (void)
 
     xmlrpc_env_clean(&env);
 }
+
+
+
+static void
+test_value_invalid_type(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+
+    /* Test invalid type specifier in format string */
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_build_value(&env, "Q");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_missing_array_delim(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+
+    /* Test missing close parenthesis on array */
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "(");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "(i");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_missing_struct_delim(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    
+    /* Test missing closing brace on struct */
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "{");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "{s:i", "key1", 7);
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "{s:i,s:i", "key1", 9, "key2", -4);
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_invalid_struct(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "{s:ii");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "{si:");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_build_value(&env, "{s");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INTERNAL_ERROR);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void test_value (void)
+{
+    printf("\nRunning value tests.");
+
+    test_value_alloc_dealloc();
+    test_value_integer();
+    test_value_bool();
+    test_value_double();
+    test_value_string_no_null();
+    test_value_string_null();
+    test_value_type_mismatch();
+    test_value_value();
+    test_value_array();
+    test_value_array2();
+    test_value_AS();
+    test_value_AS_typecheck();
+    test_value_cptr();
+    test_value_base64();
+    test_value_invalid_type();
+    test_value_missing_array_delim();
+    test_value_missing_struct_delim();
+    test_value_invalid_struct();
+    
+    printf("\nValue tests done.");
+}
+
+
 
 static void test_bounds_checks (void)
 {
@@ -965,13 +1281,19 @@ static void test_struct (void)
     xmlrpc_env_clean(&env);
 }
 
-static void test_serialize (void)
-{
-    xmlrpc_env env, fault;
-    xmlrpc_value *v;
+
+
+
+static void
+test_serialize_basic(void) {
+
+    char const serialized_data[] = RAW_STRING_DATA;
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
     xmlrpc_mem_block *output;
     size_t size;
-
+    
     xmlrpc_env_init(&env);
 
     /* Build a nice, messy value to serialize. We should attempt to use
@@ -1006,7 +1328,87 @@ static void test_serialize (void)
     XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_double(void) {
+
+    /* Test serialize of a double.  */
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    xmlrpc_mem_block *output;
+    char * result;
+        /* serialized result, as asciiz string */
+    size_t resultLength;
+        /* Length in characters of the serialized result */
+    float serializedValue;
+    char nextChar;
+    int itemsMatched;
+    
+    xmlrpc_env_init(&env);
+
+    /* Build a double to serialize */
+    v = xmlrpc_build_value(&env, "d", 3.14159);
+    TEST_NO_FAULT(&env);
+    
+    /* Serialize the value. */
+    output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
+    TEST_NO_FAULT(&env);
+    xmlrpc_serialize_value(&env, output, v);
+    TEST_NO_FAULT(&env);
+
+    /* Make sure we serialized the correct value.  Note that because
+       doubles aren't precise, this might serialize as 3.1415899999
+       or something like that.  So we check it arithmetically.
+    */
+    resultLength = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
+    result = malloc(resultLength + 1);
+
+    memcpy(result, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output), 
+           resultLength);
+    result[resultLength] = '\0';
+    
+    itemsMatched = sscanf(result, 
+                          "<value><double>%f</double></value>" CRLF "%c",
+                          &serializedValue, &nextChar);
+
+    TEST(itemsMatched == 1);
+    TEST(serializedValue - 3.14159 < .000001);
+    /* We'd like to test more precision, but sscanf doesn't do doubles */
+
+    free(result);
+    
+    /* Clean up our value. */
+    XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_struct(void) {
+
     /* Serialize a simple struct. */
+
+    char const serialized_struct[] = 
+        "<value><struct>"CRLF \
+        "<member><name>&lt;&amp;&gt;</name>"CRLF \
+        "<value><i4>10</i4></value></member>"CRLF \
+        "</struct></value>";
+    
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    xmlrpc_mem_block *output;
+    size_t size;
+    
+    xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "{s:i}", "<&>", (xmlrpc_int32) 10);
     TEST_NO_FAULT(&env);
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
@@ -1024,7 +1426,23 @@ static void test_serialize (void)
     XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
     xmlrpc_DECREF(v);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_methodResponse(void) {
+
     /* Serialize a methodResponse. */
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    xmlrpc_mem_block *output;
+    size_t size;
+    
+    xmlrpc_env_init(&env);
+
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
     TEST_NO_FAULT(&env);
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 30);
@@ -1042,7 +1460,23 @@ static void test_serialize (void)
     xmlrpc_DECREF(v);
     XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_methodCall(void) {
+
     /* Serialize a methodCall. */
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    xmlrpc_mem_block *output;
+    size_t size;
+    
+    xmlrpc_env_init(&env);
+
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
     TEST_NO_FAULT(&env);
     v = xmlrpc_build_value(&env, "(ii)", (xmlrpc_int32) 10, (xmlrpc_int32) 20);
@@ -1060,7 +1494,22 @@ static void test_serialize (void)
     xmlrpc_DECREF(v);
     XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_fault(void) {
     /* Serialize a fault. */
+
+    xmlrpc_env env;
+    xmlrpc_env fault;
+    xmlrpc_mem_block *output;
+    size_t size;
+    
+    xmlrpc_env_init(&env);
+
     output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
     TEST_NO_FAULT(&env);
     xmlrpc_env_init(&fault);
@@ -1080,6 +1529,25 @@ static void test_serialize (void)
 
     xmlrpc_env_clean(&env);
 }
+
+
+
+static void 
+test_serialize(void) {
+
+    printf("\nRunning serialize tests.");
+
+    test_serialize_basic();
+    test_serialize_double();
+    test_serialize_struct();
+    test_serialize_methodResponse();
+    test_serialize_methodCall();
+    test_serialize_fault();
+
+    printf("\nSerialize tests done.");
+}
+
+
 
 static void test_expat (void)
 {
