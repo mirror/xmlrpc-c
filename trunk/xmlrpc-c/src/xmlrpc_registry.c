@@ -57,6 +57,7 @@ xmlrpc_registry *xmlrpc_registry_new (xmlrpc_env *env)
 			"Could not allocate memory for registry");
 
     /* Set everything up. */
+    registry->_introspection_enabled = 1;
     registry->_methods = methods;
 
  cleanup:
@@ -78,6 +79,19 @@ void xmlrpc_registry_free (xmlrpc_registry *registry)
     xmlrpc_DECREF(registry->_methods);
     registry->_methods = XMLRPC_BAD_POINTER;
     free(registry);
+}
+
+
+/*=========================================================================
+**  xmlrpc_registry_disable_introspection
+**=========================================================================
+**  See xmlrpc.h for more documentation.
+*/
+
+void xmlrpc_registry_disable_introspection (xmlrpc_registry *registry)
+{
+    XMLRPC_ASSERT_PTR_OK(registry);
+    registry->_introspection_enabled = 0;
 }
 
 
@@ -373,8 +387,48 @@ system_listMethods (xmlrpc_env *env,
 		    xmlrpc_value *param_array,
 		    void *user_data)
 {
-    xmlrpc_env_set_fault(env, XMLRPC_INTERNAL_ERROR, "Not implemented");
-    return NULL;
+    xmlrpc_registry *registry;
+    xmlrpc_value *method_names, *method_name, *method_info;
+    size_t size, i;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_VALUE_OK(param_array);
+    XMLRPC_ASSERT_PTR_OK(user_data);
+
+    /* Error-handling preconditions. */
+    method_names = NULL;
+
+    /* Turn our arguments into something more useful. */
+    registry = (xmlrpc_registry*) user_data;
+    xmlrpc_parse_value(env, param_array, "()");
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Make sure we're allowed to introspect. */
+    if (!registry->_introspection_enabled)
+	XMLRPC_FAIL(env, XMLRPC_INTROSPECTION_DISABLED_ERROR,
+		    "Introspection disabled for security reasons");
+
+    /* Iterate over all the methods in the registry, adding their names
+    ** to a list. */
+    method_names = xmlrpc_build_value(env, "()");
+    XMLRPC_FAIL_IF_FAULT(env);
+    size = xmlrpc_struct_size(env, registry->_methods);
+    XMLRPC_FAIL_IF_FAULT(env);
+    for (i = 0; i < size; i++) {
+	xmlrpc_struct_get_key_and_value(env, registry->_methods, i,
+					&method_name, &method_info);
+	XMLRPC_FAIL_IF_FAULT(env);
+	xmlrpc_array_append_item(env, method_names, method_name);
+	XMLRPC_FAIL_IF_FAULT(env);
+    }
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (method_names)
+	    xmlrpc_DECREF(method_names);
+	return NULL;
+    }
+    return method_names;
 }
 
 
@@ -423,9 +477,6 @@ void
 xmlrpc_registry_install_system_methods (xmlrpc_env *env,
 					xmlrpc_registry *registry)
 {
-    xmlrpc_registry_add_method(env, registry, NULL, "system.multicall",
-			       &system_multicall, registry);
-    XMLRPC_FAIL_IF_FAULT(env);
     xmlrpc_registry_add_method(env, registry, NULL, "system.listMethods",
 			       &system_listMethods, registry);
     XMLRPC_FAIL_IF_FAULT(env);
@@ -434,6 +485,9 @@ xmlrpc_registry_install_system_methods (xmlrpc_env *env,
     XMLRPC_FAIL_IF_FAULT(env);
     xmlrpc_registry_add_method(env, registry, NULL, "system.methodHelp",
 			       &system_methodHelp, registry);
+    XMLRPC_FAIL_IF_FAULT(env);
+    xmlrpc_registry_add_method(env, registry, NULL, "system.multicall",
+			       &system_multicall, registry);
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:

@@ -43,6 +43,10 @@ extern "C" {
 extern void
 xmlrpc_cgi_init (int flags);
 
+/* Fetch the internal registry, if you happen to need it. */
+extern xmlrpc_registry *
+xmlrpc_cgi_registry (void);
+
 /* Register a new method. */
 extern void
 xmlrpc_cgi_add_method (char *method_name,

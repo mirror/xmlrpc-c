@@ -110,6 +110,10 @@ xmlrpc_server_abyss_default_handler (TSession *r);
 /* This is called automatically by xmlrpc_server_abyss_init. */
 void xmlrpc_server_abyss_init_registry (void);
 
+/* Fetch the internal registry, if you happen to need it. */
+extern xmlrpc_registry *
+xmlrpc_server_abyss_registry (void);
+
 /* A quick & easy shorthand for adding a method. Depending on
 ** how you've configured your copy of Abyss, it's probably not safe to
 ** call this method after calling xmlrpc_server_abyss_run. */

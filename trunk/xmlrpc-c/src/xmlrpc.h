@@ -115,14 +115,15 @@ extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 **    xmlrpc_env_clean(&env);
 */
 
-#define XMLRPC_INTERNAL_ERROR        (-500)
-#define XMLRPC_TYPE_ERROR            (-501)
-#define XMLRPC_INDEX_ERROR           (-502)
-#define XMLRPC_PARSE_ERROR           (-503)
-#define XMLRPC_NETWORK_ERROR         (-504)
-#define XMLRPC_TIMEOUT_ERROR         (-505)
-#define XMLRPC_NO_SUCH_METHOD_ERROR  (-506)
-#define XMLRPC_REQUEST_REFUSED_ERROR (-507)
+#define XMLRPC_INTERNAL_ERROR               (-500)
+#define XMLRPC_TYPE_ERROR                   (-501)
+#define XMLRPC_INDEX_ERROR                  (-502)
+#define XMLRPC_PARSE_ERROR                  (-503)
+#define XMLRPC_NETWORK_ERROR                (-504)
+#define XMLRPC_TIMEOUT_ERROR                (-505)
+#define XMLRPC_NO_SUCH_METHOD_ERROR         (-506)
+#define XMLRPC_REQUEST_REFUSED_ERROR        (-507)
+#define XMLRPC_INTROSPECTION_DISABLED_ERROR (-508)
 
 typedef struct _xmlrpc_env {
     int   fault_occurred;
@@ -550,6 +551,7 @@ typedef struct _xmlrpc_registry xmlrpc_registry;
 #else /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
 
 typedef struct _xmlrpc_registry {
+    int _introspection_enabled;
     xmlrpc_value *_methods;
 } xmlrpc_registry;
 
@@ -562,6 +564,12 @@ xmlrpc_registry_new (xmlrpc_env *env);
 /* Delete a method registry. */
 extern void
 xmlrpc_registry_free (xmlrpc_registry *registry);
+
+/* Disable introspection. By default, the xmlrpc_registry has built-in
+** support for introspection. If like to make nosy people work harder,
+** your can turn this off. */
+extern void
+xmlrpc_registry_disable_introspection(xmlrpc_registry *registry);
 
 /* Register a method. The host parameter must be NULL (for now). You
 ** are responsible for owning and managing user_data. The registry

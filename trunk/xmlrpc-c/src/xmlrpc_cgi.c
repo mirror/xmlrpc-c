@@ -110,6 +110,11 @@ void xmlrpc_cgi_cleanup (void)
     xmlrpc_registry_free(registry);
 }
 
+xmlrpc_registry *xmlrpc_cgi_registry (void)
+{
+    return registry;
+}
+
 void xmlrpc_cgi_add_method (char *method_name,
 			    xmlrpc_method method,
 			    void *user_data)

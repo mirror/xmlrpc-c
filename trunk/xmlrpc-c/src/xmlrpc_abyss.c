@@ -76,6 +76,11 @@ void xmlrpc_server_abyss_init_registry (void)
     xmlrpc_env_clean(&env);
 }
 
+xmlrpc_registry *xmlrpc_server_abyss_registry (void)
+{
+    return registry;
+}
+
 /* A quick & easy shorthand for adding a method. */
 void xmlrpc_server_abyss_add_method (char *method_name,
 				     xmlrpc_method method,
