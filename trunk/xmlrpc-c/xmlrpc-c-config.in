@@ -62,8 +62,10 @@ while test $# -gt 0; do
       the_libs="-lxmlrpc_cgi $the_libs"
       ;;
     abyss-server)
-      the_libs=
-         "-lxmlrpc_abyss_server -lxmlrpc_abyss @LIBABYSS_LDADD@ $the_libs"
+      the_libs="@LIBABYSS_LDADD $the_libs"
+      the_libs="-lxmlrpc_abyss $the_libs"
+      the_libs="-lxmlrpc_abyss_server $the_libs"
+      the_libs="-lxmlrpc_server $the_libs"
       ;;
     wininet-client)
       the_libdirs="-L@WININET_LIBDIR@ $the_libdirs"
