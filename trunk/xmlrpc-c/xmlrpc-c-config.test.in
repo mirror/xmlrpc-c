@@ -33,7 +33,7 @@ fi
 needCpp=no
 
 the_libs="${BUILDDIR}/src/.libs/libxmlrpc.a ${LIBXML}"
-the_includes="-I ${BUILDDIR}"
+the_includes="-I ${BUILDDIR}/src"
 sopath="${BUILDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do

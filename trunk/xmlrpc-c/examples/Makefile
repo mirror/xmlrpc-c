@@ -36,8 +36,7 @@ CLIENTPROGS_CPP = \
   interop-client \
 
 SERVERPROGS_CGI = \
-  sample-cgi.cgi \
-  interop-cgi.cgi \
+  sample-cgi.cgi
 
 SERVERPROGS_ABYSS = \
   xmlrpc_loop_server \
@@ -55,6 +54,7 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
 endif
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(BUILDDIR)/lib/abyss/src
+INCLUDES = $(shell $(XMLRPC_C_CONFIG) abyss-server --cflags)
 
 LDADD_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) client --ldadd)
@@ -94,10 +94,12 @@ gen_sample_add_xml:%:%.o
 %.o:%.cc
 	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
-*.c: config.h
+*.c: config.h xmlrpc_amconfig.h
 
 config.h:
 	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+xmlrpc_amconfig.h:
+	$(LN_S) $(BUILDDIR)/$@ .
 
 include $(SRCDIR)/Makefile.common
 
