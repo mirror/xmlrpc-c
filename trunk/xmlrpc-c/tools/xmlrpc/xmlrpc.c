@@ -576,14 +576,14 @@ dumpStruct(const char *   const prefix,
         printf("%sStruct of %u members:\n", prefix, structSize);
 
         for (i = 0; i < structSize; ++i) {
-            int const blankCount = strlen(prefix);
             const char * prefix1;
 
-            if (index == 0)
+            if (i == 0)
                 prefix1 = strdup(prefix);
-            else
+            else {
+                int const blankCount = strlen(prefix);
                 casprintf(&prefix1, "%*s", blankCount, "");
-            
+            }            
             dumpStructMember(prefix1, structP, i);
 
             strfree(prefix1);
