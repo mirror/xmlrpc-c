@@ -456,7 +456,6 @@ xmlrpc_array_size(xmlrpc_env *         const env,
                   const xmlrpc_value * const array);
 
 /* Append an item to an XML-RPC array.
-** Increments the reference count of 'value' if no fault occurs.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
 extern void
 xmlrpc_array_append_item (xmlrpc_env*   env,
@@ -469,10 +468,13 @@ xmlrpc_array_read_item(xmlrpc_env *         const envP,
                        unsigned int         const index,
                        xmlrpc_value **      const valuePP);
 
-/* Get an item from an XML-RPC array.
-** Does not increment the reference count of the returned value.
-** Sets XMLRPC_TYPE_ERROR if 'array' is not an array.
-** Sets XMLRPC_INDEX_ERROR if 'index' is out of bounds. */
+/* Deprecated.  Use xmlrpc_array_read_item() instead.
+
+   Get an item from an XML-RPC array.
+   Does not increment the reference count of the returned value.
+   Sets XMLRPC_TYPE_ERROR if 'array' is not an array.
+   Sets XMLRPC_INDEX_ERROR if 'index' is out of bounds.
+*/
 xmlrpc_value * 
 xmlrpc_array_get_item(xmlrpc_env *         const env,
                       const xmlrpc_value * const array,
@@ -565,8 +567,8 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                           size_t         const key_len);
 
 /* Set the value associated with 'key' in 'strct' to 'value'.
-** Increments the reference count of value.
-** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
+   Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. 
+*/
 void 
 xmlrpc_struct_set_value(xmlrpc_env *   const env,
                         xmlrpc_value * const strct,
@@ -608,7 +610,7 @@ xmlrpc_struct_read_member(xmlrpc_env *    const envP,
    two values it returns, and return NULL for both if it fails, and
    takes a signed integer for the index (but fails if it is negative).
 
-   Deprecated.
+   Deprecated.  Use xmlrpc_struct_read_member() instead.
 */
 void
 xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
