@@ -812,7 +812,7 @@ parsevalue(xmlrpc_env *   const env,
 
 
 
-static void 
+void 
 xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       xmlrpc_value * const value,
                       const char *   const format,
