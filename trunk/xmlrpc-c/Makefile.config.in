@@ -28,6 +28,7 @@ ENABLE_CPLUSPLUS       = @ENABLE_CPLUSPLUS@
 ENABLE_CGI_SERVER      = @ENABLE_CGI_SERVER@
 ENABLE_LIBXML2_BACKEND = @ENABLE_LIBXML2_BACKEND@
 
+# Stuff 'configure' figured out about our build platform:
 
 SHELL = @SHELL@
 CC = @CC@
@@ -35,6 +36,7 @@ CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
 LN_S = @LN_S@
+
 
 # The following LIBWWW_x make variables have values that ultimately come
 # from running the 'libwww-config' program on the build system.  That

@@ -313,6 +313,8 @@ AC_MSG_ERROR(your C library does not provide vsnprintf)
 dnl CygWin looks like Unix, but doesn't provide setgroups.
 AC_CHECK_FUNCS(setgroups)
 
+AC_CHECK_FUNCS(asprintf)
+
 
 dnl =======================================================================
 dnl Decide what to do about Unicode.
