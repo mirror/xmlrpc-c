@@ -1520,7 +1520,7 @@ void test_nesting_limit (void)
     xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 1);
     val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
     TEST(env.fault_occurred);
-    TEST(env.fault_code == XMLRPC_PARSE_ERROR);
+    TEST(env.fault_code == XMLRPC_PARSE_ERROR); /* BREAKME - Will change. */
     TEST(val == NULL);
 
     /* Reset the default limit. */
@@ -1529,6 +1529,42 @@ void test_nesting_limit (void)
 	 == XMLRPC_NESTING_LIMIT_DEFAULT);
 
     xmlrpc_env_clean(&env);
+}
+
+void test_xml_size_limit (void)
+{
+    xmlrpc_env env;
+    char *method_name;
+    xmlrpc_value *params, *val;
+    
+
+    /* NOTE - This test suite only verifies the last-ditch size-checking
+    ** code.  There should also be matching code in all server (and
+    ** preferably all client) modules as well. */
+
+    /* Set our XML size limit to something ridiculous. */
+    xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, 6);
+    
+    /* Attempt to parse a call. */
+    xmlrpc_env_init(&env);
+    xmlrpc_parse_call(&env, serialized_call, strlen(serialized_call),
+		      &method_name, &params);
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_LIMIT_EXCEEDED_ERROR);
+    TEST(method_name == NULL);
+    TEST(params == NULL);
+    xmlrpc_env_clean(&env);
+
+    /* Attempt to parse a response. */
+    xmlrpc_env_init(&env);
+    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_LIMIT_EXCEEDED_ERROR);
+    TEST(val == NULL);
+    xmlrpc_env_clean(&env);
+
+    /* Reset the default limit. */
+    xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, XMLRPC_XML_SIZE_LIMIT_DEFAULT);
 }
 
 
@@ -1553,6 +1589,7 @@ int main (int argc, char** argv)
     test_parse_xml_call();
     test_method_registry();
     test_nesting_limit();
+    test_xml_size_limit();
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",

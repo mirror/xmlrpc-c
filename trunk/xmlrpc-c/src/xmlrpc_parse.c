@@ -405,6 +405,14 @@ void xmlrpc_parse_call (xmlrpc_env *env,
     *out_param_array = NULL;
     call_elem = NULL;
 
+    /* SECURITY: Last-ditch attempt to make sure our content length is legal.
+    ** XXX - This check occurs too late to prevent an attacker from creating
+    ** an enormous memory block in RAM, so you should try to enforce it
+    ** *before* reading any data off the network. */
+    if (xml_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+	XMLRPC_FAIL(env, XMLRPC_LIMIT_EXCEEDED_ERROR,
+		    "XML-RPC request too large");
+
     /* Parse our XML data. */
     call_elem = xml_parse(env, xml_data, xml_len);
     XMLRPC_FAIL_IF_FAULT(env);
@@ -474,7 +482,15 @@ xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
     params = fault = NULL;
     retval_incremented = 0;
 
-    /* Set up our recursion depth counter. */
+    /* SECURITY: Last-ditch attempt to make sure our content length is legal.
+    ** XXX - This check occurs too late to prevent an attacker from creating
+    ** an enormous memory block in RAM, so you should try to enforce it
+    ** *before* reading any data off the network. */
+    if (xml_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+	XMLRPC_FAIL(env, XMLRPC_LIMIT_EXCEEDED_ERROR,
+		    "XML-RPC response too large");
+
+    /* SECURITY: Set up our recursion depth counter. */
     depth = 0;
 
     /* Parse our XML data. */

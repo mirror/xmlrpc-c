@@ -124,6 +124,7 @@ extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 #define XMLRPC_NO_SUCH_METHOD_ERROR         (-506)
 #define XMLRPC_REQUEST_REFUSED_ERROR        (-507)
 #define XMLRPC_INTROSPECTION_DISABLED_ERROR (-508)
+#define XMLRPC_LIMIT_EXCEEDED_ERROR         (-509)
 
 typedef struct _xmlrpc_env {
     int   fault_occurred;
@@ -192,10 +193,15 @@ void xmlrpc_env_set_fault_formatted (xmlrpc_env* env, int code,
 
 /* Limit IDs. There will be more of these as time goes on. */
 #define XMLRPC_NESTING_LIMIT_ID   (0)
-#define XMLRPC_LAST_LIMIT_ID      (XMLRPC_NESTING_LIMIT_ID)
+#define XMLRPC_XML_SIZE_LIMIT_ID  (1)
+#define XMLRPC_LAST_LIMIT_ID      (XMLRPC_XML_SIZE_LIMIT_ID)
 
 /* By default, deserialized data may be no more than 64 levels deep. */
-#define XMLRPC_NESTING_LIMIT_DEFAULT (64)
+#define XMLRPC_NESTING_LIMIT_DEFAULT  (64)
+
+/* By default, XML data from the network may be no larger than 512K.
+** Some client and server modules may fail to enforce this properly. */
+#define XMLRPC_XML_SIZE_LIMIT_DEFAULT (512*1024)
 
 /* Set a specific limit to the specified value. */
 extern void xmlrpc_limit_set (int limit_id, size_t value);

@@ -234,6 +234,13 @@ void xmlrpc_cgi_process_call (void)
 	XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Content-length must be > 0");
     }
 
+    /* SECURITY: Make sure our content length is legal. */
+    if (length > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID)) {
+	code = 400; message = "Bad Request";
+	XMLRPC_FAIL(&env, XMLRPC_LIMIT_EXCEEDED_ERROR,
+		    "XML-RPC request too large");
+    }
+
     /* Get our body. */
     input = get_body(&env, length);
     XMLRPC_FAIL_IF_FAULT(&env);

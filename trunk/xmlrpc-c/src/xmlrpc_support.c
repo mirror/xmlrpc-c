@@ -36,7 +36,7 @@
 #include "xmlrpc.h"
 
 #define BLOCK_ALLOC_MIN (16)
-#define BLOCK_ALLOC_MAX (512 * 1024)
+#define BLOCK_ALLOC_MAX (128 * 1024 * 1024)
 
 #define ERROR_BUFFER_SZ (256)
 
@@ -131,7 +131,8 @@ void xmlrpc_fatal_error (char* file, int line, char* msg)
 */ 
 
 static size_t limits[XMLRPC_LAST_LIMIT_ID + 1] = {
-    XMLRPC_NESTING_LIMIT_DEFAULT
+    XMLRPC_NESTING_LIMIT_DEFAULT,
+    XMLRPC_XML_SIZE_LIMIT_DEFAULT
 };
 
 void xmlrpc_limit_set (int limit_id, size_t value)
@@ -206,7 +207,7 @@ void xmlrpc_mem_block_init (xmlrpc_env* env,
 			"Can't allocate memory block");
 
  cleanup:
-	return;
+    return;
 }
 
 /* Deallocate the contents of the provided xmlrpc_mem_block, but not the
@@ -272,7 +273,7 @@ void xmlrpc_mem_block_resize (xmlrpc_env* env,
     block->_allocated = proposed_alloc;
 
  cleanup:
-	return;
+    return;
 }
 
 /* Append data to an existing xmlrpc_mem_block. */

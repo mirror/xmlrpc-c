@@ -29,3 +29,6 @@ Make the various xmlrpc*.h headers idempotent.
 
 Give XMLRPC_TYPE_C_PTR support for an optional destructor function?
 
+BREAK ME: Return XMLRPC_LIMIT_EXCEEDED_ERROR when nesting limits are
+exceeded. This will break binary and source API compatibility in a very
+minor way.

@@ -289,6 +289,11 @@ bool xmlrpc_server_abyss_rpc2_handler (TSession *r)
     xmlrpc_env_init(&env);
     body = output = NULL;
 
+    /* SECURITY: Make sure our content length is legal. */
+    if (input_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+	XMLRPC_FAIL(&env, XMLRPC_LIMIT_EXCEEDED_ERROR,
+		    "XML-RPC request too large");
+
     /* Read XML data off the wire. */
     body = get_body(&env, r, input_len);
     XMLRPC_FAIL_IF_FAULT(&env);
