@@ -35,29 +35,10 @@ BUILDABLE_UTILS = casprintf.o cmdline_parser.o
 $(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(XMLRPC_LIBS): FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
 include $(SRCDIR)/Makefile.common
 
-
-BINDIR=$(DESTDIR)$(bindir)
-
-FILENAME_GENERATOR = "echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'"
-
-INSTCMD =  "$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p \
-  $(BINDIR)/`$(FILENAME_GENERATOR)`"
-
 .PHONY: install
-install: $(INSTALL_PROGS)
-	@$(NORMAL_INSTALL)
-	$(MKINSTALLDIRS) $(BINDIR)
-	@list='$(bin_PROGRAMS)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    echo "$(INSTCMD)"; $(INSTCMD); \
-	  else :; \
-          fi; \
-	done
+install: install-common
 
 .PHONY: check
 check:

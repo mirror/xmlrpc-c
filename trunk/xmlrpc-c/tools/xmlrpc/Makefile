@@ -7,6 +7,8 @@ all: xmlrpc
 
 include $(BUILDDIR)/Makefile.config
 
+PROGRAMS_TO_INSTALL = xmlrpc
+
 include ../Makefile.common
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/util/include

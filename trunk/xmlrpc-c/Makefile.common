@@ -85,7 +85,6 @@ INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
 
 install-libraries: $(LIBRARIES_TO_INSTALL)
-	@$(NORMAL_INSTALL)
 	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
 	@list='$(LIBRARIES_TO_INSTALL)'; for p in $$list; do \
 	  if test -f $$p; then \
@@ -105,7 +104,6 @@ LIBTOOL_INSTALL_CMD = $(LIBTOOL) --mode=install \
   $(INSTALL) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 
 install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
-	@$(NORMAL_INSTALL)
 	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
 	@list='$(LTLIBRARIES_TO_INSTALL)'; for p in $$list; do \
 	  if test -f $$p; then \
@@ -117,7 +115,6 @@ install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
 INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(DESTDIR)$(HEADERINST_DIR)/$$p 
 
 install-headers: $(HEADERS_TO_INSTALL)
-	@$(NORMAL_INSTALL)
 	$(MKINSTALLDIRS) $(DESTDIR)$(HEADERINST_DIR)
 	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
 	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
@@ -125,17 +122,20 @@ install-headers: $(HEADERS_TO_INSTALL)
 	  $(INSTALL_HDR_CMD); \
 	done
 
-INSTALL_PROGRAM_CMD = \
-  $(INSTALL_PROGRAM) $$d$$p $(DESTDIR)$(PROGRAMINST_DIR)/$$p 
 
-install-bin: $(PROGRAMS_TO_INSTALL)
-	@$(NORMAL_INSTALL)
-	$(MKINSTALLDIRS) $(DESTDIR)$(PROGRAMINST_DIR)
-	@list='$(PROGRAMS_TO_INSTALL)'; for p in $$list; do \
-	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
-	  echo " $(INSTALL_PROGRAM_CMD)"; \
-	  $(INSTALL_PROGRAM_CMD); \
-	done
+INSTALL_PROGRAM_CMD = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p \
+  $(DESTDIR)$(PROGRAMINST_DIR)/$$p
+
+install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
+	@list='$(PROGRAMS_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(INSTALL_PROGRAM_CMD)"; \
+	   $(INSTALL_PROGRAM_CMD); \
+	   done
+
+$(DESTDIR)$(PROGRAMINST_DIR):
+	$(MKINSTALLDIRS) $@
+
 
 .PHONY: clean-common
 clean-common:
