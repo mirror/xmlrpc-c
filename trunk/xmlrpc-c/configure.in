@@ -667,8 +667,6 @@ AC_OUTPUT(xmlrpc-c-config \
           src/testdata/Makefile \
           doc/Makefile \
           lib/expat/Makefile \
-          lib/expat/gennmtab/Makefile \
-          lib/expat/xmltok/Makefile \
           lib/expat/xmlparse/Makefile \
           lib/expat/xmlwf/Makefile \
           lib/expat/sample/Makefile \
