@@ -4,5 +4,6 @@ query-meerkat
 meerkat-app-list
 synch_client
 asynch_client
+auth_client
 server
 *.cgi
