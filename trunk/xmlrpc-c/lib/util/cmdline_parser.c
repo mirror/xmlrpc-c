@@ -140,7 +140,7 @@ processOption(struct optionDesc * const optionP,
 static void
 extractArguments(struct cmdlineParserCtl * const cpP,
                  int                       const argc,
-                 char **                   const argv,
+                 const char **             const argv,
                  int                       const optind) {
     
     cpP->numArguments = argc - optind;
@@ -168,7 +168,7 @@ extractArguments(struct cmdlineParserCtl * const cpP,
 void
 cmd_processOptions(cmdlineParser   const cpP,
                    int             const argc,
-                   char **         const argv, 
+                   const char **   const argv, 
                    const char **   const errorP) {
 
     struct option * longopts;
@@ -197,7 +197,8 @@ cmd_processOptions(cmdlineParser   const cpP,
             opterr = 0; 
                 /* Don't let getopt_long_only() print an error message */
             
-            rc = getopt_long_only(argc, argv, "", longopts, &longoptsIndex);
+            rc = getopt_long_only(argc, (char**) argv, "", longopts, 
+                                  &longoptsIndex);
             if (rc < 0)
                 endOfOptions = TRUE;
              else if (rc == '?') {
