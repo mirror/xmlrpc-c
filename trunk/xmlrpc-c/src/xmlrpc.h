@@ -467,20 +467,20 @@ xmlrpc_struct_size (xmlrpc_env   * env,
 
 /* Returns true iff 'strct' contains 'key'.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
-int
-xmlrpc_struct_has_key(xmlrpc_env   * env, 
-                      xmlrpc_value * strct, 
-                      char *         key);
+int 
+xmlrpc_struct_has_key(xmlrpc_env *   const envP,
+                      xmlrpc_value * const strctP,
+                      const char *   const key);
 
 /* The same as the above, but the key may contain zero bytes.
    Deprecated.  xmlrpc_struct_get_value_v() is more general, and this
    case is not common enough to warrant a shortcut.
 */
-int
-xmlrpc_struct_has_key_n(xmlrpc_env   * env,
-                        xmlrpc_value * strct,
-                        char         * key, 
-                        size_t         key_len);
+int 
+xmlrpc_struct_has_key_n(xmlrpc_env   * const envP,
+                        xmlrpc_value * const strctP,
+                        const char *   const key, 
+                        size_t         const key_len);
 
 #if 0
 /* Not implemented yet, but needed for completeness. */
@@ -495,20 +495,20 @@ xmlrpc_struct_has_key_v(xmlrpc_env *   env,
 ** Does not increment the reference count of the returned value.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct.
 ** Sets XMLRPC_INDEX_ERROR if 'key' is not in 'strct'. */
-xmlrpc_value *
-xmlrpc_struct_get_value(xmlrpc_env   * env, 
-                        xmlrpc_value * strct,
-                        char *         key);
+xmlrpc_value * 
+xmlrpc_struct_get_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const strctP,
+                        const char *   const key);
 
 /* The same as above, but the key may contain zero bytes. 
    Deprecated.  xmlrpc_struct_get_value_v() is more general, and this
    case is not common enough to warrant a shortcut.
 */
-xmlrpc_value *
-xmlrpc_struct_get_value_n(xmlrpc_env *   env, 
-                          xmlrpc_value * strct,
-                          char *         key, 
-                          size_t         key_len);
+xmlrpc_value * 
+xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
+                          xmlrpc_value * const strctP,
+                          const char *   const key, 
+                          size_t         const key_len);
 
 #if 0
 /* Not implemented yet, but needed for completeness. */
@@ -607,12 +607,12 @@ xmlrpc_serialize_fault(xmlrpc_env *       env,
 ** the output variables to NULL.
 ** The caller is responsible for calling free(*out_method_name) and
 ** xmlrpc_DECREF(*out_param_array). */
-void
-xmlrpc_parse_call(xmlrpc_env *    env,
-                  char *          xml_data,
-                  size_t          xml_len,
-                  char **         out_method_name,
-                  xmlrpc_value ** out_param_array);
+void 
+xmlrpc_parse_call(xmlrpc_env *    const envP,
+                  const char *    const xml_data,
+                  size_t          const xml_len,
+                  const char **   const out_method_name,
+                  xmlrpc_value ** const out_param_array);
 
 /* Parse an XML-RPC response. If a fault occurs (or was received over the
 ** wire), return NULL and set up 'env'. The calling is responsible for

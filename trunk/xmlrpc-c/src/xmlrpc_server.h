@@ -66,7 +66,7 @@ extern "C" {
 ** method will not be called and the fault will be returned. */
 typedef void
 (*xmlrpc_preinvoke_method)(xmlrpc_env *   env,
-                           char *         method_name,
+                           const char *   method_name,
                            xmlrpc_value * param_array,
                            void *         user_data);
 
@@ -79,8 +79,8 @@ typedef xmlrpc_value *
 /* A default method to call if no method can be found. */
 typedef xmlrpc_value *
 (*xmlrpc_default_method)(xmlrpc_env *   env,
-                         char *         host,
-                         char *         method_name,
+                         const char *   host,
+                         const char *   method_name,
                          xmlrpc_value * param_array,
                          void *         user_data);
 
@@ -145,11 +145,11 @@ xmlrpc_registry_add_method_w_doc(xmlrpc_env *      env,
 ** but that should change eventually.)
 ** The caller is responsible for destroying the memory block. */
 xmlrpc_mem_block *
-xmlrpc_registry_process_call(xmlrpc_env *      env,
-                             xmlrpc_registry * registry,
-                             char *            host,
-                             char *            xml_data,
-                             size_t            xml_len);
+xmlrpc_registry_process_call(xmlrpc_env *      const envP,
+                             xmlrpc_registry * const registryP,
+                             const char *      const host,
+                             const char *      const xml_data,
+                             size_t            const xml_len);
 
 /* Define a default method for the specified registry.  This will be invoked
 ** if no other method matches.  The user_data pointer is property of the

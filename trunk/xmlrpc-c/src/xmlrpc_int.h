@@ -74,6 +74,13 @@ struct _xmlrpc_registry {
 ** this and throw in a few assertions here and there. */
 #define XMLRPC_BAD_POINTER ((void*) 0xDEADBEEF)
 
+
+void
+xmlrpc_traceXml(const char * const label, 
+                const char * const xml,
+                unsigned int const xmlLength);
+
+
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without

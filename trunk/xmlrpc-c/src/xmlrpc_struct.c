@@ -49,7 +49,8 @@
 **  a linear search of the hash codes.
 */
 
-xmlrpc_value *xmlrpc_struct_new (xmlrpc_env* env)
+xmlrpc_value *
+xmlrpc_struct_new(xmlrpc_env* env)
 {
     xmlrpc_value *strct;
     int strct_valid;
@@ -63,25 +64,26 @@ xmlrpc_value *xmlrpc_struct_new (xmlrpc_env* env)
     /* Allocate and fill out an empty structure. */
     strct = (xmlrpc_value*) malloc(sizeof(xmlrpc_value));
     XMLRPC_FAIL_IF_NULL(strct, env, XMLRPC_INTERNAL_ERROR,
-			"Could not allocate memory for struct");
+                        "Could not allocate memory for struct");
     strct->_refcount = 1;
     strct->_type = XMLRPC_TYPE_STRUCT;
-    XMLRPC_TYPED_MEM_BLOCK_INIT(_struct_member, env, &strct->_block, 0);
+    XMLRPC_MEMBLOCK_INIT(_struct_member, env, &strct->_block, 0);
     XMLRPC_FAIL_IF_FAULT(env);
     strct_valid = 1;
 
  cleanup:
     if (env->fault_occurred) {
-	if (strct) {
-	    if (strct_valid)
-		xmlrpc_DECREF(strct);
-	    else
-		free(strct);
-	}
-	return NULL;
+        if (strct) {
+            if (strct_valid)
+                xmlrpc_DECREF(strct);
+            else
+                free(strct);
+        }
+        return NULL;
     }
     return strct;
 }
+
 
 
 /*=========================================================================
@@ -91,7 +93,8 @@ xmlrpc_value *xmlrpc_struct_new (xmlrpc_env* env)
 **  value is not a struct, return -1 and set a fault.
 */
 
-int xmlrpc_struct_size (xmlrpc_env* env, xmlrpc_value* strct)
+int 
+xmlrpc_struct_size(xmlrpc_env* env, xmlrpc_value* strct)
 {
     int retval;
 
@@ -102,13 +105,14 @@ int xmlrpc_struct_size (xmlrpc_env* env, xmlrpc_value* strct)
     XMLRPC_ASSERT_VALUE_OK(strct);
 
     XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
-    retval = XMLRPC_TYPED_MEM_BLOCK_SIZE(_struct_member, &strct->_block);
+    retval = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strct->_block);
 
  cleanup:
     if (env->fault_occurred)
-	return -1;
+        return -1;
     return retval;
 }
+
 
 
 /*=========================================================================
@@ -118,8 +122,10 @@ int xmlrpc_struct_size (xmlrpc_env* env, xmlrpc_value* strct)
 **  more clever if this produces bad results.
 */
 
-static unsigned char get_hash (char *key, size_t key_len)
-{
+static unsigned char 
+get_hash(const char * const key, 
+         size_t       const key_len) {
+
     unsigned char retval;
     size_t i;
 
@@ -127,9 +133,10 @@ static unsigned char get_hash (char *key, size_t key_len)
     
     retval = 0;
     for (i = 0; i < key_len; i++)
-	retval += key[i];
+        retval += key[i];
     return retval;
 }
+
 
 
 /*=========================================================================
@@ -139,8 +146,11 @@ static unsigned char get_hash (char *key, size_t key_len)
 **  member exists.
 */
 
-static int find_member (xmlrpc_value *strct, char *key, size_t key_len)
-{
+static int 
+find_member(xmlrpc_value * const strctP, 
+            const char *   const key, 
+            size_t         const key_len) {
+
     size_t size, i;
     unsigned char hash;
     _struct_member *contents;
@@ -148,25 +158,25 @@ static int find_member (xmlrpc_value *strct, char *key, size_t key_len)
     char *keystr;
     size_t keystr_size;
 
-    XMLRPC_ASSERT_VALUE_OK(strct);
+    XMLRPC_ASSERT_VALUE_OK(strctP);
     XMLRPC_ASSERT(key != NULL);
 
     /* Look for our key. */
     hash = get_hash(key, key_len);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(_struct_member, &strct->_block);
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(_struct_member, &strct->_block);
+    size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strctP->_block);
+    contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
     for (i = 0; i < size; i++) {
-	if (contents[i].key_hash == hash) {
-	    keyval = contents[i].key;
-	    keystr = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &keyval->_block);
-	    keystr_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &keyval->_block)-1;
-	    if (key_len == keystr_size && memcmp(key, keystr, key_len) == 0)
-		return i;
-	}   
+        if (contents[i].key_hash == hash) {
+            keyval = contents[i].key;
+            keystr = XMLRPC_MEMBLOCK_CONTENTS(char, &keyval->_block);
+            keystr_size = XMLRPC_MEMBLOCK_SIZE(char, &keyval->_block)-1;
+            if (key_len == keystr_size && memcmp(key, keystr, key_len) == 0)
+                return i;
+        }   
     }
-
     return -1;
 }
+
 
 
 /*=========================================================================
@@ -174,35 +184,40 @@ static int find_member (xmlrpc_value *strct, char *key, size_t key_len)
 **=========================================================================
 */
 
-int xmlrpc_struct_has_key (xmlrpc_env* env,
-			   xmlrpc_value* strct,
-			   char* key)
-{
+int 
+xmlrpc_struct_has_key(xmlrpc_env *   const envP,
+                      xmlrpc_value * const strctP,
+                      const char *   const key) {
+
     XMLRPC_ASSERT(key != NULL);
-    return xmlrpc_struct_has_key_n(env, strct, key, strlen(key));
+    return xmlrpc_struct_has_key_n(envP, strctP, key, strlen(key));
 }
 
-int xmlrpc_struct_has_key_n (xmlrpc_env* env,
-			     xmlrpc_value* strct,
-			     char* key, size_t key_len)
-{
+
+
+int 
+xmlrpc_struct_has_key_n(xmlrpc_env   * const envP,
+                        xmlrpc_value * const strctP,
+                        const char *   const key, 
+                        size_t         const key_len) {
     int index;
 
     /* Suppress a compiler warning about uninitialized variables. */
     index = 0;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(strct);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(strctP);
     XMLRPC_ASSERT(key != NULL);
     
-    XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
-    index = find_member(strct, key, key_len);
+    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
+    index = find_member(strctP, key, key_len);
 
  cleanup:
-    if (env->fault_occurred)
-	return 0;
+    if (envP->fault_occurred)
+        return 0;
     return (index >= 0);
 }
+
 
 
 /*=========================================================================
@@ -212,18 +227,23 @@ int xmlrpc_struct_has_key_n (xmlrpc_env* env,
 **  present, set a fault and return NULL.
 */
 
-xmlrpc_value* xmlrpc_struct_get_value (xmlrpc_env* env,
-				       xmlrpc_value* strct,
-				       char* key)
-{
+xmlrpc_value * 
+xmlrpc_struct_get_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const strctP,
+                        const char *   const key) {
+
     XMLRPC_ASSERT(key != NULL);
-    return xmlrpc_struct_get_value_n(env, strct, key, strlen(key));
+    return xmlrpc_struct_get_value_n(envP, strctP, key, strlen(key));
 }
 
-xmlrpc_value* xmlrpc_struct_get_value_n (xmlrpc_env* env,
-					 xmlrpc_value* strct,
-					 char* key, size_t key_len)
-{
+
+
+xmlrpc_value * 
+xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
+                          xmlrpc_value * const strctP,
+                          const char *   const key, 
+                          size_t         const key_len) {
+
     int index;
     _struct_member *members;
     xmlrpc_value *retval;
@@ -231,40 +251,35 @@ xmlrpc_value* xmlrpc_struct_get_value_n (xmlrpc_env* env,
     /* Suppress a compiler warning about uninitialized variables. */
     retval = NULL;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(strct);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(strctP);
     XMLRPC_ASSERT(key != NULL);
-
-    XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
-
+    
+    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
+    
     /* Get our member index. */
-    index = find_member(strct, key, key_len);
+    index = find_member(strctP, key, key_len);
     if (index < 0) {
-	/* Create a NULL-terminated version of our key, and report the error.
-	** XXX - This is dangerous code (because some cases happen so
-	** infrequently that they're hard to test), but the debugging help
-	** is invaluable. So we really need it; just be very careful if you
-	** change it.
-	** XXX - We report a misleading error message if the key contains
-	** '\0' characters.) */
-	char buffer[KEY_ERROR_BUFFER_SZ];
-	if (key_len > KEY_ERROR_BUFFER_SZ - 1)
-	    key_len = KEY_ERROR_BUFFER_SZ - 1;
-	memcpy(buffer, key, key_len);
-	buffer[key_len] = 0;
-	XMLRPC_FAIL1(env, XMLRPC_INDEX_ERROR,
-		     "No struct member %s...", buffer);
+        /* Report the error.
+        ** XXX - This is dangerous code (because some cases happen so
+        ** infrequently that they're hard to test), but the debugging help
+        ** is invaluable. So we really need it; just be very careful if you
+        ** change it.
+        ** XXX - We report a misleading error message if the key contains
+        ** '\0' characters.) */
+        XMLRPC_FAIL2(envP, XMLRPC_INDEX_ERROR,
+                     "No struct member %.*s...", key_len, key);
     }
 
     /* Recover our actual value. */
-    members = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(_struct_member, &strct->_block);
+    members = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
     retval = members[index].value;
 
     XMLRPC_ASSERT_VALUE_OK(retval);
 
- cleanup:
-    if (env->fault_occurred)
-	return NULL;
+cleanup:
+    if (envP->fault_occurred)
+        return NULL;
     return retval;
 }
 
@@ -275,53 +290,53 @@ xmlrpc_value* xmlrpc_struct_get_value_n (xmlrpc_env* env,
 */
 
 void 
-xmlrpc_struct_set_value(xmlrpc_env *   const env,
-                        xmlrpc_value * const strct,
+xmlrpc_struct_set_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const strctP,
                         const char *   const key,
-                        xmlrpc_value * const value) {
+                        xmlrpc_value * const valueP) {
 
     XMLRPC_ASSERT(key != NULL);
-    xmlrpc_struct_set_value_n(env, strct, key, strlen(key), value);    
+    xmlrpc_struct_set_value_n(envP, strctP, key, strlen(key), valueP);
 }
 
 
 
 void 
-xmlrpc_struct_set_value_n(xmlrpc_env *    const env,
-                          xmlrpc_value *  const strct,
+xmlrpc_struct_set_value_n(xmlrpc_env *    const envP,
+                          xmlrpc_value *  const strctP,
                           const char *    const key, 
                           size_t          const key_len,
-                          xmlrpc_value *  const value) {
+                          xmlrpc_value *  const valueP) {
 
     xmlrpc_value *keyval;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(key != NULL);
 
     /* Set up error handling preconditions. */
     keyval = NULL;
 
-    XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
+    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
 
     /* Build an xmlrpc_value from our string. */
-    keyval = xmlrpc_build_value(env, "s#", key, key_len);
-    XMLRPC_FAIL_IF_FAULT(env);
+    keyval = xmlrpc_build_value(envP, "s#", key, key_len);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Do the actual work. */
-    xmlrpc_struct_set_value_v(env, strct, keyval, value);
+    xmlrpc_struct_set_value_v(envP, strctP, keyval, valueP);
 
  cleanup:
     if (keyval)
-	xmlrpc_DECREF(keyval);
+        xmlrpc_DECREF(keyval);
 }
 
 
 
 void 
-xmlrpc_struct_set_value_v (xmlrpc_env *   const env,
-                           xmlrpc_value * const strct,
-                           xmlrpc_value * const keyval,
-                           xmlrpc_value * const value) {
+xmlrpc_struct_set_value_v(xmlrpc_env *   const envP,
+                          xmlrpc_value * const strctP,
+                          xmlrpc_value * const keyvalP,
+                          xmlrpc_value * const valueP) {
 
     char *key;
     size_t key_len;
@@ -329,49 +344,47 @@ xmlrpc_struct_set_value_v (xmlrpc_env *   const env,
     _struct_member *members, *member, new_member;
     xmlrpc_value *old_value;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(strct);
-    XMLRPC_ASSERT_VALUE_OK(keyval);
-    XMLRPC_ASSERT_VALUE_OK(value);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(strctP);
+    XMLRPC_ASSERT_VALUE_OK(keyvalP);
+    XMLRPC_ASSERT_VALUE_OK(valueP);
 
-    XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
-    XMLRPC_TYPE_CHECK(env, keyval, XMLRPC_TYPE_STRING);
+    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
+    XMLRPC_TYPE_CHECK(envP, keyvalP, XMLRPC_TYPE_STRING);
 
-    key = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &keyval->_block);
-    key_len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &keyval->_block) - 1;
-    index = find_member(strct, key, key_len);
+    key = XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+    key_len = XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
+    index = find_member(strctP, key, key_len);
 
     if (index >= 0) {
+        /* Change the value of an existing member. (But be careful--the
+        ** original and new values might be the same object, so watch
+        ** the order of INCREF and DECREF calls!) */
+        members = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
+        member = &members[index];
 
-	/* Change the value of an existing member. (But be careful--the
-	** original and new values might be the same object, so watch
-	** the order of INCREF and DECREF calls!) */
-	members = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(_struct_member,
-						  &strct->_block);
-	member = &members[index];
-
-	/* Juggle our references. */
-	old_value = member->value;
-	member->value = value;
-	xmlrpc_INCREF(member->value);
-	xmlrpc_DECREF(old_value);
-
+        /* Juggle our references. */
+        old_value = member->value;
+        member->value = valueP;
+        xmlrpc_INCREF(member->value);
+        xmlrpc_DECREF(old_value);
     } else {
-
-	/* Add a new member. */
-	new_member.key_hash = get_hash(key, key_len);
-	new_member.key      = keyval;
-	new_member.value    = value;
-	XMLRPC_TYPED_MEM_BLOCK_APPEND(_struct_member, env, &strct->_block,
-				      &new_member, 1);
-	XMLRPC_FAIL_IF_FAULT(env);
-	xmlrpc_INCREF(keyval);
-	xmlrpc_INCREF(value);
+        /* Add a new member. */
+        new_member.key_hash = get_hash(key, key_len);
+        new_member.key      = keyvalP;
+        new_member.value    = valueP;
+        XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &strctP->_block,
+                               &new_member, 1);
+        XMLRPC_FAIL_IF_FAULT(envP);
+        xmlrpc_INCREF(keyvalP);
+        xmlrpc_INCREF(valueP);
     }
 
- cleanup:
-	return;
+cleanup:
+    return;
 }
+
+
 
 /*=========================================================================
 **  xmlrpc_struct_get_key_and_value
@@ -385,35 +398,36 @@ xmlrpc_struct_set_value_v (xmlrpc_env *   const env,
 **  values.
 */
 
-void xmlrpc_struct_get_key_and_value (xmlrpc_env *env,
-				      xmlrpc_value *strct,
-				      int index,
-				      xmlrpc_value **keyval,
-				      xmlrpc_value **value)
-{
+void 
+xmlrpc_struct_get_key_and_value(xmlrpc_env *    const envP,
+                                xmlrpc_value *  const strctP,
+                                int             const index,
+                                xmlrpc_value ** const keyvalP,
+                                xmlrpc_value ** const valueP) {
+
     _struct_member *members, *member;
     size_t size;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(strct);
-    XMLRPC_ASSERT(keyval != NULL && value != NULL);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(strctP);
+    XMLRPC_ASSERT(keyvalP != NULL && valueP != NULL);
 
-    XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
+    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
 
-    members = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(_struct_member, &strct->_block);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(_struct_member, &strct->_block);
+    members = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
+    size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strctP->_block);
 
     /* BREAKME: 'index' should be a parameter of type size_t. */
     if (index < 0 || (size_t) index >= size)
-	XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Invalid index into struct");
+        XMLRPC_FAIL(envP, XMLRPC_INDEX_ERROR, "Invalid index into struct");
     
     member = &members[index];
-    *keyval = member->key;
-    *value = member->value;
+    *keyvalP = member->key;
+    *valueP = member->value;
 
  cleanup:
-    if (env->fault_occurred) {
-	*keyval = NULL;
-	*value = NULL;
+    if (envP->fault_occurred) {
+        *keyvalP = NULL;
+        *valueP = NULL;
     }
 }

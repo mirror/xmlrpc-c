@@ -144,10 +144,10 @@ void xmlrpc_DECREF (xmlrpc_value* value)
             break;
 
         case XMLRPC_TYPE_DEAD:
-            XMLRPC_FATAL_ERROR("Tried to destroy deallocated value");
+            XMLRPC_ASSERT(FALSE); /* Can't happen, per entry conditions */
 
         default:
-            XMLRPC_FATAL_ERROR("Unknown XML-RPC type");
+            XMLRPC_ASSERT(FALSE); /* There are no other possible values */
         }
 
         /* Next, we mark this value as invalid, to help catch refcount
@@ -456,7 +456,6 @@ mkBase64(xmlrpc_env *          const envP,
 
 static void
 getBase64(xmlrpc_env *    const envP,
-          const char **   const formatP,
           va_list *       const args,
           xmlrpc_value ** const valPP) {
 
@@ -688,7 +687,6 @@ getValue(xmlrpc_env *    const envP,
    last 's' and advance 'args' to point to the argument that belongs to
    that 's'.
 -----------------------------------------------------------------------------*/
-    xmlrpc_value * valP;
     char const formatChar = *(*formatP)++;
 
     switch (formatChar) {
@@ -720,7 +718,7 @@ getValue(xmlrpc_env *    const envP,
         break;
 
     case '6':
-        getBase64(envP, formatP, args, valPP);
+        getBase64(envP, args, valPP);
         break;
 
     case 'p':
@@ -780,7 +778,6 @@ xmlrpc_build_value_va(xmlrpc_env *    const env,
 
     const char * formatCursor;
     va_list args_copy;
-    xmlrpc_value * retval;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(format != NULL);
@@ -1090,7 +1087,7 @@ parsevalue(xmlrpc_env *   const env,
         break;
 
     default:
-        XMLRPC_FATAL_ERROR("Unknown type code when parsing value");
+        XMLRPC_ASSERT(FALSE); /* There are no other values */
     }
 
 cleanup:

@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "xmlrpc.h"
 #include "xmlrpc_int.h"
@@ -334,4 +335,29 @@ xmlrpc_mem_block_append(xmlrpc_env *       const env,
 
  cleanup:
     return;
+}
+
+
+
+void
+xmlrpc_traceXml(const char * const label, 
+                const char * const xml,
+                unsigned int const xmlLength) {
+
+    if (getenv("XMLRPC_TRACE_XML")) {
+        unsigned int nonPrintableCount;
+        unsigned int i;
+
+        nonPrintableCount = 0;  /* Initial value */
+
+        for (i = 0; i < xmlLength; ++i) {
+            if (!isprint(xml[i]) && xml[i] != '\n' && xml[i] != '\r')
+                ++nonPrintableCount;
+        }
+        if (nonPrintableCount > 0)
+            fprintf(stderr, "%s contains %u nonprintable characters.\n", 
+                    label, nonPrintableCount);
+
+        fprintf(stderr, "%s:\n %.*s\n", label, (int)xmlLength, xml);
+    }
 }
