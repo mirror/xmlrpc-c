@@ -355,9 +355,9 @@ dnl =======================================================================
 dnl Abyss doesn't pay any attention to xmlrpc_config.h, so we need to
 dnl pass it some flags on the command-line.
 
-AC_MSG_CHECKING(whether to use experimental Abyss pthread function)
+AC_MSG_CHECKING(whether to use Abyss pthread function)
 AC_ARG_ENABLE(abyss-threads,
-  [  --enable-abyss-threads  Use threads in Abyss instead of the default
+  [  --enable-abyss-threads  Use pthreads in Abyss instead of the default
                              fork() implementation.], ,
   enable_abyss_threads=no)
 AC_MSG_RESULT($enable_abyss_threads)
@@ -367,8 +367,6 @@ CFLAGS="$CFLAGS -D_UNIX"
 if test x"$enable_abyss_threads" != xno; then
     CFLAGS="$CFLAGS -D_THREAD"
     LIBABYSS_LDADD="-lpthread"
-else
-    CFLAGS="$CFLAGS -D_FORK"
 fi
 AC_SUBST(LIBABYSS_LDADD)
 
@@ -656,11 +654,15 @@ CPP_WARN_FLAGS=
 AC_SUBST(CPP_WARN_FLAGS)
 
 
+BUILDDIR=`pwd`
+AC_SUBST(BUILDDIR)
+
 dnl =======================================================================
 dnl Output our results.
 dnl =======================================================================
 
 AC_OUTPUT(xmlrpc-c-config \
+          xmlrpc-c-config.test \
           Makefile.config \
           xmlrpc_config.h \
           Makefile \
@@ -681,3 +683,5 @@ AC_OUTPUT(xmlrpc-c-config \
           tools/Makefile \
           tools/turbocharger/Makefile \
           )
+chmod +x xmlrpc-c-config
+chmod +x xmlrpc-c-config.test

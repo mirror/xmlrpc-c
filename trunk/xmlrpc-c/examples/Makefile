@@ -7,23 +7,28 @@
 # We need the following make variables to be defined by Makefile.config
 # or be passed in:
 #
-# LIBWWW_CFLAGS, LIBWWW_LDADD, LIBWWW_LIBDIR, LIBWWW_RPATH, LIBWWW_WL_PATH:
-#   As set by the 'libwww-config' program.  These tell how libwww is installed
+# LIBWWW_CFLAGS
+#   As set by the 'libwww-config' program.  This tells how libwww is installed
 #   on this system.
 
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/..
+BUILDDIR = $(SRCDIR)
 endif
 
 default: all
 
-include $(SRCDIR)/Makefile.config
+include $(BUILDDIR)/Makefile.config
 
 CXXFLAGS = 
 
 CFLAGS = $(CFLAGS_COMMON) $(LIBWWW_CFLAGS) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
 
+# If this were a real application, working from an installed copy of
+# Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
+# found in the user's PATH.
+XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
 
 CLIENTPROGS_C = \
   auth_client \
@@ -33,68 +38,61 @@ CLIENTPROGS_C = \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
 
-PROGS_CPP = \
+CLIENTPROGS_CPP = \
   meerkat-app-list \
   interop-client \
 
-CGISERVERPROGS = \
+SERVERPROGS_CGI = \
   sample-cgi.cgi \
   interop-cgi.cgi \
 
-SERVERPROGS = \
+SERVERPROGS_ABYSS = \
   xmlrpc_loop_server \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
-PROGS = $(CLIENTPROGS_C) $(SERVERPROGS) gen_sample_add_xml
+PROGS = $(CLIENTPROGS_C) $(SERVERPROGS_ABYSS) gen_sample_add_xml
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
-  PROGS += $(PROGS_CPP) 
+  PROGS += $(CLIENTPROGS_CPP) 
 endif
 ifeq ($(ENABLE_CGI_SERVER),yes)
-  PROGS += $(CGISERVERPROGS) 
+  PROGS += $(CGIPROGS_SERVER) 
 endif
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/abyss/src
+INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(BUILDDIR)/lib/abyss/src
 
-ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  LIBXML = $(LIBXML2_LIBS)
-else
-  LIBXML = $(SRCDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a \
-           $(SRCDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
-endif
+LDADD_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 
-LIBABYSS = $(SRCDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
-LIBXMLRPC = $(SRCDIR)/src/.libs/libxmlrpc.a $(LIBXML)
-LIBXMLRPC_CPP = $(SRCDIR)/src/libxmlrpc_cpp.a
-LIBCLIENT = $(SRCDIR)/src/.libs/libxmlrpc_client.a \
-  $(LIBWWW_LDADD) $(LIBXMLRPC)
-LIBSERVER = \
-  $(SRCDIR)/src/.libs/libxmlrpc_server_abyss.a \
-  $(LIBABYSS) \
-  $(SRCDIR)/src/.libs/libxmlrpc_server.a \
-  $(LIBXMLRPC)
-LIBCGI = $(SRCDIR)/src/.libs/libxmlrpc_cgi.a $(LIBXMLRPC)
+LDADD_CLIENT_CPP = \
+  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
+
+LDADD_SERVER_ABYSS = \
+  $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
+
+LDADD_SERVER_CGI = \
+  $(shell $(XMLRPC_C_CONFIG) cgi-server --ldadd)
+
+LDADD_BASE = \
+  $(shell $(XMLRPC_C_CONFIG) --ldadd)
 
 all: $(PROGS)
 
 $(CLIENTPROGS_C):%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCLIENT)
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
 
-$(PROGS_CPP):%:%.o
-# Unfortunately, there is just one C++ library for both client and server,
-# so we have to link all client and server libraries to all C++ programs,
-# whether client or server.
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC_CPP) $(LIBCLIENT) $(LIBSERVER)
+$(CLIENTPROGS_CPP):%:%.o
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT_CPP)
 
 $(CGISERVERPROGS):%.cgi:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCGI) $(LIBSERVER)
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_CGI)
 
-$(SERVERPROGS):%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBSERVER)
+$(SERVERPROGS_ABYSS):%:%.o
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
 
 gen_sample_add_xml:%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC)
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_BASE)
 
 %.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<
@@ -105,7 +103,7 @@ gen_sample_add_xml:%:%.o
 *.c: config.h
 
 config.h:
-	$(LN_S) $(SRCDIR)/xmlrpc_config.h $@
+	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
 
 include $(SRCDIR)/Makefile.common
 

@@ -1,0 +1,131 @@
+#!/bin/sh
+# This is like 'xmlrpc-c-config', but for testing Xmlrpc-c from its build
+# directory instead of for an installed instance of Xmlrpc-c.
+#
+# For example, the make file in the examples/ directory uses this program
+# to link the example programs with the Xmlrpc-c libraries in the build
+# directory.  A real application program would instead use xmlrpc-c-config
+# and get the Xmlrpc-c libraries from their installed home.
+
+
+BUILDDIR="@BUILDDIR@"
+ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND"
+ENABLE_CURL_CLIENT="@ENABLE_CURL_CLIENT@"
+ENABLE_WININET_CLIENT="@ENABLE_WININET_CLIENT@"
+ENABLE_LIBWWW_CLIENT="@ENABLE_LIBWWW_CLIENT@"
+
+if test $# -eq 0; then
+      echo "You need to specify arguments"
+      exit 1
+fi
+
+
+if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
+  LIBXML="@LIBXML2_LIBS@"
+else
+  LIBXML="${BUILDDIR}/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a"
+  LIBXML="${LIBXML} ${BUILDDIR}/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a"
+fi
+
+needCpp=no
+
+the_libs="${BUILDDIR}/src/.libs/libxmlrpc.a ${LIBXML}"
+the_includes="-I${BUILDDIR}/src"
+
+while test $# -gt 0; do
+  case $1 in
+    c++)
+      needCpp=yes
+      ;;
+    cgi-server)
+      the_libs="${BUILDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BUILDDIR}/src/libxmlrpc_cgi.a $the_libs"
+      ;;
+    abyss-server)
+      the_libs="@LIBABYSS_LDADD@ $the_libs"
+      the_libs="${BUILDDIR}/lib/abyss/src/.libs/libxmlrpc_abyss.a $the_libs"
+      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
+      the_includes="-I${BUILDDIR}/lib/abyss/src $the_includes"
+      ;;
+    client)
+      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
+      if test "${ENABLE_CURL_CLIENT}" = "yes"; then
+        the_libdirs="-L@CURL_LIBDIR@ $the_libdirs"
+        the_libs="@CURL_LDADD@ $the_libs"
+        the_rpath="@CURL_RPATH@ $the_rpath"
+        the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
+        fi
+      if test "${ENABLE_WININET_CLIENT}" = "yes"; then
+        the_libdirs="-L@WININET_LIBDIR@ $the_libdirs"
+        the_libs="@WININET_LDADD@ $the_libs"
+        the_rpath="@WININET_RPATH@ $the_rpath"
+        the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
+        fi
+      if test "${ENABLE_LIBWWW_CLIENT}" = "yes"; then
+        the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"
+        the_libs="@LIBWWW_LDADD@ $the_libs"
+        the_rpath="@LIBWWW_RPATH@ $the_rpath"
+        the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
+        fi
+      if test "${needCpp}" = "yes"; then
+        # Unfortunately, there is just one CPP library for both client
+        # and server, and it needs both client and server base
+        # libraries.  So a C++ client program gets linked with server
+        # libraries.
+        the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
+        the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+        the_libs="${BUILDDIR}/src/libxmlrpc_cpp.a $the_libs"
+        fi
+      ;;
+    --version)
+      echo "@VERSION@"
+      exit 0
+      ;;
+    --modules)
+      echo "@AVAILABLE_MODULES@"
+      exit 0
+      ;;
+    --cflags)
+      echo "$the_includes"
+      exit 0
+      ;;
+    --libs)
+      echo "$the_libdirs $cpp_libs $the_libs $the_wl_rpath"
+      exit 0
+      ;;
+    --ldadd)
+      echo "$the_libdirs $cpp_libs $the_libs"
+      exit 0
+      ;;
+    --ldflags)
+      echo "$the_rpath"
+      exit 0
+      ;;
+    --prefix)
+      echo "@prefix@"
+      exit 0
+      ;;
+    --exec-prefix)
+      echo "@exec_prefix@"
+      exit 0
+      ;;
+    --*dir)
+      # Swiped from gnome-config.
+      dirname=\$`echo $1 | sed -e 's,^--,,'`
+      dirname=`eval echo $dirname`
+      test -z "$dirname" && exit 1
+      echo $dirname
+      exit 0
+      ;;
+    --help)
+      echo "See the real xmlrpc-c-config program" 1>&2
+      exit 0
+      ;;
+    *)
+      echo "Unrecognized option." 1>&2
+      exit 1
+      ;;
+  esac
+  shift
+done
