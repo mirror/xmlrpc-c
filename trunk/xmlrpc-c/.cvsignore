@@ -11,6 +11,7 @@ config.status
 xmlrpc-c-config
 Makefile
 xmlrpc_config.h
+xmlrpc_amconfig.h
 xmlrpc-c-*.tar.gz
 fulldist
 xmlrpc-c.spec

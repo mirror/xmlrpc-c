@@ -45,9 +45,9 @@
 #include "WWWInit.h"
 
 /* Include our libwww SSL headers, if available. */
-#ifdef HAVE_LIBWWW_SSL
+#if HAVE_LIBWWW_SSL
 #include "WWWSSL.h"
-#endif /* HAVE_LIBWWW_SSL */
+#endif
 
 #include "xmlrpc_libwww_transport.h"
 
@@ -83,7 +83,7 @@ void libwww_transport_client_init(int flags,
 
 	/* Ilya Goldberg <igg@mit.edu> provided the following code to access
 	** SSL-protected servers. */
-#ifdef HAVE_LIBWWW_SSL
+#if HAVE_LIBWWW_SSL
 	/* Set the SSL protocol method. By default, it is the highest
 	** available protocol. Setting it up to SSL_V23 allows the client
 	** to negotiate with the server and set up either TSLv1, SSLv3,

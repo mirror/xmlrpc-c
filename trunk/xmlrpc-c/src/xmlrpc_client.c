@@ -44,13 +44,18 @@
 #include "xmlrpc_int.h"
 #include "xmlrpc_client.h"
 #include "xmlrpc_client_int.h"
-#ifdef ENABLE_WININET_CLIENT
+/* transport_config.h defines XMLRPC_DEFAULT_TRANSPORT,
+    ENABLE_WININET_CLIENT, ENABLE_CURL_CLIENT, ENABLE_LIBWWW_CLIENT 
+*/
+#include "transport_config.h"
+
+#if ENABLE_WININET_CLIENT
 #include "xmlrpc_wininet_transport.h"
 #endif
-#ifdef ENABLE_CURL_CLIENT
+#if ENABLE_CURL_CLIENT
 #include "xmlrpc_curl_transport.h"
 #endif
-#ifdef ENABLE_LIBWWW_CLIENT
+#if ENABLE_LIBWWW_CLIENT
 #include "xmlrpc_libwww_transport.h"
 #endif
 
@@ -66,9 +71,6 @@ transport_info_free      g_transport_info_free = NULL;
 transport_send_request   g_transport_send_request = NULL;
 transport_client_call_server_params g_transport_client_call_server_params = NULL;
 transport_finish_asynch g_transport_finish_asynch = NULL;
-
-/* default_transport.h defines XMLRPC_DEFAULT_TRANSPORT */
-#include "default_transport.h"
 
 extern void
 xmlrpc_client_init(int    const flags,
@@ -103,7 +105,7 @@ xmlrpc_client_get_default_transport(xmlrpc_env * const env ATTR_UNUSED) {
 static void
 setupWininetTransport(void) {
 
-#ifdef ENABLE_WININET_CLIENT
+#if ENABLE_WININET_CLIENT
     g_transport_client_init = wininet_transport_client_init;
     g_transport_client_cleanup = wininet_transport_client_cleanup;
     g_transport_info_new = wininet_transport_info_new;
@@ -119,7 +121,7 @@ setupWininetTransport(void) {
 
 static void
 setupCurlTransport(void) {
-#ifdef ENABLE_CURL_CLIENT
+#if ENABLE_CURL_CLIENT
     
     g_transport_client_init = curl_transport_client_init;
     g_transport_client_cleanup = curl_transport_client_cleanup;
@@ -136,7 +138,7 @@ setupCurlTransport(void) {
 
 static void
 setupLibwwwTransport(void) {
-#ifdef ENABLE_LIBWWW_CLIENT
+#if ENABLE_LIBWWW_CLIENT
 
     g_transport_client_init = libwww_transport_client_init;
     g_transport_client_cleanup = libwww_transport_client_cleanup;

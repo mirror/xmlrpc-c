@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
@@ -38,8 +39,8 @@
 #include "xmlrpc_xmlparser.h"
 
 #define CRLF    "\015\012"
-#define INT_MAX	(2147483647)
-#define INT_MIN	(-INT_MAX - 1)
+#define INT_MAX (2147483647)
+#define INT_MIN (-INT_MAX - 1)
 
 
 /*=========================================================================
@@ -71,25 +72,25 @@ static void test_failure (char *file, int line, char *label, char *statement)
 }
 
 #define TEST(statement) \
-    do { \
-        total_tests++; \
-        if ((statement)) { \
-            printf("."); \
-	} else { \
-            test_failure(__FILE__, __LINE__, "expected", #statement); \
-        } \
-    } while (0)
+do { \
+    total_tests++; \
+    if ((statement)) { \
+        printf("."); \
+    } else { \
+        test_failure(__FILE__, __LINE__, "expected", #statement); \
+    } \
+   } while (0)
 
 #define TEST_NO_FAULT(env) \
     do { \
         total_tests++; \
         if (!(env)->fault_occurred) { \
             printf("."); \
-	} else { \
+        } else { \
             test_failure(__FILE__, __LINE__, "fault occurred", \
-                         (env)->fault_string); \
+            (env)->fault_string); \
         } \
-    } while (0)
+       } while (0)
 
 
 /*=========================================================================
@@ -99,7 +100,7 @@ static void test_failure (char *file, int line, char *label, char *statement)
 **  or which are inconvenient to allocate inline.
 */
 
-static char* test_string_1 = "foo";
+    static char* test_string_1 = "foo";
 static char* test_string_2 = "bar";
 static int test_int_array_1[5] = {1, 2, 3, 4, 5};
 static int test_int_array_2[3] = {6, 7, 8};
@@ -107,24 +108,24 @@ static int test_int_array_3[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 
 /* We use these strings for simple serialization and deserialization tests. */
 #define RAW_STRING_DATA \
-"<value><array><data>"CRLF \
-"<value><i4>2147483647</i4></value>"CRLF \
-"<value><i4>-2147483648</i4></value>"CRLF \
-"<value><boolean>0</boolean></value>"CRLF \
-"<value><boolean>1</boolean></value>"CRLF \
-"<value><string>Hello, world! &lt;&amp;&gt;</string></value>"CRLF \
-"<value><base64>"CRLF \
-"YmFzZTY0IGRhdGE="CRLF \
-"</base64></value>"CRLF \
-"<value><dateTime.iso8601>19980717T14:08:55</dateTime.iso8601></value>"CRLF \
-"<value><array><data>"CRLF \
-"</data></array></value>"CRLF \
-"</data></array></value>"
+    "<value><array><data>"CRLF \
+    "<value><i4>2147483647</i4></value>"CRLF \
+    "<value><i4>-2147483648</i4></value>"CRLF \
+    "<value><boolean>0</boolean></value>"CRLF \
+    "<value><boolean>1</boolean></value>"CRLF \
+    "<value><string>Hello, world! &lt;&amp;&gt;</string></value>"CRLF \
+    "<value><base64>"CRLF \
+    "YmFzZTY0IGRhdGE="CRLF \
+    "</base64></value>"CRLF \
+    "<value><dateTime.iso8601>19980717T14:08:55</dateTime.iso8601></value>"CRLF \
+    "<value><array><data>"CRLF \
+    "</data></array></value>"CRLF \
+    "</data></array></value>"
 
 static char serialized_data[] = RAW_STRING_DATA;
 
-static char serialized_struct[] = \
-"<value><struct>"CRLF \
+static char serialized_struct[] = 
+    "<value><struct>"CRLF \
 "<member><name>&lt;&amp;&gt;</name>"CRLF \
 "<value><i4>10</i4></value></member>"CRLF \
 "</struct></value>";
@@ -132,181 +133,182 @@ static char serialized_struct[] = \
 #define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"CRLF
 
 static char serialized_call[] =
-XML_PROLOGUE
-"<methodCall>"CRLF
-"<methodName>gloom&amp;doom</methodName>"CRLF
-"<params>"CRLF
-"<param><value><i4>10</i4></value></param>"CRLF
-"<param><value><i4>20</i4></value></param>"CRLF
-"</params>"CRLF
-"</methodCall>"CRLF;
+    XML_PROLOGUE
+    "<methodCall>"CRLF
+    "<methodName>gloom&amp;doom</methodName>"CRLF
+    "<params>"CRLF
+    "<param><value><i4>10</i4></value></param>"CRLF
+    "<param><value><i4>20</i4></value></param>"CRLF
+    "</params>"CRLF
+    "</methodCall>"CRLF;
 
 static char serialized_response[] =
-XML_PROLOGUE
-"<methodResponse>"CRLF
-"<params>"CRLF
-"<param><value><i4>30</i4></value></param>"CRLF
-"</params>"CRLF
-"</methodResponse>"CRLF;
+    XML_PROLOGUE
+    "<methodResponse>"CRLF
+    "<params>"CRLF
+    "<param><value><i4>30</i4></value></param>"CRLF
+    "</params>"CRLF
+    "</methodResponse>"CRLF;
 
 static char serialized_fault[] =
-XML_PROLOGUE
-"<methodResponse>"CRLF
-"<fault>"CRLF
-"<value><struct>"CRLF
-"<member><name>faultCode</name>"CRLF
-"<value><i4>6</i4></value></member>"CRLF
-"<member><name>faultString</name>"CRLF
-"<value><string>A fault occurred</string></value></member>"CRLF
-"</struct></value>"CRLF
-"</fault>"CRLF
-"</methodResponse>"CRLF;
+    XML_PROLOGUE
+    "<methodResponse>"CRLF
+    "<fault>"CRLF
+    "<value><struct>"CRLF
+    "<member><name>faultCode</name>"CRLF
+    "<value><i4>6</i4></value></member>"CRLF
+    "<member><name>faultString</name>"CRLF
+    "<value><string>A fault occurred</string></value></member>"CRLF
+    "</struct></value>"CRLF
+    "</fault>"CRLF
+    "</methodResponse>"CRLF;
 
 static char expat_data[] = XML_PROLOGUE RAW_STRING_DATA CRLF;
-static char expat_error_data[] = \
-XML_PROLOGUE \
-"<foo><bar>abc</bar><baz></baz>"CRLF;
+static char expat_error_data[] =
+    XML_PROLOGUE \
+    "<foo><bar>abc</bar><baz></baz>"CRLF;
 
-static char correct_value[] = \
-XML_PROLOGUE \
-"<methodResponse><params><param>"CRLF \
-"<value><array><data>"CRLF \
-RAW_STRING_DATA CRLF \
-"<value><int>1</int></value>"CRLF \
-"<value><double>-1.0</double></value>"CRLF \
-"<value><double>0.0</double></value>"CRLF \
-"<value><double>1.0</double></value>"CRLF \
-"<value><struct>"CRLF \
-"<member><name>ten &lt;&amp;&gt;</name>"CRLF \
-"<value><i4>10</i4></value></member>"CRLF \
-"<member><name>twenty</name>"CRLF \
-"<value><i4>20</i4></value></member>"CRLF \
-"</struct></value>"CRLF \
-"<value>Untagged string</value>"CRLF \
-"</data></array></value>"CRLF \
-"</param></params></methodResponse>"CRLF;
+static char correct_value[] = 
+    XML_PROLOGUE 
+    "<methodResponse><params><param>"CRLF 
+    "<value><array><data>"CRLF 
+    RAW_STRING_DATA CRLF 
+    "<value><int>1</int></value>"CRLF 
+    "<value><double>-1.0</double></value>"CRLF 
+    "<value><double>0.0</double></value>"CRLF 
+    "<value><double>1.0</double></value>"CRLF 
+    "<value><struct>"CRLF 
+    "<member><name>ten &lt;&amp;&gt;</name>"CRLF 
+    "<value><i4>10</i4></value></member>"CRLF 
+    "<member><name>twenty</name>"CRLF 
+    "<value><i4>20</i4></value></member>"CRLF 
+    "</struct></value>"CRLF 
+    "<value>Untagged string</value>"CRLF 
+    "</data></array></value>"CRLF 
+    "</param></params></methodResponse>"CRLF;
 
 #define VALUE_HEADER \
-XML_PROLOGUE"<methodResponse><params><param><value>"CRLF
+    XML_PROLOGUE"<methodResponse><params><param><value>"CRLF
 #define VALUE_FOOTER \
-"</value></param></params></methodResponse>"CRLF
+    "</value></param></params></methodResponse>"CRLF
 
 #define MEMBER_HEADER \
-VALUE_HEADER"<struct><member>"
+    VALUE_HEADER"<struct><member>"
 #define MEMBER_FOOTER \
-"</member></struct>"VALUE_FOOTER
+    "</member></struct>"VALUE_FOOTER
 #define ARBITRARY_VALUE \
-"<value><i4>0</i4></value>"
+    "<value><i4>0</i4></value>"
 
 static char unparseable_value[] = VALUE_HEADER"<i4>"VALUE_FOOTER;
 
-static char *(bad_values[]) = \
-{VALUE_HEADER"<i4>0</i4><i4>0</i4>"VALUE_FOOTER,
- VALUE_HEADER"<foo></foo>"VALUE_FOOTER,
- VALUE_HEADER"<i4><i4>4</i4></i4>"VALUE_FOOTER,
- VALUE_HEADER"<i4>2147483648</i4>"VALUE_FOOTER,
- VALUE_HEADER"<i4>-2147483649</i4>"VALUE_FOOTER,
- VALUE_HEADER"<i4> 0</i4>"VALUE_FOOTER,
- VALUE_HEADER"<i4>0 </i4>"VALUE_FOOTER,
- VALUE_HEADER"<boolean>2</boolean>"VALUE_FOOTER,
- VALUE_HEADER"<boolean>-1</boolean>"VALUE_FOOTER,
- VALUE_HEADER"<double> 0.0</double>"VALUE_FOOTER,
- VALUE_HEADER"<double>0.0 </double>"VALUE_FOOTER,
- VALUE_HEADER"<array></array>"VALUE_FOOTER,
- VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,
- VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,
- VALUE_HEADER"<array><data><foo></foo></data></array>"VALUE_FOOTER,
- VALUE_HEADER"<struct><foo></foo></struct>"VALUE_FOOTER,
- MEMBER_HEADER MEMBER_FOOTER,
- MEMBER_HEADER"<name>a</name>"MEMBER_FOOTER,
- MEMBER_HEADER"<name>a</name>"ARBITRARY_VALUE"<f></f>"MEMBER_FOOTER,
- MEMBER_HEADER"<foo></foo>"ARBITRARY_VALUE MEMBER_FOOTER,
- MEMBER_HEADER"<name>a</name><foo></foo>"MEMBER_FOOTER,
- MEMBER_HEADER"<name><foo></foo></name>"ARBITRARY_VALUE MEMBER_FOOTER,
- NULL};
+static char *(bad_values[]) = {
+    VALUE_HEADER"<i4>0</i4><i4>0</i4>"VALUE_FOOTER,
+    VALUE_HEADER"<foo></foo>"VALUE_FOOTER,
+    VALUE_HEADER"<i4><i4>4</i4></i4>"VALUE_FOOTER,
+    VALUE_HEADER"<i4>2147483648</i4>"VALUE_FOOTER,
+    VALUE_HEADER"<i4>-2147483649</i4>"VALUE_FOOTER,
+    VALUE_HEADER"<i4> 0</i4>"VALUE_FOOTER,
+    VALUE_HEADER"<i4>0 </i4>"VALUE_FOOTER,
+    VALUE_HEADER"<boolean>2</boolean>"VALUE_FOOTER,
+    VALUE_HEADER"<boolean>-1</boolean>"VALUE_FOOTER,
+    VALUE_HEADER"<double> 0.0</double>"VALUE_FOOTER,
+    VALUE_HEADER"<double>0.0 </double>"VALUE_FOOTER,
+    VALUE_HEADER"<array></array>"VALUE_FOOTER,
+    VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,
+    VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,
+    VALUE_HEADER"<array><data><foo></foo></data></array>"VALUE_FOOTER,
+    VALUE_HEADER"<struct><foo></foo></struct>"VALUE_FOOTER,
+    MEMBER_HEADER MEMBER_FOOTER,
+    MEMBER_HEADER"<name>a</name>"MEMBER_FOOTER,
+    MEMBER_HEADER"<name>a</name>"ARBITRARY_VALUE"<f></f>"MEMBER_FOOTER,
+    MEMBER_HEADER"<foo></foo>"ARBITRARY_VALUE MEMBER_FOOTER,
+    MEMBER_HEADER"<name>a</name><foo></foo>"MEMBER_FOOTER,
+    MEMBER_HEADER"<name><foo></foo></name>"ARBITRARY_VALUE MEMBER_FOOTER,
+    NULL
+};
 
 #define RESPONSE_HEADER \
-XML_PROLOGUE"<methodResponse>"CRLF
+    XML_PROLOGUE"<methodResponse>"CRLF
 #define RESPONSE_FOOTER \
-"</methodResponse>"CRLF
+    "</methodResponse>"CRLF
 
 #define PARAMS_RESP_HEADER \
-RESPONSE_HEADER"<params>"
+    RESPONSE_HEADER"<params>"
 #define PARAMS_RESP_FOOTER \
-"</params>"RESPONSE_FOOTER
+    "</params>"RESPONSE_FOOTER
 
 #define FAULT_HEADER \
-RESPONSE_HEADER"<fault>"
+    RESPONSE_HEADER"<fault>"
 #define FAULT_FOOTER \
-"</fault>"RESPONSE_FOOTER
+    "</fault>"RESPONSE_FOOTER
 
 #define FAULT_STRUCT_HEADER \
-FAULT_HEADER"<value><struct>"
+    FAULT_HEADER"<value><struct>"
 #define FAULT_STRUCT_FOOTER \
-"</struct></value>"FAULT_FOOTER
+    "</struct></value>"FAULT_FOOTER
 
-static char *(bad_responses[]) =
-{XML_PROLOGUE"<foo></foo>"CRLF,
- RESPONSE_HEADER RESPONSE_FOOTER,
- RESPONSE_HEADER"<params></params><params></params>"RESPONSE_FOOTER,
- RESPONSE_HEADER"<foo></foo>"RESPONSE_FOOTER,
+static char *(bad_responses[]) = {
+    XML_PROLOGUE"<foo></foo>"CRLF,
+    RESPONSE_HEADER RESPONSE_FOOTER,
+    RESPONSE_HEADER"<params></params><params></params>"RESPONSE_FOOTER,
+    RESPONSE_HEADER"<foo></foo>"RESPONSE_FOOTER,
 
- /* Make sure we insist on only one parameter in a response. */
- PARAMS_RESP_HEADER PARAMS_RESP_FOOTER,
- PARAMS_RESP_HEADER
+    /* Make sure we insist on only one parameter in a response. */
+    PARAMS_RESP_HEADER PARAMS_RESP_FOOTER,
+    PARAMS_RESP_HEADER
     "<param><i4>0</i4></param>"
     "<param><i4>0</i4></param>"
- PARAMS_RESP_FOOTER,
+    PARAMS_RESP_FOOTER,
 
- /* Test other sorts of bad parameters. */
- PARAMS_RESP_HEADER"<foo></foo>"PARAMS_RESP_FOOTER,
- PARAMS_RESP_HEADER"<param></param>"PARAMS_RESP_FOOTER,
- PARAMS_RESP_HEADER"<param><foo></foo></param>"PARAMS_RESP_FOOTER,
- PARAMS_RESP_HEADER
+    /* Test other sorts of bad parameters. */
+    PARAMS_RESP_HEADER"<foo></foo>"PARAMS_RESP_FOOTER,
+    PARAMS_RESP_HEADER"<param></param>"PARAMS_RESP_FOOTER,
+    PARAMS_RESP_HEADER"<param><foo></foo></param>"PARAMS_RESP_FOOTER,
+    PARAMS_RESP_HEADER
     "<param>"ARBITRARY_VALUE ARBITRARY_VALUE"</param>"
- PARAMS_RESP_FOOTER,
- 
- /* Basic fault tests. */
- FAULT_HEADER FAULT_FOOTER,
- FAULT_HEADER"<foo></foo>"FAULT_FOOTER,
- FAULT_HEADER"<value></value><value></value>"FAULT_FOOTER,
- FAULT_HEADER"<value><i4>1</i4></value>"FAULT_FOOTER,
+    PARAMS_RESP_FOOTER,
+    
+    /* Basic fault tests. */
+    FAULT_HEADER FAULT_FOOTER,
+    FAULT_HEADER"<foo></foo>"FAULT_FOOTER,
+    FAULT_HEADER"<value></value><value></value>"FAULT_FOOTER,
+    FAULT_HEADER"<value><i4>1</i4></value>"FAULT_FOOTER,
 
- /* Make sure we insist on the proper members within the fault struct. */
- FAULT_STRUCT_HEADER
-     "<member><name>faultString</name>"
-         "<value><string>foo</string></value></member>"
- FAULT_STRUCT_FOOTER,
- FAULT_STRUCT_HEADER
-     "<member><name>faultCode</name>"
-         "<value><i4>0</i4></value></member>"
- FAULT_STRUCT_FOOTER,
- FAULT_STRUCT_HEADER
-     "<member><name>faultCode</name>"
-         "<value><i4>0</i4></value></member>"
-     "<member><name>faultString</name>"
-         "<value><i4>0</i4></value></member>"
- FAULT_STRUCT_FOOTER,
- FAULT_STRUCT_HEADER
-     "<member><name>faultCode</name>"
-         "<value><string>0</string></value></member>"
-     "<member><name>faultString</name>"
-         "<value><string>foo</string></value></member>"
- FAULT_STRUCT_FOOTER,
- NULL};
+    /* Make sure we insist on the proper members within the fault struct. */
+    FAULT_STRUCT_HEADER
+    "<member><name>faultString</name>"
+    "<value><string>foo</string></value></member>"
+    FAULT_STRUCT_FOOTER,
+    FAULT_STRUCT_HEADER
+    "<member><name>faultCode</name>"
+    "<value><i4>0</i4></value></member>"
+    FAULT_STRUCT_FOOTER,
+    FAULT_STRUCT_HEADER
+    "<member><name>faultCode</name>"
+    "<value><i4>0</i4></value></member>"
+    "<member><name>faultString</name>"
+    "<value><i4>0</i4></value></member>"
+    FAULT_STRUCT_FOOTER,
+    FAULT_STRUCT_HEADER
+    "<member><name>faultCode</name>"
+    "<value><string>0</string></value></member>"
+    "<member><name>faultString</name>"
+    "<value><string>foo</string></value></member>"
+    FAULT_STRUCT_FOOTER,
+    NULL};
 
 #define CALL_HEADER \
-XML_PROLOGUE"<methodCall>"CRLF
+    XML_PROLOGUE"<methodCall>"CRLF
 #define CALL_FOOTER \
-"</methodCall>"CRLF
+    "</methodCall>"CRLF
 
-static char *(bad_calls[]) =
-{XML_PROLOGUE"<foo></foo>"CRLF,
- CALL_HEADER CALL_FOOTER,
- CALL_HEADER"<methodName>m</methodName><foo></foo>"CALL_FOOTER, 
- CALL_HEADER"<foo></foo><params></params>"CALL_FOOTER, 
- CALL_HEADER"<methodName><f></f></methodName><params></params>"CALL_FOOTER, 
- NULL};
+static char *(bad_calls[]) = {
+    XML_PROLOGUE"<foo></foo>"CRLF,
+    CALL_HEADER CALL_FOOTER,
+    CALL_HEADER"<methodName>m</methodName><foo></foo>"CALL_FOOTER, 
+    CALL_HEADER"<foo></foo><params></params>"CALL_FOOTER, 
+    CALL_HEADER"<methodName><f></f></methodName><params></params>"CALL_FOOTER, 
+    NULL};
 
 
 /*=========================================================================
@@ -426,11 +428,11 @@ static void test_mem_block (void)
     block = XMLRPC_TYPED_MEM_BLOCK_NEW(int, &env, 5);
     TEST_NO_FAULT(&env);
     memcpy(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(int, block),
-	   test_int_array_1, sizeof(test_int_array_1));
+           test_int_array_1, sizeof(test_int_array_1));
     XMLRPC_TYPED_MEM_BLOCK_APPEND(int, &env, block, test_int_array_2, 3);
     TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(int, block) == 8);
     TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(int, block),
-		test_int_array_3, sizeof(test_int_array_3)) == 0);
+                test_int_array_3, sizeof(test_int_array_3)) == 0);
     XMLRPC_TYPED_MEM_BLOCK_FREE(int, block);
 
     xmlrpc_env_clean(&env);
@@ -459,41 +461,41 @@ static void test_base64_conversion (void)
     xmlrpc_env_init(&env);
 
     for (triplet = base64_triplets; *triplet != NULL; triplet += 3) {
-	bin_data = *triplet;
-	nocrlf_ascii_data = *(triplet + 1);
-	ascii_data = *(triplet + 2);
+        bin_data = *triplet;
+        nocrlf_ascii_data = *(triplet + 1);
+        ascii_data = *(triplet + 2);
 
-	/* Test our encoding routine. */
-	output = xmlrpc_base64_encode(&env,
-				      (unsigned char*) bin_data,
-				      strlen(bin_data));
-	TEST_NO_FAULT(&env);
-	TEST(output != NULL);
-	TEST(xmlrpc_mem_block_size(output) == strlen(ascii_data));
-	TEST(memcmp(xmlrpc_mem_block_contents(output), ascii_data,
-		    strlen(ascii_data)) == 0);
-	xmlrpc_mem_block_free(output);
+        /* Test our encoding routine. */
+        output = xmlrpc_base64_encode(&env,
+                                      (unsigned char*) bin_data,
+                                      strlen(bin_data));
+        TEST_NO_FAULT(&env);
+        TEST(output != NULL);
+        TEST(xmlrpc_mem_block_size(output) == strlen(ascii_data));
+        TEST(memcmp(xmlrpc_mem_block_contents(output), ascii_data,
+                    strlen(ascii_data)) == 0);
+        xmlrpc_mem_block_free(output);
 
-	/* Test our newline-free encoding routine. */
-	output =
-	    xmlrpc_base64_encode_without_newlines(&env,
-						  (unsigned char*) bin_data,
-						  strlen(bin_data));
-	TEST_NO_FAULT(&env);
-	TEST(output != NULL);
-	TEST(xmlrpc_mem_block_size(output) == strlen(nocrlf_ascii_data));
-	TEST(memcmp(xmlrpc_mem_block_contents(output), nocrlf_ascii_data,
-		    strlen(nocrlf_ascii_data)) == 0);
-	xmlrpc_mem_block_free(output);
+        /* Test our newline-free encoding routine. */
+        output =
+            xmlrpc_base64_encode_without_newlines(&env,
+                                                  (unsigned char*) bin_data,
+                                                  strlen(bin_data));
+        TEST_NO_FAULT(&env);
+        TEST(output != NULL);
+        TEST(xmlrpc_mem_block_size(output) == strlen(nocrlf_ascii_data));
+        TEST(memcmp(xmlrpc_mem_block_contents(output), nocrlf_ascii_data,
+                    strlen(nocrlf_ascii_data)) == 0);
+        xmlrpc_mem_block_free(output);
 
-	/* Test our decoding routine. */
-	output = xmlrpc_base64_decode(&env, ascii_data, strlen(ascii_data));
-	TEST_NO_FAULT(&env);
-	TEST(output != NULL);
-	TEST(xmlrpc_mem_block_size(output) == strlen(bin_data));
-	TEST(memcmp(xmlrpc_mem_block_contents(output), bin_data,
-		    strlen(bin_data)) == 0);
-	xmlrpc_mem_block_free(output);
+        /* Test our decoding routine. */
+        output = xmlrpc_base64_decode(&env, ascii_data, strlen(ascii_data));
+        TEST_NO_FAULT(&env);
+        TEST(output != NULL);
+        TEST(xmlrpc_mem_block_size(output) == strlen(bin_data));
+        TEST(memcmp(xmlrpc_mem_block_contents(output), bin_data,
+                    strlen(bin_data)) == 0);
+        xmlrpc_mem_block_free(output);
     }
 
     /* Now for something broken... */
@@ -634,8 +636,8 @@ static void test_value (void)
 
     /* A more complex array. */
     v = xmlrpc_build_value(&env, "(i(ii)i)",
-			   (xmlrpc_int32) 10, (xmlrpc_int32) 20,
-			   (xmlrpc_int32) 30, (xmlrpc_int32) 40);
+                           (xmlrpc_int32) 10, (xmlrpc_int32) 20,
+                           (xmlrpc_int32) 30, (xmlrpc_int32) 40);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
     len = xmlrpc_array_size(&env, v);
@@ -871,9 +873,9 @@ static void test_struct (void)
 
     /* Build a struct using our automagic struct builder. */
     s = xmlrpc_build_value(&env, "{s:s,s:i,s:b}",
-			   "foo", "Hello!",
-			   "bar", (xmlrpc_int32) 1,
-			   "baz", (xmlrpc_bool) 0);
+                           "foo", "Hello!",
+                           "bar", (xmlrpc_int32) 1,
+                           "baz", (xmlrpc_bool) 0);
     TEST_NO_FAULT(&env);
     TEST(s != NULL);
     TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(s));
@@ -897,17 +899,17 @@ static void test_struct (void)
 
     /* Extract keys and values. */
     for (index = 0; index < 3; index++) {
-	xmlrpc_struct_get_key_and_value(&env, s, index, &key, &value);
-	TEST_NO_FAULT(&env);
-	TEST(key != NULL);
-	TEST(value != NULL);
+        xmlrpc_struct_get_key_and_value(&env, s, index, &key, &value);
+        TEST_NO_FAULT(&env);
+        TEST(key != NULL);
+        TEST(value != NULL);
     }
 
     /* Test our automagic struct parser. */
     xmlrpc_parse_value(&env, s, "{s:b,s:s,s:i,*}",
-		       "baz", &bval,
-		       "foo", &sval,
-		       "bar", &ival);
+                       "baz", &bval,
+                       "foo", &sval,
+                       "bar", &ival);
     TEST_NO_FAULT(&env);
     TEST(ival == 1);
     TEST(!bval);
@@ -916,8 +918,8 @@ static void test_struct (void)
     /* Test automagic struct parser with value of wrong type. */
     xmlrpc_env_init(&env2);
     xmlrpc_parse_value(&env2, s, "{s:b,s:i,*}",
-		       "baz", &bval,
-		       "foo", &sval);
+                       "baz", &bval,
+                       "foo", &sval);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
@@ -925,8 +927,8 @@ static void test_struct (void)
     /* Test automagic struct parser with bad key. */
     xmlrpc_env_init(&env2);
     xmlrpc_parse_value(&env2, s, "{s:b,s:i,*}",
-		       "baz", &bval,
-		       "nosuch", &sval);
+                       "baz", &bval,
+                       "nosuch", &sval);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_INDEX_ERROR);
     xmlrpc_env_clean(&env2);
@@ -976,11 +978,11 @@ static void test_serialize (void)
     ** use every data type except double (which doesn't serialize in a
     ** portable manner. */
     v = xmlrpc_build_value(&env, "(iibbs68())",
-			   (xmlrpc_int32) INT_MAX, (xmlrpc_int32) INT_MIN,
-			   (xmlrpc_bool) 0, (xmlrpc_bool) 1,
-			   "Hello, world! <&>",
-			   "base64 data", (size_t) 11,
-			   "19980717T14:08:55");
+                           (xmlrpc_int32) INT_MAX, (xmlrpc_int32) INT_MIN,
+                           (xmlrpc_bool) 0, (xmlrpc_bool) 1,
+                           "Hello, world! <&>",
+                           "base64 data", (size_t) 11,
+                           "19980717T14:08:55");
     TEST_NO_FAULT(&env);
     
     /* Serialize the value. */
@@ -993,7 +995,7 @@ static void test_serialize (void)
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
     TEST(size == strlen(serialized_data));
     TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
-		serialized_data, size) == 0);
+                serialized_data, size) == 0);
     
     /* (Debugging code to display the value.) */
     /* XMLRPC_TYPED_MEM_BLOCK_APPEND(char, &env, output, "\0", 1);
@@ -1016,7 +1018,7 @@ static void test_serialize (void)
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
     TEST(size == strlen(serialized_struct));
     TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
-		serialized_struct, size) == 0);
+                serialized_struct, size) == 0);
     
     /* Clean up our struct. */
     XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
@@ -1034,7 +1036,7 @@ static void test_serialize (void)
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
     TEST(size == strlen(serialized_response));
     TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
-		serialized_response, size) == 0);
+                serialized_response, size) == 0);
 
     /* Clean up our methodResponse. */
     xmlrpc_DECREF(v);
@@ -1052,7 +1054,7 @@ static void test_serialize (void)
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
     TEST(size == strlen(serialized_call));
     TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
-		serialized_call, size) == 0);
+                serialized_call, size) == 0);
 
     /* Clean up our methodCall. */
     xmlrpc_DECREF(v);
@@ -1070,7 +1072,7 @@ static void test_serialize (void)
     size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
     TEST(size == strlen(serialized_fault));
     TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
-		serialized_fault, size) == 0);
+                serialized_fault, size) == 0);
 
     /* Clean up our fault. */
     xmlrpc_env_clean(&fault);
@@ -1143,15 +1145,15 @@ static void test_parse_xml_value (void)
     
     /* Parse a correctly-formed response. */
     val = xmlrpc_parse_response(&env, correct_value,
-				strlen(correct_value));
+                                strlen(correct_value));
     TEST_NO_FAULT(&env);
     TEST(val != NULL);
     
     /* Analyze it and make sure it contains the correct values. */
     xmlrpc_parse_value(&env, val, "((iibbs68())idddSs)", &int_max, &int_min,
-		       &bool_false, &bool_true, &str_hello,
-		       &b64_data, &b64_len, &datetime,
-		       &int_one, &negone, &zero, &one, &s, &str_untagged);
+                       &bool_false, &bool_true, &str_hello,
+                       &b64_data, &b64_len, &datetime,
+                       &int_one, &negone, &zero, &one, &s, &str_untagged);
     TEST_NO_FAULT(&env);
     TEST(int_max == INT_MAX);
     TEST(int_min == INT_MIN);
@@ -1194,7 +1196,7 @@ static void test_parse_xml_value (void)
     /* First, test some poorly-formed XML data. */
     xmlrpc_env_init(&env2);
     val = xmlrpc_parse_response(&env2, unparseable_value,
-				strlen(unparseable_value));
+                                strlen(unparseable_value));
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
     TEST(val == NULL);
@@ -1203,20 +1205,20 @@ static void test_parse_xml_value (void)
     /* Next, check for bogus values. These are all well-formed XML, but
     ** they aren't legal XML-RPC. */
     for (bad_value = bad_values; *bad_value != NULL; bad_value++) {
-	
-	/* First, check to make sure that our test case is well-formed XML.
-	** (It's easy to make mistakes when writing the test cases!) */
-	elem = xml_parse(&env, *bad_value, strlen(*bad_value));
-	TEST_NO_FAULT(&env);
-	xml_element_free(elem);
-	
-	/* Now, make sure the higher-level routine barfs appropriately. */
-	xmlrpc_env_init(&env2);
-	val = xmlrpc_parse_response(&env2, *bad_value, strlen(*bad_value));
-	TEST(env2.fault_occurred);
-	TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
-	TEST(val == NULL);
-	xmlrpc_env_clean(&env2);
+    
+        /* First, check to make sure that our test case is well-formed XML.
+        ** (It's easy to make mistakes when writing the test cases!) */
+        elem = xml_parse(&env, *bad_value, strlen(*bad_value));
+        TEST_NO_FAULT(&env);
+        xml_element_free(elem);
+    
+        /* Now, make sure the higher-level routine barfs appropriately. */
+        xmlrpc_env_init(&env2);
+        val = xmlrpc_parse_response(&env2, *bad_value, strlen(*bad_value));
+        TEST(env2.fault_occurred);
+        TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+        TEST(val == NULL);
+        xmlrpc_env_clean(&env2);
     }
     
     xmlrpc_env_clean(&env);
@@ -1234,7 +1236,7 @@ static void test_parse_xml_response (void)
 
     /* Parse a valid response. */
     v = xmlrpc_parse_response(&env, serialized_response,
-			      strlen(serialized_response));
+                              strlen(serialized_response));
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
     xmlrpc_parse_value(&env, v, "i", &i1);
@@ -1245,7 +1247,7 @@ static void test_parse_xml_response (void)
     /* Parse a valid fault. */
     xmlrpc_env_init(&fault);
     v = xmlrpc_parse_response(&fault, serialized_fault,
-			      strlen(serialized_fault));
+                              strlen(serialized_fault));
     TEST(fault.fault_occurred);
     TEST(fault.fault_code == 6);
     TEST(strcmp(fault.fault_string, "A fault occurred") == 0);
@@ -1257,20 +1259,20 @@ static void test_parse_xml_response (void)
     /* Next, check for bogus responses. These are all well-formed XML, but
     ** they aren't legal XML-RPC. */
     for (bad_resp = bad_responses; *bad_resp != NULL; bad_resp++) {
-	
-	/* First, check to make sure that our test case is well-formed XML.
-	** (It's easy to make mistakes when writing the test cases!) */
-	elem = xml_parse(&env, *bad_resp, strlen(*bad_resp));
-	TEST_NO_FAULT(&env);
-	xml_element_free(elem);
-	
-	/* Now, make sure the higher-level routine barfs appropriately. */
-	xmlrpc_env_init(&env2);
-	v = xmlrpc_parse_response(&env2, *bad_resp, strlen(*bad_resp));
-	TEST(env2.fault_occurred);
-	TEST(env2.fault_code != 0); /* We use 0 as a code in our bad faults. */
-	TEST(v == NULL);
-	xmlrpc_env_clean(&env2);
+    
+        /* First, check to make sure that our test case is well-formed XML.
+        ** (It's easy to make mistakes when writing the test cases!) */
+        elem = xml_parse(&env, *bad_resp, strlen(*bad_resp));
+        TEST_NO_FAULT(&env);
+        xml_element_free(elem);
+    
+        /* Now, make sure the higher-level routine barfs appropriately. */
+        xmlrpc_env_init(&env2);
+        v = xmlrpc_parse_response(&env2, *bad_resp, strlen(*bad_resp));
+        TEST(env2.fault_occurred);
+        TEST(env2.fault_code != 0); /* We use 0 as a code in our bad faults. */
+        TEST(v == NULL);
+        xmlrpc_env_clean(&env2);
     }
     
     xmlrpc_env_clean(&env);
@@ -1289,7 +1291,7 @@ static void test_parse_xml_call (void)
 
     /* Parse a valid call. */
     xmlrpc_parse_call(&env, serialized_call, strlen(serialized_call),
-		      &method_name, &params);
+                      &method_name, &params);
     TEST_NO_FAULT(&env);
     TEST(params != NULL);
     xmlrpc_parse_value(&env, params, "(ii)", &i1, &i2);
@@ -1302,7 +1304,7 @@ static void test_parse_xml_call (void)
     /* Test some poorly-formed XML data. */
     xmlrpc_env_init(&env2);
     xmlrpc_parse_call(&env2, unparseable_value, strlen(unparseable_value),
-		      &method_name, &params);
+                      &method_name, &params);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
     TEST(method_name == NULL && params == NULL);
@@ -1311,24 +1313,24 @@ static void test_parse_xml_call (void)
     /* Next, check for bogus values. These are all well-formed XML, but
     ** they aren't legal XML-RPC. */
     for (bad_call = bad_calls; *bad_call != NULL; bad_call++) {
-	
-       /* First, check to make sure that our test case is well-formed XML.
-       ** (It's easy to make mistakes when writing the test cases!) */
-       elem = xml_parse(&env, *bad_call, strlen(*bad_call));
-       TEST_NO_FAULT(&env);
-       xml_element_free(elem);
+    
+        /* First, check to make sure that our test case is well-formed XML.
+        ** (It's easy to make mistakes when writing the test cases!) */
+        elem = xml_parse(&env, *bad_call, strlen(*bad_call));
+        TEST_NO_FAULT(&env);
+        xml_element_free(elem);
 
-       /* Now, make sure the higher-level routine barfs appropriately. */
-       xmlrpc_env_init(&env2);
-       xmlrpc_parse_call(&env2, *bad_call, strlen(*bad_call),
-			 &method_name, &params);
-       TEST(env2.fault_occurred);
-       TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
-       TEST(method_name == NULL && params == NULL);
-       xmlrpc_env_clean(&env2);
-   }
+        /* Now, make sure the higher-level routine barfs appropriately. */
+        xmlrpc_env_init(&env2);
+        xmlrpc_parse_call(&env2, *bad_call, strlen(*bad_call),
+                          &method_name, &params);
+        TEST(env2.fault_occurred);
+        TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
+        TEST(method_name == NULL && params == NULL);
+        xmlrpc_env_clean(&env2);
+    }
 
-   xmlrpc_env_clean(&env);    
+    xmlrpc_env_clean(&env);    
 }
 
 /*=========================================================================
@@ -1341,8 +1343,8 @@ static void test_parse_xml_call (void)
 #define BAR_USER_DATA ((void*) 0xBAF)
 
 static xmlrpc_value *test_foo (xmlrpc_env *env,
-			       xmlrpc_value *param_array,
-			       void *user_data)
+                               xmlrpc_value *param_array,
+                               void *user_data)
 {
     xmlrpc_int32 x, y;
 
@@ -1359,8 +1361,8 @@ static xmlrpc_value *test_foo (xmlrpc_env *env,
 }
 
 static xmlrpc_value *test_bar (xmlrpc_env *env,
-			       xmlrpc_value *param_array,
-			       void *user_data)
+                               xmlrpc_value *param_array,
+                               void *user_data)
 {
     xmlrpc_int32 x, y;
 
@@ -1377,12 +1379,13 @@ static xmlrpc_value *test_bar (xmlrpc_env *env,
     return NULL;
 }
 
-static xmlrpc_value *test_default (xmlrpc_env *env,
-				   char *host,
-				   char *method_name,
-				   xmlrpc_value *param_array,
-				   void *user_data)
-{
+static xmlrpc_value *
+test_default(xmlrpc_env *   const env,
+             char *         const host ATTR_UNUSED,
+             char *         const method_name ATTR_UNUSED,
+             xmlrpc_value * const param_array,
+             void *         const user_data) {
+
     xmlrpc_int32 x, y;
 
     TEST_NO_FAULT(env);
@@ -1399,9 +1402,9 @@ static xmlrpc_value *test_default (xmlrpc_env *env,
 
 static xmlrpc_value *
 process_call_helper (xmlrpc_env *env,
-		     xmlrpc_registry *registry,
-		     char *method_name,
-		     xmlrpc_value *arg_array)
+                     xmlrpc_registry *registry,
+                     char *method_name,
+                     xmlrpc_value *arg_array)
 {
     xmlrpc_mem_block *call, *response;
     xmlrpc_value *value;
@@ -1412,14 +1415,14 @@ process_call_helper (xmlrpc_env *env,
     xmlrpc_serialize_call(env, call, method_name, arg_array);
     TEST_NO_FAULT(env);
     response = xmlrpc_registry_process_call(env, registry, NULL,
-					    xmlrpc_mem_block_contents(call),
-					    xmlrpc_mem_block_size(call));
+                                            xmlrpc_mem_block_contents(call),
+                                            xmlrpc_mem_block_size(call));
     TEST_NO_FAULT(env);
     TEST(response != NULL);
 
     /* Parse the response. */
     value = xmlrpc_parse_response(env, xmlrpc_mem_block_contents(response),
-				  xmlrpc_mem_block_size(response));
+                                  xmlrpc_mem_block_size(response));
 
     xmlrpc_mem_block_free(call);
     xmlrpc_mem_block_free(response);
@@ -1449,15 +1452,15 @@ static void test_method_registry (void)
 
     /* Add some test methods. */
     xmlrpc_registry_add_method(&env, registry, NULL, "test.foo",
-			       test_foo, FOO_USER_DATA);
+                               test_foo, FOO_USER_DATA);
     TEST_NO_FAULT(&env);
     xmlrpc_registry_add_method(&env, registry, NULL, "test.bar",
-			       test_bar, BAR_USER_DATA);
+                               test_bar, BAR_USER_DATA);
     TEST_NO_FAULT(&env);
 
     /* Build an argument array for our calls. */
     arg_array = xmlrpc_build_value(&env, "(ii)",
-				   (xmlrpc_int32) 25, (xmlrpc_int32) 17); 
+                                   (xmlrpc_int32) 25, (xmlrpc_int32) 17); 
     TEST_NO_FAULT(&env);
 
     /* Call test.foo and check the result. */
@@ -1487,37 +1490,37 @@ static void test_method_registry (void)
 
     /* Test system.multicall. */
     multi = xmlrpc_build_value(&env,
-			       "(({s:s,s:V}{s:s,s:V}{s:s,s:V}"
-			       "{s:s,s:()}s{}{s:s,s:V}))",
-			       "methodName", "test.foo",
-			       "params", arg_array,
-			       "methodName", "test.bar",
-			       "params", arg_array,
-			       "methodName", "test.nosuch",
-			       "params", arg_array,
-			       "methodName", "system.multicall",
-			       "params",
-			       "bogus_entry",
-			       "methodName", "test.foo",
-			       "params", arg_array);
+                               "(({s:s,s:V}{s:s,s:V}{s:s,s:V}"
+                               "{s:s,s:()}s{}{s:s,s:V}))",
+                               "methodName", "test.foo",
+                               "params", arg_array,
+                               "methodName", "test.bar",
+                               "params", arg_array,
+                               "methodName", "test.nosuch",
+                               "params", arg_array,
+                               "methodName", "system.multicall",
+                               "params",
+                               "bogus_entry",
+                               "methodName", "test.foo",
+                               "params", arg_array);
     TEST_NO_FAULT(&env);    
     value = process_call_helper(&env, registry, "system.multicall", multi);
     TEST_NO_FAULT(&env);
     xmlrpc_parse_value(&env, value,
-		       "((i){s:i,s:s,*}{s:i,s:s,*}"
-		       "{s:i,s:s,*}{s:i,s:s,*}{s:i,s:s,*}(i))",
-		       &foo1_result,
-		       "faultCode", &bar_code,
-		       "faultString", &bar_string,
-		       "faultCode", &nosuch_code,
-		       "faultString", &nosuch_string,
-		       "faultCode", &multi_code,
-		       "faultString", &multi_string,
-		       "faultCode", &bogus1_code,
-		       "faultString", &bogus1_string,
-		       "faultCode", &bogus2_code,
-		       "faultString", &bogus2_string,
-		       &foo2_result);
+                       "((i){s:i,s:s,*}{s:i,s:s,*}"
+                       "{s:i,s:s,*}{s:i,s:s,*}{s:i,s:s,*}(i))",
+                       &foo1_result,
+                       "faultCode", &bar_code,
+                       "faultString", &bar_string,
+                       "faultCode", &nosuch_code,
+                       "faultString", &nosuch_string,
+                       "faultCode", &multi_code,
+                       "faultString", &multi_string,
+                       "faultCode", &bogus1_code,
+                       "faultString", &bogus1_string,
+                       "faultCode", &bogus2_code,
+                       "faultString", &bogus2_string,
+                       &foo2_result);
     TEST_NO_FAULT(&env);    
     TEST(foo1_result == 42);
     TEST(bar_code == 123);
@@ -1533,12 +1536,12 @@ static void test_method_registry (void)
     ** test suites, this lets us skip tests for invalid XML-RPC data.) */
     xmlrpc_env_init(&env2);
     response = xmlrpc_registry_process_call(&env, registry, NULL,
-					    expat_error_data,
-					    strlen(expat_error_data));
+                                            expat_error_data,
+                                            strlen(expat_error_data));
     TEST_NO_FAULT(&env);
     TEST(response != NULL);
     value = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(response),
-				  xmlrpc_mem_block_size(response));
+                                  xmlrpc_mem_block_size(response));
     TEST(value == NULL);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_PARSE_ERROR);
@@ -1547,7 +1550,7 @@ static void test_method_registry (void)
 
     /* Test default method support. */
     xmlrpc_registry_set_default_method(&env, registry, &test_default,
-				       FOO_USER_DATA);
+                                       FOO_USER_DATA);
     TEST_NO_FAULT(&env);
     value = process_call_helper(&env, registry, "test.nosuch", arg_array);
     TEST_NO_FAULT(&env);
@@ -1559,7 +1562,7 @@ static void test_method_registry (void)
 
     /* Change the default method. */
     xmlrpc_registry_set_default_method(&env, registry, &test_default,
-				       BAR_USER_DATA);
+                                       BAR_USER_DATA);
     TEST_NO_FAULT(&env);
     
     /* Test cleanup code (w/memprof). */
@@ -1593,7 +1596,7 @@ static void test_nesting_limit (void)
     /* Reset the default limit. */
     xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, XMLRPC_NESTING_LIMIT_DEFAULT);
     TEST(xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID)
-	 == XMLRPC_NESTING_LIMIT_DEFAULT);
+         == XMLRPC_NESTING_LIMIT_DEFAULT);
 
     xmlrpc_env_clean(&env);
 }
@@ -1615,7 +1618,7 @@ static void test_xml_size_limit (void)
     /* Attempt to parse a call. */
     xmlrpc_env_init(&env);
     xmlrpc_parse_call(&env, serialized_call, strlen(serialized_call),
-		      &method_name, &params);
+                      &method_name, &params);
     TEST(env.fault_occurred);
     TEST(env.fault_code == XMLRPC_LIMIT_EXCEEDED_ERROR);
     TEST(method_name == NULL);
@@ -1645,14 +1648,10 @@ static void test_xml_size_limit (void)
 **  supported encodings, etc.
 */
 
-#define FILE_PREFIX \
-    ".." PATH_SEPARATOR TOP_SRCDIR PATH_SEPARATOR \
-    "src" PATH_SEPARATOR "testdata" PATH_SEPARATOR
-
 static char *good_requests[] = {
-    FILE_PREFIX "req_out_of_order.xml",
-    FILE_PREFIX "req_no_params.xml",
-    FILE_PREFIX "req_value_name.xml",
+    TESTDATADIR DIRECTORY_SEPARATOR "req_out_of_order.xml",
+    TESTDATADIR DIRECTORY_SEPARATOR "req_no_params.xml",
+    TESTDATADIR DIRECTORY_SEPARATOR "req_value_name.xml",
     NULL
 };
 
@@ -1669,12 +1668,12 @@ read_file (char *path, char **out_data, size_t *out_size)
     /* Open the file. */
     f = fopen(path, "r");
     if (f == NULL) {
-	/* Since this error is fairly likely to happen, give an
-	** informative error message... */
-	fflush(stdout);
-	perror("\n" __FILE__);
-	fprintf(stderr, "Could not open file \"%s\".\n", path);
-	exit(1);
+        /* Since this error is fairly likely to happen, give an
+        ** informative error message... */
+        fflush(stdout);
+        fprintf(stderr, "Could not open file '%s'.  errno=%d (%s)\n", 
+                path, errno, strerror(errno));
+        exit(1);
     }
     
     /* Read in one buffer full of data, and make sure that everything
@@ -1702,12 +1701,12 @@ static void test_sample_files (void)
 
     /* Test our good requests. */
     for (paths = good_requests; *paths != NULL; paths++) {
-	path = *paths;
-	read_file(path, &data, &data_len);
-	xmlrpc_parse_call(&env, data, data_len, &method_name, &params);
-	TEST_NO_FAULT(&env);
-	free(method_name);
-	xmlrpc_DECREF(params);
+        path = *paths;
+        read_file(path, &data, &data_len);
+        xmlrpc_parse_call(&env, data, data_len, &method_name, &params);
+        TEST_NO_FAULT(&env);
+        free(method_name);
+        xmlrpc_DECREF(params);
     }
 
     xmlrpc_env_clean(&env);
@@ -1815,11 +1814,11 @@ int wcsncmp(wchar_t *wcs1, wchar_t* wcs2, size_t len)
     /* XXX - 'unsigned long' should be 'uwchar_t'. */
     unsigned long c1, c2;
     for (i=0; i < len; i++) {
-	c1 = wcs1[i];
-	c2 = wcs2[i];
-	/* This clever comparison borrowed from the GNU C Library. */
-	if (c1 == 0 || c1 != c2)
-	    return c1 - c2;
+        c1 = wcs1[i];
+        c2 = wcs2[i];
+        /* This clever comparison borrowed from the GNU C Library. */
+        if (c1 == 0 || c1 != c2)
+            return c1 - c2;
     }
     return 0;
 }
@@ -1839,53 +1838,53 @@ static void test_utf8_coding (void)
 
     /* Test each of our valid UTF-8 sequences. */
     for (good_data = good_utf8; good_data->utf8 != NULL; good_data++) {
-	utf8 = good_data->utf8;
-	wcs = good_data->wcs;
+        utf8 = good_data->utf8;
+        wcs = good_data->wcs;
 
-	/* Attempt to validate the UTF-8 string. */
-	xmlrpc_validate_utf8(&env, utf8, strlen(utf8));
-	TEST_NO_FAULT(&env);
+        /* Attempt to validate the UTF-8 string. */
+        xmlrpc_validate_utf8(&env, utf8, strlen(utf8));
+        TEST_NO_FAULT(&env);
 
-	/* Attempt to decode the UTF-8 string. */
-	output = xmlrpc_utf8_to_wcs(&env, utf8, strlen(utf8));
-	TEST_NO_FAULT(&env);
-	TEST(output != NULL);
-	TEST(wcslen(wcs) == XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, output));
-	TEST(0 ==
-	     wcsncmp(wcs, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, output),
-		     wcslen(wcs)));
-	xmlrpc_mem_block_free(output);
+        /* Attempt to decode the UTF-8 string. */
+        output = xmlrpc_utf8_to_wcs(&env, utf8, strlen(utf8));
+        TEST_NO_FAULT(&env);
+        TEST(output != NULL);
+        TEST(wcslen(wcs) == XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, output));
+        TEST(0 ==
+             wcsncmp(wcs, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, output),
+                     wcslen(wcs)));
+        xmlrpc_mem_block_free(output);
 
-	/* Test the UTF-8 encoder, too. */
-	output = xmlrpc_wcs_to_utf8(&env, wcs, wcslen(wcs));
-	TEST_NO_FAULT(&env);
-	TEST(output != NULL);
-	TEST(strlen(utf8) == XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output));
-	TEST(0 ==
-	     strncmp(utf8, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
-		     strlen(utf8)));
-	xmlrpc_mem_block_free(output);
+        /* Test the UTF-8 encoder, too. */
+        output = xmlrpc_wcs_to_utf8(&env, wcs, wcslen(wcs));
+        TEST_NO_FAULT(&env);
+        TEST(output != NULL);
+        TEST(strlen(utf8) == XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output));
+        TEST(0 ==
+             strncmp(utf8, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
+                     strlen(utf8)));
+        xmlrpc_mem_block_free(output);
     }
 
     /* Test each of our illegal UTF-8 sequences. */
     for (bad_data = bad_utf8; *bad_data != NULL; bad_data++) {
-	utf8 = *bad_data;
-	
-	/* Attempt to validate the UTF-8 string. */
-	xmlrpc_env_init(&env2);
-	xmlrpc_validate_utf8(&env2, utf8, strlen(utf8));
-	TEST(env2.fault_occurred);
-	TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
-	/* printf("Fault: %s\n", env2.fault_string); --Hand-checked */
-	xmlrpc_env_clean(&env2);
+        utf8 = *bad_data;
+    
+        /* Attempt to validate the UTF-8 string. */
+        xmlrpc_env_init(&env2);
+        xmlrpc_validate_utf8(&env2, utf8, strlen(utf8));
+        TEST(env2.fault_occurred);
+        TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
+        /* printf("Fault: %s\n", env2.fault_string); --Hand-checked */
+        xmlrpc_env_clean(&env2);
 
-	/* Attempt to decode the UTF-8 string. */
-	xmlrpc_env_init(&env2);
-	output = xmlrpc_utf8_to_wcs(&env2, utf8, strlen(utf8));
-	TEST(env2.fault_occurred);
-	TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
-	TEST(output == NULL);
-	xmlrpc_env_clean(&env2);
+        /* Attempt to decode the UTF-8 string. */
+        xmlrpc_env_init(&env2);
+        output = xmlrpc_utf8_to_wcs(&env2, utf8, strlen(utf8));
+        TEST(env2.fault_occurred);
+        TEST(env2.fault_code == XMLRPC_INVALID_UTF8_ERROR);
+        TEST(output == NULL);
+        xmlrpc_env_clean(&env2);
     }
 
     xmlrpc_env_clean(&env);
@@ -1951,8 +1950,15 @@ static void test_wchar_support (void)
 **=========================================================================
 */
 
-int main (int argc, char** argv)
-{
+int 
+main(int     argc, 
+     char ** argv ATTR_UNUSED) {
+
+    if (argc-1 > 0) {
+        fprintf(stderr, "There are no arguments.");
+        exit(1);
+    }
+
     /* Add your test suites here. */
     test_env();
     test_mem_block();
@@ -1977,13 +1983,13 @@ int main (int argc, char** argv)
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",
-	   total_tests, total_failures,
-	   100.0 - (100.0 * total_failures) / total_tests);
+           total_tests, total_failures,
+           100.0 - (100.0 * total_failures) / total_tests);
 
     /* Print the final result. */
     if (total_failures == 0) {
-	printf("OK\n");
-	return 0;
+        printf("OK\n");
+        return 0;
     }
 
     printf("FAILED\n");

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT(src/xmlrpc.h)
-AM_CONFIG_HEADER(xmlrpc_config.h)
+AM_CONFIG_HEADER(xmlrpc_amconfig.h)
 
 dnl =======================================================================
 dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
@@ -18,11 +18,8 @@ AC_SUBST(VERSION_INFO)
 
 dnl Get our host type.
 AC_CANONICAL_HOST
-AC_DEFINE_UNQUOTED(XMLRPC_HOST_TYPE,"$host")
-
-dnl Get our source directory (so our test suites will work).
-AC_DEFINE_UNQUOTED(TOP_SRCDIR,"$srcdir")
-
+XMLRPC_HOST_TYPE=$host
+AC_SUBST(XMLRPC_HOST_TYPE)
 
 dnl We need this to compensate for an incompatibility between autoconf
 dnl and our libtool.  autoconf generates an invalid ltconfig command
@@ -278,8 +275,14 @@ AC_MSG_CHECKING(whether va_list is an array)
 AC_TRY_COMPILE([
 #include <stdarg.h>
 ], [va_list list1, list2; list1 = list2;], , 
-AC_DEFINE(VA_LIST_IS_ARRAY) va_list_is_array=yes)
+va_list_is_array=yes)
 AC_MSG_RESULT($va_list_is_array)
+if test x"$va_list_is_array" = xyes; then
+  VA_LIST_IS_ARRAY_DEFINE=1
+else
+  VA_LIST_IS_ARRAY_DEFINE=0
+fi
+AC_SUBST(VA_LIST_IS_ARRAY_DEFINE)
 
 dnl See if the compiler supports __attribute__ gracefully.
 AC_MSG_CHECKING(whether compiler supports __attribute__)
@@ -292,7 +295,7 @@ if test x"$compiler_supports_attribute" = xyes; then
 else
     ATTR_UNUSED=
 fi
-AC_DEFINE_UNQUOTED(ATTR_UNUSED, $ATTR_UNUSED)
+AC_SUBST(ATTR_UNUSED)
 
 
 dnl =======================================================================
@@ -320,16 +323,15 @@ AC_MSG_RESULT($enable_unicode)
 
 dnl Do all the work...
 if test x"$enable_unicode" != xno; then
-    ENABLE_UNICODE=1
-    AC_DEFINE(HAVE_UNICODE_WCHAR)
+    HAVE_UNICODE_WCHAR_DEFINE=1
 
     dnl Unicode function needed by test suites.
     AC_CHECK_FUNCS(wcsncmp)
 else
-    ENABLE_UNICODE=0
+    HAVE_UNICODE_WCHAR_DEFINE=0
 fi
 
-AC_SUBST(ENABLE_UNICODE)
+AC_SUBST(HAVE_UNICODE_WCHAR_DEFINE)
 
 dnl =======================================================================
 dnl Checks for operating system features.
@@ -337,7 +339,8 @@ dnl =======================================================================
 
 dnl Non-Unix systems will need to set up their platform configuration file
 dnl by hand.
-AC_DEFINE(PATH_SEPARATOR, "/")
+DIRECTORY_SEPARATOR="/"
+AC_SUBST(DIRECTORY_SEPARATOR)
 
 
 dnl =======================================================================
@@ -373,8 +376,6 @@ dnl If you implement the parts of wininet.h the wininet_transport uses,
 dnl you will need to configure this way..
 
 if test x"$enable_wininet_client" != xno; then
-
-    AC_DEFINE(ENABLE_WININET_CLIENT)
 
     dnl You can control which of these gets chosen by fooling around with PATH.
     AC_PATH_PROGS(WININET_CONFIG, wininet-xmlrpc-config wininet-config, no)
@@ -450,8 +451,6 @@ dnl for keeping track of libwww's rpath, although this is no longer really
 dnl necessary.
 
 if test x"$enable_libwww_client" != xno; then
-
-    AC_DEFINE(ENABLE_LIBWWW_CLIENT)
 
     dnl First of all, locate the semi-broken libwww config program.
     dnl You can control which of these gets chosen by fooling around with PATH.
@@ -534,8 +533,6 @@ dnl Modified from libwww_client requirements.
 
 if test x"$enable_curl_client" != xno; then
 
-    AC_DEFINE(ENABLE_CURL_CLIENT)
-
     dnl First of all, locate the curl config program.
     dnl You can control which of these gets chosen by fooling around with PATH.
     AC_PATH_PROGS(CURL_CONFIG, curl-xmlrpc-config curl-config, no)
@@ -616,11 +613,13 @@ if test x"$enable_libwww_client" != xno; then
     AC_MSG_CHECKING(whether to use SSL with libwww)
     if test x"$with_libwww_ssl" = xyes; then
         AC_MSG_RESULT(yes)
-        AC_DEFINE(HAVE_LIBWWW_SSL)
+        HAVE_LIBWWW_SSL_DEFINE=1
     else
         AC_MSG_RESULT(no)
+        HAVE_LIBWWW_SSL_DEFINE=0
     fi
 fi
+AC_SUBST(HAVE_LIBWWW_SSL_DEFINE)
 
 AC_ARG_ENABLE(efence,
   [  --enable-efence         Enable malloc/free debugging with Bruce Perens\'
@@ -659,6 +658,7 @@ dnl =======================================================================
 
 AC_OUTPUT(xmlrpc-c-config \
           Makefile.config \
+          xmlrpc_config.h \
           Makefile \
           xmlrpc-c.spec \
           src/Makefile \

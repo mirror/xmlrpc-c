@@ -1,18 +1,14 @@
 /* A CGI which implements all of the test functions need for an interop
 ** endpoint. */
 
-/* Get PACKAGE, XMLRPC_C_VERSION and XMLRPC_HOST_TYPE from the source tree.
-** The config headers won't be available to regular applications, so you'll
-** need to define these macros yourself if you build outside the tree. */
-#ifndef HAVE_WIN32_CONFIG_H
-#include "xmlrpc_config.h"
-#else
-#include "xmlrpc_win32_config.h"
-#endif
+#include <sys/utsname.h>
+#include <errno.h>
+#include <string.h>
 
-#include "version.h"
 #include <xmlrpc.h>
 #include <xmlrpc_cgi.h>
+
+#include "version.h"
 
 #include "config.h"  /* information about this build environment */
 
@@ -27,19 +23,37 @@ whichToolkit(xmlrpc_env *   const env,
              xmlrpc_value * const param_array, 
              void *         const user_data ATTR_UNUSED) {
 
+    xmlrpc_value * retval;
+
     /* Parse our argument array. */
     xmlrpc_parse_value(env, param_array, "()");
     if (env->fault_occurred)
-	return NULL;
+        retval = NULL;
+    else {
+        struct utsname utsname;
 
-    /* Assemble our result. */
-    return xmlrpc_build_value(env, "{s:s,s:s,s:s,s:s}",
-			      "toolkitDocsUrl",
-			      "http://xmlrpc-c.sourceforge.net/",
-			      "toolkitName", PACKAGE,
-			      "toolkitVersion", XMLRPC_C_VERSION"+",
-			      "toolkitOperatingSystem", XMLRPC_HOST_TYPE);
+        int rc;
+        rc = uname(&utsname);
+        if (rc != 0) {
+            xmlrpc_env_set_fault_formatted(env, XMLRPC_INTERNAL_ERROR,
+                                           "uname() failed.  errno=%d (%s)",
+                                           errno, strerror(errno));
+            retval = NULL;
+        } else {
+            /* Assemble our result. */
+            retval = xmlrpc_build_value(env, "{s:s,s:s,s:s,s:s}",
+                                        "toolkitDocsUrl",
+                                        "http://xmlrpc-c.sourceforge.net/",
+                                        "toolkitName", PACKAGE,
+                                        "toolkitVersion", XMLRPC_C_VERSION"+",
+                                        "toolkitOperatingSystem", 
+                                        utsname.sysname);
+        }
+    }
+    return retval;
 }
+
+
 
 static char whichToolkit_help[] =
 "Identify the toolkit used to implement this server.  The operating system "
@@ -61,7 +75,7 @@ noInParams(xmlrpc_env *   const env,
     /* Parse our argument array. */
     xmlrpc_parse_value(env, param_array, "()");
     if (env->fault_occurred)
-	return NULL;
+        return NULL;
 
     /* Assemble our result. */
     return xmlrpc_build_value(env, "i", (xmlrpc_int32) 0);
@@ -88,7 +102,7 @@ echoValue(xmlrpc_env *   const env,
     /* Parse our argument array. */
     xmlrpc_parse_value(env, param_array, "(V)", &val);
     if (env->fault_occurred)
-	return NULL;
+        return NULL;
 
     /* Create a new reference (because both our parameter list and our
     ** return value will be DECREF'd when we return). */

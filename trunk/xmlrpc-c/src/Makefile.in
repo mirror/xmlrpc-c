@@ -181,10 +181,6 @@ libxmlrpc_cgi_la_LDFLAGS = @VERSION_INFO@ -rpath $(libdir)
 # A library containing our C++ wrappers.
 libxmlrpc_cpp_a_SOURCES = XmlRpcCpp.cc
 
-# The test suites for the XML-RPC core.
-rpctest_SOURCES = rpctest.c 
-rpctest_LDADD = libxmlrpc.la $(LIBXML)
-
 # The test suites for the XML-RPC core w/Electric Fence.
 efrpctest_SOURCES = rpctest.c 
 efrpctest_LDADD = libxmlrpc.la $(LIBXML) -lefence
@@ -233,11 +229,6 @@ efrpctest_DEPENDENCIES =  libxmlrpc.la \
 ../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
 ../lib/expat/xmltok/libxmlrpc_xmltok.la
 efrpctest_LDFLAGS = 
-rpctest_OBJECTS =  rpctest.o
-rpctest_DEPENDENCIES =  libxmlrpc.la \
-../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-../lib/expat/xmltok/libxmlrpc_xmltok.la
-rpctest_LDFLAGS = 
 SCRIPTS =  $(noinst_SCRIPTS)
 
 CXXFLAGS = @CXXFLAGS@
@@ -258,8 +249,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-SOURCES = $(libxmlrpc_cpp_a_SOURCES) $(libxmlrpc_abyss_server_la_SOURCES) $(libxmlrpc_cgi_la_SOURCES) $(libxmlrpc_la_SOURCES) $(cpptest_SOURCES) $(efrpctest_SOURCES) $(rpctest_SOURCES)
-OBJECTS = $(libxmlrpc_cpp_a_OBJECTS) $(libxmlrpc_abyss_server_la_OBJECTS) $(libxmlrpc_cgi_la_OBJECTS) $(libxmlrpc_la_OBJECTS) $(cpptest_OBJECTS) $(efrpctest_OBJECTS) $(rpctest_OBJECTS)
+SOURCES = $(libxmlrpc_cpp_a_SOURCES) $(libxmlrpc_abyss_server_la_SOURCES) $(libxmlrpc_cgi_la_SOURCES) $(libxmlrpc_la_SOURCES) $(cpptest_SOURCES) $(efrpctest_SOURCES)
+OBJECTS = $(libxmlrpc_cpp_a_OBJECTS) $(libxmlrpc_abyss_server_la_OBJECTS) $(libxmlrpc_cgi_la_OBJECTS) $(libxmlrpc_la_OBJECTS) $(cpptest_OBJECTS) $(efrpctest_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
@@ -370,7 +361,7 @@ uninstall-libLTLIBRARIES:
 	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
 	done
 
-libxmlrpc_client.la: FORCE
+libxmlrpc_client.la rpctest rpctest.o xmlrpc_client.lo: FORCE
 	$(MAKE) -f Makefile2 $@
 
 libxmlrpc_abyss_server.la: $(libxmlrpc_abyss_server_la_OBJECTS) $(libxmlrpc_abyss_server_la_DEPENDENCIES)
@@ -399,9 +390,6 @@ efrpctest: $(efrpctest_OBJECTS) $(efrpctest_DEPENDENCIES)
 	@rm -f efrpctest
 	$(LINK) $(efrpctest_LDFLAGS) $(efrpctest_OBJECTS) $(efrpctest_LDADD) $(LIBS)
 
-rpctest: $(rpctest_OBJECTS) $(rpctest_DEPENDENCIES)
-	@rm -f rpctest
-	$(LINK) $(rpctest_LDFLAGS) $(rpctest_OBJECTS) $(rpctest_LDADD) $(LIBS)
 .cc.o:
 	$(CXXCOMPILE) -c $<
 .cc.lo:
@@ -539,14 +527,13 @@ distdir: $(DISTFILES)
 XmlRpcCpp.o: XmlRpcCpp.cc XmlRpcCpp.h xmlrpc.h xmlrpc_client.h
 cgi-scratch.o: cgi-scratch.c
 cpptest.o: cpptest.cc XmlRpcCpp.h xmlrpc.h xmlrpc_client.h
-rpctest.o: rpctest.c ../xmlrpc_config.h xmlrpc.h xmlrpc_xmlparser.h
 xmlrpc_abyss.lo xmlrpc_abyss.o : xmlrpc_abyss.c ../xmlrpc_config.h \
 	xmlrpc.h ../lib/abyss/src/abyss.h xmlrpc_abyss.h
 xmlrpc_base64.lo xmlrpc_base64.o : xmlrpc_base64.c ../xmlrpc_config.h \
 	xmlrpc.h
 xmlrpc_cgi.lo xmlrpc_cgi.o : xmlrpc_cgi.c ../xmlrpc_config.h xmlrpc.h \
 	xmlrpc_cgi.h
-xmlrpc_client.lo xmlrpc_client.o : xmlrpc_client.c ../xmlrpc_config.h \
+xmlrpc_client.o : xmlrpc_client.c ../xmlrpc_config.h \
 	xmlrpc.h xmlrpc_client.h ../lib/expat/xmlparse/xmlparse.h
 xmlrpc_data.lo xmlrpc_data.o : xmlrpc_data.c ../xmlrpc_config.h xmlrpc.h
 xmlrpc_expat.lo xmlrpc_expat.o : xmlrpc_expat.c ../xmlrpc_config.h \

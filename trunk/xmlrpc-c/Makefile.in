@@ -115,7 +115,7 @@ EXTRA_DIST = NEWS BUGS CREDITS PORTING REFACTORINGS TESTING SECURITY 	     GETTI
 bin_SCRIPTS = xmlrpc-c-config
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
-CONFIG_HEADER = xmlrpc_config.h
+CONFIG_HEADER = xmlrpc_amconfig.h
 CONFIG_CLEAN_FILES =  xmlrpc-c-config xmlrpc-c.spec
 SCRIPTS =  $(bin_SCRIPTS)
 
@@ -149,7 +149,7 @@ xmlrpc_config.h: stamp-h
 	else :; fi
 stamp-h: $(srcdir)/xmlrpc_config.h.in $(top_builddir)/config.status
 	cd $(top_builddir) \
-	  && CONFIG_FILES= CONFIG_HEADERS=xmlrpc_config.h \
+	  && CONFIG_FILES= CONFIG_HEADERS=xmlrpc_amconfig.h \
 	     $(SHELL) ./config.status
 	@echo timestamp > stamp-h 2> /dev/null
 
@@ -158,7 +158,7 @@ mostlyclean-hdr:
 clean-hdr:
 
 distclean-hdr:
-	-rm -f xmlrpc_config.h
+	-rm -f xmlrpc_config.h xmlrpc_amconfig.h
 
 maintainer-clean-hdr:
 xmlrpc-c-config: $(top_builddir)/config.status xmlrpc-c-config.in

@@ -51,7 +51,7 @@ typedef double va_double;
 ** tricky fashions. We don't why Python does this, but since we're
 ** abusing our va_list objects in a similar fashion, we'll copy them
 ** too. */
-#ifdef VA_LIST_IS_ARRAY
+#if VA_LIST_IS_ARRAY
 #define VA_LIST_COPY(dest,src) memcpy((dest), (src), sizeof(va_list))
 #else
 #define VA_LIST_COPY(dest,src) ((dest) = (src))
