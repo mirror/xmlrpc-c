@@ -1,3 +1,5 @@
+# -*-makefile-*-    <-- an Emacs control
+
 CLIENT_LDFLAGS =
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   CLIENT_LDFLAGS += $(shell libwww-config --libs)
@@ -31,6 +33,9 @@ UTIL_DIR = $(BUILDDIR)/lib/util
 BUILDABLE_UTILS = casprintf.o cmdline_parser.o
 
 $(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+$(XMLRPC_LIBS): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 include $(SRCDIR)/Makefile.common
