@@ -39,4 +39,4 @@ clean: clean-common
 	rm -f xmlrpc config.h
 
 .PHONY: distclean
-distclean: clean
+distclean: clean distclean-common

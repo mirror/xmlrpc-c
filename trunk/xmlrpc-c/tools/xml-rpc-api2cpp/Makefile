@@ -42,7 +42,7 @@ clean: clean-common
 	rm -f xml-rpc-api2cpp
 
 .PHONY: distclean
-distclean: clean
+distclean: clean distclean-common
 
 .PHONY: dep
 dep: dep-common

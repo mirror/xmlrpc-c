@@ -44,7 +44,8 @@ SERVERPROGS_ABYSS = \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
-PROGS = $(CLIENTPROGS_C) $(SERVERPROGS_ABYSS) gen_sample_add_xml
+PROGS = $(CLIENTPROGS_C) $(SERVERPROGS_ABYSS) $(SERVERPROGS_CGI) \
+  gen_sample_add_xml
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   PROGS += $(CLIENTPROGS_CPP) 

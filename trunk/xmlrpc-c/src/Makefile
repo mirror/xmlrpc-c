@@ -201,13 +201,18 @@ check: rpctest cpptest
 	  ./$$tst; \
 	done;
 
+.PHONY: install
 install: install-common
 
+.PHONY: clean clean-local distclean
 clean: clean-common clean-local
 clean-local:
 	rm -f transport_config.h
 	rm -f $(TARGET_TESTPROGS)
 
+distclean: clean distclean-common
+
+.PHONY: dep
 dep: dep-common
 
 include $(SRCDIR)/Makefile.common

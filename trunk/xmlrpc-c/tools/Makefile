@@ -8,13 +8,15 @@ include $(SRCDIR)/Makefile.config
 
 SUBDIRS = binmode-rpc-kit turbocharger xml-rpc-api2cpp xmlrpc
 
-.PHONY: all clean install
+.PHONY: all clean distclean install dep
 
 all: $(SUBDIRS:%=%/all)
 
-clean: $(SUBDIRS:%=%/all)
+clean: $(SUBDIRS:%=%/clean)
 
-install: $(SUBDIRS:%=%/all)
+distclean: $(SUBDIRS:%=%/distclean)
+
+install: $(SUBDIRS:%=%/install)
 
 dep: $(SUBDIRS:%=%/dep)
 
