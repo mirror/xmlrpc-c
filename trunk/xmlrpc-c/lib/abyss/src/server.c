@@ -784,7 +784,8 @@ void ServerRun(TServer *srv)
    processed the request!
 */
 
-void ServerRunOnce(TServer *srv)
+void ServerRunOnce2(TServer *           const srv,
+                    enum abyss_foreback const foregroundBackground)
 {
       TConn connection;
       TSocket listenSocket;
@@ -802,9 +803,10 @@ void ServerRunOnce(TServer *srv)
       
       succeeded = SocketAccept(&listenSocket, &connectedSocket, &remoteAddr);
       if (succeeded) {
-          abyss_bool parent;
-          parent = ConnCreate(&connection, &connectedSocket, &ServerFunc);
-          if (parent)
+          abyss_bool success;
+          success = ConnCreate2(&connection, &connectedSocket, &ServerFunc,
+                                foregroundBackground);
+          if (success)
               ConnProcess(&connection);
           else
               SocketClose(&connectedSocket);
@@ -812,7 +814,10 @@ void ServerRunOnce(TServer *srv)
           TraceMsg("Socket Error=%d\n", SocketError());
 }
 
-
+void ServerRunOnce(TServer *srv)
+{
+    ServerRunOnce2(srv, ABYSS_BACKGROUND);
+}
 
 abyss_bool ServerAddHandler(TServer *srv,URIHandler handler)
 {

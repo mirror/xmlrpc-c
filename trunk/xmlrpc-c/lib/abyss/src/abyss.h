@@ -489,7 +489,13 @@ typedef struct _TConn
 TConn *ConnAlloc(void);
 void ConnFree(TConn *c);
 
+enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
+
 abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *));
+abyss_bool ConnCreate2(TConn *             const connection, 
+                       TSocket *           const listenSocketP,
+                       void            ( *       func)(TConn *),
+                       enum abyss_foreback const foregroundBackground);
 abyss_bool ConnProcess(TConn *c);
 abyss_bool ConnKill(TConn *c);
 
@@ -643,6 +649,8 @@ void ServerFree(TServer *srv);
 void ServerInit(TServer *srv);
 void ServerRun(TServer *srv);
 void ServerRunOnce(TServer *srv);
+void ServerRunOnce2(TServer *           const srv,
+                    enum abyss_foreback const foregroundBackground);
 
 abyss_bool ServerAddHandler(TServer *srv,URIHandler handler);
 void ServerDefaultHandler(TServer *srv,URIHandler handler);
