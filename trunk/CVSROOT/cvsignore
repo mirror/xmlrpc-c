@@ -2,4 +2,6 @@
 *.la 
 .deps 
 .libs
+*.s
+*.i
 Makefile.depend
