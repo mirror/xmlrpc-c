@@ -1,4 +1,5 @@
-(BJH means Bryan Henderson <bryanh@giraffe-data.com>)
+﻿(BJH means Bryan Henderson <bryanh@giraffe-data.com>)
+(SAB means Steven A. Bone <sbone@pobox.com>)
 
 1.2 - not yet
 
@@ -15,10 +16,19 @@
   * BJH: Fix memory leak in Curl - not freeing curlTransaction.
 
   * BJH: Add nil (<nil/>, XMLRPC_TYPE_NIL) capability.
+  
+  * SAB: WinInet Transport: Fix bad authentication header.
+  
+  * SAB: WinInet Transport: Add Ignore Invalid SSL certs option.
+  
+  * SAB: Win32 http.sys server: Added new project and sample as 
+    an alternative to Abyss on current Win32 platforms.  Supports
+    basic authentication and SSL.  Requires recent Platform SDK to
+    build.
 
 1.1 - January 8, 2005
 
-  * Steve Bone: Windows works again; new build strategy.
+  * SAB: Windows works again; new build strategy.
 
   * BJH: Abyss:  Add ConnCreate2() with foreground capability.
 
