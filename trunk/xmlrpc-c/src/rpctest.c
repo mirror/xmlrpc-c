@@ -875,6 +875,61 @@ test_value_array2(void) {
 
 
 static void
+test_value_array_nil(void) {
+
+    xmlrpc_value * arrayP;
+    xmlrpc_env env;
+    xmlrpc_int32 i1, i2;
+    xmlrpc_value * itemP;
+    size_t len;
+
+    xmlrpc_env_init(&env);
+
+    arrayP = xmlrpc_build_value(&env, "(nini)",
+                                (xmlrpc_int32) 10, (xmlrpc_int32) 20);
+    TEST_NO_FAULT(&env);
+    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(arrayP));
+
+    len = xmlrpc_array_size(&env, arrayP);
+    TEST_NO_FAULT(&env);
+    TEST(len == 4);
+
+    itemP = xmlrpc_array_get_item(&env, arrayP, 0);
+    TEST_NO_FAULT(&env);
+    xmlrpc_parse_value(&env, itemP, "n");
+    TEST_NO_FAULT(&env);
+
+    itemP = xmlrpc_array_get_item(&env, arrayP, 1);
+    TEST_NO_FAULT(&env);
+    {
+        int i;
+        xmlrpc_parse_value(&env, itemP, "i", &i);
+        TEST_NO_FAULT(&env);
+        TEST(i == 10);
+    }
+    xmlrpc_parse_value(&env, arrayP, "(nini)", &i1, &i2);
+    TEST_NO_FAULT(&env);
+    TEST(i1 == 10 && i2 == 20);
+
+    /* Test bounds check on xmlrpc_array_get_item. */
+    xmlrpc_array_read_item(&env, arrayP, 4, &itemP);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    xmlrpc_array_get_item(&env, arrayP, 4);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    xmlrpc_DECREF(arrayP);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 test_value_type_mismatch(void) {
 
     xmlrpc_value * v;
@@ -918,6 +973,26 @@ test_value_cptr(void) {
     xmlrpc_parse_value(&env, v, "p", &ptr);
     TEST_NO_FAULT(&env);
     TEST(ptr == (void*) 0x00000017);
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_nil(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_build_value(&env, "n");
+    TEST_NO_FAULT(&env);
+    TEST(XMLRPC_TYPE_NIL == xmlrpc_value_type(v));
+    xmlrpc_parse_value(&env, v, "n");
+    TEST_NO_FAULT(&env);
     xmlrpc_DECREF(v);
 
     xmlrpc_env_clean(&env);
@@ -1054,9 +1129,11 @@ static void test_value (void)
     test_value_value();
     test_value_array();
     test_value_array2();
+    test_value_array_nil();
     test_value_AS();
     test_value_AS_typecheck();
     test_value_cptr();
+    test_value_nil();
     test_value_base64();
     test_value_invalid_type();
     test_value_missing_array_delim();

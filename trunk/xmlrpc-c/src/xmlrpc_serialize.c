@@ -422,6 +422,11 @@ xmlrpc_serialize_value(xmlrpc_env *env,
             "Tried to serialize a C pointer value.");
         break;
 
+    case XMLRPC_TYPE_NIL:
+        format_out(env, output, "<nil/>");
+        XMLRPC_FAIL_IF_FAULT(env);
+        break;
+
     case XMLRPC_TYPE_DEAD:
         xmlrpc_env_set_fault_formatted(
             env, XMLRPC_INTERNAL_ERROR,

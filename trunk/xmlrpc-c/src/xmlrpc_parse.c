@@ -48,7 +48,7 @@
 **  param          value
 **  fault          value
 **  value          (i4|int|boolean|string|double|dateTime.iso8601|base64|
-**                  struct|array)
+**                  nil|struct|array)
 **  array          data
 **  data           value*
 **  struct         member*
@@ -345,6 +345,8 @@ convert_value(xmlrpc_env *  const envP,
                 retval = xmlrpc_build_value(envP, "d", d);
             } else if (strcmp(child_name, "dateTime.iso8601") == 0) {
                 retval = xmlrpc_build_value(envP, "8", cdata);
+            } else if (strcmp(child_name, "nil") == 0) {
+                retval = xmlrpc_build_value(envP, "n");
             } else if (strcmp(child_name, "base64") == 0) {
                 /* No more tail calls once we do this! */
 

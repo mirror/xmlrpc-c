@@ -364,6 +364,7 @@ typedef enum {
     XMLRPC_TYPE_ARRAY    = 6,
     XMLRPC_TYPE_STRUCT   = 7,
     XMLRPC_TYPE_C_PTR    = 8,
+    XMLRPC_TYPE_NIL      = 9,
     XMLRPC_TYPE_DEAD     = 0xDEAD,
 } xmlrpc_type;
 

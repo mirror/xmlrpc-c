@@ -64,6 +64,9 @@ destroyValue(xmlrpc_value * const valueP) {
     case XMLRPC_TYPE_C_PTR:
         break;
 
+    case XMLRPC_TYPE_NIL:
+        break;
+
     case XMLRPC_TYPE_DEAD:
         XMLRPC_ASSERT(FALSE); /* Can't happen, per entry conditions */
 
@@ -93,8 +96,8 @@ xmlrpc_INCREF (xmlrpc_value * const valueP) {
 
     XMLRPC_ASSERT_VALUE_OK(valueP);
     XMLRPC_ASSERT(valueP->_refcount > 0);
-
-    valueP->_refcount++;
+    
+    ++valueP->_refcount;
 }
 
 
@@ -133,6 +136,7 @@ typeName(xmlrpc_type const type) {
     case XMLRPC_TYPE_ARRAY: return "ARRAY";
     case XMLRPC_TYPE_STRUCT: return "STRUCT";
     case XMLRPC_TYPE_C_PTR: return "C_PTR";
+    case XMLRPC_TYPE_NIL: return "NIL";
     case XMLRPC_TYPE_DEAD: return "DEAD";
     default: return "???";
     }
@@ -646,6 +650,22 @@ mkCPtr(xmlrpc_env *    const envP,
 
 
 static void
+mkNil(xmlrpc_env *    const envP, 
+      xmlrpc_value ** const valPP) {
+
+    xmlrpc_value * valP;
+
+    createXmlrpcValue(envP, &valP);
+
+    if (!envP->fault_occurred) {
+        valP->_type = XMLRPC_TYPE_NIL;
+    }
+    *valPP = valP;
+}
+
+
+
+static void
 mkArrayFromVal(xmlrpc_env *    const envP, 
                xmlrpc_value *  const value,
                xmlrpc_value ** const valPP) {
@@ -867,6 +887,10 @@ getValue(xmlrpc_env *    const envP,
     case '6':
         getBase64(envP, args, valPP);
         break;
+
+    case 'n':
+        mkNil(envP, valPP);
+        break;      
 
     case 'p':
         /* We might someday want to use the code 'p!' to read in a
@@ -1206,6 +1230,10 @@ parsevalue(xmlrpc_env *   const envP,
             *binptr = bin_data;
             *sizeptr = len;
         }
+        break;
+
+    case 'n':
+        validateType(envP, valueP, XMLRPC_TYPE_NIL);
         break;
 
     case 'p':
