@@ -8,12 +8,12 @@ dnl Version Numbering
 dnl =======================================================================
 
 dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.8)
+AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.9)
 
 dnl This version number needs to be changed in several *different* tricky
 dnl ways for each release. Please read the libtool documentation very
 dnl closely before touching this or making a release!
-VERSION_INFO="-version-info 5:1:2"
+VERSION_INFO="-version-info 6:0:3"
 AC_SUBST(VERSION_INFO)
 
 dnl Get the date for use in our LSM file.
@@ -164,6 +164,17 @@ dnl =======================================================================
 dnl Checks for libraries.
 dnl =======================================================================
 
+# Code by albert chin <china@thewrittenword.com> to check for various
+# oddball networking libraries.  Solaris and some other operating systems
+# hide their networking code in various places.  (Yes, this links too many
+# of our libraries against -lsocket, but a finer-grained mechanism would
+# require too much testing.)
+AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
+
+# For some reason, we don't seem to need this on Solaris.  If you do
+# need it, go ahead and try it.
+# AC_CHECK_FUNC(gethostent, , AC_CHECK_LIB(nsl, gethostent))
+
 
 dnl =======================================================================
 dnl Checks for header files.
@@ -178,6 +189,9 @@ AC_MSG_ERROR(stdarg.h is required to build this library)
 AC_CHECK_HEADERS(wchar.h, , [
 AC_MSG_ERROR(wchar.h is required to build this library)
 ])
+
+# I/O headers, needed by Abyss on Solaris.
+AC_CHECK_HEADERS(sys/filio.h sys/ioctl.h)
 
 
 dnl =======================================================================
