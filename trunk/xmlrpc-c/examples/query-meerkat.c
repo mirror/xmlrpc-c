@@ -103,6 +103,8 @@ main(int          const argc,
     /* Set up our client. */
     xmlrpc_client_init2(&env, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0);
 
+    die_if_fault_occurred(&env);
+
     /* Ask Meerkat to look for matching stories. */
     stories = xmlrpc_client_call(&env, MEERKAT_URL,
                                  "meerkat.getItems", "({s:s,s:i,s:s})",

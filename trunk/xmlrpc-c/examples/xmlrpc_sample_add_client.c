@@ -35,15 +35,16 @@ main(int           const argc,
     char * const methodName = "sample.add";
 
     if (argc-1 > 0) {
-        fprintf(stderr, "No arguments");
-        exit(0);
+        fprintf(stderr, "This program has no arguments\n");
+        exit(1);
     }
-
-    /* Start up our XML-RPC client library. */
-    xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION);
 
     /* Initialize our error-handling environment. */
     xmlrpc_env_init(&env);
+
+    /* Start up our XML-RPC client library. */
+    xmlrpc_client_init2(&env, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0);
+    die_if_fault_occurred(&env);
 
     printf("Making XMLRPC call to server url '%s' method '%s' "
            "to request the sum "

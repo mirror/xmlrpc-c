@@ -17,7 +17,7 @@ sample_add(xmlrpc_env *   const env,
     /* Parse our argument array. */
     xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
     if (env->fault_occurred)
-	return NULL;
+        return NULL;
 
     /* Add our two numbers. */
     z = x + y;

@@ -42,7 +42,7 @@ CGICLIENTPROGS = \
 
 SERVERPROGS = \
   xmlrpc_sample_add_server \
-  xmlrpc_server_validatee
+  xmlrpc_server_validatee \
 
 PROGS = $(CLIENTPROGS_C) $(SERVERPROGS)
 
