@@ -940,157 +940,242 @@ cleanup:
 }
 
 
+static const char *
+typeName(xmlrpc_type const type) {
+
+    switch(type) {
+
+    case XMLRPC_TYPE_INT: return "INT";
+    case XMLRPC_TYPE_BOOL: return "BOOL";
+    case XMLRPC_TYPE_DOUBLE: return "DOUBLE";
+    case XMLRPC_TYPE_DATETIME: return "DATETIME";
+    case XMLRPC_TYPE_STRING: return "STRING";
+    case XMLRPC_TYPE_BASE64: return "BASE64";
+    case XMLRPC_TYPE_ARRAY: return "ARRAY";
+    case XMLRPC_TYPE_STRUCT: return "STRUCT";
+    case XMLRPC_TYPE_C_PTR: return "C_PTR";
+    case XMLRPC_TYPE_DEAD: return "DEAD";
+    default: return "???";
+    }
+}
+
+
+
+static void
+validateType(xmlrpc_env *   const envP,
+             xmlrpc_value * const valueP,
+             xmlrpc_type    const expectedType) {
+
+    if (valueP->_type != expectedType) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
+            "type %s was expected.", 
+            typeName(valueP->_type), typeName(expectedType));
+    }
+}
+
+
+
+static void
+verifyNoNulls(xmlrpc_env * const envP,
+              const char * const contents,
+              unsigned int const len) {
+
+    unsigned int i;
+
+    for (i = 0; i < len && !envP->fault_occurred; i++)
+        if (contents[i] == '\0')
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_TYPE_ERROR, 
+                "String must not contain NUL characters");
+}
+
+
+
+static void
+verifyNoNullsW(xmlrpc_env *    const envP,
+               const wchar_t * const contents,
+               unsigned int    const len) {
+
+    unsigned int i;
+
+    for (i = 0; i < len && !envP->fault_occurred; i++)
+        if (contents[i] == '\0')
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_TYPE_ERROR, 
+                "String must not contain NUL characters");
+}
+
+
 
 static void 
-parsevalue(xmlrpc_env *   const env,
-           xmlrpc_value * const val,
+parsevalue(xmlrpc_env *   const envP,
+           xmlrpc_value * const valueP,
            const char **  const format,
            va_list *            args) {
 
-    xmlrpc_int32 *int32ptr;
-    xmlrpc_bool *boolptr;
-    double *doubleptr;
-    char *contents;
-    unsigned char *bin_data;
-    char **strptr;
-    void **voidptrptr;
-    unsigned char **binptr;
-    size_t len, i, *sizeptr;
-    xmlrpc_value **valptr;
+    char formatSpecChar;
 
-#ifdef HAVE_UNICODE_WCHAR
-    wchar_t *wcontents;
-    wchar_t **wcsptr;
-#endif
+    formatSpecChar = *(*format)++;
 
-    switch (*(*format)++) {
+    switch (formatSpecChar) {
     case 'i':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_INT);
-        int32ptr = (xmlrpc_int32*) va_arg(*args, xmlrpc_int32*);
-        *int32ptr = val->_value.i;
+        validateType(envP, valueP, XMLRPC_TYPE_INT);
+        if (!envP->fault_occurred) {
+            xmlrpc_int32 * const int32ptr = 
+                (xmlrpc_int32*) va_arg(*args, xmlrpc_int32*);
+            *int32ptr = valueP->_value.i;
+        }
         break;
 
     case 'b':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_BOOL);
-        boolptr = (xmlrpc_bool*) va_arg(*args, xmlrpc_bool*);
-        *boolptr = val->_value.b;       
+        validateType(envP, valueP, XMLRPC_TYPE_BOOL);
+        if (!envP->fault_occurred) {
+            xmlrpc_bool * const boolptr =
+                (xmlrpc_bool*) va_arg(*args, xmlrpc_bool*);
+            *boolptr = valueP->_value.b;       
+        }
         break;
 
     case 'd':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_DOUBLE);
-        doubleptr = (double*) va_arg(*args, double*);
-        *doubleptr = val->_value.d;     
+        validateType(envP, valueP, XMLRPC_TYPE_DOUBLE);
+        if (!envP->fault_occurred) {
+            double * const doubleptr = (double*) va_arg(*args, double*);
+            *doubleptr = valueP->_value.d;     
+        }
         break;
 
     case 's':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
-        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-        len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block) - 1;
-
-        strptr = (char**) va_arg(*args, char**);
-        if (**format == '#') {
-            (*format)++;
-            sizeptr = (size_t*) va_arg(*args, size_t**);
-            *sizeptr = len;
-        } else {
-            for (i = 0; i < len; i++)
-                if (contents[i] == '\0')
-                    XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR,
-                                "String must not contain NULL characters");
+        validateType(envP, valueP, XMLRPC_TYPE_STRING);
+        if (!envP->fault_occurred) {
+            char * const contents =
+                XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            size_t const len = XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block) - 1;
+            
+            char ** const strptr = (char**) va_arg(*args, char**);
+            if (**format == '#') {
+                size_t * const sizeptr = (size_t*) va_arg(*args, size_t**);
+                (*format)++;
+                *sizeptr = len;
+            } else
+                verifyNoNulls(envP, contents, len);
+            *strptr = contents;
         }
-        *strptr = contents;
         break;
 
 #ifdef HAVE_UNICODE_WCHAR
     case 'w':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
-        if (!val->_wcs_block) {
-            /* Allocate a wchar_t string if we don't have one. */
-            contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-            len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block) - 1;
-            val->_wcs_block = xmlrpc_utf8_to_wcs(env, contents, len + 1);
-            XMLRPC_FAIL_IF_FAULT(env);
+        validateType(envP, valueP, XMLRPC_TYPE_STRING);
+        if (!envP->fault_occurred) {
+            if (!valueP->_wcs_block) {
+                /* Allocate a wchar_t string if we don't have one. */
+                char * const contents = 
+                    XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+                size_t const len = 
+                    XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block) - 1;
+                valueP->_wcs_block = 
+                    xmlrpc_utf8_to_wcs(envP, contents, len + 1);
+            }
+            if (!envP->fault_occurred) {
+                wchar_t * const wcontents = 
+                    XMLRPC_MEMBLOCK_CONTENTS(wchar_t, valueP->_wcs_block);
+                size_t const len = 
+                    XMLRPC_MEMBLOCK_SIZE(wchar_t, valueP->_wcs_block) - 1;
+
+                wchar_t ** const wcsptr = (wchar_t**) va_arg(*args, wchar_t**);
+                if (**format == '#') {
+                    size_t * const sizeptr = (size_t*) va_arg(*args, size_t**);
+                    (*format)++;
+                    *sizeptr = len;
+                } else
+                    verifyNoNullsW(envP, wcontents, len);
+                *wcsptr = wcontents;
+            }
         }
-        wcontents =
-            XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, val->_wcs_block);
-        len = XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, val->_wcs_block) - 1;
-        
-        wcsptr = (wchar_t**) va_arg(*args, wchar_t**);
-        if (**format == '#') {
-            (*format)++;
-            sizeptr = (size_t*) va_arg(*args, size_t**);
-            *sizeptr = len;
-        } else {
-            for (i = 0; i < len; i++)
-                if (wcontents[i] == '\0')
-                    XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR,
-                                "String must not contain NULL characters");
-        }
-        *wcsptr = wcontents;
         break;
 #endif /* HAVE_UNICODE_WCHAR */
         
     case '8':
         /* The code 't' is reserved for a better, time_t based
         ** implementation of dateTime conversion. */
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_DATETIME);
-        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-        strptr = (char**) va_arg(*args, char**);
-        *strptr = contents;
+        validateType(envP, valueP, XMLRPC_TYPE_DATETIME);
+        if (!envP->fault_occurred) {
+            char * const contents = 
+                XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            char ** const strptr = (char**) va_arg(*args, char**);
+            *strptr = contents;
+        }
         break;
 
     case '6':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_BASE64);
-        bin_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char,
-                                                   &val->_block);
-        len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block);
-
-        binptr = (unsigned char**) va_arg(*args, unsigned char**);
-        *binptr = bin_data;
-        sizeptr = (size_t*) va_arg(*args, size_t**);        
-        *sizeptr = len;
+        validateType(envP, valueP, XMLRPC_TYPE_BASE64);
+        if (!envP->fault_occurred) {
+            unsigned char * const bin_data =
+                XMLRPC_MEMBLOCK_CONTENTS(unsigned char,
+                                         &valueP->_block);
+            size_t const len = XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+            unsigned char ** const binptr =
+                (unsigned char**) va_arg(*args, unsigned char**);
+            size_t * const sizeptr = (size_t*) va_arg(*args, size_t**);        
+            *binptr = bin_data;
+            *sizeptr = len;
+        }
         break;
 
     case 'p':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_C_PTR);
-        voidptrptr = (void**) va_arg(*args, void**);
-        *voidptrptr = val->_value.c_ptr;
+        validateType(envP, valueP, XMLRPC_TYPE_C_PTR);
+        if (!envP->fault_occurred) {
+            void ** const voidptrptr = (void**) va_arg(*args, void**);
+            *voidptrptr = valueP->_value.c_ptr;
+        }
         break;
 
-    case 'V':
-        valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
-        *valptr = val;
+    case 'V': {
+        xmlrpc_value ** const valptr =
+            (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
+        *valptr = valueP;
+    }
         break;
 
     case 'A':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_ARRAY);
-        valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
-        *valptr = val;
+        validateType(envP, valueP, XMLRPC_TYPE_ARRAY);
+        if (!envP->fault_occurred) {
+            xmlrpc_value ** const valptr =
+                (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
+            *valptr = valueP;
+        }
         break;
 
     case 'S':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRUCT);
-        valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
-        *valptr = val;
+        validateType(envP, valueP, XMLRPC_TYPE_STRUCT);
+        if (!envP->fault_occurred) {
+            xmlrpc_value ** const valptr =
+                (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
+            *valptr = valueP;
+        }
         break;
 
     case '(':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_ARRAY);
-        parsearray(env, val, format, ')', args);
-        (*format)++;
+        validateType(envP, valueP, XMLRPC_TYPE_ARRAY);
+        if (!envP->fault_occurred) {
+            parsearray(envP, valueP, format, ')', args);
+            (*format)++;
+        }
         break;
 
     case '{':
-        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRUCT);
-        parsestruct(env, val, format, '}', args);
-        (*format)++;
+        validateType(envP, valueP, XMLRPC_TYPE_STRUCT);
+        if (!envP->fault_occurred) {
+            parsestruct(envP, valueP, format, '}', args);
+            (*format)++;
+        }
         break;
 
     default:
-        XMLRPC_ASSERT(FALSE); /* There are no other values */
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR, "Invalid format character '%c'",
+            formatSpecChar);
     }
-
-cleanup:
 }
 
 
@@ -1111,11 +1196,9 @@ xmlrpc_parse_value_va(xmlrpc_env *   const envP,
     format_copy = format;
     VA_LIST_COPY(args_copy, args);
     parsevalue(envP, value, &format_copy, &args_copy);
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-    XMLRPC_ASSERT(*format_copy == '\0');
-
-cleanup:
+    if (!envP->fault_occurred) {
+        XMLRPC_ASSERT(*format_copy == '\0');
+    }
 }
 
 
