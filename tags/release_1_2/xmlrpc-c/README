@@ -1,0 +1,64 @@
+This is the source code for XML-RPC for C/C++, or Xmlrpc-c for short.
+
+XML-RPC for C/C++ is programming libraries and related tools to help you
+write an XML-RPC server or client in C or C++.
+
+Documentation for the package is at
+
+  http://xmlrpc-c.sourceforge.net/doc
+
+See the Xmlrpc-c website at:
+
+  http://xmlrpc-c.sourceforge.net/
+
+
+PREREQUISITES
+-------------
+
+To build a useful XML-RPC client library, you'll need to have at least
+one HTTP library.  The standard configuration uses the W3C Libwww library
+(Version 5.3.2 or newer).  You can also configure the build to use
+Curl or Wininet.
+
+There are some old instructions on getting W3C Libwww in the file
+GETTING_LIBWWW.  I haven't checked them recently, so I don't know how
+valid they are.
+
+The libraries need an XML parser/builder library.  An old version of
+Expat is included in the package and used by default, so there's no
+actual prerequisite here.  But if you separately obtain Libxml2, you can
+configure the build to use that instead.  There's no really pressing
+reason to do that, though.
+
+Once that's done, you can type:
+
+  $ ./configure
+  $ make
+  $ make install
+
+(There's supposed to be a 'make check' step in there too, to validate
+that everything built OK, but it's broken right now - 2005.01.07).
+
+You may want to pass a '--prefix' argument to configure. See './configure
+--help' for details.
+
+To see it work, start a simple server like this:
+
+  $ examples/xmlrpc_sample_add_server examples/abyss.conf
+
+Then run a client that does an RPC to this server:
+
+  $ examples/xmlrpc_sample_add_client
+
+Also try other sample servers and clients, described in examples/README.
+
+
+
+Funding for the project that created the original Xmlrpc-c was
+provided in part by the good folks at First Peer, Inc., producers of
+P2P applications.
+
+Eric Kidd developed the original Xmlrpc-c and maintained it up through
+January 2001.
+
+Bryan Henderson took over as maintainer in October 2004.

@@ -1,0 +1,65 @@
+In general, we want to run as many automated test tools on the xmlrpc-c
+library as possible. Before shipping a new release, please run as many of
+these tests as possible.
+
+
+1. Included Test Suites
+-----------------------
+
+We include several test programs. To test the core XML-RPC
+libraries--without any HTTP--run 'rpctest' in the src directory. This will
+run several hundred test cases, with a special emphasis on malformed and/or
+hostile XML data.
+
+
+2. Memory Leaks
+---------------
+
+(Linux only?) Install Owen Taylor's 'memprof' utility. This program
+includes a malloc debugger and a conservative garbage collector. To run it,
+type:
+
+  memprof rpctest
+
+This should report any memory leaks which occur while the test suites are
+running.
+
+
+3. Electric Fence
+-----------------
+
+(Most Unix platforms.) Install Bruce Perens' Electric Fence library, and
+read the man pages carefully. Link 'rpctest' against '-lefence', and run it
+with the following sets of environment variables:
+
+  1) (Default environment.)
+     Test for heap block overruns.
+
+  2) EF_PROTECT_BELOW=1
+     Test for heap block underruns.
+
+  3) EF_PROTECT_FREE=1
+     Test for doubly-freed memory and illegal accesses to freed memory.
+
+  4) EF_ALIGNMENT=0
+     Test for very small block overruns. This is an important test, but
+     it may not work on some platforms. Please see the efence manpage for
+     more information.
+
+(After each run, unset the environment variables from the previous run.)
+
+Using a Bourne shell (such as bash) you can run all these tests as follows:
+
+  rpctest
+  EF_PROTECT_BELOW=1 rpctest
+  EF_PROTECT_FREE=1 rpctest
+  EF_ALIGNMENT=0 rpctest
+
+Alternatively, if you have a copy of Purify installed, please run that.
+
+
+Tips
+====
+
+To debug Abyss without threads, don't pass -D_UNIX or -D_WIN32. The server
+will run in a single-threaded mode.

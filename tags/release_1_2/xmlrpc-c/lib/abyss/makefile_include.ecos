@@ -1,0 +1,49 @@
+
+ifndef PKG_INSTALL_DIR
+PKG_INSTALL_DIR := /ecos/work
+endif
+
+ifndef TOP
+TOP =.
+endif
+
+# export variables for sublevel makefiles
+export CC CFLAGS AS LD AR STRIP
+
+# Define this macro as the prefix for your cross-compiler
+CROSS_COMPILE = mipsel-r3041-elf-
+CC            = $(CROSS_COMPILE)gcc
+AS            = $(CROSS_COMPILE)as
+LD            = $(CROSS_COMPILE)gcc
+AR            = $(CROSS_COMPILE)ar
+STRIP         = $(CROSS_COMPILE)strip
+OBJCOPY       = $(CROSS_COMPILE)objcopy
+CXX           = $(CROSS_COMPILE)g++
+GDEBUG        = $(CROSS_COMPILE)gdb
+RANLIB        = $(CROSS_COMPILE)ranlib
+
+ifeq ($(MODE), DEBUG)
+#
+# These definitions come from your eCos install tree
+#
+DEBUG   := -g -Wall -O0
+CFLAGS := $(DEBUG) -D_DEBUG
+
+else
+
+# Retail version
+CFLAGS := -O2
+
+endif
+
+INCLUDEDIRS   = -I$(TOP)/src -I$(PKG_INSTALL_DIR)/include -I.
+
+LIBDIRS       = -L$(TOP)/lib -L$(PKG_INSTALL_DIR)/lib
+
+ARFLAGS       = rcs
+LDFLAGS       = -msoft-float -nostartfiles $(LIBDIRS) -Wl,--gc-sections
+CXXFLAGS      = $(CFLAGS)
+EXTRACFLAGS   = $(INCLUDEDIRS) -msoft-float -Wall -ffunction-sections -fdata-sections
+EXTRACXXFLAGS = $(EXTRACFLAGS) -fno-exceptions -fno-rtti -finit-priority
+
+CFLAGS  += -DOS="eCos" -DECOS -D__ECOS
