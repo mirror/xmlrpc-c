@@ -39,7 +39,7 @@ struct xportparms;
     */
 
 struct xmlrpc_curl_xportparms {
-    const char * interface;
+    const char * interfaceId;
 };
 
 
@@ -47,6 +47,15 @@ struct xmlrpc_curl_xportparms {
     XMLRPC_STRUCTSIZE(struct xmlrpc_curl_xportparms, mbrname)
 
 /* XMLRPC_CXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
+
+struct xmlrpc_wininet_xportparms {
+    int allowInvalidSSLCerts;
+};
+
+#define XMLRPC_WXPSIZE(mbrname) \
+    XMLRPC_STRUCTSIZE(struct xmlrpc_wininet_xportparms, mbrname)
+
+/* XMLRPC_WXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
 
 struct xmlrpc_clientparms {
     const char *               transport;
