@@ -212,10 +212,10 @@ void xmlrpc_client_cleanup()
 
 
 xmlrpc_value * 
-xmlrpc_client_call_params (xmlrpc_env *   const env,
-                           const char *   const server_url,
-                           const char *   const method_name,
-                           xmlrpc_value * const param_array) {
+xmlrpc_client_call_params(xmlrpc_env *   const env,
+                          const char *   const server_url,
+                          const char *   const method_name,
+                          xmlrpc_value * const argP) {
 
     xmlrpc_value *retval;
 
@@ -236,7 +236,7 @@ xmlrpc_client_call_params (xmlrpc_env *   const env,
             XMLRPC_ASSERT(g_transport_client_call_server_params != NULL);
 
             retval = g_transport_client_call_server_params(
-                env, server, method_name, param_array);
+                env, server, method_name, argP);
             
             xmlrpc_server_info_free(server);
         }
@@ -251,91 +251,102 @@ xmlrpc_client_call_params (xmlrpc_env *   const env,
 
 
 static xmlrpc_value * 
-xmlrpc_client_call_va(xmlrpc_env * const env,
-                      char *       const server_url,
-                      char *       const method_name,
-                      char *       const format,
+xmlrpc_client_call_va(xmlrpc_env * const envP,
+                      const char * const server_url,
+                      const char * const method_name,
+                      const char * const format,
                       va_list            args) {
 
-    xmlrpc_value *arg_array, *retval;
+    xmlrpc_value * argP;
+    xmlrpc_value * retval;
+    xmlrpc_env argenv;
+    const char * suffix;
 
-    /* Error-handling preconditions. */
-    arg_array = retval = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(format);
 
-    /* Build our argument array. */
-    arg_array = xmlrpc_build_value_va(env, format, args);
-    XMLRPC_FAIL_IF_FAULT(env);
+    /* Build our argument value. */
+    xmlrpc_env_init(&argenv);
+    xmlrpc_build_value_va(&argenv, format, args, &argP, &suffix);
+    if (argenv.fault_occurred) {
+        xmlrpc_env_set_fault_formatted(
+            envP, argenv.fault_code, "Invalid arguments.  %s",
+            argenv.fault_string);
+        xmlrpc_env_clean(&argenv);
+    } else {
+        XMLRPC_ASSERT_VALUE_OK(argP);
 
-    /* Perform the actual XML-RPC call. */
-    retval = xmlrpc_client_call_params(env, server_url, method_name,
-                                       arg_array);
-    XMLRPC_FAIL_IF_FAULT(env);
-    XMLRPC_ASSERT_VALUE_OK(retval);
-
- cleanup:
-    if (arg_array)
-    xmlrpc_DECREF(arg_array);
-    if (env->fault_occurred) {
-        if (retval)
-            xmlrpc_DECREF(retval);
-        return NULL;
+        if (*suffix != '\0')
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
+                "specifier: '%s'.  There must be exactly one arument.",
+                suffix);
+        else {
+            /* Perform the actual XML-RPC call. */
+            retval = xmlrpc_client_call_params(envP, server_url, method_name,
+                                               argP);
+            if (!envP->fault_occurred)
+                XMLRPC_ASSERT_VALUE_OK(retval);
+        }
+        xmlrpc_DECREF(argP);
     }
     return retval;
 }
 
-xmlrpc_value * xmlrpc_client_call (xmlrpc_env *env,
-                   char *server_url,
-                   char *method_name,
-                   char *format,
-                   ...)
-{
+
+
+xmlrpc_value * 
+xmlrpc_client_call(xmlrpc_env * const envP,
+                   const char *       const server_url,
+                   const char *       const method_name,
+                   const char *       const format,
+                   ...) {
+
     xmlrpc_value * result;
     va_list args;
 
     va_start(args, format);
-    result = xmlrpc_client_call_va(env, server_url,
-                              method_name, format, args);
+    result = xmlrpc_client_call_va(envP, server_url,
+                                   method_name, format, args);
     va_end(args);
 
     return result;
 }
 
-xmlrpc_value * xmlrpc_client_call_server (xmlrpc_env *env,
-                                          xmlrpc_server_info *server,
-                                          char *method_name,
-                                          char *format,
-                                          ...)
-{
+
+
+xmlrpc_value * 
+xmlrpc_client_call_server(xmlrpc_env *         const envP,
+                          xmlrpc_server_info * const server,
+                          const char *         const method_name,
+                          const char *         const format, 
+                          ...) {
+
     va_list args;
-    xmlrpc_value *arg_array, *retval;
+    xmlrpc_value * argP;
+    xmlrpc_value * retval;
+    const char * suffix;
 
-    /* Error-handling preconditions. */
-    arg_array = retval = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(format);
 
-    /* Build our argument array. */
+    /* Build our argument */
     va_start(args, format);
-    arg_array = xmlrpc_build_value_va(env, format, args);
+    xmlrpc_build_value_va(envP, format, args, &argP, &suffix);
     va_end(args);
-    XMLRPC_FAIL_IF_FAULT(env);
 
-    /* Perform the actual XML-RPC call. */
-    retval = g_transport_client_call_server_params(env, server, method_name,
-                                              arg_array);
-    XMLRPC_FAIL_IF_FAULT(env);
-
- cleanup:
-    if (arg_array)
-        xmlrpc_DECREF(arg_array);
-    if (env->fault_occurred) {
-        if (retval)
-            xmlrpc_DECREF(retval);
-        return NULL;
+    if (!envP->fault_occurred) {
+        if (*suffix != '\0')
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
+                "specifier: '%s'.  There must be exactly one arument.",
+                suffix);
+        else {
+            retval = g_transport_client_call_server_params(
+                envP, server, method_name,
+                argP);
+        }
+        xmlrpc_DECREF(argP);
     }
     return retval;
 }
@@ -380,7 +391,7 @@ call_info *
 call_info_new (xmlrpc_env *         const env,
                xmlrpc_server_info * const server,
                const char *         const method_name,
-               xmlrpc_value *       const param_array) {
+               xmlrpc_value *       const argP) {
 
     call_info *retval;
 
@@ -395,7 +406,7 @@ call_info_new (xmlrpc_env *         const env,
     retval->serialized_xml = xmlrpc_mem_block_new(env, 0);
     XMLRPC_FAIL_IF_FAULT(env);
     xmlrpc_serialize_call(env, retval->serialized_xml,
-                          method_name, param_array);
+                          method_name, argP);
     XMLRPC_FAIL_IF_FAULT(env);
 
     XMLRPC_FAIL_IF_NULL(g_transport_info_new, env, XMLRPC_INTERNAL_ERROR,
@@ -414,14 +425,15 @@ call_info_new (xmlrpc_env *         const env,
 
 
 
-static void call_info_set_asynch_data (xmlrpc_env *env,
-                                       call_info *info,
-                                       char *server_url,
-                                       char *method_name,
-                                       xmlrpc_value *param_array,
-                                       xmlrpc_response_handler callback,
-                                       void *user_data)
-{
+static void 
+call_info_set_asynch_data(xmlrpc_env *   const env,
+                          call_info *    const info,
+                          const char *   const server_url,
+                          const char *   const method_name,
+                          xmlrpc_value * const argP,
+                          xmlrpc_response_handler callback,
+                          void *         const user_data) {
+
     xmlrpc_value *holder;
 
     /* Error-handling preconditions. */
@@ -432,7 +444,7 @@ static void call_info_set_asynch_data (xmlrpc_env *env,
     XMLRPC_ASSERT(info->_asynch_data_holder == NULL);
     XMLRPC_ASSERT_PTR_OK(server_url);
     XMLRPC_ASSERT_PTR_OK(method_name);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
+    XMLRPC_ASSERT_VALUE_OK(argP);
 
     /* Install our callback and user_data.
     ** (We're not responsible for destroying the user_data.) */
@@ -441,9 +453,9 @@ static void call_info_set_asynch_data (xmlrpc_env *env,
 
     /* Build an XML-RPC data structure to hold our other data. This makes
     ** copies of server_url and method_name, and increments the reference
-    ** to the param_array. */
+    ** to the argument *argP. */
     holder = xmlrpc_build_value(env, "(ssV)",
-                                server_url, method_name, param_array);
+                                server_url, method_name, argP);
     XMLRPC_FAIL_IF_FAULT(env);
 
     /* Parse the newly-allocated structure into our public member variables.
@@ -575,21 +587,23 @@ void xmlrpc_server_info_free (xmlrpc_server_info *server)
 /* MRB-Eliminated a call to xmlrpc_client_call_asynch_params.
 **     This was unnecessary overhead, just to allow for a
 **     "...)" version of the xmlrpc_client_call_server_asynch_params call. */
-void xmlrpc_client_call_asynch (char *server_url,
-                                char *method_name,
-                                xmlrpc_response_handler callback,
-                                void *user_data,
-                                char *format,
-                                ...)
-{
+void 
+xmlrpc_client_call_asynch(const char * const server_url,
+                          const char * const method_name,
+                          xmlrpc_response_handler callback,
+                          void *       const user_data,
+                          const char * const format,
+                          ...) {
+
     xmlrpc_env env;
     va_list args;
-    xmlrpc_value *param_array;
+    xmlrpc_value * argP;
     xmlrpc_server_info *server;
+    const char * suffix;
 
     /* Error-handling preconditions. */
     xmlrpc_env_init(&env);
-    param_array = NULL;
+    argP = NULL;
     server = NULL;
 
     XMLRPC_ASSERT_PTR_OK(format);
@@ -597,79 +611,95 @@ void xmlrpc_client_call_asynch (char *server_url,
 
     /* Build our argument array. */
     va_start(args, format);
-    param_array = xmlrpc_build_value_va(&env, format, args);
+    xmlrpc_build_value_va(&env, format, args, &argP, &suffix);
     va_end(args);
     XMLRPC_FAIL_IF_FAULT(&env);
 
-/* xmlrpc_client_call_asynch_params */
-    /* Build a server info object and make our call. */
-    server = xmlrpc_server_info_new(&env, server_url);
-    XMLRPC_FAIL_IF_FAULT(&env);
-
-    /* Perform the actual XML-RPC call. */
-    xmlrpc_client_call_server_asynch_params(server, method_name,
-                                            callback, user_data,
-                                            param_array);
-
+    if (*suffix != '\0')
+        xmlrpc_env_set_fault_formatted(
+            &env, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
+            "specifier: '%s'.  There must be exactly one arument.",
+            suffix);
+    else {
+        /* Build a server info object and make our call. */
+        server = xmlrpc_server_info_new(&env, server_url);
+        XMLRPC_FAIL_IF_FAULT(&env);
+        
+        /* Perform the actual XML-RPC call. */
+        xmlrpc_client_call_server_asynch_params(server, method_name,
+                                                callback, user_data, argP);
+    }
  cleanup:
     if (server)
         xmlrpc_server_info_free(server);
 
     if (env.fault_occurred) {
-        (*callback)(server_url, method_name, param_array, user_data,
+        (*callback)(server_url, method_name, argP, user_data,
                     &env, NULL);
     }
 
-    if (param_array)
-        xmlrpc_DECREF(param_array);
+    if (argP)
+        xmlrpc_DECREF(argP);
     xmlrpc_env_clean(&env);
 }
 
-void xmlrpc_client_call_server_asynch (xmlrpc_server_info *server,
-                                       char *method_name,
-                                       xmlrpc_response_handler callback,
-                                       void *user_data,
-                                       char *format,
-                                       ...)
-{
+
+
+void 
+xmlrpc_client_call_server_asynch(xmlrpc_server_info * const server,
+                                 const char *         const method_name,
+                                 xmlrpc_response_handler callback,
+                                 void *               const user_data,
+                                 const char *         const format,
+                                 ...) {
+
     xmlrpc_env env;
     va_list args;
-    xmlrpc_value *param_array;
+    xmlrpc_value * argP;
+    const char * suffix;
 
     /* Error-handling preconditions. */
     xmlrpc_env_init(&env);
-    param_array = NULL;
+    argP = NULL;
 
     XMLRPC_ASSERT_PTR_OK(format);
 
     /* Build our argument array. */
     va_start(args, format);
-    param_array = xmlrpc_build_value_va(&env, format, args);
+    xmlrpc_build_value_va(&env, format, args, &argP, &suffix);
     va_end(args);
     XMLRPC_FAIL_IF_FAULT(&env);
 
-    /* Perform the actual XML-RPC call. */
-    xmlrpc_client_call_server_asynch_params(server, method_name,
-                                            callback, user_data,
-                                            param_array);
-
+        if (*suffix != '\0')
+            xmlrpc_env_set_fault_formatted(
+                &env, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
+                "specifier: '%s'.  There must be exactly one arument.",
+                suffix);
+        else {
+            /* Perform the actual XML-RPC call. */
+            xmlrpc_client_call_server_asynch_params(server, method_name,
+                                                    callback, user_data,
+                                                    argP);
+        }
  cleanup:
     if (env.fault_occurred) {
-        (*callback)(server->_server_url, method_name, param_array, user_data,
+        (*callback)(server->_server_url, method_name, argP, user_data,
                     &env, NULL);
     }
 
-    if (param_array)
-        xmlrpc_DECREF(param_array);
+    if (argP)
+        xmlrpc_DECREF(argP);
     xmlrpc_env_clean(&env);
 }
 
-void xmlrpc_client_call_server_asynch_params (xmlrpc_server_info *server,
-                                              char *method_name,
-                                              xmlrpc_response_handler callback,
-                                              void *user_data,
-                                              xmlrpc_value *param_array)
-{
+
+
+void 
+xmlrpc_client_call_server_asynch_params(xmlrpc_server_info * const server,
+                                        const char *         const method_name,
+                                        xmlrpc_response_handler callback,
+                                        void *               const user_data,
+                                        xmlrpc_value *       const argP) {
     xmlrpc_env env;
     call_info *info;
 
@@ -680,15 +710,15 @@ void xmlrpc_client_call_server_asynch_params (xmlrpc_server_info *server,
     XMLRPC_ASSERT_PTR_OK(server);
     XMLRPC_ASSERT_PTR_OK(method_name);
     XMLRPC_ASSERT_PTR_OK(callback);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
+    XMLRPC_ASSERT_VALUE_OK(argP);
 
     /* Create our call_info structure. */
-    info = call_info_new(&env, server, method_name, param_array);
+    info = call_info_new(&env, server, method_name, argP);
     XMLRPC_FAIL_IF_FAULT(&env);
 
     /* Add some more data to our call_info struct. */
     call_info_set_asynch_data(&env, info, server->_server_url, method_name,
-                              param_array, callback, user_data);
+                              argP, callback, user_data);
     XMLRPC_FAIL_IF_FAULT(&env);
 
     g_transport_send_request(&env, info);
@@ -703,7 +733,7 @@ void xmlrpc_client_call_server_asynch_params (xmlrpc_server_info *server,
         call_info_free(info);
     if (env.fault_occurred) {
         /* Report the error immediately. */
-        (*callback)(server->_server_url, method_name, param_array, user_data,
+        (*callback)(server->_server_url, method_name, argP, user_data,
                     &env, NULL);
     }
     xmlrpc_env_clean(&env);

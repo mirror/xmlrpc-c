@@ -132,12 +132,12 @@ xmlrpc_server_info_set_basic_auth (xmlrpc_env *env,
 **  functions from inside an asynchronous callback!
 */
 
-extern xmlrpc_value *
-xmlrpc_client_call (xmlrpc_env *env,
-                    char *server_url,
-                    char *method_name,
-                    char *args_format,
-                    ...);
+xmlrpc_value * 
+xmlrpc_client_call(xmlrpc_env * const envP,
+                   const char *       const server_url,
+                   const char *       const method_name,
+                   const char *       const format,
+                   ...);
 
 xmlrpc_value * 
 xmlrpc_client_call_params (xmlrpc_env *   const env,
@@ -145,12 +145,12 @@ xmlrpc_client_call_params (xmlrpc_env *   const env,
                            const char *   const method_name,
                            xmlrpc_value * const param_array);
 
-extern xmlrpc_value *
-xmlrpc_client_call_server (xmlrpc_env *env,
-                           xmlrpc_server_info *server,
-                           char *method_name,
-                           char *args_format,
-                           ...);
+xmlrpc_value * 
+xmlrpc_client_call_server(xmlrpc_env *         const envP,
+                          xmlrpc_server_info * const server,
+                          const char *         const method_name,
+                          const char *         const format, 
+                          ...);
 
 extern xmlrpc_value *
 xmlrpc_client_call_server_params (xmlrpc_env *env,
@@ -169,25 +169,25 @@ xmlrpc_client_call_server_params (xmlrpc_env *env,
 ** arguments except user_data, so you can deallocate them safely as soon
 ** as you return. Errors will be passed to the callback. You will need
 ** to run the event loop somehow; see below.
-** WARNING: If an error occurs while building the parameter array, the
+** WARNING: If an error occurs while building the argument, the
 ** response handler will be called with a NULL param_array. */
-extern void
-xmlrpc_client_call_asynch (char *server_url,
-                           char *method_name,
-                           xmlrpc_response_handler callback,
-                           void *user_data,
-                           char *args_format,
-                           ...);
+void 
+xmlrpc_client_call_asynch(const char * const server_url,
+                          const char * const method_name,
+                          xmlrpc_response_handler callback,
+                          void *       const user_data,
+                          const char * const format,
+                          ...);
 
 /* As above, but use an xmlrpc_server_info object. The server object can be
 ** safely destroyed as soon as this function returns. */
-extern void
-xmlrpc_client_call_server_asynch (xmlrpc_server_info *server,
-                                  char *method_name,
-                                  xmlrpc_response_handler callback,
-                                  void *user_data,
-                                  char *args_format,
-                                  ...);
+void 
+xmlrpc_client_call_server_asynch(xmlrpc_server_info * const server,
+                                 const char *         const method_name,
+                                 xmlrpc_response_handler callback,
+                                 void *               const user_data,
+                                 const char *         const format,
+                                 ...);
 
 /* As above, but the parameter list is supplied as an xmlrpc_value
 ** containing an array. We make our own reference to the param_array,
@@ -201,12 +201,12 @@ xmlrpc_client_call_asynch_params (char *server_url,
     
 /* As above, but use an xmlrpc_server_info object. The server object can be
 ** safely destroyed as soon as this function returns. */
-extern void
-xmlrpc_client_call_server_asynch_params (xmlrpc_server_info *server,
-                                         char *method_name,
-                                         xmlrpc_response_handler callback,
-                                         void *user_data,
-                                         xmlrpc_value *param_array);
+void 
+xmlrpc_client_call_server_asynch_params(xmlrpc_server_info * const server,
+                                        const char *         const method_name,
+                                        xmlrpc_response_handler callback,
+                                        void *               const user_data,
+                                        xmlrpc_value *       const argP);
     
 /*=========================================================================
 **  Event Loop Interface
