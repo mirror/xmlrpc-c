@@ -1,0 +1,179 @@
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(src/xmlrpc.h)
+AM_CONFIG_HEADER(xmlrpc_config.h)
+
+dnl =======================================================================
+dnl Version Numbering
+dnl =======================================================================
+
+dnl Increment the package version for each release.
+AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.2)
+
+dnl This version number needs to be changed in several *different* tricky
+dnl ways for each release. Please read the libtool documentation very
+dnl closely before touching this or making a release!
+VERSION_INFO="-version-info 2:0:2"
+AC_SUBST(VERSION_INFO)
+
+
+dnl =======================================================================
+dnl Checks for programs.
+dnl =======================================================================
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_INSTALL
+AM_PROG_LIBTOOL
+
+
+dnl =======================================================================
+dnl Checks for libraries.
+dnl =======================================================================
+
+
+dnl =======================================================================
+dnl Checks for header files.
+dnl =======================================================================
+
+AC_STDC_HEADERS
+
+AC_CHECK_HEADERS(stdarg.h, , [
+AC_MSG_ERROR(stdarg.h is required to build this library)
+])
+
+
+dnl =======================================================================
+dnl Checks for typedefs, structures, and compiler characteristics.
+dnl =======================================================================
+
+dnl AC_C_BIGENDIAN
+AC_TYPE_SIZE_T
+
+dnl This check is borrowed from Python 1.5.2.
+va_list_is_array=no
+AC_MSG_CHECKING(whether va_list is an array)
+AC_TRY_COMPILE([
+#include <stdarg.h>
+], [va_list list1, list2; list1 = list2;], , 
+AC_DEFINE(VA_LIST_IS_ARRAY) va_list_is_array=yes)
+AC_MSG_RESULT($va_list_is_array)
+
+
+dnl =======================================================================
+dnl Checks for library functions.
+dnl =======================================================================
+
+AC_CHECK_FUNC(vsnprintf, , [
+AC_MSG_ERROR(your C library does not provide vsnprintf)
+])
+
+
+dnl =======================================================================
+dnl ABYSS Configuration
+dnl =======================================================================
+dnl Abyss doesn't pay any attention to xmlrpc_config.h, so we need to
+dnl pass it some flags on the command-line.
+
+CFLAGS="$CFLAGS -D_UNIX -D_FORK" 
+
+
+dnl =======================================================================
+dnl Finding w3c-libwww
+dnl =======================================================================
+dnl Once upon a time, we used a patched copy of libwww that needed to
+dnl co-exist with the system copy of libwww. We have some vestigal support
+dnl for keeping track of libwww's rpath, although this is no longer really
+dnl necessary.
+
+dnl First of all, locate the semi-broken libwww config program.
+dnl You can control which of these gets chosen by fooling around with PATH.
+AC_PATH_PROGS(LIBWWW_CONFIG, libwww-xmlrpc-config libwww-config, no)
+if test "x$LIBWWW_CONFIG" = "xno"; then
+    AC_MSG_ERROR(w3c-libwww required to build xmlrpc-c)
+fi
+
+dnl Get our libwww version.
+dnl Adapted from a macro which called gtk-config.
+AC_MSG_CHECKING(for w3c-libwww version >= 5.3.2)
+W3VER=`$LIBWWW_CONFIG --version`
+LIBWWW_MAJOR=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+LIBWWW_MINOR=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+LIBWWW_MICRO=`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+AC_MSG_RESULT($LIBWWW_MAJOR.$LIBWWW_MINOR.$LIBWWW_MICRO)
+
+dnl Check to make sure our version is OK.
+LIBWWW_VERSION_OK=yes
+if test $LIBWWW_MAJOR -lt 5; then
+    LIBWWW_VERSION_OK=no
+else
+    if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -lt 3; then
+        LIBWWW_VERSION_OK=no
+    else
+        if test $LIBWWW_MAJOR -eq 5 -a $LIBWWW_MINOR -eq 3 \
+            -a $LIBWWW_MICRO -lt 2; then
+            LIBWWW_VERSION_OK=no
+        fi
+    fi
+fi
+if test "x$LIBWWW_VERSION_OK" = "xno"; then
+    AC_MSG_ERROR(w3c-libwww version >= 5.3.2 required)
+fi
+
+dnl Make sure the libwww has a fighting chance of working.
+AC_MSG_CHECKING(whether libwww will work)
+if $LIBWWW_CONFIG --libs | grep xmltok >& /dev/null; then
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR(w3c-libww configured without '--disable-expat'; please see GETTING_LIBWWW for more information)
+else
+    AC_MSG_RESULT(probably)
+fi
+
+dnl Get the necessary CFLAGS, and merge them into our master list.
+LIBWWW_CFLAGS="`$LIBWWW_CONFIG --cflags`"
+AC_SUBST(LIBWWW_CFLAGS)
+CFLAGS="$CFLAGS $LIBWWW_CFLAGS" 
+
+dnl Get the huge list of libraries we need to link against.
+LIBWWW_LDADD="`$LIBWWW_CONFIG --libs`"
+AC_SUBST(LIBWWW_LDADD)
+
+dnl Oh, such massive brain damage! Because there may be another copy
+dnl of libwww in the default dynamic loader search path, we need to
+dnl adjust the search patch manually. Just gag me with a backquote, OK?
+AC_MSG_CHECKING(for libwww library directory)
+if $LIBWWW_CONFIG --rpath-dir >& /dev/null; then
+   dnl Yay! We're using our smart version of libwww.
+   LIBWWW_LIBDIR="`$LIBWWW_CONFIG --rpath-dir`"
+else
+   dnl Yawn. We're using the regular boring version.
+   LIBWWW_LIBDIR="`$LIBWWW_CONFIG --prefix`/lib"
+fi
+AC_MSG_RESULT($LIBWWW_LIBDIR)
+AC_SUBST(LIBWWW_LIBDIR)
+LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
+AC_SUBST(LIBWWW_RPATH)
+LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
+AC_SUBST(LIBWWW_WL_RPATH)
+
+
+dnl =======================================================================
+dnl Output our results.
+dnl =======================================================================
+
+AC_OUTPUT(xmlrpc-c-config \
+          Makefile \
+          src/Makefile \
+          examples/Makefile \
+          doc/Makefile \
+          lib/Makefile \
+          lib/expat/Makefile \
+          lib/expat/gennmtab/Makefile \
+          lib/expat/xmltok/Makefile \
+          lib/expat/xmlparse/Makefile \
+          lib/expat/xmlwf/Makefile \
+          lib/expat/sample/Makefile \
+          lib/abyss/Makefile \
+          lib/abyss/htdocs/Makefile \
+          lib/abyss/conf/Makefile \
+          lib/abyss/src/Makefile )

@@ -1,0 +1,207 @@
+This is some simple, preliminary documentation. You can find more
+documentation in the files 'xmlrpc.h', 'xmlrpc_client.h' and
+'xmlrpc_abyss.h'.
+
+
+Compiling
+---------
+
+To compile an XML-RPC program, you'll need a whole mess of compiler flags.
+To keep your life easy, you can get the necessary flags from
+xmlrpc-c-config:
+
+  $ CLIENT_CFLAGS=`xmlrpc-c-config libwww-client --cflags`
+  $ CLIENT_LIBS=`xmlrpc-c-config libwww-client --libs`
+  $ gcc $CLIENT_CFLAGS -o myclient myclient.c $CLIENT_LIBS
+
+  $ SERVER_CFLAGS=`xmlrpc-c-config abyss-server --cflags`
+  $ SERVER_LIBS=`xmlrpc-c-config abyss-server --libs`
+  $ gcc $SERVER_CFLAGS -o myserver myserver.c $SERVER_LIBS
+
+To run a server, you'll need an appropriate abyss.conf file and directory
+setup. Please see the example in conf/abyss_root.
+
+To compile a C++ client, use the following flags:
+
+  $ CLIENT_CFLAGS=`xmlrpc-c-config c++ libwww-client --cflags`
+  $ CLIENT_LIBS=`xmlrpc-c-config c++ libwww-client --libs`
+  $ c++ $CLIENT_CFLAGS -o fancycppclient fancyclient.cc $CLIENT_LIBS
+
+The C++ API is still highly experimental, and subject to change. For now,
+xmlrpc-c-config will always link a static version of the C++ client into
+your application, to prevent you against future changes.
+
+
+Reference Counting
+------------------
+
+XML-RPC values use reference counts. When they're created, the reference
+count is set to 1. When the reference count reaches zero, they get
+automatically deleted.
+
+To increase a reference count, use xmlrpc_INCREF.
+To decrease a reference count, use xmlrpc_DECREF.
+
+The reference-counting behavior of a function is part of that function's
+documented API. But there are some general rules which almost always apply:
+
+  * Constructor functions create a new reference and give it to you.
+
+  * Functions which store an xmlrpc_value into a data structure make
+    their own reference if AND ONLY IF they succeed.
+
+  * Functions which retreive an xmlrpc_value from a data structure
+    (without deleting that data structure) do not create a new reference.
+    So long as you don't delete or change the data structure, you can
+    "borrow" this reference safely.
+
+  * When an xmlrpc_value is remove from a data structure (perhaps as the
+    side effect of a "set" function), the data structure will release
+    its reference to that value.
+
+  * When destroyed, a data structure will release all the references
+    it contains.
+
+If you have doubts about the behavior of a function, take a look at
+src/rpctest.c. In theory, this file releases all the references it creates
+in an appropriate fashion. If src/rpctest.c and the documentation appear to
+disagree, PLEASE file a bug report.
+
+
+Error Handling
+--------------
+
+Errors are handled using an CORBA-like "environment", which contains any
+active faults.
+
+  xmlrpc_env *env;
+  xmlrpc_env_init(&env);
+
+  do_something(&env);
+  if (env.fault_occurred)
+      handle_error();
+
+  xmlrpc_env_clean(&env);
+
+It as an error to use an xmlrpc_env object before it has been initialized
+or after it has been cleaned.
+
+You can set a fault as follows:
+
+  xmlrpc_env_set_fault(&env, fault_code, fault_string);
+
+This function will make a private copy of 'fault_string'. You are, of
+course, allowed to set a fault more than once.
+
+
+Building and Parsing xmlrpc_value Objects
+-----------------------------------------
+
+The system described below is shamelessly stolen from Python's external C
+API. It allows you to translate between C values and XML-RPC values using
+format strings and vararg lists.
+
+You could build an array of values as follows:
+
+  xmlrpc_value *value;
+
+  value = xmlrpc_build_value(env, "(ibdss#)",
+                             (xmlrpc_int32) 42,
+			     (xmlrpc_bool) 0,
+			     1.0,
+                             "Hello, world!",
+                             "a\0b", 3);
+
+You are responsible for calling xmlrpc_DECREF on 'value'.
+
+Notice that integers and boolean values need to be coerced to the
+appropriate type, to avoid varargs weirdness on some obscure platforms.
+
+You could parse that same value as follows:
+
+  xmlrpc_int32 i;
+  xmlrpc_bool b;
+  double d;
+  char *str1, *str2;
+  size_t *str2_len;
+
+  xmlrpc_parse_value(env, value, "(ibdss#)",
+                     &i, &b, &d, &str1, &str2, &str2_len);
+
+To build an array, you could write:
+
+  xmlrpc_parse_value(env, value, "{s:d,s:d}",
+                     "min", -1.0,
+		     "max", 1.0);
+
+To parse an array, you must currently use the functions in xmlrpc.h.
+
+Here's a complete table of all supported codes:
+
+  Character(s)  Build Type      Parse Type      Note
+  ------------  ----------      ----------      ----
+  i             xmlrpc_int32    xmlrpc_int32*   Don't use int!
+  b             xmlrpc_bool     xmlrpc_bool*    Don't use int!
+  d             double          double*
+  s             char*           char**          string encoded as UTF-8
+  s#            char*,size_t    char**,size_t*  string encoded as UTF-8
+  6             uchar*,size_t   uchar**,size_t* "uchar" is unsigned char 
+  8             char*           char**          Raw ISO8601 date format
+  p             void*           void**          C pointer w/o cleanup
+  V             xmlrpc_value*   xmlrpc_value**
+  A             N/A             xmlrpc_value**  guaranteed to be an array
+  S             N/A             xmlrpc_value**  guaranteed to be a struct
+  ()            (array)         (array)
+  {}            (struct)        {struct}        See note about parsing
+
+Some miscellaneous notes:
+
+  * Use xmlrpc_int32 and xmlrpc_bool (instead of int) if you want your
+    code to run on weird platforms. When passing a constant value,
+    coerce it to the appropriate type.
+
+  * If you try to decode a string containing a '\0' byte using 's',
+    you will get an error.
+
+  * If you've already allocated an xmlrpc_value, you can pass it to
+    xmlrpc_build_value using 'V'. This will create a new reference
+    if and only if the call succeeds.
+
+  * The 'V', 'A' and 'S' codes can be used to extract an xmlrpc_value
+    from somewhere deep within another value. None of these codes will
+    create a new reference. The last two will perform a run-time typecheck.
+
+  * All 's' and 's#' arguments are encoded using UTF-8. But since XML-RPC
+    only supports ASCII, these strings can be interepreted as regular
+    US-ASCII with no characters >= 128.
+
+  * The 'p' code allows you to store a void pointer in an xmlrpc_value.
+    This cannot be sent over the network, of course, but it can be
+    used for internal data storage.
+
+  * The '6' code represents the XML-RPC <base64> type. But these routines
+    work with unencoded data.
+
+  * The '8' code can be used to manipulate raw ISO8601 dates. It should
+    eventually be supplemented by a 't' code which knows about time_t and
+    timezones. Patches welcome.
+
+  * Parsing structs is slightly tricky. You can write something like this:
+
+        char *fooval, *barval;
+        xmlrpc_parse_value(env, strct, "{s:s,s:s,*}",
+                           "foo", &fooval,
+                           "bar", &barval);
+
+    The trailing ',*' means to ignore any other members. For now, it's
+    mandatory. The code to the left of the ':' is treated as a
+    value-BUILDING code (suprise!), and the code to the right is treated as
+    a regular value-parsing code.
+
+  * You can ignore the tail of an array when parsing:
+
+        xmlrpc_int32 i1, i2, i3;
+        xmlrpc_parse_value(env, hugearray, "(iii*)", &i1, &i2, &i3);
+
+    This will extract the first three arguments of hugearray and leave the
+    rest alone.

@@ -1,0 +1,60 @@
+This is a development release of an XML-RPC library for C and C++
+programmers. As such, it still has a few rough edges.
+
+This library has been released under an extremely generous license, but it
+comes with ABSOLUTELY NO WARRANTY. Please see the file COPYING for the
+appropriate terms and disclaimers.
+
+You can find the official xmlrpc-c website at:
+
+  http://xmlrpc-c.sourceforge.net/
+
+To build this library, you'll need to have w3c-libwww 5.3.2 or newer.
+Please see the following file:
+
+  GETTING_LIBWWW        How to get a copy of w3c-libwww
+
+Once that's done, you can type:
+
+  $ ./configure
+  $ make
+  $ make check
+  $ make install
+
+You may want to pass a '--prefix' argument to configure. See './configure
+--help' for details.
+
+To get started, have a look at the following files:
+
+  SECURITY              Important security information
+  doc/overview.txt      Compiling XML-RPC programs; API documentation
+  examples/*.c          Sample programs
+  src/xmlrpc.h          API documentation
+  src/xmlrpc_client.h   API documentation
+  src/xmlrpc_abyss.h    API documentation
+  src/XmlRpcCpp.h       Experimental C++ API documentation
+  src/validatee.c       A more complex XML-RPC server
+
+Also of interest are:
+
+  BUGS                  Known issues
+  REFACTORINGS          Suggested code reorganizations
+  TESTING               Notes on testing this library
+
+To run the various server applications, you can type one of the following:
+
+  $ examples/server conf/abyss_root/conf/abyss.conf 
+  $ src/servertest conf/abyss_root/conf/abyss.conf 
+  $ src/validatee conf/abyss_root/conf/abyss.conf 
+
+To shut down a running server (under Unix), type:
+
+  $ kill `cat conf/abyss_root/log/abyss.pid`
+
+Funding for this project was provided in part by the good folks at First
+Peer, Inc., producers of P2P applications.
+
+
+Eric Kidd
+eric.kidd@pobox.com
+9 January 2000
