@@ -35,12 +35,11 @@
     We could make 'configure' simply do a trial compile to figure out
     which one, but for now, this approximation is easier:
 */
-#ifndef __GNUC__
-#ifndef __inline__
-#ifdef __sgi
-#define __inline__ __inline
-#else
-#define __inline__
-#endif
-#endif
+#if defined(__GNUC__)
+  #if (!defined(__inline__))
+  #if (defined(__sgi) || defined(_AIX))
+    #define __inline__ __inline
+  #else   
+    #define __inline__
+  #endif
 #endif
