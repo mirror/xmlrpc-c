@@ -327,7 +327,7 @@ typedef struct in_addr TIPAddr;
 #define IPB3(x)	(((unsigned char *)(&x))[2])
 #define IPB4(x)	(((unsigned char *)(&x))[3])
 
-abyss_bool SocketInit();
+abyss_bool SocketInit(void);
 
 abyss_bool SocketCreate(TSocket *s);
 abyss_bool SocketClose(TSocket *s);
@@ -342,7 +342,7 @@ abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port);
 abyss_bool SocketListen(TSocket *s, uint32 backlog);
 abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip);
 
-uint32 SocketError();
+uint32 SocketError(void);
 
 uint32 SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32 timems);
 
@@ -493,7 +493,7 @@ typedef struct _TConn
 	char buffer[BUFFER_SIZE];
 } TConn;
 
-TConn *ConnAlloc();
+TConn *ConnAlloc(void);
 void ConnFree(TConn *c);
 
 abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *));
@@ -533,7 +533,7 @@ int32 DateCompare(TDate *d1,TDate *d2);
 abyss_bool DateFromGMT(TDate *d,time_t t);
 abyss_bool DateFromLocal(TDate *d,time_t t);
 
-abyss_bool DateInit();
+abyss_bool DateInit(void);
 
 /*********************************************************************
 ** Base64
@@ -659,7 +659,7 @@ void LogClose(TServer *srv);
 ** MIMEType
 *********************************************************************/
 
-void MIMETypeInit();
+void MIMETypeInit(void);
 abyss_bool MIMETypeAdd(char *type,char *ext);
 char *MIMETypeFromExt(char *ext);
 char *MIMETypeFromFileName(char *filename);
