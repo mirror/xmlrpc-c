@@ -53,6 +53,17 @@ Then run a client that does an RPC to this server:
 Also try other sample servers and clients, described in examples/README.
 
 
+WINDOWS
+-------
+
+All of the above is essentially for Unix-type operating systems.  To
+build and use Xmlrpc-c on Windows, see the file
+Windows/ReadMeWin32.txt.
+
+
+
+CREDITS
+-------
 
 Funding for the project that created the original Xmlrpc-c was
 provided in part by the good folks at First Peer, Inc., producers of
@@ -62,3 +73,5 @@ Eric Kidd developed the original Xmlrpc-c and maintained it up through
 January 2001.
 
 Bryan Henderson took over as maintainer in October 2004.
+
+For more history, see the HISTORY file.
