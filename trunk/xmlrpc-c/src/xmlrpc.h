@@ -537,7 +537,7 @@ xmlrpc_parse_call (xmlrpc_env *env,
 ** wire), return NULL and set up 'env'. The calling is responsible for
 ** calling xmlrpc_DECREF on the return value (if it isn't NULL). */
 extern xmlrpc_value *
-xmlrpc_parse_response (xmlrpc_env *env, char *xml_data, size_t xml_len);
+xmlrpc_parse_response (xmlrpc_env *env, const char *xml_data, size_t xml_len);
 
 
 /*=========================================================================

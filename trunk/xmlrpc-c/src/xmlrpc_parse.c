@@ -635,7 +635,7 @@ void xmlrpc_parse_call (xmlrpc_env *env,
 */
 
 xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
-                                     char *xml_data,
+                                     const char *xml_data,
                                      size_t xml_len)
 {
     xml_element *response, *child, *value;

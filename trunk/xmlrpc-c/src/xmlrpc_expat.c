@@ -346,7 +346,7 @@ static void character_data (void *user_data, XML_Char *s, int len)
 **  XXX - We should allow the user to specify the encoding of our xml_data.
 */
 
-xml_element *xml_parse (xmlrpc_env *env, char *xml_data, int xml_len)
+xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len)
 {
     parse_context context;
     XML_Parser parser;

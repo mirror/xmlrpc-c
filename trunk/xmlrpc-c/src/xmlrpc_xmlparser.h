@@ -79,4 +79,4 @@ xml_element **xml_element_children (xml_element *elem);
 **  You are responsible for calling xml_element_free on the returned pointer.
 */
 
-xml_element *xml_parse (xmlrpc_env *env, char *xml_data, int xml_len);
+xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len);
