@@ -26,7 +26,7 @@ ifeq ($(ENABLE_LIBWWW_CLIENT),yes)
   TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
 endif
 
-ifeq ($(ENABLE_LIBXML2),yes)
+ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
   LIBXML = $(LIBXML2_LIBS)
   LIBXML_FILES = xmlrpc_libxml2.c

@@ -44,7 +44,7 @@ SERVERPROGS = \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
-PROGS = $(CLIENTPROGS_C) $(SERVERPROGS)
+PROGS = $(CLIENTPROGS_C) $(SERVERPROGS) gen_sample_add_xml
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   PROGS += $(PROGS_CPP) 
@@ -55,7 +55,7 @@ endif
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
 
-ifneq ($(ENABLE_LIBXML2)x,x)
+ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML = $(LIBXML2_LIBS)
 else
   LIBXML = $(SRCDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a \
@@ -90,6 +90,9 @@ $(CGISERVERPROGS):%.cgi:%.o
 
 $(SERVERPROGS):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBSERVER)
+
+gen_sample_add_xml:%:%.o
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC)
 
 %.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<

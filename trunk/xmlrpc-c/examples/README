@@ -33,8 +33,3 @@ You can run such a client like this:
 
   $ ./xmlrpc_sample_add_client
 
-
-
-The server program 'validatee' should be in this directory, but right now
-is in the src/ directory.
-

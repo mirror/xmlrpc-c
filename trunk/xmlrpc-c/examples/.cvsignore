@@ -1,11 +1,11 @@
-query-meerkat
+gen_sample_add_xml
+interop-client
 meerkat-app-list
+query-meerkat
 synch_client
 xmlrpc_asynch_client
 auth_client
 xmlrpc_sample_add_client
 xmlrpc_sample_add_server
 xmlrpc_server_validatee
-interop-client
-server
 *.cgi

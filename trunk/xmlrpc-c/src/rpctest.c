@@ -64,6 +64,12 @@
 int total_tests = 0;
 int total_failures = 0;
 
+
+static void
+strfree(const char * const string) {
+    free((char*)string);
+}
+
 /* This is a good place to set a breakpoint. */
 static void test_failure (char *file, int line, char *label, char *statement)
 {
@@ -1750,7 +1756,7 @@ static void test_parse_xml_response (void)
 static void test_parse_xml_call (void)
 {
     xmlrpc_env env, env2;
-    char *method_name;
+    const char *method_name;
     xmlrpc_value *params;
     int i1, i2;
     char **bad_call;
@@ -1767,7 +1773,7 @@ static void test_parse_xml_call (void)
     TEST_NO_FAULT(&env);
     TEST(strcmp(method_name, "gloom&doom") == 0);
     TEST(i1 == 10 && i2 == 20);
-    free(method_name);
+    strfree(method_name);
     xmlrpc_DECREF(params);    
 
     /* Test some poorly-formed XML data. */
@@ -1850,8 +1856,8 @@ static xmlrpc_value *test_bar (xmlrpc_env *env,
 
 static xmlrpc_value *
 test_default(xmlrpc_env *   const env,
-             char *         const host ATTR_UNUSED,
-             char *         const method_name ATTR_UNUSED,
+             const char *   const host ATTR_UNUSED,
+             const char *   const method_name ATTR_UNUSED,
              xmlrpc_value * const param_array,
              void *         const user_data) {
 
@@ -2073,7 +2079,7 @@ static void test_nesting_limit (void)
 static void test_xml_size_limit (void)
 {
     xmlrpc_env env;
-    char *method_name;
+    const char *method_name;
     xmlrpc_value *params, *val;
     
 
@@ -2163,7 +2169,7 @@ static void test_sample_files (void)
     char **paths, *path;
     char *data;
     size_t data_len;
-    char *method_name;
+    const char *method_name;
     xmlrpc_value *params;
 
     xmlrpc_env_init(&env);
@@ -2174,7 +2180,7 @@ static void test_sample_files (void)
         read_file(path, &data, &data_len);
         xmlrpc_parse_call(&env, data, data_len, &method_name, &params);
         TEST_NO_FAULT(&env);
-        free(method_name);
+        strfree(method_name);
         xmlrpc_DECREF(params);
     }
 

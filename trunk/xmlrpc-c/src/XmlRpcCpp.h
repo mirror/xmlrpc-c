@@ -54,6 +54,7 @@ using namespace std;
 #include <xmlrpc_config.h>
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
+#include <xmlrpc_server.h>
 
 #define XMLRPC_NO_ASSIGNMENT \
     XMLRPC_FATAL_ERROR("Assignment operator not supported"); return *this;

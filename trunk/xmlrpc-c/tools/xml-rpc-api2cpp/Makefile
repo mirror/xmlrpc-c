@@ -33,6 +33,10 @@ endif
 LIBXMLRPC = $(SRCDIR)/src/libxmlrpc.la
 LIBXMLRPC_CPP = $(SRCDIR)/src/libxmlrpc_cpp.a
 LIBXMLRPC_CLIENT = $(SRCDIR)/src/libxmlrpc_client.la
+LIBXMLRPC_SERVER = $(SRCDIR)/src/libxmlrpc_server.la
+
+XMLRPC_LIBS = $(LIBXMLRPC) $(LIBXMLRPC_CPP) $(LIBXMLRPC_CLIENT) \
+	$(LIBXMLRPC_SERVER) $(LIBEXPAT)
 
 all: xml-rpc-api2cpp
 
@@ -47,6 +51,7 @@ OBJECTS = \
 xml-rpc-api2cpp: \
   $(OBJECTS) \
   $(LIBXMLRPC_CLIENT) \
+  $(LIBXMLRPC_SERVER) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_CPP) \
   $(LIBXML)
@@ -55,7 +60,7 @@ xml-rpc-api2cpp: \
 %.o:%.cc
 	$(LIBTOOL) --mode=compile $(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
-$(LIBXMLRPC) $(LIBXMLRPC_CPP) $(LIBXMLRPC_CLIENT) $(LIBEXPAT):
+$(XMLRPC_LIBS):
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 include $(SRCDIR)/Makefile.common
