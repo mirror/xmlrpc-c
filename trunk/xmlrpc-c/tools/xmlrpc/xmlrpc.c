@@ -41,8 +41,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <xmlrpc.h>
-#include <xmlrpc_client.h>
+#include "xmlrpc.h"
+#include "xmlrpc_client.h"
 
 #include "config.h"  /* information about this build environment */
 #include "casprintf.h"
