@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+#include "xmlrpc_config.h"  /* prereq for mallocvar.h -- defines __inline__ */
 
 #include <string.h>
 #include <stdio.h>

@@ -2,6 +2,9 @@
    an extension to C, as they do allocations with a cognizance of C 
    variables.  You can use them to make C read more like a high level
    language.
+
+   Before including this, you must define an __inline__ macro if your
+   compiler doesn't recognize it as a keyword.
 */
 
 #ifndef MALLOCVAR_INCLUDED
