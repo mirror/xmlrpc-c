@@ -35,6 +35,11 @@
 #ifndef _ABYSS_H_
 #define _ABYSS_H_
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*********************************************************************
 ** EDIT THE FOLLOWING LINES TO MEET YOUR CONFIGURATION NEEDS
 *********************************************************************/
@@ -43,13 +48,17 @@
 ** Paths and so on...
 *********************************************************************/
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #define DEFAULT_ROOT		"c:\\abyss"
 #define DEFAULT_DOCS		DEFAULT_ROOT"\\htdocs"
 #define DEFAULT_CONF_FILE	DEFAULT_ROOT"\\conf\\abyss.conf"
 #define DEFAULT_LOG_FILE	DEFAULT_ROOT"\\log\\abyss.log"
 #else
+#ifdef __rtems__
+#define DEFAULT_ROOT		"/abyss"
+#else
 #define DEFAULT_ROOT		"/usr/local/abyss"
+#endif
 #define DEFAULT_DOCS		DEFAULT_ROOT"/htdocs"
 #define DEFAULT_CONF_FILE	DEFAULT_ROOT"/conf/abyss.conf"
 #define DEFAULT_LOG_FILE	DEFAULT_ROOT"/log/abyss.log"
@@ -79,11 +88,11 @@
 ** General purpose definitions
 *********************************************************************/
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #define strcasecmp(a,b)	stricmp((a),(b))
 #else
 #define ioctlsocket(a,b,c)	ioctl((a),(b),(c))
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -97,11 +106,11 @@
 #define FALSE    0
 #endif  /* FALSE */
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #define LBR	"\n"
 #else
 #define LBR "\n"
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 /*********************************************************************
 ** Typedefs
@@ -120,7 +129,9 @@ typedef unsigned char byte;
 typedef unsigned char uint8;
 typedef char int8;
 
+#ifndef __cplusplus
 typedef int bool;
+#endif
 
 /*********************************************************************
 ** Buffer
@@ -202,36 +213,39 @@ char *TableFind(TTable *t,char *name);
 ** Thread
 *********************************************************************/
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #include <windows.h>
+#define  THREAD_ENTRYTYPE  WINAPI
 #else
+#define  THREAD_ENTRYTYPE
 #include <pthread.h>
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
-typedef uint32 (*TThreadProc)(void *);
-#ifdef _WIN32
+typedef uint32 (THREAD_ENTRYTYPE *TThreadProc)(void *);
+#ifdef ABYSS_WIN32
 typedef HANDLE TThread;
 #else
 typedef pthread_t TThread;
 typedef void* (*PTHREAD_START_ROUTINE)(void *);
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 bool ThreadCreate(TThread *t,TThreadProc func,void *arg);
 bool ThreadRun(TThread *t);
 bool ThreadStop(TThread *t);
 bool ThreadKill(TThread *t);
 void ThreadWait(uint32 ms);
-
+void ThreadExit( TThread *t, int ret_value );
+void ThreadClose( TThread *t );
 
 /*********************************************************************
 ** Mutex
 *********************************************************************/
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 typedef HANDLE TMutex;
 #else
 typedef pthread_mutex_t TMutex;
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 bool MutexCreate(TMutex *m);
 bool MutexLock(TMutex *m);
@@ -248,7 +262,8 @@ typedef struct _TPoolZone
 {
 	char *pos,*maxpos;
 	struct _TPoolZone *next,*prev;
-	char data[0];
+/*	char data[0]; */
+	char data[1];
 } TPoolZone;
 
 typedef struct
@@ -269,7 +284,7 @@ char *PoolStrdup(TPool *p,char *s);
 ** Socket
 *********************************************************************/
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #include <winsock.h>
 #else
 #include <sys/types.h>
@@ -282,15 +297,15 @@ char *PoolStrdup(TPool *p,char *s);
 #include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 #define TIME_INFINITE	0xffffffff
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 typedef SOCKET TSocket;
 #else
 typedef uint32 TSocket;
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 typedef struct in_addr TIPAddr;
 
@@ -329,37 +344,55 @@ uint32 SocketAvailableReadBytes(TSocket *s);
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #ifndef NAME_MAX
 #define NAME_MAX	1024
 #endif
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
+#ifndef __BORLANDC__
 #define O_APPEND	_O_APPEND
 #define O_CREAT 	_O_CREAT 
 #define O_EXCL		_O_EXCL
 #define O_RDONLY	_O_RDONLY
 #define O_RDWR		_O_RDWR 
-#define O_TRUNC		_O_TRUNC
+#define O_TRUNC	_O_TRUNC
 #define O_WRONLY	_O_WRONLY
 #define O_TEXT		_O_TEXT
 #define O_BINARY	_O_BINARY
+#endif
 
 #define A_HIDDEN	_A_HIDDEN
 #define A_NORMAL	_A_NORMAL
 #define A_RDONLY	_A_RDONLY
-#define	A_SUBDIR	_A_SUBDIR
+#define A_SUBDIR	_A_SUBDIR
 #else
 #define	A_SUBDIR	1
 #define O_BINARY	0
 #define O_TEXT		0
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 
+#ifndef __BORLANDC__
 typedef struct _stati64 TFileStat;
 typedef struct _finddata_t TFileInfo;
 typedef long TFileFind;
+
+#else
+
+typedef struct stat TFileStat;
+typedef struct finddata_t
+{
+	char name[NAME_MAX+1];
+	int attrib;
+	uint64 size;
+	time_t time_write;
+   WIN32_FIND_DATA data;
+} TFileInfo;
+typedef HANDLE TFileFind;
+#endif
 
 #else
 
@@ -442,6 +475,7 @@ typedef struct _TConn
 	TIPAddr peerip;
 	TThread thread;
 	bool connected;
+	bool inUse;
 	void (*job)(struct _TConn *);
 	char buffer[BUFFER_SIZE];
 } TConn;
@@ -639,5 +673,10 @@ void TraceExit(char *fmt,...);
 *********************************************************************/
 
 bool SessionLog(TSession *s);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* _ABYSS_H_ */

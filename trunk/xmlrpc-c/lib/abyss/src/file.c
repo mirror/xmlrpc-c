@@ -32,17 +32,17 @@
 **
 *******************************************************************************/
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #include <io.h>
 #else
 /* Must check this
 #include <sys/io.h>
 */
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
-#ifndef _WIN32
+#ifndef ABYSS_WIN32
 #include <dirent.h>
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 #include "abyss.h"
 
 /*********************************************************************
@@ -51,7 +51,7 @@
 
 bool FileOpen(TFile *f, char *name,uint32 attrib)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib))!=(-1));
 #else
 	return ((*f=open(name,attrib))!=(-1));
@@ -60,7 +60,7 @@ bool FileOpen(TFile *f, char *name,uint32 attrib)
 
 bool FileOpenCreate(TFile *f, char *name,uint32 attrib)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
 #else
 	return ((*f=open(name,attrib | O_CREAT,S_IWRITE | S_IREAD))!=(-1));
@@ -69,7 +69,7 @@ bool FileOpenCreate(TFile *f, char *name,uint32 attrib)
 
 bool FileWrite(TFile *f, void *buffer, uint32 len)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_write(*f,buffer,len)==(int32)len);
 #else
 	return (write(*f,buffer,len)==(int32)len);
@@ -78,7 +78,7 @@ bool FileWrite(TFile *f, void *buffer, uint32 len)
 
 int32 FileRead(TFile *f, void *buffer, uint32 len)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_read(*f,buffer,len));
 #else
 	return (read(*f,buffer,len));
@@ -87,7 +87,7 @@ int32 FileRead(TFile *f, void *buffer, uint32 len)
 
 bool FileSeek(TFile *f, uint64 pos, uint32 attrib)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_lseek(*f,pos,attrib)!=(-1));
 #else
 	return (lseek(*f,pos,attrib)!=(-1));
@@ -96,7 +96,7 @@ bool FileSeek(TFile *f, uint64 pos, uint32 attrib)
 
 uint64 FileSize(TFile *f)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_filelength(*f));
 #else
 	struct stat fs;
@@ -108,7 +108,7 @@ uint64 FileSize(TFile *f)
 
 bool FileClose(TFile *f)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_close(*f)!=(-1));
 #else
 	return (close(*f)!=(-1));
@@ -117,7 +117,7 @@ bool FileClose(TFile *f)
 
 bool FileStat(char *filename,TFileStat *filestat)
 {
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_stati64(filename,filestat)!=(-1));
 #else
 	return (stat(filename,filestat)!=(-1));
@@ -126,14 +126,29 @@ bool FileStat(char *filename,TFileStat *filestat)
 
 bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	bool ret;
 	char *p=path+strlen(path);
 
 	*p='\\';
 	*(p+1)='*';
 	*(p+2)='\0';
+#ifndef __BORLANDC__
 	ret=(((*filefind)=_findfirst(path,fileinfo))!=(-1));
+#else
+	*filefind = FindFirstFile( path, &fileinfo->data );
+   ret = *filefind != NULL;
+   if( ret )
+   {
+      LARGE_INTEGER li;
+      li.LowPart = fileinfo->data.nFileSizeLow;
+      li.HighPart = fileinfo->data.nFileSizeHigh;
+      strcpy( fileinfo->name, fileinfo->data.cFileName );
+	   fileinfo->attrib = fileinfo->data.dwFileAttributes;
+	   fileinfo->size   = li.QuadPart;
+      fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
+   }
+#endif
 	*p='\0';
 	return ret;
 #else
@@ -148,8 +163,25 @@ bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo)
 
 bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
+
+#ifndef __BORLANDC__
 	return (_findnext(*filefind,fileinfo)!=(-1));
+#else
+   bool ret = FindNextFile( *filefind, &fileinfo->data );
+   if( ret )
+   {
+      LARGE_INTEGER li;
+      li.LowPart = fileinfo->data.nFileSizeLow;
+      li.HighPart = fileinfo->data.nFileSizeHigh;
+      strcpy( fileinfo->name, fileinfo->data.cFileName );
+	   fileinfo->attrib = fileinfo->data.dwFileAttributes;
+	   fileinfo->size   = li.QuadPart;
+      fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
+   }
+	return ret;
+#endif
+
 #else
 	struct dirent *de;
 	/****** Must be changed ***/
@@ -184,8 +216,14 @@ bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
 
 void FileFindClose(TFileFind *filefind)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
+
+#ifndef __BORLANDC__
 	_findclose(*filefind);
+#else
+   FindClose( *filefind );
+#endif
+
 #else
 	closedir(filefind->handle);
 #endif

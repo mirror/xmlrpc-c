@@ -220,7 +220,7 @@ bool ConfReadServerFile(char *filename,TServer *srv)
 				}
 				else if (strcasecmp(option,"serverroot")==0)
 				{
-#ifdef _WIN32
+#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 					if (_chdir(p))
 #else
 					if (chdir(p))

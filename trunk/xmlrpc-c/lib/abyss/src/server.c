@@ -36,13 +36,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #include <io.h>
 #else
 /* Check this
 #include <sys/io.h>
 */
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 #include <fcntl.h>
 #include "abyss.h"
 
@@ -468,7 +468,7 @@ bool ServerDefaultHandlerFunc(TSession *r)
 		*p='\0';
 	};
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	p=z;
 	while (*p)
 	{
@@ -477,7 +477,7 @@ bool ServerDefaultHandlerFunc(TSession *r)
 
 		p++;
 	};
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 	if (!FileStat(z,&fs))
 	{
@@ -502,11 +502,11 @@ bool ServerDefaultHandlerFunc(TSession *r)
 			return TRUE;
 		};
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 		*p='\\';
 #else
 		*p='/';
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 		p++;
 
 		i=r->server->defaultfilenames.size;
@@ -644,7 +644,6 @@ void ServerFunc(TConn *c)
 	};
 
 	RequestFree(&r);
-
 	SocketClose(&(c->socket));
 }
 
@@ -705,20 +704,37 @@ void ServerRun(TServer *srv)
 	uint32 i;
 	TSocket s,ns;
 	TIPAddr ip;
-	TConn c[MAX_CONN];
+	TConn *c;
+
+	/* Connection array from Heap. Small systems might not
+	 * have the "stack_size" required to have the array of
+	 * connections right on it
+	 */
+	c = (TConn *)malloc( sizeof( TConn ) * MAX_CONN );
 
 	for (i=0;i<MAX_CONN;i++)
 	{
 		c[i].connected=FALSE;
+		c[i].inUse = FALSE;
 		c[i].server=srv;
 	};
 
 	s=srv->listensock;
 
-	while (1)
+	while( 1 )
 	{
+		/* collect all threads resources for closed connections */
 		for (i=0;i<MAX_CONN;i++)
-			if (!c[i].connected)
+		{
+			if( c[i].inUse && ( c[i].connected == FALSE ) )
+			{
+				ThreadClose( &c[i].thread );
+				c[i].inUse = FALSE;
+			}
+		}
+		
+		for (i=0;i<MAX_CONN;i++)
+			if( ( c[i].inUse == FALSE ) && ( c[i].connected == FALSE ) )
 				break;
 
 		if (i==MAX_CONN)
@@ -733,6 +749,7 @@ void ServerRun(TServer *srv)
 			{
 				c[i].peerip=ip;
 				c[i].connected=TRUE;
+				c[i].inUse = TRUE;
 				ConnProcess(c+i);
 			}
 			else
@@ -740,7 +757,10 @@ void ServerRun(TServer *srv)
 		}
 		else
 			TraceMsg("Socket Error=%d\n", SocketError());
-	};
+	}
+	/* It never gets here, bu in case someone make a change
+	 * later to terminate a server .... */
+	free( c );
 }
 #endif	/* _FORK */
 

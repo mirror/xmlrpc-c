@@ -266,10 +266,7 @@ char *StringData(TString *s)
 uint16 Hash16(char *s)
 {
 	uint16 i=0;
-
-	while (*s)
-		i+=*(s++);
-
+   while( *s ) i = i * 37 + ( *s++ );
 	return i;
 }
 

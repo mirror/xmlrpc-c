@@ -464,7 +464,7 @@ bool RequestValidURI(TSession *r)
 			r->host--;
 		};
 
-	// Host and Port Decoding
+	/* Host and Port Decoding */
 	if (r->host)
 		if (p=strchr(r->host,':'))
 		{

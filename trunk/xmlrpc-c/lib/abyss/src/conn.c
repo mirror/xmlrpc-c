@@ -50,11 +50,12 @@ void ConnFree(TConn *c)
 	free(c);
 }
 
-uint32 ConnJob(TConn *c)
+uint32 THREAD_ENTRYTYPE ConnJob(TConn *c)
 {
 	c->connected=TRUE;
 	(c->job)(c);
 	c->connected=FALSE;
+	ThreadExit( &c->thread, 0 );
 	return 0;
 }
 
@@ -71,8 +72,10 @@ bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *))
 bool ConnProcess(TConn *c)
 {
 /******* Must check this undef *****/
-#ifndef _WIN32
+#ifndef ABYSS_WIN32
+#ifndef _THREAD
 	c->connected=FALSE;
+#endif
 #endif
 	return ThreadRun(&(c->thread));
 }

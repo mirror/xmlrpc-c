@@ -37,13 +37,13 @@
 #include <time.h>
 #include <fcntl.h>
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 #include <io.h>
 #else
 /* Must check this
 #include <sys/io.h>
 */
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 #ifdef _UNIX
 #include <sys/signal.h>
@@ -217,7 +217,7 @@ int main(int argc,char **argv)
 		exit(1);
 	};
 
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	copyright();
 	printf("\nPress Ctrl+C to stop the server\n");
 #endif
@@ -244,9 +244,9 @@ int main(int argc,char **argv)
 	signal(SIGHUP,sigterm);
 	signal(SIGUSR1,sigterm);
 
+#ifdef _FORK
 	/* Catch defunct children. */
 	signal(SIGCHLD,sigchld);
-
 	/* Become a daemon */
 	switch (fork())
 	{
@@ -257,9 +257,10 @@ int main(int argc,char **argv)
 	default:
 	    exit(0);
 	};
+#endif
 
+#if !defined( _NO_USERS ) && !defined( __CYGWIN32__ )
 	setsid();
-
 	/* Change the current user if we are root */
 	if (getuid()==0)
 	{
@@ -276,6 +277,7 @@ int main(int argc,char **argv)
 		if (setuid(srv.uid)==(-1))
 			TraceExit("Failed to change the user.");
 	};
+#endif
 
 	if (srv.pidfile!=(-1))
 	{

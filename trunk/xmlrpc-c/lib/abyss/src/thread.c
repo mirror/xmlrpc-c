@@ -32,27 +32,40 @@
 **
 *******************************************************************************/
 
+#ifdef ABYSS_WIN32
+#include <process.h>
+#endif
 #include "abyss.h"
+
+/* 16K is the minimum size of stack on Win32 */
+#define  THREAD_STACK_SIZE    (16*1024)
 
 /*********************************************************************
 ** Thread
 *********************************************************************/
 
-bool ThreadCreate(TThread *t,uint32 (*func)(void *),void *arg)
+bool ThreadCreate(TThread *t, TThreadProc func, void *arg )
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	DWORD z;
-
-	*t=CreateThread(NULL,4096,(LPTHREAD_START_ROUTINE)func,(LPVOID)arg,CREATE_SUSPENDED,&z);
-
+   *t =(TThread)_beginthreadex( NULL, THREAD_STACK_SIZE, func, 
+                                arg, CREATE_SUSPENDED, &z );
 	return (*t!=NULL);
 #else
 #	ifdef _UNIX
 #		ifdef _THREAD
-	if (pthread_create(t,NULL,(PTHREAD_START_ROUTINE)func,arg)==0)
+ {
+    pthread_attr_t attr;
+    pthread_attr_init( &attr );
+    pthread_attr_setstacksize( &attr, THREAD_STACK_SIZE );
+ 	 if( pthread_create( t,&attr,(PTHREAD_START_ROUTINE)func,arg)==0)
+    {
+      pthread_attr_destroy( &attr );
 		return (pthread_detach(*t)==0);
-
-	return FALSE;
+    }
+    pthread_attr_destroy( &attr );
+	 return FALSE;
+ }
 #		else
 #			ifdef _FORK	
 	switch (fork())
@@ -74,44 +87,64 @@ bool ThreadCreate(TThread *t,uint32 (*func)(void *),void *arg)
 	(*func)(arg);
 	return TRUE;
 #	endif	/*_UNIX */
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
 
 bool ThreadRun(TThread *t)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	return (ResumeThread(*t)!=0xFFFFFFFF);
 #else
 	return TRUE;	
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
 bool ThreadStop(TThread *t)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	return (SuspendThread(*t)!=0xFFFFFFFF);
 #else
 	return TRUE;
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
 
 bool ThreadKill(TThread *t)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	return (TerminateThread(*t,0)!=0);
 #else
 	/*return (pthread_kill(*t)==0);*/
 	return TRUE;
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
 
 void ThreadWait(uint32 ms)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	Sleep(ms);
 #else
 	usleep(ms*1000);
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
+
+void ThreadExit( TThread *t, int ret_value )
+{
+#ifdef ABYSS_WIN32
+   _endthreadex( ret_value );
+#elif _THREAD
+	pthread_exit( ret_value );
+#else
+   ;
+#endif	/* ABYSS_WIN32 */
+}
+
+void ThreadClose( TThread *t )
+{
+#ifdef ABYSS_WIN32
+    CloseHandle( *t );
+#endif	/* ABYSS_WIN32 */
+}
+
+
 
 /*********************************************************************
 ** Mutex
@@ -119,10 +152,10 @@ void ThreadWait(uint32 ms)
 
 bool MutexCreate(TMutex *m)
 {
-#ifdef _THREAD
-	return (pthread_mutex_init(m, NULL)==0);
-#elif defined(_WIN32)
+#if defined(ABYSS_WIN32)
 	return ((*m=CreateMutex(NULL,FALSE,NULL))!=NULL);
+#elif _THREAD
+	return (pthread_mutex_init(m, NULL)==0);
 #else
 	return TRUE;
 #endif	
@@ -130,10 +163,10 @@ bool MutexCreate(TMutex *m)
 
 bool MutexLock(TMutex *m)
 {
-#ifdef _THREAD
-	return (pthread_mutex_lock(m)==0);
-#elif defined(_WIN32)
+#if defined(ABYSS_WIN32)
 	return (WaitForSingleObject(*m,INFINITE)!=WAIT_TIMEOUT);
+#elif _THREAD
+	return (pthread_mutex_lock(m)==0);
 #else
 	return TRUE;
 #endif
@@ -141,10 +174,10 @@ bool MutexLock(TMutex *m)
 
 bool MutexUnlock(TMutex *m)
 {
-#ifdef _THREAD
-	return (pthread_mutex_unlock(m)==0);
-#elif defined(_WIN32)
+#if defined(ABYSS_WIN32)
 	return ReleaseMutex(*m);
+#elif _THREAD
+	return (pthread_mutex_unlock(m)==0);
 #else
 	return TRUE;
 #endif
@@ -152,10 +185,10 @@ bool MutexUnlock(TMutex *m)
 
 bool MutexTryLock(TMutex *m)
 {
-#ifdef _THREAD
-	return (pthread_mutex_trylock(m)==0);
-#elif defined(_WIN32)
+#if defined(ABYSS_WIN32)
 	return (WaitForSingleObject(*m,0)!=WAIT_TIMEOUT);
+#elif _THREAD
+	return (pthread_mutex_trylock(m)==0);
 #else
 	return TRUE;
 #endif
@@ -163,10 +196,10 @@ bool MutexTryLock(TMutex *m)
 
 void MutexFree(TMutex *m)
 {
-#ifdef _THREAD
-	pthread_mutex_destroy(m);
-#elif defined(_WIN32)
+#if defined(ABYSS_WIN32)
 	CloseHandle(*m);
+#elif _THREAD
+	pthread_mutex_destroy(m);
 #else
 	;
 #endif

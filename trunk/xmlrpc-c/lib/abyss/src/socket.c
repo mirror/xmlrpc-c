@@ -34,13 +34,17 @@
 
 #include "abyss.h"
 
+#ifdef ABYSS_WIN32
+#define  EINTR		WSAEINTR
+#endif
+
 /*********************************************************************
 ** Socket
 *********************************************************************/
 
 bool SocketInit()
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	WORD wVersionRequested;
 	WSADATA wsaData;
 	int err;
@@ -51,7 +55,7 @@ bool SocketInit()
 	return ( err == 0 );
 #else
 	return TRUE;
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
 
 #define RET(x)	return ((x)!=(-1))
@@ -68,11 +72,11 @@ bool SocketCreate(TSocket *s)
 
 bool SocketClose(TSocket *s)
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	RET(closesocket(*s));
 #else
 	RET(close(*s));
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
 
 uint32 SocketWrite(TSocket *s, char *buffer, uint32 len)
@@ -90,7 +94,7 @@ uint32 SocketPeek(TSocket *s, char *buffer, uint32 len)
 	int32 r=recv(*s,buffer,len,MSG_PEEK);
 
 	if (r==(-1))
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 		if (SocketError()==WSAEMSGSIZE)
 #else
 		if (SocketError()==EMSGSIZE)
@@ -156,11 +160,11 @@ bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
 uint32 SocketWait(TSocket *s,bool rd,bool wr,uint32 timems)
 {
 	fd_set rfds,wfds;
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	TIMEVAL tv;
 #else
 	struct timeval tv;
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
@@ -216,9 +220,9 @@ uint32 SocketAvailableReadBytes(TSocket *s)
 
 uint32 SocketError()
 {
-#ifdef _WIN32
+#ifdef ABYSS_WIN32
 	return WSAGetLastError();
 #else
 	return errno;
-#endif	/* _WIN32 */
+#endif	/* ABYSS_WIN32 */
 }
