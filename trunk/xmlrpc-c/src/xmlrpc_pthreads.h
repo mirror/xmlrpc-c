@@ -23,6 +23,9 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
+#ifndef  XMLRPC_PTHREADS_H_INCLUDED
+#define  XMLRPC_PTHREADS_H_INCLUDED
+
 #ifndef WIN32
 #	define _REENTRANT
 #	include <pthread.h>
@@ -63,4 +66,4 @@ extern int pthread_mutex_unlock(pthread_mutex_t *mp);
 extern int pthread_mutex_destroy(pthread_mutex_t *mp);
 
 #endif
-
+#endif
