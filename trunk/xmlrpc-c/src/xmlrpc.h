@@ -425,6 +425,33 @@ xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       const char *   const format,
                       va_list              args);
 
+void 
+xmlrpc_read_int(xmlrpc_env *         const envP,
+                const xmlrpc_value * const valueP,
+                int *                const intValueP);
+
+void
+xmlrpc_read_double(xmlrpc_env *         const envP,
+                   const xmlrpc_value * const valueP,
+                   xmlrpc_double *      const doubleValueP);
+
+void
+xmlrpc_read_bool(xmlrpc_env *         const envP,
+                 const xmlrpc_value * const valueP,
+                 xmlrpc_bool *        const boolValueP);
+
+void
+xmlrpc_read_string(xmlrpc_env *         const envP,
+                   const xmlrpc_value * const valueP,
+                   const char **        const stringValueP);
+
+
+void
+xmlrpc_read_string_lp(xmlrpc_env *         const envP,
+                      const xmlrpc_value * const valueP,
+                      unsigned int *       const lengthP,
+                      const char **        const stringValueP);
+
 /* Return the number of elements in an XML-RPC array.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
 int 

@@ -120,9 +120,211 @@ xmlrpc_DECREF (xmlrpc_value * const valueP) {
 
 
 /*=========================================================================
+    Utiltiies
+=========================================================================*/
+
+static const char *
+typeName(xmlrpc_type const type) {
+
+    switch(type) {
+
+    case XMLRPC_TYPE_INT: return "INT";
+    case XMLRPC_TYPE_BOOL: return "BOOL";
+    case XMLRPC_TYPE_DOUBLE: return "DOUBLE";
+    case XMLRPC_TYPE_DATETIME: return "DATETIME";
+    case XMLRPC_TYPE_STRING: return "STRING";
+    case XMLRPC_TYPE_BASE64: return "BASE64";
+    case XMLRPC_TYPE_ARRAY: return "ARRAY";
+    case XMLRPC_TYPE_STRUCT: return "STRUCT";
+    case XMLRPC_TYPE_C_PTR: return "C_PTR";
+    case XMLRPC_TYPE_DEAD: return "DEAD";
+    default: return "???";
+    }
+}
+
+
+
+static void
+verifyNoNulls(xmlrpc_env * const envP,
+              const char * const contents,
+              unsigned int const len) {
+/*----------------------------------------------------------------------------
+   Verify that the character array 'contents', which is 'len' bytes long,
+   does not contain any NUL characters, which means it can be made into
+   a passable ASCIIZ string just by adding a terminating NUL.
+
+   Fail if the array contains a NUL.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
+    for (i = 0; i < len && !envP->fault_occurred; i++)
+        if (contents[i] == '\0')
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_TYPE_ERROR, 
+                "String must not contain NUL characters");
+}
+
+
+
+static void
+verifyNoNullsW(xmlrpc_env *    const envP,
+               const wchar_t * const contents,
+               unsigned int    const len) {
+/*----------------------------------------------------------------------------
+   Same as verifyNoNulls(), but for wide characters.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
+    for (i = 0; i < len && !envP->fault_occurred; i++)
+        if (contents[i] == '\0')
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_TYPE_ERROR, 
+                "String must not contain NUL characters");
+}
+
+
+
+static void
+validateType(xmlrpc_env *         const envP,
+             const xmlrpc_value * const valueP,
+             xmlrpc_type          const expectedType) {
+
+    if (valueP->_type != expectedType) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
+            "type %s was expected.", 
+            typeName(valueP->_type), typeName(expectedType));
+    }
+}
+
+
+
+/*=========================================================================
+    Extracting XML-RPC value
+===========================================================================
+  These routines extract XML-RPC values into ordinary C data types.
+
+  For array and struct values, see the separates files xmlrpc_array.c
+  and xmlrpc_struct.c.
+=========================================================================*/
+
+void 
+xmlrpc_read_int(xmlrpc_env *         const envP,
+                const xmlrpc_value * const valueP,
+                xmlrpc_int32 *       const intValueP) {
+
+    validateType(envP, valueP, XMLRPC_TYPE_INT);
+    if (!envP->fault_occurred)
+        *intValueP = valueP->_value.i;
+}
+
+
+
+void
+xmlrpc_read_double(xmlrpc_env *         const envP,
+                   const xmlrpc_value * const valueP,
+                   xmlrpc_double *      const doubleValueP) {
+    
+    validateType(envP, valueP, XMLRPC_TYPE_DOUBLE);
+    if (!envP->fault_occurred)
+        *doubleValueP = valueP->_value.d;
+
+}
+
+
+
+void
+xmlrpc_read_bool(xmlrpc_env *         const envP,
+                 const xmlrpc_value * const valueP,
+                 xmlrpc_bool *        const boolValueP) {
+
+    validateType(envP, valueP, XMLRPC_TYPE_BOOL);
+    if (!envP->fault_occurred)
+        *boolValueP = valueP->_value.b;
+}
+
+
+
+void
+xmlrpc_read_string(xmlrpc_env *         const envP,
+                   const xmlrpc_value * const valueP,
+                   const char **        const stringValueP) {
+/*----------------------------------------------------------------------------
+   Read the value of an XML-RPC string an ASCIIZ string.
+
+   Fail if the string contains null characters (which means it wasn't
+   really a string, but XML-RPC doesn't seem to understand what a string
+   is, and such values are possible).
+-----------------------------------------------------------------------------*/
+    validateType(envP, valueP, XMLRPC_TYPE_STRING);
+    if (!envP->fault_occurred) {
+        unsigned int const size = 
+            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+        const char * const contents = 
+            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+
+        verifyNoNulls(envP, contents, size);
+        if (!envP->fault_occurred) {
+            char * stringValue;
+            
+            stringValue = malloc(size+1);
+            if (stringValue == NULL)
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate space "
+                    "for %u-character string", size);
+            else {
+                memcpy(stringValue,
+                       XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block), size);
+                stringValue[size] = '\0';
+
+                *stringValueP = stringValue;
+            }
+        }
+    }
+}
+
+
+
+void
+xmlrpc_read_string_lp(xmlrpc_env *         const envP,
+                      const xmlrpc_value * const valueP,
+                      unsigned int *       const lengthP,
+                      const char **        const stringValueP) {
+
+    validateType(envP, valueP, XMLRPC_TYPE_STRING);
+    if (!envP->fault_occurred) {
+        unsigned int const size = 
+            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+        const char * const contents = 
+            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+
+        char * stringValue;
+
+        stringValue = malloc(size);
+        if (stringValue == NULL)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate %u bytes "
+                "for string.", size);
+        else {
+            memcpy(stringValue, contents, size);
+            *stringValueP = stringValue;
+            *lengthP = size;
+        }
+    }
+}
+
+
+
+/*=========================================================================
 **  Building XML-RPC values.
 **=========================================================================
+**  Build new XML-RPC values from a format string. This code is heavily
+**  inspired by Py_BuildValue from Python 1.5.2. In particular, our
+**  particular abuse of the va_list data type is copied from the equivalent
+**  Python code in modsupport.c. Since Python is portable, our code should
+**  (in theory) also be portable.
 */
+
 
 xmlrpc_type xmlrpc_value_type (xmlrpc_value* value)
 {
@@ -229,10 +431,10 @@ mkString(xmlrpc_env *    const envP,
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_STRING;
         MAKE_WCS_BLOCK_NULL(valP);
-        XMLRPC_TYPED_MEM_BLOCK_INIT(char, envP, &valP->_block, length + 1);
+        XMLRPC_MEMBLOCK_INIT(char, envP, &valP->_block, length + 1);
         if (!envP->fault_occurred) {
             char * const contents =
-                XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &valP->_block);
+                XMLRPC_MEMBLOCK_CONTENTS(char, &valP->_block);
             memcpy(contents, value, length);
             contents[length] = '\0';
         }
@@ -479,16 +681,6 @@ mkStructFromVal(xmlrpc_env *    const envP,
 
 
 
-/*=========================================================================
-**  Building XML-RPC values.
-**=========================================================================
-**  Build new XML-RPC values from a format string. This code is heavily
-**  inspired by Py_BuildValue from Python 1.5.2. In particular, our
-**  particular abuse of the va_list data type is copied from the equivalent
-**  Python code in modsupport.c. Since Python is portable, our code should
-**  (in theory) also be portable.
-*/
-
 static void
 getValue(xmlrpc_env *    const envP, 
          const char**    const format, 
@@ -710,7 +902,7 @@ getValue(xmlrpc_env *    const envP,
         }
         break;
 
-    case '{':
+    case '{': 
         getStruct(envP, formatP, '}', args, valPP);
         if (!envP->fault_occurred) {
             XMLRPC_ASSERT(**formatP == '}');
@@ -718,18 +910,20 @@ getValue(xmlrpc_env *    const envP,
         }
         break;
 
-    default:
+    default: {
+        const char * const badCharacter = xmlrpc_makePrintableChar(formatChar);
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INTERNAL_ERROR,
-            "Unexpected character '%c' in "
-            "format string", formatChar);
+            "Unexpected character '%s' in format string", badCharacter);
+        xmlrpc_strfree(badCharacter);
+        }
     }
 }
 
 
 
 void
-xmlrpc_build_value_va(xmlrpc_env *    const env,
+xmlrpc_build_value_va(xmlrpc_env *    const envP,
                       const char *    const format,
                       va_list               args,
                       xmlrpc_value ** const valPP,
@@ -738,17 +932,22 @@ xmlrpc_build_value_va(xmlrpc_env *    const env,
     const char * formatCursor;
     va_list args_copy;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(format != NULL);
-    
-    formatCursor = &format[0];
-    VA_LIST_COPY(args_copy, args);
-    getValue(env, &formatCursor, &args_copy, valPP);
 
-    if (!env->fault_occurred)
-        XMLRPC_ASSERT_VALUE_OK(*valPP);
-
-    *tailP = formatCursor;
+    if (strlen(format) == 0)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR, "Format string is empty.");
+    else {
+        formatCursor = &format[0];
+        VA_LIST_COPY(args_copy, args);
+        getValue(envP, &formatCursor, &args_copy, valPP);
+        
+        if (!envP->fault_occurred)
+            XMLRPC_ASSERT_VALUE_OK(*valPP);
+        
+        *tailP = formatCursor;
+    }
 }
 
 
@@ -897,74 +1096,6 @@ cleanup:
     if (key)
         xmlrpc_DECREF(key);
 }
-
-
-static const char *
-typeName(xmlrpc_type const type) {
-
-    switch(type) {
-
-    case XMLRPC_TYPE_INT: return "INT";
-    case XMLRPC_TYPE_BOOL: return "BOOL";
-    case XMLRPC_TYPE_DOUBLE: return "DOUBLE";
-    case XMLRPC_TYPE_DATETIME: return "DATETIME";
-    case XMLRPC_TYPE_STRING: return "STRING";
-    case XMLRPC_TYPE_BASE64: return "BASE64";
-    case XMLRPC_TYPE_ARRAY: return "ARRAY";
-    case XMLRPC_TYPE_STRUCT: return "STRUCT";
-    case XMLRPC_TYPE_C_PTR: return "C_PTR";
-    case XMLRPC_TYPE_DEAD: return "DEAD";
-    default: return "???";
-    }
-}
-
-
-
-static void
-validateType(xmlrpc_env *   const envP,
-             xmlrpc_value * const valueP,
-             xmlrpc_type    const expectedType) {
-
-    if (valueP->_type != expectedType) {
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
-            "type %s was expected.", 
-            typeName(valueP->_type), typeName(expectedType));
-    }
-}
-
-
-
-static void
-verifyNoNulls(xmlrpc_env * const envP,
-              const char * const contents,
-              unsigned int const len) {
-
-    unsigned int i;
-
-    for (i = 0; i < len && !envP->fault_occurred; i++)
-        if (contents[i] == '\0')
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_TYPE_ERROR, 
-                "String must not contain NUL characters");
-}
-
-
-
-static void
-verifyNoNullsW(xmlrpc_env *    const envP,
-               const wchar_t * const contents,
-               unsigned int    const len) {
-
-    unsigned int i;
-
-    for (i = 0; i < len && !envP->fault_occurred; i++)
-        if (contents[i] == '\0')
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_TYPE_ERROR, 
-                "String must not contain NUL characters");
-}
-
 
 
 static void 
