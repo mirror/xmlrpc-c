@@ -63,14 +63,14 @@ int pthread_create(pthread_t *new_thread_ID,
 	return hThread ? 0 : -1;
 }
 
-//Just kill it.
+/* Just kill it. */
 int pthread_cancel(pthread_t target_thread)
 {
 	CloseHandle (target_thread);
 	return 0;
 }
 
-//Waits for the thread to exit before continuing.
+/* Waits for the thread to exit before continuing. */
 int pthread_join(pthread_t target_thread, void **status)
 {
 	DWORD dwResult = WaitForSingleObject(target_thread, INFINITE);
@@ -78,7 +78,7 @@ int pthread_join(pthread_t target_thread, void **status)
 	return 0;
 }
 
-//Stubbed. Do nothing.
+/* Stubbed. Do nothing. */
 int pthread_detach(pthread_t target_thread)
 {
 	return 0;
