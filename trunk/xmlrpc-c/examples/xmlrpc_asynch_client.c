@@ -1,7 +1,7 @@
 /* A simple asynchronous XML-RPC client written in C, as an example of
    Xmlrpc-c asynchronous RPC facilities.  This is the same as the 
    simpler synchronous client xmlprc_sample_add_client.c, except that
-   it adds 3 different pairs of numbers with the summations RPCs going on
+   it adds 3 different pairs of numbers with the summation RPCs going on
    simultaneously.
 */
 
@@ -98,6 +98,8 @@ main(int           const argc,
 
     /* The following is what calls handle_sample_add_response() (3 times) */
     xmlrpc_client_event_loop_finish_asynch();
+
+    printf("All RPCs finished.\n");
 
     /* Destroy the Xmlrpc-c client object */
     xmlrpc_client_cleanup();

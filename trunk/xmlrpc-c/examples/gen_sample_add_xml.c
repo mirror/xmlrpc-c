@@ -2,6 +2,10 @@
    call suitable for the xmlrpc_sample_add_server program.
 
    This is the same XML that the xmlrpc_sample_add_client program sends.
+
+   Use this either as an example of how to use the Xmlrpc-c XML-generating
+   functions or to generate XML that you can use to test an XML-RPC
+   server.
 */
 
 #include <stdio.h>

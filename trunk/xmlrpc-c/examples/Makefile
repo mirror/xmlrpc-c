@@ -26,11 +26,12 @@ LDFLAGS = $(LADD)
 
 
 CLIENTPROGS_C = \
-  synch_client \
   auth_client \
+  query-meerkat \
+  synch_client \
+  xmlrpc \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
-  query-meerkat \
 
 PROGS_CPP = \
   meerkat-app-list \
@@ -41,6 +42,7 @@ CGISERVERPROGS = \
   interop-cgi.cgi \
 
 SERVERPROGS = \
+  xmlrpc_loop_server \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
@@ -53,7 +55,7 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
   PROGS += $(CGISERVERPROGS) 
 endif
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
+INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/abyss/src
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML = $(LIBXML2_LIBS)
