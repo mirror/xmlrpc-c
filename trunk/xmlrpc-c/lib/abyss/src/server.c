@@ -666,62 +666,37 @@ void ServerInit(TServer *srv)
 		TraceExit("Can't listen\n");
 };
 
+/* With pthread configuration, our connections run as threads of a
+   single address space, so we manage a pool of connection
+   descriptors.  With fork configuration, our connections run as
+   separate processes with their own memory, so we don't have the
+   pool.
+*/
 
-#ifdef _FORK
-void ServerRun(TServer *srv)
-{
-	TSocket s,ns;
-	TConn c;
-	pid_t r;
-	TIPAddr ip;
-
-	s=srv->listensock;
-
-	while (1)
-	{
-		if (SocketAccept(&s,&ns,&ip))
-		{
-			switch (fork())
-			{
-			case 0:
-				SocketClose(&s);
-				c.socket=ns;
-				c.buffersize=c.bufferpos=0;
-				c.inbytes=c.outbytes=0;
-				c.server=srv;
-				c.peerip=ip;
-				ServerFunc(&c);
-			 	exit(0);
-			case (-1):
-				TraceExit("Fork Error");
-			};
-			SocketClose(&ns);
-		}
-		else
-			TraceMsg("Socket Error=%d\n", SocketError());
-	};
-}
+static abyss_bool const usingPthreadsForConnections = 
+#ifdef _THREAD
+TRUE;
 #else
-void ServerRun(TServer *srv)
+FALSE;
+#endif
+
+
+
+static void 
+ServerRunThreaded(TServer *srv)
 {
 	uint32 i;
 	TSocket s,ns;
-	TIPAddr ip;
+	TIPAddr peerIpAddr;
 	TConn *c;
-	TIPAddr emptyIp = {0};
 
 	/* Connection array from Heap. Small systems might not
 	 * have the "stack_size" required to have the array of
-	 * connections right on it
-	 */
+	 * connections right on it */
 	c = (TConn *)malloc( sizeof( TConn ) * MAX_CONN );
 
 	for (i=0;i<MAX_CONN;i++)
-	{
-		c[i].connected=FALSE;
 		c[i].inUse = FALSE;
-		c[i].server=srv;
-	};
 
 	s=srv->listensock;
 
@@ -732,48 +707,88 @@ void ServerRun(TServer *srv)
 		{
 			if( c[i].inUse && ( c[i].connected == FALSE ) )
 			{
-				ThreadClose( &c[i].thread );
+				ConnClose( &c[i] );
 				c[i].inUse = FALSE;
 			}
 		}
 		
-		for (i=0;i<MAX_CONN;i++)
-			if( ( c[i].inUse == FALSE ) && ( c[i].connected == FALSE ) )
-				break;
+		for (i=0; i<MAX_CONN && c[i].inUse; ++i);
 
 		if (i==MAX_CONN)
 		{
+            /* Every connection descriptor was in use. */
 			ThreadWait(2000);
 			continue;
 		};
 
-		if (SocketAccept(&s,&ns,&ip))
+		if (SocketAccept(&s,&ns,&peerIpAddr))
 		{
-			c[i].peerip=ip;
-			c[i].connected=TRUE;
+            abyss_bool success;
 			c[i].inUse = TRUE;
-			if (ConnCreate(&c[i],&ns,&ServerFunc))
+			success = ConnCreate2(&c[i], srv, ns, peerIpAddr, &ServerFunc, 
+                                  ABYSS_BACKGROUND);
+            if (success)
 			{
 				ConnProcess(&c[i]);
 			}
 			else
 			{
-				c[i].peerip = emptyIp;
-				c[i].connected=FALSE;
-				c[i].inUse = FALSE;
 				SocketClose(&ns);
+				c[i].inUse = FALSE;
 			}
 		}
 		else
 			TraceMsg("Socket Error=%d\n", SocketError());
 	}
-	/* It never gets here, bu in case someone make a change
-	 * later to terminate a server .... */
+	/* We never get here, but it's conceptually possible for someone to 
+       terminate a server normally, so... 
+    */
 	free( c );
 }
-#endif	/* _FORK */
 
-/* This function supplied by Brian Quinlan of ActiveState. */
+
+
+static void 
+ServerRunForked(TServer *srv)
+{
+	TSocket s,ns;
+	TConn c;
+	TIPAddr ip;
+
+	s=srv->listensock;
+
+	while (1)
+	{
+		if (SocketAccept(&s,&ns,&ip))
+		{
+            abyss_bool success;
+            success = ConnCreate2(&c, 
+                                  srv, ns, ip, ServerFunc, ABYSS_BACKGROUND);
+
+                /* ConnCreate2() forks.  Child does not return. */
+            if (success)
+                ConnProcess(&c);
+
+            SocketClose(&ns); /* Close parent's copy of socket */
+		}
+		else
+			TraceMsg("Socket Error=%d\n", SocketError());
+	};
+}
+
+
+
+void 
+ServerRun(TServer * const serverP) {
+    if (usingPthreadsForConnections)
+        ServerRunThreaded(serverP);
+    else
+        ServerRunForked(NULL);
+}
+
+
+
+/* ServerRunOnce() supplied by Brian Quinlan of ActiveState. */
 
 /* Bryan Henderson found this to be completely wrong on 2001.11.29
    and changed it so it does the same thing as ServerRun(), but only
@@ -783,6 +798,21 @@ void ServerRun(TServer *srv)
    ConnCreate(), both the parent and the child read the socket and
    processed the request!
 */
+
+
+static void
+closeParentSocketCopy(TSocket * socketP) {
+/*----------------------------------------------------------------------------
+   If we're doing forked connections, close the indicated socket because it
+   is the parent's copy and the parent doesn't need it.  If we're doing
+   threaded connections, then there's no such thing as a parent's copy, so
+   nothing to close.
+-----------------------------------------------------------------------------*/
+#ifndef _THREAD
+    SocketClose(socketP);
+#endif
+}
+
 
 void ServerRunOnce2(TServer *           const srv,
                     enum abyss_foreback const foregroundBackground)
@@ -797,19 +827,19 @@ void ServerRunOnce2(TServer *           const srv,
 
       connection.connected = FALSE;
       connection.inUse = FALSE;
-      connection.server = srv;
 
       listenSocket = srv->listensock;
       
       succeeded = SocketAccept(&listenSocket, &connectedSocket, &remoteAddr);
       if (succeeded) {
           abyss_bool success;
-          success = ConnCreate2(&connection, &connectedSocket, &ServerFunc,
+          success = ConnCreate2(&connection, 
+                                srv, connectedSocket, remoteAddr, 
+                                &ServerFunc,
                                 foregroundBackground);
           if (success)
               ConnProcess(&connection);
-          else
-              SocketClose(&connectedSocket);
+          closeParentSocketCopy(&connectedSocket);
       } else
           TraceMsg("Socket Error=%d\n", SocketError());
 }

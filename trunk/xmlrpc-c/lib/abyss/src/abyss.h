@@ -479,6 +479,7 @@ typedef struct _TConn
 	uint32 inbytes,outbytes;	
 	TSocket socket;
 	TIPAddr peerip;
+    abyss_bool hasOwnThread;
 	TThread thread;
 	abyss_bool connected;
 	abyss_bool inUse;
@@ -492,12 +493,15 @@ void ConnFree(TConn *c);
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
 abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *));
-abyss_bool ConnCreate2(TConn *             const connection, 
-                       TSocket *           const listenSocketP,
+abyss_bool ConnCreate2(TConn *             const connectionP, 
+                       TServer *           const serverP,
+                       TSocket             const connectedSocket,
+                       TIPAddr             const peerIpAddr,
                        void            ( *       func)(TConn *),
                        enum abyss_foreback const foregroundBackground);
 abyss_bool ConnProcess(TConn *c);
 abyss_bool ConnKill(TConn *c);
+void ConnClose(TConn *c);
 
 abyss_bool ConnWrite(TConn *c,void *buffer,uint32 size);
 abyss_bool ConnRead(TConn *c, uint32 timems);

@@ -59,30 +59,36 @@ uint32 THREAD_ENTRYTYPE ConnJob(TConn *c)
 	return 0;
 }
 
-abyss_bool ConnCreate2(TConn *             const connection, 
-                       TSocket *           const listenSocketP,
+abyss_bool ConnCreate2(TConn *             const connectionP, 
+                       TServer *           const serverP,
+                       TSocket             const connectedSocket,
+                       TIPAddr             const peerIpAddr,
                        void            ( *       func)(TConn *),
                        enum abyss_foreback const foregroundBackground)
 {
     abyss_bool retval;
     
-    connection->socket     = *listenSocketP;
-    connection->buffersize = connection->bufferpos=0;
-    connection->connected  = TRUE;
-    connection->job        = func;
-    connection->inbytes    = 0;
-    connection->outbytes   = 0;
+    connectionP->server     = serverP;
+    connectionP->socket     = connectedSocket;
+    connectionP->peerip     = peerIpAddr;
+    connectionP->buffersize = 0;
+    connectionP->bufferpos  = 0;
+    connectionP->connected  = TRUE;
+    connectionP->job        = func;
+    connectionP->inbytes    = 0;
+    connectionP->outbytes   = 0;
     
     switch (foregroundBackground)
     {
     case ABYSS_FOREGROUND:
-        connection->thread = NULL;
+        connectionP->hasOwnThread = FALSE;
         retval = TRUE;
         break;
     case ABYSS_BACKGROUND:
-        retval = ThreadCreate(&(connection->thread),
+        connectionP->hasOwnThread = TRUE;
+        retval = ThreadCreate(&connectionP->thread,
                               (TThreadProc)ConnJob, 
-                              connection);
+                              connectionP);
         break;
     }
     return retval;
@@ -90,23 +96,17 @@ abyss_bool ConnCreate2(TConn *             const connection,
 
 abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *))
 {
-    return ConnCreate2(c, s, func, ABYSS_BACKGROUND);
+    return ConnCreate2(c, c->server, *s, c->peerip, func, ABYSS_BACKGROUND);
 }
 
 abyss_bool ConnProcess(TConn *c)
 {
     abyss_bool retval;
 
-    if (c->thread) {
+    if (c->hasOwnThread) {
         /* There's a background thread to handle this connection.  Set
            it running.
         */
-/******* Must check this undef *****/
-#ifndef ABYSS_WIN32
-#ifndef _THREAD
-        c->connected=FALSE;
-#endif
-#endif
         retval = ThreadRun(&(c->thread));
     } else {
         /* No background thread.  We just handle it here while Caller waits. */
@@ -115,6 +115,12 @@ abyss_bool ConnProcess(TConn *c)
         retval = TRUE;
     }
     return retval;
+}
+
+void ConnClose(TConn *c)
+{
+    if (c->hasOwnThread)
+        ThreadClose(c->thread);
 }
 
 abyss_bool ConnKill(TConn *c)

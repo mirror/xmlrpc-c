@@ -67,7 +67,6 @@ abyss_bool ThreadCreate(TThread *t, TThreadProc func, void *arg )
 	 return FALSE;
  }
 #		else
-#			ifdef _FORK	
 	switch (fork())
 	{
 	case 0:
@@ -78,10 +77,6 @@ abyss_bool ThreadCreate(TThread *t, TThreadProc func, void *arg )
 	};
 	
 	return TRUE;
-#			else
-	(*func)(arg);
-	return TRUE;
-#			endif	/* _FORK */
 #		endif	/* _THREAD */
 #	else
 	(*func)(arg);

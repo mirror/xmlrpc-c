@@ -244,7 +244,6 @@ int main(int argc,char **argv)
 	signal(SIGHUP,sigterm);
 	signal(SIGUSR1,sigterm);
 
-#ifdef _FORK
 	/* Catch defunct children. */
 	signal(SIGCHLD,sigchld);
 	/* Become a daemon */
@@ -257,7 +256,6 @@ int main(int argc,char **argv)
 	default:
 	    exit(0);
 	};
-#endif
 
 #if !defined( _NO_USERS ) && !defined( __CYGWIN32__ )
 	setsid();
