@@ -23,8 +23,12 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
-
+#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
+#else
+#include "xmlrpc_win32_config.h"
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -180,6 +184,7 @@ void xmlrpc_mem_block_init (xmlrpc_env* env,
 			"Can't allocate memory block");
 
  cleanup:
+	return;
 }
 
 /* Deallocate the contents of the provided xmlrpc_mem_block, but not the
@@ -245,6 +250,7 @@ void xmlrpc_mem_block_resize (xmlrpc_env* env,
     block->_allocated = proposed_alloc;
 
  cleanup:
+	return;
 }
 
 /* Append data to an existing xmlrpc_mem_block. */
@@ -261,7 +267,8 @@ void xmlrpc_mem_block_append (xmlrpc_env* env,
     xmlrpc_mem_block_resize(env, block, size + len);
     XMLRPC_FAIL_IF_FAULT(env);
 
-    memcpy(block->_block + size, data, len);
+    memcpy(((unsigned char*) block->_block) + size, data, len);
 
  cleanup:
+    return;
 }

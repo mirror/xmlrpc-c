@@ -280,7 +280,7 @@ typedef struct _xmlrpc_value {
 	xmlrpc_int32 i;
 	xmlrpc_bool b;
 	double d;
-	/* time_t t */;
+	/* time_t t */
 	void *c_ptr;
     } _value;
 

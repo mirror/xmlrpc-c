@@ -23,8 +23,12 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
-
+#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
+#else
+#include "xmlrpc_win32_config.h"
+#endif
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <xmlparse.h>
@@ -301,6 +305,7 @@ static void end_element (void *user_data, XML_Char *name)
 	context->current = context->current->_parent;
 
  cleanup:
+	return;
     }
 }
 
@@ -320,6 +325,7 @@ static void character_data (void *user_data, XML_Char *s, int len)
 	XMLRPC_FAIL_IF_FAULT(context->env);
 
  cleanup:
+	return;
     }
 }
 

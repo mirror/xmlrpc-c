@@ -1,4 +1,9 @@
-0.9.6 - Eric Kidd <eric.kidd@pobox.com> - 30 January 2000
+CVS - Eric Kidd <eric.kidd@pobox.com> - 02 February 2001
+
+  * Merged Win32 VC/C++ changes from Alex and Ian.
+  * Merged Win32 Cygwin changes from Rosimildo.
+
+0.9.6 - Eric Kidd <eric.kidd@pobox.com> - 30 January 2001
 
   * Fixed lots of gcc warnings.
   * Added a new 'xmlrpc_server_info' class, which allows you to
@@ -15,27 +20,27 @@
   * Added xml-rpc-api2txt, since XML-RPC doesn't have any IDL language.
   * Merged in Ilya Goldberg's libwww/SSL setup code.
 
-0.9.5 - Eric Kidd <eric.kidd@pobox.com> - 20 January 2000
+0.9.5 - Eric Kidd <eric.kidd@pobox.com> - 20 January 2001
 
   * Bug fix: Make sure CGI-based servers send correct content-length.
 
-0.9.4 - Eric Kidd <eric.kidd@pobox.com> - 18 January 2000
+0.9.4 - Eric Kidd <eric.kidd@pobox.com> - 18 January 2001
 
   * Support for CGI-based servers.
 
-0.9.3 - Eric Kidd <eric.kidd@pobox.com> - 14 January 2000
+0.9.3 - Eric Kidd <eric.kidd@pobox.com> - 14 January 2001
 
   * Added support for libwww 5.2.8, even when linked against expat.
   * Added xmlrpc_value_type and XmlRpcValue::getType functions.
   * Miscellaneous API tweaks to discourage writing of incorrect programs.
     Should not affect any correct programs.
 
-0.9.2 - Eric Kidd <eric.kidd@pobox.com> - 12 January 2000
+0.9.2 - Eric Kidd <eric.kidd@pobox.com> - 12 January 2001
 
   * Improved error messages.
   * Refuse to link against libwww if it was built with expat.
 
-0.9.1 - Eric Kidd <eric.kidd@pobox.com> - 9 January 2000
+0.9.1 - Eric Kidd <eric.kidd@pobox.com> - 9 January 2001
 
   * Integrated Rick Blair's fix to speed up libwww client.
   * Added informative URLs to Meerkat example programs.

@@ -23,8 +23,12 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
-
+#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
+#else
+#include "xmlrpc_win32_config.h"
+#endif 
+
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -256,6 +260,7 @@ static void xmlrpc_serialize_struct (xmlrpc_env *env,
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:
+	return;
 }
 
 
@@ -377,6 +382,7 @@ void xmlrpc_serialize_value (xmlrpc_env *env,
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:
+	return;
 }
 
 
@@ -418,6 +424,7 @@ void xmlrpc_serialize_params (xmlrpc_env *env,
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:    
+	return;
 }
 
 
@@ -499,6 +506,7 @@ void xmlrpc_serialize_response (xmlrpc_env *env,
     XMLRPC_FAIL_IF_FAULT(env);
     
  cleanup:
+	return;
 }
 
 

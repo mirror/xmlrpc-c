@@ -4,7 +4,7 @@ RPM_TOPDIR = =rpm_topdir
 
 SUBDIRS = lib src examples doc tools
 EXTRA_DIST = NEWS BUGS CREDITS PORTING REFACTORINGS TESTING SECURITY \
-	     GETTING_LIBWWW PATCHING_ABYSS 
+	     GETTING_LIBWWW PATCHING_ABYSS xmlrpc_win32_config.h
 
 bin_SCRIPTS = xmlrpc-c-config
 
@@ -12,6 +12,9 @@ dist-hook:
 	cp -r $(srcdir)/conf $(distdir)/
 	rm -f $(distdir)/conf/log/abyss.pid
 	rm -f $(distdir)/conf/log/access.log
+	cp -r $(srcdir)/Windows $(distdir)/
+	cp -r $(srcdir)/examples/Win32ClientTest $(distdir)/examples/
+	cp -r $(srcdir)/examples/Win32ServerTest $(distdir)/examples/
 
 fulldist: distcheck xmlrpc-c.spec xmlrpc-c.lsm
 	rm -rf fulldist/$(VERSION)

@@ -24,8 +24,12 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
-
+#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
+#else
+#include "xmlrpc_win32_config.h"
+#endif
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -473,6 +477,7 @@ static void parsearray (xmlrpc_env* env,
 	XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Not enough items in array");
 
  cleanup:
+	return;
 }
 
 static void parsestruct(xmlrpc_env* env,
@@ -639,6 +644,7 @@ static void parsevalue (xmlrpc_env* env,
     }
 
  cleanup:
+	return;
 }
 
 static void xmlrpc_parse_value_va (xmlrpc_env* env,
@@ -661,6 +667,7 @@ static void xmlrpc_parse_value_va (xmlrpc_env* env,
     XMLRPC_ASSERT(*format_copy == '\0');
 
  cleanup:
+	return;
 }
 
 void xmlrpc_parse_value (xmlrpc_env* env,
@@ -720,6 +727,7 @@ void xmlrpc_array_append_item (xmlrpc_env* env,
     contents[size] = value;
 
  cleanup:    
+    return;
 }
 
 xmlrpc_value* xmlrpc_array_get_item (xmlrpc_env* env,

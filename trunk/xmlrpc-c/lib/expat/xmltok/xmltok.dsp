@@ -23,8 +23,8 @@ CFG=xmltok - Win32 Release
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""
-# PROP Scc_LocalPath ""
+# PROP Scc_ProjName "xmltok"
+# PROP Scc_LocalPath ".."
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
@@ -38,8 +38,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir "."
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\Release"
-# PROP Intermediate_Dir ".\Release"
+# PROP Output_Dir "..\..\..\bin\Release\xmltok"
+# PROP Intermediate_Dir "..\..\..\bin\Release\xmltok"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir "."
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /entry:"DllMain" /subsystem:windows /dll /machine:I386 /out:"..\bin\xmltok.dll" /link50compat
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /entry:"DllMain" /subsystem:windows /dll /machine:I386 /out:"..\..\xmltok.dll" /link50compat
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "xmltok - Win32 Debug"
@@ -65,8 +65,8 @@ LINK32=link.exe
 # PROP BASE Target_Dir "."
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir ".\Debug"
-# PROP Intermediate_Dir ".\Debug"
+# PROP Output_Dir "..\..\..\bin\Debug\xmltok"
+# PROP Intermediate_Dir "..\..\..\bin\Debug\xmltok"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir "."
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"..\dbgbin\xmltok.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"..\..\xmltokD.dll"
 
 !ENDIF 
 
@@ -103,13 +103,11 @@ SOURCE=..\gennmtab\gennmtab.c
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build - Creating nametab.h
-InputDir=\home\work\xmls\gennmtab
-OutDir=.\Release
 ProjDir=.
 InputPath=..\gennmtab\gennmtab.c
 
 "$(ProjDir)\nametab.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	$(InputDir)\$(OutDir)\gennmtab >$(ProjDir)\nametab.h
+	..\..\..\bin\gennmtab >$(ProjDir)\nametab.h
 
 # End Custom Build
 
@@ -117,13 +115,11 @@ InputPath=..\gennmtab\gennmtab.c
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build - Creating nametab.h
-InputDir=\home\work\xmls\gennmtab
-OutDir=.\Debug
 ProjDir=.
 InputPath=..\gennmtab\gennmtab.c
 
 "$(ProjDir)\nametab.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	$(InputDir)\$(OutDir)\gennmtab >$(ProjDir)\nametab.h
+	..\..\..\bin\gennmtabD >$(ProjDir)\nametab.h
 
 # End Custom Build
 
