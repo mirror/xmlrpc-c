@@ -452,7 +452,7 @@ void FileFindClose(TFileFind *filefind);
 ** Server (1/2)
 *********************************************************************/
 
-typedef struct
+typedef struct _TServer
 {
 	TSocket listensock;
 	TFile logfile;
