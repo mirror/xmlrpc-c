@@ -245,34 +245,29 @@ xmlrpc_serialize_string_data(xmlrpc_env *env,
 
 
 
-/*=========================================================================
-**  xmlrpc_serialize_base64_data
-**=========================================================================
-**  Print the contents of a memory block as well-formed Base64 data.
-*/                
-
 static void 
-xmlrpc_serialize_base64_data (xmlrpc_env *env,
-                              xmlrpc_mem_block *output,
-                              unsigned char* data, size_t len) {
+xmlrpc_serialize_base64_data(xmlrpc_env *       const envP,
+                             xmlrpc_mem_block * const output,
+                             unsigned char *    const data, 
+                             size_t             const len) {
+/*----------------------------------------------------------------------------
+   Encode the 'len' bytes at 'data' in base64 ASCII and append the result to
+   'output'.
+-----------------------------------------------------------------------------*/
+    xmlrpc_mem_block * encoded;
 
-    xmlrpc_mem_block *encoded;
-    unsigned char *contents;
-    size_t size;
-
-    /* Encode the data. */
-    encoded = xmlrpc_base64_encode(env, data, len);
-    XMLRPC_FAIL_IF_FAULT(env);
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char, encoded);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(unsigned char, encoded);
-
-    /* Print the data. */
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, contents, size);
-    XMLRPC_FAIL_IF_FAULT(env);
-
- cleanup:
-    if (encoded)
-        XMLRPC_TYPED_MEM_BLOCK_FREE(char, encoded);
+    encoded = xmlrpc_base64_encode(envP, data, len);
+    if (!envP->fault_occurred) {
+        unsigned char * const contents =
+            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, encoded);
+        size_t const size = 
+            XMLRPC_MEMBLOCK_SIZE(unsigned char, encoded);
+        
+        XMLRPC_MEMBLOCK_APPEND(char, envP, output, contents, size);
+        
+        if (envP->fault_occurred)
+            XMLRPC_MEMBLOCK_FREE(char, encoded);
+    }
 }
 
 
