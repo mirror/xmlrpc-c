@@ -6,6 +6,11 @@
 #
 # You'll need to get Ken MacLeod's Frontier::RPC2 module from CPAN to use
 # this.
+#
+# Eric Kidd <eric.kidd@pobox.com>
+#
+# This script is part of xmlrpc-c, and may be used and distributed under
+# the same terms as the rest of the package.
 
 use strict;
 

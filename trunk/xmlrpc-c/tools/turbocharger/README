@@ -32,3 +32,6 @@ everything to work. Don't run this on your production web server, OK?
 Eric Kidd
 eric.kidd@pobox.com
 
+P.S. The Turbocharger appears to dump core in mod_gzip decides to serialize
+a large response to disk. Do you see what I mean by "experimental" and
+"don't run this on your production web server"? :-)
