@@ -358,9 +358,8 @@ void xmlrpc_serialize_value (xmlrpc_env *env,
 	    break;
 
 	case XMLRPC_TYPE_DOUBLE:
-	    /* We must output a number of the form [+-]?\d*.\d*.
-	    ** XXX - I think that '%f' should do roughly the right thing. */
-	    format_out(env, output, "<double>%f</double>", value->_value.d);
+	    /* We must output a number of the form [+-]?\d*.\d*. */
+	    format_out(env, output, "<double>%.17g</double>", value->_value.d);
 	    XMLRPC_FAIL_IF_FAULT(env);
 	    break;
 
