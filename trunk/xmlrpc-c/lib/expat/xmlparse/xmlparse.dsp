@@ -42,8 +42,8 @@ CFG=xmlparse - Win32 Release
 # PROP Output_Dir "Release\xmlparse"
 # PROP Intermediate_Dir "Release\xmlparse"
 # PROP Target_Dir "."
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MT /W3 /GX /O2 /I "..\xmltok" /I "..\xmlwf" /I "..\..\.." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /c
@@ -69,8 +69,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmlparse"
 # PROP Intermediate_Dir "Debug\xmlparse"
 # PROP Target_Dir "."
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\xmltok" /I "..\xmlwf" /I "..\..\.." /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
