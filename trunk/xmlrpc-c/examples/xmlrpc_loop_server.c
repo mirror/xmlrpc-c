@@ -8,13 +8,36 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <signal.h>
 #include <xmlrpc.h>
 #include <xmlrpc_abyss.h>
 #include <xmlrpc_server.h>
 #include <xmlrpc_server_abyss.h>
 
 #include "config.h"  /* information about this build environment */
+
+
+static void
+setupSignalHandlers(void) {
+
+    /* In UNIX, when you try to write to a socket that has been closed
+       from the other end, your write fails, but you also get a SIGPIPE
+       signal.  That signal will kill you before you even have a chance
+       to see the write fail unless you catch, block, or ignore it.
+       If a client should connect to us and then disconnect before we've
+       sent our response, we see this socket-closed behavior.  We
+       obviously don't want to die just because a client didn't complete
+       an RPC, so we ignore SIGPIPE.
+    */
+    struct sigaction mysigaction;
+    
+    sigemptyset(&mysigaction.sa_mask);
+    mysigaction.sa_flags = 0;
+    mysigaction.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &mysigaction, NULL);
+}
+
+
 
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP, 
@@ -68,10 +91,12 @@ main(int           const argc,
 
     ServerInit(&abyssServer);
 
+    setupSignalHandlers();
+
     while (1) {
         printf("Waiting for next RPC...\n");
 
-        ServerRunOnce(&abyssServer);
+        ServerRunOnce2(&abyssServer, ABYSS_FOREGROUND);
             /* This waits for the next connection, accepts it, reads the
                HTTP POST request, executes the indicated RPC, and closes
                the connection.
