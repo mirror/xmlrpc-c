@@ -108,6 +108,20 @@ void xmlrpc_registry_add_method (xmlrpc_env *env,
 				 xmlrpc_method method,
 				 void *user_data)
 {
+    xmlrpc_registry_add_method_doc (env, registry, host, method_name,
+				    method, user_data, "?",
+				    "No help is available for this method.");
+}
+
+void xmlrpc_registry_add_method_doc (xmlrpc_env *env,
+				     xmlrpc_registry *registry,
+				     char *host,
+				     char *method_name,
+				     xmlrpc_method method,
+				     void *user_data,
+				     char *signature,
+				     char *help)
+{
     xmlrpc_value *method_info;
 
     XMLRPC_ASSERT_ENV_OK(env);
@@ -120,7 +134,8 @@ void xmlrpc_registry_add_method (xmlrpc_env *env,
     method_info = NULL;
 
     /* Store our method and user data into our hash table. */
-    method_info = xmlrpc_build_value(env, "(pp)", (void*) method, user_data);
+    method_info = xmlrpc_build_value(env, "(ppss)", (void*) method, user_data,
+				     signature, help);
     XMLRPC_FAIL_IF_FAULT(env);
     xmlrpc_struct_set_value(env, registry->_methods, method_name, method_info);
     XMLRPC_FAIL_IF_FAULT(env);
@@ -158,7 +173,7 @@ dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
 		     "Method %s not defined", method_name);
 
     /* Extract our method information. */
-    xmlrpc_parse_value(env, method_info, "(pp)", &method_ptr, &user_data);
+    xmlrpc_parse_value(env, method_info, "(pp*)", &method_ptr, &user_data);
     XMLRPC_FAIL_IF_FAULT(env);
     method = (xmlrpc_method) method_ptr;
 
@@ -443,8 +458,34 @@ system_methodHelp (xmlrpc_env *env,
 		   xmlrpc_value *param_array,
 		   void *user_data)
 {
-    xmlrpc_env_set_fault(env, XMLRPC_INTERNAL_ERROR, "Not implemented");
-    return NULL;
+    xmlrpc_registry *registry;
+    char *method_name;
+    xmlrpc_value *ignored1, *ignored2, *ignored3, *help;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_VALUE_OK(param_array);
+    XMLRPC_ASSERT_PTR_OK(user_data);
+
+    /* Turn our arguments into something more useful. */
+    registry = (xmlrpc_registry*) user_data;
+    xmlrpc_parse_value(env, param_array, "(s)", &method_name);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Make sure we're allowed to introspect. */
+    if (!registry->_introspection_enabled)
+	XMLRPC_FAIL(env, XMLRPC_INTROSPECTION_DISABLED_ERROR,
+		    "Introspection disabled for security reasons");
+
+    /* Get our documentation string. */
+    xmlrpc_parse_value(env, registry->_methods, "{s:(VVVV*),*}",
+		       method_name, &ignored1, &ignored2, &ignored3, &help);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
+    if (env->fault_occurred)
+	return NULL;
+    xmlrpc_INCREF(help);
+    return help;
 }
 
 
@@ -473,21 +514,49 @@ system_methodSignature (xmlrpc_env *env,
 **  without warning.
 */
 
+static char *listMethods_help =
+"Return an array of all available XML-RPC methods on this server.";
+
+static char *methodSignature_help =
+"Given the name of a method, return an array of legal signatures. "
+"Each signature is an array of strings. The first item of each signature "
+"is the return type, and any others items are parameter types.";
+
+static char *methodHelp_help =
+"Given the name of a method, return a help string (which may contain "
+"HTML markup).";
+
+static char *multicall_help =
+"Process an array of calls, and return an array of results. Calls should "
+"be structs of the form {'methodName': string, 'params': array}. Each "
+"result will either be a single-item array containg the result value, or "
+"a struct of the form {'faultCode': int, 'faultString': string}. This "
+"is useful when you need to make lots of small calls without lots of "
+"round trips.";
+
 void
 xmlrpc_registry_install_system_methods (xmlrpc_env *env,
 					xmlrpc_registry *registry)
 {
-    xmlrpc_registry_add_method(env, registry, NULL, "system.listMethods",
-			       &system_listMethods, registry);
+    xmlrpc_registry_add_method_doc(env, registry, NULL,
+				   "system.listMethods",
+				   &system_listMethods, registry,
+				   "A:", listMethods_help);
     XMLRPC_FAIL_IF_FAULT(env);
-    xmlrpc_registry_add_method(env, registry, NULL, "system.methodSignature",
-			       &system_methodSignature, registry);
+    xmlrpc_registry_add_method_doc(env, registry, NULL,
+				   "system.methodSignature",
+				   &system_methodSignature, registry,
+				   "A:s", methodSignature_help);
     XMLRPC_FAIL_IF_FAULT(env);
-    xmlrpc_registry_add_method(env, registry, NULL, "system.methodHelp",
-			       &system_methodHelp, registry);
+    xmlrpc_registry_add_method_doc(env, registry, NULL,
+				   "system.methodHelp",
+				   &system_methodHelp, registry,
+				   "s:s", methodHelp_help);
     XMLRPC_FAIL_IF_FAULT(env);
-    xmlrpc_registry_add_method(env, registry, NULL, "system.multicall",
-			       &system_multicall, registry);
+    xmlrpc_registry_add_method_doc(env, registry, NULL,
+				   "system.multicall",
+				   &system_multicall, registry,
+				   "A:A", multicall_help);
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:

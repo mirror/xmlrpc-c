@@ -629,6 +629,8 @@ void test_value (void)
     xmlrpc_parse_value(&env, v, "(i(i*)i)", &i1, &i2, &i3);
     TEST(!env.fault_occurred);
     TEST(i1 == 10 && i2 == 20 && i3 == 40);
+    xmlrpc_parse_value(&env, v, "(i(ii*)i)", &i1, &i2, &i3, &i4);
+    TEST(!env.fault_occurred);
     xmlrpc_DECREF(v);
 
     /* Test parsing of 'A' and 'S'. */

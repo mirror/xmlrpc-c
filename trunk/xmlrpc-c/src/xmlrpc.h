@@ -583,6 +583,29 @@ xmlrpc_registry_add_method (xmlrpc_env *env,
 			    xmlrpc_method method,
 			    void *user_data);
 
+/* As above, but allow the user to supply introspection information. 
+** Signatures use their own little description language. It consists
+** of one-letter type code (similar to the ones used in xmlrpc_parse_value)
+** for the result, a colon, and zero or more one-letter type codes for
+** the parameters. For example:
+**   i:ibdsAS86
+** If a function has more than one possible prototype, separate them with
+** commas:
+**   i:,i:s,i:ii
+** If the function signature can't be represented using this language,
+** pass a single question mark:
+**   ?
+** Help strings are ASCII text, and may contain HTML markup. */
+extern void
+xmlrpc_registry_add_method_doc (xmlrpc_env *env,
+				xmlrpc_registry *registry,
+				char *host,
+				char *method_name,
+				xmlrpc_method method,
+				void *user_data,
+				char *signature,
+				char *help);
+
 /* Given a registry, a host name, and XML data; parse the <methodCall>,
 ** find the appropriate method, call it, serialize the response, and
 ** return it as an xmlrpc_mem_block. Most errors will be serialized

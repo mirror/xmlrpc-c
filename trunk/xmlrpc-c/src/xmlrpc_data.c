@@ -455,11 +455,8 @@ static void parsearray (xmlrpc_env* env,
     /* Loop over the items in the array. */
     for (i = 0; i < size; i++) {
 	/* Bail out if the caller didn't care about the rest of the items. */
-	if (**format == '*') {
-	    (*format)++;
-	    XMLRPC_ASSERT(**format == delimiter);
+	if (**format == '*')
 	    break;
-	}
 
 	item = xmlrpc_array_get_item(env, array, i);
 	XMLRPC_FAIL_IF_FAULT(env);
@@ -470,6 +467,8 @@ static void parsearray (xmlrpc_env* env,
 	parsevalue(env, item, format, args);
 	XMLRPC_FAIL_IF_FAULT(env);
     }
+    if (**format == '*')
+	(*format)++;
     if (**format != delimiter)
 	XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Not enough items in array");
 
