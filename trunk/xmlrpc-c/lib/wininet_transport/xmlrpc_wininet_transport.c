@@ -817,7 +817,6 @@ call(xmlrpc_env *             const envP,
      struct clientTransport * const clientTransportP,
      xmlrpc_server_info *     const serverP,
      xmlrpc_mem_block *       const callXmlP,
-     struct call_info *       const callInfoP,
      xmlrpc_mem_block **      const responsePP) {
 
 	 
@@ -827,7 +826,6 @@ call(xmlrpc_env *             const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(serverP);
     XMLRPC_ASSERT_PTR_OK(callXmlP);
-    XMLRPC_ASSERT_PTR_OK(callInfoP);
     XMLRPC_ASSERT_PTR_OK(responsePP);
 
     responseXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);

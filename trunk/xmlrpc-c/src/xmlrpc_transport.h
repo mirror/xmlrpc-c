@@ -46,7 +46,6 @@ typedef void (*transport_call)(
     struct clientTransport *   const clientTransportP,
     const xmlrpc_server_info * const serverP,
     xmlrpc_mem_block *         const xmlP,
-    struct call_info *         const callInfoP,
     xmlrpc_mem_block **        const responsePP);
 
 enum timeoutType {timeout_no, timeout_yes};

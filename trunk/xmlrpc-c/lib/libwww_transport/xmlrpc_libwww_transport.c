@@ -508,7 +508,6 @@ call(xmlrpc_env *               const envP,
      struct clientTransport *   const clientTransportP ATTR_UNUSED,
      const xmlrpc_server_info * const serverP,
      xmlrpc_mem_block *         const xmlP,
-     struct call_info *         const callInfoP,
      xmlrpc_mem_block **        const responsePP) {
 /*----------------------------------------------------------------------------
    This does the 'call' operation for a Libwww client transport.
@@ -518,7 +517,6 @@ call(xmlrpc_env *               const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(serverP);
     XMLRPC_ASSERT_PTR_OK(xmlP);
-    XMLRPC_ASSERT_PTR_OK(callInfoP);
     XMLRPC_ASSERT_PTR_OK(responsePP);
 
     rpcCreate(envP, serverP, xmlP, NULL, NULL, &rpcP);

@@ -363,7 +363,7 @@ clientCallServerParams(xmlrpc_env *               const envP,
             xmlrpc_mem_block * respXmlP;
         
             clientTransportOps.call(envP, transportP, serverP, 
-                                    callInfoP->serialized_xml, callInfoP, 
+                                    callInfoP->serialized_xml,
                                     &respXmlP);
             if (!envP->fault_occurred) {
                 xmlrpc_traceXml("XML-RPC RESPONSE", 
