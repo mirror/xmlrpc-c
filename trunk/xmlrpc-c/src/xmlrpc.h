@@ -93,6 +93,21 @@ extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 
 
 /*=========================================================================
+**  Strings
+**=======================================================================*/
+
+/* Traditional C strings are char *, because they come from a time before
+   there was 'const'.  Now, const char * makes a lot more sense.  Also,
+   in modern times, we tend to dynamically allocate memory for strings.
+   We need this free function accordingly.  Ordinary free() doesn't check
+   the type, and can generate a warning due to the 'const'.
+*/
+void
+xmlrpc_strfree(const char * const string);
+
+
+
+/*=========================================================================
 **  xmlrpc_env
 **=========================================================================
 **  XML-RPC represents runtime errors as <fault> elements. These contain
@@ -312,6 +327,9 @@ typedef struct _xmlrpc_value xmlrpc_value;
             XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Expected " #t); \
     while (0)
 
+#define XMLRPC_ASSERT_ARRAY_OK(val) \
+    XMLRPC_ASSERT((val) != NULL && (val)->_type != XMLRPC_TYPE_ARRAY)
+
 /* Increment the reference count of an xmlrpc_value. */
 extern void xmlrpc_INCREF (xmlrpc_value* value);
 
@@ -330,11 +348,13 @@ xmlrpc_build_value(xmlrpc_env * const env,
                    const char * const format, 
                    ...);
 
-/* The same as the above, but using a va_list. */
-xmlrpc_value * 
-xmlrpc_build_value_va(xmlrpc_env * const env,
-                      const char * const format,
-                      va_list            args);
+/* The same as the above, but using a va_list and more general */
+void
+xmlrpc_build_value_va(xmlrpc_env *    const env,
+                      const char *    const format,
+                      va_list               args,
+                      xmlrpc_value ** const valPP,
+                      const char **   const tailP);
 
 /* Extract values from an xmlrpc_value and store them into C variables.
 ** Does not increment the reference counts of output values.

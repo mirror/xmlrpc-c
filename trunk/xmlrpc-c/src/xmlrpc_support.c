@@ -48,6 +48,16 @@
 
 
 /*=========================================================================
+**  Strings
+**=======================================================================*/
+
+void
+xmlrpc_strfree(const char * const string) {
+    free((void*)string);
+}
+
+
+/*=========================================================================
 **  Assertions and Error Handling
 **=========================================================================
 **  Support code for XMLRPC_ASSERT and xmlrpc_env.
@@ -217,11 +227,11 @@ void xmlrpc_mem_block_init (xmlrpc_env* env,
         block->_allocated = size;
 
     block->_block = (void*) malloc(block->_allocated);
-    XMLRPC_FAIL_IF_NULL(block->_block, env, XMLRPC_INTERNAL_ERROR,
-                        "Can't allocate memory block");
-
- cleanup:
-    return;
+    if (!block->_block)
+        xmlrpc_env_set_fault_formatted(
+            env, XMLRPC_INTERNAL_ERROR,
+            "Can't allocate %u-byte memory block",
+            block->_allocated);
 }
 
 /* Deallocate the contents of the provided xmlrpc_mem_block, but not the
