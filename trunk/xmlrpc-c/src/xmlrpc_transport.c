@@ -42,6 +42,7 @@
 #endif
 #endif /*WIN32*/
 
+#include "pthreadx.h"
 #include "xmlrpc.h"
 #include "xmlrpc_client.h"
 
