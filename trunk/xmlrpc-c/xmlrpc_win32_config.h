@@ -17,7 +17,7 @@
 #define PACKAGE "xmlrpc-c"
   
 /* Version number of package */
-#define VERSION "0.9.3"
+#define VERSION "0.9.7"
 
 /* Windows-specific includes. */  
 #include <stdio.h>
@@ -28,3 +28,8 @@
   #endif
 #include <time.h>
 #include <WINSOCK.h>
+
+
+/* Required for compatability with libWWW headers */
+/* Define if you have the memcpy function.  */
+#define HAVE_MEMCPY 1

@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\bin\Release\xmlrpc"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /YX /FD /c
 # SUBTRACT CPP /X
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
@@ -65,7 +65,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "..\bin\Debug\xmlrpc"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "HAVE_WIN32_CONFIG_H" /YX /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /D "_DEBUG" /D "HAVE_WIN32_CONFIG_H" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /YX /FD /GZ /c
 # SUBTRACT CPP /X
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
@@ -93,7 +93,6 @@ SOURCE=..\src\xmlrpc_abyss.c
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
 
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
 # SUBTRACT CPP /X /u
 
 !ENDIF 
@@ -107,8 +106,6 @@ SOURCE=..\src\xmlrpc_base64.c
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
 
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
-
 !ENDIF 
 
 # End Source File
@@ -119,8 +116,6 @@ SOURCE=..\src\xmlrpc_client.c
 !IF  "$(CFG)" == "xmlrpc - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
-
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
 
 !ENDIF 
 
@@ -133,8 +128,6 @@ SOURCE=..\src\xmlrpc_data.c
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
 
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
-
 !ENDIF 
 
 # End Source File
@@ -145,8 +138,6 @@ SOURCE=..\src\xmlrpc_expat.c
 !IF  "$(CFG)" == "xmlrpc - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
-
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
 
 !ENDIF 
 
@@ -159,8 +150,6 @@ SOURCE=..\src\xmlrpc_parse.c
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
 
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
-
 !ENDIF 
 
 # End Source File
@@ -171,8 +160,6 @@ SOURCE=..\src\xmlrpc_registry.c
 !IF  "$(CFG)" == "xmlrpc - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
-
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
 
 !ENDIF 
 
@@ -185,8 +172,6 @@ SOURCE=..\src\xmlrpc_serialize.c
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
 
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
-
 !ENDIF 
 
 # End Source File
@@ -198,8 +183,6 @@ SOURCE=..\src\xmlrpc_struct.c
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
 
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
-
 !ENDIF 
 
 # End Source File
@@ -210,8 +193,6 @@ SOURCE=..\src\xmlrpc_support.c
 !IF  "$(CFG)" == "xmlrpc - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
-
-# ADD CPP /D "HAVE_WIN32_CONFIG_H"
 
 !ENDIF 
 

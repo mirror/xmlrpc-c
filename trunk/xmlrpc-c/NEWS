@@ -1,4 +1,10 @@
-CVS - Eric Kidd <eric.kidd@pobox.com> - 02 February 2001
+0.9.7 - Eric Kidd <eric.kidd@pobox.com> - 14 February 2001
+
+  * SECURITY: Configurable nesting limits (see advisory 1) to prevent
+    denial-of-service attacks and stack overflow.
+  * Added Binmode RPC developer's kit.
+
+0.9.6w - Eric Kidd <eric.kidd@pobox.com> - 02 February 2001
 
   * Merged Win32 VC/C++ changes from Alex and Ian.
   * Merged Win32 Cygwin changes from Rosimildo.
