@@ -476,16 +476,17 @@ xmlrpc_client_call_va(xmlrpc_env * const envP,
             "following arguments must correspond to that format argument.  "
             "The failure is: %s",
             argenv.fault_string);
-        xmlrpc_env_clean(&argenv);
+        retval = NULL;  /* just to quiet compiler warning */
     } else {
         XMLRPC_ASSERT_VALUE_OK(argP);
         
-        if (*suffix != '\0')
+        if (*suffix != '\0') {
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
                 "specifier: '%s'.  There must be exactly one arument.",
                 suffix);
-        else {
+            retval = NULL;  /* just to quiet compiler warning */
+        } else {
             /* Perform the actual XML-RPC call. */
             retval = xmlrpc_client_call_params(
                 envP, server_url, methodName, argP);
@@ -494,6 +495,7 @@ xmlrpc_client_call_va(xmlrpc_env * const envP,
         }
         xmlrpc_DECREF(argP);
     }
+    xmlrpc_env_clean(&argenv);
     return retval;
 }
 
@@ -883,11 +885,11 @@ asynchComplete(call_info *        const callInfoP,
 
    This includes calling the user's RPC completion routine.
 
-   'transportEnv' describes the an error that the transport
+   'transportEnv' describes an error that the transport
    encountered in processing the call.  If the transport successfully
    sent the call to the server and processed the response but the
    server failed the call, 'transportEnv' indicates no error, and the
-   response in *callInfoP might very well indicate that the server
+   response in *responseXmlP might very well indicate that the server
    failed the request.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
@@ -906,6 +908,11 @@ asynchComplete(call_info *        const callInfoP,
             &env,
             XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlP),
             XMLRPC_MEMBLOCK_SIZE(char, responseXmlP));
+    else
+        responseP = NULL;
+        /* just to quiet compiler warning; value undefined when env
+           indicates an error.
+        */
 
     /* Call the user's callback function with the result */
     (*callInfoP->callback)(callInfoP->server_url, 

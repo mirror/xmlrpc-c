@@ -88,6 +88,8 @@ endif
 
 all: $(TARGET_LTLIBRARIES) $(TARGET_LIBRARIES) $(TARGET_TESTPROGS)
 
+LDFLAGS = $(LADD)
+
 rpctest:%:%.o libxmlrpc.la libxmlrpc_server.la $(LIBXML)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
 
@@ -98,7 +100,7 @@ cpptest:%:%.o XmlRpcCpp.o libxmlrpc_cpp.a libxmlrpc.la libxmlrpc_server.la \
   $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR)
+LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
 
 libxmlrpc.la: $(LIBXMLRPC_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^

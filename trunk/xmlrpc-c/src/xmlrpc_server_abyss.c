@@ -69,7 +69,7 @@ send_xml_data (TSession * const r,
                char *     const buffer, 
                uint64     const len) {
 
-    const char * const http_cookie = NULL;
+    const char * http_cookie = NULL;
         /* This used to set http_cookie to getenv("HTTP_COOKIE"), but
            that doesn't make any sense -- environment variables are not
            appropriate for this.  So for now, cookie code is disabled.
@@ -97,7 +97,6 @@ send_xml_data (TSession * const r,
         free(cookie_response);
     }   
  
-  
     ResponseContentType(r, "text/xml; charset=\"utf-8\"");
     ResponseContentLength(r, len);
     

@@ -712,9 +712,9 @@ xmlrpc_base64_encode_without_newlines(xmlrpc_env *    env,
 
 /* This decodes Base64 data with or without newlines. */
 extern xmlrpc_mem_block *
-xmlrpc_base64_decode(xmlrpc_env * env,
-                     char *       ascii_data,
-                     size_t       ascii_len);
+xmlrpc_base64_decode(xmlrpc_env * const envP,
+                     const char * const ascii_data,
+                     size_t       const ascii_len);
 
 
 /*=========================================================================

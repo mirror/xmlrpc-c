@@ -233,9 +233,7 @@ make_string(xmlrpc_env *env, char *cdata, size_t cdata_size)
 
 /*=========================================================================
 **  convert_value
-**=========================================================================
-**  Convert an XML element representing a value into an xmlrpc_value.
-*/
+**=======================================================================*/
 
 static xmlrpc_value *
 convert_array (xmlrpc_env *env, unsigned *depth, xml_element *elem);
@@ -244,101 +242,129 @@ convert_struct(xmlrpc_env *env, unsigned *depth, xml_element *elem);
 
 
 
-static xmlrpc_value *
-convert_value(xmlrpc_env *env, unsigned *depth, xml_element *elem)
-{
-    xml_element *child;
-    int child_count;
-    char *cdata, *child_name;
-    size_t cdata_size, ascii_len;
+static void
+convertBase64(xmlrpc_env *    const envP,
+              const char *    const cdata,
+              size_t          const cdata_size,
+              xmlrpc_value ** const valuePP) {
+    
     xmlrpc_mem_block *decoded;
-    unsigned char *ascii_data;
-    xmlrpc_value *retval;
-    xmlrpc_int32 i;
-    double d;
+    
+    decoded = xmlrpc_base64_decode(envP, cdata, cdata_size);
+    if (!envP->fault_occurred) {
+        unsigned char * const asciiData =
+            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, decoded);
+        size_t const asciiLen =
+            XMLRPC_MEMBLOCK_SIZE(unsigned char, decoded);
 
-    XMLRPC_ASSERT_ENV_OK(env);
+        *valuePP = xmlrpc_build_value(envP, "6", asciiData, asciiLen);
+        
+        XMLRPC_MEMBLOCK_FREE(unsigned char, decoded);
+    }
+}
+
+
+
+static xmlrpc_value *
+convert_value(xmlrpc_env *  const envP,
+              unsigned *    const depthP, 
+              xml_element * const elem) {
+/*----------------------------------------------------------------------------
+   Compute the xmlrpc_value represented by the XML <value> element 'elem'.
+   Return that xmlrpc_value.
+
+   Assume we are running at recursion depth *depthP.  (TODO: this is a
+   modularity violation.  We have to replace this with a "maximum
+   depth" argument that tells how much additional recursion depth
+   we're allowed to use).
+-----------------------------------------------------------------------------*/
+    int child_count;
+    char * child_name;
+    xmlrpc_value *retval;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(elem != NULL);
 
     /* Error-handling precoditions.
     ** If we haven't changed any of these from their default state, we're
     ** allowed to tail-call xmlrpc_build_value. */
     retval = NULL;
-    decoded = NULL;
 
     /* Make sure we haven't recursed too deeply. */
-    if (*depth > xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID))
-    XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR,
-                "Nested data structure too deep.");
+    if (*depthP > xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID))
+        XMLRPC_FAIL(envP, XMLRPC_PARSE_ERROR,
+                    "Nested data structure too deep.");
 
     /* Validate our structure, and see whether we have a child element. */
-    CHECK_NAME(env, elem, "value");
+    CHECK_NAME(envP, elem, "value");
     child_count = xml_element_children_size(elem);
 
     if (child_count == 0) {
         /* We have no type element, so treat the value as a string. */
-        cdata = xml_element_cdata(elem);
-        cdata_size = xml_element_cdata_size(elem);
-        return make_string(env, cdata, cdata_size);
+        char * const cdata      = xml_element_cdata(elem);
+        size_t const cdata_size = xml_element_cdata_size(elem);
+        retval = make_string(envP, cdata, cdata_size);
     } else {
         /* We should have a type tag inside our value tag. */
-        CHECK_CHILD_COUNT(env, elem, 1);
+        xml_element *child;
+        
+        CHECK_CHILD_COUNT(envP, elem, 1);
         child = xml_element_children(elem)[0];
         
         /* Parse our value-containing element. */
-    child_name = xml_element_name(child);
-    if (strcmp(child_name, "struct") == 0) {
-        return convert_struct(env, depth, child);
-    } else if (strcmp(child_name, "array") == 0) {
-        CHECK_CHILD_COUNT(env, child, 1);
-        return convert_array(env, depth, child);
-    } else {
-        CHECK_CHILD_COUNT(env, child, 0);
-        cdata = xml_element_cdata(child);
-        cdata_size = xml_element_cdata_size(child);
-        if (strcmp(child_name, "i4") == 0 ||
-            strcmp(child_name, "int") == 0)
-        {
-            i = xmlrpc_atoi(env, cdata, strlen(cdata),
-                            XMLRPC_INT32_MIN, XMLRPC_INT32_MAX);
-            XMLRPC_FAIL_IF_FAULT(env);
-            return xmlrpc_build_value(env, "i", i);
-        } else if (strcmp(child_name, "string") == 0) {
-            return make_string(env, cdata, cdata_size);
-        } else if (strcmp(child_name, "boolean") == 0) {
-            i = xmlrpc_atoi(env, cdata, strlen(cdata), 0, 1);
-            XMLRPC_FAIL_IF_FAULT(env);
-            return xmlrpc_build_value(env, "b", (xmlrpc_bool) i);
-        } else if (strcmp(child_name, "double") == 0) {
-            d = xmlrpc_atod(env, cdata, strlen(cdata));
-            XMLRPC_FAIL_IF_FAULT(env);
-            return xmlrpc_build_value(env, "d", d);
-        } else if (strcmp(child_name, "dateTime.iso8601") == 0) {
-            return xmlrpc_build_value(env, "8", cdata);
-        } else if (strcmp(child_name, "base64") == 0) {
-            /* No more tail calls once we do this! */
-            decoded = xmlrpc_base64_decode(env, cdata, cdata_size);
-            XMLRPC_FAIL_IF_FAULT(env);
-            ascii_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char,
-                                                         decoded);
-            ascii_len = XMLRPC_TYPED_MEM_BLOCK_SIZE(unsigned char,
-                                                    decoded);
-            retval = xmlrpc_build_value(env, "6", ascii_data, ascii_len);
-            XMLRPC_FAIL_IF_FAULT(env);      
+        child_name = xml_element_name(child);
+        if (strcmp(child_name, "struct") == 0) {
+            retval = convert_struct(envP, depthP, child);
+        } else if (strcmp(child_name, "array") == 0) {
+            CHECK_CHILD_COUNT(envP, child, 1);
+            retval = convert_array(envP, depthP, child);
         } else {
-            XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
-                         "Unknown value type <%s>", child_name);
+            char * cdata;
+            size_t cdata_size;
+
+            CHECK_CHILD_COUNT(envP, child, 0);
+            cdata = xml_element_cdata(child);
+            cdata_size = xml_element_cdata_size(child);
+            if (strcmp(child_name, "i4") == 0 ||
+                strcmp(child_name, "int") == 0) {
+                xmlrpc_int32 const i =
+                    xmlrpc_atoi(envP, cdata, strlen(cdata),
+                                XMLRPC_INT32_MIN, XMLRPC_INT32_MAX);
+                XMLRPC_FAIL_IF_FAULT(envP);
+                retval = xmlrpc_build_value(envP, "i", i);
+            } else if (strcmp(child_name, "string") == 0) {
+                retval = make_string(envP, cdata, cdata_size);
+            } else if (strcmp(child_name, "boolean") == 0) {
+                xmlrpc_int32 const i =
+                    xmlrpc_atoi(envP, cdata, strlen(cdata), 0, 1);
+                XMLRPC_FAIL_IF_FAULT(envP);
+                retval = xmlrpc_build_value(envP, "b", (xmlrpc_bool) i);
+            } else if (strcmp(child_name, "double") == 0) {
+                double const d = xmlrpc_atod(envP, cdata, strlen(cdata));
+                XMLRPC_FAIL_IF_FAULT(envP);
+                retval = xmlrpc_build_value(envP, "d", d);
+            } else if (strcmp(child_name, "dateTime.iso8601") == 0) {
+                retval = xmlrpc_build_value(envP, "8", cdata);
+            } else if (strcmp(child_name, "base64") == 0) {
+                /* No more tail calls once we do this! */
+
+                convertBase64(envP, cdata, cdata_size, &retval);
+                if (envP->fault_occurred)
+                    /* Just for cleanup code: */
+                    retval = NULL;
+            } else {
+                XMLRPC_FAIL1(envP, XMLRPC_PARSE_ERROR,
+                             "Unknown value type -- XML element is named "
+                             "<%s>", child_name);
+            }
         }
-    }
     }
 
  cleanup:
-    if (decoded)
-    xmlrpc_mem_block_free(decoded);
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         if (retval)
             xmlrpc_DECREF(retval);
-        return NULL;
+        retval = NULL;
     }
     return retval;
 }
