@@ -357,9 +357,8 @@ dnl pass it some flags on the command-line.
 
 AC_MSG_CHECKING(whether to use Abyss pthread function)
 AC_ARG_ENABLE(abyss-threads,
-  [  --enable-abyss-threads  Use pthreads in Abyss instead of the default
-                             fork() implementation.], ,
-  enable_abyss_threads=no)
+  [  --disable-abyss-threads   Use fork in Abyss instead of pthreads], ,
+  enable_abyss_threads=yes)
 AC_MSG_RESULT($enable_abyss_threads)
 
 CFLAGS="$CFLAGS -D_UNIX" 
