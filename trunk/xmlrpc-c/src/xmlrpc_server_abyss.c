@@ -162,61 +162,66 @@ get_buffer_data(TSession * const r,
 **  Slurp the body of the request into an xmlrpc_mem_block.
 */
 
-static xmlrpc_mem_block *
-get_body(xmlrpc_env * const env, 
-         TSession *   const r, 
-         int          const content_size) {
+static void
+getBody(xmlrpc_env *        const envP,
+        TSession *          const abyssSessionP,
+        unsigned int        const contentSize,
+        xmlrpc_mem_block ** const bodyP) {
+/*----------------------------------------------------------------------------
+   Get the entire body from the Abyss session and return it as the new
+   memblock *bodyP.
 
-    xmlrpc_mem_block *body;
-    int bytes_read;
-    char *chunk_ptr;
-    int chunk_len;
+   The first chunk of the body may already be in Abyss's buffer.  We
+   retrieve that before reading more.
+-----------------------------------------------------------------------------*/
+    xmlrpc_mem_block * body;
 
-    /* Error-handling preconditions. */
-    body = NULL;
+    body = xmlrpc_mem_block_new(envP, 0);
+    if (!envP->fault_occurred) {
+        unsigned int bytesRead;
+        char * chunkPtr;
+        int chunkLen;
 
-    /* Allocate a memory block to hold the body. */
-    body = xmlrpc_mem_block_new(env, 0);
-    XMLRPC_FAIL_IF_FAULT(env);
+        bytesRead = 0;
 
-    bytes_read = 0;
+        while (!envP->fault_occurred && bytesRead < contentSize) {
+            get_buffer_data(abyssSessionP, contentSize - bytesRead, 
+                            &chunkPtr, &chunkLen);
+            bytesRead += chunkLen;
 
-    /* Get our first chunk of data from the buffer. */
-    get_buffer_data(r, content_size - bytes_read, &chunk_ptr, &chunk_len);
-    bytes_read += chunk_len;
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, body, chunk_ptr, chunk_len);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    while (bytes_read < content_size) {
-        abyss_bool succeeded;
-
-        /* Reset our read buffer & flush data from previous reads. */
-        ConnReadInit(r->conn);
-
-        /* Read more network data into our buffer. If we encounter a timeout,
-        ** exit immediately.
-        ** XXX - We're very forgiving about the timeout here. We allow a
-        ** full timeout per network read, which would allow somebody to
-        ** keep a connection alive nearly indefinitely. But it's hard to do
-        ** anything intelligent here without very complicated code. */
-        succeeded = ConnRead(r->conn, r->server->timeout);
-        if (!succeeded) {
-            XMLRPC_FAIL(env, XMLRPC_TIMEOUT_ERROR, "POST timed out");
+            printf("get_buffer_data() got '%*s'\n", chunkLen, chunkPtr);
+            XMLRPC_TYPED_MEM_BLOCK_APPEND(char, envP, body, 
+                                          chunkPtr, chunkLen);
+            
+            if (bytesRead < contentSize) {
+                /* Get the next chunk of data from the connection into the
+                   buffer 
+                */
+                abyss_bool succeeded;
+            
+                /* Reset our read buffer & flush data from previous reads. */
+                ConnReadInit(abyssSessionP->conn);
+            
+                /* Read more network data into our buffer. If we encounter
+                   a timeout, exit immediately. We're very forgiving about
+                   the timeout here. We allow a full timeout per network
+                   read, which would allow somebody to keep a connection
+                   alive nearly indefinitely. But it's hard to do anything
+                   intelligent here without very complicated code. 
+                */
+                succeeded = ConnRead(abyssSessionP->conn,
+                                     abyssSessionP->server->timeout);
+                if (!succeeded)
+                    xmlrpc_env_set_fault_formatted(
+                        envP, XMLRPC_TIMEOUT_ERROR, "Timed out waiting for "
+                        "client to send its POST data");
+            }
         }
-        /* Get the next chunk of data from the buffer. */
-        get_buffer_data(r, content_size - bytes_read, &chunk_ptr, &chunk_len);
-        bytes_read += chunk_len;
-        XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, body, chunk_ptr, chunk_len);
-        XMLRPC_FAIL_IF_FAULT(env);
-    }
-
- cleanup:
-    if (env->fault_occurred) {
-        if (body)
+        if (envP->fault_occurred)
             xmlrpc_mem_block_free(body);
-        return NULL;
+        else
+            *bodyP = body;
     }
-    return body;
 }
 
 
@@ -302,8 +307,8 @@ static xmlrpc_registry *global_registryP;
 static const char * trace_abyss;
 
 static void
-processCall(TSession * const r,
-            int        const input_len) {
+processCall(TSession * const abyssSessionP,
+            int        const inputLen) {
 /*----------------------------------------------------------------------------
    Handle an RPC request.  This is an HTTP request that has the proper form
    to be one of our RPCs.
@@ -316,16 +321,16 @@ processCall(TSession * const r,
     xmlrpc_env_init(&env);
 
     /* SECURITY: Make sure our content length is legal.
-       XXX - We can cast 'input_len' because we know it's >= 0, yes? 
+       XXX - We can cast 'inputLen' because we know it's >= 0, yes? 
     */
-    if ((size_t) input_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+    if ((size_t) inputLen > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
         xmlrpc_env_set_fault_formatted(
             &env, XMLRPC_LIMIT_EXCEEDED_ERROR,
-            "XML-RPC request too large (%d bytes)", input_len);
+            "XML-RPC request too large (%d bytes)", inputLen);
     else {
         xmlrpc_mem_block *body;
         /* Read XML data off the wire. */
-        body = get_body(&env, r, input_len);
+        getBody(&env, abyssSessionP, inputLen, &body);
         if (!env.fault_occurred) {
             xmlrpc_mem_block * output;
             /* Process the RPC. */
@@ -335,7 +340,7 @@ processCall(TSession * const r,
                 XMLRPC_MEMBLOCK_SIZE(char, body));
             if (!env.fault_occurred) {
             /* Send our the result. */
-                send_xml_data(r, 
+                send_xml_data(abyssSessionP, 
                               XMLRPC_MEMBLOCK_CONTENTS(char, output),
                               XMLRPC_MEMBLOCK_SIZE(char, output));
                 
@@ -346,9 +351,9 @@ processCall(TSession * const r,
     }
     if (env.fault_occurred) {
         if (env.fault_code == XMLRPC_TIMEOUT_ERROR)
-            send_error(r, 408); /* 408 Request Timeout */
+            send_error(abyssSessionP, 408); /* 408 Request Timeout */
         else
-            send_error(r, 500); /* 500 Internal Server Error */
+            send_error(abyssSessionP, 500); /* 500 Internal Server Error */
     }
 
     xmlrpc_env_clean(&env);
@@ -396,13 +401,13 @@ xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
                     send_error(r, httpError);
                 else {
                     unsigned int httpError;
-                    int input_len;
+                    int inputLen;
 
-                    processContentLength(r, &input_len, &httpError);
+                    processContentLength(r, &inputLen, &httpError);
                     if (httpError)
                         send_error(r, httpError);
 
-                    processCall(r, input_len);
+                    processCall(r, inputLen);
                 }
             }
         }

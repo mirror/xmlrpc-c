@@ -351,7 +351,7 @@ dispatch_call(xmlrpc_env *      const envP,
                     /* No matching method, and no default. */
                     xmlrpc_env_set_fault_formatted(
                         envP, XMLRPC_NO_SUCH_METHOD_ERROR,
-                        "Method %s not defined", methodName);
+                        "Method '%s' not defined", methodName);
                 }
             } 
         }

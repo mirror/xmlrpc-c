@@ -541,6 +541,25 @@ convert_params(xmlrpc_env *env, unsigned *depth, xml_element *elem)
 
 
 
+static void
+parseCallXml(xmlrpc_env *   const envP,
+             const char *   const xmlData,
+             size_t         const xmlLen,
+             xml_element ** const callElemP) {
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+    *callElemP = xml_parse(&env, xmlData, xmlLen);
+    if (env.fault_occurred)
+        xmlrpc_env_set_fault_formatted(
+            envP, env.fault_code, "Call is not valid XML.  %s",
+            env.fault_string);
+    xmlrpc_env_clean(&env);
+}
+
+
+
 /*=========================================================================
 **  xmlrpc_parse_call
 **=========================================================================
@@ -582,8 +601,7 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
         XMLRPC_FAIL(envP, XMLRPC_LIMIT_EXCEEDED_ERROR,
                     "XML-RPC request too large");
 
-    /* Parse our XML data. */
-    call_elem = xml_parse(envP, xml_data, xml_len);
+    parseCallXml(envP, xml_data, xml_len, &call_elem);
     XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Pick apart and verify our structure. */
