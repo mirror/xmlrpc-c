@@ -140,23 +140,24 @@ xmlrpc_client_call(xmlrpc_env * const envP,
                    ...);
 
 xmlrpc_value * 
-xmlrpc_client_call_params (xmlrpc_env *   const env,
-                           const char *   const server_url,
-                           const char *   const method_name,
-                           xmlrpc_value * const param_array);
+xmlrpc_client_call_params(xmlrpc_env *   const envP,
+                          const char *   const serverUrl,
+                          const char *   const methodName,
+                          xmlrpc_value * const paramArrayP);
 
 xmlrpc_value * 
-xmlrpc_client_call_server(xmlrpc_env *         const envP,
-                          xmlrpc_server_info * const server,
-                          const char *         const method_name,
-                          const char *         const format, 
+xmlrpc_client_call_server(xmlrpc_env *               const envP,
+                          const xmlrpc_server_info * const server,
+                          const char *               const method_name,
+                          const char *               const format, 
                           ...);
 
-extern xmlrpc_value *
-xmlrpc_client_call_server_params (xmlrpc_env *env,
-                                  xmlrpc_server_info *server,
-                                  char *method_name,
-                                  xmlrpc_value *param_array);
+xmlrpc_value *
+xmlrpc_client_call_server_params(
+    xmlrpc_env *               const envP,
+    const xmlrpc_server_info * const serverP,
+    const char *               const method_name,
+    xmlrpc_value *             const paramArrayP);
 
 
 /*=========================================================================

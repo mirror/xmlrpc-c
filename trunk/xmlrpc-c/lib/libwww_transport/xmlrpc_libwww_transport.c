@@ -314,9 +314,9 @@ createSourceAnchor(xmlrpc_env *       const envP,
 
 
 static void
-createDestAnchor(xmlrpc_env *         const envP,
-                 HTAnchor **          const destAnchorPP,
-                 xmlrpc_server_info * const serverP) {
+createDestAnchor(xmlrpc_env *               const envP,
+                 HTAnchor **                const destAnchorPP,
+                 const xmlrpc_server_info * const serverP) {
                  
     *destAnchorPP = HTAnchor_findAddress(serverP->_server_url);
 
@@ -330,12 +330,12 @@ createDestAnchor(xmlrpc_env *         const envP,
 
 
 static void
-rpcCreate(xmlrpc_env *             const envP,
-          xmlrpc_server_info *     const serverP,
-          xmlrpc_mem_block *       const xmlP,
-          transport_asynch_complete      complete, 
-          struct call_info *       const callInfoP,
-          rpc                   ** const rpcPP) {
+rpcCreate(xmlrpc_env *               const envP,
+          const xmlrpc_server_info * const serverP,
+          xmlrpc_mem_block *         const xmlP,
+          transport_asynch_complete        complete, 
+          struct call_info *         const callInfoP,
+          rpc                   **   const rpcPP) {
 
     rpc *rpcP;
     HTRqHd request_headers;
@@ -502,12 +502,12 @@ synch_terminate_handler(HTRequest *  const request,
 
 
 static void
-call(xmlrpc_env *             const envP,
-     struct clientTransport * const clientTransportP ATTR_UNUSED,
-     xmlrpc_server_info *     const serverP,
-     xmlrpc_mem_block *       const xmlP,
-     struct call_info *       const callInfoP,
-     xmlrpc_mem_block **      const responsePP) {
+call(xmlrpc_env *               const envP,
+     struct clientTransport *   const clientTransportP ATTR_UNUSED,
+     const xmlrpc_server_info * const serverP,
+     xmlrpc_mem_block *         const xmlP,
+     struct call_info *         const callInfoP,
+     xmlrpc_mem_block **        const responsePP) {
 /*----------------------------------------------------------------------------
    This does the 'call' operation for a Libwww client transport.
 -----------------------------------------------------------------------------*/
@@ -736,12 +736,12 @@ asynch_terminate_handler(HTRequest *  const request,
 
 
 static void 
-sendRequest(xmlrpc_env *             const envP, 
-            struct clientTransport * const clientTransportP ATTR_UNUSED,
-            xmlrpc_server_info *     const serverP,
-            xmlrpc_mem_block *       const xmlP,
-            transport_asynch_complete      complete,
-            struct call_info *       const callInfoP) {
+sendRequest(xmlrpc_env *               const envP, 
+            struct clientTransport *   const clientTransportP ATTR_UNUSED,
+            const xmlrpc_server_info * const serverP,
+            xmlrpc_mem_block *         const xmlP,
+            transport_asynch_complete        complete,
+            struct call_info *         const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
    the server.

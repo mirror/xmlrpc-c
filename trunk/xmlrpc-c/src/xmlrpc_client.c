@@ -226,11 +226,11 @@ call_info_free(call_info * const callInfoP) {
 
 
 static void
-call_info_new(xmlrpc_env *         const envP,
-              xmlrpc_server_info * const server,
-              const char *         const method_name,
-              xmlrpc_value *       const argP,
-              call_info **         const callInfoPP) {
+call_info_new(xmlrpc_env *               const envP,
+              const xmlrpc_server_info * const server,
+              const char *               const methodName,
+              xmlrpc_value *             const argP,
+              call_info **               const callInfoPP) {
 /*----------------------------------------------------------------------------
    Create a call_info object.  A call_info object represents an XML-RPC
    call.
@@ -240,7 +240,7 @@ call_info_new(xmlrpc_env *         const envP,
     XMLRPC_ASSERT_PTR_OK(argP);
     XMLRPC_ASSERT_PTR_OK(callInfoPP);
 
-    if (method_name == NULL)
+    if (methodName == NULL)
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INTERNAL_ERROR,
             "method name argument is NULL pointer");
@@ -263,7 +263,7 @@ call_info_new(xmlrpc_env *         const envP,
             /* Make the XML for our call */
             callXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
             if (!envP->fault_occurred) {
-                xmlrpc_serialize_call(envP, callXmlP, method_name, argP);
+                xmlrpc_serialize_call(envP, callXmlP, methodName, argP);
                 if (!envP->fault_occurred) {
                     xmlrpc_traceXml("XML-RPC CALL", 
                                     XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
@@ -285,12 +285,12 @@ call_info_new(xmlrpc_env *         const envP,
 
 
 static void
-clientCallServerParams(xmlrpc_env *             const envP,
-                       struct clientTransport * const transportP,
-                       xmlrpc_server_info *     const serverP,
-                       const char *             const methodName,
-                       xmlrpc_value *           const paramArrayP,
-                       xmlrpc_value **          const resultPP) {
+clientCallServerParams(xmlrpc_env *               const envP,
+                       struct clientTransport *   const transportP,
+                       const xmlrpc_server_info * const serverP,
+                       const char *               const methodName,
+                       xmlrpc_value *             const paramArrayP,
+                       xmlrpc_value **            const resultPP) {
 
     call_info * callInfoP;
     
@@ -363,10 +363,40 @@ xmlrpc_client_call_params(xmlrpc_env *   const envP,
 
 
 
+xmlrpc_value *
+xmlrpc_client_call_server_params(
+    xmlrpc_env *               const envP,
+    const xmlrpc_server_info * const serverP,
+    const char *               const methodName,
+    xmlrpc_value *             const paramArrayP) {
+
+    xmlrpc_value *retval;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(serverP);
+
+    if (!clientInitialized)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR, 
+            "Xmlrpc-c client instance has not been initialized "
+            "(need to call xmlrpc_client_init2()).");
+    else {
+        clientCallServerParams(envP, client.transportP, serverP, 
+                               methodName, paramArrayP,
+                               &retval);
+    }
+    if (!envP->fault_occurred)
+        XMLRPC_ASSERT_VALUE_OK(retval);
+
+    return retval;
+}
+
+
+
 static xmlrpc_value * 
 xmlrpc_client_call_va(xmlrpc_env * const envP,
                       const char * const server_url,
-                      const char * const method_name,
+                      const char * const methodName,
                       const char * const format,
                       va_list            args) {
 
@@ -400,7 +430,7 @@ xmlrpc_client_call_va(xmlrpc_env * const envP,
         else {
             /* Perform the actual XML-RPC call. */
             retval = xmlrpc_client_call_params(
-                envP, server_url, method_name, argP);
+                envP, server_url, methodName, argP);
             if (!envP->fault_occurred)
                 XMLRPC_ASSERT_VALUE_OK(retval);
         }
@@ -413,17 +443,17 @@ xmlrpc_client_call_va(xmlrpc_env * const envP,
 
 xmlrpc_value * 
 xmlrpc_client_call(xmlrpc_env * const envP,
-                   const char *       const server_url,
-                   const char *       const method_name,
-                   const char *       const format,
+                   const char * const serverUrl,
+                   const char * const methodName,
+                   const char * const format,
                    ...) {
 
     xmlrpc_value * result;
     va_list args;
 
     va_start(args, format);
-    result = xmlrpc_client_call_va(envP, server_url,
-                                   method_name, format, args);
+    result = xmlrpc_client_call_va(envP, serverUrl,
+                                   methodName, format, args);
     va_end(args);
 
     return result;
@@ -432,10 +462,10 @@ xmlrpc_client_call(xmlrpc_env * const envP,
 
 
 xmlrpc_value * 
-xmlrpc_client_call_server(xmlrpc_env *         const envP,
-                          xmlrpc_server_info * const serverP,
-                          const char *         const methodName,
-                          const char *         const format, 
+xmlrpc_client_call_server(xmlrpc_env *               const envP,
+                          const xmlrpc_server_info * const serverP,
+                          const char *               const methodName,
+                          const char *               const format, 
                           ...) {
 
     va_list args;

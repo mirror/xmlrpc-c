@@ -211,9 +211,9 @@ destroy(struct clientTransport * const clientTransportP) {
 
 
 static void
-createCurlHeaderList(xmlrpc_env *         const envP,
-                     xmlrpc_server_info * const serverP,
-                     struct curl_slist ** const headerListP) {
+createCurlHeaderList(xmlrpc_env *               const envP,
+                     const xmlrpc_server_info * const serverP,
+                     struct curl_slist **       const headerListP) {
 
     struct curl_slist * headerList;
 
@@ -286,11 +286,11 @@ setupCurlSession(xmlrpc_env *       const envP,
 
 
 static void
-createCurlTransaction(xmlrpc_env *         const envP,
-                      xmlrpc_server_info * const serverP,
-                      xmlrpc_mem_block *   const callXmlP,
-                      xmlrpc_mem_block *   const responseXmlP,
-                      curlTransaction **   const curlTransactionPP) {
+createCurlTransaction(xmlrpc_env *               const envP,
+                      const xmlrpc_server_info * const serverP,
+                      xmlrpc_mem_block *         const callXmlP,
+                      xmlrpc_mem_block *         const responseXmlP,
+                      curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
 
@@ -460,14 +460,14 @@ createRpcThread(xmlrpc_env *              const envP,
 
 
 static void
-rpcCreate(xmlrpc_env *             const envP,
-          struct clientTransport * const clientTransportP,
-          xmlrpc_server_info *     const serverP,
-          xmlrpc_mem_block *       const callXmlP,
-          xmlrpc_mem_block *       const responseXmlP,
-          transport_asynch_complete      complete, 
-          struct call_info *       const callInfoP,
-          rpc **                   const rpcPP) {
+rpcCreate(xmlrpc_env *               const envP,
+          struct clientTransport *   const clientTransportP,
+          const xmlrpc_server_info * const serverP,
+          xmlrpc_mem_block *         const callXmlP,
+          xmlrpc_mem_block *         const responseXmlP,
+          transport_asynch_complete        complete, 
+          struct call_info *         const callInfoP,
+          rpc **                     const rpcPP) {
 
     rpc * rpcP;
 
@@ -523,12 +523,12 @@ rpcDestroy(rpc * const rpcP) {
 
 
 static void 
-sendRequest(xmlrpc_env *             const envP, 
-            struct clientTransport * const clientTransportP,
-            xmlrpc_server_info *     const serverP,
-            xmlrpc_mem_block *       const callXmlP,
-            transport_asynch_complete      complete,
-            struct call_info *       const callInfoP) {
+sendRequest(xmlrpc_env *               const envP, 
+            struct clientTransport *   const clientTransportP,
+            const xmlrpc_server_info * const serverP,
+            xmlrpc_mem_block *         const callXmlP,
+            transport_asynch_complete        complete,
+            struct call_info *         const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
    the server.
@@ -605,12 +605,12 @@ finishAsynch(struct clientTransport * const clientTransportP ATTR_UNUSED,
 
 
 static void
-call(xmlrpc_env *             const envP,
-     struct clientTransport * const clientTransportP,
-     xmlrpc_server_info *     const serverP,
-     xmlrpc_mem_block *       const callXmlP,
-     struct call_info *       const callInfoP,
-     xmlrpc_mem_block **      const responsePP) {
+call(xmlrpc_env *               const envP,
+     struct clientTransport *   const clientTransportP,
+     const xmlrpc_server_info * const serverP,
+     xmlrpc_mem_block *         const callXmlP,
+     struct call_info *         const callInfoP,
+     xmlrpc_mem_block **        const responsePP) {
 
     xmlrpc_mem_block * responseXmlP;
     rpc * rpcP;

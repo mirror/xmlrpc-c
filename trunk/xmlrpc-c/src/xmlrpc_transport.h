@@ -32,20 +32,20 @@ typedef void (*transport_asynch_complete)(
     xmlrpc_env         const env);
 
 typedef void (*transport_send_request)(
-    xmlrpc_env *             const envP, 
-    struct clientTransport * const clientTransportP,
-    xmlrpc_server_info *     const serverP,
-    xmlrpc_mem_block *       const xmlP,
-    transport_asynch_complete      complete,
-    struct call_info *       const callInfoP);
+    xmlrpc_env *               const envP, 
+    struct clientTransport *   const clientTransportP,
+    const xmlrpc_server_info * const serverP,
+    xmlrpc_mem_block *         const xmlP,
+    transport_asynch_complete        complete,
+    struct call_info *         const callInfoP);
 
 typedef void (*transport_call)(
-    xmlrpc_env *             const envP,
-    struct clientTransport * const clientTransportP,
-    xmlrpc_server_info *     const serverP,
-    xmlrpc_mem_block *       const xmlP,
-    struct call_info *       const callInfoP,
-    xmlrpc_mem_block **      const responsePP);
+    xmlrpc_env *               const envP,
+    struct clientTransport *   const clientTransportP,
+    const xmlrpc_server_info * const serverP,
+    xmlrpc_mem_block *         const xmlP,
+    struct call_info *         const callInfoP,
+    xmlrpc_mem_block **        const responsePP);
 
 enum timeoutType {timeout_no, timeout_yes};
 typedef void (*transport_finish_asynch)(
