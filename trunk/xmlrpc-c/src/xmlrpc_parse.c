@@ -36,9 +36,6 @@
 #include "xmlrpc.h"
 #include "xmlrpc_expat.h"
 
-/* Security workaround. */
-#define MAX_RECURSION_DEPTH (64)
-
 
 /*=========================================================================
 **  Data Format
@@ -119,7 +116,7 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
     decoded = NULL;
 
     /* Make sure we haven't recursed too deeply. */
-    if (*depth > MAX_RECURSION_DEPTH)
+    if (*depth > xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID))
 	XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR,
 		    "Nested data structure too deep.");
 

@@ -184,6 +184,27 @@ void xmlrpc_env_set_fault_formatted (xmlrpc_env* env, int code,
 
 
 /*=========================================================================
+**  Resource Limits
+**=========================================================================
+**  To discourage denial-of-service attacks, we provide several adjustable
+**  resource limits. These functions are *not* re-entrant.
+*/
+
+/* Limit IDs. There will be more of these as time goes on. */
+#define XMLRPC_NESTING_LIMIT_ID   (0)
+#define XMLRPC_LAST_LIMIT_ID      (XMLRPC_NESTING_LIMIT_ID)
+
+/* By default, deserialized data may be no more than 64 levels deep. */
+#define XMLRPC_NESTING_LIMIT_DEFAULT (64)
+
+/* Set a specific limit to the specified value. */
+extern void xmlrpc_limit_set (int limit_id, size_t value);
+
+/* Get the value of a specified limit. */
+extern size_t xmlrpc_limit_get (int limit_id);
+
+
+/*=========================================================================
 **  xmlrpc_mem_block
 **=========================================================================
 **  A resizable chunk of memory. This is mostly used internally, but it is

@@ -1502,6 +1502,35 @@ void test_method_registry (void)
     xmlrpc_env_clean(&env);
 }
 
+void test_nesting_limit (void)
+{
+    xmlrpc_env env;
+    xmlrpc_value *val;
+
+    xmlrpc_env_init(&env);
+    
+    /* Test with an adequate limit for (...(...()...)...). */
+    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 2);
+    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
+    TEST(!env.fault_occurred);
+    TEST(val != NULL);
+    xmlrpc_DECREF(val);
+
+    /* Test with an inadequate limit. */
+    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 1);
+    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_PARSE_ERROR);
+    TEST(val == NULL);
+
+    /* Reset the default limit. */
+    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, XMLRPC_NESTING_LIMIT_DEFAULT);
+    TEST(xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID)
+	 == XMLRPC_NESTING_LIMIT_DEFAULT);
+
+    xmlrpc_env_clean(&env);
+}
+
 
 /*=========================================================================
 **  Test Driver
@@ -1523,6 +1552,7 @@ int main (int argc, char** argv)
     test_parse_xml_response();
     test_parse_xml_call();
     test_method_registry();
+    test_nesting_limit();
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",

@@ -126,6 +126,28 @@ void xmlrpc_fatal_error (char* file, int line, char* msg)
 
 
 /*=========================================================================
+**  Resource Limits
+**=========================================================================
+*/ 
+
+static size_t limits[XMLRPC_LAST_LIMIT_ID] = {
+    XMLRPC_NESTING_LIMIT_DEFAULT
+};
+
+void xmlrpc_limit_set (int limit_id, size_t value)
+{
+    XMLRPC_ASSERT(0 <= limit_id && limit_id <= XMLRPC_LAST_LIMIT_ID);
+    limits[limit_id] = value;
+}
+
+size_t xmlrpc_limit_get (int limit_id)
+{
+    XMLRPC_ASSERT(0 <= limit_id && limit_id <= XMLRPC_LAST_LIMIT_ID);
+    return limits[limit_id];
+}
+
+
+/*=========================================================================
 **  xmlrpc_mem_block
 **=========================================================================
 **  We support resizable blocks of memory. We need these just about
