@@ -39,7 +39,7 @@ typedef struct {
 
     xmlrpc_registry * registryP;
 
-    /* runfirstFn an runfirst_arg are meaningless when 
+    /* runfirstFn and runfirst_arg are meaningless when 
        config_file_name is NULL
     */
     runfirstFn        runfirst;
