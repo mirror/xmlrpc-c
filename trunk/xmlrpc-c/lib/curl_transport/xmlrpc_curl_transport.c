@@ -382,7 +382,7 @@ destroyCurlTransaction(curlTransaction * const curlTransactionP) {
 }
 
 
-#include <unistd.h>
+
 static void
 performCurlTransaction(xmlrpc_env *      const envP,
                        curlTransaction * const curlTransactionP) {
