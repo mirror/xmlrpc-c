@@ -1,4 +1,4 @@
-CVS - Eric Kidd <eric.kidd@pobox.com> - 25 January 2000
+0.9.6 - Eric Kidd <eric.kidd@pobox.com> - 30 January 2000
 
   * Fixed lots of gcc warnings.
   * Added a new 'xmlrpc_server_info' class, which allows you to

@@ -69,6 +69,7 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root)
 %{_prefix}/bin/xmlrpc-c-config
+%{_prefix}/bin/xml-rpc-api2txt
 %{_prefix}/lib/lib*.a
 %{_prefix}/lib/lib*.la
 %{_prefix}/lib/lib*.so

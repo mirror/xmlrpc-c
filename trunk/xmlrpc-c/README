@@ -9,7 +9,7 @@ You can find the official xmlrpc-c website at:
 
   http://xmlrpc-c.sourceforge.net/
 
-To build this library, you'll need to have w3c-libwww 5.3.2 or newer.
+To build this library, you'll need to have w3c-libwww 5.2.8 or newer.
 Please see the following file:
 
   GETTING_LIBWWW        How to get a copy of w3c-libwww
@@ -57,4 +57,4 @@ Peer, Inc., producers of P2P applications.
 
 Eric Kidd
 eric.kidd@pobox.com
-9 January 2001
+30 January 2001
