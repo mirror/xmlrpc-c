@@ -13,6 +13,7 @@ CVS - Eric Kidd <eric.kidd@pobox.com> - 25 January 2000
   * Added highly experimental hacked copy of mod_gzip into the
     tools/turbocharger directory. This version supports gzip *and* deflate!
   * Added xml-rpc-api2txt, since XML-RPC doesn't have any IDL language.
+  * Merged in Ilya Goldberg's libwww/SSL setup code.
 
 0.9.5 - Eric Kidd <eric.kidd@pobox.com> - 20 January 2000
 

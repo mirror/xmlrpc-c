@@ -153,6 +153,23 @@ AC_SUBST(LIBWWW_WL_RPATH)
 
 
 dnl =======================================================================
+dnl Checks for build options.
+dnl =======================================================================
+
+AC_ARG_WITH(libwww-ssl, [\
+  --with-libwww-ssl       Include experimental support for libwww/SSL.
+                          Please read doc/libwww-ssl.txt before trying this,
+                          or it probably won't work.])
+AC_MSG_CHECKING(whether to use SSL with libwww)
+if test x"$with_libwww_ssl" = xyes; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_LIBWWW_SSL)
+else
+    AC_MSG_RESULT(no)
+fi
+
+
+dnl =======================================================================
 dnl Output our results.
 dnl =======================================================================
 

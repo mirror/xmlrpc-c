@@ -39,6 +39,10 @@
 #include "WWWHTTP.h"
 #include "WWWInit.h"
 
+/* Include our libwww SSL headers, if available. */
+#if HAVE_LIBWWW_SSL
+#include "WWWSSL.h"
+#endif /* HAVE_LIBWWW_SSL */
 
 /* This value was discovered by Rick Blair. His efforts shaved two seconds
 ** off of every request processed. Many thanks. */
@@ -69,6 +73,24 @@ void xmlrpc_client_init(int flags,
 	** care about redirects or HTTP authentication, and we want to
 	** reduce our application footprint as much as possible. */
 	HTProfile_newRobot(appname, appversion);
+
+	/* Ilya Goldberg <igg@mit.edu> provided the following code to access
+	** SSL-protected servers. */
+#if HAVE_LIBWWW_SSL
+	/* Set the SSL protocol method. By default, it is the highest
+	** available protocol. Setting it up to SSL_V23 allows the client
+	** to negotiate with the server and set up either TSLv1, SSLv3,
+	** or SSLv2 */
+	HTSSL_protMethod_set(HTSSL_V23);
+
+	/* Set the certificate verification depth to 2 in order to be able to
+	** validate self-signed certificates */
+	HTSSL_verifyDepth_set(2);
+
+	/* Register SSL stuff for handling ssl access. The parameter we pass
+	** is NO because we can't be pre-emptive with POST */
+	HTSSLhttps_init(NO);
+#endif /* HAVE_LIBWWW_SSL */
 	
 	/* For interoperability with Frontier, we need to tell libwww *not*
 	** to send 'Expect: 100-continue' headers. But if we're not sending
