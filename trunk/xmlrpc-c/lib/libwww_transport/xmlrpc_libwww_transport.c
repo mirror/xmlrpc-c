@@ -57,34 +57,6 @@
 
 
 /*=========================================================================
-**  Tracing
-**=======================================================================*/
-
-static void
-traceResponseXml(const char * const xml,
-                 unsigned int const xmlLength) {
-
-    if (getenv("XMLRPC_TRACE_XML")) {
-        unsigned int nonPrintableCount;
-        unsigned int i;
-
-        nonPrintableCount = 0;  /* Initial value */
-
-        for (i = 0; i < xmlLength; ++i) {
-            if (!isprint(xml[i]) && xml[i] != '\n' && xml[i] != '\r')
-                ++nonPrintableCount;
-        }
-        if (nonPrintableCount > 0)
-            fprintf(stderr, "XML RESPONSE contains %u nonprintable "
-                    "characters.\n", nonPrintableCount);
-
-        fprintf(stderr, "XML RESPONSE:\n %*s\n", xmlLength, xml);
-    }
-}
-
-
-
-/*=========================================================================
 **  Initialization and Shutdown
 **=========================================================================
 */
@@ -483,8 +455,9 @@ parse_response_chunk(xmlrpc_env * const envP,
     if (!HTChunk_data(t_info->response_data))
         XMLRPC_FAIL(envP, XMLRPC_NETWORK_ERROR, "w3c-libwww returned no data");
 
-    traceResponseXml(HTChunk_data(t_info->response_data),
-                     HTChunk_size(t_info->response_data));
+    xmlrpc_traceXml("XML-RPC RESPONSE", 
+                    HTChunk_data(t_info->response_data),
+                    HTChunk_size(t_info->response_data));
     
     /* Parse the response. */
     retval = xmlrpc_parse_response(envP, HTChunk_data(t_info->response_data),
