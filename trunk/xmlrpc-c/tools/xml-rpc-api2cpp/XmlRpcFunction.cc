@@ -1,5 +1,4 @@
 #include <iostream.h>
-#include <strstream.h>
 #include <stdexcept>
 
 #include <XmlRpcCpp.h>
@@ -35,6 +34,7 @@ XmlRpcFunction& XmlRpcFunction::operator= (const XmlRpcFunction& f) {
     mMethodName = f.mMethodName;
     mHelp = f.mHelp;
     mSynopsis = f.mSynopsis;
+    return *this;
 }
 
 void XmlRpcFunction::printDeclarations (ostream& out) {
@@ -101,7 +101,7 @@ void XmlRpcFunction::printDefinition (ostream& out,
     }
 
     /* Emit the function call.*/
-    out << "    XmlRpcValue result = this->server.call(\""
+    out << "    XmlRpcValue result = this->mClient.call(\""
 	<< mMethodName << "\", params);" << endl;    
 
     /* Emit the return statement. */

@@ -14,6 +14,8 @@ LIBCLIENT = ../../src/libxmlrpc_client.la @LIBWWW_LDADD@ $(LIBXMLRPC)
 
 xml_rpc_api2cpp_SOURCES = DataType.h DataType.cc \
 			  XmlRpcFunction.h XmlRpcFunction.cc \
+			  XmlRpcClass.h XmlRpcClass.cc \
+			  SystemProxy.h SystemProxy.cc \
                           xml-rpc-api2cpp.cc
 xml_rpc_api2cpp_LDADD   = ../../src/libxmlrpc_cpp.a $(LIBCLIENT)
 xml_rpc_api2cpp_LDFLAGS = @LIBWWW_RPATH@

@@ -239,6 +239,7 @@ inline XmlRpcValue& XmlRpcValue::operator= (const XmlRpcValue& value) {
     xmlrpc_INCREF(value.mValue);
     xmlrpc_DECREF(mValue);
     mValue = value.mValue;
+    return *this;
 }
 
 inline xmlrpc_type XmlRpcValue::getType (void) const {
@@ -264,17 +265,15 @@ class XmlRpcClient {
 private:
     string mServerUrl;
 
-    XmlRpcClient (const XmlRpcClient& client) {
-        XMLRPC_FATAL_ERROR("Cannot copy an XmlRpcClient object");
-    }
-    XmlRpcClient& operator= (const XmlRpcClient& f) { XMLRPC_NO_ASSIGNMENT }
-
 public:
     static void Initialize (string appname, string appversion);
     static void Terminate (void);
 
-                XmlRpcClient (string server_url) : mServerUrl(server_url) {}
-               ~XmlRpcClient (void) {}
+    XmlRpcClient (const string& server_url) : mServerUrl(server_url) {}
+    ~XmlRpcClient (void) {}
+
+    XmlRpcClient (const XmlRpcClient& client);
+    XmlRpcClient& operator= (const XmlRpcClient& client);
 
     XmlRpcValue call (string method_name, XmlRpcValue param_array);
 };
@@ -285,6 +284,18 @@ public:
 //=========================================================================
 //  These are inline for now, so we don't need to screw with linker issues
 //  and build a separate client library.
+
+inline XmlRpcClient::XmlRpcClient (const XmlRpcClient& client)
+    : mServerUrl(client.mServerUrl)
+{
+}
+
+inline XmlRpcClient& XmlRpcClient::operator= (const XmlRpcClient& client) {
+    if (this == &client)
+	return *this;
+    mServerUrl = client.mServerUrl;
+    return *this;
+}
 
 inline void XmlRpcClient::Initialize (string appname, string appversion) {
     xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS,

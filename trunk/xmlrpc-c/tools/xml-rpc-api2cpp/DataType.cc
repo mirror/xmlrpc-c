@@ -14,8 +14,11 @@
 
 string DataType::defaultParameterBaseName (int position) const {
     ostrstream name_stream;
-    name_stream << typeName() << position;
-    return string(name_stream.str());
+    name_stream << typeName() << position << ends;
+    string name(name_stream.str());
+    // (Ask the ostrstream to reclaim ownership of its buffer.)
+    name_stream.freeze(false);
+    return name;
 }
 
 
@@ -99,7 +102,7 @@ string SimpleDataType::returnTypeFragment () const {
 
 string SimpleDataType::outputConversionFragment (const string& var_name) const
 {
-    return mGetterFunc + "(" + var_name + ")";
+    return var_name + "." + mGetterFunc + "()";
 }
 
 
@@ -145,16 +148,16 @@ string VoidDataType::outputConversionFragment (const string& var_name) const {
 
 SimpleDataType intType    ("int", "XmlRpcValue::int32",
 			   "XmlRpcValue::makeInt",
-			   "XmlRpcValue::getInt");
+			   "getInt");
 SimpleDataType boolType   ("bool", "bool",
 			   "XmlRpcValue::makeBool",
-			   "XmlRpcValue::getBool");
+			   "getBool");
 SimpleDataType doubleType ("double", "double",
 			   "XmlRpcValue::makeDouble",
-			   "XmlRpcValue::getDouble");
+			   "getDouble");
 SimpleDataType stringType ("string", "string",
 			   "XmlRpcValue::makeString",
-			   "XmlRpcValue::getString");
+			   "getString");
 
 RawDataType dateTimeType  ("dateTime");
 RawDataType base64Type    ("base64");
@@ -189,5 +192,3 @@ const DataType& findDataType (const string& name) {
     XMLRPC_ASSERT(0);
     return intType;
 }
-
-

@@ -1,5 +1,6 @@
 CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
 
+  * xml-rpc-api2cpp now generates usable proxy classes.
   * Luke Howard: Default method support.
   * Abstract XML parser API (but you'll need to edit makefiles to use it).
   * Integrated Electric Fence into build system (optional).
