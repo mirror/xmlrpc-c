@@ -33,14 +33,13 @@ main(int           const argc,
      const char ** const argv ATTR_UNUSED) {
 
     xmlrpc_env env;
-    xmlrpc_server_info *server;
-    xmlrpc_value *result;    
-    char *user, *password;
+    xmlrpc_server_info * server;
+    xmlrpc_value * result;    
 	int sum;
     
     if (argc-1 > 0) {
-        fprintf(stderr, "No arguments");
-        exit(0);
+        fprintf(stderr, "There are no arguments.  You specified %d", argc-1);
+        exit(1);
     }
 
     /* Start up our XML-RPC client library. */
@@ -55,10 +54,10 @@ main(int           const argc,
     xmlrpc_server_info_set_basic_auth(&env, server, "jrandom", "secret");
     die_if_fault_occurred(&env);
 
-    /* Ask the server to show us all our authentication information. */
-    //result = xmlrpc_client_call_server(&env, server, "debug.authInfo", "()");
-	result = xmlrpc_client_call_server(&env, server, "sample.add",
-            "(ii)", (xmlrpc_int32) 5, (xmlrpc_int32) 7);
+	result = 
+        xmlrpc_client_call_server(
+            &env, server, "sample.add", "(ii)", 
+            (xmlrpc_int32) 5, (xmlrpc_int32) 7);
     die_if_fault_occurred(&env);
 
     /* Dispose of our server object. */
