@@ -18,6 +18,6 @@
 #undef PATH_SEPARATOR
 
 /* The directory containing our source code.  This is used by some of
-** the build-time test suites to locate their test data (because automake
-** and autoconf may not compile our code in a separate build directory. */
+** the build-time test suites to locate their test data (because 
+** autoconf may compile our code in a separate build directory. */
 #undef TOP_SRCDIR

@@ -5,8 +5,10 @@
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
 
-#define NAME "XML-RPC C Test Client"
-#define VERSION "0.1"
+#include "config.h"  /* information about this build environment */
+
+#define NAME "XML-RPC C Test Client synch_client"
+#define VERSION "1.0"
 
 static void die_if_fault_occurred (xmlrpc_env *env)
 {
@@ -17,12 +19,21 @@ static void die_if_fault_occurred (xmlrpc_env *env)
     }
 }
 
-int main (int argc, char** argv)
-{
+
+
+int 
+main(int           const argc, 
+     const char ** const argv ATTR_UNUSED) {
+
     xmlrpc_env env;
     xmlrpc_value *result;
     char *state_name;
-    
+
+    if (argc-1 > 0) {
+        fprintf(stderr, "No arguments");
+        exit(0);
+    }
+
     /* Start up our XML-RPC client library. */
     xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION);
 

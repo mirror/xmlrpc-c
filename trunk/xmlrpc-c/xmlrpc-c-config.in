@@ -46,7 +46,7 @@ if test $# -eq 0; then
 fi
 
 the_libdirs="-L@libdir@"
-the_libs="-lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok"
+the_libs="-lxmlrpc @EXTRA_XML_LIBS@"
 the_rpath=
 the_wl_rpath=
 cpp_libs=
@@ -54,14 +54,14 @@ cpp_libs=
 while test $# -gt 0; do
   case $1 in
     c++)
-      cpp_libs="-lxmlrpc_cpp "
+      cpp_libs="-lxmlrpc_cpp"
       ;;
     cgi-server)
       the_libs="-lxmlrpc_cgi $the_libs"
       ;;
     abyss-server)
-      the_libs=\
-"-lxmlrpc_abyss_server -lxmlrpc_abyss @LIBABYSS_LDADD@ $the_libs"
+      the_libs=
+         "-lxmlrpc_abyss_server -lxmlrpc_abyss @LIBABYSS_LDADD@ $the_libs"
       ;;
     libwww-client)
       the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"
@@ -82,11 +82,11 @@ while test $# -gt 0; do
       exit 0
       ;;
     --libs)
-      echo "$the_libdirs $cpp_libs$the_libs $the_wl_rpath"
+      echo "$the_libdirs $cpp_libs $the_libs $the_wl_rpath"
       exit 0
       ;;
     --ldadd)
-      echo "$the_libdirs $cpp_libs$the_libs"
+      echo "$the_libdirs $cpp_libs $the_libs"
       exit 0
       ;;
     --ldflags)

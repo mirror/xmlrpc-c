@@ -238,7 +238,7 @@ void XmlRpcValue::getBase64 (const unsigned char *& out_data,
     env.throwIfFaultOccurred();
 }
 
-size_t XmlRpcValue::arraySize (void) {
+size_t XmlRpcValue::arraySize (void) const {
     XmlRpcEnv env;
     size_t result = xmlrpc_array_size(env, mValue);
     env.throwIfFaultOccurred();
@@ -251,21 +251,21 @@ void XmlRpcValue::arrayAppendItem (const XmlRpcValue& value) {
     env.throwIfFaultOccurred();
 }
 
-XmlRpcValue XmlRpcValue::arrayGetItem (int index) {
+XmlRpcValue XmlRpcValue::arrayGetItem (int index) const {
     XmlRpcEnv env;
     xmlrpc_value *result = xmlrpc_array_get_item(env, mValue, index);
     env.throwIfFaultOccurred();
     return XmlRpcValue(result);
 }
 
-size_t XmlRpcValue::structSize (void) {
+size_t XmlRpcValue::structSize (void) const {
     XmlRpcEnv env;
     size_t result = xmlrpc_struct_size(env, mValue);
     env.throwIfFaultOccurred();
     return result;
 }
 
-bool XmlRpcValue::structHasKey (const string& key) {
+bool XmlRpcValue::structHasKey (const string& key) const {
     XmlRpcEnv env;
     const char *keystr = key.data();
     size_t keylen = key.size();
@@ -275,7 +275,7 @@ bool XmlRpcValue::structHasKey (const string& key) {
     return result;
 }
 
-XmlRpcValue XmlRpcValue::structGetValue (const string& key) {
+XmlRpcValue XmlRpcValue::structGetValue (const string& key) const {
     XmlRpcEnv env;
     const char *keystr = key.data();
     size_t keylen = key.size();
@@ -298,7 +298,7 @@ void XmlRpcValue::structSetValue (const string& key, const XmlRpcValue& value)
 
 void XmlRpcValue::structGetKeyAndValue (const int index,
 					string& out_key,
-					XmlRpcValue& out_value)
+					XmlRpcValue& out_value) const
 {
     XmlRpcEnv env;
 
@@ -308,4 +308,84 @@ void XmlRpcValue::structGetKeyAndValue (const int index,
 
     out_key = XmlRpcValue(key).getString();
     out_value = XmlRpcValue(value);
+}
+
+XmlRpcGenSrv& XmlRpcGenSrv::addMethod (const string& name,
+							xmlrpc_method method,
+							void *data)
+{
+    XmlRpcEnv env;
+
+	xmlrpc_registry_add_method (env, mRegistry, NULL,
+				name.c_str (),
+				method, data);
+
+    env.throwIfFaultOccurred ();
+	return (*this);
+}
+
+XmlRpcGenSrv& XmlRpcGenSrv::addMethod (const string& name,
+			xmlrpc_method method,
+			void* data,
+			const string& signature,
+			const string& help)
+{
+    XmlRpcEnv env;
+
+	xmlrpc_registry_add_method_w_doc (env, mRegistry, NULL,
+				name.c_str (),
+				method, data,
+				signature.c_str (),
+				help.c_str ());
+
+    env.throwIfFaultOccurred ();
+	return (*this);
+}
+
+xmlrpc_mem_block* XmlRpcGenSrv::alloc (XmlRpcEnv& env, const string& body) const
+{
+   	xmlrpc_mem_block*	result = NULL;
+   	char*				contents;
+
+	result		= xmlrpc_mem_block_new (env, body.length ());
+	env.throwIfFaultOccurred ();
+
+	contents	= XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, result);
+
+	memcpy (contents, body.c_str (), body.length ());
+	return result;
+}
+
+string XmlRpcGenSrv::handle (const string& body) const
+{
+	XmlRpcEnv env;
+	string result;
+	xmlrpc_mem_block*	input = NULL, * output = NULL; 
+   	char* input_data, * output_data;
+   	size_t input_size, output_size;
+
+   	if (body.length () > xmlrpc_limit_get (XMLRPC_XML_SIZE_LIMIT_ID))
+		throw XmlRpcFault (XMLRPC_LIMIT_EXCEEDED_ERROR, "XML-RPC request too large");
+
+	input	= alloc (env, body);
+	input_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, input);
+	input_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, input);
+
+	output	= xmlrpc_registry_process_call (env, mRegistry, NULL,
+			input_data, input_size);
+
+	if (output)
+	{
+    	output_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
+		output_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
+
+		result.assign (output_data, output_size);
+		xmlrpc_mem_block_free (output);
+	}
+
+	xmlrpc_mem_block_free (input);
+	if (!result.length ())
+		throw XmlRpcFault (env);
+
+	return result;
 }

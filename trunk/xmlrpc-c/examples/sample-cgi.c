@@ -3,9 +3,13 @@
 #include <xmlrpc.h>
 #include <xmlrpc_cgi.h>
 
+#include "config.h"  /* information about this build environment */
+
 static xmlrpc_value *
-sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
+sample_add(xmlrpc_env *   const env, 
+           xmlrpc_value * const param_array, 
+           void *         const user_data ATTR_UNUSED) {
+
     xmlrpc_int32 x, y, z;
 
     /* Parse our argument array. */
@@ -20,8 +24,12 @@ sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
     return xmlrpc_build_value(env, "i", z);
 }
 
-int main (int argc, char **argv)
-{
+
+
+int 
+main(int           const argc ATTR_UNUSED, 
+     const char ** const argv ATTR_UNUSED) {
+
     /* Process our request. */
     xmlrpc_cgi_init(XMLRPC_CGI_NO_FLAGS);
     xmlrpc_cgi_add_method_w_doc("sample.add", &sample_add, NULL,

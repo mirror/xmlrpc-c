@@ -46,8 +46,12 @@
 // Tell me what your compiler does; I can provide some autoconf magic to the
 // Right Thing on most platforms.
 #include <string>
-// using namespace std;
 
+#if defined(__GNUC__) && (__GNUC__ >= 3)        // g++ 3.0+ needs this
+using namespace std;
+#endif // __GNUC__
+
+#include <xmlrpc_config.h>
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
 
@@ -202,19 +206,19 @@ public:
 
     // Array functions. These will throw an XmlRpcFault if the value
     // isn't an array.
-    size_t       arraySize (void);
+    size_t       arraySize (void) const;
     void         arrayAppendItem (const XmlRpcValue& value);
-    XmlRpcValue  arrayGetItem (int index);
+    XmlRpcValue  arrayGetItem (int index) const;
     
     // Struct functions. These will throw an XmlRpcFault if the value
     // isn't a struct.
-    size_t       structSize (void);
-    bool         structHasKey (const string& key);
-    XmlRpcValue  structGetValue (const string& key);
+    size_t       structSize (void) const;
+    bool         structHasKey (const string& key) const;
+    XmlRpcValue  structGetValue (const string& key) const;
     void         structSetValue (const string& key, const XmlRpcValue& value);
     void         structGetKeyAndValue (const int index,
 				       string& out_key,
-				       XmlRpcValue& out_value);
+				       XmlRpcValue& out_value) const;
 };
 
 inline XmlRpcValue::XmlRpcValue (xmlrpc_value *value,
@@ -278,7 +282,30 @@ public:
     XmlRpcClient& operator= (const XmlRpcClient& client);
 
     XmlRpcValue call (string method_name, XmlRpcValue param_array);
+    void call_asynch (string method_name,
+		      XmlRpcValue param_array,
+		      xmlrpc_response_handler callback,
+		      void* user_data);
+    void event_loop_asynch (timeout_t milliseconds);
 };
+
+inline void XmlRpcClient::call_asynch(string method_name,
+				             XmlRpcValue param_array,
+					     xmlrpc_response_handler callback,
+					     void* user_data)
+{
+    xmlrpc_client_call_asynch_params(
+				  const_cast<char*>(mServerUrl.c_str()),
+				  const_cast<char*>(method_name.c_str()),
+				  callback,
+				  user_data,
+				  param_array.borrowReference());
+}
+
+inline void XmlRpcClient::event_loop_asynch(timeout_t milliseconds)
+{
+	xmlrpc_client_event_loop_finish_asynch_timeout(milliseconds);
+}
 
 
 //=========================================================================
@@ -322,6 +349,56 @@ inline XmlRpcValue XmlRpcClient::call (string method_name,
     return XmlRpcValue(result, XmlRpcValue::CONSUME_REFERENCE);
 }
 
+//=========================================================================
+//  XmlRpcGenSrv
+//=========================================================================
+
+class XmlRpcGenSrv {
+
+private:
+
+	xmlrpc_registry*	mRegistry;
+
+	xmlrpc_mem_block* alloc (XmlRpcEnv& env, const string& body) const; 
+
+public:
+
+	XmlRpcGenSrv (int flags);
+	~XmlRpcGenSrv (void);
+
+	xmlrpc_registry* getRegistry (void) const;
+
+	XmlRpcGenSrv&	addMethod (const string& name,
+				   xmlrpc_method method,
+				   void *data);
+	XmlRpcGenSrv&	addMethod (const string& name,
+				   xmlrpc_method method,
+				   void* data,
+				   const string& signature,
+				   const string& help);
+
+	string handle (const string& body) const;
+};
+
+inline XmlRpcGenSrv::XmlRpcGenSrv (int flags) {
+
+    XmlRpcEnv env;
+
+    if (flags == flags){};
+
+    mRegistry = xmlrpc_registry_new (env);
+    env.throwIfFaultOccurred();        
+}
+
+inline XmlRpcGenSrv::~XmlRpcGenSrv (void) {
+
+	xmlrpc_registry_free (mRegistry);
+}
+
+inline xmlrpc_registry* XmlRpcGenSrv::getRegistry () const {
+
+	return mRegistry;
+}
 
 #undef XMLRPC_NO_ASSIGNMENT
 

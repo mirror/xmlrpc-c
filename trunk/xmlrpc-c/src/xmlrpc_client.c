@@ -200,6 +200,42 @@ static void set_fault_from_http_request (xmlrpc_env *env,
 
 
 /*=========================================================================
+**  xmlrpc_authcookie_store
+**=========================================================================
+**  HTCookie callback to check for auth cookie and set it.
+*/
+
+PRIVATE BOOL xmlrpc_authcookie_store(HTRequest *request, HTCookie *cookie, void *param) {
+    /* First check to see if the cookie exists at all. */
+    if (cookie) {
+	/* Check for auth cookie. */
+	if (!strcasecmp("auth", HTCookie_name(cookie))) {
+	    /* Set auth cookie as HTTP_COOKIE_AUTH. */
+	    setenv("HTTP_COOKIE_AUTH", HTCookie_value(cookie), 1);
+	}
+    }
+    return YES;
+}
+
+/*=========================================================================
+**  xmlrpc_authcookie_grab
+**=========================================================================
+**  HTCookie callback to get auth value and store it in cookie.
+*/
+
+PRIVATE HTAssocList *xmlrpc_authcookie_grab(HTRequest *request, void *param) {
+    /* Create associative list for cookies. */
+    HTAssocList *alist = HTAssocList_new();
+
+    /* If HTTP_COOKIE_AUTH is set, pass that to the list. */
+    if (getenv("HTTP_COOKIE_AUTH") != NULL) {
+	HTAssocList_addObject(alist, "auth", getenv("HTTP_COOKIE_AUTH"));
+    }
+    return alist;
+}
+
+
+/*=========================================================================
 **  xmlrpc_server_info
 **=========================================================================
 */
@@ -448,6 +484,11 @@ static call_info *call_info_new (xmlrpc_env *env,
     /* Set up our basic members. */
     retval->is_done = 0;
     retval->http_status = 0;
+
+    /* Start cookie handler. */
+    HTCookie_init();
+    HTCookie_setCallbacks(xmlrpc_authcookie_store, NULL,
+		xmlrpc_authcookie_grab, NULL);
 
     /* Create a HTRequest object. */
     retval->request = HTRequest_new();
@@ -1230,3 +1271,4 @@ static int asynch_terminate_handler (HTRequest *request,
     xmlrpc_env_clean(&env);
     return HT_OK;
 }
+

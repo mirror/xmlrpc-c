@@ -1,4 +1,4 @@
-/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
+/* Copyright (C) 2002 by jeff@ourexchange.net. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions
@@ -23,39 +23,52 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
+#ifndef HAVE_WIN32_CONFIG_H
+#include "xmlrpc_config.h"
+#else
+#include "xmlrpc_win32_config.h"
+#endif
 
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
+#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
-#include "xmlrpc_abyss.h"
 
-static xmlrpc_value *
-sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-    xmlrpc_int32 x, y, z;
+/* set cookie function */
+void xmlrpc_authcookie_set ( xmlrpc_env *env, 
+			const char *username, 
+			const char *password ) {
+    char *unencoded;
+    xmlrpc_mem_block *token;
 
-    /* Parse our argument array. */
-    xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
-    if (env->fault_occurred)
-	return NULL;
+    /* Check asserts. */
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(username);
+    XMLRPC_ASSERT_PTR_OK(password);
 
-    /* Add our two numbers. */
-    z = x + y;
+    /* Clear out memory. */
+    unencoded = (char *) malloc ( sizeof ( char * ) );
+    token = NULL;
 
-    /* Return our result. */
-    return xmlrpc_build_value(env, "i", z);
+    /* Create unencoded string/hash. */
+    sprintf(unencoded, "%s:%s", username, password);
+
+    /* Create encoded string. */
+    token = xmlrpc_base64_encode_without_newlines(env, unencoded,
+				strlen(unencoded));
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Set HTTP_COOKIE_AUTH to the character representation of the
+    ** encoded string. */
+    setenv("HTTP_COOKIE_AUTH", XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, token),
+		1);
+
+ cleanup:
+    if (token) xmlrpc_mem_block_free(token);
 }
 
-int main (int argc, char **argv)
-{
-    if (argc != 2) {
-	fprintf(stderr, "Usage: servertest abyss.conf\n");
-	exit(1);
-    }
-
-    xmlrpc_server_abyss_init(XMLRPC_SERVER_ABYSS_NO_FLAGS, argv[1]);
-    xmlrpc_server_abyss_add_method("sample.add", &sample_add, NULL);
-    xmlrpc_server_abyss_run();
-
-    return 0;
+char *xmlrpc_authcookie ( void ) {
+    return getenv("HTTP_COOKIE_AUTH");
 }

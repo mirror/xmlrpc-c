@@ -190,7 +190,7 @@ bool ConfReadMIMETypes(char *filename)
 ** Server Configuration File
 *********************************************************************/
 
-bool ConfReadServerFile(char *filename,TServer *srv)
+bool ConfReadServerFile(const char *filename,TServer *srv)
 {
 	TFile f;
 	char z[512],*p;

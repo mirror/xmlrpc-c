@@ -75,31 +75,38 @@ void xmlrpc_env_clean (xmlrpc_env* env)
     **   3) a pointer to a malloc'd fault string
     ** If we have case (3), we'll need to free it. */
     if (env->fault_string && env->fault_string != default_fault_string)
-	free(env->fault_string);
+        free(env->fault_string);
     env->fault_string = XMLRPC_BAD_POINTER;
 }
 
-void xmlrpc_env_set_fault (xmlrpc_env* env, int code, char* string)
-{
-    XMLRPC_ASSERT(env != NULL);
-    XMLRPC_ASSERT(string != NULL);
+
+
+void 
+xmlrpc_env_set_fault(xmlrpc_env * const env, 
+                     int          const faultCode, 
+                     const char * const faultDescription) {
+
+    XMLRPC_ASSERT(env != NULL); 
+    XMLRPC_ASSERT(faultDescription != NULL);
 
     /* Clean up any leftover pointers. */
     xmlrpc_env_clean(env);
 
     env->fault_occurred = 1;
-    env->fault_code     = code;
+    env->fault_code     = faultCode;
 
     /* Try to copy the fault string. If this fails, use a default. */
-    env->fault_string = (char*) malloc(strlen(string) + 1);
+    env->fault_string = (char*) malloc(strlen(faultDescription) + 1);
     if (env->fault_string)
-	strcpy(env->fault_string, string);
+        strcpy(env->fault_string, faultDescription);
     else
-	env->fault_string = default_fault_string;
+        env->fault_string = default_fault_string;
 }
 
+
+
 void xmlrpc_env_set_fault_formatted (xmlrpc_env* env, int code,
-				     char *format, ...)
+                                     char *format, ...)
 {
     va_list args;
     char buffer[ERROR_BUFFER_SZ];
@@ -156,26 +163,27 @@ size_t xmlrpc_limit_get (int limit_id)
 **  everywhere.
 */
 
-xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* env, size_t size)
-{
+xmlrpc_mem_block * 
+xmlrpc_mem_block_new(xmlrpc_env * const env, 
+                     size_t       const size) {
     xmlrpc_mem_block* block;
 
     XMLRPC_ASSERT_ENV_OK(env);
 
     block = (xmlrpc_mem_block*) malloc(sizeof(xmlrpc_mem_block));
     XMLRPC_FAIL_IF_NULL(block, env, XMLRPC_INTERNAL_ERROR,
-			"Can't allocate memory block");
+                        "Can't allocate memory block");
 
     xmlrpc_mem_block_init(env, block, size);
     XMLRPC_FAIL_IF_FAULT(env);
 
- cleanup:
+                     cleanup:
     if (env->fault_occurred) {
-	if (block)
-	    free(block);
-	return NULL;
+        if (block)
+            free(block);
+        return NULL;
     } else {
-	return block;
+        return block;
     }
 }
 
@@ -191,21 +199,21 @@ void xmlrpc_mem_block_free (xmlrpc_mem_block* block)
 
 /* Initialize the contents of the provided xmlrpc_mem_block. */
 void xmlrpc_mem_block_init (xmlrpc_env* env,
-			    xmlrpc_mem_block* block,
-			    size_t size)
+                            xmlrpc_mem_block* block,
+                            size_t size)
 {
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(block != NULL);
 
     block->_size = size;
     if (size < BLOCK_ALLOC_MIN)
-	block->_allocated = BLOCK_ALLOC_MIN;
+        block->_allocated = BLOCK_ALLOC_MIN;
     else
-	block->_allocated = size;
+        block->_allocated = size;
 
     block->_block = (void*) malloc(block->_allocated);
     XMLRPC_FAIL_IF_NULL(block->_block, env, XMLRPC_INTERNAL_ERROR,
-			"Can't allocate memory block");
+                        "Can't allocate memory block");
 
  cleanup:
     return;
@@ -222,26 +230,35 @@ void xmlrpc_mem_block_clean (xmlrpc_mem_block* block)
     block->_block = XMLRPC_BAD_POINTER;
 }
 
+
+
 /* Get the size of the xmlrpc_mem_block. */
-size_t xmlrpc_mem_block_size (xmlrpc_mem_block* block)
-{
+size_t 
+xmlrpc_mem_block_size(const xmlrpc_mem_block * const block) {
+
     XMLRPC_ASSERT(block != NULL);
     return block->_size;
 }
 
+
+
 /* Get the contents of the xmlrpc_mem_block. */
-void* xmlrpc_mem_block_contents (xmlrpc_mem_block* block)
-{
+void * 
+xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block) {
+
     XMLRPC_ASSERT(block != NULL);
     return block->_block;
 }
 
+
+
 /* Resize an xmlrpc_mem_block, preserving as much of the contents as
 ** possible. */
-void xmlrpc_mem_block_resize (xmlrpc_env* env,
-			      xmlrpc_mem_block* block,
-			      size_t size)
-{
+void 
+xmlrpc_mem_block_resize (xmlrpc_env *       const env,
+                         xmlrpc_mem_block * const block,
+                         size_t             const size) {
+
     size_t proposed_alloc;
     void* new_block;
 
@@ -250,21 +267,21 @@ void xmlrpc_mem_block_resize (xmlrpc_env* env,
 
     /* Check to see if we already have enough space. Maybe we'll get lucky. */
     if (size <= block->_allocated) {
-	block->_size = size;
-	return;
+        block->_size = size;
+        return;
     }
 
     /* Calculate a new allocation size. */
     proposed_alloc = block->_allocated;
     while (proposed_alloc < size && proposed_alloc <= BLOCK_ALLOC_MAX)
-	proposed_alloc *= 2;
+        proposed_alloc *= 2;
     if (proposed_alloc > BLOCK_ALLOC_MAX)
-	XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, "Memory block too large");
+        XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, "Memory block too large");
 
     /* Allocate our new memory block. */
     new_block = (void*) malloc(proposed_alloc);
     XMLRPC_FAIL_IF_NULL(new_block, env, XMLRPC_INTERNAL_ERROR,
-			"Can't resize memory block");
+                        "Can't resize memory block");
 
     /* Copy over our data and update the xmlrpc_mem_block struct. */
     memcpy(new_block, block->_block, block->_size);
@@ -278,9 +295,11 @@ void xmlrpc_mem_block_resize (xmlrpc_env* env,
 }
 
 /* Append data to an existing xmlrpc_mem_block. */
-void xmlrpc_mem_block_append (xmlrpc_env* env,
-			      xmlrpc_mem_block* block,
-			      void *data, size_t len)
+void 
+xmlrpc_mem_block_append(xmlrpc_env *       const env,
+                        xmlrpc_mem_block * const block,
+                        void *             const data, 
+                        size_t             const len)
 {
     int size;
 

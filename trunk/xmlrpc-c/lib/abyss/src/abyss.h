@@ -434,7 +434,7 @@ typedef struct
 
 typedef int TFile;
 
-bool FileOpen(TFile *f, char *name, uint32 attrib);
+bool FileOpen(TFile *f, const char *name,uint32 attrib);
 bool FileOpenCreate(TFile *f, char *name, uint32 attrib);
 bool FileClose(TFile *f);
 
@@ -673,7 +673,7 @@ char *MIMETypeGuessFromFile(char *filename);
 *********************************************************************/
 
 bool ConfReadMIMETypes(char *filename);
-bool ConfReadServerFile(char *filename,TServer *srv);
+bool ConfReadServerFile(const char *filename,TServer *srv);
 
 
 /*********************************************************************

@@ -274,20 +274,25 @@ xmlrpc_value* xmlrpc_struct_get_value_n (xmlrpc_env* env,
 **=========================================================================
 */
 
-void xmlrpc_struct_set_value (xmlrpc_env* env,
-			      xmlrpc_value* strct,
-			      char* key,
-			      xmlrpc_value* value)
-{
+void 
+xmlrpc_struct_set_value(xmlrpc_env *   const env,
+                        xmlrpc_value * const strct,
+                        const char *   const key,
+                        xmlrpc_value * const value) {
+
     XMLRPC_ASSERT(key != NULL);
     xmlrpc_struct_set_value_n(env, strct, key, strlen(key), value);    
 }
 
-void xmlrpc_struct_set_value_n (xmlrpc_env* env,
-				xmlrpc_value* strct,
-				char* key, size_t key_len,
-				xmlrpc_value* value)
-{
+
+
+void 
+xmlrpc_struct_set_value_n(xmlrpc_env *    const env,
+                          xmlrpc_value *  const strct,
+                          const char *    const key, 
+                          size_t          const key_len,
+                          xmlrpc_value *  const value) {
+
     xmlrpc_value *keyval;
 
     XMLRPC_ASSERT_ENV_OK(env);
@@ -310,11 +315,14 @@ void xmlrpc_struct_set_value_n (xmlrpc_env* env,
 	xmlrpc_DECREF(keyval);
 }
 
-void xmlrpc_struct_set_value_v (xmlrpc_env* env,
-				xmlrpc_value* strct,
-				xmlrpc_value* keyval,
-				xmlrpc_value* value)
-{
+
+
+void 
+xmlrpc_struct_set_value_v (xmlrpc_env *   const env,
+                           xmlrpc_value * const strct,
+                           xmlrpc_value * const keyval,
+                           xmlrpc_value * const value) {
+
     char *key;
     size_t key_len;
     int index;

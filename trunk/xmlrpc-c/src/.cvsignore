@@ -1,9 +1,5 @@
 Makefile
-Makefile.in
 rpctest
 cpptest
-clienttest
-servertest
-validatee
 efrpctest
 efrpctest_wrapper

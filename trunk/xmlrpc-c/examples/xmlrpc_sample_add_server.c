@@ -5,9 +5,13 @@
 #include <xmlrpc.h>
 #include <xmlrpc_abyss.h>
 
+#include "config.h"  /* information about this build environment */
+
 static xmlrpc_value *
-sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
+sample_add(xmlrpc_env *   const env, 
+           xmlrpc_value * const param_array, 
+           void *         const user_data ATTR_UNUSED) {
+
     xmlrpc_int32 x, y, z;
 
     /* Parse our argument array. */
@@ -22,11 +26,15 @@ sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
     return xmlrpc_build_value(env, "i", z);
 }
 
-int main (int argc, char **argv)
-{
+
+
+int 
+main (int           const argc, 
+      const char ** const argv) {
+
     if (argc != 2) {
-	fprintf(stderr, "Usage: servertest abyss.conf\n");
-	exit(1);
+        fprintf(stderr, "Usage: servertest abyss.conf\n");
+        exit(1);
     }
 
     xmlrpc_server_abyss_init(XMLRPC_SERVER_ABYSS_NO_FLAGS, argv[1]);

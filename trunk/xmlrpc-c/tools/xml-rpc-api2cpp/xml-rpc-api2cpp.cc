@@ -1,4 +1,4 @@
-#include <iostream.h>
+#include <iostream>
 #include <stdexcept>
 
 #include <XmlRpcCpp.h>
@@ -6,6 +6,8 @@
 #include "XmlRpcFunction.h"
 #include "XmlRpcClass.h"
 #include "SystemProxy.h"
+
+using std::logic_error;
 
 #define NAME           "xml-rpc-api2cpp"
 #define VERSION        "0.1"

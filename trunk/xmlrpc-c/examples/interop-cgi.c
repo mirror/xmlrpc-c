@@ -1,7 +1,7 @@
 /* A CGI which implements all of the test functions need for an interop
 ** endpoint. */
 
-/* Get PACKAGE, VERSION and XMLRPC_HOST_TYPE from the source tree.
+/* Get PACKAGE, XMLRPC_C_VERSION and XMLRPC_HOST_TYPE from the source tree.
 ** The config headers won't be available to regular applications, so you'll
 ** need to define these macros yourself if you build outside the tree. */
 #ifndef HAVE_WIN32_CONFIG_H
@@ -10,8 +10,11 @@
 #include "xmlrpc_win32_config.h"
 #endif
 
+#include "version.h"
 #include <xmlrpc.h>
 #include <xmlrpc_cgi.h>
+
+#include "config.h"  /* information about this build environment */
 
 
 /*=========================================================================
@@ -20,8 +23,10 @@
 */
 
 static xmlrpc_value *
-whichToolkit (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
+whichToolkit(xmlrpc_env *   const env, 
+             xmlrpc_value * const param_array, 
+             void *         const user_data ATTR_UNUSED) {
+
     /* Parse our argument array. */
     xmlrpc_parse_value(env, param_array, "()");
     if (env->fault_occurred)
@@ -32,7 +37,7 @@ whichToolkit (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 			      "toolkitDocsUrl",
 			      "http://xmlrpc-c.sourceforge.net/",
 			      "toolkitName", PACKAGE,
-			      "toolkitVersion", VERSION"+",
+			      "toolkitVersion", XMLRPC_C_VERSION"+",
 			      "toolkitOperatingSystem", XMLRPC_HOST_TYPE);
 }
 
@@ -49,8 +54,10 @@ static char whichToolkit_help[] =
 */
 
 static xmlrpc_value *
-noInParams (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
+noInParams(xmlrpc_env *   const env, 
+           xmlrpc_value * const param_array, 
+           void *         const user_data ATTR_UNUSED) {
+
     /* Parse our argument array. */
     xmlrpc_parse_value(env, param_array, "()");
     if (env->fault_occurred)
@@ -72,8 +79,10 @@ static char noInParams_help[] =
 */
 
 static xmlrpc_value *
-echoValue (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
+echoValue(xmlrpc_env *   const env, 
+          xmlrpc_value * const param_array, 
+          void *         const user_data ATTR_UNUSED) {
+
     xmlrpc_value *val;
 
     /* Parse our argument array. */
@@ -132,8 +141,10 @@ static char echoStructArray_help[] =
 **  Set up and run our server.
 */
 
-int main (int argc, char **argv)
-{
+int 
+main(int     const argc ATTR_UNUSED, 
+     char ** const argv ATTR_UNUSED) {
+
     /* Process our request. */
     xmlrpc_cgi_init(XMLRPC_CGI_NO_FLAGS);
 

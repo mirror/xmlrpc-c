@@ -4,7 +4,7 @@ AC_INIT(src/xmlrpc.h)
 AM_CONFIG_HEADER(xmlrpc_config.h)
 
 dnl =======================================================================
-dnl Version Numbering
+dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
 dnl =======================================================================
 
 dnl Increment the package version for each release.
@@ -16,10 +16,6 @@ dnl closely before touching this or making a release!
 VERSION_INFO="-version-info 7:0:4"
 AC_SUBST(VERSION_INFO)
 
-dnl Get the date for use in our LSM file.
-CONFIGURE_DATE=`date`
-AC_SUBST(CONFIGURE_DATE)
-
 dnl Get our host type.
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(XMLRPC_HOST_TYPE,"$host")
@@ -27,6 +23,11 @@ AC_DEFINE_UNQUOTED(XMLRPC_HOST_TYPE,"$host")
 dnl Get our source directory (so our test suites will work).
 AC_DEFINE_UNQUOTED(TOP_SRCDIR,"$srcdir")
 
+
+dnl We need this to compensate for an incompatibility between autoconf
+dnl and our libtool.  autoconf generates an invalid ltconfig command
+dnl otherwise.
+test -z "$target" && target=NONE
 
 dnl =======================================================================
 dnl Decide What To Build
@@ -69,6 +70,38 @@ AC_SUBST(SYNCH_CLIENT)
 AC_SUBST(ASYNCH_CLIENT)
 AC_SUBST(AUTH_CLIENT)
 AC_SUBST(QUERY_MEERKAT)
+
+dnl Check to see if we should build the libxml2 backend.
+AC_ARG_ENABLE(libxml2-backend, [\
+  --enable-libxml2-backend  Use libxml2 instead of built-in expat], ,
+enable_libxml2_backend=no)
+AC_MSG_CHECKING(whether to build the libxml2 backend)
+AC_MSG_RESULT($enable_libxml2_backend)
+ENABLE_LIBXML2_BACKEND=$enable_libxml2_backend
+AC_SUBST(ENABLE_LIBXML2_BACKEND)
+
+dnl If we're using the libxml2 backend, look for pkg-config
+if test x"$enable_libxml2_backend" != xno; then
+    AC_MSG_CHECKING(for pkg-config)
+    AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+    if test x$PKG_CONFIG = xno; then
+        AC_MSG_ERROR([*** pkg-config not found.  See http://www.freedesktop.org/software/pkgconfig/])
+    fi
+
+dnl Set up the appropriate Makefile substitutions
+    LIBXML2_CFLAGS=`pkg-config --cflags libxml-2.0`
+    AC_SUBST(LIBXML2_CFLAGS)
+    CFLAGS="$CFLAGS $LIBXML2_CFLAGS"
+
+    LIBXML2_LIBS=`pkg-config --libs libxml-2.0`
+    AC_SUBST(LIBXML2_LIBS)
+
+    EXTRA_XML_LIBS="$LIBXML2_LIBS"
+else
+    EXTRA_XML_LIBS="-lxmlrpc_xmlparse -lxmlrpc_xmltok"
+fi
+
+AC_SUBST(EXTRA_XML_LIBS)
 
 dnl Check to see if we should build our Abyss server module.
 AC_MSG_CHECKING(whether to build Abyss server module)
@@ -422,21 +455,19 @@ fi
 AC_SUBST(EFRPCTEST)
 AC_SUBST(EFRPCTEST_WRAPPER)
 
-AC_ARG_ENABLE(efence, [\
-  --enable-warnings       Turn on many GCC warnings for xmlrpc-c core.])
-AC_MSG_CHECKING(whether to enable warnings for xmlrpc-c core)
-if test x"$enable_warnings" = xyes; then
-    AC_MSG_RESULT(yes)
-    CC_WARN_FLAGS="-Wall -Wsign-compare -Wmissing-prototypes"
-    CPP_WARN_FLAGS="$CC_WARN_FLAGS -Woverloaded-virtual -Wsynth"
-else
-    AC_MSG_RESULT(no)
-    CC_WARN_FLAGS=
-    CPP_WARN_FLAGS=
-fi
-AC_SUBST(CC_WARN_FLAGS)
-AC_SUBST(CPP_WARN_FLAGS)
+dnl =======================================================================
+dnl Compiler information
+dnl =======================================================================
+C_COMPILER_GNU=$ac_cv_c_compiler_gnu
+AC_SUBST(C_COMPILER_GNU)
+CXX_COMPILER_GNU=$ac_cv_cxx_compiler_gnu
+AC_SUBST(CXX_COMPILER_GNU)
 
+dnl obsolete variables, need to be removed from Makefile.in:
+CC_WARN_FLAGS=
+AC_SUBST(CC_WARN_FLAGS)
+CPP_WARN_FLAGS=
+AC_SUBST(CPP_WARN_FLAGS)
 
 
 dnl =======================================================================
@@ -444,13 +475,11 @@ dnl Output our results.
 dnl =======================================================================
 
 AC_OUTPUT(xmlrpc-c-config \
+          Makefile.config \
           Makefile \
-          xmlrpc-c.lsm \
           xmlrpc-c.spec \
           src/Makefile \
           src/testdata/Makefile \
-          examples/Makefile \
-          examples/interop-client/Makefile \
           doc/Makefile \
           lib/Makefile \
           lib/expat/Makefile \

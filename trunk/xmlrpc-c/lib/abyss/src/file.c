@@ -49,7 +49,7 @@
 ** File
 *********************************************************************/
 
-bool FileOpen(TFile *f, char *name,uint32 attrib)
+bool FileOpen(TFile *f, const char *name,uint32 attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib))!=(-1));

@@ -59,8 +59,9 @@ extern "C" {
 ** options. If you've already initialized Abyss, you can instead call
 ** xmlrpc_server_abyss_init_registry and install the appropriate handlers
 ** yourself. (See below for more information about our handlers.) */
-extern void
-xmlrpc_server_abyss_init (int flags, char *config_file);
+void 
+xmlrpc_server_abyss_init(int          const flags, 
+                         const char * const config_file);
 
 /* Start the Abyss webserver running. Under Unix, this routine will attempt
 ** to do a detaching fork, drop root privileges (if any) and create a pid

@@ -73,6 +73,7 @@ xmlrpc_registry *xmlrpc_registry_new (xmlrpc_env *env)
     registry->_introspection_enabled = 1;
     registry->_methods = methods;
     registry->_default_method = NULL;
+    registry->_preinvoke_method = NULL;
     registry_valid = 1;
 
     /* Install our system methods. */
@@ -103,6 +104,8 @@ void xmlrpc_registry_free (xmlrpc_registry *registry)
     registry->_methods = XMLRPC_BAD_POINTER;
     if (registry->_default_method != NULL)
 	xmlrpc_DECREF(registry->_default_method);
+    if (registry->_preinvoke_method != NULL)
+        xmlrpc_DECREF(registry->_preinvoke_method);
     free(registry);
 }
 
@@ -128,8 +131,8 @@ void xmlrpc_registry_disable_introspection (xmlrpc_registry *registry)
 
 void xmlrpc_registry_add_method (xmlrpc_env *env,
 				 xmlrpc_registry *registry,
-				 char *host,
-				 char *method_name,
+				 const char *host,
+				 const char *method_name,
 				 xmlrpc_method method,
 				 void *user_data)
 {
@@ -140,12 +143,12 @@ void xmlrpc_registry_add_method (xmlrpc_env *env,
 
 void xmlrpc_registry_add_method_w_doc (xmlrpc_env *env,
 				       xmlrpc_registry *registry,
-				       char *host,
-				       char *method_name,
+				       const char *host,
+				       const char *method_name,
 				       xmlrpc_method method,
 				       void *user_data,
-				       char *signature,
-				       char *help)
+				       const char *signature,
+				       const char *help)
 {
     xmlrpc_value *method_info;
 
@@ -208,6 +211,42 @@ void xmlrpc_registry_set_default_method (xmlrpc_env *env,
     }
 }
 
+/*=========================================================================
+**  xmlrpc_registry_set_preinvoke_method
+**=========================================================================
+**  See xmlrpc.h for more documentation.
+*/
+
+void xmlrpc_registry_set_preinvoke_method (xmlrpc_env *env,
+					   xmlrpc_registry *registry,
+					   xmlrpc_preinvoke_method handler,
+					   void *user_data)
+{
+    xmlrpc_value *method_info;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(registry);
+    XMLRPC_ASSERT_PTR_OK(handler);
+
+    /* Error-handling preconditions. */
+    method_info = NULL;
+
+    /* Store our method and user data into our hash table. */
+    method_info = xmlrpc_build_value(env, "(pp)", (void*) handler, user_data);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Dispose of any pre-existing preinvoke method and install ours. */
+    if (registry->_preinvoke_method)
+	xmlrpc_DECREF(registry->_preinvoke_method);
+    registry->_preinvoke_method = method_info;
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (method_info)
+	    xmlrpc_DECREF(method_info);
+    }
+}
+
 
 /*=========================================================================
 **  dispatch_call
@@ -222,11 +261,22 @@ dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
 {
     xmlrpc_value *method_info, *result;
     void *method_ptr, *user_data;
+    xmlrpc_preinvoke_method preinvoke_method;
     xmlrpc_method method;
     xmlrpc_default_method default_method;
 
     /* Error-handling preconditions. */
     result = NULL;
+
+    /* Get the preinvoke method, if it is set. */
+    if (registry->_preinvoke_method != NULL) {
+        xmlrpc_parse_value(env, registry->_preinvoke_method, "(pp)",
+			   &method_ptr, &user_data);
+        XMLRPC_FAIL_IF_FAULT(env);
+	preinvoke_method = (xmlrpc_preinvoke_method) method_ptr;
+    } else {
+	preinvoke_method = NULL;
+    }
 
     /* Look up the method info for the specified method. */
     method_info = xmlrpc_struct_get_value(env, registry->_methods,
@@ -237,6 +287,13 @@ dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
 	    /* Clean up after the fault. */
 	    xmlrpc_env_clean(env);
 	    xmlrpc_env_init(env);
+
+	    /* Call our preinvoke method, if it's set */
+	    if (preinvoke_method) {
+		    (*preinvoke_method)(env, method_name,
+					param_array, user_data);
+		    XMLRPC_FAIL_IF_FAULT(env);
+	    }
 
 	    /* Get our default method. */
 	    xmlrpc_parse_value(env, registry->_default_method, "(pp)",
@@ -254,6 +311,12 @@ dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
 			 "Method %s not defined", method_name);
 	}
     } else {
+	/* Call our preinvoke method, if it's set */
+	if (preinvoke_method) {
+		(*preinvoke_method)(env, method_name,
+				    param_array, user_data);
+		XMLRPC_FAIL_IF_FAULT(env);
+	}
 
 	/* Extract our method information for the matching method. */
 	xmlrpc_parse_value(env, method_info, "(pp*)", &method_ptr, &user_data);

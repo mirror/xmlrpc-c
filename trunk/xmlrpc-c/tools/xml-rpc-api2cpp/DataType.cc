@@ -1,9 +1,13 @@
-#include <iostream.h>
+#include <iostream>
 #include <strstream.h>
 #include <stdexcept>
 
 #include <XmlRpcCpp.h>
 #include "DataType.h"
+
+using std::ends;
+using std::domain_error;
+
 
 
 //=========================================================================

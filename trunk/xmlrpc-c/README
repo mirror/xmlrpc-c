@@ -30,6 +30,17 @@ Once that's done, you can type:
 You may want to pass a '--prefix' argument to configure. See './configure
 --help' for details.
 
+To see it work, start a simple server like this:
+
+  $ examples/xmlrpc_sample_add_server examples/abyss.conf
+
+Then run a client that does an RPC to this server:
+
+  $ examples/xmlrpc_sample_add_client
+
+Also try other sample servers and clients, described in examples/README.
+
+
 To get started, have a look at the following files:
 
   SECURITY                    Important security information
@@ -48,21 +59,9 @@ Also of interest are:
   REFACTORINGS                Suggested code reorganizations
   TESTING                     Notes on testing this library
 
-To run the various Abyss-based server applications, you can type one of the
-following:
+Funding for the project that created the original Xmlrpc-c was
+provided in part by the good folks at First Peer, Inc., producers of
+P2P applications.
 
-  $ examples/server conf/abyss_root/conf/abyss.conf 
-  $ src/servertest conf/abyss_root/conf/abyss.conf 
-  $ src/validatee conf/abyss_root/conf/abyss.conf 
-
-To shut down a running server (under Unix), type:
-
-  $ kill `cat conf/abyss_root/log/abyss.pid`
-
-Funding for this project was provided in part by the good folks at First
-Peer, Inc., producers of P2P applications.
-
-
-Eric Kidd
-eric.kidd@pobox.com
-30 January 2001
+Eric Kidd developed the original Xmlrpc-c and maintained it up through
+January 2001.

@@ -1,4 +1,10 @@
 
+#include <string>
+#include <iostream>
+
+using std::string;
+using std::ostream;
+
 class XmlRpcFunction {
     string mFunctionName;
     string mMethodName;

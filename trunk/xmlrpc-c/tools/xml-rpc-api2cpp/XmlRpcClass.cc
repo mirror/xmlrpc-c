@@ -1,6 +1,6 @@
-#include <iostream.h>
+#include <iostream>
 #include <stdexcept>
-#include <vector.h>
+#include <vector>
 
 #include <XmlRpcCpp.h>
 #include "DataType.h"

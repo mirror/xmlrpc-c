@@ -1,6 +1,9 @@
 CVS -
-  test
-
+  * Bryan Henderson: create Makefile.config; make examples/ directory use
+    static make file.
+  * Bryan Henderson: replace Makefile.am with already built Makefile.in.
+  * Peter Astrand: make it compile with Gcc 3.1.1.
+  * Joe Shaw: Can use libxml2 instead of libexpat.
   * Bernhard Herzog: const fixes
   * Stephen Blackheath: ./configure support for building Abyss
     with pthreads.

@@ -1,1 +1,0 @@
-SUBDIRS = expat @ABYSS_SUBDIR@

@@ -52,6 +52,9 @@ static void send_xml (char *xml_data, size_t xml_len)
     ** XXX - Coercing 'size_t' to 'unsigned long' might be unsafe under
     ** really weird circumstances. */
     fprintf(stdout, "Status: 200 OK\n");
+    /* Handle authentication cookie being sent back. */
+    if (getenv("HTTP_COOKIE_AUTH") != NULL)
+	fprintf(stdout, "Set-Cookie: auth=%s\n", getenv("HTTP_COOKIE_AUTH"));
     fprintf(stdout, "Content-type: text/xml; charset=\"utf-8\"\n");
     fprintf(stdout, "Content-length: %ld\n\n", (unsigned long) xml_len);
 

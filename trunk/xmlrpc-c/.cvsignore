@@ -1,4 +1,5 @@
 autogen.sh
+autom4te.cache
 config.guess
 config.sub
 ltconfig
@@ -6,7 +7,6 @@ ltmain.sh
 aclocal.m4
 xmlrpc_config.h.in
 stamp-h.in
-Makefile.in
 configure
 config.log
 stamp-h
@@ -20,4 +20,3 @@ xmlrpc_config.h
 xmlrpc-c-*.tar.gz
 fulldist
 xmlrpc-c.spec
-xmlrpc-c.lsm

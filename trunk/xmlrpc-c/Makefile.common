@@ -1,0 +1,26 @@
+# This file contains rules and variable settings for the convenience
+# of every other make file in the package.
+
+# No make file is required to use this file, but it usually saves a lot
+# of duplication.
+
+# The following make variables are meaningful as input to this file:
+#
+# SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
+
+include $(SRCDIR)/Makefile.config
+
+
+GCC_C_WARNINGS = -Wall -Wmissing-declarations -Wundef -Wimplicit \
+                 -W -Winline \
+	         -Wstrict-prototypes -Wmissing-prototypes
+  # We need -Wwrite-strings after we fix all the missing consts
+
+ifeq ($(C_COMPILER_GNU),yes)
+  CFLAGS_COMMON = $(GCC_C_WARNINGS) -fno-common
+endif
+
+ifeq ($(CXX_COMPILER_GNU),yes)
+  CXXFLAGS_COMMON = $(GCC_C_WARNINGS) -Woverloaded-virtual -Wsynth
+endif
+

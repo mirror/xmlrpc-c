@@ -148,7 +148,10 @@ void xmlrpc_env_clean (xmlrpc_env* env);
 /* Fill out an xmlrpc_fault with the specified values, and set the
 ** fault_occurred flag. This function will make a private copy of 'string',
 ** so you retain responsibility for your copy. */
-void xmlrpc_env_set_fault (xmlrpc_env *env, int code, char *string);
+void 
+xmlrpc_env_set_fault(xmlrpc_env * const env, 
+                     int          const faultCode, 
+                     const char * const faultDescription);
 
 /* The same as the above, but using a printf-style format string. */
 void xmlrpc_env_set_fault_formatted (xmlrpc_env* env, int code,
@@ -247,8 +250,11 @@ void xmlrpc_mem_block_init
 void xmlrpc_mem_block_clean (xmlrpc_mem_block* block);
 
 /* Get the size and contents of the xmlrpc_mem_block. */
-size_t xmlrpc_mem_block_size (xmlrpc_mem_block* block);
-void* xmlrpc_mem_block_contents (xmlrpc_mem_block* block);
+size_t 
+xmlrpc_mem_block_size(const xmlrpc_mem_block * const block);
+
+void * 
+xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block);
 
 /* Resize an xmlrpc_mem_block, preserving as much of the contents as
 ** possible. */
@@ -312,13 +318,13 @@ typedef struct _xmlrpc_value {
 
     /* Certain data types store their data directly in the xmlrpc_value. */
     union {
-	xmlrpc_int32 i;
-	xmlrpc_bool b;
-	double d;
-	/* time_t t */
-	void *c_ptr;
+        xmlrpc_int32 i;
+        xmlrpc_bool b;
+        double d;
+        /* time_t t */
+        void *c_ptr;
     } _value;
-
+    
     /* Other data types use a memory block. */
     xmlrpc_mem_block _block;
 
@@ -361,23 +367,31 @@ extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* value);
 /* Build an xmlrpc_value from a format string.
 ** Increments the reference counts of input arguments if necessary.
 ** See the xmlrpc-c documentation for more information. */
-extern xmlrpc_value *
-xmlrpc_build_value (xmlrpc_env* env, char* format, ...);
+xmlrpc_value * 
+xmlrpc_build_value(xmlrpc_env * const env,
+                   const char * const format, 
+                   ...);
 
 /* The same as the above, but using a va_list. */
-extern xmlrpc_value *
-xmlrpc_build_value_va (xmlrpc_env* env, char* format, va_list args);
+xmlrpc_value * 
+xmlrpc_build_value_va(xmlrpc_env * const env,
+                      const char * const format,
+                      va_list            args);
 
 /* Extract values from an xmlrpc_value and store them into C variables.
 ** Does not increment the reference counts of output values.
 ** See the xmlrpc-c documentation for more information. */
-extern void
-xmlrpc_parse_value (xmlrpc_env* env, xmlrpc_value* value, char* format, ...);
+void 
+xmlrpc_parse_value(xmlrpc_env *   const envP,
+                   xmlrpc_value * const value,
+                   const char *   const format, 
+                   ...);
 
 /* Return the number of elements in an XML-RPC array.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
-extern int
-xmlrpc_array_size (xmlrpc_env* env, xmlrpc_value* array);
+int 
+xmlrpc_array_size(xmlrpc_env *         const env, 
+                  const xmlrpc_value * const array);
 
 /* Append an item to an XML-RPC array.
 ** Increments the reference count of 'value' if no fault occurs.
@@ -391,10 +405,10 @@ xmlrpc_array_append_item (xmlrpc_env* env,
 ** Does not increment the reference count of the returned value.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array.
 ** Sets XMLRPC_INDEX_ERROR if 'index' is out of bounds. */
-extern xmlrpc_value*
-xmlrpc_array_get_item (xmlrpc_env* env,
-		       xmlrpc_value* array,
-		       int index);
+xmlrpc_value * 
+xmlrpc_array_get_item(xmlrpc_env *         const env,
+                      const xmlrpc_value * const array,
+                      int                  const index);
 
 /* Not implemented--we don't need it yet.
 extern int xmlrpc_array_set_item (xmlrpc_env* env,
@@ -437,27 +451,28 @@ xmlrpc_struct_get_value_n (xmlrpc_env* env, xmlrpc_value* strct,
 /* Set the value associated with 'key' in 'strct' to 'value'.
 ** Increments the reference count of value.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
-extern void
-xmlrpc_struct_set_value (xmlrpc_env* env,
-			 xmlrpc_value* strct,
-			 char* key,
-			 xmlrpc_value* value);
+void 
+xmlrpc_struct_set_value(xmlrpc_env *   const env,
+                        xmlrpc_value * const strct,
+                        const char *   const key,
+                        xmlrpc_value * const value);
 
 /* The same as above, but the key may contain zero bytes. */
-extern void
-xmlrpc_struct_set_value_n (xmlrpc_env* env,
-			   xmlrpc_value* strct,
-			   char* key, size_t key_len,
-			   xmlrpc_value* value);
+void 
+xmlrpc_struct_set_value_n(xmlrpc_env *    const env,
+                          xmlrpc_value *  const strct,
+                          const char *    const key, 
+                          size_t          const key_len,
+                          xmlrpc_value *  const value);
 
 /* The same as above, but the key must be an XML-RPC string.
 ** Increments the reference count of keyval if it gets stored.
 ** Sets XMLRPC_TYPE_ERROR if 'keyval' is not a string. */
-extern void
-xmlrpc_struct_set_value_v (xmlrpc_env* env,
-			   xmlrpc_value* strct,
-			   xmlrpc_value* keyval,
-			   xmlrpc_value* value);
+void 
+xmlrpc_struct_set_value_v (xmlrpc_env *   const env,
+                           xmlrpc_value * const strct,
+                           xmlrpc_value * const keyval,
+                           xmlrpc_value * const value);
 
 /* Given a zero-based index, return the matching key and value. This
 ** is normally used in conjuction with xmlrpc_struct_size.
@@ -568,6 +583,15 @@ xmlrpc_parse_response (xmlrpc_env *env, const char *xml_data, size_t xml_len);
 **                to the caller, and xmlrpc_DECREF'd.
 */
 
+/* A function to call before invoking a method for doing things like access
+** control or sanity checks.  If a fault is set from this function, the
+** method will not be called and the fault will be returned. */
+typedef void
+(*xmlrpc_preinvoke_method) (xmlrpc_env *env,
+			    char *method_name,
+			    xmlrpc_value *param_array,
+			    void *user_data);
+
 /* An ordinary method. */
 typedef xmlrpc_value *
 (*xmlrpc_method) (xmlrpc_env *env,
@@ -593,6 +617,7 @@ typedef struct _xmlrpc_registry {
     int _introspection_enabled;
     xmlrpc_value *_methods;
     xmlrpc_value *_default_method;
+    xmlrpc_value *_preinvoke_method;
 } xmlrpc_registry;
 
 #endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
@@ -618,8 +643,8 @@ xmlrpc_registry_disable_introspection(xmlrpc_registry *registry);
 extern void
 xmlrpc_registry_add_method (xmlrpc_env *env,
 			    xmlrpc_registry *registry,
-			    char *host,
-			    char *method_name,
+			    const char *host,
+			    const char *method_name,
 			    xmlrpc_method method,
 			    void *user_data);
 
@@ -640,12 +665,12 @@ xmlrpc_registry_add_method (xmlrpc_env *env,
 extern void
 xmlrpc_registry_add_method_w_doc (xmlrpc_env *env,
 				  xmlrpc_registry *registry,
-				  char *host,
-				  char *method_name,
+				  const char *host,
+				  const char *method_name,
 				  xmlrpc_method method,
 				  void *user_data,
-				  char *signature,
-				  char *help);
+				  const char *signature,
+				  const char *help);
 
 /* Given a registry, a host name, and XML data; parse the <methodCall>,
 ** find the appropriate method, call it, serialize the response, and
@@ -669,6 +694,17 @@ xmlrpc_registry_set_default_method (xmlrpc_env *env,
 				    xmlrpc_registry *registry,
 				    xmlrpc_default_method handler,
 				    void *user_data);
+
+/* Define a preinvoke method for the specified registry.  This function will
+** be called before any method (either the default or a registered one) is
+** invoked.  Applications can use this to do things like access control or
+** sanity checks.  The user_data pointer is property of the application,
+** and will not be freed or manipulated by the registry. */
+extern void
+xmlrpc_registry_set_preinvoke_method (xmlrpc_env *env,
+				      xmlrpc_registry *registry,
+				      xmlrpc_preinvoke_method method,
+				      void *user_data);
 
 				    
 /*=========================================================================
@@ -734,6 +770,22 @@ xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
 		    size_t wcs_len);
 
 #endif /* HAVE_UNICODE_WCHAR */
+
+/*=========================================================================
+**  Authorization Cookie Handling
+**=========================================================================
+**  Routines to get and set values for authorizing via authorization
+**  cookies. Both the client and server use HTTP_COOKIE_AUTH to store
+**  the representation of the authorization value, which is actually
+**  just a base64 hash of username:password. (This entire method is
+**  a cookie replacement of basic authentication.)
+**/
+
+extern void xmlrpc_authcookie_set ( xmlrpc_env *env,
+		const char *username,
+		const char *password );
+
+extern char *xmlrpc_authcookie ( void );
 
 #ifdef __cplusplus
 }

@@ -13,8 +13,10 @@
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
 
+#include "config.h"  /* information about this build environment */
+
 #define NAME       "XML-RPC C Auth Client"
-#define VERSION    "0.1"
+#define VERSION    "1.0"
 #define SERVER_URL "http://xmlrpc-c.sourceforge.net/api/sample.php"
 
 static void die_if_fault_occurred (xmlrpc_env *env)
@@ -26,13 +28,20 @@ static void die_if_fault_occurred (xmlrpc_env *env)
     }
 }
 
-int main (int argc, char** argv)
-{
+int 
+main(int           const argc, 
+     const char ** const argv ATTR_UNUSED) {
+
     xmlrpc_env env;
     xmlrpc_server_info *server;
     xmlrpc_value *result;    
     char *user, *password;
     
+    if (argc-1 > 0) {
+        fprintf(stderr, "No arguments");
+        exit(0);
+    }
+
     /* Start up our XML-RPC client library. */
     xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION);
     xmlrpc_env_init(&env);

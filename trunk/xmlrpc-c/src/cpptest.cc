@@ -2,6 +2,10 @@
 #include <iomanip>
 #include "XmlRpcCpp.h"
 
+using std::cout;
+using std::endl;
+using std::setprecision;
+
 
 //=========================================================================
 //  Test Harness

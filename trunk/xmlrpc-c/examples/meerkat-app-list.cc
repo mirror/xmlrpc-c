@@ -2,8 +2,14 @@
 // For more details about O'Reilly's excellent Meerkat news service, see:
 // http://www.oreillynet.com/pub/a/rss/2000/11/14/meerkat_xmlrpc.html */
 
-#include <iostream.h>
-#include <strstream.h>
+#include <iostream>
+#include <strstream>
+
+using std::ends;
+using std::endl;
+using std::cout;
+using std::cerr;
+using std::ostrstream;
 
 #include <XmlRpcCpp.h>
 

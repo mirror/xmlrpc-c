@@ -89,73 +89,73 @@ void xmlrpc_DECREF (xmlrpc_value* value)
     /* If we have no more refs, we need to deallocate this value. */
     if (value->_refcount == 0) {
 
-	/* First, we need to destroy this value's contents, if any. */
-	switch (value->_type) {
-	    case XMLRPC_TYPE_INT:
-	    case XMLRPC_TYPE_BOOL:
-	    case XMLRPC_TYPE_DOUBLE:
-		break;
-		
-	    case XMLRPC_TYPE_ARRAY:
-		/* Dispose of the contents of the array.
-		** No errors should *ever* occur when this code is running,
-		** so we use assertions instead of regular error checks. */
-		xmlrpc_env_init(&env);
-		size = xmlrpc_array_size(&env, value);
-		XMLRPC_ASSERT(!env.fault_occurred);
-		for (i = 0; i < size; i++) {
-		    item = xmlrpc_array_get_item(&env, value, i);
-		    XMLRPC_ASSERT(!env.fault_occurred);
-		    xmlrpc_DECREF(item);
-		}
-		xmlrpc_env_clean(&env);
-		xmlrpc_mem_block_clean(&value->_block);
-		break;
+        /* First, we need to destroy this value's contents, if any. */
+        switch (value->_type) {
+        case XMLRPC_TYPE_INT:
+        case XMLRPC_TYPE_BOOL:
+        case XMLRPC_TYPE_DOUBLE:
+            break;
+        
+        case XMLRPC_TYPE_ARRAY:
+            /* Dispose of the contents of the array.
+            ** No errors should *ever* occur when this code is running,
+            ** so we use assertions instead of regular error checks. */
+            xmlrpc_env_init(&env);
+            size = xmlrpc_array_size(&env, value);
+            XMLRPC_ASSERT(!env.fault_occurred);
+            for (i = 0; i < size; i++) {
+                item = xmlrpc_array_get_item(&env, value, i);
+                XMLRPC_ASSERT(!env.fault_occurred);
+                xmlrpc_DECREF(item);
+            }
+            xmlrpc_env_clean(&env);
+            xmlrpc_mem_block_clean(&value->_block);
+            break;
 
-	    case XMLRPC_TYPE_STRING:
+        case XMLRPC_TYPE_STRING:
 #ifdef HAVE_UNICODE_WCHAR
-		if (value->_wcs_block)
-		    xmlrpc_mem_block_free(value->_wcs_block);
+            if (value->_wcs_block)
+                xmlrpc_mem_block_free(value->_wcs_block);
 #endif /* HAVE_UNICODE_WCHAR */
-		/* Fall through. */
+            /* Fall through. */
 
-	    case XMLRPC_TYPE_DATETIME:
-	    case XMLRPC_TYPE_BASE64:
-		xmlrpc_mem_block_clean(&value->_block);
-		break;
+        case XMLRPC_TYPE_DATETIME:
+        case XMLRPC_TYPE_BASE64:
+            xmlrpc_mem_block_clean(&value->_block);
+            break;
 
-	    case XMLRPC_TYPE_STRUCT:
-		/* Dispose of the contents of the struct.
-		** No errors should *ever* occur when this code is running,
-		** so we use assertions instead of regular error checks. */
-		size = XMLRPC_TYPED_MEM_BLOCK_SIZE(_struct_member,
-						   &value->_block);
-		members = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(_struct_member,
-							  &value->_block);
-		for (i = 0; i < size; i++) {
-		    xmlrpc_DECREF(members[i].key);
-		    xmlrpc_DECREF(members[i].value);
-		}
-		xmlrpc_mem_block_clean(&value->_block);
-		break;
+        case XMLRPC_TYPE_STRUCT:
+            /* Dispose of the contents of the struct.
+            ** No errors should *ever* occur when this code is running,
+            ** so we use assertions instead of regular error checks. */
+            size = XMLRPC_TYPED_MEM_BLOCK_SIZE(_struct_member,
+                                               &value->_block);
+            members = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(_struct_member,
+                                                      &value->_block);
+            for (i = 0; i < size; i++) {
+                xmlrpc_DECREF(members[i].key);
+                xmlrpc_DECREF(members[i].value);
+            }
+            xmlrpc_mem_block_clean(&value->_block);
+            break;
 
 
-	    case XMLRPC_TYPE_C_PTR:
-		break;
+        case XMLRPC_TYPE_C_PTR:
+            break;
 
-	    case XMLRPC_TYPE_DEAD:
-		XMLRPC_FATAL_ERROR("Tried to destroy deallocated value");
+        case XMLRPC_TYPE_DEAD:
+            XMLRPC_FATAL_ERROR("Tried to destroy deallocated value");
 
-	    default:
-		XMLRPC_FATAL_ERROR("Unknown XML-RPC type");
-	}
+        default:
+            XMLRPC_FATAL_ERROR("Unknown XML-RPC type");
+        }
 
-	/* Next, we mark this value as invalid, to help catch refcount
-	** errors. */
-	value->_type = XMLRPC_TYPE_DEAD;
+        /* Next, we mark this value as invalid, to help catch refcount
+        ** errors. */
+        value->_type = XMLRPC_TYPE_DEAD;
 
-	/* Finally, we destroy the value itself. */
-	free(value);
+        /* Finally, we destroy the value itself. */
+        free(value);
     }
 }
 
@@ -182,13 +182,17 @@ xmlrpc_type xmlrpc_value_type (xmlrpc_value* value)
 **  (in theory) also be portable.
 */
 
-static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args);
+static xmlrpc_value * 
+mkvalue(xmlrpc_env * const env, 
+        const char** const format, 
+        va_list *          args);
 
-static xmlrpc_value* mkarray(xmlrpc_env* env,
-			     char** format,
-			     char delimiter,
-			     va_list* args)
-{
+static xmlrpc_value * 
+mkarray(xmlrpc_env *  const env,
+        const char ** const format,
+        char          const delimiter,
+        va_list *     const args) {
+
     xmlrpc_value *array, *item;
     int array_valid;
     char code;
@@ -200,7 +204,7 @@ static xmlrpc_value* mkarray(xmlrpc_env* env,
     /* Allocate our array. */
     array = (xmlrpc_value*) malloc(sizeof(xmlrpc_value));
     XMLRPC_FAIL_IF_NULL(array, env, XMLRPC_INTERNAL_ERROR,
-			"Could not allocate memory for array");
+                        "Could not allocate memory for array");
     array->_refcount = 1;
     array->_type = XMLRPC_TYPE_ARRAY;
     XMLRPC_TYPED_MEM_BLOCK_INIT(xmlrpc_value*, env, &array->_block, 0);
@@ -211,35 +215,36 @@ static xmlrpc_value* mkarray(xmlrpc_env* env,
     code = **format;
     while (code != delimiter && code != '\0') {
 
-	item = mkvalue(env, format, args);
-	XMLRPC_FAIL_IF_FAULT(env);
+        item = mkvalue(env, format, args);
+        XMLRPC_FAIL_IF_FAULT(env);
 
-	xmlrpc_array_append_item(env, array, item);
-	xmlrpc_DECREF(item);
-	XMLRPC_FAIL_IF_FAULT(env);
+        xmlrpc_array_append_item(env, array, item);
+        xmlrpc_DECREF(item);
+        XMLRPC_FAIL_IF_FAULT(env);
 
-	code = **format;
+        code = **format;
     }
     XMLRPC_ASSERT(code == delimiter);
 
  cleanup:
     if (env->fault_occurred) {
-	if (array) {
-	    if (array_valid)
-		xmlrpc_DECREF(array);
-	    else
-		free(array);
-	}
-	return NULL;
+        if (array) {
+            if (array_valid)
+                xmlrpc_DECREF(array);
+            else
+                free(array);
+        }
+        return NULL;
     }
     return array;
 }
 
-static xmlrpc_value* mkstruct(xmlrpc_env* env,
-			      char** format,
-			      char delimiter,
-			      va_list* args)
-{
+static xmlrpc_value * 
+mkstruct(xmlrpc_env *  const env,
+         const char ** const format,
+         char          const delimiter,
+         va_list *           args) {
+
     xmlrpc_value *strct, *key, *value;
 
     /* Set up error handling preconditions. */
@@ -252,48 +257,48 @@ static xmlrpc_value* mkstruct(xmlrpc_env* env,
     /* Build the members of our struct. */
     while (**format != delimiter && **format != '\0') {
 
-	/* Get our key, and skip over the ':' character. */
-	key = mkvalue(env, format, args);
-	XMLRPC_FAIL_IF_FAULT(env);
-	XMLRPC_ASSERT(**format == ':');
-	(*format)++;
+        /* Get our key, and skip over the ':' character. */
+        key = mkvalue(env, format, args);
+        XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_ASSERT(**format == ':');
+        (*format)++;
 
-	/* Get our value, and skip over the ',' character (if present). */
-	value = mkvalue(env, format, args);
-	XMLRPC_FAIL_IF_FAULT(env);
-	XMLRPC_ASSERT(**format == ',' || **format == delimiter);
-	if (**format == ',')
-	    (*format)++;
+        /* Get our value, and skip over the ',' character (if present). */
+        value = mkvalue(env, format, args);
+        XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_ASSERT(**format == ',' || **format == delimiter);
+        if (**format == ',')
+            (*format)++;
 
-	/* Add the new key/value pair to the struct. */
-	xmlrpc_struct_set_value_v(env, strct, key, value);
-	XMLRPC_FAIL_IF_FAULT(env);
+        /* Add the new key/value pair to the struct. */
+        xmlrpc_struct_set_value_v(env, strct, key, value);
+        XMLRPC_FAIL_IF_FAULT(env);
 
-	/* Release our references, and restore our invariants. */
-	xmlrpc_DECREF(key);
-	key = NULL;
-	xmlrpc_DECREF(value);
-	value = NULL;
+        /* Release our references, and restore our invariants. */
+        xmlrpc_DECREF(key);
+        key = NULL;
+        xmlrpc_DECREF(value);
+        value = NULL;
     }
     XMLRPC_ASSERT(**format == delimiter);
 
  cleanup:
     if (env->fault_occurred) {
-	if (strct)
-	    xmlrpc_DECREF(strct);
-	if (key)
-	    xmlrpc_DECREF(key);
-	if (value)
-	    xmlrpc_DECREF(value);
-	return NULL;
+        if (strct)
+            xmlrpc_DECREF(strct);
+        if (key)
+            xmlrpc_DECREF(key);
+        if (value)
+            xmlrpc_DECREF(value);
+        return NULL;
     }
     return strct;
 }
 
 #ifdef HAVE_UNICODE_WCHAR
 static xmlrpc_value *mkwidestring(xmlrpc_env *env,
-				  wchar_t *wcs,
-				  size_t wcs_len)
+                                  wchar_t *wcs,
+                                  size_t wcs_len)
 {
     xmlrpc_value* val;
     char *contents;
@@ -311,7 +316,7 @@ static xmlrpc_value *mkwidestring(xmlrpc_env *env,
     /* Initialize our XML-RPC value. */
     val = (xmlrpc_value*) malloc(sizeof(xmlrpc_value));
     XMLRPC_FAIL_IF_NULL(val, env, XMLRPC_INTERNAL_ERROR,
-			"Could not allocate memory for wide string");
+                        "Could not allocate memory for wide string");
     val->_refcount = 1;
     val->_type = XMLRPC_TYPE_STRING;
 
@@ -320,10 +325,10 @@ static xmlrpc_value *mkwidestring(xmlrpc_env *env,
 
     /* Build our wchar_t block first. */
     val->_wcs_block =
-	XMLRPC_TYPED_MEM_BLOCK_NEW(wchar_t, env, wcs_len + 1);
+        XMLRPC_TYPED_MEM_BLOCK_NEW(wchar_t, env, wcs_len + 1);
     XMLRPC_FAIL_IF_FAULT(env);
     wcs_contents =
-	XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, val->_wcs_block);
+        XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, val->_wcs_block);
     memcpy(wcs_contents, wcs, wcs_len * sizeof(wchar_t));
     wcs_contents[wcs_len] = '\0';
     
@@ -342,23 +347,28 @@ static xmlrpc_value *mkwidestring(xmlrpc_env *env,
 
  cleanup:
     if (utf8_block)
-	xmlrpc_mem_block_free(utf8_block);
+        xmlrpc_mem_block_free(utf8_block);
     if (env->fault_occurred) {
-	if (val) {
-	    if (val->_wcs_block)
-		xmlrpc_mem_block_free(val->_wcs_block);
-	    if (block_is_inited)
-		xmlrpc_mem_block_clean(&val->_block);
-	    free(val);
-	}
-	return NULL;
+        if (val) {
+            if (val->_wcs_block)
+                xmlrpc_mem_block_free(val->_wcs_block);
+            if (block_is_inited)
+                xmlrpc_mem_block_clean(&val->_block);
+            free(val);
+        }
+        return NULL;
     }
     return val;
 }
 #endif /* HAVE_UNICODE_WCHAR */
 
-static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
-{
+
+
+static xmlrpc_value * 
+mkvalue(xmlrpc_env * const env, 
+        const char** const format, 
+        va_list *          args) {
+
     xmlrpc_value* val;
     char *str, *contents;
     unsigned char *bin_data;
@@ -377,130 +387,133 @@ static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
     ** use it, we'll deallocate it before returning. */
     val = (xmlrpc_value*) malloc(sizeof(xmlrpc_value));
     if (!val) {
-	xmlrpc_env_set_fault(env, XMLRPC_INTERNAL_ERROR,
-			     "Could not allocate memory for xmlrpc_value");
-	return NULL;
+        xmlrpc_env_set_fault(env, XMLRPC_INTERNAL_ERROR,
+                             "Could not allocate memory for xmlrpc_value");
+        return NULL;
     }
     val->_refcount = 1;
 
     /* Process the next format character. */
     switch (*(*format)++) {
-	case 'i':
-	    val->_type = XMLRPC_TYPE_INT;
-	    val->_value.i = (xmlrpc_int32) va_arg(*args, xmlrpc_int32);
-	    break;
+    case 'i':
+        val->_type = XMLRPC_TYPE_INT;
+        val->_value.i = (xmlrpc_int32) va_arg(*args, xmlrpc_int32);
+        break;
 
-	case 'b':
-	    val->_type = XMLRPC_TYPE_BOOL;
-	    val->_value.b = (xmlrpc_bool) va_arg(*args, xmlrpc_bool);
-	    break;
+    case 'b':
+        val->_type = XMLRPC_TYPE_BOOL;
+        val->_value.b = (xmlrpc_bool) va_arg(*args, xmlrpc_bool);
+        break;
 
-	case 'd':
-	    val->_type = XMLRPC_TYPE_DOUBLE;
-	    val->_value.d = (double) va_arg(*args, va_double);
-	    break;
+    case 'd':
+        val->_type = XMLRPC_TYPE_DOUBLE;
+        val->_value.d = (double) va_arg(*args, va_double);
+        break;
 
-	case 's':
-	    val->_type = XMLRPC_TYPE_STRING;
+    case 's':
+        val->_type = XMLRPC_TYPE_STRING;
 #ifdef HAVE_UNICODE_WCHAR
-	    val->_wcs_block = NULL;
+        val->_wcs_block = NULL;
 #endif
-	    str = (char*) va_arg(*args, char*);
-	    if (**format == '#') {
-		(*format)++;
-		len = (size_t) va_arg(*args, size_t);
-	    } else {
-		len = strlen(str);
-	    }
-	    XMLRPC_TYPED_MEM_BLOCK_INIT(char, env, &val->_block, len + 1);
-	    XMLRPC_FAIL_IF_FAULT(env);
-	    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-	    memcpy(contents, str, len);
-	    contents[len] = '\0';
-	    break;
+        str = (char*) va_arg(*args, char*);
+        if (**format == '#') {
+            (*format)++;
+            len = (size_t) va_arg(*args, size_t);
+        } else {
+            len = strlen(str);
+        }
+        XMLRPC_TYPED_MEM_BLOCK_INIT(char, env, &val->_block, len + 1);
+        XMLRPC_FAIL_IF_FAULT(env);
+        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
+        memcpy(contents, str, len);
+        contents[len] = '\0';
+        break;
 
 #ifdef HAVE_UNICODE_WCHAR
-	case 'w':
-	    wcs = (wchar_t*) va_arg(*args, wchar_t*);
-	    if (**format == '#') {
-		(*format)++;
-		len = (size_t) va_arg(*args, size_t);
-	    } else {
-		len = wcslen(wcs);
-	    }
-	    free(val); /* We won't need that after all, I guess. */
-	    val = mkwidestring(env, wcs, len);
-	    XMLRPC_FAIL_IF_FAULT(env);
-	    break;
+    case 'w':
+        wcs = (wchar_t*) va_arg(*args, wchar_t*);
+        if (**format == '#') {
+            (*format)++;
+            len = (size_t) va_arg(*args, size_t);
+        } else {
+            len = wcslen(wcs);
+        }
+        free(val); /* We won't need that after all, I guess. */
+        val = mkwidestring(env, wcs, len);
+        XMLRPC_FAIL_IF_FAULT(env);
+        break;
 #endif /* HAVE_UNICODE_WCHAR */
 
-	case '8':
-	    /* The code 't' is reserved for a better, time_t based
-	    ** implementation of dateTime conversion. */
-	    val->_type = XMLRPC_TYPE_DATETIME;
-	    str = (char*) va_arg(*args, char*);
-	    len = strlen(str);
-	    XMLRPC_TYPED_MEM_BLOCK_INIT(char, env, &val->_block, len + 1);
-	    XMLRPC_FAIL_IF_FAULT(env);
-	    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-	    memcpy(contents, str, len);
-	    contents[len] = '\0';
-	    break;
+    case '8':
+        /* The code 't' is reserved for a better, time_t based
+        ** implementation of dateTime conversion. */
+        val->_type = XMLRPC_TYPE_DATETIME;
+        str = (char*) va_arg(*args, char*);
+        len = strlen(str);
+        XMLRPC_TYPED_MEM_BLOCK_INIT(char, env, &val->_block, len + 1);
+        XMLRPC_FAIL_IF_FAULT(env);
+        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
+        memcpy(contents, str, len);
+        contents[len] = '\0';
+        break;
 
-	case '6':
-	    val->_type = XMLRPC_TYPE_BASE64;
-	    bin_data = (unsigned char*) va_arg(*args, unsigned char*);
-	    len = (size_t) va_arg(*args, size_t);
-	    xmlrpc_mem_block_init(env, &val->_block, len);
-	    XMLRPC_FAIL_IF_FAULT(env);
-	    contents = xmlrpc_mem_block_contents(&val->_block);
-	    memcpy(contents, bin_data, len);
-	    break;
+    case '6':
+        val->_type = XMLRPC_TYPE_BASE64;
+        bin_data = (unsigned char*) va_arg(*args, unsigned char*);
+        len = (size_t) va_arg(*args, size_t);
+        xmlrpc_mem_block_init(env, &val->_block, len);
+        XMLRPC_FAIL_IF_FAULT(env);
+        contents = xmlrpc_mem_block_contents(&val->_block);
+        memcpy(contents, bin_data, len);
+        break;
 
-	case 'p':
-	    /* We might someday want to use the code 'p!' to read in a
-	    ** cleanup function for this pointer. */
-	    val->_type = XMLRPC_TYPE_C_PTR;
-	    val->_value.c_ptr = (void*) va_arg(*args, void*);
-	    break;	    
+    case 'p':
+        /* We might someday want to use the code 'p!' to read in a
+        ** cleanup function for this pointer. */
+        val->_type = XMLRPC_TYPE_C_PTR;
+        val->_value.c_ptr = (void*) va_arg(*args, void*);
+        break;      
 
-	case 'V':
-	    free(val); /* We won't need that after all, I guess. */
-	    val = (xmlrpc_value*) va_arg(*args, xmlrpc_value*);
-	    xmlrpc_INCREF(val);
-	    break;
+    case 'V':
+        free(val); /* We won't need that after all, I guess. */
+        val = (xmlrpc_value*) va_arg(*args, xmlrpc_value*);
+        xmlrpc_INCREF(val);
+        break;
 
-	case '(':
-	    free(val); /* We won't need that after all, I guess. */
-	    val = mkarray(env, format, ')', args);
-	    XMLRPC_FAIL_IF_FAULT(env);
-	    (*format)++;
-	    break;
+    case '(':
+        free(val); /* We won't need that after all, I guess. */
+        val = mkarray(env, format, ')', args);
+        XMLRPC_FAIL_IF_FAULT(env);
+        (*format)++;
+        break;
 
-	case '{':
-	    free(val); /* We won't need that after all, I guess. */
-	    val = mkstruct(env, format, '}', args);
-	    XMLRPC_FAIL_IF_FAULT(env);
-	    (*format)++;
-	    break;
+    case '{':
+        free(val); /* We won't need that after all, I guess. */
+        val = mkstruct(env, format, '}', args);
+        XMLRPC_FAIL_IF_FAULT(env);
+        (*format)++;
+        break;
 
-	default:
-	    XMLRPC_FATAL_ERROR("Unknown type code when building value");
+    default:
+        XMLRPC_FATAL_ERROR("Unknown type code when building value");
     }
 
  cleanup:
     if (env->fault_occurred && val) {
-	free(val);
-	return NULL;
+        free(val);
+        return NULL;
     }
     return val;
 }
 
-xmlrpc_value* xmlrpc_build_value_va (xmlrpc_env* env,
-				     char* format,
-				     va_list args)
-{
-    char *format_copy;
+
+
+xmlrpc_value * 
+xmlrpc_build_value_va(xmlrpc_env * const env,
+                      const char * const format,
+                      va_list            args) {
+
+    const char *format_copy;
     va_list args_copy;
     xmlrpc_value* retval;
 
@@ -512,16 +525,20 @@ xmlrpc_value* xmlrpc_build_value_va (xmlrpc_env* env,
     retval = mkvalue(env, &format_copy, &args_copy);
 
     if (!env->fault_occurred) {
-	XMLRPC_ASSERT_VALUE_OK(retval);
-	XMLRPC_ASSERT(*format_copy == '\0');
+        XMLRPC_ASSERT_VALUE_OK(retval);
+        XMLRPC_ASSERT(*format_copy == '\0');
     }
 
     return retval;    
 }
 
-xmlrpc_value* xmlrpc_build_value (xmlrpc_env* env,
-				  char* format, ...)
-{
+
+
+xmlrpc_value * 
+xmlrpc_build_value(xmlrpc_env * const env,
+                   const char * const format, 
+                   ...) {
+
     va_list args;
     xmlrpc_value* retval;
 
@@ -540,17 +557,21 @@ xmlrpc_value* xmlrpc_build_value (xmlrpc_env* env,
 **  inspired by Py_BuildValue from Python 1.5.2.
 */
 
-static void parsevalue (xmlrpc_env* env,
-			xmlrpc_value* val,
-			char** format,
-			va_list* args);
+/* Prototype for recursive invocation: */
 
-static void parsearray (xmlrpc_env* env,
-			xmlrpc_value* array,
-			char** format,
-			char delimiter,
-			va_list* args)
-{
+static void 
+parsevalue(xmlrpc_env *   const env,
+           xmlrpc_value * const val,
+           const char **  const format,
+           va_list *            args);
+
+static void 
+parsearray(xmlrpc_env *         const env,
+           const xmlrpc_value * const array,
+           const char **        const format,
+           char                 const delimiter,
+           va_list *                  args) {
+
     int size, i;
     xmlrpc_value *item;
 
@@ -560,34 +581,37 @@ static void parsearray (xmlrpc_env* env,
 
     /* Loop over the items in the array. */
     for (i = 0; i < size; i++) {
-	/* Bail out if the caller didn't care about the rest of the items. */
-	if (**format == '*')
-	    break;
+        /* Bail out if the caller didn't care about the rest of the items. */
+        if (**format == '*')
+            break;
 
-	item = xmlrpc_array_get_item(env, array, i);
-	XMLRPC_FAIL_IF_FAULT(env);
+        item = xmlrpc_array_get_item(env, array, i);
+        XMLRPC_FAIL_IF_FAULT(env);
 
-	XMLRPC_ASSERT(**format != '\0');
-	if (**format == delimiter)
-	    XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Too many items in array");
-	parsevalue(env, item, format, args);
-	XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_ASSERT(**format != '\0');
+        if (**format == delimiter)
+            XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Too many items in array");
+        parsevalue(env, item, format, args);
+        XMLRPC_FAIL_IF_FAULT(env);
     }
     if (**format == '*')
-	(*format)++;
+        (*format)++;
     if (**format != delimiter)
-	XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Not enough items in array");
+        XMLRPC_FAIL(env, XMLRPC_INDEX_ERROR, "Not enough items in array");
 
- cleanup:
-	return;
+           cleanup:
+    return;
 }
 
-static void parsestruct(xmlrpc_env* env,
-			xmlrpc_value* strct,
-			char** format,
-			char delimiter,
-			va_list* args)
-{
+
+
+static void 
+parsestruct(xmlrpc_env *   const env,
+            xmlrpc_value * const strct,
+            const char **  const format,
+            char           const delimiter,
+            va_list *            args) {
+
     xmlrpc_value *key, *value;
     char *keystr;
     size_t keylen;
@@ -598,44 +622,47 @@ static void parsestruct(xmlrpc_env* env,
     /* Build the members of our struct. */
     while (**format != '*' && **format != delimiter && **format != '\0') {
 
-	/* Get our key, and skip over the ':' character. Notice the
-	** sudden call to mkvalue--we're going in the opposite direction. */
-	key = mkvalue(env, format, args);
-	XMLRPC_FAIL_IF_FAULT(env);
-	XMLRPC_ASSERT(**format == ':');
-	(*format)++;
+        /* Get our key, and skip over the ':' character. Notice the
+        ** sudden call to mkvalue--we're going in the opposite direction. */
+        key = mkvalue(env, format, args);
+        XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_ASSERT(**format == ':');
+        (*format)++;
 
-	/* Look up the value for our key. */
-	xmlrpc_parse_value(env, key, "s#", &keystr, &keylen);
-	XMLRPC_FAIL_IF_FAULT(env);
-	value = xmlrpc_struct_get_value_n(env, strct, keystr, keylen);
-	XMLRPC_FAIL_IF_FAULT(env);
+        /* Look up the value for our key. */
+        xmlrpc_parse_value(env, key, "s#", &keystr, &keylen);
+        XMLRPC_FAIL_IF_FAULT(env);
+        value = xmlrpc_struct_get_value_n(env, strct, keystr, keylen);
+        XMLRPC_FAIL_IF_FAULT(env);
 
-	/* Get our value, and skip over the ',' character (if present). */
-	parsevalue(env, value, format, args);
-	XMLRPC_FAIL_IF_FAULT(env);
-	XMLRPC_ASSERT(**format == ',' || **format == delimiter);
-	if (**format == ',')
-	    (*format)++;
+        /* Get our value, and skip over the ',' character (if present). */
+        parsevalue(env, value, format, args);
+        XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_ASSERT(**format == ',' || **format == delimiter);
+        if (**format == ',')
+            (*format)++;
 
-	/* Release our reference, and restore our invariant. */
-	xmlrpc_DECREF(key);
-	key = NULL;
+        /* Release our reference, and restore our invariant. */
+        xmlrpc_DECREF(key);
+        key = NULL;
     }
     XMLRPC_ASSERT(**format == '*');
     (*format)++;
     XMLRPC_ASSERT(**format == delimiter);
 
- cleanup:
+            cleanup:
     if (key)
-	xmlrpc_DECREF(key);
+        xmlrpc_DECREF(key);
 }
 
-static void parsevalue (xmlrpc_env* env,
-			xmlrpc_value* val,
-			char** format,
-			va_list* args)
-{
+
+
+static void 
+parsevalue(xmlrpc_env *   const env,
+           xmlrpc_value * const val,
+           const char **  const format,
+           va_list *            args) {
+
     xmlrpc_int32 *int32ptr;
     xmlrpc_bool *boolptr;
     double *doubleptr;
@@ -653,167 +680,174 @@ static void parsevalue (xmlrpc_env* env,
 #endif
 
     switch (*(*format)++) {
-	case 'i':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_INT);
-	    int32ptr = (xmlrpc_int32*) va_arg(*args, xmlrpc_int32*);
-	    *int32ptr = val->_value.i;
-	    break;
+    case 'i':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_INT);
+        int32ptr = (xmlrpc_int32*) va_arg(*args, xmlrpc_int32*);
+        *int32ptr = val->_value.i;
+        break;
 
-	case 'b':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_BOOL);
-	    boolptr = (xmlrpc_bool*) va_arg(*args, xmlrpc_bool*);
-	    *boolptr = val->_value.b;	    
-	    break;
+    case 'b':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_BOOL);
+        boolptr = (xmlrpc_bool*) va_arg(*args, xmlrpc_bool*);
+        *boolptr = val->_value.b;       
+        break;
 
-	case 'd':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_DOUBLE);
-	    doubleptr = (double*) va_arg(*args, double*);
-	    *doubleptr = val->_value.d;	    
-	    break;
+    case 'd':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_DOUBLE);
+        doubleptr = (double*) va_arg(*args, double*);
+        *doubleptr = val->_value.d;     
+        break;
 
-	case 's':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
-	    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-	    len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block) - 1;
+    case 's':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
+        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
+        len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block) - 1;
 
-	    strptr = (char**) va_arg(*args, char**);
-	    if (**format == '#') {
-		(*format)++;
-		sizeptr = (size_t*) va_arg(*args, size_t**);
-		*sizeptr = len;
-	    } else {
-		for (i = 0; i < len; i++)
-		    if (contents[i] == '\0')
-			XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR,
-				    "String must not contain NULL characters");
-	    }
-	    *strptr = contents;
-	    break;
+        strptr = (char**) va_arg(*args, char**);
+        if (**format == '#') {
+            (*format)++;
+            sizeptr = (size_t*) va_arg(*args, size_t**);
+            *sizeptr = len;
+        } else {
+            for (i = 0; i < len; i++)
+                if (contents[i] == '\0')
+                    XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR,
+                                "String must not contain NULL characters");
+        }
+        *strptr = contents;
+        break;
 
 #ifdef HAVE_UNICODE_WCHAR
-	case 'w':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
-	    if (!val->_wcs_block) {
-		/* Allocate a wchar_t string if we don't have one. */
-		contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-		len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block) - 1;
-		val->_wcs_block = xmlrpc_utf8_to_wcs(env, contents, len + 1);
-		XMLRPC_FAIL_IF_FAULT(env);
-	    }
-	    wcontents =
-		XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, val->_wcs_block);
-	    len = XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, val->_wcs_block) - 1;
-	    
-	    wcsptr = (wchar_t**) va_arg(*args, wchar_t**);
-	    if (**format == '#') {
-		(*format)++;
-		sizeptr = (size_t*) va_arg(*args, size_t**);
-		*sizeptr = len;
-	    } else {
-		for (i = 0; i < len; i++)
-		    if (wcontents[i] == '\0')
-			XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR,
-				    "String must not contain NULL characters");
-	    }
-	    *wcsptr = wcontents;
-	    break;
+    case 'w':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
+        if (!val->_wcs_block) {
+            /* Allocate a wchar_t string if we don't have one. */
+            contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
+            len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block) - 1;
+            val->_wcs_block = xmlrpc_utf8_to_wcs(env, contents, len + 1);
+            XMLRPC_FAIL_IF_FAULT(env);
+        }
+        wcontents =
+            XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, val->_wcs_block);
+        len = XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, val->_wcs_block) - 1;
+        
+        wcsptr = (wchar_t**) va_arg(*args, wchar_t**);
+        if (**format == '#') {
+            (*format)++;
+            sizeptr = (size_t*) va_arg(*args, size_t**);
+            *sizeptr = len;
+        } else {
+            for (i = 0; i < len; i++)
+                if (wcontents[i] == '\0')
+                    XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR,
+                                "String must not contain NULL characters");
+        }
+        *wcsptr = wcontents;
+        break;
 #endif /* HAVE_UNICODE_WCHAR */
-	    
-	case '8':
-	    /* The code 't' is reserved for a better, time_t based
-	    ** implementation of dateTime conversion. */
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_DATETIME);
-	    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
-	    strptr = (char**) va_arg(*args, char**);
-	    *strptr = contents;
-	    break;
+        
+    case '8':
+        /* The code 't' is reserved for a better, time_t based
+        ** implementation of dateTime conversion. */
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_DATETIME);
+        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
+        strptr = (char**) va_arg(*args, char**);
+        *strptr = contents;
+        break;
 
-	case '6':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_BASE64);
-	    bin_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char,
-						       &val->_block);
-	    len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block);
+    case '6':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_BASE64);
+        bin_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char,
+                                                   &val->_block);
+        len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block);
 
-	    binptr = (unsigned char**) va_arg(*args, unsigned char**);
-	    *binptr = bin_data;
-	    sizeptr = (size_t*) va_arg(*args, size_t**);	    
-	    *sizeptr = len;
-	    break;
+        binptr = (unsigned char**) va_arg(*args, unsigned char**);
+        *binptr = bin_data;
+        sizeptr = (size_t*) va_arg(*args, size_t**);        
+        *sizeptr = len;
+        break;
 
-	case 'p':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_C_PTR);
-	    voidptrptr = (void**) va_arg(*args, void**);
-	    *voidptrptr = val->_value.c_ptr;
-	    break;
+    case 'p':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_C_PTR);
+        voidptrptr = (void**) va_arg(*args, void**);
+        *voidptrptr = val->_value.c_ptr;
+        break;
 
-	case 'V':
-	    valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
-	    *valptr = val;
-	    break;
+    case 'V':
+        valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
+        *valptr = val;
+        break;
 
-	case 'A':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_ARRAY);
-	    valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
-	    *valptr = val;
-	    break;
+    case 'A':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_ARRAY);
+        valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
+        *valptr = val;
+        break;
 
-	case 'S':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRUCT);
-	    valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
-	    *valptr = val;
-	    break;
+    case 'S':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRUCT);
+        valptr = (xmlrpc_value**) va_arg(*args, xmlrpc_value**);
+        *valptr = val;
+        break;
 
-	case '(':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_ARRAY);
-	    parsearray(env, val, format, ')', args);
-	    (*format)++;
-	    break;
+    case '(':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_ARRAY);
+        parsearray(env, val, format, ')', args);
+        (*format)++;
+        break;
 
-	case '{':
-	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRUCT);
-	    parsestruct(env, val, format, '}', args);
-	    (*format)++;
-	    break;
+    case '{':
+        XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRUCT);
+        parsestruct(env, val, format, '}', args);
+        (*format)++;
+        break;
 
-	default:
-	    XMLRPC_FATAL_ERROR("Unknown type code when parsing value");
+    default:
+        XMLRPC_FATAL_ERROR("Unknown type code when parsing value");
     }
 
- cleanup:
-	return;
+           cleanup:
+    return;
 }
 
-static void xmlrpc_parse_value_va (xmlrpc_env* env,
-				   xmlrpc_value* value,
-				   char* format,
-				   va_list args)
-{
-    char *format_copy;
+
+
+static void 
+xmlrpc_parse_value_va(xmlrpc_env *   const envP,
+                      xmlrpc_value * const value,
+                      const char *   const format,
+                      va_list              args) {
+
+    const char *format_copy;
     va_list args_copy;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_VALUE_OK(value);
     XMLRPC_ASSERT(format != NULL);
 
     format_copy = format;
     VA_LIST_COPY(args_copy, args);
-    parsevalue(env, value, &format_copy, &args_copy);
-    XMLRPC_FAIL_IF_FAULT(env);
+    parsevalue(envP, value, &format_copy, &args_copy);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     XMLRPC_ASSERT(*format_copy == '\0');
 
- cleanup:
-	return;
+                      cleanup:
+    return;
 }
 
-void xmlrpc_parse_value (xmlrpc_env* env,
-			 xmlrpc_value* value,
-			 char* format, ...)
-{
+
+
+void 
+xmlrpc_parse_value(xmlrpc_env *   const envP,
+                   xmlrpc_value * const value,
+                   const char *   const format, 
+                   ...) {
+
     va_list args;
 
     va_start(args, format);
-    xmlrpc_parse_value_va(env, value, format, args);
+    xmlrpc_parse_value_va(envP, value, format, args);
     va_end(args);
 }
 
@@ -823,8 +857,10 @@ void xmlrpc_parse_value (xmlrpc_env* env,
 **=========================================================================
 */
 
-int xmlrpc_array_size (xmlrpc_env* env, xmlrpc_value* array)
-{
+int 
+xmlrpc_array_size(xmlrpc_env *         const env, 
+                  const xmlrpc_value * const array) {
+
     int retval;
 
     /* Suppress a compiler warning about uninitialized variables. */
@@ -836,17 +872,19 @@ int xmlrpc_array_size (xmlrpc_env* env, xmlrpc_value* array)
 
     retval = XMLRPC_TYPED_MEM_BLOCK_SIZE(xmlrpc_value*, &array->_block);
 
- cleanup:
+                  cleanup:
     if (env->fault_occurred)
-	return -1;
+        return -1;
     else
-	return retval;
+        return retval;
 }
 
-void xmlrpc_array_append_item (xmlrpc_env* env,
-			       xmlrpc_value* array,
-			       xmlrpc_value* value)
-{
+
+
+void 
+xmlrpc_array_append_item (xmlrpc_env *   const env,
+                          xmlrpc_value * const array,
+                          xmlrpc_value * const value) {
     size_t size;
     xmlrpc_value **contents;
 
@@ -862,14 +900,17 @@ void xmlrpc_array_append_item (xmlrpc_env* env,
     xmlrpc_INCREF(value);
     contents[size] = value;
 
- cleanup:    
+                          cleanup:    
     return;
 }
 
-xmlrpc_value* xmlrpc_array_get_item (xmlrpc_env* env,
-				     xmlrpc_value* array,
-				     int index)
-{
+
+
+xmlrpc_value * 
+xmlrpc_array_get_item(xmlrpc_env *         const env,
+                      const xmlrpc_value * const array,
+                      int                  const index) {
+
     size_t size;
     xmlrpc_value **contents, *retval;
 
@@ -885,21 +926,11 @@ xmlrpc_value* xmlrpc_array_get_item (xmlrpc_env* env,
 
     /* BREAKME: 'index' should be a parameter of type size_t. */
     if (index < 0 || (size_t) index >= size)
-	XMLRPC_FAIL1(env, XMLRPC_INDEX_ERROR, "Index %d out of bounds", index);
+        XMLRPC_FAIL1(env, XMLRPC_INDEX_ERROR, "Index %d out of bounds", index);
     retval = contents[index];
 
- cleanup:    
+                      cleanup:    
     if (env->fault_occurred)
-	return NULL;
+        return NULL;
     return retval;
 }
-
-/*
-int xmlrpc_array_set_item (xmlrpc_env* env,
-			   xmlrpc_value* array,
-			   int index,
-			   xmlrpc_value* value)
-{
-
-}
-*/
