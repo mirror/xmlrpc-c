@@ -27,4 +27,6 @@ int main (int argc, char **argv)
     xmlrpc_cgi_add_method("sample.add", &sample_add, NULL);
     xmlrpc_cgi_process_call();
     xmlrpc_cgi_cleanup();
+
+    return 0;
 }

@@ -44,8 +44,6 @@ static void print_state_name_callback (char *server_url,
 
 int main (int argc, char** argv)
 {
-    xmlrpc_value *result;
-    char *state_name;
     int i;
     
     /* Start up our XML-RPC client library. */

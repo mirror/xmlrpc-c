@@ -34,4 +34,7 @@ int main (int argc, char **argv)
 
     printf("server: switching to background.\n");
     xmlrpc_server_abyss_run();
+
+    /* We never reach this point. */
+    return 0;
 }

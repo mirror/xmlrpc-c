@@ -1,4 +1,7 @@
-noinst_PROGRAMS = synch_client asynch_client server sample-cgi.cgi
+# Turn on warnings.
+CFLAGS = @CFLAGS@ -Wall
+
+noinst_PROGRAMS = synch_client asynch_client auth_client server sample-cgi.cgi
 bin_PROGRAMS = query-meerkat meerkat-app-list
 
 INCLUDES = -I$(srcdir)/../src
@@ -33,3 +36,7 @@ query_meerkat_LDFLAGS    = @LIBWWW_RPATH@
 meerkat_app_list_SOURCES = meerkat-app-list.cc
 meerkat_app_list_LDADD   = ../src/libxmlrpc_cpp.a $(LIBCLIENT)
 meerkat_app_list_LDFLAGS = @LIBWWW_RPATH@
+
+auth_client_SOURCES      = auth_client.c
+auth_client_LDADD        = $(LIBCLIENT)
+auth_client_LDFLAGS      = @LIBWWW_RPATH@
