@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+query-meerkat
+meerkat-app-list
+synch_client
+asynch_client
+server
