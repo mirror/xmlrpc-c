@@ -219,39 +219,70 @@ computeUrl(const char *  const urlArg,
 
 
 static void
+buildString(xmlrpc_env *    const envP,
+            const char *    const valueString,
+            xmlrpc_value ** const paramPP) {
+
+    *paramPP = xmlrpc_build_value(envP, "s", valueString);
+}
+
+
+
+static void
+buildInt(xmlrpc_env *    const envP,
+         const char *    const valueString,
+         xmlrpc_value ** const paramPP) {
+
+    if (strlen(valueString) < 1)
+        setError(envP, "Integer argument has nothing after the 'i/'");
+    else {
+        long value;
+        char * tailptr;
+        
+        value = strtol(valueString, &tailptr, 10);
+
+        if (*tailptr != '\0')
+            setError(envP, 
+                     "Integer argument has non-digit crap in it: '%s'",
+                     tailptr);
+        else
+            *paramPP = xmlrpc_build_value(envP, "i", value);
+    }
+} 
+
+
+
+static void
+buildNil(xmlrpc_env *    const envP,
+         const char *    const valueString,
+         xmlrpc_value ** const paramPP) {
+
+    if (strlen(valueString) > 0)
+        setError(envP, "Nil argument has something after the 'n/'");
+    else {
+        *paramPP = xmlrpc_build_value(envP, "n");
+    }
+}
+
+
+
+static void
 computeParameter(xmlrpc_env *    const envP,
                  const char *    const paramArg,
                  xmlrpc_value ** const paramPP) {
 
-    if (strncmp(paramArg, "s/", 2) == 0) {
-        /* It's "s/..." -- a string */
-        *paramPP = xmlrpc_build_value(envP, "s", &paramArg[2]);
-    } else if (strncmp(paramArg, "i/", 2) == 0) {
-        /* It's "i/..." -- an integer */
-        const char * integerString = &paramArg[2];
-
-        if (strlen(integerString) < 1)
-            setError(envP, "Integer argument has nothing after the 'i/'");
-        else {
-            long value;
-            char * tailptr;
-
-            value = strtol(integerString, &tailptr, 10);
-
-            if (*tailptr != '\0')
-                setError(envP, 
-                         "Integer argument has non-digit crap in it: '%s'",
-                         tailptr);
-            else
-                *paramPP = xmlrpc_build_value(envP, "i", value);
-        }
-    } else {
+    if (strncmp(paramArg, "s/", 2) == 0)
+        buildString(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "i/", 2) == 0) 
+        buildInt(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "n/", 2) == 0)
+        buildNil(envP, &paramArg[2], paramPP);
+    else {
         /* It's not in normal type/value format, so we take it to be
            the shortcut string notation 
         */
-        *paramPP = xmlrpc_build_value(envP, "s", paramArg);
+        buildString(envP, paramArg, paramPP);
     }
-
 }
 
 
@@ -565,6 +596,27 @@ dumpCPtr(const char *   const prefix,
 
 
 static void
+dumpNil(const char *   const prefix,
+        xmlrpc_value * const valueP) {
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_value(&env, valueP, "n");
+        
+    if (env.fault_occurred)
+        printf("Unable to parse nil value in result.  %s\n",
+               env.fault_string);
+    else
+        printf("%sNil\n", prefix);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 dumpUnknown(const char *   const prefix,
             xmlrpc_value * const valueP) {
 
@@ -606,6 +658,9 @@ dumpValue(const char *   const prefix,
         break;
     case XMLRPC_TYPE_C_PTR:
         dumpCPtr(prefix, valueP);
+        break;
+    case XMLRPC_TYPE_NIL:
+        dumpNil(prefix, valueP);
         break;
     default:
         dumpUnknown(prefix, valueP);

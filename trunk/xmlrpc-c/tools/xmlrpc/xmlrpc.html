@@ -73,6 +73,7 @@ by a program rather than a person to be of use.
 <p>
 <b>i/</b><i>integer</i> |
 <b>s/</b><i>string</i> |
+<b>n/</b> |
 <b><i>string</i></b>
 
 
@@ -102,13 +103,24 @@ an XML-RPC responder.
 arguments into an XML-RPC parameter, in the order given.  You may specify
 no parameters if you like.
 
-<p>You specify the data type of the paramter with a prefix ending in
+<p>You specify the data type of the parameter with a prefix ending in
 a slash.  Example: <b>i/5</b>.  Here, the &quot;i&quot; signifies an
 integer data type.  &quot;5&quot; is the value.
 
-<p><b>xmlrpc</b> is capable of only two data types in the parameters
-(there are several more in XML-RPC): integer and string.  The prefix
-for integer is &quot;i&quot;.  For string, it's &quot;s&quot;.
+<p><b>xmlrpc</b> is capable of only a subset of the 
+possible XML-RPC types, as follows by prefix:
+
+<dl>
+<dt>i/
+<dd>integer (&lt;int4&gt;)
+
+<dt>s/
+<dd>string (&lt;string&gt;)
+
+<dt>n/
+<dd>nil (&lt;nil&gt;)
+
+</dl>
 
 <p>As a shortcut, if you don't specify a prefix (i.e. your argument does
 not contain a slash), <b>xmlrpc</b> assumes string data type.
