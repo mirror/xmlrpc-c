@@ -26,6 +26,9 @@ xmlrpc:%:%.o $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXML) $(UTILS)
 
 *.c: config.h
 
+config.h:
+	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+
 include Makefile.depend
 
 .PHONY: dep
