@@ -29,6 +29,7 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+#include <wchar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,6 +126,7 @@ extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 #define XMLRPC_REQUEST_REFUSED_ERROR        (-507)
 #define XMLRPC_INTROSPECTION_DISABLED_ERROR (-508)
 #define XMLRPC_LIMIT_EXCEEDED_ERROR         (-509)
+#define XMLRPC_INVALID_UTF8_ERROR           (-510)
 
 typedef struct _xmlrpc_env {
     int   fault_occurred;
@@ -313,6 +315,9 @@ typedef struct _xmlrpc_value {
 
     /* Other data types use a memory block. */
     xmlrpc_mem_block _block;
+
+    /* We may need to convert our string data to a wchar_t string. */
+    xmlrpc_mem_block *_wcs_block;
 } xmlrpc_value;
 
 /* This is a private structure, but it's used in several different files. */
@@ -675,6 +680,39 @@ extern xmlrpc_mem_block *
 xmlrpc_base64_decode (xmlrpc_env *env,
 		      unsigned char *ascii_data,
 		      size_t ascii_len);
+
+
+/*=========================================================================
+**  UTF-8 Encoding and Decoding
+**=========================================================================
+**  We need a correct, reliable and secure UTF-8 decoder. This decoder
+**  raises a fault if it encounters invalid UTF-8.
+**
+**  Note that ANSI C does not precisely define the representation used
+**  by wchar_t--it may be UCS-2, UTF-16, UCS-4, or something from outer
+**  space. If your platform does something especially bizarre, you may
+**  need to reimplement these routines.
+*/
+
+/* Ensure that a string contains valid, legally-encoded UTF-8 data.
+** (Incorrectly-encoded UTF-8 strings are often used to bypass security
+** checks.) */
+extern void
+xmlrpc_validate_utf8 (xmlrpc_env *env,
+		      char *utf8_data,
+		      size_t utf8_len);
+
+/* Decode a UTF-8 string. */
+extern xmlrpc_mem_block *
+xmlrpc_utf8_to_wcs (xmlrpc_env *env,
+		    char *utf8_data,
+		    size_t utf8_len);
+
+/* Encode a UTF-8 string. */
+extern xmlrpc_mem_block *
+xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
+		    wchar_t *wcs_data,
+		    size_t wcs_len);
 
 
 #ifdef __cplusplus

@@ -175,6 +175,10 @@ AC_CHECK_HEADERS(stdarg.h, , [
 AC_MSG_ERROR(stdarg.h is required to build this library)
 ])
 
+AC_CHECK_HEADERS(wchar.h, , [
+AC_MSG_ERROR(wchar.h is required to build this library)
+])
+
 
 dnl =======================================================================
 dnl Checks for typedefs, structures, and compiler characteristics.

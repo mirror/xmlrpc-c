@@ -36,7 +36,8 @@ LIBABYSS = ../lib/abyss/src/libxmlrpc_abyss.la
 # A library containing just the XML-RPC core.
 libxmlrpc_la_SOURCES = xmlrpc_support.c xmlrpc_data.c xmlrpc_struct.c \
 		       xmlrpc_expat.h xmlrpc_expat.c xmlrpc_parse.c \
-                       xmlrpc_serialize.c xmlrpc_registry.c xmlrpc_base64.c
+                       xmlrpc_serialize.c xmlrpc_registry.c xmlrpc_base64.c \
+		       xmlrpc_utf8.c
 libxmlrpc_la_LDFLAGS = @VERSION_INFO@
 
 # A library containing the client-related components.
