@@ -1,0 +1,23 @@
+Miscellaneous portability notes.
+---
+
+We assume that vsnprintf is present, and works according to either
+old-style C rules or the new C99 rules.
+
+We use new-style ANSI C varargs.
+
+We *abuse* our varargs in various odd ways. All this code is based on
+Python 1.5.2, and so should run on any normal system.
+
+We assume that it's safe to convert between int and size_t in several
+places. This might not be true if you somehow allocated more than 2
+gigabytes in certain XML-RPC data structures.
+This is a bug, and we're trying to clean it up.
+
+We use atoi and atof, and assume they do something reasonable.
+
+We define xmlrpc_int32 and xmlrpc_bool to contain signed 32-bit integers
+and boolean values, respectively.
+
+We assume that XML_UNICODE is *NOT* defined when compling expat.
+
