@@ -33,10 +33,15 @@
 *******************************************************************************/
 
 #include "abyss.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef ABYSS_WIN32
 #define  EINTR		WSAEINTR
 #endif
+
+static abyss_bool ABYSS_TRACE_SOCKET;
 
 /*********************************************************************
 ** Socket
@@ -44,6 +49,7 @@
 
 abyss_bool SocketInit()
 {
+    abyss_bool retval;
 #ifdef ABYSS_WIN32
 	WORD wVersionRequested;
 	WSADATA wsaData;
@@ -52,22 +58,31 @@ abyss_bool SocketInit()
 	wVersionRequested = MAKEWORD( 2, 0 );
  
 	err = WSAStartup( wVersionRequested, &wsaData );
-	return ( err == 0 );
+	retval = ( err == 0 );
 #else
-	return TRUE;
+	retval = TRUE;
+    ABYSS_TRACE_SOCKET = (getenv("ABYSS_TRACE_SOCKET") != NULL);
 #endif	/* ABYSS_WIN32 */
+    if (ABYSS_TRACE_SOCKET)
+        fprintf(stderr, "Abyss socket layer will trace socket traffic "
+                "due to ABYSS_TRACE_SOCKET environment variable\n");
+    return retval;
 }
 
 #define RET(x)	return ((x)!=(-1))
 
 abyss_bool SocketCreate(TSocket *s)
 {
-	int32 n=1;
+    int rc;
 
-	if ((*s=socket(AF_INET,SOCK_STREAM,0))==(-1))
+    rc =socket(AF_INET,SOCK_STREAM,0);
+    if (rc < 0)
 		return FALSE;
-
-	RET(setsockopt(*s,SOL_SOCKET,SO_REUSEADDR,(char*)&n,sizeof(n)));
+    else {
+        int32 n=1;
+        *s = rc;
+        RET(setsockopt(*s,SOL_SOCKET,SO_REUSEADDR,(char*)&n,sizeof(n)));
+    }
 }
 
 abyss_bool SocketClose(TSocket *s)
@@ -84,10 +99,25 @@ uint32 SocketWrite(TSocket *s, char *buffer, uint32 len)
 	return send(*s,buffer,len,0);
 }
 
-uint32 SocketRead(TSocket *s, char *buffer, uint32 len)
-{
-	return recv(*s,buffer,len,0);
+
+
+uint32 SocketRead(TSocket * const socketP, 
+                  char *    const buffer, 
+                  uint32    const len) {
+    int rc;
+    rc = recv(*socketP, buffer, len, 0);
+    if (ABYSS_TRACE_SOCKET) {
+        if (rc < 0)
+            fprintf(stderr, "Abyss socket: recv() failed.  errno=%d (%s)",
+                    errno, strerror(errno));
+        else 
+            fprintf(stderr, "Abyss socket: read %u bytes: '%.*s'\n",
+                    len, (int)len, buffer);
+    }
+    return rc;
 }
+
+
 
 uint32 SocketPeek(TSocket *s, char *buffer, uint32 len)
 {
@@ -143,18 +173,24 @@ abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
 {
 	struct sockaddr_in sa;
 	uint32 size=sizeof(sa);
+    abyss_bool connected;
 
-	for (;;)
-		if ((*ns=accept(*s,(struct sockaddr *)&sa,&size))!=(-1))
+    connected = FALSE;
+	for (;;) {
+        int rc;
+        rc = accept(*s,(struct sockaddr *)&sa,&size);
+        if (rc >= 0)
 		{
+            connected = TRUE;
+            *ns = rc;
 			*ip=sa.sin_addr;
 			break;
 		}
 		else
 			if (SocketError()!=EINTR)
 				break;
-	
-	RET(*ns);
+    }	
+	return connected;
 }
 
 uint32 SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32 timems)
