@@ -23,69 +23,19 @@ struct _xmlrpc_server_info {
     char *_http_basic_auth;
 };
 
-typedef struct _call_info
-{
-    /* To prevent race conditions between the top half and the bottom
-    ** half of our asynch support, we need to keep track of who owns this
-    ** structure and whether the asynch call has been registered with
-    ** the event loop. If this flag is true, then the
-    ** asynch_terminate_handler must unregister the call and destroy this
-    ** data structure. */
-    int asynch_call_is_registered;
-
-    /* These fields are used when performing asynchronous calls.
-    ** The _asynch_data_holder contains server_url, method_name and
-    ** param_array, so it's the only thing we need to free. */
-    xmlrpc_value *_asynch_data_holder;
-    char *server_url;
-    char *method_name;
-    xmlrpc_value *param_array;
-    xmlrpc_response_handler callback;
-    void *user_data;
-
-    /* The serialized XML data passed to this call. We keep this around
-    ** for use by our source_anchor field. */
-    xmlrpc_mem_block *serialized_xml;
-
-    /* Information for your transport handler. */
-    void *transport_info;
-} call_info;
-
-/* For now, this function is exposed so the transport may complete
-** an asynchronous callback and successfully free the info. */
-extern call_info * call_info_new (xmlrpc_env *env,
-                                  xmlrpc_server_info *server,
-                                  const char *method_name,
-                                  xmlrpc_value *param_array);
-
 /* Create a new server info record, with a copy of the old server. */
 extern xmlrpc_server_info * 
 xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *aserver);
 
-extern void call_info_free (call_info *info);
 
+/* A timeout in milliseconds. */
+typedef unsigned long timeout_t;
 
 /*=========================================================================
 ** Transport Implementation functions.
 **=========================================================================
 */
 #include "xmlrpc_transport.h"
-
-extern transport_client_init    g_transport_client_init;
-extern transport_client_cleanup g_transport_client_cleanup;
-extern transport_info_new       g_transport_info_new;
-extern transport_info_free      g_transport_info_free;
-extern transport_send_request   g_transport_send_request;
-extern transport_client_call_server_params
-                                g_transport_client_call_server_params;
-extern transport_finish_asynch  g_transport_finish_asynch;
-
-/* Some more flags. */
-#define XMLRPC_CLIENT_FINISH_ASYNCH (1)
-#define XMLRPC_CLIENT_USE_TIMEOUT   (2)
-
-/* A timeout in milliseconds. */
-typedef unsigned long timeout_t;
 
 /* The generalized event loop. This uses the above flags. For more details,
 ** see the wrapper functions below. If you're not using the timeout, the

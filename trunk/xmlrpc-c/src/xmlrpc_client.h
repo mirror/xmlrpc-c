@@ -118,11 +118,11 @@ xmlrpc_server_info_free (xmlrpc_server_info *server);
 ** (In general, you shouldn't write XML-RPC servers which require this
 ** kind of authentication--it confuses many client implementations.)
 ** If we fail, leave the xmlrpc_server_info record unchanged. */
-extern void
-xmlrpc_server_info_set_basic_auth (xmlrpc_env *env,
-                                   xmlrpc_server_info *server,
-                                   char *username,
-                                   char *password);
+void 
+xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
+                                  xmlrpc_server_info * const serverP,
+                                  const char *         const username,
+                                  const char *         const password);
 
 
 /*=========================================================================
@@ -218,14 +218,12 @@ xmlrpc_client_call_server_asynch_params(xmlrpc_server_info * const server,
 /* Finish all outstanding asynchronous calls. Alternatively, the loop
 ** will exit if someone calls xmlrpc_client_event_loop_end. */
 extern void
-xmlrpc_client_event_loop_finish_asynch (void);
+xmlrpc_client_event_loop_finish_asynch(void);
 
 
-/* Finish all outstanding asynchronous calls. Alternatively, the loop
-** will exit if someone calls xmlrpc_client_event_loop_end or the
-** timeout expires. */
+/* Finish all outstanding asynchronous calls. */
 extern void
-xmlrpc_client_event_loop_finish_asynch_timeout (unsigned long milliseconds);
+xmlrpc_client_event_loop_finish_asynch_timeout(unsigned long milliseconds);
 
 
 

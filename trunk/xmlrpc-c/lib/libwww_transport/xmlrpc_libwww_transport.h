@@ -3,6 +3,6 @@
 
 #include "xmlrpc_transport.h"
 
-DECLARE_TRANSPORT_FUNCTIONS(libwww)
+extern struct clientTransportOps xmlrpc_libwww_transport_ops;
 
 #endif

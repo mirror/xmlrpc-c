@@ -16,17 +16,16 @@
 # 'configure', because of a AC_SUBST(TOKEN) statement in the
 # 'configure.in' from which 'configure' was built.
 
-BUILDDIR = @builddir@
-
 # Here are the options the user chose on 'configure':
 
-ENABLE_WININET_CLIENT  = @ENABLE_WININET_CLIENT@
-ENABLE_CURL_CLIENT     = @ENABLE_CURL_CLIENT@
-ENABLE_LIBWWW_CLIENT   = @ENABLE_LIBWWW_CLIENT@
 ENABLE_ABYSS_SERVER    = @ENABLE_ABYSS_SERVER@
 ENABLE_CPLUSPLUS       = @ENABLE_CPLUSPLUS@
 ENABLE_CGI_SERVER      = @ENABLE_CGI_SERVER@
 ENABLE_LIBXML2_BACKEND = @ENABLE_LIBXML2_BACKEND@
+
+MUST_BUILD_WININET_CLIENT = @MUST_BUILD_WININET_CLIENT@
+MUST_BUILD_CURL_CLIENT    = @MUST_BUILD_CURL_CLIENT@
+MUST_BUILD_LIBWWW_CLIENT  = @MUST_BUILD_LIBWWW_CLIENT@
 
 # Stuff 'configure' figured out about our build platform:
 
@@ -36,18 +35,6 @@ CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
 LN_S = @LN_S@
-
-
-# The following LIBWWW_x make variables have values that ultimately come
-# from running the 'libwww-config' program on the build system.  That
-# program's job is to tell us how to build a program that uses the libwww
-# library.
-
-LIBWWW_CFLAGS = @LIBWWW_CFLAGS@
-LIBWWW_LDADD = @LIBWWW_LDADD@
-LIBWWW_LIBDIR = @LIBWWW_LIBDIR@
-LIBWWW_RPATH = @LIBWWW_RPATH@
-LIBWWW_WL_RPATH = @LIBWWW_WL_RPATH@
 
 C_COMPILER_GNU = @C_COMPILER_GNU@
 CXX_COMPILER_GNU = @CXX_COMPILER_GNU@

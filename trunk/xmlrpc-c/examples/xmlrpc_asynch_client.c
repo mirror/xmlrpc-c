@@ -35,27 +35,30 @@ handle_sample_add_response(const char *   const server_url,
                            xmlrpc_value * const resultP) {
     
     xmlrpc_env env;
-    xmlrpc_int addend, adder, sum;
-
-    /* If the RPC didn't complete normally, die */
-    die_if_fault_occurred(faultP);
-
+    xmlrpc_int addend, adder;
+    
     /* Initialize our error environment variable */
     xmlrpc_env_init(&env);
-
-    /* Get our sum and print it out. */
-    xmlrpc_parse_value(&env, resultP, "i", &sum);
-    die_if_fault_occurred(&env);
 
     /* Our first four arguments provide helpful context.  Let's grab the
        addends from our parameter array. 
     */
     xmlrpc_parse_value(&env, param_array, "(ii)", &addend, &adder);
     die_if_fault_occurred(&env);
+
+    printf("RPC with method '%s' at URL '%s' to add %d and %d "
+           "has completed\n", method_name, server_url, addend, adder);
     
-    printf("The response from method '%s' at URL '%s' says "
-           "the sum of %d and %d is %d\n", 
-           method_name, server_url, addend, adder, sum);
+    if (faultP->fault_occurred)
+        printf("The RPC failed.  %s", faultP->fault_string);
+    else {
+        xmlrpc_int sum;
+
+        xmlrpc_parse_value(&env, resultP, "i", &sum);
+        die_if_fault_occurred(&env);
+
+        printf("The sum is  %d\n", sum);
+    }
 }
 
 

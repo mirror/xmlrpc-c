@@ -10,9 +10,9 @@
 
 BUILDDIR="@BUILDDIR@"
 ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND"
-ENABLE_CURL_CLIENT="@ENABLE_CURL_CLIENT@"
-ENABLE_WININET_CLIENT="@ENABLE_WININET_CLIENT@"
-ENABLE_LIBWWW_CLIENT="@ENABLE_LIBWWW_CLIENT@"
+MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
+MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
+MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
 
 if test $# -eq 0; then
       echo "You need to specify arguments"
@@ -30,7 +30,7 @@ fi
 needCpp=no
 
 the_libs="${BUILDDIR}/src/.libs/libxmlrpc.a ${LIBXML}"
-the_includes="-I${BUILDDIR}/src"
+the_includes="-I ${BUILDDIR}"
 
 while test $# -gt 0; do
   case $1 in
@@ -50,19 +50,19 @@ while test $# -gt 0; do
       ;;
     client)
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
-      if test "${ENABLE_CURL_CLIENT}" = "yes"; then
-        the_libdirs="-L@CURL_LIBDIR@ $the_libdirs"
-        the_libs="@CURL_LDADD@ $the_libs"
-        the_rpath="@CURL_RPATH@ $the_rpath"
-        the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
-        fi
-      if test "${ENABLE_WININET_CLIENT}" = "yes"; then
+      if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
         the_libdirs="-L@WININET_LIBDIR@ $the_libdirs"
         the_libs="@WININET_LDADD@ $the_libs"
         the_rpath="@WININET_RPATH@ $the_rpath"
         the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
         fi
-      if test "${ENABLE_LIBWWW_CLIENT}" = "yes"; then
+      if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
+        the_libdirs="-L@CURL_LIBDIR@ $the_libdirs"
+        the_libs="@CURL_LDADD@ -lpthread $the_libs"
+        the_rpath="@CURL_RPATH@ $the_rpath"
+        the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
+        fi
+      if test "${MUST_BUILD_LIBWWW_CLIENT}" = "yes"; then
         the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"
         the_libs="@LIBWWW_LDADD@ $the_libs"
         the_rpath="@LIBWWW_RPATH@ $the_rpath"
@@ -73,7 +73,6 @@ while test $# -gt 0; do
         # and server, and it needs both client and server base
         # libraries.  So a C++ client program gets linked with server
         # libraries.
-        the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
         the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
         the_libs="${BUILDDIR}/src/libxmlrpc_cpp.a $the_libs"
         fi
@@ -83,7 +82,11 @@ while test $# -gt 0; do
       exit 0
       ;;
     --modules)
-      echo "@AVAILABLE_MODULES@"
+      echo "@FEATURE_LIST@"
+      exit 0
+      ;;
+    --features)
+      echo "@FEATURE_LIST@"
       exit 0
       ;;
     --cflags)
@@ -91,11 +94,11 @@ while test $# -gt 0; do
       exit 0
       ;;
     --libs)
-      echo "$the_libdirs $cpp_libs $the_libs $the_wl_rpath"
+      echo "$the_libdirs $the_libs $the_wl_rpath"
       exit 0
       ;;
     --ldadd)
-      echo "$the_libdirs $cpp_libs $the_libs"
+      echo "$the_libdirs $the_libs"
       exit 0
       ;;
     --ldflags)

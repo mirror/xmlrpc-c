@@ -5,17 +5,17 @@ SUBDIR = lib
 
 include $(SRCDIR)/Makefile.config
 
-SUBDIRS =
+SUBDIRS = util
 ifeq ($(ENABLE_ABYSS_SERVER),yes)
   SUBDIRS += abyss
 endif
-ifeq ($(ENABLE_WININET_CLIENT),yes)
+ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   SUBDIRS += wininet_transport
 endif
-ifeq ($(ENABLE_CURL_CLIENT),yes)
+ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   SUBDIRS += curl_transport
 endif
-ifeq ($(ENABLE_LIBWWW_CLIENT),yes)
+ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   SUBDIRS += libwww_transport
 endif
 ifneq ($(ENABLE_LIBXML2),yes)

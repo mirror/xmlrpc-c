@@ -4,15 +4,17 @@ endif
 
 include $(SRCDIR)/Makefile.config
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+CURL_CFLAGS := $(shell curl-config --cflags)
+
+CFLAGS = $(CFLAGS_COMMON) $(CURL_CFLAGS) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = -lpthread $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
+INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/lib/util/include
 
 default: all
 
 .PHONY: all
-all: xmlrpc_curl_transport.la
+all: xmlrpc_curl_transport.lo
 
 .PHONY: clean
 clean: clean-common

@@ -21,9 +21,14 @@ pkgdatadir=$datadir/@PACKAGE@
 pkglibdir=$libdir/@PACKAGE@
 pkgincludedir=$includedir/@PACKAGE@
 
+ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND"
+MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
+MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
+MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
+
 usage="Usage: xmlrpc-c-config <module>... <flag>
 
-You may optionally specify one or more modules:
+You may optionally specify one or more features you want to exploit:
   c++            C++ wrapper code
   libwww-client  libwww-based client
   curl-client    cURL-based client
@@ -33,7 +38,7 @@ You may optionally specify one or more modules:
 
 Available flags include:
   --version      The version number of the package
-  --modules      List all modules currently installed
+  --features     List all features (aka modules) currently installed
   --cflags       C compiler flags to use when '#include'ing package headers
   --libs         Libraries and flags to use when linking programs normally
   --ldadd        Libraries to use with automake
@@ -47,8 +52,16 @@ if test $# -eq 0; then
       exit 1
 fi
 
+if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
+  LIBXML="@LIBXML2_LIBS@"
+else
+  LIBXML="-lxmlrpc_xmlparse -lxmlrpc_xmltok"
+fi
+
+needCpp=no
+
 the_libdirs="-L@libdir@"
-the_libs="-lxmlrpc @EXTRA_XML_LIBS@"
+the_libs="-lxmlrpc ${LIBXML}"
 the_rpath=
 the_wl_rpath=
 cpp_libs=
@@ -56,41 +69,71 @@ cpp_libs=
 while test $# -gt 0; do
   case $1 in
     c++)
-      cpp_libs="-lxmlrpc_cpp"
+      needCpp=yes
       ;;
     cgi-server)
+      the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_cgi $the_libs"
+      if test "${needCpp}" = "yes"; then
+        # Unfortunately, there is just one CPP library for both client
+        # and server, and it needs both client and server base
+        # libraries.  So a C++ client program gets linked with server
+        # libraries.
+        the_libs="-lxmlrpc_cpp -lxmlrpc_client $the_libs"
+        fi
       ;;
     abyss-server)
       the_libs="@LIBABYSS_LDADD@ $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"
-      the_libs="-lxmlrpc_abyss_server $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
+      the_libs="-lxmlrpc_server_abyss $the_libs"
+      if test "${needCpp}" = "yes"; then
+        # Unfortunately, there is just one CPP library for both client
+        # and server, and it needs both client and server base
+        # libraries.  So a C++ client program gets linked with server
+        # libraries.
+        the_libs="-lxmlrpc_cpp -lxmlrpc_client $the_libs"
+        fi
       ;;
-    wininet-client)
-      the_libdirs="-L@WININET_LIBDIR@ $the_libdirs"
-      the_libs="-lxmlrpc_client -lxmlrpc_wininet @WININET_LDADD@ $the_libs"
-      the_rpath="@WININET_RPATH@ $the_rpath"
-      the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
-      ;;
-    curl-client)
-      the_libdirs="-L@CURL_LIBDIR@ $the_libdirs"
-      the_libs="-lxmlrpc_client -lxmlrpc_curl @CURL_LDADD@ $the_libs"
-      the_rpath="@CURL_RPATH@ $the_rpath"
-      the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
-      ;;
-    libwww-client)
-      the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"
-      the_libs="-lxmlrpc_client -lxmlrpc_libwww @LIBWWW_LDADD@ $the_libs"
-      the_rpath="@LIBWWW_RPATH@ $the_rpath"
-      the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
+    client)
+      the_libs="-lxmlrpc_client"
+
+      if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
+        the_libdirs="-L@WININET_LIBDIR@ $the_libdirs"
+        the_libs="@WININET_LDADD@ $the_libs"
+        the_rpath="@WININET_RPATH@ $the_rpath"
+        the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
+      fi
+      if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
+        the_libdirs="-L@CURL_LIBDIR@ $the_libdirs"
+        the_libs="@CURL_LDADD@ -lpthread $the_libs"
+        the_rpath="@CURL_RPATH@ $the_rpath"
+        the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
+      fi
+      if test "${MUST_BUILD_LIBWWW_CLIENT}" = "yes"; then
+        the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"
+        the_libs="@LIBWWW_LDADD@ $the_libs"
+        the_rpath="@LIBWWW_RPATH@ $the_rpath"
+        the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
+      fi
+      if test "${needCpp}" = "yes"; then
+        # Unfortunately, there is just one CPP library for both client
+        # and server, and it needs both client and server base
+        # libraries.  So a C++ client program gets linked with server
+        # libraries.
+        the_libs="-lxmlrpc_cpp -lxmlrpc_server $the_libs"
+        fi
       ;;
     --version)
       echo "@VERSION@"
       exit 0
       ;;
     --modules)
-      echo "@AVAILABLE_MODULES@"
+      echo "@FEATURE_LIST@"
+      exit 0
+      ;;
+    --features)
+      echo "@FEATURE_LIST@"
       exit 0
       ;;
     --cflags)
@@ -98,11 +141,11 @@ while test $# -gt 0; do
       exit 0
       ;;
     --libs)
-      echo "$the_libdirs $cpp_libs $the_libs $the_wl_rpath"
+      echo "$the_libdirs $the_libs $the_wl_rpath"
       exit 0
       ;;
     --ldadd)
-      echo "$the_libdirs $cpp_libs $the_libs"
+      echo "$the_libdirs $the_libs"
       exit 0
       ;;
     --ldflags)

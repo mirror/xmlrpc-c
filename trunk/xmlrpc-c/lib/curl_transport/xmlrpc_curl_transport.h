@@ -3,6 +3,6 @@
 
 #include "xmlrpc_transport.h"
 
-DECLARE_TRANSPORT_FUNCTIONS(curl)
+extern struct clientTransportOps xmlrpc_curl_transport_ops;
 
 #endif

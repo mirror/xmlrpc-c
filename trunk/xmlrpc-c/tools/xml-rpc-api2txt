@@ -1,8 +1,11 @@
 #!/usr/bin/perl -w
 #
-# A handy little script for printing out an XML-RPC API as a
-# nicely-formatted text file. (I wrote this in Perl because of all the
-# spiffy report-generation features.)
+# A handy little program to get the documentation of the available
+# methods from an XML-RPC service (via XML-RPC Introspection) and
+# print it out nicely formatted.
+#
+# (I wrote this in Perl because of all the spiffy report-generation
+# features.)
 #
 # You'll need to get Ken MacLeod's Frontier::RPC2 module from CPAN to use
 # this.

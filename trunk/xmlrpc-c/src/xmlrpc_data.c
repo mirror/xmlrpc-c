@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "bool.h"
 #include "xmlrpc.h"
 #include "xmlrpc_int.h"
 

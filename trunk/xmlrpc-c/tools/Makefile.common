@@ -1,0 +1,64 @@
+CLIENT_LDFLAGS =
+ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
+  CLIENT_LDFLAGS += $(shell libwww-config --libs)
+endif
+ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
+  CLIENT_LDFLAGS += $(shell curl-config --libs) -lpthread
+endif
+ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
+  CLIENT_LDFLAGS += $(shell wininet-config --libs)
+endif
+
+LIBEXPAT = $(SRCDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
+           $(SRCDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
+
+ifneq ($(ENABLE_LIBXML2)x,x)
+  LIBXML = $(LIBXML2_LIBS)
+else
+  LIBXML = $(LIBEXPAT)
+endif
+
+LIBXMLRPC = $(SRCDIR)/src/libxmlrpc.la
+LIBXMLRPC_CPP = $(SRCDIR)/src/libxmlrpc_cpp.a
+LIBXMLRPC_CLIENT = $(SRCDIR)/src/libxmlrpc_client.la
+LIBXMLRPC_SERVER = $(SRCDIR)/src/libxmlrpc_server.la
+
+XMLRPC_LIBS = $(LIBXMLRPC) $(LIBXMLRPC_CPP) $(LIBXMLRPC_CLIENT) \
+	$(LIBXMLRPC_SERVER) $(LIBXML)
+
+UTIL_DIR = $(BUILDDIR)/lib/util
+
+BUILDABLE_UTILS = casprintf.o cmdline_parser.o
+
+$(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+$(XMLRPC_LIBS): FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+include $(SRCDIR)/Makefile.common
+
+
+BINDIR=$(DESTDIR)$(bindir)
+
+FILENAME_GENERATOR = "echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'"
+
+INSTCMD =  "$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p \
+  $(BINDIR)/`$(FILENAME_GENERATOR)`"
+
+.PHONY: install
+install: $(INSTALL_PROGS)
+	@$(NORMAL_INSTALL)
+	$(MKINSTALLDIRS) $(BINDIR)
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "$(INSTCMD)"; $(INSTCMD); \
+	  else :; \
+          fi; \
+	done
+
+.PHONY: check
+check:
+
+.PHONY: FORCE
+FORCE:

@@ -14,20 +14,6 @@
 #ifndef  _XMLRPC_INT_H_
 #define  _XMLRPC_INT_H_ 1
 
-#ifndef TRUE
-#define TRUE (1)
-#endif
-#ifndef FALSE
-#define FALSE (0)
-#endif
-
-#ifndef __cplusplus
-#ifndef HAVE_BOOL
-#define HAVE_BOOL
-typedef int bool;
-#endif
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

@@ -4,12 +4,6 @@
 # libtool.  Also, we don't try to build or rebuild the libraries on which
 # these programs depend.
 
-# We need the following make variables to be defined by Makefile.config
-# or be passed in:
-#
-# LIBWWW_CFLAGS
-#   As set by the 'libwww-config' program.  This tells how libwww is installed
-#   on this system.
 
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/..
@@ -22,7 +16,7 @@ include $(BUILDDIR)/Makefile.config
 
 CXXFLAGS = 
 
-CFLAGS = $(CFLAGS_COMMON) $(LIBWWW_CFLAGS) $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
 
 # If this were a real application, working from an installed copy of
@@ -34,7 +28,6 @@ CLIENTPROGS_C = \
   auth_client \
   query-meerkat \
   synch_client \
-  xmlrpc \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
 

@@ -2,6 +2,21 @@
 
 1.1 - not yet
 
+  * BJH: Examples/Makefile uses new xmlrpc-c-config.test so as to be a
+    better example.
+
+  * BJH: Abyss:  Add ConnCreate2() with foreground capability.
+
+  * BJH  Abyss:  Add ServerRunOnce2() with foreground capability.
+
+  * BJH  Abyss:  Fix ServerRunOnce().
+
+  * BJH: Add xmlrpc_server_abyss().
+
+  * BJH: Clean up client transport multiplexor
+
+  * BJH: Abyss pthreads is default
+
   * BJH: Separate out server registry stuff into new libxml_server.
   
   * BJH: Fail when structure format specifier does not end in

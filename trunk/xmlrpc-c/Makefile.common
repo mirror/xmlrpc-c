@@ -9,6 +9,7 @@
 # The following make variables are meaningful as input to this file:
 #
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
+# BUILDDIR: Name of directory which is the top of the Xmrpc-c build tree.
 
 LIBTOOL = $(SRCDIR)/libtool
 LINK = $(LIBTOOL) --mode=link $(CCLD)
@@ -19,7 +20,7 @@ GCC_C_WARNINGS = -Wall -Wmissing-declarations -Wundef -Wimplicit \
   # We need -Wwrite-strings after we fix all the missing consts
 
 ifeq ($(C_COMPILER_GNU),yes)
-  CFLAGS_COMMON = $(GCC_C_WARNINGS) -fno-common
+  CFLAGS_COMMON = $(GCC_C_WARNINGS) -fno-common -g
 endif
 
 ifeq ($(CXX_COMPILER_GNU),yes)
@@ -60,6 +61,10 @@ $(SUBDIRS:%=%/distdir): %/distdir: $(CURDIR)/%
 	    $(notdir $@) 
 
 $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SRCDIR)/lib/util/casprintf.lo:
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 

@@ -1,0 +1,4 @@
+all:
+clean:
+install:
+dep:
