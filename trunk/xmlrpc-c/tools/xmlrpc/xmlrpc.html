@@ -45,6 +45,16 @@ by a program rather than a person to be of use.
      Result:
        String: This is a string in shortcut syntax
 
+<pre>
+<tt>
+     $ xmlrpc http://xmlrpc.server.net sample.add i/3 i/5 \
+         transport=curl -username=bryanh -password=passw0rd
+       Result:
+         Integer: 8
+     
+</tt>
+</pre>
+
 </tt>
 </pre>
 
@@ -54,7 +64,8 @@ by a program rather than a person to be of use.
 <i>url</i>
 <i>methodName</i>
 <i>parameter</i> ...
-[<b>-transport=</b><i>transportname</i>
+[<b>-transport=</b><i>transportname</i>]
+[<b>-username=</b><i>username</i> <b>-password=</b><i>password</i>]
 
 <p><i>parameter</i>:
 
@@ -117,6 +128,13 @@ library recognizes.  This is typically <b>libwww</b>, <b>curl</b>, and
 <b>wininet</b>.
 
 <p>By default, <b>xmlrpc</b> lets the Xmlrpc-c library choose.
+
+<dt><b>-username=</b><i>username</i>
+<dt><b>-password=</b><i>password</i>
+
+<dd>These options, which must be used together, cause the client to
+authenticate itself to the server, if the server requires it, using
+HTTP Basic Authentication and the specified username and password.
 
 </body>
 
