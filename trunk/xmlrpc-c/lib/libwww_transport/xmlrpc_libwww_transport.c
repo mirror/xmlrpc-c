@@ -56,13 +56,19 @@
 #define XMLRPC_CLIENT_USE_TIMEOUT   (2)
 
 
+struct clientTransport {
+    int saved_flags;
+    HTList *xmlrpc_conversions;
+    bool tracingOn;
+};
+
+static struct clientTransport clientTransport;
+
+
 /*=========================================================================
 **  Initialization and Shutdown
 **=========================================================================
 */
-
-static int saved_flags;
-static HTList *xmlrpc_conversions;
 
 static void 
 create(xmlrpc_env *                     const envP ATTR_UNUSED,
@@ -79,15 +85,14 @@ create(xmlrpc_env *                     const envP ATTR_UNUSED,
        per program instance.  Even if we changed the Xmlrpc-c code not
        to use global variables, that wouldn't help because Libwww
        itself is not re-entrant.  
-
-       So our handle is meaningless -- there's no ambiguity as to which
-       Libwww transport you mean!
+       
+       So we use a global variable ('clientTransport') for our transport state.
     */
-    *handlePP = (struct clientTransport *) handlePP; 
-        /* Return an arbitrary non-null value */
+    struct clientTransport * const clientTransportP = &clientTransport;
+    *handlePP = clientTransportP;
 
-    saved_flags = flags;
-    if (!(saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
+    clientTransportP->saved_flags = flags;
+    if (!(clientTransportP->saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
     
         /* We initialize the library using a robot profile, because we don't
         ** care about redirects or HTTP authentication, and we want to
@@ -136,9 +141,14 @@ create(xmlrpc_env *                     const envP ATTR_UNUSED,
     ** massively stripped-down version of the list in libwww's HTInit.c.
     ** XXX - This is hackish; 10.0 is an arbitrary, large quality factor
     ** designed to override the built-in converter for XML. */
-    xmlrpc_conversions = HTList_new();
-    HTConversion_add(xmlrpc_conversions, "text/xml", "*/*",
+    clientTransportP->xmlrpc_conversions = HTList_new();
+    HTConversion_add(clientTransportP->xmlrpc_conversions, "text/xml", "*/*",
                      HTThroughLine, 10.0, 0.0, 0.0);
+
+    if (getenv("XMLRPC_LIBWWW_TRACE"))
+        clientTransportP->tracingOn = TRUE;
+    else
+        clientTransportP->tracingOn = FALSE;
 }
 
 
@@ -150,7 +160,7 @@ destroy(struct clientTransport * const clientTransportP) {
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(clientTransportP != NULL);
 
-    if (!(saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
+    if (!(clientTransportP->saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
         HTProfile_delete();
     }
 }
@@ -263,6 +273,8 @@ typedef struct {
 /*----------------------------------------------------------------------------
    This object represents one RPC.
 -----------------------------------------------------------------------------*/
+    struct clientTransport * clientTransportP;
+
     /* These fields are used when performing synchronous calls. */
     bool is_done;
     int http_status;
@@ -333,6 +345,7 @@ createDestAnchor(xmlrpc_env *               const envP,
 
 static void
 rpcCreate(xmlrpc_env *               const envP,
+          struct clientTransport *   const clientTransportP,
           const xmlrpc_server_info * const serverP,
           xmlrpc_mem_block *         const xmlP,
           transport_asynch_complete        complete, 
@@ -349,6 +362,7 @@ rpcCreate(xmlrpc_env *               const envP,
                         "Out of memory in rpcCreate()");
 
     /* Set up our basic members. */
+    rpcP->clientTransportP = clientTransportP;
     rpcP->is_done = FALSE;
     rpcP->http_status = 0;
     rpcP->complete = complete;
@@ -381,7 +395,8 @@ rpcCreate(xmlrpc_env *               const envP,
     ** The 'override' parameter is currently ignored by libwww, so our
     ** list of conversions must be designed to co-exist with the built-in
     ** conversions. */
-    HTRequest_setConversion(rpcP->request, xmlrpc_conversions, NO);
+    HTRequest_setConversion(rpcP->request, 
+                            clientTransportP->xmlrpc_conversions, NO);
 
     /* Set up our response buffer. */
     target_stream = HTStreamToChunk(rpcP->request, &rpcP->response_data, 0);
@@ -467,6 +482,13 @@ extract_response_chunk(xmlrpc_env *        const envP,
     else {
         *responseXmlPP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
         if (!envP->fault_occurred) {
+            if (rpcP->clientTransportP->tracingOn) {
+                fprintf(stderr, "HTTP chunk received: %u bytes: '%.*s'",
+                        HTChunk_size(rpcP->response_data),
+                        HTChunk_size(rpcP->response_data),
+                        HTChunk_data(rpcP->response_data));
+            }
+
             XMLRPC_MEMBLOCK_APPEND(char, envP, *responseXmlPP,
                                    HTChunk_data(rpcP->response_data),
                                    HTChunk_size(rpcP->response_data));
@@ -505,7 +527,7 @@ synch_terminate_handler(HTRequest *  const request,
 
 static void
 call(xmlrpc_env *               const envP,
-     struct clientTransport *   const clientTransportP ATTR_UNUSED,
+     struct clientTransport *   const clientTransportP,
      const xmlrpc_server_info * const serverP,
      xmlrpc_mem_block *         const xmlP,
      xmlrpc_mem_block **        const responsePP) {
@@ -519,7 +541,7 @@ call(xmlrpc_env *               const envP,
     XMLRPC_ASSERT_PTR_OK(xmlP);
     XMLRPC_ASSERT_PTR_OK(responsePP);
 
-    rpcCreate(envP, serverP, xmlP, NULL, NULL, &rpcP);
+    rpcCreate(envP, clientTransportP, serverP, xmlP, NULL, NULL, &rpcP);
     if (!envP->fault_occurred) {
         int ok;
         
@@ -737,7 +759,7 @@ asynch_terminate_handler(HTRequest *  const request,
 
 static void 
 sendRequest(xmlrpc_env *               const envP, 
-            struct clientTransport *   const clientTransportP ATTR_UNUSED,
+            struct clientTransport *   const clientTransportP,
             const xmlrpc_server_info * const serverP,
             xmlrpc_mem_block *         const xmlP,
             transport_asynch_complete        complete,
@@ -758,7 +780,8 @@ sendRequest(xmlrpc_env *               const envP,
     XMLRPC_ASSERT_PTR_OK(xmlP);
     XMLRPC_ASSERT_PTR_OK(callInfoP);
 
-    rpcCreate(envP, serverP, xmlP, complete, callInfoP, &rpcP);
+    rpcCreate(envP, clientTransportP, serverP, xmlP, complete, callInfoP, 
+              &rpcP);
     if (!envP->fault_occurred) {
         int ok;
 
