@@ -23,8 +23,8 @@ CFG=xmlrpc_sample_add_server - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""
-# PROP Scc_LocalPath ""
+# PROP Scc_ProjName "xmlrpc_sample_add_server"
+# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 

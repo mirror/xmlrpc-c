@@ -8,12 +8,12 @@ CFG=xmlrpc - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "xmlrpcWininet.mak".
+!MESSAGE NMAKE /f "xmlrpc.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "xmlrpcWininet.mak" CFG="xmlrpc - Win32 Debug"
+!MESSAGE NMAKE /f "xmlrpc.mak" CFG="xmlrpc - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -23,6 +23,8 @@ CFG=xmlrpc - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
+# PROP Scc_ProjName "xmlrpc"
+# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
@@ -38,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "Release\xmlrpc"
 # PROP Intermediate_Dir "Release\xmlrpc"
 # PROP Target_Dir ""
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MT /W3 /GX /O2 /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../src" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -63,8 +65,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmlrpc"
 # PROP Intermediate_Dir "Debug\xmlrpc"
 # PROP Target_Dir ""
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../src" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -149,6 +151,11 @@ SOURCE=..\src\xmlrpc_server_abyss.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\xmlrpc_server_w32httpsys.c
+# ADD CPP /I "../lib/util/include"
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\xmlrpc_struct.c
 # ADD CPP /I "../lib/util/include"
 # End Source File
@@ -229,7 +236,11 @@ SOURCE=..\src\xmlrpc_server_abyss.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc_server_abyss_int.h
+SOURCE=..\src\xmlrpc_server_abyss.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\xmlrpc_server_w32httpsys.h
 # End Source File
 # Begin Source File
 
