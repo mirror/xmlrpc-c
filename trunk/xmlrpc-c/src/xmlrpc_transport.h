@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#include "xmlrpc_pthreads.h" /* For threading helpers. */
+#include "pthreadx.h" /* For threading helpers. */
 
 struct call_info;
 

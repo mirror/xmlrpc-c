@@ -8,26 +8,21 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+
 #include "xmlrpc_config.h"
 
 #include "bool.h"
 #include "mallocvar.h"
 #include "linklist.h"
 #include "casprintf.h"
+#include "pthreadx.h"
 #include "xmlrpc.h"
 #include "xmlrpc_int.h"
 #include "xmlrpc_client.h"
 #include "xmlrpc_client_int.h"
-
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-
-#ifndef WIN32
-#include <pthread.h>
-#else
-#include <pthreadx.h>
-#endif
 
 #include <curl/curl.h>
 #include <curl/types.h>
