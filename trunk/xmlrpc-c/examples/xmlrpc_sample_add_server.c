@@ -1,5 +1,6 @@
 /* A simple standalone XML-RPC server written in C. */
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <xmlrpc.h>
@@ -30,19 +31,17 @@ sample_add(xmlrpc_env *   const env,
 
 
 int 
-main (int           const argc, 
-      const char ** const argv) {
+main(int           const argc, 
+     const char ** const argv) {
 
     xmlrpc_server_abyss_parms serverparm;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
 
     if (argc-1 != 1) {
-        fprintf(stderr, "You must specify 1 argument:  The Abyss " 
-                "configuration file name.  You specified %d.\n",  argc-1);
-        fprintf(stderr, "A suitable example Abyss configuration file is "
-                "abyss.conf in the examples/ directory of the Xmlrpc-c "
-                "source tree\n");
+        fprintf(stderr, "You must specify 1 argument:  The TCP port "
+                "number on which the server will accept connections "
+                "for RPCs.  You specified %d arguments.\n",  argc-1);
         exit(1);
     }
     
@@ -53,12 +52,20 @@ main (int           const argc,
     xmlrpc_registry_add_method(
         &env, registryP, NULL, "sample.add", &sample_add, NULL);
 
-    serverparm.config_file_name = argv[1];
+    /* In the modern form of the Abyss API, we supply parameters in memory
+       like a normal API.  We select the modern form by setting
+       config_file_name to NULL: 
+    */
+    serverparm.config_file_name = NULL;
     serverparm.registryP = registryP;
+    serverparm.port_number = atoi(argv[1]);
+    serverparm.log_file_name = "/tmp/xmlrpc_log";
 
-    printf("Starting XML-RPC server...\n");
+    printf("Running XML-RPC server...\n");
 
-    xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(registryP));
+    xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(log_file_name));
+
+    /* xmlrpc_server_abyss() never returns */
 
     return 0;
 }

@@ -59,9 +59,23 @@ typedef void ((*runfirstFn)(void *));
 
 typedef struct {
     const char *      config_file_name;
+        /* NULL to use preferred proper API-level interface */
+
     xmlrpc_registry * registryP;
+
+    /* runfirstFn an runfirst_arg are meaningless when 
+       config_file_name is NULL
+    */
     runfirstFn        runfirst;
     void *            runfirst_arg;
+
+    unsigned int      port_number;
+    const char *      log_file_name;
+    unsigned int      keepalive_timeout;
+    unsigned int      keepalive_max_conn;
+    unsigned int      timeout;
+    xmlrpc_bool       dont_advertise;
+
 } xmlrpc_server_abyss_parms;
 
 

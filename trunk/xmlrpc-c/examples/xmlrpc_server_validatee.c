@@ -80,13 +80,13 @@ array_of_structs(xmlrpc_env *   const env,
     size = xmlrpc_array_size(env, array);
     RETURN_IF_FAULT(env);
     for (i = 0; i < size; i++) {
-	strct = xmlrpc_array_get_item(env, array, i);
-	RETURN_IF_FAULT(env);
-	xmlrpc_parse_value(env, strct, "{s:i,*}", "curly", &curly);
-	RETURN_IF_FAULT(env);
-	sum += curly;
+        strct = xmlrpc_array_get_item(env, array, i);
+        RETURN_IF_FAULT(env);
+        xmlrpc_parse_value(env, strct, "{s:i,*}", "curly", &curly);
+        RETURN_IF_FAULT(env);
+        sum += curly;
     }
-
+    
     /* Return our result. */
     return xmlrpc_build_value(env, "i", sum);
 }
@@ -110,23 +110,24 @@ count_entities(xmlrpc_env *   const env,
 
     left = right = amp = apos = quote = 0;
     for (i = 0; i < len; i++) {
-	switch (str[i]) {
-	    case '<': left++; break;
-	    case '>': right++; break;
-	    case '&': amp++; break;
-	    case '\'': apos++; break;
-	    case '\"': quote++; break;
-	    default: break;
-	}
+        switch (str[i]) {
+        case '<': left++; break;
+        case '>': right++; break;
+        case '&': amp++; break;
+        case '\'': apos++; break;
+        case '\"': quote++; break;
+        default: break;
+        }
     }
 
     return xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i,s:i}",
-			      "ctLeftAngleBrackets", left,
-			      "ctRightAngleBrackets", right,
-			      "ctAmpersands", amp,
-			      "ctApostrophes", apos,
-			      "ctQuotes", quote);
+                              "ctLeftAngleBrackets", left,
+                              "ctRightAngleBrackets", right,
+                              "ctAmpersands", amp,
+                              "ctApostrophes", apos,
+                              "ctQuotes", quote);
 }
+
 
 
 /*=========================================================================
@@ -143,9 +144,9 @@ easy_struct(xmlrpc_env *   const env,
 
     /* Parse our argument array and get the stooges. */
     xmlrpc_parse_value(env, param_array, "({s:i,s:i,s:i,*})",
-		       "larry", &larry,
-		       "moe", &moe,
-		       "curly", &curly);
+                       "larry", &larry,
+                       "moe", &moe,
+                       "curly", &curly);
     RETURN_IF_FAULT(env);
 
     /* Return our result. */
@@ -167,7 +168,7 @@ echo_struct(xmlrpc_env *   const env,
     /* Parse our argument array. */
     xmlrpc_parse_value(env, param_array, "(S)", &s);
     RETURN_IF_FAULT(env);
-
+    
     /* Create a new reference to the struct, and return it. */
     xmlrpc_INCREF(s);
     return s;
@@ -218,7 +219,7 @@ moderate_array(xmlrpc_env *   const env,
     RETURN_IF_FAULT(env);
     xmlrpc_parse_value(env, item, "s#", &str1, &str1_len);
     RETURN_IF_FAULT(env);
-
+    
     /* Get our last string. */
     item = xmlrpc_array_get_item(env, array, size - 1);
     RETURN_IF_FAULT(env);
@@ -228,8 +229,8 @@ moderate_array(xmlrpc_env *   const env,
     /* Concatenate the two strings. */
     buffer = (char*) malloc(str1_len + str2_len);
     if (!buffer) {
-	xmlrpc_env_set_fault(env, 1, "Couldn't allocate concatenated string");
-	return NULL;
+        xmlrpc_env_set_fault(env, 1, "Couldn't allocate concatenated string");
+        return NULL;
     }
     memcpy(buffer, str1, str1_len);
     memcpy(&buffer[str1_len], str2, str2_len);
@@ -260,13 +261,13 @@ nested_struct(xmlrpc_env *   const env,
 
     /* Get values of larry, moe and curly for 2000-04-01. */
     xmlrpc_parse_value(env, years,
-		       "{s:{s:{s:{s:i,s:i,s:i,*},*},*},*}",
-		       "2000", "04", "01",
-		       "larry", &larry,
-		       "moe", &moe,
-		       "curly", &curly);		       
+                       "{s:{s:{s:{s:i,s:i,s:i,*},*},*},*}",
+                       "2000", "04", "01",
+                       "larry", &larry,
+                       "moe", &moe,
+                       "curly", &curly);               
     RETURN_IF_FAULT(env);
-
+    
     /* Return our result. */
     return xmlrpc_build_value(env, "i", larry + moe + curly);
 }
@@ -288,9 +289,9 @@ struct_return(xmlrpc_env *   const env,
     RETURN_IF_FAULT(env);
 
     return xmlrpc_build_value(env, "{s:i,s:i,s:i}",
-			      "times10", (xmlrpc_int32) i * 10,
-			      "times100", (xmlrpc_int32) i * 100,
-			      "times1000", (xmlrpc_int32) i * 1000);
+                              "times10", (xmlrpc_int32) i * 10,
+                              "times100", (xmlrpc_int32) i * 100,
+                              "times1000", (xmlrpc_int32) i * 1000);
 }
 
 
@@ -301,31 +302,55 @@ struct_return(xmlrpc_env *   const env,
 
 int main(int           const argc, 
          const char ** const argv) {
-    if (argc != 2) {
-	fprintf(stderr, "Usage: validatee abyss.conf\n");
-	exit(1);
+
+    xmlrpc_server_abyss_parms serverparm;
+    xmlrpc_registry * registryP;
+    xmlrpc_env env;
+
+    if (argc-1 != 1) {
+        fprintf(stderr, "You must specify 1 argument:  The TCP port "
+                "number on which the server will accept connections "
+                "for RPCs.  You specified %d arguments.\n",  argc-1);
+        exit(1);
     }
 
-    xmlrpc_server_abyss_init(XMLRPC_SERVER_ABYSS_NO_FLAGS, argv[1]);
+    xmlrpc_env_init(&env);
 
-    xmlrpc_server_abyss_add_method("validator1.arrayOfStructsTest",
-				   &array_of_structs, NULL);
-    xmlrpc_server_abyss_add_method("validator1.countTheEntities",
-				   &count_entities, NULL);
-    xmlrpc_server_abyss_add_method("validator1.easyStructTest",
-				   &easy_struct, NULL);
-    xmlrpc_server_abyss_add_method("validator1.echoStructTest",
-				   &echo_struct, NULL);
-    xmlrpc_server_abyss_add_method("validator1.manyTypesTest",
-				   &many_types, NULL);
-    xmlrpc_server_abyss_add_method("validator1.moderateSizeArrayCheck",
-				   &moderate_array, NULL);
-    xmlrpc_server_abyss_add_method("validator1.nestedStructTest",
-				   &nested_struct, NULL);
-    xmlrpc_server_abyss_add_method("validator1.simpleStructReturnTest",
-				   &struct_return, NULL);
+    registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_server_abyss_run();
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.arrayOfStructsTest", 
+        &array_of_structs, NULL);
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.countTheEntities", 
+        &count_entities, NULL);
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.easyStructTest", 
+        &easy_struct, NULL);
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.echoStructTest", 
+        &echo_struct, NULL);
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.manyTypesTest", 
+        &many_types, NULL);
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.moderateSizeArrayCheck", 
+        &moderate_array, NULL);
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.nestedStructTest", 
+        &nested_struct, NULL);
+    xmlrpc_registry_add_method(
+        &env, registryP, NULL, "validator1.simpleStructReturnTest", 
+        &struct_return, NULL);
+
+    serverparm.config_file_name = NULL;
+    serverparm.registryP = registryP;
+    serverparm.port_number = atoi(argv[1]);
+    serverparm.log_file_name = NULL;
+
+    printf("Running XML-RPC server...\n");
+
+    xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(log_file_name));
 
     /* This never gets executed. */
     return 0;

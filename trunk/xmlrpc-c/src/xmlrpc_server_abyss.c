@@ -641,9 +641,9 @@ daemonize(TServer * const srvP) {
 
 
 static void
-runServer(TServer *  const srvP,
-          runfirstFn const runfirst,
-          void *     const runfirstArg) {
+runServerDaemon(TServer *  const srvP,
+                runfirstFn const runfirst,
+                void *     const runfirstArg) {
 
     setupSignalHandlers();
 
@@ -667,14 +667,14 @@ void
 xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
                               void *     const runfirstArg) {
     
-    runServer(&globalSrv, runfirst, runfirstArg);
+    runServerDaemon(&globalSrv, runfirst, runfirstArg);
 }
 
 
 
 void 
 xmlrpc_server_abyss_run(void) {
-    runServer(&globalSrv, NULL, NULL);
+    runServerDaemon(&globalSrv, NULL, NULL);
 }
 
 
@@ -698,6 +698,123 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
 
 
 
+static void
+oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
+                     const xmlrpc_server_abyss_parms * const parmsP,
+                     unsigned int                      const parm_size) {
+/*----------------------------------------------------------------------------
+   This is the old deprecated interface, where the caller of the 
+   xmlrpc_server_abyss API supplies an Abyss configuration file and
+   we use it to daemonize (fork into the background, chdir, set uid, etc.)
+   and run the Abyss server.
+
+   The new preferred interface, implemented by normalLevelAbyssRun(),
+   instead lets Caller set up the process environment himself and pass
+   Abyss parameters in memory.  That's a more conventional and
+   flexible API.
+-----------------------------------------------------------------------------*/
+    TServer srv;
+    runfirstFn runfirst;
+    void * runfirstArg;
+    
+    DateInit();
+    MIMETypeInit();
+    
+    ServerCreate(&srv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+    
+    ConfReadServerFile(parmsP->config_file_name, &srv);
+        
+    xmlrpc_server_abyss_set_handlers(&srv, parmsP->registryP);
+        
+    ServerInit(&srv);
+    
+    if (parm_size >= XMLRPC_APSIZE(runfirst_arg)) {
+        runfirst    = parmsP->runfirst;
+        runfirstArg = parmsP->runfirst_arg;
+    } else {
+        runfirst    = NULL;
+        runfirstArg = NULL;
+    }
+    runServerDaemon(&srv, runfirst, runfirstArg);
+}
+
+
+
+static void
+setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
+                         unsigned int                      const parm_size,
+                         TServer *                         const srvP) {
+
+    /* The following ought to be parameters on ServerCreate(), but it
+       looks like plugging them straight into the TServer structure is
+       the only way to set them.  
+    */
+
+    if (parm_size >= XMLRPC_APSIZE(keepalive_timeout) &&
+        parmsP->keepalive_timeout > 0)
+            srvP->keepalivetimeout = parmsP->keepalive_timeout;
+    if (parm_size >= XMLRPC_APSIZE(keepalive_max_conn) &&
+        parmsP->keepalive_max_conn > 0)
+        srvP->keepalivemaxconn = parmsP->keepalive_max_conn;
+    if (parm_size >= XMLRPC_APSIZE(timeout) &&
+        parmsP->timeout > 0)
+        srvP->timeout = parmsP->timeout;
+    if (parm_size >= XMLRPC_APSIZE(dont_advertise))
+        srvP->advertise = !parmsP->dont_advertise;
+}
+
+
+
+static void
+normalLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
+                    const xmlrpc_server_abyss_parms * const parmsP,
+                    unsigned int                      const parm_size) {
+    
+    uint16 portNumber;
+    
+    DateInit();
+    MIMETypeInit();
+
+    if (parm_size >= XMLRPC_APSIZE(port_number))
+        portNumber = parmsP->port_number;
+    else
+        portNumber = 8080;
+
+    if (portNumber > 0xffff)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR,
+            "TCP port number %u exceeds the maximum possible "
+            "TCP port number (65535)",
+            portNumber);
+    else {
+        TServer srv;
+        const char * logFileName;
+
+        if (parm_size >= XMLRPC_APSIZE(log_file_name))
+            logFileName = parmsP->log_file_name;
+        else
+            logFileName = NULL;
+
+        ServerCreate(&srv, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
+                     logFileName);
+
+        setAdditionalServerParms(parmsP, parm_size, &srv);
+
+        xmlrpc_server_abyss_set_handlers(&srv, parmsP->registryP);
+        
+        ServerInit(&srv);
+        
+        setupSignalHandlers();
+        
+        ServerRun(&srv);
+
+        /* We can't exist here because ServerRun doesn't return */
+        XMLRPC_ASSERT(FALSE);
+    }
+}
+
+
+
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
@@ -714,29 +831,10 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
             "but you specified a size of %u",
             XMLRPC_APSIZE(registryP), parm_size);
     else {
-        TServer srv;
-        runfirstFn runfirst;
-        void * runfirstArg;
-
-        DateInit();
-        MIMETypeInit();
-        
-        ServerCreate(&srv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
-        
-        ConfReadServerFile(parmsP->config_file_name, &srv);
-        
-        xmlrpc_server_abyss_set_handlers(&srv, parmsP->registryP);
-        
-        ServerInit(&srv);
-
-        if (parm_size >= XMLRPC_APSIZE(runfirst_arg)) {
-            runfirst    = parmsP->runfirst;
-            runfirstArg = parmsP->runfirst_arg;
-        } else {
-            runfirst    = NULL;
-            runfirstArg = NULL;
-        }
-        runServer(&srv, runfirst, runfirstArg);
+        if (parmsP->config_file_name)
+            oldHighLevelAbyssRun(envP, parmsP, parm_size);
+        else
+            normalLevelAbyssRun(envP, parmsP, parm_size);
     }
 }
 
