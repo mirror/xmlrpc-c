@@ -42,7 +42,7 @@
 static void send_xml (char *xml_data, size_t xml_len)
 {
     /* Send our CGI headers back to the server. */
-    fprintf(stdout, "Status: 200\n");
+    fprintf(stdout, "Status: 200 OK\n");
     fprintf(stdout, "Content-type: text/plain\n\n");
 
     /* Blast out our data. */
@@ -51,8 +51,8 @@ static void send_xml (char *xml_data, size_t xml_len)
 
 static void send_internal_error ()
 {
-    /* Just send an error header. */
-    fprintf(stdout, "Status: 500\n");
+    /* Send an error header. */
+    fprintf(stdout, "Status: 500 Internal Server Error\n");
     fprintf(stdout, "Content-type: text/html\n\n");
     
     /* Send an error message. */
