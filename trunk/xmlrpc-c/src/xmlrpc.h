@@ -122,6 +122,7 @@ extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 #define XMLRPC_NETWORK_ERROR         (-504)
 #define XMLRPC_TIMEOUT_ERROR         (-505)
 #define XMLRPC_NO_SUCH_METHOD_ERROR  (-506)
+#define XMLRPC_REQUEST_REFUSED_ERROR (-507)
 
 typedef struct _xmlrpc_env {
     int   fault_occurred;
@@ -587,6 +588,15 @@ xmlrpc_registry_process_call (xmlrpc_env *env,
 			      char *host,
 			      char *xml_data,
 			      size_t xml_len);
+
+#ifdef XMLRPC_WANT_INTERNAL_DECLARATIONS
+/* Install the standard methods under system.* prefix.
+** This particular function is highly experimental, and may disappear
+** without warning. */
+extern void
+xmlrpc_registry_install_system_methods (xmlrpc_env *env,
+					xmlrpc_registry *registry);
+#endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
 
 
 /*=========================================================================

@@ -26,6 +26,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
+/* We want xmlrpc_registry_install_system_methods. */
+#define XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
 #include "xmlrpc_expat.h"
 
@@ -1380,11 +1383,21 @@ void test_method_registry (void)
     xmlrpc_mem_block *response;
     xmlrpc_int32 i;
 
+    xmlrpc_value *multi;
+    xmlrpc_int32 foo1_result, foo2_result;
+    xmlrpc_int32 bar_code, nosuch_code, multi_code, bogus1_code, bogus2_code;
+    char *bar_string, *nosuch_string, *multi_string;
+    char *bogus1_string, *bogus2_string;
+
     xmlrpc_env_init(&env);
 
     /* Create a new registry. */
     registry = xmlrpc_registry_new(&env);
     TEST(registry != NULL);
+    TEST(!env.fault_occurred);
+
+    /* Install the system methods. */
+    xmlrpc_registry_install_system_methods(&env, registry);
     TEST(!env.fault_occurred);
 
     /* Add some test methods. */
@@ -1425,7 +1438,50 @@ void test_method_registry (void)
     TEST(env2.fault_code == XMLRPC_NO_SUCH_METHOD_ERROR);
     xmlrpc_env_clean(&env2);
 
-    /* Pass bogus XML data and make sure our parser pukes gracefully.
+    /* Test system.multicall. */
+    multi = xmlrpc_build_value(&env,
+			       "(({s:s,s:V}{s:s,s:V}{s:s,s:V}"
+			       "{s:s,s:()}s{}{s:s,s:V}))",
+			       "methodName", "test.foo",
+			       "params", arg_array,
+			       "methodName", "test.bar",
+			       "params", arg_array,
+			       "methodName", "test.nosuch",
+			       "params", arg_array,
+			       "methodName", "system.multicall",
+			       "params",
+			       "bogus_entry",
+			       "methodName", "test.foo",
+			       "params", arg_array);
+    TEST(!env.fault_occurred);    
+    value = process_call_helper(&env, registry, "system.multicall", multi);
+    TEST(!env.fault_occurred);
+    xmlrpc_parse_value(&env, value,
+		       "((i){s:i,s:s,*}{s:i,s:s,*}"
+		       "{s:i,s:s,*}{s:i,s:s,*}{s:i,s:s,*}(i))",
+		       &foo1_result,
+		       "faultCode", &bar_code,
+		       "faultString", &bar_string,
+		       "faultCode", &nosuch_code,
+		       "faultString", &nosuch_string,
+		       "faultCode", &multi_code,
+		       "faultString", &multi_string,
+		       "faultCode", &bogus1_code,
+		       "faultString", &bogus1_string,
+		       "faultCode", &bogus2_code,
+		       "faultString", &bogus2_string,
+		       &foo2_result);
+    TEST(!env.fault_occurred);    
+    TEST(foo1_result == 42);
+    TEST(bar_code == 123);
+    TEST(strcmp(bar_string, "Test fault") == 0);
+    TEST(nosuch_code == XMLRPC_NO_SUCH_METHOD_ERROR);
+    TEST(multi_code == XMLRPC_REQUEST_REFUSED_ERROR);
+    TEST(foo2_result == 42);
+    xmlrpc_DECREF(multi);
+    xmlrpc_DECREF(value);
+
+    /* PASS bogus XML data and make sure our parser pukes gracefully.
     ** (Because of the way the code is laid out, and the presence of other
     ** test suites, this lets us skip tests for invalid XML-RPC data.) */
     xmlrpc_env_init(&env2);

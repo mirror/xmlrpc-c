@@ -119,6 +119,52 @@ void xmlrpc_registry_add_method (xmlrpc_env *env,
 
 
 /*=========================================================================
+**  dispatch_call
+**=========================================================================
+**  An internal method which actually does the dispatch. This may get
+**  prettified and exported at some point in the future.
+*/
+
+static xmlrpc_value *
+dispatch_call(xmlrpc_env *env, xmlrpc_registry *registry,
+	      char *method_name, xmlrpc_value *param_array)
+{
+    xmlrpc_value *method_info, *result;
+    void *method_ptr, *user_data;
+    xmlrpc_method method;
+
+    /* Error-handling preconditions. */
+    result = NULL;
+
+    /* Look up the method info for the specified method. */
+    method_info = xmlrpc_struct_get_value(env, registry->_methods,
+					  method_name);
+    if (env->fault_occurred)
+	XMLRPC_FAIL1(env, XMLRPC_NO_SUCH_METHOD_ERROR,
+		     "Method %s not defined", method_name);
+
+    /* Extract our method information. */
+    xmlrpc_parse_value(env, method_info, "(pp)", &method_ptr, &user_data);
+    XMLRPC_FAIL_IF_FAULT(env);
+    method = (xmlrpc_method) method_ptr;
+
+    /* Call the method. */
+    result = (*method)(env, param_array, user_data);
+    XMLRPC_ASSERT((result && !env->fault_occurred) ||
+		  (!result && env->fault_occurred));
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
+    if (env->fault_occurred) {
+	if (result)
+	    xmlrpc_DECREF(result);
+	return NULL;
+    }
+    return result;
+}
+
+
+/*=========================================================================
 **  xmlrpc_registry_process_call
 **=========================================================================
 **  See xmlrpc.h for more documentation.
@@ -135,9 +181,7 @@ xmlrpc_mem_block *xmlrpc_registry_process_call (xmlrpc_env *env2,
     xmlrpc_env fault;
     xmlrpc_mem_block *output;
     char *method_name;
-    xmlrpc_value *param_array, *result, *method_info;
-    void *method_ptr, *user_data;
-    xmlrpc_method method;
+    xmlrpc_value *param_array, *result;
 
     XMLRPC_ASSERT_ENV_OK(env2);
     XMLRPC_ASSERT_PTR_OK(xml_data);
@@ -161,22 +205,8 @@ xmlrpc_mem_block *xmlrpc_registry_process_call (xmlrpc_env *env2,
     xmlrpc_parse_call(&fault, xml_data, xml_len, &method_name, &param_array);
     XMLRPC_FAIL_IF_FAULT(&fault);
 
-    /* Look up the method info for the specified method. */
-    method_info = xmlrpc_struct_get_value(&fault, registry->_methods,
-					  method_name);
-    if (fault.fault_occurred)
-	XMLRPC_FAIL1(&fault, XMLRPC_NO_SUCH_METHOD_ERROR,
-		     "Method %s not defined", method_name);
-
-    /* Extract our method information. */
-    xmlrpc_parse_value(&fault, method_info, "(pp)", &method_ptr, &user_data);
-    XMLRPC_FAIL_IF_FAULT(&fault);
-    method = (xmlrpc_method) method_ptr;
-
-    /* Call the method. */
-    result = (*method)(&fault, param_array, user_data);
-    XMLRPC_ASSERT((result && !fault.fault_occurred) ||
-		  (!result && fault.fault_occurred));
+    /* Perform the call. */
+    result = dispatch_call(&fault, registry, method_name, param_array);
     XMLRPC_FAIL_IF_FAULT(&fault);
 
     /* Serialize the result.
@@ -213,4 +243,198 @@ xmlrpc_mem_block *xmlrpc_registry_process_call (xmlrpc_env *env2,
     ** intelligent under these circumstances. */
     XMLRPC_FATAL_ERROR("An error occured while serializing our output");
     return NULL;    
+}
+
+
+/*=========================================================================
+**  system.multicall
+**=========================================================================
+**  Low-tech support for transparent, boxed methods.
+*/
+
+static xmlrpc_value *
+call_one_method (xmlrpc_env *env, xmlrpc_registry *registry,
+		 xmlrpc_value *method_info)
+{
+    xmlrpc_value *result_val, *result;
+    char *method_name;
+    xmlrpc_value *param_array;
+
+    /* Error-handling preconditions. */
+    result = result_val = NULL;
+
+    /* Extract our method name and parameters. */
+    xmlrpc_parse_value(env, method_info, "{s:s,s:A,*}",
+		       "methodName", &method_name,
+		       "params", &param_array);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Watch out for a deep recursion attack. */
+    if (strcmp(method_name, "system.multicall") == 0)
+	XMLRPC_FAIL(env, XMLRPC_REQUEST_REFUSED_ERROR,
+		    "Recursive system.multicall strictly forbidden");
+    
+    /* Perform the call. */
+    result_val = dispatch_call(env, registry, method_name, param_array);
+    XMLRPC_FAIL_IF_FAULT(env);
+    
+    /* Build our one-item result array. */
+    result = xmlrpc_build_value(env, "(V)", result_val);
+    XMLRPC_FAIL_IF_FAULT(env);
+	
+ cleanup:
+    if (result_val)
+	xmlrpc_DECREF(result_val);
+    if (env->fault_occurred) {
+	if (result)
+	    xmlrpc_DECREF(result);
+	return NULL;
+    }
+    return result;
+}
+
+static xmlrpc_value *
+system_multicall (xmlrpc_env *env,
+		  xmlrpc_value *param_array,
+		  void *user_data)
+{
+    xmlrpc_registry *registry;
+    xmlrpc_value *methlist, *methinfo, *results, *result;
+    size_t size, i;
+    xmlrpc_env env2;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_VALUE_OK(param_array);
+    XMLRPC_ASSERT_PTR_OK(user_data);
+
+    /* Error-handling preconditions. */
+    results = result = NULL;
+    xmlrpc_env_init(&env2);
+    
+    /* Turn our arguments into something more useful. */
+    registry = (xmlrpc_registry*) user_data;
+    xmlrpc_parse_value(env, param_array, "(A)", &methlist);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Create an empty result list. */
+    results = xmlrpc_build_value(env, "()");
+    XMLRPC_FAIL_IF_FAULT(env);
+
+    /* Loop over our input list, calling each method in turn. */
+    size = xmlrpc_array_size(env, methlist);
+    XMLRPC_ASSERT_ENV_OK(env);
+    for (i = 0; i < size; i++) {
+	methinfo = xmlrpc_array_get_item(env, methlist, i);
+	XMLRPC_ASSERT_ENV_OK(env);
+
+	/* Call our method. */
+	xmlrpc_env_clean(&env2);
+	xmlrpc_env_init(&env2);
+	result = call_one_method(&env2, registry, methinfo);
+
+	/* Turn any fault into a structure. */
+	if (env2.fault_occurred) {
+	    XMLRPC_ASSERT(result == NULL);
+	    result = 
+		xmlrpc_build_value(env, "{s:i,s:s}",
+				   "faultCode", (xmlrpc_int32) env2.fault_code,
+				   "faultString", env2.fault_string);
+	    XMLRPC_FAIL_IF_FAULT(env);
+	}
+
+	/* Append this method result to our master array. */
+	xmlrpc_array_append_item(env, results, result);
+	xmlrpc_DECREF(result);
+	result = NULL;
+	XMLRPC_FAIL_IF_FAULT(env);
+    }
+
+ cleanup:
+    xmlrpc_env_clean(&env2);
+    if (result)
+	xmlrpc_DECREF(result);
+    if (env->fault_occurred) {
+	if (results)
+	    xmlrpc_DECREF(results);
+	return NULL;
+    }
+    return results;
+}
+
+
+/*=========================================================================
+**  system.listMethods
+**=========================================================================
+**  List all available methods by name.
+*/
+
+static xmlrpc_value *
+system_listMethods (xmlrpc_env *env,
+		    xmlrpc_value *param_array,
+		    void *user_data)
+{
+    xmlrpc_env_set_fault(env, XMLRPC_INTERNAL_ERROR, "Not implemented");
+    return NULL;
+}
+
+
+/*=========================================================================
+**  system.methodHelp
+**=========================================================================
+**  Get the help string for a particular method.
+*/
+
+static xmlrpc_value *
+system_methodHelp (xmlrpc_env *env,
+		   xmlrpc_value *param_array,
+		   void *user_data)
+{
+    xmlrpc_env_set_fault(env, XMLRPC_INTERNAL_ERROR, "Not implemented");
+    return NULL;
+}
+
+
+/*=========================================================================
+**  system.methodSignature
+**=========================================================================
+**  Return an array of arrays describing possible signatures for this
+**  method.
+*/
+
+static xmlrpc_value *
+system_methodSignature (xmlrpc_env *env,
+			xmlrpc_value *param_array,
+			void *user_data)
+{
+    xmlrpc_env_set_fault(env, XMLRPC_INTERNAL_ERROR, "Not implemented");
+    return NULL;
+}
+
+
+/*=========================================================================
+**  xmlrpc_registry_install_system_methods
+**=========================================================================
+**  Install the standard methods under system.*.
+**  This particular function is highly experimental, and may disappear
+**  without warning.
+*/
+
+void
+xmlrpc_registry_install_system_methods (xmlrpc_env *env,
+					xmlrpc_registry *registry)
+{
+    xmlrpc_registry_add_method(env, registry, NULL, "system.multicall",
+			       &system_multicall, registry);
+    XMLRPC_FAIL_IF_FAULT(env);
+    xmlrpc_registry_add_method(env, registry, NULL, "system.listMethods",
+			       &system_listMethods, registry);
+    XMLRPC_FAIL_IF_FAULT(env);
+    xmlrpc_registry_add_method(env, registry, NULL, "system.methodSignature",
+			       &system_methodSignature, registry);
+    XMLRPC_FAIL_IF_FAULT(env);
+    xmlrpc_registry_add_method(env, registry, NULL, "system.methodHelp",
+			       &system_methodHelp, registry);
+    XMLRPC_FAIL_IF_FAULT(env);
+
+ cleanup:
 }
