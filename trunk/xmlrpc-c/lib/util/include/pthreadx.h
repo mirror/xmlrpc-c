@@ -27,26 +27,24 @@
 #define PTHREADX_H_INCLUDED
 
 #ifndef WIN32
-#	define _REENTRANT
-#	include <pthread.h>
+#  define _REENTRANT
+#  include <pthread.h>
 #elif defined (WIN32)
 
 typedef HANDLE pthread_t;
 typedef CRITICAL_SECTION pthread_mutex_t;
 
 #define PTHREAD_MUTEX_INITIALIZER NULL
-//usage: pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    //usage: pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef
-struct
-{
-	int attrs; //currently unused. placeholder.
+struct {
+    int attrs; //currently unused. placeholder.
 } pthread_attr_t;
 
 typedef
-struct
-{
-	int attrs; //currently unused. placeholder.
+struct {
+    int attrs; //currently unused. placeholder.
 } pthread_mutexattr_t;
 
 //typedef void * (*pthread_func)(void *);

@@ -70,18 +70,18 @@ struct clientTransportOps {
 */
 typedef struct _running_thread_info
 {
-	struct _running_thread_info * Next;
-	struct _running_thread_info * Last;
+    struct _running_thread_info * Next;
+    struct _running_thread_info * Last;
 
-	pthread_t _thread;
+    pthread_t _thread;
 } running_thread_info;
 
 
 /* list of running Async callback functions. */
 typedef struct _running_thread_list
 {
-	running_thread_info * AsyncThreadHead;
-	running_thread_info * AsyncThreadTail;
+    running_thread_info * AsyncThreadHead;
+    running_thread_info * AsyncThreadTail;
 } running_thread_list;
 
 /* MRB-WARNING: Only call when you have successfully

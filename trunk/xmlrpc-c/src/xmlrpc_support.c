@@ -34,7 +34,7 @@
 #include "xmlrpc_int.h"
 
 #ifdef EFENCE
-		/* when looking for corruption don't allocate extra slop */
+        /* when looking for corruption don't allocate extra slop */
 #define BLOCK_ALLOC_MIN (1)
 #else
 #define BLOCK_ALLOC_MIN (16)
