@@ -134,14 +134,20 @@ initWindowsStuff(xmlrpc_env * const envP) {
     wVersionRequested = MAKEWORD(1, 1);
     
     err = WSAStartup(wVersionRequested, &wsaData);
-    if (LOBYTE(wsaData.wVersion) != 1 || 
-        HIBYTE( wsaData.wVersion) != 1) {
-        /* Tell the user that we couldn't find a useable */ 
-        /* winsock.dll. */ 
-        WSACleanup();
+    if (err)
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, "Winsock reported that "
-            "it does not implement the requested version 1.1.");
+            envP, XMLRPC_INTERNAL_ERROR,
+            "Winsock startup failed.  WSAStartup returned rc %d", err);
+    else {
+        if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
+            /* Tell the user that we couldn't find a useable */ 
+            /* winsock.dll. */ 
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTERNAL_ERROR, "Winsock reported that "
+                "it does not implement the requested version 1.1.");
+        }
+        if (envP->fault_occurred)
+            WSACleanup();
     }
 #else
     if (0)
