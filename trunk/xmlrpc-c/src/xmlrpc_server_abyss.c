@@ -26,11 +26,7 @@
 ** There is more copyright information in the bottom half of this file. 
 ** Please see it for more details. */
 
-#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
-#else
-#include "xmlrpc_win32_config.h"
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -8,11 +8,7 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
-#ifndef HAVE_WIN32_CONFIG_H
-#   include "xmlrpc_config.h"
-#else
-#   include "xmlrpc_win32_config.h"
-#endif
+#include "xmlrpc_config.h"
 
 #include "bool.h"
 #include "mallocvar.h"

@@ -29,11 +29,7 @@
 #include <string.h>
 #include <errno.h>
 
-#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
-#else
-#include "xmlrpc_win32_config.h"
-#endif
 
 #include "xmlrpc.h"
 #include "xmlrpc_server.h"

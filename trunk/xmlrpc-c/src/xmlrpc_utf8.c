@@ -38,11 +38,7 @@
 **    http://www.cl.cam.ac.uk/~mgk25/unicode.html
 */
 
-#ifndef HAVE_WIN32_CONFIG_H
 #include "xmlrpc_config.h"
-#else
-#include "xmlrpc_win32_config.h"
-#endif
 
 #include "xmlrpc.h"
 
