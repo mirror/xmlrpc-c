@@ -35,7 +35,7 @@ main(int           const argc,
     xmlrpc_env env;
     xmlrpc_server_info * server;
     xmlrpc_value * result;    
-	xmlrpc_int sum;
+    xmlrpc_int sum;
     
     if (argc-1 > 0) {
         fprintf(stderr, "There are no arguments.  You specified %d", argc-1);
@@ -54,7 +54,7 @@ main(int           const argc,
     xmlrpc_server_info_set_basic_auth(&env, server, "jrandom", "secret");
     die_if_fault_occurred(&env);
 
-	result = 
+    result = 
         xmlrpc_client_call_server(
             &env, server, "sample.add", "(ii)", 
             (xmlrpc_int32) 5, (xmlrpc_int32) 7);

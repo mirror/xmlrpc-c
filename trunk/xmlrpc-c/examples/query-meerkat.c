@@ -55,7 +55,7 @@ parseCommandLine(int              const argc,
             if (cmdlineP->hours > 49) {
                 fprintf(stderr, "It's not nice to ask for > 49 hours "
                         "at once.\n");
-                exit(1);	
+                exit(1);    
             }
             if (argc-1 > 2) {
                 fprintf(stderr, "There are at most 2 arguments: "
