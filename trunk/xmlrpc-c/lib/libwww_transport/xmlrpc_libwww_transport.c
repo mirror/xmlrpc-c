@@ -30,6 +30,7 @@
 
 #include <stddef.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc.h"
 #include "xmlrpc_int.h"
