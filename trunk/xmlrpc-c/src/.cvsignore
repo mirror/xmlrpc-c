@@ -3,3 +3,4 @@ rpctest
 cpptest
 efrpctest
 efrpctest_wrapper
+default_transport.h

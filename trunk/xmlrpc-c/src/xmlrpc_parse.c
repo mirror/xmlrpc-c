@@ -35,8 +35,8 @@
 #include <errno.h>
 #include <ctype.h>
 
-#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
+#include "xmlrpc_int.h"
 #include "xmlrpc_xmlparser.h"
 
 

@@ -125,7 +125,8 @@ noinst_PROGRAMS = rpctest @EFRPCTEST@ @CPPTEST@
 EXTRA_PROGRAMS = cpptest efrpctest
 
 # Declare our headers (installed ones only!).
-include_HEADERS = xmlrpc.h @XMLRPC_CLIENT_H@ @XMLRPC_ABYSS_H@ @XMLRPC_CGI_H@                   @XMLRPCCPP_H@
+include_HEADERS = xmlrpc.h @XMLRPC_CLIENT_H@ @XMLRPC_TRANSPORT_H@ \
+	          @XMLRPC_ABYSS_H@ @XMLRPC_CGI_H@ @XMLRPCCPP_H@
 
 EXTRA_HEADERS = xmlrpc_client.h xmlrpc_abyss.h xmlrpc_cgi.h XmlRpcCpp.h
 
@@ -146,9 +147,20 @@ else
   LIBXML_FILES = xmlrpc_expat.c
 endif
 
-INCLUDES = -I.. -I$(srcdir)/../lib/abyss/src $(LIBXML_INCLUDES)
+TRANSPORT_INCLUDES = \
+  -I$(srcdir)/../lib/wininet_transport \
+  -I$(srcdir)/../lib/curl_transport \
+  -I$(srcdir)/../lib/libwww_transport \
 
-LIBABYSS = ../lib/abyss/src/libxmlrpc_abyss.la
+INCLUDES = -I.. \
+	   -I$(srcdir)/../lib/abyss/src \
+	   $(TRANSPORT_INCLUDES) \
+	   $(LIBXML_INCLUDES) \
+
+LIBABYSS      = ../lib/abyss/src/libxmlrpc_abyss.la
+LIBWININETTPT = ../lib/wininet_transport/libxmlrpc_wininet.la
+LIBCURLTPT    = ../lib/curl_transport/libxmlrpc_curl.la
+LIBWWWTPT     = ../lib/libwww_transport/libxmlrpc_libwww.la
 
 # A library containing just the XML-RPC core.
 libxmlrpc_la_SOURCES = xmlrpc_support.c xmlrpc_data.c xmlrpc_struct.c \
@@ -157,10 +169,6 @@ libxmlrpc_la_SOURCES = xmlrpc_support.c xmlrpc_data.c xmlrpc_struct.c \
 		       xmlrpc_utf8.c xmlrpc_authcookie.c
 
 libxmlrpc_la_LDFLAGS = @VERSION_INFO@
-
-# A library containing the client-related components.
-libxmlrpc_client_la_SOURCES = xmlrpc_client.c 
-libxmlrpc_client_la_LDFLAGS = @VERSION_INFO@ -rpath $(libdir)
 
 # A library containing the server-related components.
 libxmlrpc_abyss_server_la_SOURCES = xmlrpc_abyss.c
@@ -201,8 +209,10 @@ libxmlrpc_cpp_a_OBJECTS =  XmlRpcCpp.o
 AR = ar
 LTLIBRARIES =  $(lib_LTLIBRARIES)
 
-libxmlrpc_client_la_LIBADD = 
-libxmlrpc_client_la_OBJECTS =  xmlrpc_client.lo
+WININET_TRANSPORT_OBJ = ../lib/wininet_transport/xmlrpc_wininet_transport.lo
+CURL_TRANSPORT_OBJ = ../lib/curl_transport/xmlrpc_curl_transport.lo
+LIBWWW_TRANSPORT_OBJ = ../lib/libwww_transport/xmlrpc_libwww_transport.lo
+
 libxmlrpc_abyss_server_la_LIBADD = 
 libxmlrpc_abyss_server_la_OBJECTS =  xmlrpc_abyss.lo
 libxmlrpc_cgi_la_LIBADD = 
@@ -248,8 +258,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-SOURCES = $(libxmlrpc_cpp_a_SOURCES) $(libxmlrpc_client_la_SOURCES) $(libxmlrpc_abyss_server_la_SOURCES) $(libxmlrpc_cgi_la_SOURCES) $(libxmlrpc_la_SOURCES) $(cpptest_SOURCES) $(efrpctest_SOURCES) $(rpctest_SOURCES)
-OBJECTS = $(libxmlrpc_cpp_a_OBJECTS) $(libxmlrpc_client_la_OBJECTS) $(libxmlrpc_abyss_server_la_OBJECTS) $(libxmlrpc_cgi_la_OBJECTS) $(libxmlrpc_la_OBJECTS) $(cpptest_OBJECTS) $(efrpctest_OBJECTS) $(rpctest_OBJECTS)
+SOURCES = $(libxmlrpc_cpp_a_SOURCES) $(libxmlrpc_abyss_server_la_SOURCES) $(libxmlrpc_cgi_la_SOURCES) $(libxmlrpc_la_SOURCES) $(cpptest_SOURCES) $(efrpctest_SOURCES) $(rpctest_SOURCES)
+OBJECTS = $(libxmlrpc_cpp_a_OBJECTS) $(libxmlrpc_abyss_server_la_OBJECTS) $(libxmlrpc_cgi_la_OBJECTS) $(libxmlrpc_la_OBJECTS) $(cpptest_OBJECTS) $(efrpctest_OBJECTS) $(rpctest_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
@@ -360,8 +370,8 @@ uninstall-libLTLIBRARIES:
 	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
 	done
 
-libxmlrpc_client.la: $(libxmlrpc_client_la_OBJECTS) $(libxmlrpc_client_la_DEPENDENCIES)
-	$(LINK)  $(libxmlrpc_client_la_LDFLAGS) $(libxmlrpc_client_la_OBJECTS) $(libxmlrpc_client_la_LIBADD) $(LIBS)
+libxmlrpc_client.la: FORCE
+	$(MAKE) -f Makefile2 $@
 
 libxmlrpc_abyss_server.la: $(libxmlrpc_abyss_server_la_OBJECTS) $(libxmlrpc_abyss_server_la_DEPENDENCIES)
 	$(LINK)  $(libxmlrpc_abyss_server_la_LDFLAGS) $(libxmlrpc_abyss_server_la_OBJECTS) $(libxmlrpc_abyss_server_la_LIBADD) $(LIBS)
@@ -685,3 +695,5 @@ efrpctest_wrapper: $(srcdir)/efrpctest_wrapper.sh
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
+
+FORCE:

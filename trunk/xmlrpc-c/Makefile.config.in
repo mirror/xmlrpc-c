@@ -7,11 +7,28 @@
 # Makefile.config is intended to contain information specific to the
 # particular build environment or user build choices.
 
+# Furthermore, most of the logic in 'configure', and thus 'configure.in',
+# should go into the make files to simplify the build.  Makefile.config
+# should just pass raw configure variables through to the make file.
+
 # Tokens of the form @TOKEN@ in the template file get replaced by
 # 'configure' with the values of variables of the same name within
 # 'configure', because of a AC_SUBST(TOKEN) statement in the
 # 'configure.in' from which 'configure' was built.
 
+BUILDDIR = @builddir@
+
+ENABLE_WININET_CLIENT = @ENABLE_WININET_CLIENT@
+ENABLE_CURL_CLIENT = @ENABLE_CURL_CLIENT@
+ENABLE_LIBWWW_CLIENT = @ENABLE_LIBWWW_CLIENT@
+ENABLE_ABYSS_SERVER = @ENABLE_ABYSS_SERVER@
+
+SHELL = @SHELL@
+CC = @CC@
+CXX = @CXX@
+CCLD = $(CC)
+CXXLD = $(CXX)
+LN_S = @LN_S@
 
 # The following LIBWWW_x make variables have values that ultimately come
 # from running the 'libwww-config' program on the build system.  That
@@ -29,4 +46,4 @@ CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
 
 ENABLE_LIBXML2_BACKEND = @ENABLE_LIBXML2_BACKEND@
 
-
+LIBINST_DIR = @libdir@

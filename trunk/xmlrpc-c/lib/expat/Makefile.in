@@ -105,7 +105,7 @@ XMLRPC_CLIENT_H = @XMLRPC_CLIENT_H@
 XML_RPC_API2CPP_SUBDIR = @XML_RPC_API2CPP_SUBDIR@
 
 SUBDIRS = gennmtab xmltok xmlparse xmlwf sample
-EXTRA_DIST = expat.html Makefile.old expat.dsw
+EXTRA_DIST = expat.html expat.dsw
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../../xmlrpc_config.h
 CONFIG_CLEAN_FILES = 
@@ -310,3 +310,5 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
+
+dep:

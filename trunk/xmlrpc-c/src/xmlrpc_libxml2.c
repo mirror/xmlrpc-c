@@ -36,7 +36,6 @@
 #include <string.h>
 #include <libxml/parser.h>
 
-#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
 #include "xmlrpc_xmlparser.h"
 

@@ -1,12 +1,10 @@
+Makefile.config
 autogen.sh
 autom4te.cache
 config.guess
 config.sub
 ltconfig
 ltmain.sh
-aclocal.m4
-xmlrpc_config.h.in
-stamp-h.in
 configure
 config.log
 stamp-h

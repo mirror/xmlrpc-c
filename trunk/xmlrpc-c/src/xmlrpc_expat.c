@@ -34,8 +34,8 @@
 #include <string.h>
 #include <xmlparse.h>
 
-#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
+#include "xmlrpc_int.h"
 #include "xmlrpc_xmlparser.h"
 
 /* Define the contents of our internal structure. */

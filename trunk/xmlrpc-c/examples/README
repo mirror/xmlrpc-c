@@ -1,8 +1,8 @@
-This directory contains working examples of uses of Xmlrpc-c.  There
-are XMLRPC servers and XMLRPC clients that use the Xmlrpc-c libraries.
+This directory contains working examples of uses of XML-RPC-c.  There
+are XML-RPC servers and XML-RPC clients that use the Xmlrpc-c libraries.
 
 The simplest example is the 'query-meerkat' program, which contacts an
-XMLRPC server that O'Reilly operates on the Internet called Meerkat.
+XML-RPC server that O'Reilly operates on the Internet called Meerkat.
 Meerkat provides an RPC that returns a list of new articles that match
 a specified search pattern.  Run 'query-meerkat' like this example:
 
@@ -13,7 +13,7 @@ according to O'reilly's Meerkat service.
 
 
 The simplest server program is 'xmlrpc_sample_add_server'.  This
-implements a single XMLRPC method called 'sample.add'.  All it does is
+implements a single XML-RPC method called 'sample.add'.  All it does is
 add two numbers and return the sum.  You can run such a server like
 this:
 
@@ -21,11 +21,11 @@ this:
 
 The server this runs is based on the Abyss HTTP server.  The file
 'abyss.conf' in the example is a very simple Abyss configuration
-file.  It sets up the server to listen for XMLRPC requests on TCP
+file.  It sets up the server to listen for XML-RPC requests on TCP
 Port 8080.  It puts log information in /tmp, so be sure to look there.
 
 A client program that goes along with this server is
-'xmlrpc_sample_add_client'.  All this client does is make an XMLRPC
+'xmlrpc_sample_add_client'.  All this client does is make an XML-RPC
 request to Port 8080 of 'localhost' to add the numbers 5 and 7 and
 print the result on Standard Output.
 

@@ -91,12 +91,6 @@ extern void xmlrpc_assertion_failed (char* file, int line);
 
 extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 
-/* When we deallocate a pointer in a struct, we often replace it with
-** this and throw in a few assertions here and there. */
-#ifdef XMLRPC_WANT_INTERNAL_DECLARATIONS
-#define XMLRPC_BAD_POINTER ((void*) 0xDEADBEEF)
-#endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
-
 
 /*=========================================================================
 **  xmlrpc_env
@@ -305,44 +299,8 @@ void xmlrpc_mem_block_append
 
 typedef int xmlrpc_type;
 
-#ifndef XMLRPC_WANT_INTERNAL_DECLARATIONS
-
 /* These are *always* allocated on the heap. No exceptions. */
 typedef struct _xmlrpc_value xmlrpc_value;
-
-#else /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
-
-typedef struct _xmlrpc_value {
-    xmlrpc_type _type;
-    int _refcount;
-
-    /* Certain data types store their data directly in the xmlrpc_value. */
-    union {
-        xmlrpc_int32 i;
-        xmlrpc_bool b;
-        double d;
-        /* time_t t */
-        void *c_ptr;
-    } _value;
-    
-    /* Other data types use a memory block. */
-    xmlrpc_mem_block _block;
-
-#ifdef HAVE_UNICODE_WCHAR
-    /* We may need to convert our string data to a wchar_t string. */
-    xmlrpc_mem_block *_wcs_block;
-#endif
-} xmlrpc_value;
-
-/* This is a private structure, but it's used in several different files. */
-typedef struct {
-    unsigned char key_hash;
-    xmlrpc_value *key;
-    xmlrpc_value *value;
-} _struct_member;
-
-#endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
-
 
 #define XMLRPC_ASSERT_VALUE_OK(val) \
     XMLRPC_ASSERT((val) != NULL && (val)->_type != XMLRPC_TYPE_DEAD)
@@ -512,11 +470,11 @@ xmlrpc_serialize_params (xmlrpc_env *env,
 			 xmlrpc_value *param_array);
 
 /* Serialize an XML-RPC call. */
-extern void
-xmlrpc_serialize_call (xmlrpc_env *env,
-		       xmlrpc_mem_block *output,
-		       char *method_name,
-		       xmlrpc_value *param_array);
+void 
+xmlrpc_serialize_call (xmlrpc_env *       const env,
+                       xmlrpc_mem_block * const output,
+                       const char *       const method_name,
+                       xmlrpc_value *     const param_array);
 
 /* Serialize an XML-RPC return value. */
 extern void
@@ -606,21 +564,8 @@ typedef xmlrpc_value *
 			  xmlrpc_value *param_array,
 			  void *user_data);
 
-#ifndef XMLRPC_WANT_INTERNAL_DECLARATIONS
-
 /* Our registry structure. This has no public members. */
 typedef struct _xmlrpc_registry xmlrpc_registry;
-
-#else /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
-
-typedef struct _xmlrpc_registry {
-    int _introspection_enabled;
-    xmlrpc_value *_methods;
-    xmlrpc_value *_default_method;
-    xmlrpc_value *_preinvoke_method;
-} xmlrpc_registry;
-
-#endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
 
 /* Create a new method registry. */
 extern xmlrpc_registry *
@@ -752,10 +697,10 @@ xmlrpc_base64_decode (xmlrpc_env *env,
 /* Ensure that a string contains valid, legally-encoded UTF-8 data.
 ** (Incorrectly-encoded UTF-8 strings are often used to bypass security
 ** checks.) */
-extern void
-xmlrpc_validate_utf8 (xmlrpc_env *env,
-		      char *utf8_data,
-		      size_t utf8_len);
+void 
+xmlrpc_validate_utf8 (xmlrpc_env * const env,
+                      const char * const utf8_data,
+                      size_t       const utf8_len);
 
 /* Decode a UTF-8 string. */
 extern xmlrpc_mem_block *

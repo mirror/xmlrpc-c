@@ -32,48 +32,72 @@ test -z "$target" && target=NONE
 dnl =======================================================================
 dnl Decide What To Build
 dnl =======================================================================
-dnl We have a fully modular build system. Automake deals with this in a
+dnl We have a fully modular build system. Autoconf deals with this in a
 dnl semi-competent fashion--everything works OK, but we must declare
 dnl zillions of Makefile substitution variables.
 
 AVAILABLE_MODULES=
 
-dnl Check to see if we should build our w3c-libwww module.
+dnl Check to see if we should build our wininet module. Default to disabled.
+AC_MSG_CHECKING(whether to build wininet client module)
+AC_ARG_ENABLE(wininet-client,
+  [  --enable-wininet-client Build the wininet client module], ,
+enable_wininet_client=no)
+AC_MSG_RESULT($enable_wininet_client)
+ENABLE_WININET_CLIENT=$enable_wininet_client
+AC_SUBST(ENABLE_WININET_CLIENT)
+
+dnl Check to see if we should build our cURL module. Default to disabled.
+AC_MSG_CHECKING(whether to build cURL client module)
+AC_ARG_ENABLE(curl-client,
+  [  --enable-curl-client    Build the cURL client module], ,
+enable_curl_client=no)
+AC_MSG_RESULT($enable_curl_client)
+ENABLE_CURL_CLIENT=$enable_curl_client
+AC_SUBST(ENABLE_CURL_CLIENT)
+
+dnl Check to see if we should build our w3c-libwww module. Default to enabled.
 AC_MSG_CHECKING(whether to build w3c-libwww client module)
-AC_ARG_ENABLE(libwww-client, [\
-  --disable-libwww-client Don't build the w3c-libwww client module], ,
+AC_ARG_ENABLE(libwww-client, 
+  [  --disable-libwww-client  Don't build the w3c-libwww client module], ,
 enable_libwww_client=yes)
 AC_MSG_RESULT($enable_libwww_client)
+ENABLE_LIBWWW_CLIENT=$enable_libwww_client
+AC_SUBST(ENABLE_LIBWWW_CLIENT)
+
 
 dnl Set up the appropriate Makefile substitutions.
-LIBXMLRPC_CLIENT_LA=
-CLIENTTEST=
-XMLRPC_CLIENT_H=
-SYNCH_CLIENT=
-ASYNCH_CLIENT=
-AUTH_CLIENT=
-QUERY_MEERKAT=
-if test x"$enable_libwww_client" != xno; then
-    AVAILABLE_MODULES="libwww-client $AVAILABLE_MODULES"
-    LIBXMLRPC_CLIENT_LA=libxmlrpc_client.la
-    CLIENTTEST=clienttest
-    XMLRPC_CLIENT_H=xmlrpc_client.h
-    SYNCH_CLIENT=synch_client
-    ASYNCH_CLIENT=asynch_client
-    AUTH_CLIENT=auth_client
-    QUERY_MEERKAT=query-meerkat
-fi
+
+LIBXMLRPC_CLIENT_LA=libxmlrpc_client.la
 AC_SUBST(LIBXMLRPC_CLIENT_LA)
+CLIENTTEST=clienttest
 AC_SUBST(CLIENTTEST)
+XMLRPC_CLIENT_H=xmlrpc_client.h
 AC_SUBST(XMLRPC_CLIENT_H)
+XMLRPC_TRANSPORT_H=xmlrpc_transport.h
+AC_SUBST(XMLRPC_TRANSPORT_H)
+SYNCH_CLIENT=synch_client
 AC_SUBST(SYNCH_CLIENT)
+ASYNCH_CLIENT=asynch_client
 AC_SUBST(ASYNCH_CLIENT)
+AUTH_CLIENT=auth_client
 AC_SUBST(AUTH_CLIENT)
+QUERY_MEERKAT=query-meerkat
 AC_SUBST(QUERY_MEERKAT)
 
+if test x"$enable_wininet_client" != xno; then
+    AVAILABLE_MODULES="wininet-client $AVAILABLE_MODULES"
+fi
+if test x"$enable_curl_client" != xno; then
+    AVAILABLE_MODULES="curl-client $AVAILABLE_MODULES"
+fi
+if test x"$enable_libwww_client" != xno; then
+    AVAILABLE_MODULES="libwww-client $AVAILABLE_MODULES"
+fi
+
 dnl Check to see if we should build the libxml2 backend.
-AC_ARG_ENABLE(libxml2-backend, [\
-  --enable-libxml2-backend  Use libxml2 instead of built-in expat], ,
+AC_ARG_ENABLE(libxml2-backend,
+  [  --enable-libxml2-backend  Use libxml2 instead of built-in expat], ,
 enable_libxml2_backend=no)
 AC_MSG_CHECKING(whether to build the libxml2 backend)
 AC_MSG_RESULT($enable_libxml2_backend)
@@ -105,10 +129,12 @@ AC_SUBST(EXTRA_XML_LIBS)
 
 dnl Check to see if we should build our Abyss server module.
 AC_MSG_CHECKING(whether to build Abyss server module)
-AC_ARG_ENABLE(abyss-server, [\
-  --disable-abyss-server  Don't build the Abyss server module], ,
+AC_ARG_ENABLE(abyss-server,
+  [  --disable-abyss-server  Don't build the Abyss server module], ,
 enable_abyss_server=yes)
 AC_MSG_RESULT($enable_abyss_server)
+ENABLE_ABYSS_SERVER=$enable_abyss_server
+AC_SUBST(ENABLE_ABYSS_SERVER)
 
 dnl Set up the appropriate Makefile substitutions.
 ABYSS_SUBDIR=
@@ -135,8 +161,8 @@ AC_SUBST(SERVER)
 
 dnl Check to see if we should build our CGI server module.
 AC_MSG_CHECKING(whether to build CGI server module)
-AC_ARG_ENABLE(cgi-server, [\
-  --disable-cgi-server    Don't build the CGI server module], ,
+AC_ARG_ENABLE(cgi-server,
+  [  --disable-cgi-server    Don't build the CGI server module], ,
 enable_cgi_server=yes)
 AC_MSG_RESULT($enable_cgi_server)
 
@@ -159,8 +185,8 @@ AC_SUBST(INTEROP_CGI)
 
 dnl Check to see if we should build our C++ stuff.
 AC_MSG_CHECKING(whether to build C++ wrappers and tools)
-AC_ARG_ENABLE(cplusplus, [\
-  --disable-cplusplus     Don't build the C++ wrapper classes or tools], ,
+AC_ARG_ENABLE(cplusplus,
+  [  --disable-cplusplus     Don't build the C++ wrapper classes or tools], ,
 enable_cplusplus=yes)
 AC_MSG_RESULT($enable_cplusplus)
 
@@ -180,16 +206,15 @@ if test x"$enable_cplusplus" != xno; then
     dnl Some stuff requires both libwww *and* C++.
     if test x"$enable_libwww_client" != xno; then
         XML_RPC_API2CPP_SUBDIR=xml-rpc-api2cpp
-	MEERKAT_APP_LIST=meerkat-app-list
-        INTEROP_CLIENT_SUBDIR=interop-client
+    fi
+    if test x"$enable_curl_client" != xno; then
+        XML_RPC_API2CPP_SUBDIR=xml-rpc-api2cpp
     fi
 fi
 AC_SUBST(LIBXMLRPC_CPP_A)
 AC_SUBST(CPPTEST)
 AC_SUBST(XMLRPCCPP_H)
 AC_SUBST(XML_RPC_API2CPP_SUBDIR)
-AC_SUBST(MEERKAT_APP_LIST)
-AC_SUBST(INTEROP_CLIENT_SUBDIR)
 
 AC_SUBST(AVAILABLE_MODULES)
 
@@ -288,8 +313,8 @@ dnl =======================================================================
 
 dnl Check to see if we should build our Unicode stuff.
 AC_MSG_CHECKING(whether to build Unicode support)
-AC_ARG_ENABLE(unicode, [\
-  --disable-unicode       Disable Unicode and wchar_t support], ,
+AC_ARG_ENABLE(unicode,
+  [  --disable-unicode       Disable Unicode and wchar_t support], ,
 enable_unicode=yes)
 AC_MSG_RESULT($enable_unicode)
 
@@ -317,11 +342,12 @@ dnl =======================================================================
 dnl Abyss doesn't pay any attention to xmlrpc_config.h, so we need to
 dnl pass it some flags on the command-line.
 
-AC_MSG_CHECKING(whether to use experimental Abyss pthread support)
-AC_ARG_ENABLE(abyss-threads, [\
-  --enable-abyss-threads  Use threads in Abyss instead of the default
-                          fork() implementation.  Thread support in Abyss
-                          is considered unstable--see lib/abyss/readme.txt.], ,
+AC_MSG_CHECKING(whether to use experimental Abyss pthread function)
+AC_ARG_ENABLE(abyss-threads,
+  [  --enable-abyss-threads  Use threads in Abyss instead of the default
+                             fork() implementation.  Thread function in Abyss
+                             is considered unstable -- 
+                             see lib/abyss/readme.txt.], ,
 enable_abyss_threads=no)
 AC_MSG_RESULT($enable_abyss_threads)
 
@@ -337,6 +363,81 @@ AC_SUBST(LIBABYSS_LDADD)
 
 
 dnl =======================================================================
+dnl Finding wininet stubs
+dnl =======================================================================
+dnl If you implement the parts of wininet.h the wininet_transport uses,
+dnl you will need to configure this way..
+
+if test x"$enable_wininet_client" != xno; then
+
+    AC_DEFINE(ENABLE_WININET_CLIENT)
+
+    dnl You can control which of these gets chosen by fooling around with PATH.
+    AC_PATH_PROGS(WININET_CONFIG, wininet-xmlrpc-config wininet-config, no)
+    if test "x$WININET_CONFIG" = "xno"; then
+        AC_MSG_ERROR(wininet lib not found; see './configure --help')
+    fi
+
+    dnl Get our wininet version.
+    dnl Adapted from a macro which called gtk-config.
+    AC_MSG_CHECKING(for wininet version >= 1.0.0)
+    W3VER=`$WININET_CONFIG --version`
+    WININET_MAJOR=\
+`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+    WININET_MINOR=\
+`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+    WININET_MICRO=\
+`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+    AC_MSG_RESULT($WININET_MAJOR.$WININET_MINOR.$WININET_MICRO)
+
+    dnl Check to make sure our version is OK.
+    WININET_VERSION_OK=yes
+    if test $WININET_MAJOR -lt 1; then
+        WININET_VERSION_OK=no
+    else
+        if test $WININET_MAJOR -eq 1 -a $WININET_MINOR -lt 0; then
+            WININET_VERSION_OK=no
+        else
+            if test $WININET_MAJOR -eq 1 -a $WININET_MINOR -eq 0 \
+                -a $WININET_MICRO -lt 0; then
+                WININET_VERSION_OK=no
+            fi
+        fi
+    fi
+    if test "x$WININET_VERSION_OK" = "xno"; then
+        AC_MSG_ERROR(wininet version >= 1.0.0 required)
+    fi
+
+    dnl Get the necessary CFLAGS, and merge them into our master list.
+    WININET_CFLAGS="`$WININET_CONFIG --cflags`"
+    AC_SUBST(WININET_CFLAGS)
+    CFLAGS="$CFLAGS $WININET_CFLAGS" 
+
+    dnl Get the huge list of libraries we need to link against.
+    WININET_LDADD="`$WININET_CONFIG --libs`"
+    AC_SUBST(WININET_LDADD)
+
+    dnl Oh, such massive brain damage! Because there may be another copy
+    dnl of libwww in the default dynamic loader search path, we need to
+    dnl adjust the search patch manually. Just gag me with a backquote, OK?
+    AC_MSG_CHECKING(for wininet library directory)
+    if $WININET_CONFIG --rpath-dir > /dev/null 2>&1; then
+       dnl Yay! We're using our smart version of wininet.
+       WININET_LIBDIR="`$WININET_CONFIG --rpath-dir`"
+    else
+       dnl Yawn. We're using the regular boring version.
+       WININET_LIBDIR="`$WININET_CONFIG --prefix`/lib"
+    fi
+    AC_MSG_RESULT($WININET_LIBDIR)
+    AC_SUBST(WININET_LIBDIR)
+    WININET_RPATH="-rpath $WININET_LIBDIR"
+    AC_SUBST(WININET_RPATH)
+    WININET_WL_RPATH="-Wl,--rpath -Wl,$WININET_LIBDIR"
+    AC_SUBST(WININET_WL_RPATH)
+
+fi # enable_wininet_client
+
+dnl =======================================================================
 dnl Finding w3c-libwww
 dnl =======================================================================
 dnl Once upon a time, we used a patched copy of libwww that needed to
@@ -345,6 +446,8 @@ dnl for keeping track of libwww's rpath, although this is no longer really
 dnl necessary.
 
 if test x"$enable_libwww_client" != xno; then
+
+    AC_DEFINE(ENABLE_LIBWWW_CLIENT)
 
     dnl First of all, locate the semi-broken libwww config program.
     dnl You can control which of these gets chosen by fooling around with PATH.
@@ -421,13 +524,89 @@ fi # enable_libwww_client
 
 
 dnl =======================================================================
+dnl Finding cURL
+dnl =======================================================================
+dnl Modified from libwww_client requirements.
+
+if test x"$enable_curl_client" != xno; then
+
+    AC_DEFINE(ENABLE_CURL_CLIENT)
+
+    dnl First of all, locate the curl config program.
+    dnl You can control which of these gets chosen by fooling around with PATH.
+    AC_PATH_PROGS(CURL_CONFIG, curl-xmlrpc-config curl-config, no)
+    if test "x$CURL_CONFIG" = "xno"; then
+        AC_MSG_ERROR(cURL not found; see './configure --help')
+    fi
+
+    dnl Get our cURL version.
+    dnl Adapted from a macro which called gtk-config.
+    AC_MSG_CHECKING(for cURL version >= 7.8)
+    dnl MRB-The curl maintainers maintain a "--vernum" for
+    dnl     returning the version as a "hex string."
+    CURLVER=`$CURL_CONFIG --vernum`
+    CURL_MAJOR=`echo $CURLVER|cut -b1-2`
+    CURL_MINOR=`echo $CURLVER|cut -b3-4`
+    CURL_MICRO=`echo $CURLVER|cut -b5-6`
+    AC_MSG_RESULT($CURL_MAJOR.$CURL_MINOR.$CURL_MICRO)
+
+    dnl Check to make sure our version is OK.
+    CURL_VERSION_OK=yes
+    if test $CURL_MAJOR -lt 7; then
+        CURL_VERSION_OK=no
+    else
+        if test $CURL_MAJOR -eq 7 -a $CURL_MINOR -lt 8; then
+            CURL_VERSION_OK=no
+        else
+            if test $CURL_MAJOR -eq 7 -a $CURL_MINOR -eq 8 \
+                -a $CURL_MICRO -lt 0; then
+                CURL_VERSION_OK=no
+            fi
+        fi
+    fi
+    if test "x$CURL_VERSION_OK" = "xno"; then
+        AC_MSG_ERROR(cURL version >= 7.8 required)
+    fi
+
+    dnl Get the necessary CFLAGS, and merge them into our master list.
+    CURL_CFLAGS="`$CURL_CONFIG --cflags`"
+    AC_SUBST(CURL_CFLAGS)
+    dnl MRB-20010518-cURL has a weird --cflags which does not include itself
+    dnl as an include path. We will add it ourself.
+    CURL_INCDIR="-I`$CURL_CONFIG --prefix`/include/curl -I`$CURL_CONFIG --prefix`/include"
+    CFLAGS="$CFLAGS $CURL_CFLAGS $CURL_INCDIR" 
+
+    dnl Get the huge list of libraries we need to link against.
+    dnl MRB-20010516-For some reason, curl-config
+    dnl     does not list itself '-lcurl'.
+    CURL_LDADD="-lcurl `$CURL_CONFIG --libs`"
+    AC_SUBST(CURL_LDADD)
+
+    dnl Oh, such massive brain damage! Because there may be another copy
+    dnl of curl in the default dynamic loader search path, we need to
+    dnl adjust the search patch manually. Just gag me with a backquote, OK?
+    AC_MSG_CHECKING(for curl library directory)
+    dnl Yawn. We're using the regular boring version.
+    CURL_LIBDIR="`$CURL_CONFIG --prefix`/lib"
+
+    AC_MSG_RESULT($CURL_LIBDIR)
+    AC_SUBST(CURL_LIBDIR)
+    CURL_RPATH="-rpath $CURL_LIBDIR"
+    AC_SUBST(CURL_RPATH)
+    CURL_WL_RPATH="-Wl,--rpath -Wl,$CURL_LIBDIR"
+    AC_SUBST(CURL_WL_RPATH)
+
+fi # enable_curl_client
+
+
+dnl =======================================================================
 dnl Checks for build options.
 dnl =======================================================================
 
-AC_ARG_WITH(libwww-ssl, [\
-  --with-libwww-ssl       Include experimental support for libwww/SSL.
-                          Please read doc/libwww-ssl.txt before trying this,
-                          or it probably won't work.])
+AC_ARG_WITH(libwww-ssl,
+  [  --with-libwww-ssl       Include experimental libwww/SSL function.
+                             Please read doc/libwww-ssl.txt before trying this,
+                             or it probably won't work.])
 
 if test x"$enable_libwww_client" != xno; then
     AC_MSG_CHECKING(whether to use SSL with libwww)
@@ -439,9 +618,9 @@ if test x"$enable_libwww_client" != xno; then
     fi
 fi
 
-AC_ARG_ENABLE(efence, [\
-  --enable-efence         Enable malloc/free debugging with Bruce Perens\'
-                          Electric Fence library (test suites only).])
+AC_ARG_ENABLE(efence,
+  [  --enable-efence         Enable malloc/free debugging with Bruce Perens\'
+                             Electric Fence library (test suites only).])
 AC_MSG_CHECKING(whether to test with Electric Fence)
 if test x"$enable_efence" = xyes; then
     AC_MSG_RESULT(yes)
@@ -481,7 +660,6 @@ AC_OUTPUT(xmlrpc-c-config \
           src/Makefile \
           src/testdata/Makefile \
           doc/Makefile \
-          lib/Makefile \
           lib/expat/Makefile \
           lib/expat/gennmtab/Makefile \
           lib/expat/xmltok/Makefile \
@@ -494,4 +672,4 @@ AC_OUTPUT(xmlrpc-c-config \
           lib/abyss/src/Makefile \
           tools/Makefile \
           tools/turbocharger/Makefile \
-          tools/xml-rpc-api2cpp/Makefile )
+          )

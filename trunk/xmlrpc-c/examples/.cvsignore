@@ -5,6 +5,7 @@ asynch_client
 auth_client
 xmlrpc_sample_add_client
 xmlrpc_sample_add_server
-xmlrpc_server_validatee.c
+xmlrpc_server_validatee
+interop-client
 server
 *.cgi

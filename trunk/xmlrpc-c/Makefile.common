@@ -1,3 +1,5 @@
+# -*-makefile-*-    <-- an Emacs control
+
 # This file contains rules and variable settings for the convenience
 # of every other make file in the package.
 
@@ -8,8 +10,9 @@
 #
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
 
-include $(SRCDIR)/Makefile.config
-
+CCLD = $(CC)
+LIBTOOL = $(SRCDIR)/libtool
+LINK = $(LIBTOOL) --mode=link $(CCLD)
 
 GCC_C_WARNINGS = -Wall -Wmissing-declarations -Wundef -Wimplicit \
                  -W -Winline \
@@ -24,3 +27,95 @@ ifeq ($(CXX_COMPILER_GNU),yes)
   CXXFLAGS_COMMON = $(GCC_C_WARNINGS) -Woverloaded-virtual -Wsynth
 endif
 
+DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
+
+LDFLAGS_VERSINFO = -version-info 7:0:4
+
+# CURDIR was introduced in GNU Make 3.77.
+ifeq ($(CURDIR)x,x)
+  CURDIR := $(shell /bin/pwd)
+endif
+
+##############################################################################
+#                             RULES                                          #
+##############################################################################
+
+$(SUBDIRS:%=%/clean): %/clean: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/all): %/all: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/distdir): %/distdir: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+.PHONY: clean-common
+clean-common:
+	rm -f *.o *.a *.s *.i *.la *.lo
+	rm -rf .libs
+
+.PHONY: distclean-common
+distclean-common:
+	rm -f TAGS
+
+
+.PHONY: distdir-common
+distdir-common:
+	@for file in $(DISTFILES); do \
+	  d=$(SRCDIR); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(DISTDIR)/$$file; \
+	  else \
+	    test -f $(DISTDIR)/$$file \
+	    || ln $$d/$$file $(DISTDIR)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(DISTDIR)/$$file || :; \
+	  fi; \
+	done
+
+TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+   if test "$$subdir" = .; then :; else \
+	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+   fi; \
+	done; \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
+
+DEP_SOURCES = $(wildcard *.c *.cc)
+
+.PHONY: dep-common
+dep-common: FORCE
+ifneq ($(DEP_SOURCES)x,x)
+	-$(CC) -MM -MG -I. $(INCLUDES) $(DEP_SOURCES) >Makefile.depend
+endif
+
+Makefile.depend:
+	cat /dev/null >$@
+
+# The automatic dependency generation is a pain in the butt and
+# totally unnecessary for people just installing the distributed code,
+# so to avoid needless failures in the field and a complex build, the
+# 'distclean' target simply makes Makefile.depend an empty file.  A
+# developer may do 'make dep' to create a Makefile.depend full of real
+# dependencies.
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
+
+
+# Use the FORCE target as a dependency to force a target to get remade
+FORCE:

@@ -33,8 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
+#include "xmlrpc_int.h"
 
 #define KEY_ERROR_BUFFER_SZ (32)
 

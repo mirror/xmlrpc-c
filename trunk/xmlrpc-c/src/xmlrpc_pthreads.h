@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 by jeff@ourexchange.net. All rights reserved.
+/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions
@@ -23,51 +23,44 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE. */
 
-#ifndef HAVE_WIN32_CONFIG_H
-#include "xmlrpc_config.h"
-#else
-#include "xmlrpc_win32_config.h"
+#ifndef WIN32
+#	define _REENTRANT
+#	include <pthread.h>
+#elif defined (WIN32)
+
+typedef HANDLE pthread_t;
+typedef CRITICAL_SECTION pthread_mutex_t;
+
+#define PTHREAD_MUTEX_INITIALIZER NULL
+//usage: pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+typedef
+struct
+{
+	int attrs; //currently unused. placeholder.
+} pthread_attr_t;
+
+typedef
+struct
+{
+	int attrs; //currently unused. placeholder.
+} pthread_mutexattr_t;
+
+//typedef void * (*pthread_func)(void *);
+typedef unsigned ( __stdcall *pthread_func )( void * );
+
+extern int pthread_create(pthread_t *new_thread_ID,
+          const pthread_attr_t *attr,
+          pthread_func start_func, void *arg);
+extern int pthread_cancel(pthread_t target_thread);
+extern int pthread_join(pthread_t target_thread, void **status);
+extern int pthread_detach(pthread_t target_thread);
+
+extern int pthread_mutex_init(pthread_mutex_t *mp,
+					const pthread_mutexattr_t *attr);
+extern int pthread_mutex_lock(pthread_mutex_t *mp);
+extern int pthread_mutex_unlock(pthread_mutex_t *mp);
+extern int pthread_mutex_destroy(pthread_mutex_t *mp);
+
 #endif
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "xmlrpc.h"
-
-/* set cookie function */
-void xmlrpc_authcookie_set ( xmlrpc_env *env, 
-			const char *username, 
-			const char *password ) {
-    char *unencoded;
-    xmlrpc_mem_block *token;
-
-    /* Check asserts. */
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(username);
-    XMLRPC_ASSERT_PTR_OK(password);
-
-    /* Clear out memory. */
-    unencoded = (char *) malloc ( sizeof ( char * ) );
-    token = NULL;
-
-    /* Create unencoded string/hash. */
-    sprintf(unencoded, "%s:%s", username, password);
-
-    /* Create encoded string. */
-    token = xmlrpc_base64_encode_without_newlines(env, unencoded,
-				strlen(unencoded));
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Set HTTP_COOKIE_AUTH to the character representation of the
-    ** encoded string. */
-    setenv("HTTP_COOKIE_AUTH", XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, token),
-		1);
-
- cleanup:
-    if (token) xmlrpc_mem_block_free(token);
-}
-
-char *xmlrpc_authcookie ( void ) {
-    return getenv("HTTP_COOKIE_AUTH");
-}

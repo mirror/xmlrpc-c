@@ -33,8 +33,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
+#include "xmlrpc_int.h"
 
 #define BLOCK_ALLOC_MIN (16)
 #define BLOCK_ALLOC_MAX (128 * 1024 * 1024)
@@ -51,7 +51,7 @@
 void xmlrpc_assertion_failed (char* file, int line)
 {
     fprintf(stderr, "%s:%d: assertion failed\n", file, line);
-    exit(1);
+    abort();
 }
 
 static char* default_fault_string = "Not enough memory for error message";

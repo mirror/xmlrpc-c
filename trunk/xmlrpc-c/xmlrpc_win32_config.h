@@ -56,3 +56,19 @@
 ** the build-time test suites to locate their test data (because automake
 ** and autoconf may not compile our code in a separate build directory. */
 #define SRCDIR ""
+
+/* Define if we're building the "wininet" xmlrpc_client. */
+/* #undef BUILD_WININET_CLIENT 0  */
+
+
+/* Define if we're building the "libwww" xmlrpc_client. */
+/* #undef BUILD_LIBWWW_CLIENT 0 */
+
+
+/* Define if we're building the "curl" xmlrpc_client. */
+/* #undef BUILD_CURL_CLIENT 0 */
+
+
+/* Define your preferred transport. Use 0L if you are unsure. */
+#define XMLRPCDEFAULTTRANSPORT "wininet"
+

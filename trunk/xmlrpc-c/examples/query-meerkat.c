@@ -98,9 +98,10 @@ main(int          const argc,
 
     snprintf(time_period, sizeof(time_period), "%dHOUR", cmdline.hours);
 
-    /* Set up our client. */
-    xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION);
     xmlrpc_env_init(&env);
+
+    /* Set up our client. */
+    xmlrpc_client_init2(&env, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0);
 
     /* Ask Meerkat to look for matching stories. */
     stories = xmlrpc_client_call(&env, MEERKAT_URL,

@@ -26,6 +26,8 @@ usage="Usage: xmlrpc-c-config <module>... <flag>
 You may optionally specify one or more modules:
   c++            C++ wrapper code
   libwww-client  libwww-based client
+  curl-client    cURL-based client
+  wininet-client WinInet-based client
   cgi-server     CGI-based server
   abyss-server   ABYSS-based server
 
@@ -63,9 +65,21 @@ while test $# -gt 0; do
       the_libs=
          "-lxmlrpc_abyss_server -lxmlrpc_abyss @LIBABYSS_LDADD@ $the_libs"
       ;;
+    wininet-client)
+      the_libdirs="-L@WININET_LIBDIR@ $the_libdirs"
+      the_libs="-lxmlrpc_client -lxmlrpc_wininet @WININET_LDADD@ $the_libs"
+      the_rpath="@WININET_RPATH@ $the_rpath"
+      the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
+      ;;
+    curl-client)
+      the_libdirs="-L@CURL_LIBDIR@ $the_libdirs"
+      the_libs="-lxmlrpc_client -lxmlrpc_curl @CURL_LDADD@ $the_libs"
+      the_rpath="@CURL_RPATH@ $the_rpath"
+      the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
+      ;;
     libwww-client)
       the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"
-      the_libs="-lxmlrpc_client @LIBWWW_LDADD@ $the_libs"
+      the_libs="-lxmlrpc_client -lxmlrpc_libwww @LIBWWW_LDADD@ $the_libs"
       the_rpath="@LIBWWW_RPATH@ $the_rpath"
       the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
       ;;

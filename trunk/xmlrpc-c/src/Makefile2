@@ -1,0 +1,84 @@
+# -*-makefile-*-    <-- an Emacs control
+
+# This is the beginnngs of what will eventually replace Makefile.
+
+ifeq ($(SRCDIR)x,x)
+SRCDIR = $(CURDIR)/..
+endif
+SUBDIR = src
+
+include $(SRCDIR)/Makefile.config
+
+LDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR)
+
+WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
+CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
+LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
+
+TRANSPORT_OBJS =
+ifeq ($(ENABLE_WININET_CLIENT),yes)
+  TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
+endif
+ifeq ($(ENABLE_CURL_CLIENT),yes)
+  TRANSPORT_OBJS += $(CURL_TRANSPORT_DIR)/xmlrpc_curl_transport.lo
+endif
+ifeq ($(ENABLE_LIBWWW_CLIENT),yes)
+  TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
+endif
+
+ifeq ($(ENABLE_LIBXML2),yes)
+  LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
+  LIBXML = $(LIBXML2_LIBS)
+  LIBXML_FILES = xmlrpc_libxml2.c
+else
+  LIBXML_INCLUDES = -I$(SRCDIR)/lib/expat/xmlparse
+  LIBXML = $(SRCDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
+           $(SRCDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
+  LIBXML_FILES = xmlrpc_expat.c
+endif
+
+TRANSPORT_INCLUDES = \
+  -I$(WININET_TRANSPORT_DIR) \
+  -I$(CURL_TRANSPORT_DIR) \
+  -I$(LIBWWW_TRANSPORT_DIR) \
+
+INCLUDES = -I. -I$(SRCDIR) \
+	   -I$(SRCDIR)/lib/abyss/src \
+	   $(TRANSPORT_INCLUDES) \
+	   $(LIBXML_INCLUDES) \
+
+libxmlrpc_client.la: xmlrpc_client.lo $(TRANSPORT_OBJS)
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
+
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+
+xmlrpc_client.lo:%.lo:%.c
+	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+
+$(TRANSPORT_OBJS): FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+default_transport.h:
+	rm -f $@
+	echo "static const char * const XMLRPC_DEFAULT_TRANSPORT =" >>$@
+ifeq ($(ENABLE_LIBWWW_CLIENT),yes)
+	echo '"libwww";' >>$@
+else
+  ifeq ($(ENABLE_CURL_CLIENT),yes)
+	echo '"curl";' >>$@
+  else
+    ifeq ($(ENABLE_WININET_CLIENT),yes)
+	echo '"wininet"'; >>$@
+    else
+	echo '"libwww"'; >>$@
+    endif
+  endif
+endif
+
+clean: clean-common clean-local
+clean-local:
+	rm -f default_transport.h
+
+include $(SRCDIR)/Makefile.common
+
+xmlrpc_client.lo: default_transport.h

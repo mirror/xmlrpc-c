@@ -135,12 +135,13 @@ static wchar_t utf8_min_char_for_length[4] = {
 **  byte ordering.
 */
 
-static void decode_utf8 (xmlrpc_env *env,
-			 char *utf8_data,
-			 size_t utf8_len,
-			 wchar_t *io_buff,
-			 size_t *out_buff_len)
-{
+static void 
+decode_utf8(xmlrpc_env * const env,
+            const char * const utf8_data,
+            size_t       const utf8_len,
+            wchar_t *    const io_buff,
+            size_t *     const out_buff_len) {
+
     size_t i, length, out_pos;
     char init, con1, con2;
     wchar_t wc;
@@ -148,7 +149,7 @@ static void decode_utf8 (xmlrpc_env *env,
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_PTR_OK(utf8_data);
     XMLRPC_ASSERT((!io_buff && !out_buff_len) ||
-		  (io_buff && out_buff_len));
+                  (io_buff && out_buff_len));
 
     /* Suppress GCC warning about possibly undefined variable. */
     wc = 0;
@@ -156,98 +157,97 @@ static void decode_utf8 (xmlrpc_env *env,
     i = 0;
     out_pos = 0;
     while (i < utf8_len) {
-	init = utf8_data[i];
-	if ((init & 0x80) == 0x00) {
-	    /* Convert ASCII character to wide character. */
-	    wc = init;
-	    i++;
-	} else {
-
-	    /* Look up the length of this UTF-8 sequence. */
-	    length = utf8_seq_length[(unsigned char) init];
-
-	    /* Check to make sure we have enough bytes to convert. */
-	    if (i + length > utf8_len)
-		XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-			    "Truncated UTF-8 sequence");
-
-	    /* Decode a multibyte UTF-8 sequence. */
-	    switch (length) {
-		case 0:
-		    XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-				"Invalid UTF-8 initial byte");
+        init = utf8_data[i];
+        if ((init & 0x80) == 0x00) {
+            /* Convert ASCII character to wide character. */
+            wc = init;
+            i++;
+        } else {
+            /* Look up the length of this UTF-8 sequence. */
+            length = utf8_seq_length[(unsigned char) init];
+            
+            /* Check to make sure we have enough bytes to convert. */
+            if (i + length > utf8_len)
+                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                            "Truncated UTF-8 sequence");
+            
+            /* Decode a multibyte UTF-8 sequence. */
+            switch (length) {
+            case 0:
+                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                            "Invalid UTF-8 initial byte");
+                
+            case 2:
+                /* 110xxxxx 10xxxxxx */
+                con1 = utf8_data[i+1];
+                if (!IS_CONTINUATION(con1))
+                    XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                                "UTF-8 sequence too short");
+                wc = ((((wchar_t) (init & 0x1F)) <<  6) |
+                      (((wchar_t) (con1 & 0x3F))));
+                break;
+                
+            case 3:
+                /* 1110xxxx 10xxxxxx 10xxxxxx */
+                con1 = utf8_data[i+1];
+                con2 = utf8_data[i+2];
+                if (!IS_CONTINUATION(con1) || !IS_CONTINUATION(con2))
+                    XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                                "UTF-8 sequence too short");
+                wc = ((((wchar_t) (init & 0x0F)) << 12) |
+                      (((wchar_t) (con1 & 0x3F)) <<  6) |
+                      (((wchar_t) (con2 & 0x3F))));
+                break;
+                
+            case 4:
+                /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
+            case 5:
+                /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+            case 6:
+                /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                            "UCS-4 characters not supported");
+                
+            default:
+                XMLRPC_ASSERT("Error in UTF-8 decoder tables");
+            }
 		    
-		case 2:
-		    /* 110xxxxx 10xxxxxx */
-		    con1 = utf8_data[i+1];
-		    if (!IS_CONTINUATION(con1))
-			XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-				    "UTF-8 sequence too short");
-		    wc = ((((wchar_t) (init & 0x1F)) <<  6) |
-			  (((wchar_t) (con1 & 0x3F))));
-		    break;
-		    
-		case 3:
-		    /* 1110xxxx 10xxxxxx 10xxxxxx */
-		    con1 = utf8_data[i+1];
-		    con2 = utf8_data[i+2];
-		    if (!IS_CONTINUATION(con1) || !IS_CONTINUATION(con2))
-			XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-				    "UTF-8 sequence too short");
-		    wc = ((((wchar_t) (init & 0x0F)) << 12) |
-			  (((wchar_t) (con1 & 0x3F)) <<  6) |
-			  (((wchar_t) (con2 & 0x3F))));
-		    break;
-		    
-		case 4:
-		    /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
-		case 5:
-		    /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-		case 6:
-		    /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-		    XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-				"UCS-4 characters not supported");
-
-		default:
-		    XMLRPC_ASSERT("Error in UTF-8 decoder tables");
-	    }
-		    
-	    /* Advance to the end of the sequence. */
-	    i += length;
-
-	    /* Check for illegal UCS-2 characters. */
-	    if (wc > UCS2_MAX_LEGAL_CHARACTER)
-		XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-			    "UCS-2 characters > U+FFFD are illegal");
-	    
-	    /* Check for UTF-16 surrogates. */
-	    if (UTF16_FIRST_SURROGATE <= wc && wc <= UTF16_LAST_SURROGATE)
-		XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-			    "UTF-16 surrogates may not appear in UTF-8 data");
-
-	    /* Check for overlong sequences. */
-	    if (wc < utf8_min_char_for_length[length])
-		XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-			    "Overlong UTF-8 sequence not allowed");
-	}
-
-	/* If we have a buffer, write our character to it. */
-	if (io_buff) {
-	    io_buff[out_pos++] = wc;
-	}
+            /* Advance to the end of the sequence. */
+            i += length;
+            
+            /* Check for illegal UCS-2 characters. */
+            if (wc > UCS2_MAX_LEGAL_CHARACTER)
+                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                            "UCS-2 characters > U+FFFD are illegal");
+            
+            /* Check for UTF-16 surrogates. */
+            if (UTF16_FIRST_SURROGATE <= wc && wc <= UTF16_LAST_SURROGATE)
+                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                            "UTF-16 surrogates may not appear in UTF-8 data");
+            
+            /* Check for overlong sequences. */
+            if (wc < utf8_min_char_for_length[length])
+                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                            "Overlong UTF-8 sequence not allowed");
+        }
+        
+        /* If we have a buffer, write our character to it. */
+        if (io_buff) {
+            io_buff[out_pos++] = wc;
+        }
     }
-
+    
     /* Record the number of characters we found. */
     if (out_buff_len)
-	*out_buff_len = out_pos;
-
+        *out_buff_len = out_pos;
+    
  cleanup:
     if (env->fault_occurred) {
-	if (out_buff_len)
-	    *out_buff_len = 0;
+        if (out_buff_len)
+            *out_buff_len = 0;
     }
-    return;
 }
+
 
 
 /*=========================================================================
@@ -256,10 +256,11 @@ static void decode_utf8 (xmlrpc_env *env,
 **  Make sure that a UTF-8 string is valid.
 */
 
-void xmlrpc_validate_utf8 (xmlrpc_env *env,
-			   char *utf8_data,
-			   size_t utf8_len)
-{
+void 
+xmlrpc_validate_utf8 (xmlrpc_env * const env,
+                      const char * const utf8_data,
+                      size_t       const utf8_len) {
+
     decode_utf8(env, utf8_data, utf8_len, NULL, NULL);
 }
 

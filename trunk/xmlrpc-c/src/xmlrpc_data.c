@@ -35,8 +35,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
+#include "xmlrpc_int.h"
 
 /* Borrowed from Python 1.5.2.
 ** MPW pushes 'extended' for float and double types with varargs */

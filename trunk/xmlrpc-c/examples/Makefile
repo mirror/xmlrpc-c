@@ -1,3 +1,9 @@
+# Since the programs in this directories are examples for the user, this
+# make file should be as ordinary as possible.  It should not rely heavily
+# on included make files or configuration parameters.  It should not use
+# libtool.  Also, we don't try to build or rebuild the libraries on which
+# these programs depend.
+
 # We need the following make variables to be defined by Makefile.config
 # or be passed in:
 #
@@ -6,25 +12,14 @@
 #   on this system.
 
 ifeq ($(SRCDIR)x,x)
-SRCDIR = ..
+SRCDIR = $(CURDIR)/..
 endif
 
-include ../Makefile.common
+default: all
 
-MKINSTALLDIRS = $(SRCDIR)/mkinstalldirs
-LIBTOOL = $(SRCDIR)/libtool
-SYMLINK = ln -s
+include $(SRCDIR)/Makefile.config
 
 CXXFLAGS = 
-CXXCOMPILE = $(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(INCLUDES) \
-  $(CPPFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD)
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS)$(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD)
 
 CFLAGS = $(CFLAGS_COMMON) $(LIBWWW_CFLAGS) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
@@ -51,63 +46,54 @@ SERVERPROGS = \
 
 PROGS = $(CLIENTPROGS_C) $(CLIENTPROGS_CC) $(CGICLIENTPROGS) $(SERVERPROGS)
 
-INCLUDES = -I.. -I../src
+INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
 
 ifneq ($(ENABLE_LIBXML2)x,x)
   LIBXML = $(LIBXML2_LIBS)
 else
-  LIBXML = ../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-           ../lib/expat/xmltok/libxmlrpc_xmltok.la
+  LIBXML = $(SRCDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a \
+           $(SRCDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
 endif
 
-LIBABYSS = ../lib/abyss/src/libxmlrpc_abyss.la
-LIBXMLRPC = ../src/libxmlrpc.la $(LIBXML)
-LIBXMLRPC_CPP = ../src/libxmlrpc_cpp.a
-LIBCLIENT = ../src/libxmlrpc_client.la ../src/libxmlrpc_cpp.a \
-	    $(LIBWWW_LDADD) $(LIBXMLRPC)
-LIBSERVER = ../src/libxmlrpc_abyss_server.la $(LIBABYSS) $(LIBXMLRPC)
-LIBCGI = -static ../src/libxmlrpc_cgi.la $(LIBXMLRPC)
+LIBABYSS = $(SRCDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
+LIBXMLRPC = $(SRCDIR)/src/.libs/libxmlrpc.a $(LIBXML)
+LIBXMLRPC_CPP = $(SRCDIR)/src/libxmlrpc_cpp.a
+LIBCLIENT = $(SRCDIR)/src/.libs/libxmlrpc_client.a ../src/libxmlrpc_cpp.a \
+  $(LIBWWW_LDADD) $(LIBXMLRPC)
+LIBSERVER = $(SRCDIR)/src/.libs/libxmlrpc_abyss_server.a \
+  $(LIBABYSS) $(LIBXMLRPC)
+LIBCGI = $(SRCDIR)/src/.libs/libxmlrpc_cgi.a $(LIBXMLRPC)
 
 all: $(PROGS)
 
 $(CLIENTPROGS_C):%:%.o
-	$(LINK) -o $@ $(LDFLAGS) $(LIBCLIENT) $^
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCLIENT)
 
 $(CLIENTPROGS_CC):%:%.o
-	$(CXXLINK) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC_CPP) $(LIBCLIENT)
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LIBXMLRPC_CPP) $(LIBCLIENT)
 
 $(CGICLIENTPROGS):%.cgi:%.o
-	$(LINK) -o $@ $(LDFLAGS) $^ $(LIBCGI)
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBCGI)
 
 $(SERVERPROGS):%:%.o
-	$(LINK) -o $@ $(LDFLAGS) $(LIBSERVER) $^
-
+	$(CCLD) -o $@ $(LDFLAGS) $^ $(LIBSERVER)
 
 %.o:%.c
-	$(COMPILE) -c $(CFLAGS) $<
+	$(CC) -c $(INCLUDES) $(CFLAGS) $<
 
 %.o:%.cc
-	$(CXXCOMPILE) -c $(CFLAGS) $<
+	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
 *.c: config.h
 
 config.h:
-	$(SYMLINK) $(SRCDIR)/xmlrpc_config.h $@
+	$(LN_S) $(SRCDIR)/xmlrpc_config.h $@
 
-include Makefile.depend
-
-.PHONY: dep
-dep:
-# This rule is meant to be used by a developer.  The shipped version of
-# Makefile.depend is empty.  Only a developer would modify a dependency
-# and rebuild.  We don't want non-developer users automatically generating
-# dependency files, because is too complicated -- there's too much opportunity
-# for something to fail and the fix not to be obvious.
-	gcc -MM $(CFLAGS) >Makefile.depend
+include $(SRCDIR)/Makefile.common
 
 .PHONY: clean
-clean:
-	rm -f $(PROGS) *.o *.i *.s CORE config.h
+clean: clean-common
+	rm -f $(PROGS) config.h
 
 .PHONY: distclean
 distclean: clean

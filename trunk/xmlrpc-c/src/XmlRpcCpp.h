@@ -286,7 +286,7 @@ public:
 		      XmlRpcValue param_array,
 		      xmlrpc_response_handler callback,
 		      void* user_data);
-    void event_loop_asynch (timeout_t milliseconds);
+    void event_loop_asynch (unsigned long milliseconds);
 };
 
 inline void XmlRpcClient::call_asynch(string method_name,
@@ -302,7 +302,7 @@ inline void XmlRpcClient::call_asynch(string method_name,
 				  param_array.borrowReference());
 }
 
-inline void XmlRpcClient::event_loop_asynch(timeout_t milliseconds)
+inline void XmlRpcClient::event_loop_asynch(unsigned long milliseconds)
 {
 	xmlrpc_client_event_loop_finish_asynch_timeout(milliseconds);
 }

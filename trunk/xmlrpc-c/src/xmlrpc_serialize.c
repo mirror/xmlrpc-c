@@ -34,8 +34,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
+#include "xmlrpc_int.h"
 
 #define CRLF "\015\012"
 #define SMALL_BUFFER_SZ (128)
@@ -101,19 +101,20 @@ cleanup:
 
 #if !defined NDEBUG && defined HAVE_UNICODE_WCHAR
 
-static void sanity_check_utf8 (char *str, size_t len)
-{
+static void 
+sanity_check_utf8(const char * const str,
+                  size_t       const len) {
+
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
     xmlrpc_validate_utf8(&env, str, len);
     if (env.fault_occurred)
-	fprintf(stderr, "*** xmlrpc-c WARNING ***: %s (%s)\n",
-		"Application sending corrupted UTF-8 data to network",
-		env.fault_string);
+        fprintf(stderr, "*** xmlrpc-c WARNING ***: %s (%s)\n",
+                "Application sending corrupted UTF-8 data to network",
+                env.fault_string);
     xmlrpc_env_clean(&env);
 }
-
 #endif
 
 
@@ -123,8 +124,11 @@ static void sanity_check_utf8 (char *str, size_t len)
 **=========================================================================
 */
 
-static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
-{
+static xmlrpc_mem_block * 
+escape_string(xmlrpc_env * const env, 
+              const char * const str,
+              size_t       const len) {
+
     xmlrpc_mem_block *retval;
     size_t i, needed;
     char *out;
@@ -143,14 +147,14 @@ static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
     /* Calculate the amount of space we'll need. */
     needed = 0;
     for (i = 0; i < len; i++) {
-	if (str[i] == '<')
-	    needed += 4; /* &lt; */
-	else if (str[i] == '>')
-	    needed += 4; /* &gt; */
-	else if (str[i] == '&')
-	    needed += 5; /* &amp; */
-	else
-	    needed++;
+        if (str[i] == '<')
+            needed += 4; /* &lt; */
+        else if (str[i] == '>')
+            needed += 4; /* &gt; */
+        else if (str[i] == '&')
+            needed += 5; /* &amp; */
+        else
+            needed++;
     }
 
     /* Allocate our memory block. */
@@ -160,35 +164,37 @@ static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
     /* Copy over the newly-allocated data. */
     out = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, retval);
     for (i = 0; i < len; i++) {
-	if (str[i] == '<') {
-	    *out++ = '&';
-	    *out++ = 'l';
-	    *out++ = 't';
-	    *out++ = ';';
-	} else if (str[i] == '>') {
-	    *out++ = '&';
-	    *out++ = 'g';
-	    *out++ = 't';
-	    *out++ = ';';
-	} else if (str[i] == '&') {
-	    *out++ = '&';
-	    *out++ = 'a';
-	    *out++ = 'm';
-	    *out++ = 'p';
-	    *out++ = ';';
-	} else {
-	    *out++ = str[i];
-	}
+        if (str[i] == '<') {
+            *out++ = '&';
+            *out++ = 'l';
+            *out++ = 't';
+            *out++ = ';';
+        } else if (str[i] == '>') {
+            *out++ = '&';
+            *out++ = 'g';
+            *out++ = 't';
+            *out++ = ';';
+        } else if (str[i] == '&') {
+            *out++ = '&';
+            *out++ = 'a';
+            *out++ = 'm';
+            *out++ = 'p';
+            *out++ = ';';
+        } else {
+            *out++ = str[i];
+        }
     }
 
  cleanup:
     if (env->fault_occurred) {
-	if (retval)
-	    XMLRPC_TYPED_MEM_BLOCK_FREE(char, retval);
-	return NULL;
+        if (retval)
+            XMLRPC_TYPED_MEM_BLOCK_FREE(char, retval);
+        retval = NULL;
     }
     return retval;
 }
+
+
 
 static xmlrpc_mem_block* escape_block (xmlrpc_env *env,
 				       xmlrpc_mem_block *block)
@@ -480,11 +486,12 @@ void xmlrpc_serialize_params (xmlrpc_env *env,
 **  Serialize an XML-RPC call.
 */			      
 
-void xmlrpc_serialize_call (xmlrpc_env *env,
-			    xmlrpc_mem_block *output,
-			    char *method_name,
-			    xmlrpc_value *param_array)
-{
+void 
+xmlrpc_serialize_call (xmlrpc_env *       const env,
+                       xmlrpc_mem_block * const output,
+                       const char *       const method_name,
+                       xmlrpc_value *     const param_array) {
+
     xmlrpc_mem_block *escaped;
     char *contents;
     size_t size;
@@ -521,8 +528,9 @@ void xmlrpc_serialize_call (xmlrpc_env *env,
 
  cleanup:
     if (escaped)
-	xmlrpc_mem_block_free(escaped);
+        xmlrpc_mem_block_free(escaped);
 }
+
 
 
 /*=========================================================================
