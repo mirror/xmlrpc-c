@@ -64,9 +64,16 @@ $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
-$(SRCDIR)/lib/util/casprintf.lo:
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
-	    $(notdir $@) 
+$(BUILDDIR)/lib/util/casprintf.lo:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/util/Makefile $(notdir $@) 
+
+$(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
+	    $(notdir $@)
 
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
@@ -143,7 +150,7 @@ distclean-common:
 # have 'make' automatically build Makefile.depend.  We have
 # found that to be an utter disaster -- it's way to complicated and prone
 # to failure, especially with built .h files.  Better not to burden the user,
-# who gain nothing from it, with that.
+# who gains nothing from it, with that.
 #
 	cat /dev/null >Makefile.depend
 	rm -f TAGS

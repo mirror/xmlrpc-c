@@ -33,9 +33,6 @@ BUILDABLE_UTILS = casprintf.o cmdline_parser.o
 $(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(XMLRPC_LIBS): FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
 include $(SRCDIR)/Makefile.common
 
 
