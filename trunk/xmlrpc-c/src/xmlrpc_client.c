@@ -648,111 +648,144 @@ void xmlrpc_server_info_free (xmlrpc_server_info *server)
 **=========================================================================
 */
 
-/* MRB-Eliminated a call to xmlrpc_client_call_asynch_params.
-**     This was unnecessary overhead, just to allow for a
-**     "...)" version of the xmlrpc_client_call_server_asynch_params call. */
 void 
-xmlrpc_client_call_asynch(const char * const server_url,
-                          const char * const method_name,
+xmlrpc_client_call_asynch(const char * const serverUrl,
+                          const char * const methodName,
                           xmlrpc_response_handler callback,
-                          void *       const user_data,
+                          void *       const userData,
                           const char * const format,
                           ...) {
 
     xmlrpc_env env;
     va_list args;
-    xmlrpc_value * argP;
-    xmlrpc_server_info *server;
+    xmlrpc_value * paramArrayP;
     const char * suffix;
 
-    /* Error-handling preconditions. */
     xmlrpc_env_init(&env);
-    argP = NULL;
-    server = NULL;
 
+    XMLRPC_ASSERT_PTR_OK(serverUrl);
     XMLRPC_ASSERT_PTR_OK(format);
-    XMLRPC_ASSERT_PTR_OK(server_url);
 
     /* Build our argument array. */
     va_start(args, format);
-    xmlrpc_build_value_va(&env, format, args, &argP, &suffix);
+    xmlrpc_build_value_va(&env, format, args, &paramArrayP, &suffix);
     va_end(args);
-    XMLRPC_FAIL_IF_FAULT(&env);
-
-    if (*suffix != '\0')
-        xmlrpc_env_set_fault_formatted(
-            &env, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-            "specifier: '%s'.  There must be exactly one arument.",
-            suffix);
-    else {
-        /* Build a server info object and make our call. */
-        server = xmlrpc_server_info_new(&env, server_url);
-        XMLRPC_FAIL_IF_FAULT(&env);
-        
-        /* Perform the actual XML-RPC call. */
-        xmlrpc_client_call_server_asynch_params(server, method_name,
-                                                callback, user_data, argP);
-    }
- cleanup:
-    if (server)
-        xmlrpc_server_info_free(server);
-
     if (env.fault_occurred) {
-        (*callback)(server_url, method_name, argP, user_data,
-                    &env, NULL);
-    }
-
-    if (argP)
-        xmlrpc_DECREF(argP);
-    xmlrpc_env_clean(&env);
-}
-
-
-
-void 
-xmlrpc_client_call_server_asynch(xmlrpc_server_info * const server,
-                                 const char *         const method_name,
-                                 xmlrpc_response_handler callback,
-                                 void *               const user_data,
-                                 const char *         const format,
-                                 ...) {
-
-    xmlrpc_env env;
-    va_list args;
-    xmlrpc_value * argP;
-    const char * suffix;
-
-    /* Error-handling preconditions. */
-    xmlrpc_env_init(&env);
-    argP = NULL;
-
-    XMLRPC_ASSERT_PTR_OK(format);
-
-    /* Build our argument array. */
-    va_start(args, format);
-    xmlrpc_build_value_va(&env, format, args, &argP, &suffix);
-    va_end(args);
-    XMLRPC_FAIL_IF_FAULT(&env);
-
+        /* Unfortunately, we have no way to return an error and the
+           regular callback for a failed RPC is designed to have the
+           parameter array passed to it.  This was probably an oversight
+           of the original asynch design, but now we have to be as
+           backward compatible as possible, so we do this:
+        */
+        (*callback)(serverUrl, methodName, NULL, userData, &env, NULL);
+    } else {
         if (*suffix != '\0')
             xmlrpc_env_set_fault_formatted(
                 &env, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
                 "specifier: '%s'.  There must be exactly one arument.",
                 suffix);
         else {
-            /* Perform the actual XML-RPC call. */
-            xmlrpc_client_call_server_asynch_params(server, method_name,
-                                                    callback, user_data,
-                                                    argP);
+            xmlrpc_server_info * serverP;
+            serverP = xmlrpc_server_info_new(&env, serverUrl);
+            if (!env.fault_occurred) {
+                xmlrpc_client_call_server_asynch_params(
+                    serverP, methodName, callback, userData, 
+                    paramArrayP);
+            }
+            xmlrpc_server_info_free(serverP);
         }
- cleanup:
-    if (env.fault_occurred) {
-        (*callback)(server->_server_url, method_name, argP, user_data,
-                    &env, NULL);
+        if (env.fault_occurred)
+            (*callback)(serverUrl, methodName, paramArrayP, userData,
+                        &env, NULL);
+        xmlrpc_DECREF(paramArrayP);
     }
 
-    if (argP)
-        xmlrpc_DECREF(argP);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+void
+xmlrpc_client_call_asynch_params(const char *   const serverUrl,
+                                 const char *   const methodName,
+                                 xmlrpc_response_handler callback,
+                                 void *         const userData,
+                                 xmlrpc_value * const paramArrayP) {
+
+    xmlrpc_env env;
+    xmlrpc_server_info *serverP;
+
+    xmlrpc_env_init(&env);
+
+    XMLRPC_ASSERT_PTR_OK(serverUrl);
+
+    serverP = xmlrpc_server_info_new(&env, serverUrl);
+    if (!env.fault_occurred) {
+        xmlrpc_client_call_server_asynch_params(
+            serverP, methodName, callback, userData, paramArrayP);
+
+        xmlrpc_server_info_free(serverP);
+    }
+
+    if (env.fault_occurred)
+        /* We have no way to return failure; we report the failure
+           as it happened after we successfully started the RPC.
+        */
+        (*callback)(serverUrl, methodName, paramArrayP, userData,
+                    &env, NULL);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+void 
+xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverP,
+                                 const char *         const methodName,
+                                 xmlrpc_response_handler callback,
+                                 void *               const userData,
+                                 const char *         const format,
+                                 ...) {
+
+    xmlrpc_env env;
+    va_list args;
+    xmlrpc_value * paramArrayP;
+    const char * suffix;
+
+    xmlrpc_env_init(&env);
+
+    XMLRPC_ASSERT_PTR_OK(format);
+
+    /* Build our parameter array. */
+    va_start(args, format);
+    xmlrpc_build_value_va(&env, format, args, &paramArrayP, &suffix);
+    va_end(args);
+    if (env.fault_occurred) {
+        /* Unfortunately, we have no way to return an error and the
+           regular callback for a failed RPC is designed to have the
+           parameter array passed to it.  This was probably an oversight
+           of the original asynch design, but now we have to be as
+           backward compatible as possible, so we do this:
+        */
+        (*callback)(serverP->server_url, methodName, NULL, userData, 
+                    &env, NULL);
+    } else {
+        if (*suffix != '\0')
+            xmlrpc_env_set_fault_formatted(
+                &env, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
+                "specifier: '%s'.  There must be exactly one arument.",
+                suffix);
+        else {
+            xmlrpc_client_call_server_asynch_params(
+                serverP, methodName, callback, userData, paramArrayP);
+        }
+        xmlrpc_DECREF(paramArrayP);
+    }
+
+    if (env.fault_occurred)
+        (*callback)(serverP->_server_url, methodName, paramArrayP, userData,
+                    &env, NULL);
+
     xmlrpc_env_clean(&env);
 }
 

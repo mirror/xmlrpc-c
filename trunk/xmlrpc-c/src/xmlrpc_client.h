@@ -190,23 +190,24 @@ xmlrpc_client_call_server_asynch(xmlrpc_server_info * const server,
                                  ...);
 
 /* As above, but the parameter list is supplied as an xmlrpc_value
-** containing an array. We make our own reference to the param_array,
-** so you can DECREF yours as soon as this function returns. */
-extern void
-xmlrpc_client_call_asynch_params (char *server_url,
-                                  char *method_name,
-                                  xmlrpc_response_handler callback,
-                                  void *user_data,
-                                  xmlrpc_value *param_array);
+** containing an array.
+*/
+void
+xmlrpc_client_call_asynch_params(const char *   const server_url,
+                                 const char *   const method_name,
+                                 xmlrpc_response_handler callback,
+                                 void *         const user_data,
+                                 xmlrpc_value * const paramArrayP);
     
 /* As above, but use an xmlrpc_server_info object. The server object can be
 ** safely destroyed as soon as this function returns. */
 void 
-xmlrpc_client_call_server_asynch_params(xmlrpc_server_info * const server,
-                                        const char *         const method_name,
-                                        xmlrpc_response_handler callback,
-                                        void *               const user_data,
-                                        xmlrpc_value *       const argP);
+xmlrpc_client_call_server_asynch_params(
+    xmlrpc_server_info * const server,
+    const char *         const method_name,
+    xmlrpc_response_handler callback,
+    void *               const user_data,
+    xmlrpc_value *       const paramArrayP);
     
 /*=========================================================================
 **  Event Loop Interface
