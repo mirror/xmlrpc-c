@@ -770,7 +770,7 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
                     const xmlrpc_server_abyss_parms * const parmsP,
                     unsigned int                      const parm_size) {
     
-    uint16 portNumber;
+    unsigned int portNumber;
     
     DateInit();
     MIMETypeInit();
