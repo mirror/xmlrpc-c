@@ -57,3 +57,8 @@ D: Author of Abyss web server (included with the library).
 N: Alex Olugbile
 E: aoo@home.com
 D: Win32 port.
+
+N: Brian Quinlan
+E: BrianQ@ActiveState.com
+D: Lots of cool patches.
+D: Prelimary wchar_t support.
