@@ -1,3 +1,10 @@
+This bug list is no longer updated on a regular basis. The official bug
+list can be found online at:
+
+  http://sourceforge.net/bugs/?group_id=16847
+
+---
+
 We don't handle characters with the high-bit set in a well-defined manner.
 Technically, these aren't legal in XML-RPC, but people do use them.
 UPDATE: We do the right thing if everybody uses UTF-8 everywhere. But we
