@@ -299,7 +299,7 @@ xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
             /* Get our member index. */
             index = find_member(structP, 
                                 XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block),
-                                XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block));
+                                XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block)-1);
             if (index < 0)
                 *valuePP = NULL;
             else {
@@ -332,11 +332,13 @@ xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
 
     xmlrpc_struct_find_value_v(envP, structP, keyP, valuePP);
 
-    if (*valuePP == NULL) {
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
-            XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
-            XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block));
+    if (!envP->fault_occurred) {
+        if (*valuePP == NULL) {
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
+                XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
+                XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block));
+        }
     }
 }
 
@@ -350,11 +352,13 @@ xmlrpc_struct_read_value(xmlrpc_env *    const envP,
 
     xmlrpc_struct_find_value(envP, structP, key, valuePP);
     
-    if (*valuePP == NULL) {
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%s'",
-            key);
-        /* We should fix the error message to format the key for display */
+    if (!envP->fault_occurred) {
+        if (*valuePP == NULL) {
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%s'",
+                key);
+            /* We should fix the error message to format the key for display */
+        }
     }
 }
 
@@ -381,15 +385,18 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
     if (!envP->fault_occurred) {
         xmlrpc_struct_find_value_v(envP, structP, keyP, &retval);
 
-        if (retval == NULL) {
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
-                keyLen, key);
-            /* We should fix the error message to format the key for display */
-        } else
-            /* For backward compatibility.  */
-            xmlrpc_DECREF(retval);
-
+        if (!envP->fault_occurred) {
+            if (retval == NULL) {
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_INDEX_ERROR, 
+                    "No member of struct has key '%.*s'",
+                    keyLen, key);
+                /* We should fix the error message to format the key
+                   for display */
+            } else
+                /* For backward compatibility.  */
+                xmlrpc_DECREF(retval);
+        }
         xmlrpc_DECREF(keyP);
     }
     return retval;

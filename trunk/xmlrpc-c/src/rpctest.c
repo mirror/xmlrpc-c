@@ -1076,6 +1076,115 @@ static void test_bounds_checks (void)
     xmlrpc_DECREF(array);
 }
 
+static void
+test_struct_get_element(xmlrpc_value * const structP,
+                        xmlrpc_value * const i1,
+                        xmlrpc_value * const i2,
+                        const char *   const weirdKey,
+                        unsigned int   const weirdKeyLen) {
+
+    xmlrpc_env env;
+    xmlrpc_value * valueP;
+    xmlrpc_value * aasStringP;
+    xmlrpc_value * bogusKeyStringP;
+
+    xmlrpc_env_init(&env);
+
+    /* build test tools */
+
+    aasStringP = xmlrpc_build_value(&env, "s", "aas");
+    TEST_NO_FAULT(&env);
+
+    bogusKeyStringP = xmlrpc_build_value(&env, "s", "doesn't_exist");
+    TEST_NO_FAULT(&env);
+
+    /* "find" interface */
+
+    xmlrpc_struct_find_value(&env, structP, "aas", &valueP);
+    TEST_NO_FAULT(&env);
+    TEST(valueP == i1);
+            
+    xmlrpc_struct_find_value(&env, structP, "doesn't_exist", &valueP);
+    TEST_NO_FAULT(&env);
+    TEST(valueP == NULL);
+            
+    xmlrpc_struct_find_value_v(&env, structP, aasStringP, &valueP);
+    TEST_NO_FAULT(&env);
+    TEST(valueP == i1);
+    xmlrpc_DECREF(valueP);
+            
+    xmlrpc_struct_find_value_v(&env, structP, bogusKeyStringP, &valueP);
+    TEST_NO_FAULT(&env);
+    TEST(valueP == NULL);
+
+    xmlrpc_struct_find_value(&env, i1, "aas", &valueP);
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_TYPE_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+            
+    /* "read" interface */
+            
+    xmlrpc_struct_read_value(&env, structP, "aas", &valueP);
+    TEST_NO_FAULT(&env);
+    TEST(valueP == i1);
+    xmlrpc_DECREF(valueP);
+            
+    xmlrpc_struct_read_value(&env, structP, "doesn't_exist", &valueP);
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+            
+    xmlrpc_struct_read_value_v(&env, structP, aasStringP, &valueP);
+    TEST_NO_FAULT(&env);
+    TEST(valueP == i1);
+    xmlrpc_DECREF(valueP);
+            
+    xmlrpc_struct_read_value_v(&env, structP, bogusKeyStringP, &valueP);
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    xmlrpc_struct_read_value(&env, i1, "aas", &valueP);
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_TYPE_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+            
+    /* obsolete "get" interface */
+            
+    valueP = xmlrpc_struct_get_value(&env, structP, "aas");
+    TEST_NO_FAULT(&env);
+    TEST(valueP == i1);
+
+    valueP = xmlrpc_struct_get_value(&env, structP, "doesn't_exist");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_INDEX_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    valueP = xmlrpc_struct_get_value(&env, i1, "foo");
+    TEST(env.fault_occurred);
+    TEST(env.fault_code == XMLRPC_TYPE_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+
+    valueP = xmlrpc_struct_get_value_n(&env, structP, weirdKey, weirdKeyLen);
+    TEST_NO_FAULT(&env);
+    TEST(valueP == i2);
+
+    /* Clean up */
+
+    xmlrpc_DECREF(aasStringP);
+    xmlrpc_DECREF(bogusKeyStringP);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 static void test_struct (void)
 {
     xmlrpc_env env, env2;
@@ -1086,6 +1195,7 @@ static void test_struct (void)
     xmlrpc_bool bval;
     char *sval;
     int index;
+    char const weirdKey[] = {'f', 'o', 'o', '\0', 'b', 'a', 'r'};
 
     xmlrpc_env_init(&env);
 
@@ -1130,17 +1240,21 @@ static void test_struct (void)
     TEST_NO_FAULT(&env);
     TEST(size == 3);
 
-    /* Get an element. */
-    i = xmlrpc_struct_get_value(&env, s, "aas");
+    /* Insert an item with a NUL in the key */
+    xmlrpc_struct_set_value_n(&env, s, weirdKey, sizeof(weirdKey), i2);
     TEST_NO_FAULT(&env);
-    TEST(i == i1);
+    size = xmlrpc_struct_size(&env, s);
+    TEST_NO_FAULT(&env);
+    TEST(size == 4);
+
+    test_struct_get_element(s, i1, i2, weirdKey, sizeof(weirdKey));
 
     /* Replace an existing element with the same element (tricky). */
     xmlrpc_struct_set_value(&env, s, "aas", i1);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 3);
+    TEST(size == 4);
     i = xmlrpc_struct_get_value(&env, s, "aas");
     TEST_NO_FAULT(&env);
     TEST(i == i1);
@@ -1167,12 +1281,6 @@ static void test_struct (void)
     xmlrpc_env_clean(&env2);
 
     xmlrpc_env_init(&env2);
-    i = xmlrpc_struct_get_value(&env2, i1, "foo");
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
-
-    xmlrpc_env_init(&env2);
     xmlrpc_struct_set_value(&env2, i1, "foo", i2);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
@@ -1184,13 +1292,6 @@ static void test_struct (void)
     TEST(env2.fault_code == XMLRPC_TYPE_ERROR);
     xmlrpc_env_clean(&env2);
 
-    /* Attempt to access a non-existant element. */
-    xmlrpc_env_init(&env2);
-    i = xmlrpc_struct_get_value(&env2, s, "bogus");
-    TEST(env2.fault_occurred);
-    TEST(env2.fault_code == XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env2);
-    
     /* Test cleanup code (w/memprof). */
     xmlrpc_DECREF(s);
 
@@ -1878,7 +1979,7 @@ test_default(xmlrpc_env *   const env,
 static xmlrpc_value *
 process_call_helper (xmlrpc_env *env,
                      xmlrpc_registry *registry,
-                     char *method_name,
+                     const char *method_name,
                      xmlrpc_value *arg_array)
 {
     xmlrpc_mem_block *call, *response;
