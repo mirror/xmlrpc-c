@@ -174,9 +174,9 @@ xmlrpc_client_init2(xmlrpc_env *                const env,
         
         if (strcmp(transport, "wininet") == 0)
             setupWininetTransport();
-        if (strcmp(transport, "curl") == 0)
+        else if (strcmp(transport, "curl") == 0)
             setupCurlTransport();
-        if (strcmp(transport, "libwww") == 0)
+        else if (strcmp(transport, "libwww") == 0)
             setupLibwwwTransport();
 
         if (g_transport_client_init)
@@ -217,33 +217,34 @@ xmlrpc_client_call_params (xmlrpc_env *   const env,
                            const char *   const method_name,
                            xmlrpc_value * const param_array) {
 
-    xmlrpc_server_info *server;
     xmlrpc_value *retval;
-
-    /* Error-handling preconditions. */
-    server = NULL;
-    retval = NULL;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_PTR_OK(server_url);
 
-    /* Build a server info object and make our call. */
-    server = xmlrpc_server_info_new(env, server_url);
-    XMLRPC_FAIL_IF_FAULT(env);
-    if (g_transport_client_call_server_params)
-        retval = g_transport_client_call_server_params(
-            env, server, method_name, param_array);
-    XMLRPC_FAIL_IF_FAULT(env);
-    XMLRPC_ASSERT_VALUE_OK(retval);
+    if (!g_transport_client_init)
+        xmlrpc_env_set_fault_formatted(
+            env, XMLRPC_INTERNAL_ERROR, 
+            "Xmlrpc-c client instance has not been initialized "
+            "(need to call xmlrpc_client_init2()).");
+    else {
+        xmlrpc_server_info *server;
+        
+        /* Build a server info object and make our call. */
+        server = xmlrpc_server_info_new(env, server_url);
+        if (!env->fault_occurred) {
+            XMLRPC_ASSERT(g_transport_client_call_server_params != NULL);
 
- cleanup:
-    if (server)
-        xmlrpc_server_info_free(server);
-    if (env->fault_occurred) {
-        if (retval)
-            xmlrpc_DECREF(retval);
-        return NULL;
+            retval = g_transport_client_call_server_params(
+                env, server, method_name, param_array);
+            
+            xmlrpc_server_info_free(server);
+        }
     }
+        
+    if (!env->fault_occurred)
+        XMLRPC_ASSERT_VALUE_OK(retval);
+
     return retval;
 }
 
