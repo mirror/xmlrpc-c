@@ -59,7 +59,7 @@ documented API. But there are some general rules which almost always apply:
     So long as you don't delete or change the data structure, you can
     "borrow" this reference safely.
 
-  * When an xmlrpc_value is remove from a data structure (perhaps as the
+  * When an xmlrpc_value is removed from a data structure (perhaps as the
     side effect of a "set" function), the data structure will release
     its reference to that value.
 
@@ -132,13 +132,19 @@ You could parse that same value as follows:
   xmlrpc_parse_value(env, value, "(ibdss#)",
                      &i, &b, &d, &str1, &str2, &str2_len);
 
-To build an array, you could write:
+To build a struct, you could write:
 
-  xmlrpc_parse_value(env, value, "{s:d,s:d}",
-                     "min", -1.0,
-		     "max", 1.0);
+  value = xmlrpc_build_value(env, "{s:d,s:d}",
+                             "min", -1.0,
+		             "max", 1.0);
 
-To parse an array, you must currently use the functions in xmlrpc.h.
+To parse a struct, you could write:
+
+  xmlrpc_int min, max;
+
+  xmlrpc_parse_value(env, value, "{s:d,s:d,*}",
+                     "min", &min,
+                     "max", &max);
 
 Here's a complete table of all supported codes:
 
