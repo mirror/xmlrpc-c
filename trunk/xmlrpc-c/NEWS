@@ -1,10 +1,18 @@
 CVS - Eric Kidd <eric.kidd@pobox.com> - Ongoing
 
+  * Man pages!
+  * Debian packages!
+
+  * Jeff Stewart: NT CGI fixes.
+  * Andy Maloney: Win32 xmlrpc_win32_config.h fixes.
+  * Mike Bytnar: Solaris build fixes.  Thanks!
+
+  * No more 'CVS' directories lurking in the dist tarball.
+  * Disabled rpath stuff so we comply with Debian policy.
   * wchar_t support can now be disabled.
   * New interop server.
   * Parts of an interop client.
   * Lots of interop fixes.
-  * Mike Bytnar: Solaris build fixes.  Thanks!
   * Other stuff.
 
 0.9.9 - Eric Kidd <eric.kidd@pobox.com> - 03 April 2001

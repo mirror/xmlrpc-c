@@ -23,7 +23,7 @@
 #define PACKAGE "xmlrpc-c"
   
 /* Version number of package */
-#define VERSION "0.9.8"
+#define VERSION "0.9.10"
 
 /* Windows-specific includes. */  
 #include <stdio.h>
@@ -34,8 +34,20 @@
   #endif
 #include <time.h>
 #include <WINSOCK.h>
+#include <DIRECT.h>   /* for _chdir() */c
 
-
-/* Required for compatability with libWWW headers */
-/* Define if you have the memcpy function.  */
+/* Required for compatability with libWWW headers
+** Define if you have the memcpy function.  */
 #define HAVE_MEMCPY 1
+
+/* Use this to mark unused variables under GCC...
+** #define ATTR_UNUSED __attribute__((__unused__))
+**  ...otherwise use this */
+#define ATTR_UNUSED
+
+/* Define this if your C library provides reasonably complete and correct
+** Unicode wchar_t support. */
+#define HAVE_UNICODE_WCHAR 1
+
+/* Define if you have the wcsncmp function.  */
+#define HAVE_WCSNCMP 1

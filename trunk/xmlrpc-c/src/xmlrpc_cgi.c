@@ -30,6 +30,12 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Windows NT stdout binary mode fix. */
+#ifdef _WIN32 
+#include <io.h> 
+#include <fcntl.h> 
+#endif 
+
 #include "xmlrpc.h"
 #include "xmlrpc_cgi.h"
 
@@ -106,6 +112,14 @@ void xmlrpc_cgi_init (int flags ATTR_UNUSED)
     registry = xmlrpc_registry_new(&env);
     die_if_fault_occurred(&env);
     xmlrpc_env_clean(&env);    
+
+#ifdef _WIN32 
+    /* Fix from Jeff Stewart: NT opens stdin and stdout in text mode
+    ** by default, badly confusing our length calculations.  So we need
+    ** to set these file handles to binary. */
+    _setmode(_fileno(stdout), _O_BINARY); 
+    _setmode(_fileno(stdin), _O_BINARY); 
+#endif 
 }
 
 void xmlrpc_cgi_cleanup (void)

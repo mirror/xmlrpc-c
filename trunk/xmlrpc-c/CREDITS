@@ -59,6 +59,9 @@ N: Moez Mahfoudh
 E: mmoez@bigfoot.com
 D: Author of Abyss web server (included with the library).
 
+N: Andy Maloney
+D: Win32 xmlrpc_win32_config.h fixes.
+
 N: Alex Olugbile
 E: aoo@home.com
 D: Win32 port.
@@ -67,3 +70,6 @@ N: Brian Quinlan
 E: BrianQ@ActiveState.com
 D: Lots of cool patches.
 D: Prelimary wchar_t support.
+
+N: Jeff Stewart
+D: NT CGI fixes.
