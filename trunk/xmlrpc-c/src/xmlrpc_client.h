@@ -27,9 +27,9 @@ extern "C" {
 #define XMLRPC_CLIENT_SKIP_LIBWWW_INIT (1)
 
 extern void
-xmlrpc_client_init(int    const flags,
-                   char * const appname,
-                   char * const appversion);
+xmlrpc_client_init(int          const flags,
+                   const char * const appname,
+                   const char * const appversion);
 
 struct xmlrpc_clientparms {
     const char * transport;
@@ -52,8 +52,8 @@ struct xmlrpc_clientparms {
 void 
 xmlrpc_client_init2(xmlrpc_env *                const env,
                     int                         const flags,
-                    char *                      const appname,
-                    char *                      const appversion,
+                    const char *                const appname,
+                    const char *                const appversion,
                     struct xmlrpc_clientparms * const clientparms,
                     unsigned int                const parm_size);
 

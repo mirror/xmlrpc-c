@@ -104,9 +104,9 @@ static struct xmlrpc_client client;
     */
 
 extern void
-xmlrpc_client_init(int    const flags,
-                   char * const appname,
-                   char * const appversion) {
+xmlrpc_client_init(int          const flags,
+                   const char * const appname,
+                   const char * const appversion) {
 
     struct xmlrpc_clientparms clientparms;
 
@@ -163,8 +163,8 @@ setupTransport(xmlrpc_env * const envP,
 void 
 xmlrpc_client_init2(xmlrpc_env *                const envP,
                     int                         const flags,
-                    char *                      const appname,
-                    char *                      const appversion,
+                    const char *                const appname,
+                    const char *                const appversion,
                     struct xmlrpc_clientparms * const clientparmsP,
                     unsigned int                const parm_size) {
 
@@ -388,7 +388,10 @@ xmlrpc_client_call_va(xmlrpc_env * const envP,
     xmlrpc_build_value_va(&argenv, format, args, &argP, &suffix);
     if (argenv.fault_occurred) {
         xmlrpc_env_set_fault_formatted(
-            envP, argenv.fault_code, "Invalid arguments.  %s",
+            envP, argenv.fault_code, "Invalid RPC arguments.  "
+            "The format argument must indicate a single array, and the "
+            "following arguments must correspond to that format argument.  "
+            "The failure is: %s",
             argenv.fault_string);
         xmlrpc_env_clean(&argenv);
     } else {
