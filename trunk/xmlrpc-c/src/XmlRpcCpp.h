@@ -31,13 +31,9 @@
 
 using namespace std;
 
-#include <xmlrpc_config.h>
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
 #include <xmlrpc_server.h>
-
-#define XMLRPC_NO_ASSIGNMENT \
-    XMLRPC_FATAL_ERROR("Assignment operator not available"); return *this;
 
 
 //=========================================================================
@@ -51,7 +47,7 @@ private:
     xmlrpc_env   mFault;
 
     XmlRpcFault& operator= (const XmlRpcFault& f)
-        { (void) f; XMLRPC_NO_ASSIGNMENT }
+        { (void) f; abort(); }
 
 public:
     XmlRpcFault (const XmlRpcFault &fault);
@@ -89,7 +85,7 @@ private:
 
     void         throwMe (void) const;
     XmlRpcEnv&   operator= (const XmlRpcEnv& e)
-        { (void) e; XMLRPC_NO_ASSIGNMENT }
+        { (void) e; abort(); }
 
 public:
     XmlRpcEnv (const XmlRpcEnv &env);
@@ -101,6 +97,7 @@ public:
         /* hasFaultOccurred() is for backward compatibility.
            faultOccurred() is a superior name for this.
         */
+    string       getFaultString() const { return mEnv.fault_string; };
     XmlRpcFault  getFault (void) const;
 
     void         throwIfFaultOccurred (void) const;
@@ -126,7 +123,7 @@ inline void XmlRpcEnv::throwIfFaultOccurred (void) const {
 //  rather use proper C++.
 //
 //  The XmlRpcValue object internally represents the value as an
-//  xmlrpc_value.  It hold one reference to the xmlrpc_value.  Users
+//  xmlrpc_value.  It holds one reference to the xmlrpc_value.  Users
 //  of XmlRpcValue never see that xmlrpc_value, but C code can.  the
 //  C code might create the xmlrpc_value and then bind it to an XmlRpcValue,
 //  or it might get the xmlrpc_value handle from the XmlRpcValue.  Finally,
@@ -395,8 +392,6 @@ inline xmlrpc_registry* XmlRpcGenSrv::getRegistry () const {
 
     return mRegistry;
 }
-
-#undef XMLRPC_NO_ASSIGNMENT
 
 
 // Copyright (C) 2001 by Eric Kidd. All rights reserved.
