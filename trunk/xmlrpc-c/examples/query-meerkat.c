@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <xmlrpc.h>
 #include <xmlrpc_client.h>
