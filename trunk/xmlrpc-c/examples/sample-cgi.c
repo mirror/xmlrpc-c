@@ -24,7 +24,8 @@ int main (int argc, char **argv)
 {
     /* Process our request. */
     xmlrpc_cgi_init(XMLRPC_CGI_NO_FLAGS);
-    xmlrpc_cgi_add_method("sample.add", &sample_add, NULL);
+    xmlrpc_cgi_add_method_w_doc("sample.add", &sample_add, NULL,
+				"i:ii", "Add two integers.");
     xmlrpc_cgi_process_call();
     xmlrpc_cgi_cleanup();
 
