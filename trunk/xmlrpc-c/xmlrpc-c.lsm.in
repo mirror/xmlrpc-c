@@ -1,0 +1,13 @@
+Begin4
+Title:          @PACKAGE@
+Version:        @VERSION@
+Entered-date:   @CONFIGURE_DATE@
+Description:    A C/C++ library for making procedure calls over HTTP using XML.
+Keywords:       rpc, xml, http, networking, library, orb
+Author:         eric.kidd@pobox.com (Eric Kidd)
+Maintained-by:  eric.kidd@pobox.com (Eric Kidd)
+Primary-site:   download.sourceforge.net /pub/sourceforge/xmlrpc-c
+                xmlrpc-c-@VERSION@.tar.gz
+Platforms:      w3c-libwww
+Copying-policy: BSD
+End

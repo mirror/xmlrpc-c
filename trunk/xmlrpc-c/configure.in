@@ -16,6 +16,10 @@ dnl closely before touching this or making a release!
 VERSION_INFO="-version-info 3:0:0"
 AC_SUBST(VERSION_INFO)
 
+dnl Get the date for use in our LSM file.
+CONFIGURE_DATE=`date`
+AC_SUBST(CONFIGURE_DATE)
+
 
 dnl =======================================================================
 dnl Checks for programs.
@@ -154,6 +158,8 @@ dnl =======================================================================
 
 AC_OUTPUT(xmlrpc-c-config \
           Makefile \
+          xmlrpc-c.lsm \
+          xmlrpc-c.spec \
           src/Makefile \
           examples/Makefile \
           doc/Makefile \
