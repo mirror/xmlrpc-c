@@ -36,7 +36,12 @@
 #include "xmlrpc.h"
 #include "xmlrpc_int.h"
 
+#ifdef EFENCE
+		// when looking for corruption don't allocate extra slop
+#define BLOCK_ALLOC_MIN (1)
+#else
 #define BLOCK_ALLOC_MIN (16)
+#endif
 #define BLOCK_ALLOC_MAX (128 * 1024 * 1024)
 
 #define ERROR_BUFFER_SZ (256)
@@ -272,9 +277,14 @@ xmlrpc_mem_block_resize (xmlrpc_env *       const env,
     }
 
     /* Calculate a new allocation size. */
+#ifdef EFENCE
+    proposed_alloc = size;
+#else
     proposed_alloc = block->_allocated;
     while (proposed_alloc < size && proposed_alloc <= BLOCK_ALLOC_MAX)
         proposed_alloc *= 2;
+#endif // DEBUG_MEM_ERRORS
+
     if (proposed_alloc > BLOCK_ALLOC_MAX)
         XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, "Memory block too large");
 
