@@ -192,4 +192,5 @@ AC_OUTPUT(xmlrpc-c-config \
           lib/abyss/conf/Makefile \
           lib/abyss/src/Makefile \
           tools/Makefile \
-          tools/turbocharger/Makefile )
+          tools/turbocharger/Makefile \
+          tools/xml-rpc-api2cpp/Makefile )
