@@ -50,7 +50,7 @@ struct clientTransport {
            from the time the user requests it until the time the user 
            acknowledges it is done.
         */
-    const char * interfaceId;
+    const char * networkInterface;
         /* This identifies the network interface on the local side to
            use for the session.  It is an ASCIIZ string in the form
            that the Curl recognizes for setting its CURLOPT_INTERFACE
@@ -200,16 +200,17 @@ create(xmlrpc_env *                     const envP,
            check into that.
         */
         
-        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(interfaceId))
-            transportP->interfaceId = NULL;
-        else if (curlXportParmsP->interfaceId == NULL)
-            transportP->interfaceId = NULL;
+        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(network_interface))
+            transportP->networkInterface = NULL;
+        else if (curlXportParmsP->network_interface == NULL)
+            transportP->networkInterface = NULL;
         else {
-            transportP->interfaceId = strdup(curlXportParmsP->interfaceId);
-            if (transportP->interfaceId == NULL)
+            transportP->networkInterface =
+                strdup(curlXportParmsP->network_interface);
+            if (transportP->networkInterface == NULL)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INTERNAL_ERROR,
-                    "Unable to allocate space for interface name.");
+                    "Unable to allocate space for network interface name.");
         }
 
         if (envP->fault_occurred)
@@ -241,8 +242,8 @@ destroy(struct clientTransport * const clientTransportP) {
 
     pthread_mutex_destroy(&clientTransportP->listLock);
 
-    if (clientTransportP->interfaceId)
-        strfree(clientTransportP->interfaceId);
+    if (clientTransportP->networkInterface)
+        strfree(clientTransportP->networkInterface);
 
     curl_global_cleanup();
 
@@ -303,15 +304,15 @@ createCurlHeaderList(xmlrpc_env *               const envP,
 static void
 setupCurlSession(xmlrpc_env *       const envP,
                  curlTransaction *  const curlTransactionP,
-                 const char *       const interfaceId,
+                 const char *       const networkInterface,
                  xmlrpc_mem_block * const callXmlP,
                  xmlrpc_mem_block * const responseXmlP) {
 
     CURL * const curlSessionP = curlTransactionP->curlSessionP;
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1 );
-    if (interfaceId)
-        curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE, interfaceId);
+    if (networkInterface)
+        curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE, networkInterface);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
     XMLRPC_MEMBLOCK_APPEND(char, envP, callXmlP, "\0", 1);
     if (!envP->fault_occurred) {
@@ -334,7 +335,7 @@ setupCurlSession(xmlrpc_env *       const envP,
 
 static void
 createCurlTransaction(xmlrpc_env *               const envP,
-                      const char *               const interfaceId,
+                      const char *               const networkInterface,
                       const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *         const callXmlP,
                       xmlrpc_mem_block *         const responseXmlP,
@@ -367,7 +368,7 @@ createCurlTransaction(xmlrpc_env *               const envP,
                                      &curlTransactionP->headerList);
 
                 if (!envP->fault_occurred)
-                    setupCurlSession(envP, curlTransactionP, interfaceId,
+                    setupCurlSession(envP, curlTransactionP, networkInterface,
                                      callXmlP, responseXmlP);
 
                 if (envP->fault_occurred)
@@ -532,7 +533,8 @@ rpcCreate(xmlrpc_env *               const envP,
         rpcP->responseXmlP = responseXmlP;
         rpcP->threadExists = FALSE;
 
-        createCurlTransaction(envP, clientTransportP->interfaceId, serverP,
+        createCurlTransaction(envP, clientTransportP->networkInterface, 
+                              serverP,
                               callXmlP, responseXmlP, 
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {

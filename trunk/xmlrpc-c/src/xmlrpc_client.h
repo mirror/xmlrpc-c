@@ -39,7 +39,7 @@ struct xportparms;
     */
 
 struct xmlrpc_curl_xportparms {
-    const char * interfaceId;
+    const char * network_interface;
 };
 
 
@@ -136,13 +136,6 @@ xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *src_server);
 extern void
 xmlrpc_server_info_free (xmlrpc_server_info *server);
 
-/* We support rudimentary basic authentication. This lets us talk to Zope
-** servers and similar critters. When called, this routine makes a copy
-** of all the authentication information and passes it to future requests.
-** Only the most-recently-set authentication information is used.
-** (In general, you shouldn't write XML-RPC servers which require this
-** kind of authentication--it confuses many client implementations.)
-** If we fail, leave the xmlrpc_server_info record unchanged. */
 void 
 xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   xmlrpc_server_info * const serverP,
