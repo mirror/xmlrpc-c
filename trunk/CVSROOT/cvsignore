@@ -1,1 +1,5 @@
-*.lo *.la .deps .libs
+*.lo 
+*.la 
+.deps 
+.libs
+Makefile.depend
