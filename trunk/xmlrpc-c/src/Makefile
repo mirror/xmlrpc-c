@@ -51,7 +51,7 @@ else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo
 endif
 
-LIBXMLRPC_OBJS = xmlrpc_support.lo xmlrpc_data.lo \
+LIBXMLRPC_OBJS = xmlrpc_support.lo xmlrpc_data.lo xmlrpc_builddecomp.lo \
 		 xmlrpc_array.lo xmlrpc_struct.lo \
 	         $(XMLRPC_XML_PARSER) xmlrpc_parse.lo \
                  xmlrpc_serialize.lo xmlrpc_base64.lo \
