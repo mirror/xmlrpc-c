@@ -11,8 +11,8 @@
 ============================================================================*/
 
 
-#ifndef  _XMLRPC_INT_H_
-#define  _XMLRPC_INT_H_ 1
+#ifndef  XMLRPC_INT_H_INCLUDED
+#define  XMLRPC_INT_H_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {

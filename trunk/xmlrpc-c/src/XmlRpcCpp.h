@@ -7,8 +7,8 @@
 //=========================================================================
 
 
-#ifndef  _XMLRPCCPP_H_
-#define  _XMLRPCCPP_H_ 1
+#ifndef XMLRPCCPP_H_INCLUDED
+#define XMLRPCCPP_H_INCLUDED
 
 // There used to be a "using namespace std" here and some confusing old
 // comments about it having something to do with what header file you

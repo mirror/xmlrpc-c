@@ -1,6 +1,6 @@
 /* Copyright information is at the end of the file */
-#ifndef  _XMLRPC_TRANSPORT_H_
-#define  _XMLRPC_TRANSPORT_H_ 1
+#ifndef  XMLRPC_TRANSPORT_H_INCLUDED
+#define  XMLRPC_TRANSPORT_H_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {

@@ -10,8 +10,8 @@
   Copyright information is at the end of the file.
 ============================================================================*/
 
-#ifndef  _XMLRPC_SERVER_ABYSS_INT_H_
-#define  _XMLRPC_SERVER_ABYSS_INT_H_ 1
+#ifndef  XMLRPC_SERVER_ABYSS_INT_H_INCLUDED
+#define  XMLRPC_SERVER_ABYSS_INT_H_INCLUDED
 
 #include "abyss.h"
 
