@@ -10,6 +10,10 @@
 
 #include "xmlrpc_config.h"
 
+#ifdef WIN32
+#include <xmlrpc_pthreads.h>
+#endif
+
 #include "bool.h"
 #include "mallocvar.h"
 #include "linklist.h"
@@ -22,7 +26,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+
+#ifndef WIN32
 #include <pthread.h>
+#endif
 
 #include <curl/curl.h>
 #include <curl/types.h>
