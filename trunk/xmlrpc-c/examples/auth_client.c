@@ -35,7 +35,7 @@ main(int           const argc,
     xmlrpc_env env;
     xmlrpc_server_info * server;
     xmlrpc_value * result;    
-	int sum;
+	xmlrpc_int sum;
     
     if (argc-1 > 0) {
         fprintf(stderr, "There are no arguments.  You specified %d", argc-1);
@@ -64,7 +64,7 @@ main(int           const argc,
     xmlrpc_server_info_free(server);
     
     /* Get the authentication information and print it out. */
-    xmlrpc_parse_value(&env, result, "i", &sum);
+    xmlrpc_read_int(&env, result, &sum);
     die_if_fault_occurred(&env);
     printf("The sum  is %d\n", sum);
     

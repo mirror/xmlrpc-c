@@ -43,7 +43,7 @@ handle_sample_add_response(const char *   const server_url,
     /* Our first four arguments provide helpful context.  Let's grab the
        addends from our parameter array. 
     */
-    xmlrpc_parse_value(&env, param_array, "(ii)", &addend, &adder);
+    xmlrpc_decompose_value(&env, param_array, "(ii)", &addend, &adder);
     die_if_fault_occurred(&env);
 
     printf("RPC with method '%s' at URL '%s' to add %d and %d "
@@ -54,7 +54,7 @@ handle_sample_add_response(const char *   const server_url,
     else {
         xmlrpc_int sum;
 
-        xmlrpc_parse_value(&env, resultP, "i", &sum);
+        xmlrpc_read_int(&env, resultP, &sum);
         die_if_fault_occurred(&env);
 
         printf("The sum is  %d\n", sum);

@@ -91,7 +91,6 @@ main(int          const argc,
     xmlrpc_env env;
     xmlrpc_value *stories, *story;
     size_t size, i;
-    char *title, *link, *description;
     int first;
 
     parseCommandLine(argc, argv, &cmdline);
@@ -118,14 +117,17 @@ main(int          const argc,
     die_if_fault_occurred(&env);
     first = 1;
     for (i = 0; i < size; i++) {
+        const char * title;
+        const char * link;
+        const char * description;
 
         /* Extract the useful information from our story. */
         story = xmlrpc_array_get_item(&env, stories, i);
         die_if_fault_occurred(&env);
-        xmlrpc_parse_value(&env, story, "{s:s,s:s,s:s,*}",
-                           "title", &title,
-                           "link", &link,
-                           "description", &description);
+        xmlrpc_decompose_value(&env, story, "{s:s,s:s,s:s,*}",
+                               "title", &title,
+                               "link", &link,
+                               "description", &description);
         die_if_fault_occurred(&env);
 
         /* Print a separator line if necessary. */
@@ -140,6 +142,9 @@ main(int          const argc,
         } else {
             printf("%s\n%s\n", title, link);
         }
+        free((char*)title);
+        free((char*)link);
+        free((char*)description);
     }
     
     /* Shut down our client. */

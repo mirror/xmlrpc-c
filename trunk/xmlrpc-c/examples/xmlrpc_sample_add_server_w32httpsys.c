@@ -125,7 +125,7 @@ sample_add(xmlrpc_env *   const env,
     xmlrpc_int32 x, y, z;
 
     /* Parse our argument array. */
-    xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
+    xmlrpc_decompose_value(env, param_array, "(ii)", &x, &y);
     if (env->fault_occurred)
         return NULL;
 

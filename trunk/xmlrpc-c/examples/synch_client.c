@@ -1,5 +1,6 @@
 /* A simple synchronous XML-RPC client written in C. */
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <xmlrpc.h>
@@ -26,8 +27,8 @@ main(int           const argc,
      const char ** const argv ATTR_UNUSED) {
 
     xmlrpc_env env;
-    xmlrpc_value *result;
-    char *state_name;
+    xmlrpc_value * resultP;
+    const char * state_name;
 
     if (argc-1 > 0) {
         fprintf(stderr, "No arguments");
@@ -41,18 +42,19 @@ main(int           const argc,
     xmlrpc_env_init(&env);
 
     /* Call the famous server at UserLand. */
-    result = xmlrpc_client_call(&env, "http://betty.userland.com/RPC2",
-				"examples.getStateName",
-				"(i)", (xmlrpc_int32) 41);
+    resultP = xmlrpc_client_call(&env, "http://betty.userland.com/RPC2",
+                                 "examples.getStateName",
+                                 "(i)", (xmlrpc_int32) 41);
     die_if_fault_occurred(&env);
     
     /* Get our state name and print it out. */
-    xmlrpc_parse_value(&env, result, "s", &state_name);
+    xmlrpc_read_string(&env, resultP, &state_name);
     die_if_fault_occurred(&env);
     printf("%s\n", state_name);
-    
+    free((char*)state_name);
+   
     /* Dispose of our result value. */
-    xmlrpc_DECREF(result);
+    xmlrpc_DECREF(resultP);
 
     /* Clean up our error-handling environment. */
     xmlrpc_env_clean(&env);

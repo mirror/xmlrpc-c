@@ -32,12 +32,24 @@ struct _xmlrpc_value {
         void *c_ptr;
     } _value;
     
-    /* Other data types use a memory block. */
+    /* Other data types use a memory block.
+
+       For a string, this is the characters of the string in UTF-8, plus
+       a NUL added to the end.
+    */
     xmlrpc_mem_block _block;
 
 #ifdef HAVE_UNICODE_WCHAR
-    /* We may need to convert our string data to a wchar_t string. */
     xmlrpc_mem_block *_wcs_block;
+        /* This is a copy of the string value in _block, but in UTF-16
+           instead of UTF-8.  This member is not always present.  If NULL,
+           it is not present.
+
+           We keep this copy for convenience.  The value is totally
+           redundant with _block.
+
+           This member is always NULL when the data type is not string.
+        */
 #endif
 };
 
@@ -78,6 +90,53 @@ xmlrpc_makePrintable(const char * const input);
 const char *
 xmlrpc_makePrintableChar(char const input);
 
+
+/*----------------------------------------------------------------------------
+   The following are for use by the legacy xmlrpc_parse_value().  They don't
+   do proper memory management, so they aren't appropriate for general use,
+   but there are old users that do xmlrpc_parse_value() and compensate for
+   the memory management, so we have to continue to offer this style of
+   memory management.
+
+   In particular, the functions that return xmlrpc_values don't increment
+   the reference count, and the functions that return strings don't allocate
+   new memory for them.
+-----------------------------------------------------------------------------*/
+
+void
+xmlrpc_read_datetime_str_old(xmlrpc_env *         const envP,
+                             const xmlrpc_value * const valueP,
+                             const char **        const stringValueP);
+
+void
+xmlrpc_read_string_old(xmlrpc_env *         const envP,
+                       const xmlrpc_value * const valueP,
+                       const char **        const stringValueP);
+
+void
+xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          size_t *             const lengthP,
+                          const char **        const stringValueP);
+
+#ifdef HAVE_UNICODE_WCHAR
+void
+xmlrpc_read_string_w_old(xmlrpc_env *     const envP,
+                         xmlrpc_value *   const valueP,
+                         const wchar_t ** const stringValueP);
+
+void
+xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
+                            xmlrpc_value *   const valueP,
+                            size_t *         const lengthP,
+                            const wchar_t ** const stringValueP);
+#endif
+
+void
+xmlrpc_read_base64_old(xmlrpc_env *           const envP,
+                       const xmlrpc_value *   const valueP,
+                       unsigned int *         const lengthP,
+                       const unsigned char ** const byteStringValueP);
 
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.

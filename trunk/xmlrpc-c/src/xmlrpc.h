@@ -400,18 +400,29 @@ xmlrpc_read_double(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    xmlrpc_double *      const doubleValueP);
 
-#if 0
-/* This is not implemented yet.  We also need a version that takes
-   the datetime in struct timespec format
-*/
 xmlrpc_value *
-xmlrpc_datetime_new(xmlrpc_env * const envP,
-                    time_t       const timeValue);
+xmlrpc_datetime_new_str(xmlrpc_env * const envP,
+                        const char * const value);
 
 void
-xmlrpc_read_datetime(xmlrpc_env *         const envP,
-                     const xmlrpc_value * const valueP,
-                     time_t *             const timeValueP);
+xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
+                         const xmlrpc_value * const valueP,
+                         const char **        const stringValueP);
+
+#if 0
+/* This is not implemented yet.  We also need a version that takes
+   the datetime in struct timespec format, and it wouldn't hurt to
+   extend XML-RPC so other kinds of times, e.g. subsecond times,
+   are possible.
+*/
+xmlrpc_value *
+xmlrpc_datetime_new_sec(xmlrpc_env * const envP,
+                        time_t       const timeValue);
+
+void
+xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
+                         const xmlrpc_value * const valueP,
+                         time_t *             const timeValueP);
 #endif
 
 xmlrpc_value *
@@ -419,8 +430,8 @@ xmlrpc_string_new(xmlrpc_env * const envP,
                   const char * const stringValue);
 
 xmlrpc_value *
-xmlrpc_string_new_lp(xmlrpc_env * const envP,
-                     unsigned int const length,
+xmlrpc_string_new_lp(xmlrpc_env * const envP, 
+                     size_t       const length,
                      const char * const stringValue);
 
 void
@@ -432,8 +443,30 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
 void
 xmlrpc_read_string_lp(xmlrpc_env *         const envP,
                       const xmlrpc_value * const valueP,
-                      unsigned int *       const lengthP,
+                      size_t *             const lengthP,
                       const char **        const stringValueP);
+
+#ifdef HAVE_UNICODE_WCHAR
+xmlrpc_value *
+xmlrpc_string_w_new(xmlrpc_env *    const envP,
+                    const wchar_t * const stringValue);
+
+xmlrpc_value *
+xmlrpc_string_w_new_lp(xmlrpc_env *    const envP, 
+                       size_t          const length,
+                       const wchar_t * const stringValue);
+
+void
+xmlrpc_read_string_w(xmlrpc_env *     const envP,
+                     xmlrpc_value *   const valueP,
+                     const wchar_t ** const stringValueP);
+
+void
+xmlrpc_read_string_w_lp(xmlrpc_env *     const envP,
+                        xmlrpc_value *   const valueP,
+                        size_t *         const lengthP,
+                        const wchar_t ** const stringValueP);
+#endif
 
 xmlrpc_value *
 xmlrpc_base64_new(xmlrpc_env *          const envP,
@@ -476,8 +509,8 @@ xmlrpc_array_read_item(xmlrpc_env *         const envP,
    Sets XMLRPC_INDEX_ERROR if 'index' is out of bounds.
 */
 xmlrpc_value * 
-xmlrpc_array_get_item(xmlrpc_env *         const env,
-                      const xmlrpc_value * const array,
+xmlrpc_array_get_item(xmlrpc_env *         const envP,
+                      const xmlrpc_value * const arrayP,
                       int                  const index);
 
 /* Not implemented--we don't need it yet.
@@ -487,6 +520,16 @@ xmlrpc_value* array,
 int index,
                                   xmlrpc_value* value);
 */
+
+void
+xmlrpc_read_nil(xmlrpc_env *   const envP,
+                xmlrpc_value * const valueP);
+                
+
+void
+xmlrpc_read_cptr(xmlrpc_env *         const envP,
+                 const xmlrpc_value * const valueP,
+                 void **              const ptrValueP);
 
 xmlrpc_value *
 xmlrpc_struct_new(xmlrpc_env * env);
@@ -620,6 +663,10 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
                                 xmlrpc_value ** out_value);
 
 xmlrpc_value *
+xmlrpc_cptr_new(xmlrpc_env * const envP,
+                void *       const value);
+
+xmlrpc_value *
 xmlrpc_nil_new(xmlrpc_env * const envP);
 
 
@@ -638,9 +685,25 @@ xmlrpc_build_value_va(xmlrpc_env *    const env,
                       xmlrpc_value ** const valPP,
                       const char **   const tailP);
 
-/* Extract values from an xmlrpc_value and store them into C variables.
-** Does not increment the reference counts of output values.
-** See the xmlrpc-c documentation for more information. */
+void 
+xmlrpc_decompose_value(xmlrpc_env *   const envP,
+                       xmlrpc_value * const value,
+                       const char *   const format, 
+                       ...);
+
+void 
+xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
+                          xmlrpc_value * const value,
+                          const char *   const format,
+                          va_list              args);
+
+/* xmlrpc_parse_value... is the same as xmlrpc_decompose_value... except
+   that it doesn't do proper memory management -- it returns xmlrpc_value's
+   without incrementing the reference count and returns pointers to data
+   inside an xmlrpc_value structure.
+
+   These are deprecated.  Use xmlrpc_decompose_value... instead.
+*/
 void 
 xmlrpc_parse_value(xmlrpc_env *   const envP,
                    xmlrpc_value * const value,

@@ -13,9 +13,9 @@ sample_add(xmlrpc_env *   const env,
     xmlrpc_int32 x, y, z;
 
     /* Parse our argument array. */
-    xmlrpc_parse_value(env, param_array, "(ii)", &x, &y);
+    xmlrpc_decompose_value(env, param_array, "(ii)", &x, &y);
     if (env->fault_occurred)
-	return NULL;
+        return NULL;
 
     /* Add our two numbers. */
     z = x + y;
@@ -33,7 +33,7 @@ main(int           const argc ATTR_UNUSED,
     /* Process our request. */
     xmlrpc_cgi_init(XMLRPC_CGI_NO_FLAGS);
     xmlrpc_cgi_add_method_w_doc("sample.add", &sample_add, NULL,
-				"i:ii", "Add two integers.");
+                                "i:ii", "Add two integers.");
     xmlrpc_cgi_process_call();
     xmlrpc_cgi_cleanup();
 
