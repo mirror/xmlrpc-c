@@ -297,6 +297,14 @@ char *PoolStrdup(TPool *p,char *s);
 #include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
+
+#ifdef HAVE_SYS_FILIO_H
+#include <sys/filio.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+
 #endif	/* ABYSS_WIN32 */
 
 #define TIME_INFINITE	0xffffffff
