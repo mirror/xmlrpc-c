@@ -30,9 +30,11 @@
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
 
-#define MIN_BLOCK_ALLOC_SZ (16)
-#define MAX_BLOCK_ALLOC_SZ (512 * 1024)
-#define ERROR_BUFFER_SZ    (256)
+#define BLOCK_ALLOC_MIN (16)
+#define BLOCK_ALLOC_MAX (512 * 1024)
+
+#define ERROR_BUFFER_SZ (256)
+
 
 /*=========================================================================
 **  Assertions and Error Handling
@@ -167,8 +169,8 @@ void xmlrpc_mem_block_init (xmlrpc_env* env,
     XMLRPC_ASSERT(block != NULL);
 
     block->_size = size;
-    if (size < MIN_BLOCK_ALLOC_SZ)
-	block->_allocated = MIN_BLOCK_ALLOC_SZ;
+    if (size < BLOCK_ALLOC_MIN)
+	block->_allocated = BLOCK_ALLOC_MIN;
     else
 	block->_allocated = size;
 
@@ -224,9 +226,9 @@ void xmlrpc_mem_block_resize (xmlrpc_env* env,
 
     /* Calculate a new allocation size. */
     proposed_alloc = block->_allocated;
-    while (proposed_alloc < size && proposed_alloc <= MAX_BLOCK_ALLOC_SZ)
+    while (proposed_alloc < size && proposed_alloc <= BLOCK_ALLOC_MAX)
 	proposed_alloc *= 2;
-    if (proposed_alloc > MAX_BLOCK_ALLOC_SZ)
+    if (proposed_alloc > BLOCK_ALLOC_MAX)
 	XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, "Memory block too large");
 
     /* Allocate our new memory block. */
