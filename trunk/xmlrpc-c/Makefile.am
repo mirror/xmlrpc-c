@@ -47,7 +47,7 @@ fulldistsig:
 	rpm --addsign fulldist/$(VERSION)/*.rpm
 	gpg --default-key $(GPG_KEY) --detach-sign \
             fulldist/$(VERSION)/xmlrpc-c-$(VERSION).tar.gz 
-	echo
+	@echo
 	@banner="fulldist/$(VERSION) has been signed with GPG"; \
 	dashes=`echo "$$banner" | sed s/./=/g`; \
 	echo "$$dashes"; \
