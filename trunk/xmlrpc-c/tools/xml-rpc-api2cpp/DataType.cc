@@ -125,13 +125,13 @@ public:
 };
 
 string VoidDataType::parameterFragment (const string& base_name) const {
-    const string& warningKiller ATTR_UNUSED = base_name;
+    static const string& warningKiller = base_name;
     throw domain_error("Can't handle functions with 'void' arguments'");
     
 }
 
 string VoidDataType::inputConversionFragment (const string& base_name) const {
-    const string& warningKiller ATTR_UNUSED = base_name;
+    static const string& warningKiller = base_name;
     throw domain_error("Can't handle functions with 'void' arguments'");
 }
 
@@ -140,7 +140,7 @@ string VoidDataType::returnTypeFragment () const {
 }
 
 string VoidDataType::outputConversionFragment (const string& var_name) const {
-    const string& warningKiller ATTR_UNUSED = var_name;
+    static const string& warningKiller = var_name;
     return "/* Return value ignored. */";
 }
 
