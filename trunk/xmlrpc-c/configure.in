@@ -8,7 +8,7 @@ dnl Version Numbering
 dnl =======================================================================
 
 dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.3)
+AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.4)
 
 dnl This version number needs to be changed in several *different* tricky
 dnl ways for each release. Please read the libtool documentation very
