@@ -150,6 +150,18 @@ void xmlrpc_DECREF (xmlrpc_value* value)
 /*=========================================================================
 **  Building XML-RPC values.
 **=========================================================================
+*/
+
+xmlrpc_type xmlrpc_value_type (xmlrpc_value* value)
+{
+    XMLRPC_ASSERT_VALUE_OK(value);
+    return value->_type;
+}
+
+
+/*=========================================================================
+**  Building XML-RPC values.
+**=========================================================================
 **  Build new XML-RPC values from a format string. This code is heavily
 **  inspired by Py_BuildValue from Python 1.5.2. In particular, our
 **  particular abuse of the va_list data type is copied from the equivalent

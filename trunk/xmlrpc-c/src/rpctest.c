@@ -498,6 +498,7 @@ void test_value (void)
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 10);
     TEST(!env.fault_occurred);
     TEST(v != NULL);
+    TEST(XMLRPC_TYPE_INT == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "i", &i);
     TEST(!env.fault_occurred);
     TEST(i == 10);
@@ -507,6 +508,7 @@ void test_value (void)
     v = xmlrpc_build_value(&env, "b", (xmlrpc_bool) 1);
     TEST(!env.fault_occurred);
     TEST(v != NULL);
+    TEST(XMLRPC_TYPE_BOOL == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "b", &b);
     TEST(!env.fault_occurred);
     TEST(b);
@@ -516,6 +518,7 @@ void test_value (void)
     v = xmlrpc_build_value(&env, "d", 1.0);
     TEST(!env.fault_occurred);
     TEST(v != NULL);
+    TEST(XMLRPC_TYPE_DOUBLE == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "d", &d);
     TEST(!env.fault_occurred);
     TEST(d == 1.0);
@@ -525,6 +528,7 @@ void test_value (void)
     v = xmlrpc_build_value(&env, "s", test_string_1);
     TEST(!env.fault_occurred);
     TEST(v != NULL);
+    TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "s", &str);
     TEST(!env.fault_occurred);
     TEST(strcmp(str, test_string_1) == 0);
@@ -538,6 +542,7 @@ void test_value (void)
     v = xmlrpc_build_value(&env, "s#", "foo\0bar", (size_t) 7);
     TEST(!env.fault_occurred);
     TEST(v != NULL);
+    TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "s#", &str, &len);
     TEST(!env.fault_occurred);
     TEST(memcmp(str, "foo\0bar", 7) == 0);
@@ -578,6 +583,7 @@ void test_value (void)
     /* Basic array-building test. */
     v = xmlrpc_build_value(&env, "()");
     TEST(!env.fault_occurred);
+    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
     len = xmlrpc_array_size(&env, v);
     TEST(!env.fault_occurred);
     TEST(len == 0);
@@ -588,6 +594,7 @@ void test_value (void)
 			   (xmlrpc_int32) 10, (xmlrpc_int32) 20,
 			   (xmlrpc_int32) 30, (xmlrpc_int32) 40);
     TEST(!env.fault_occurred);
+    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
     len = xmlrpc_array_size(&env, v);
     TEST(!env.fault_occurred);
     TEST(len == 3);
@@ -614,6 +621,8 @@ void test_value (void)
     TEST(!env.fault_occurred);
     xmlrpc_parse_value(&env, v, "(AS)", &v2, &v3);
     TEST(!env.fault_occurred);
+    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v2));
+    TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(v3));
     len = xmlrpc_array_size(&env, v2);
     TEST(!env.fault_occurred);
     TEST(len == 0);
@@ -641,6 +650,7 @@ void test_value (void)
     ** We don't support cleanup functions (yet). */
     v = xmlrpc_build_value(&env, "p", (void*) 0x00000017);
     TEST(!env.fault_occurred);
+    TEST(XMLRPC_TYPE_C_PTR == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "p", &ptr);
     TEST(!env.fault_occurred);
     TEST(ptr == (void*) 0x00000017);
@@ -649,6 +659,7 @@ void test_value (void)
     /* Test <base64> data. */
     v = xmlrpc_build_value(&env, "6", "a\0b", (size_t) 3);
     TEST(!env.fault_occurred);
+    TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
     xmlrpc_parse_value(&env, v, "6", &data, &len);
     TEST(!env.fault_occurred);
     TEST(len == 3);
@@ -712,6 +723,7 @@ void test_struct (void)
     s = xmlrpc_struct_new(&env);
     TEST(!env.fault_occurred);
     TEST(s != NULL);
+    TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(s));
     size = xmlrpc_struct_size(&env, s);
     TEST(!env.fault_occurred);
     TEST(size == 0);
@@ -819,6 +831,7 @@ void test_struct (void)
 			   "baz", (xmlrpc_bool) 0);
     TEST(!env.fault_occurred);
     TEST(s != NULL);
+    TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(s));
     size = xmlrpc_struct_size(&env, s);
     TEST(!env.fault_occurred);
     TEST(size == 3);

@@ -170,6 +170,9 @@ void test_value (void) {
     // Test our default constructor.
     XmlRpcValue val5;
     TEST(val5.getBool() == false);
+
+    // Test our type introspection.
+    TEST(XmlRpcValue::makeInt(0).getType() == XMLRPC_TYPE_INT);
     
     // Test our basic data types.
     TEST(XmlRpcValue::makeInt(30).getInt() == 30);

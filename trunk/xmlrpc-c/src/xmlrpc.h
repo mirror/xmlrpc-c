@@ -260,6 +260,8 @@ void xmlrpc_mem_block_append
 #define XMLRPC_TYPE_C_PTR    (8)
 #define XMLRPC_TYPE_DEAD     (0xDEAD)
 
+typedef int xmlrpc_type;
+
 #ifndef XMLRPC_WANT_INTERNAL_DECLARATIONS
 
 /* These are *always* allocated on the heap. No exceptions. */
@@ -268,7 +270,7 @@ typedef struct _xmlrpc_value xmlrpc_value;
 #else /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
 
 typedef struct _xmlrpc_value {
-    int _type;
+    xmlrpc_type _type;
     int _refcount;
 
     /* Certain data types store their data directly in the xmlrpc_value. */
@@ -310,6 +312,9 @@ extern void xmlrpc_INCREF (xmlrpc_value* value);
 /* Decrement the reference count of an xmlrpc_value. If there
 ** are no more references, free it. */
 extern void xmlrpc_DECREF (xmlrpc_value* value);
+
+/* Get the type of an XML-RPC value. */
+extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* value);
 
 /* Build an xmlrpc_value from a format string.
 ** Increments the reference counts of input arguments if necessary.
@@ -536,10 +541,18 @@ typedef xmlrpc_value *
 			  xmlrpc_value *param_array,
 			  void *user_data);
 
+#ifndef XMLRPC_WANT_INTERNAL_DECLARATIONS
+
 /* Our registry structure. This has no public members. */
-typedef struct {
+typedef struct _xmlrpc_registry xmlrpc_registry;
+
+#else /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
+
+typedef struct _xmlrpc_registry {
     xmlrpc_value *_methods;
 } xmlrpc_registry;
+
+#endif /* XMLRPC_WANT_INTERNAL_DECLARATIONS */
 
 /* Create a new method registry. */
 extern xmlrpc_registry *
@@ -580,7 +593,7 @@ xmlrpc_registry_process_call (xmlrpc_env *env,
 **  XML-RPC Base64 Utilities
 **=========================================================================
 **  Here are some lightweight utilities which can be used to encode and
-**  decode Base64 data.
+**  decode Base64 data. These are exported mainly for testing purposes.
 */
 
 extern xmlrpc_mem_block *

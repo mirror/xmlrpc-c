@@ -151,12 +151,15 @@ public:
                  ~XmlRpcValue (void);
 
     XmlRpcValue&  operator= (const XmlRpcValue& value);
+
+    // Accessing the value's type (think of this as lightweight RTTI).
+    xmlrpc_type getType(void) const;
     
     // We don't supply an automatic conversion operator--you need to say
     // whether you want to make or borrow this object's reference.
     // XXX - Is it really OK for these to be const?
-    xmlrpc_value * makeReference (void) const;
-    xmlrpc_value * borrowReference (void) const;
+    xmlrpc_value *makeReference (void) const;
+    xmlrpc_value *borrowReference (void) const;
 
     // Some static "constructor" functions.
     static XmlRpcValue makeInt      (const XmlRpcValue::int32 i);
@@ -236,6 +239,10 @@ inline XmlRpcValue& XmlRpcValue::operator= (const XmlRpcValue& value) {
     xmlrpc_INCREF(value.mValue);
     xmlrpc_DECREF(mValue);
     mValue = value.mValue;
+}
+
+inline xmlrpc_type XmlRpcValue::getType (void) const {
+    return xmlrpc_value_type(mValue);
 }
 
 inline xmlrpc_value *XmlRpcValue::makeReference (void) const {
