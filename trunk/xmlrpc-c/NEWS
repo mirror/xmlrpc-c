@@ -25,6 +25,9 @@
     an alternative to Abyss on current Win32 platforms.  Supports
     basic authentication and SSL.  Requires recent Platform SDK to
     build.
+  
+  * SAB: Better support for libCurl in Win32.  Added documentation
+    and altered some project and configuration files.
 
 1.1 - January 8, 2005
 
