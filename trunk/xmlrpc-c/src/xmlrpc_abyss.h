@@ -100,13 +100,13 @@ xmlrpc_server_abyss_run_first(void (runfirst(void *)),
 ** using ServerAddHandler. This handler assumes that it can read from
 ** the method registry without running into race conditions or anything
 ** nasty like that. */
-extern bool
+extern xmlrpc_bool
 xmlrpc_server_abyss_rpc2_handler (TSession *r);
 
 /* Return a "404 Not Found" for all requests. Install this using
 ** ServerDefaultHandler if you don't want to serve any HTML or
 ** GIFs from your htdocs directory. */
-extern bool
+extern xmlrpc_bool
 xmlrpc_server_abyss_default_handler (TSession *r);
 
 #endif /* XMLRPC_SERVER_WANT_ABYSS_HANDLERS */

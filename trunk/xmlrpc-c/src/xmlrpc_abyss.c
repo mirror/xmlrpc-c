@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "xmlrpc.h"
+#include "xmlrpc_int.h"
 
 #include "abyss.h"
 #define  XMLRPC_SERVER_WANT_ABYSS_HANDLERS
@@ -358,7 +359,7 @@ processContentLength(TSession *     const httpRequestP,
 **  more documentation.
 */
 
-bool 
+xmlrpc_bool 
 xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
 
     unsigned int httpError;
@@ -449,7 +450,7 @@ xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
 **  for more documentation.
 */
 
-bool 
+xmlrpc_bool 
 xmlrpc_server_abyss_default_handler (TSession * const r) {
     return send_error(r, 404);
 }
