@@ -229,27 +229,24 @@ createCurlHeaderList(xmlrpc_env *         const envP,
         /* Send an authorization header if we need one. */
         if (serverP->_http_basic_auth) {
             /* Make the authentication header "Authorization: " */
-            /* we need 15 + length of _http_basic_auth + 1 for null */
 
-            char * const authHeader = 
-                malloc(strlen(serverP->_http_basic_auth) + 15 + 1);
+            const char * authHeader;
+            
+            casprintf(&authHeader, "Authorization: %s",
+                      serverP->_http_basic_auth);
             
             if (authHeader == NULL)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INTERNAL_ERROR,
                     "Couldn't allocate memory for authentication header");
             else {
-                memcpy(authHeader,"Authorization: ", 15);
-                memcpy(authHeader + 15, serverP->_http_basic_auth,
-                       strlen(serverP->_http_basic_auth) + 1);
-
                 headerList = curl_slist_append(headerList, authHeader);
                 if (headerList == NULL)
                     xmlrpc_env_set_fault_formatted(
                         envP, XMLRPC_INTERNAL_ERROR,
                         "Could not add authentication header.  "
                         "curl_slist_append() failed.");
-                free(authHeader);
+                strfree(authHeader);
             }
         }
         if (envP->fault_occurred)
