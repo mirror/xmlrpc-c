@@ -6,6 +6,7 @@ synch_client
 xmlrpc_asynch_client
 auth_client
 xmlrpc
+xmlrpc_loop_server
 xmlrpc_sample_add_client
 xmlrpc_sample_add_server
 xmlrpc_server_validatee

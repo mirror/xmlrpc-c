@@ -115,6 +115,8 @@ CONFIG_HEADER = ../../../xmlrpc_config.h
 CONFIG_CLEAN_FILES = 
 LTLIBRARIES =  $(lib_LTLIBRARIES)
 
+# Declare our headers (installed ones only!).
+include_HEADERS = xmlrpc_abyss.h
 
 DEFS = @DEFS@ -I. -I$(srcdir) -I../../..
 CPPFLAGS = @CPPFLAGS@
@@ -172,6 +174,21 @@ uninstall-libLTLIBRARIES:
 	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
 	done
 
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(includedir)/$$p"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(includedir)/$$p; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	list='$(include_HEADERS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(includedir)/$$p; \
+	done
+
 .c.o:
 	$(COMPILE) -c $<
 
@@ -181,8 +198,16 @@ uninstall-libLTLIBRARIES:
 .S.o:
 	$(COMPILE) -c $<
 
+xmlrpc_abyss.h: abyss.h
+# abyss.h is what comes with Abyss and what Abyss .c files use, 
+# but when it gets installed as part
+# of an Xmlrpc-c install, it needs to be called xmlrpc_abyss.h to clearly
+# indicate it is the Xmlrpc-c version.  (Same goes for libxmlrpc_abyss.a).
+	cp $< $@
+
 mostlyclean-compile:
 	-rm -f *.o core *.core
+	-rm -f xmlrpc_abyss.h
 
 clean-compile:
 
@@ -278,7 +303,7 @@ installcheck: installcheck-am
 install-exec-am: install-libLTLIBRARIES
 install-exec: install-exec-am
 
-install-data-am:
+install-data-am: install-includeHEADERS
 install-data: install-data-am
 
 install-am: all-am
@@ -286,7 +311,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-libLTLIBRARIES
 uninstall: uninstall-am
-all-am: Makefile $(LTLIBRARIES)
+all-am: Makefile $(LTLIBRARIES) $(include_HEADERS)
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install

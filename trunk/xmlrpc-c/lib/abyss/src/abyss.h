@@ -40,13 +40,6 @@
 extern "C" {
 #endif
 
-#ifndef HAVE_WIN32_CONFIG_H
-#include "xmlrpc_config.h"
-#else
-#include "xmlrpc_win32_config.h"
-#endif
-
-
 /*********************************************************************
 ** EDIT THE FOLLOWING LINES TO MEET YOUR CONFIGURATION NEEDS
 *********************************************************************/
