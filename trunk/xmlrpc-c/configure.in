@@ -8,12 +8,12 @@ dnl Version Numbering
 dnl =======================================================================
 
 dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.9)
+AM_INIT_AUTOMAKE(xmlrpc-c, 0.9.10)
 
 dnl This version number needs to be changed in several *different* tricky
 dnl ways for each release. Please read the libtool documentation very
 dnl closely before touching this or making a release!
-VERSION_INFO="-version-info 6:0:3"
+VERSION_INFO="-version-info 7:0:4"
 AC_SUBST(VERSION_INFO)
 
 dnl Get the date for use in our LSM file.
@@ -353,9 +353,16 @@ if test x"$enable_libwww_client" != xno; then
     fi
     AC_MSG_RESULT($LIBWWW_LIBDIR)
     AC_SUBST(LIBWWW_LIBDIR)
-    LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
+
+    # Some ancient rpath stuff, now disabled.  I turned this off because it
+    # breaks Debian (and Mandrake?) policy, and we don't use it anymore.
+    # If you have multiple copies of w3c-libwww lying around, you can turn
+    # it back on.
+    #LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
+    LIBWWW_RPATH=""
     AC_SUBST(LIBWWW_RPATH)
-    LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
+    #LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
+    LIBWWW_WL_RPATH=""
     AC_SUBST(LIBWWW_WL_RPATH)
 
 fi # enable_libwww_client
