@@ -3,7 +3,8 @@
 
 1.2 - not yet
 
-  * BJH: Add xmlrpc_int_new(), etc.
+  * BJH: Add xmlrpc_int_new(), xmlrpc_read_int(), etc., 
+    xmlrpc_decompose_value()
 
   * BJH: Use GNUmakefile to catch non-GNU make
 
@@ -11,7 +12,7 @@
 
   * BJH: Curl transport: check for failure of Winsock startup.
 
-  * BJH: Add 'interface' option to Curl transport.
+  * BJH: Add 'network_interface' option to Curl transport.
 
   * BJH: Add transport-specific options.
 
