@@ -7,6 +7,8 @@ include $(SRCDIR)/Makefile.config
 
 SUBDIRS = src lib tools examples
 
+PROGRAMS_TO_INSTALL = xmlrpc-c-config
+
 # We're in a transition between the bloated, complex GNU
 # Autoconf/Automake style of build, in which 'configure' creates all
 # the make files, to simpler static make files.  Some directories have
@@ -35,7 +37,7 @@ DISTFILES =
 distdir: distdir-common
 
 .PHONY: install
-install: $(SUBDIRS:%=%/install)
+install: $(SUBDIRS:%=%/install) install-common
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep)

@@ -59,4 +59,4 @@ exec_prefix = @exec_prefix@
 prefix = @prefix@
 LIBINST_DIR = @libdir@
 HEADERINST_DIR = @includedir@
-
+PROGRAMINST_DIR = @bindir@

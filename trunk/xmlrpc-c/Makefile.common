@@ -9,7 +9,7 @@
 # The following make variables are meaningful as input to this file:
 #
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
-# BUILDDIR: Name of directory which is the top of the Xmrpc-c build tree.
+# BUILDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
 
 LIBTOOL = $(SRCDIR)/libtool
 LINK = $(LIBTOOL) --mode=link $(CCLD)
@@ -77,8 +77,9 @@ $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la:
 
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
-.PHONY: install-common install-libraries install-headers
-install-common: install-ltlibraries install-libraries install-headers
+.PHONY: install-common install-libraries install-headers install-bin
+install-common: \
+  install-ltlibraries install-libraries install-headers install-bin
 
 INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
@@ -122,6 +123,18 @@ install-headers: $(HEADERS_TO_INSTALL)
 	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
 	  echo " $(INSTALL_HDR_CMD)"; \
 	  $(INSTALL_HDR_CMD); \
+	done
+
+INSTALL_PROGRAM_CMD = \
+  $(INSTALL_PROGRAM) $$d$$p $(DESTDIR)$(PROGRAMINST_DIR)/$$p 
+
+install-bin: $(PROGRAMS_TO_INSTALL)
+	@$(NORMAL_INSTALL)
+	$(MKINSTALLDIRS) $(DESTDIR)$(PROGRAMINST_DIR)
+	@list='$(PROGRAMS_TO_INSTALL)'; for p in $$list; do \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  echo " $(INSTALL_PROGRAM_CMD)"; \
+	  $(INSTALL_PROGRAM_CMD); \
 	done
 
 .PHONY: clean-common
