@@ -1,3 +1,7 @@
+0.9.5 - Eric Kidd <eric.kidd@pobox.com> - 20 January 2000
+
+  * Bug fix: Make sure CGI-based servers send correct content-length.
+
 0.9.4 - Eric Kidd <eric.kidd@pobox.com> - 18 January 2000
 
   * Support for CGI-based servers.

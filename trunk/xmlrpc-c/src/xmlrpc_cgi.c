@@ -44,7 +44,7 @@ static void send_xml (char *xml_data, size_t xml_len)
     /* Send our CGI headers back to the server. */
     fprintf(stdout, "Status: 200 OK\n");
     fprintf(stdout, "Content-type: text/xml\n");
-    fprintf(stdout, "Content-length: %z\n\n", xml_len);
+    fprintf(stdout, "Content-length: %zd\n\n", xml_len);
 
     /* Blast out our data. */
     fwrite(xml_data, sizeof(char), xml_len, stdout);
@@ -152,7 +152,7 @@ static xmlrpc_mem_block *get_body (xmlrpc_env *env, size_t length)
     count = fread(contents, sizeof(char), length, stdin);
     if (count < length)
 	XMLRPC_FAIL2(env, XMLRPC_INTERNAL_ERROR,
-		     "Expected %z bytes, received %z", length, count);
+		     "Expected %zd bytes, received %zd", length, count);
 
  cleanup:
     if (env->fault_occurred) {
