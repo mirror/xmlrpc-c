@@ -1722,6 +1722,11 @@ void test_utf8_coding (void)
     xmlrpc_env_clean(&env);
 }
 
+void test_wchar_support (void)
+{
+    /* XXX - Not yet tested. */
+}
+
 
 /*=========================================================================
 **  Test Driver
@@ -1746,6 +1751,7 @@ int main (int argc, char** argv)
     test_nesting_limit();
     test_xml_size_limit();
     test_utf8_coding();
+    test_wchar_support();
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",

@@ -109,9 +109,14 @@ void xmlrpc_DECREF (xmlrpc_value* value)
 		    xmlrpc_DECREF(item);
 		}
 		xmlrpc_env_clean(&env);
-		/* Fall through. */
+		xmlrpc_mem_block_clean(&value->_block);
+		break;
 
 	    case XMLRPC_TYPE_STRING:
+		if (value->_wcs_block)
+		    xmlrpc_mem_block_free(value->_wcs_block);
+		/* Fall through. */
+
 	    case XMLRPC_TYPE_DATETIME:
 	    case XMLRPC_TYPE_BASE64:
 		xmlrpc_mem_block_clean(&value->_block);
@@ -283,12 +288,83 @@ static xmlrpc_value* mkstruct(xmlrpc_env* env,
     return strct;
 }
 
+static xmlrpc_value *mkwidestring(xmlrpc_env *env,
+				  wchar_t *wcs,
+				  size_t wcs_len)
+{
+    xmlrpc_value* val;
+    char *contents;
+    wchar_t *wcs_contents;
+    int block_is_inited;
+    xmlrpc_mem_block *utf8_block;
+    char *utf8_contents;
+    size_t utf8_len;
+
+    /* Error-handling preconditions. */
+    val = NULL;
+    utf8_block = NULL;
+    block_is_inited = 0;
+
+    /* Initialize our XML-RPC value. */
+    val = (xmlrpc_value*) malloc(sizeof(xmlrpc_value));
+    XMLRPC_FAIL_IF_NULL(val, env, XMLRPC_INTERNAL_ERROR,
+			"Could not allocate memory for wide string");
+    val->_refcount = 1;
+    val->_type = XMLRPC_TYPE_STRING;
+
+    /* More error-handling preconditions. */
+    val->_wcs_block = NULL;
+
+    /* Build our wchar_t block first. */
+    val->_wcs_block =
+	XMLRPC_TYPED_MEM_BLOCK_NEW(wchar_t, env, wcs_len + 1);
+    XMLRPC_FAIL_IF_FAULT(env);
+    wcs_contents =
+	XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, val->_wcs_block);
+    memcpy(wcs_contents, wcs, wcs_len * sizeof(wchar_t));
+    wcs_contents[wcs_len] = '\0';
+    
+    /* Convert the wcs block to UTF-8. */
+    utf8_block = xmlrpc_wcs_to_utf8(env, wcs_contents, wcs_len + 1);
+    XMLRPC_FAIL_IF_FAULT(env);
+    utf8_contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, utf8_block);
+    utf8_len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, utf8_block);
+
+    /* XXX - We need an extra memcopy to initialize _block. */
+    XMLRPC_TYPED_MEM_BLOCK_INIT(char, env, &val->_block, utf8_len);
+    XMLRPC_FAIL_IF_FAULT(env);
+    block_is_inited = 1;
+    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
+    memcpy(contents, utf8_contents, utf8_len);
+
+ cleanup:
+    if (utf8_block)
+	xmlrpc_mem_block_free(utf8_block);
+    if (env->fault_occurred) {
+	if (val) {
+	    if (val->_wcs_block)
+		xmlrpc_mem_block_free(val->_wcs_block);
+	    if (block_is_inited)
+		xmlrpc_mem_block_clean(&val->_block);
+	    free(val);
+	}
+	return NULL;
+    }
+    return val;
+}
+
 static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
 {
     xmlrpc_value* val;
     char *str, *contents;
+    wchar_t *wcs;
     unsigned char *bin_data;
     size_t len;
+
+    /* XXX - This routine has dubious error handling.  To make a long story
+    ** short, you're not currently allowed to allocate memory inside of 'val'
+    ** and then fail some later error check.  This should examined and
+    ** fixed. */
 
     /* Allocate some memory which we'll almost certainly use. If we don't
     ** use it, we'll deallocate it before returning. */
@@ -319,6 +395,7 @@ static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
 
 	case 's':
 	    val->_type = XMLRPC_TYPE_STRING;
+	    val->_wcs_block = NULL;
 	    str = (char*) va_arg(*args, char*);
 	    if (**format == '#') {
 		(*format)++;
@@ -331,6 +408,19 @@ static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
 	    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
 	    memcpy(contents, str, len);
 	    contents[len] = '\0';
+	    break;
+
+	case 'w':
+	    wcs = (wchar_t*) va_arg(*args, wchar_t*);
+	    if (**format == '#') {
+		(*format)++;
+		len = (size_t) va_arg(*args, size_t);
+	    } else {
+		len = wcslen(wcs);
+	    }
+	    free(val); /* We won't need that after all, I guess. */
+	    val = mkwidestring(env, wcs, len);
+	    XMLRPC_FAIL_IF_FAULT(env);
 	    break;
 
 	case '8':
@@ -539,8 +629,10 @@ static void parsevalue (xmlrpc_env* env,
     xmlrpc_bool *boolptr;
     double *doubleptr;
     char *contents;
+    wchar_t *wcontents;
     unsigned char *bin_data;
     char **strptr;
+    wchar_t **wcsptr;
     void **voidptrptr;
     unsigned char **binptr;
     size_t len, i, *sizeptr;
@@ -584,6 +676,33 @@ static void parsevalue (xmlrpc_env* env,
 	    *strptr = contents;
 	    break;
 
+	case 'w':
+	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
+	    if (!val->_wcs_block) {
+		/* Allocate a wchar_t string if we don't have one. */
+		contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &val->_block);
+		len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &val->_block) - 1;
+		val->_wcs_block = xmlrpc_utf8_to_wcs(env, contents, len + 1);
+		XMLRPC_FAIL_IF_FAULT(env);
+	    }
+	    wcontents =
+		XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, val->_wcs_block);
+	    len = XMLRPC_TYPED_MEM_BLOCK_SIZE(wchar_t, val->_wcs_block) - 1;
+	    
+	    wcsptr = (wchar_t**) va_arg(*args, wchar_t**);
+	    if (**format == '#') {
+		(*format)++;
+		sizeptr = (size_t*) va_arg(*args, size_t**);
+		*sizeptr = len;
+	    } else {
+		for (i = 0; i < len; i++)
+		    if (wcontents[i] == '\0')
+			XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR,
+				    "String must not contain NULL characters");
+	    }
+	    *wcsptr = wcontents;
+	    break;
+	    
 	case '8':
 	    /* The code 't' is reserved for a better, time_t based
 	    ** implementation of dateTime conversion. */
