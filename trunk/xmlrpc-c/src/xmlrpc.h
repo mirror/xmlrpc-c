@@ -29,7 +29,10 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+
+#ifdef HAVE_UNICODE_WCHAR
 #include <wchar.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +48,9 @@ extern "C" {
 
 typedef signed int xmlrpc_int32;
 typedef int xmlrpc_bool;
+
+#define XMLRPC_INT32_MAX (2147483647)
+#define XMLRPC_INT32_MIN (-XMLRPC_INT32_MAX - 1)
 
 
 /*=========================================================================
@@ -316,8 +322,10 @@ typedef struct _xmlrpc_value {
     /* Other data types use a memory block. */
     xmlrpc_mem_block _block;
 
+#ifdef HAVE_UNICODE_WCHAR
     /* We may need to convert our string data to a wchar_t string. */
     xmlrpc_mem_block *_wcs_block;
+#endif
 } xmlrpc_value;
 
 /* This is a private structure, but it's used in several different files. */
@@ -703,6 +711,8 @@ xmlrpc_base64_decode (xmlrpc_env *env,
 **  need to reimplement these routines.
 */
 
+#ifdef HAVE_UNICODE_WCHAR
+
 /* Ensure that a string contains valid, legally-encoded UTF-8 data.
 ** (Incorrectly-encoded UTF-8 strings are often used to bypass security
 ** checks.) */
@@ -723,6 +733,7 @@ xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
 		    wchar_t *wcs_data,
 		    size_t wcs_len);
 
+#endif /* HAVE_UNICODE_WCHAR */
 
 #ifdef __cplusplus
 }

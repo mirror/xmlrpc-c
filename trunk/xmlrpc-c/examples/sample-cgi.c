@@ -3,7 +3,7 @@
 #include <xmlrpc.h>
 #include <xmlrpc_cgi.h>
 
-xmlrpc_value *
+static xmlrpc_value *
 sample_add (xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
     xmlrpc_int32 x, y, z;

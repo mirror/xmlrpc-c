@@ -1,14 +1,17 @@
-# Turn on warnings.
-CFLAGS = @CFLAGS@ -Wall
+SUBDIRS = @INTEROP_CLIENT_SUBDIR@
+
+# Turn on warnings, if asked to do so.
+CFLAGS = @CFLAGS@ @CC_WARN_FLAGS@
+CPPFLAGS = @CPPFLAGS@ @CPP_WARN_FLAGS@
 
 noinst_PROGRAMS = @SYNCH_CLIENT@ @ASYNCH_CLIENT@ @AUTH_CLIENT@ \
-                  @SERVER@ @SAMPLE_CGI_CGI@
+                  @SERVER@ @SAMPLE_CGI_CGI@ @INTEROP_CGI@
 bin_PROGRAMS    = @QUERY_MEERKAT@ @MEERKAT_APP_LIST@
 EXTRA_PROGRAMS  = synch_client asynch_client auth_client \
-                  server sample-cgi.cgi \
+                  server sample-cgi.cgi interop.cgi \
 		  query-meerkat meerkat-app-list
 
-INCLUDES = -I$(srcdir)/../src
+INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../src
 
 LIBEXPAT  = ../lib/expat/xmlparse/libxmlrpc_xmlparse.la \
             ../lib/expat/xmltok/libxmlrpc_xmltok.la
@@ -32,6 +35,10 @@ server_LDADD             = $(LIBSERVER)
 sample_cgi_cgi_SOURCES   = sample-cgi.c
 sample_cgi_cgi_LDADD     = $(LIBCGI)
 sample_cgi_cgi_LDFLAGS   = -static
+
+interop_cgi_SOURCES   = interop-cgi.c
+interop_cgi_LDADD     = $(LIBCGI)
+interop_cgi_LDFLAGS   = -static
 
 query_meerkat_SOURCES    = query-meerkat.c
 query_meerkat_LDADD      = $(LIBCLIENT)

@@ -20,6 +20,10 @@ dnl Get the date for use in our LSM file.
 CONFIGURE_DATE=`date`
 AC_SUBST(CONFIGURE_DATE)
 
+dnl Get our host type.
+AC_CANONICAL_HOST
+AC_DEFINE_UNQUOTED(XMLRPC_HOST_TYPE,"$host")
+
 
 dnl =======================================================================
 dnl Decide What To Build
@@ -104,15 +108,18 @@ dnl Set up the appropriate Makefile substitutions.
 LIBXMLRPC_CGI_LA=
 XMLRPC_CGI_H=
 SAMPLE_CGI_CGI=
+INTEROP_CGI=
 if test x"$enable_cgi_server" != xno; then
     AVAILABLE_MODULES="cgi-server $AVAILABLE_MODULES"
     LIBXMLRPC_CGI_LA=libxmlrpc_cgi.la
     XMLRPC_CGI_H=xmlrpc_cgi.h
     SAMPLE_CGI_CGI=sample-cgi.cgi
+    INTEROP_CGI=interop.cgi
 fi
 AC_SUBST(LIBXMLRPC_CGI_LA)
 AC_SUBST(XMLRPC_CGI_H)
 AC_SUBST(SAMPLE_CGI_CGI)
+AC_SUBST(INTEROP_CGI)
 
 dnl Check to see if we should build our C++ stuff.
 AC_MSG_CHECKING(whether to build C++ wrappers and tools)
@@ -127,6 +134,7 @@ CPPTEST=
 XMLRPCCPP_H=
 XML_RPC_API2CPP_SUBDIR=
 MEERKAT_APP_LIST=
+INTEROP_CLIENT_SUBDIR=
 if test x"$enable_cplusplus" != xno; then
     AVAILABLE_MODULES="c++ $AVAILABLE_MODULES"
     LIBXMLRPC_CPP_A=libxmlrpc_cpp.a
@@ -137,6 +145,7 @@ if test x"$enable_cplusplus" != xno; then
     if test x"$enable_libwww_client" != xno; then
         XML_RPC_API2CPP_SUBDIR=xml-rpc-api2cpp
 	MEERKAT_APP_LIST=meerkat-app-list
+        INTEROP_CLIENT_SUBDIR=interop-client
     fi
 fi
 AC_SUBST(LIBXMLRPC_CPP_A)
@@ -144,6 +153,7 @@ AC_SUBST(CPPTEST)
 AC_SUBST(XMLRPCCPP_H)
 AC_SUBST(XML_RPC_API2CPP_SUBDIR)
 AC_SUBST(MEERKAT_APP_LIST)
+AC_SUBST(INTEROP_CLIENT_SUBDIR)
 
 AC_SUBST(AVAILABLE_MODULES)
 
@@ -235,8 +245,25 @@ AC_MSG_ERROR(your C library does not provide vsnprintf)
 dnl CygWin looks like Unix, but doesn't provide setgroups.
 AC_CHECK_FUNCS(setgroups)
 
-dnl Unicode function needed by test suites.
-AC_CHECK_FUNCS(wcsncmp)
+
+dnl =======================================================================
+dnl Decide what to do about Unicode.
+dnl =======================================================================
+
+dnl Check to see if we should build our Unicode stuff.
+AC_MSG_CHECKING(whether to build Unicode support)
+AC_ARG_ENABLE(unicode, [\
+  --disable-unicode       Disable Unicode and wchar_t support], ,
+enable_unicode=yes)
+AC_MSG_RESULT($enable_unicode)
+
+dnl Do all the work...
+if test x"$enable_unicode" != xno; then
+    AC_DEFINE(HAVE_UNICODE_WCHAR)
+
+    dnl Unicode function needed by test suites.
+    AC_CHECK_FUNCS(wcsncmp)
+fi
 
 
 dnl =======================================================================
@@ -387,6 +414,7 @@ AC_OUTPUT(xmlrpc-c-config \
           xmlrpc-c.spec \
           src/Makefile \
           examples/Makefile \
+          examples/interop-client/Makefile \
           doc/Makefile \
           lib/Makefile \
           lib/expat/Makefile \

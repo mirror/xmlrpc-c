@@ -8,7 +8,7 @@
 #define NAME "XML-RPC C Test Client"
 #define VERSION "0.1"
 
-void die_if_fault_occurred (xmlrpc_env *env)
+static void die_if_fault_occurred (xmlrpc_env *env)
 {
     if (env->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",

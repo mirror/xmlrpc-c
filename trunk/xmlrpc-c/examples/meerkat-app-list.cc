@@ -41,7 +41,7 @@ static void list_apps (int hours) {
     // Print our results.
     int first = 1;
     size_t app_count = apps.arraySize();
-    for (int i = 0; i < app_count; i++) {
+    for (size_t i = 0; i < app_count; i++) {
 	XmlRpcValue app = apps.arrayGetItem(i);
 
 	// Get some information about our application.

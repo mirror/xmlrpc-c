@@ -17,7 +17,7 @@
 #define VERSION    "0.1"
 #define SERVER_URL "http://xmlrpc-c.sourceforge.net/api/sample.php"
 
-void die_if_fault_occurred (xmlrpc_env *env)
+static void die_if_fault_occurred (xmlrpc_env *env)
 {
     if (env->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",

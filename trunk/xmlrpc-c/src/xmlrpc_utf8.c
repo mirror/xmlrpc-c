@@ -46,6 +46,7 @@
 
 #include "xmlrpc.h"
 
+#ifdef HAVE_UNICODE_WCHAR
 
 /*=========================================================================
 **  Tables and Constants
@@ -374,3 +375,5 @@ xmlrpc_mem_block *xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
     }
     return output;
 }
+
+#endif /* HAVE_UNICODE_WCHAR */

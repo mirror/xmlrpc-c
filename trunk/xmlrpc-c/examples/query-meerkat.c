@@ -13,7 +13,7 @@
 #define MEERKAT_URL "http://www.oreillynet.com/meerkat/xml-rpc/server.php"
 
 /* We're a command-line utility, so we abort if an error occurs. */
-void die_if_fault_occurred (xmlrpc_env *env)
+static void die_if_fault_occurred (xmlrpc_env *env)
 {
     if (env->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault #%d: %s\n",
@@ -23,7 +23,7 @@ void die_if_fault_occurred (xmlrpc_env *env)
 }
 
 /* Print a usage message. */
-void usage (void)
+static void usage (void)
 {
     fprintf(stderr, "Usage: query-meerkat mysql-regex [hours]\n");
     fprintf(stderr, "Try 'query-meerkat /[Ll]inux/ 24'.\n");

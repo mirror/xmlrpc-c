@@ -186,6 +186,12 @@ static char *(bad_values[]) = \
 {VALUE_HEADER"<i4>0</i4><i4>0</i4>"VALUE_FOOTER,
  VALUE_HEADER"<foo></foo>"VALUE_FOOTER,
  VALUE_HEADER"<i4><i4>4</i4></i4>"VALUE_FOOTER,
+ VALUE_HEADER"<i4>2147483648</i4>"VALUE_FOOTER,
+ VALUE_HEADER"<i4>-2147483649</i4>"VALUE_FOOTER,
+ VALUE_HEADER"<i4> 0</i4>"VALUE_FOOTER,
+ VALUE_HEADER"<i4>0 </i4>"VALUE_FOOTER,
+ VALUE_HEADER"<boolean>2</boolean>"VALUE_FOOTER,
+ VALUE_HEADER"<boolean>-1</boolean>"VALUE_FOOTER,
  VALUE_HEADER"<array></array>"VALUE_FOOTER,
  VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,
  VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,
@@ -1619,6 +1625,8 @@ static void test_xml_size_limit (void)
 **      http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 */
 
+#ifdef HAVE_UNICODE_WCHAR
+
 typedef struct {
     char *utf8;
     wchar_t wcs[16];
@@ -1837,6 +1845,8 @@ static void test_wchar_support (void)
     xmlrpc_env_clean(&env);
 }
 
+#endif /* HAVE_UNICODE_WCHAR */
+
 
 /*=========================================================================
 **  Test Driver
@@ -1860,8 +1870,11 @@ int main (int argc, char** argv)
     test_method_registry();
     test_nesting_limit();
     test_xml_size_limit();
+
+#ifdef HAVE_UNICODE_WCHAR
     test_utf8_coding();
     test_wchar_support();
+#endif /* HAVE_UNICODE_WCHAR */
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",

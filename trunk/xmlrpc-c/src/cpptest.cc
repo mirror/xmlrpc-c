@@ -101,9 +101,13 @@ void test_fault (void) {
 }
 
 void test_env (void) {
-    
-    // Perform simple environment tests.
+
+    // Declare these here to prevent silly compiler warnings about
+    // potentially uninitialized variables.
     XmlRpcEnv env1;
+    XmlRpcEnv env2;
+
+    // Perform simple environment tests.
     TEST(!env1.hasFaultOccurred());
     xmlrpc_env_set_fault(env1, 8, "Fault 8");
     TEST(env1.hasFaultOccurred());
@@ -112,7 +116,6 @@ void test_env (void) {
     TEST(fault1.getFaultString() == "Fault 8");
 
     // Test throwIfFaultOccurred.
-    XmlRpcEnv env2;
     try {
 	env2.throwIfFaultOccurred();
 	TEST_PASSED();

@@ -32,6 +32,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <ctype.h>
 
 #define  XMLRPC_WANT_INTERNAL_DECLARATIONS
 #include "xmlrpc.h"
@@ -86,6 +88,61 @@
 
 
 /*=========================================================================
+**  Number-Parsing Functions
+**=========================================================================
+**  These functions mirror atoi, atof, etc., but provide better
+**  error-handling.  These routines may reset errno to zero.
+*/
+
+static xmlrpc_int32
+xmlrpc_atoi (xmlrpc_env *env, char *str, size_t strlen,
+	     xmlrpc_int32 min, xmlrpc_int32 max)
+{
+    long i;
+    char *end;
+
+    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_PTR_OK(str);
+
+    /* Suppress compiler warnings. */
+    i = 0;
+
+    /* Check for leading white space. */
+    if (isspace(str[0]))
+	XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
+		     "\"%s\" must not contain whitespace", str);
+
+    /* Convert the value. */
+    end = str + strlen;
+    errno = 0;
+    i = strtol(str, &end, 10);
+
+    /* Look for ERANGE. */
+    if (errno != 0)
+	/* XXX - Do all operating systems have thread-safe strerror? */
+	XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR,
+		     "error parsing \"%s\": %s (%d)",
+		     str, strerror(errno), errno);
+
+    /* Look for out-of-range errors which didn't produce ERANGE. */
+    if (i < min || i > max)
+	XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR,
+		     "\"%s\" must be in range %d to %d", str, min, max);
+
+    /* Check for unused characters. */
+    if (end != str + strlen)
+	XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
+		     "\"%s\" contained trailing data", str);
+
+ cleanup:
+    errno = 0;
+    if (env->fault_occurred)
+	return 0;
+    return (xmlrpc_int32) i;
+}
+
+
+/*=========================================================================
 **  make_string
 **=========================================================================
 **  Make an XML-RPC string.
@@ -94,7 +151,9 @@
 ** penalty, but ensures that we will never pass maliciously malformed
 ** UTF-8 data back up to the user layer, where it could wreak untold
 ** damange. Don't comment out this check unless you know *exactly* what
-** you're doing.
+** you're doing.  (Win32 developers who remove this check are *begging*
+** to wind up on BugTraq, because many of the Win32 filesystem routines
+** rely on an insecure UTF-8 decoder.)
 **
 ** XXX - This validation is redundant if the user chooses to convert
 ** UTF-8 data into a wchar_t string.
@@ -103,7 +162,10 @@
 static xmlrpc_value *
 make_string(xmlrpc_env *env, char *cdata, size_t cdata_size)
 {
+#ifdef HAVE_UNICODE_WCHAR
     xmlrpc_validate_utf8(env, cdata, cdata_size);
+#endif
+
     if (env->fault_occurred)
 	return NULL;
     return xmlrpc_build_value(env, "s#", cdata, cdata_size);
@@ -131,6 +193,7 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
     xmlrpc_mem_block *decoded;
     unsigned char *ascii_data;
     xmlrpc_value *retval;
+    xmlrpc_int32 i;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(elem != NULL);
@@ -174,12 +237,16 @@ convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 	    if (strcmp(child_name, "i4") == 0 ||
 		strcmp(child_name, "int") == 0)
 	    {
-		return xmlrpc_build_value(env, "i",
-					  (xmlrpc_int32) atoi(cdata));
+		i = xmlrpc_atoi(env, cdata, strlen(cdata),
+				XMLRPC_INT32_MIN, XMLRPC_INT32_MAX);
+		XMLRPC_FAIL_IF_FAULT(env);
+		return xmlrpc_build_value(env, "i", i);
 	    } else if (strcmp(child_name, "string") == 0) {
 		return make_string(env, cdata, cdata_size);
 	    } else if (strcmp(child_name, "boolean") == 0) {
-		return xmlrpc_build_value(env, "b", (xmlrpc_bool) atoi(cdata));
+		i = xmlrpc_atoi(env, cdata, strlen(cdata), 0, 1);
+		XMLRPC_FAIL_IF_FAULT(env);
+		return xmlrpc_build_value(env, "b", (xmlrpc_bool) i);
 	    } else if (strcmp(child_name, "double") == 0) {
 		return xmlrpc_build_value(env, "d", atof(cdata));
 	    } else if (strcmp(child_name, "dateTime.iso8601") == 0) {
@@ -453,8 +520,10 @@ void xmlrpc_parse_call (xmlrpc_env *env,
     CHECK_NAME(env, name_elem, "methodName");
     CHECK_CHILD_COUNT(env, name_elem, 0);
     cdata = xml_element_cdata(name_elem);
+#ifdef HAVE_UNICODE_WCHAR
     xmlrpc_validate_utf8(env, cdata, strlen(cdata));
     XMLRPC_FAIL_IF_FAULT(env);
+#endif /* HAVE_UNICODE_WCHAR */
     *out_method_name = (char*) malloc(strlen(cdata) + 1);
     XMLRPC_FAIL_IF_NULL(*out_method_name, env, XMLRPC_INTERNAL_ERROR,
 			"Could not allocate memory for method name");

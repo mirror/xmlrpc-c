@@ -99,7 +99,7 @@ cleanup:
 **  This routine almost certainly slows down our output.
 */
 
-#ifndef NDEBUG
+#if !defined NDEBUG && defined HAVE_UNICODE_WCHAR
 
 static void sanity_check_utf8 (char *str, size_t len)
 {
@@ -136,7 +136,7 @@ static xmlrpc_mem_block* escape_string (xmlrpc_env *env, char* str, size_t len)
     retval = NULL;
 
     /* Sanity-check this string before we print it. */
-#ifndef NDEBUG
+#if !defined NDEBUG && defined HAVE_UNICODE_WCHAR
     sanity_check_utf8(str, len);
 #endif    
 

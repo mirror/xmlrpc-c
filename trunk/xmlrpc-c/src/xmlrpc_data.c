@@ -113,8 +113,10 @@ void xmlrpc_DECREF (xmlrpc_value* value)
 		break;
 
 	    case XMLRPC_TYPE_STRING:
+#ifdef HAVE_UNICODE_WCHAR
 		if (value->_wcs_block)
 		    xmlrpc_mem_block_free(value->_wcs_block);
+#endif /* HAVE_UNICODE_WCHAR */
 		/* Fall through. */
 
 	    case XMLRPC_TYPE_DATETIME:
@@ -288,6 +290,7 @@ static xmlrpc_value* mkstruct(xmlrpc_env* env,
     return strct;
 }
 
+#ifdef HAVE_UNICODE_WCHAR
 static xmlrpc_value *mkwidestring(xmlrpc_env *env,
 				  wchar_t *wcs,
 				  size_t wcs_len)
@@ -352,14 +355,18 @@ static xmlrpc_value *mkwidestring(xmlrpc_env *env,
     }
     return val;
 }
+#endif /* HAVE_UNICODE_WCHAR */
 
 static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
 {
     xmlrpc_value* val;
     char *str, *contents;
-    wchar_t *wcs;
     unsigned char *bin_data;
     size_t len;
+
+#ifdef HAVE_UNICODE_WCHAR
+    wchar_t *wcs;
+#endif
 
     /* XXX - This routine has dubious error handling.  To make a long story
     ** short, you're not currently allowed to allocate memory inside of 'val'
@@ -395,7 +402,9 @@ static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
 
 	case 's':
 	    val->_type = XMLRPC_TYPE_STRING;
+#ifdef HAVE_UNICODE_WCHAR
 	    val->_wcs_block = NULL;
+#endif
 	    str = (char*) va_arg(*args, char*);
 	    if (**format == '#') {
 		(*format)++;
@@ -410,6 +419,7 @@ static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
 	    contents[len] = '\0';
 	    break;
 
+#ifdef HAVE_UNICODE_WCHAR
 	case 'w':
 	    wcs = (wchar_t*) va_arg(*args, wchar_t*);
 	    if (**format == '#') {
@@ -422,6 +432,7 @@ static xmlrpc_value* mkvalue(xmlrpc_env* env, char** format, va_list* args)
 	    val = mkwidestring(env, wcs, len);
 	    XMLRPC_FAIL_IF_FAULT(env);
 	    break;
+#endif /* HAVE_UNICODE_WCHAR */
 
 	case '8':
 	    /* The code 't' is reserved for a better, time_t based
@@ -629,14 +640,17 @@ static void parsevalue (xmlrpc_env* env,
     xmlrpc_bool *boolptr;
     double *doubleptr;
     char *contents;
-    wchar_t *wcontents;
     unsigned char *bin_data;
     char **strptr;
-    wchar_t **wcsptr;
     void **voidptrptr;
     unsigned char **binptr;
     size_t len, i, *sizeptr;
     xmlrpc_value **valptr;
+
+#ifdef HAVE_UNICODE_WCHAR
+    wchar_t *wcontents;
+    wchar_t **wcsptr;
+#endif
 
     switch (*(*format)++) {
 	case 'i':
@@ -676,6 +690,7 @@ static void parsevalue (xmlrpc_env* env,
 	    *strptr = contents;
 	    break;
 
+#ifdef HAVE_UNICODE_WCHAR
 	case 'w':
 	    XMLRPC_TYPE_CHECK(env, val, XMLRPC_TYPE_STRING);
 	    if (!val->_wcs_block) {
@@ -702,6 +717,7 @@ static void parsevalue (xmlrpc_env* env,
 	    }
 	    *wcsptr = wcontents;
 	    break;
+#endif /* HAVE_UNICODE_WCHAR */
 	    
 	case '8':
 	    /* The code 't' is reserved for a better, time_t based
