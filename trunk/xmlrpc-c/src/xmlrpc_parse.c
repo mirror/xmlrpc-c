@@ -36,6 +36,9 @@
 #include "xmlrpc.h"
 #include "xmlrpc_expat.h"
 
+/* Security workaround. */
+#define MAX_RECURSION_DEPTH (64)
+
 
 /*=========================================================================
 **  Data Format
@@ -90,10 +93,13 @@
 **  Convert an XML element representing a value into an xmlrpc_value.
 */
 
-static xmlrpc_value *convert_array (xmlrpc_env *env, xml_element *elem);
-static xmlrpc_value *convert_struct (xmlrpc_env *env, xml_element *elem);
+static xmlrpc_value *
+convert_array (xmlrpc_env *env, unsigned *depth, xml_element *elem);
+static xmlrpc_value *
+convert_struct (xmlrpc_env *env, unsigned *depth, xml_element *elem);
 
-static xmlrpc_value *convert_value (xmlrpc_env *env, xml_element *elem)
+static xmlrpc_value *
+convert_value (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 {
     xml_element *child;
     int child_count;
@@ -112,6 +118,11 @@ static xmlrpc_value *convert_value (xmlrpc_env *env, xml_element *elem)
     retval = NULL;
     decoded = NULL;
 
+    /* Make sure we haven't recursed too deeply. */
+    if (*depth > MAX_RECURSION_DEPTH)
+	XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR,
+		    "Nested data structure too deep.");
+
     /* Validate our structure, and see whether we have a child element. */
     CHECK_NAME(env, elem, "value");
     child_count = xml_element_children_size(elem);
@@ -129,10 +140,10 @@ static xmlrpc_value *convert_value (xmlrpc_env *env, xml_element *elem)
 	/* Parse our value-containing element. */
 	child_name = xml_element_name(child);
 	if (strcmp(child_name, "struct") == 0) {
-	    return convert_struct(env, child);
+	    return convert_struct(env, depth, child);
 	} else if (strcmp(child_name, "array") == 0) {
 	    CHECK_CHILD_COUNT(env, child, 1);
-	    return convert_array(env, child);
+	    return convert_array(env, depth, child);
 	} else {
 	    CHECK_CHILD_COUNT(env, child, 0);
 	    cdata = xml_element_cdata(child);
@@ -186,7 +197,8 @@ static xmlrpc_value *convert_value (xmlrpc_env *env, xml_element *elem)
 **  Convert an XML element representing an array into an xmlrpc_value.
 */
 
-static xmlrpc_value *convert_array (xmlrpc_env *env, xml_element *elem)
+static xmlrpc_value *
+convert_array (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 {
     xml_element *data, **values, *value;
     xmlrpc_value *array, *item;
@@ -197,6 +209,7 @@ static xmlrpc_value *convert_array (xmlrpc_env *env, xml_element *elem)
 
     /* Set up our error-handling preconditions. */
     array = item = NULL;
+    (*depth)++;
 
     /* Allocate an array to hold our values. */
     array = xmlrpc_build_value(env, "()");
@@ -212,7 +225,7 @@ static xmlrpc_value *convert_array (xmlrpc_env *env, xml_element *elem)
     size = xml_element_children_size(data);
     for (i = 0; i < size; i++) {
 	value = values[i];
-	item = convert_value(env, value);
+	item = convert_value(env, depth, value);
 	XMLRPC_FAIL_IF_FAULT(env);
 
 	xmlrpc_array_append_item(env, array, item);
@@ -222,6 +235,7 @@ static xmlrpc_value *convert_array (xmlrpc_env *env, xml_element *elem)
     }
 
  cleanup:
+    (*depth)--;
     if (item)
 	xmlrpc_DECREF(item);
     if (env->fault_occurred) {
@@ -239,7 +253,8 @@ static xmlrpc_value *convert_array (xmlrpc_env *env, xml_element *elem)
 **  Convert an XML element representing a struct into an xmlrpc_value.
 */
 
-static xmlrpc_value *convert_struct (xmlrpc_env *env, xml_element *elem)
+static xmlrpc_value *
+convert_struct (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 {
     xmlrpc_value *strct, *key, *value;
     xml_element **members, *member, *name_elem, *value_elem;
@@ -252,6 +267,7 @@ static xmlrpc_value *convert_struct (xmlrpc_env *env, xml_element *elem)
 
     /* Set up our error-handling preconditions. */
     strct = key = value = NULL;
+    (*depth)++;
 
     /* Allocate an array to hold our members. */
     strct = xmlrpc_struct_new(env);
@@ -277,7 +293,7 @@ static xmlrpc_value *convert_struct (xmlrpc_env *env, xml_element *elem)
 
 	/* Get our value. */
 	value_elem = xml_element_children(member)[1];
-	value = convert_value(env, value_elem);
+	value = convert_value(env, depth, value_elem);
 	XMLRPC_FAIL_IF_FAULT(env);
 
 	/* Add the key/value pair to our struct. */
@@ -292,6 +308,7 @@ static xmlrpc_value *convert_struct (xmlrpc_env *env, xml_element *elem)
     }
     
  cleanup:
+    (*depth)--;
     if (key)
 	xmlrpc_DECREF(key);
     if (value)
@@ -312,7 +329,8 @@ static xmlrpc_value *convert_struct (xmlrpc_env *env, xml_element *elem)
 **  xmlrpc_value (of type array).
 */
 
-static xmlrpc_value *convert_params (xmlrpc_env *env, xml_element *elem)
+static xmlrpc_value *
+convert_params (xmlrpc_env *env, unsigned *depth, xml_element *elem)
 {
     xmlrpc_value *array, *item;
     int size, i;
@@ -340,7 +358,7 @@ static xmlrpc_value *convert_params (xmlrpc_env *env, xml_element *elem)
 	CHECK_CHILD_COUNT(env, param, 1);
 
 	value = xml_element_children(param)[0];
-	item = convert_value(env, value);
+	item = convert_value(env, depth, value);
 	XMLRPC_FAIL_IF_FAULT(env);
 
 	xmlrpc_array_append_item(env, array, item);
@@ -379,6 +397,7 @@ void xmlrpc_parse_call (xmlrpc_env *env,
 {
     xml_element *call_elem, *name_elem, *params_elem;
     char *cdata;
+    unsigned depth;
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT(xml_data != NULL);
@@ -409,7 +428,9 @@ void xmlrpc_parse_call (xmlrpc_env *env,
     strcpy(*out_method_name, cdata);
     
     /* Convert our parameters. */
-    *out_param_array = convert_params(env, params_elem);
+    depth = 0;
+    *out_param_array = convert_params(env, &depth, params_elem);
+    XMLRPC_ASSERT(depth == 0);
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:
@@ -440,6 +461,7 @@ xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
                                      size_t xml_len)
 {
     xml_element *response, *child, *value;
+    unsigned depth;
     xmlrpc_value *params, *retval, *fault;
     int retval_incremented;
 
@@ -455,6 +477,9 @@ xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
     params = fault = NULL;
     retval_incremented = 0;
 
+    /* Set up our recursion depth counter. */
+    depth = 0;
+
     /* Parse our XML data. */
     response = xml_parse(env, xml_data, xml_len);
     XMLRPC_FAIL_IF_FAULT(env);
@@ -468,7 +493,7 @@ xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
     if (strcmp("params", xml_element_name(child)) == 0) {
 
 	/* Convert our parameter list. */
-	params = convert_params(env, child);
+	params = convert_params(env, &depth, child);
 	XMLRPC_FAIL_IF_FAULT(env);
 
 	/* Extract the return value, and jiggle our reference counts. */
@@ -482,7 +507,7 @@ xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
 	/* Convert our fault structure. */
 	CHECK_CHILD_COUNT(env, child, 1);
 	value = xml_element_children(child)[0];
-	fault = convert_value(env, value);
+	fault = convert_value(env, &depth, value);
 	XMLRPC_FAIL_IF_FAULT(env);
 	XMLRPC_TYPE_CHECK(env, fault, XMLRPC_TYPE_STRUCT);
 
@@ -506,6 +531,9 @@ xmlrpc_value *xmlrpc_parse_response (xmlrpc_env *env,
 		    "Expected <params> or <fault> in <methodResponse>");
     }
 
+    /* Sanity-check our depth-counting code. */
+    XMLRPC_ASSERT(depth == 0);
+    
  cleanup:
     if (response)
 	xml_element_free(response);
