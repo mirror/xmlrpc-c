@@ -1,5 +1,5 @@
 #include <iostream>
-#include <strstream.h>
+#include <sstream>
 #include <stdexcept>
 
 #include <XmlRpcCpp.h>
@@ -17,11 +17,9 @@ using std::domain_error;
 //  a specific XML-RPC data type.
 
 string DataType::defaultParameterBaseName (int position) const {
-    ostrstream name_stream;
+    ostringstream name_stream;
     name_stream << typeName() << position << ends;
     string name(name_stream.str());
-    // (Ask the ostrstream to reclaim ownership of its buffer.)
-    name_stream.freeze(false);
     return name;
 }
 
