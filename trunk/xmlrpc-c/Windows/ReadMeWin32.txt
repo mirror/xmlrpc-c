@@ -10,6 +10,10 @@ To create the three headers required for Win32 WinInet compilation, run the
 ConfigureWin32.bat found in the Windows directory.  Open the xmlrpc.dsw file
 in Visual Studio 6 or greater.  The project will convert and work fine in
 Visual Studio 2003 as well - other versions of Visual Studio were not tested.
+NOTE: If you get an error while opening or converting the project files,
+it is likely due to using WinRar or similar to decompress the distribution
+tarball.  You can use WinZip or another utility to correctly decompress the
+.tgz file.
 
 Changes from the 1.0 -> 1.1 release for Win32:
 1) Project files now reflect static linking for the expat XML library.
