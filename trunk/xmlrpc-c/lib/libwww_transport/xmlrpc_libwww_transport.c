@@ -65,11 +65,13 @@ static int saved_flags;
 static HTList *xmlrpc_conversions;
 
 static void 
-create(xmlrpc_env *              const envP ATTR_UNUSED,
-       int                       const flags,
-       const char *              const appname,
-       const char *              const appversion,
-       struct clientTransport ** const handlePP) {
+create(xmlrpc_env *                     const envP ATTR_UNUSED,
+       int                              const flags,
+       const char *                     const appname,
+       const char *                     const appversion,
+       const struct xmlrpc_xportparms * const transportParmsP ATTR_UNUSED,
+       size_t                           const parm_size ATTR_UNUSED,
+       struct clientTransport **        const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Libwww client transport.
 -----------------------------------------------------------------------------*/

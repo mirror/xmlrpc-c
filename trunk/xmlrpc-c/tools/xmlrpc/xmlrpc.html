@@ -48,7 +48,7 @@ by a program rather than a person to be of use.
 <pre>
 <tt>
      $ xmlrpc http://xmlrpc.server.net sample.add i/3 i/5 \
-         transport=curl -username=bryanh -password=passw0rd
+         transport=curl -curlinterface=eth1 -username=bryanh -password=passw0rd
        Result:
          Integer: 8
      
@@ -66,6 +66,7 @@ by a program rather than a person to be of use.
 <i>parameter</i> ...
 [<b>-transport=</b><i>transportname</i>]
 [<b>-username=</b><i>username</i> <b>-password=</b><i>password</i>]
+[<b>-curlinterface</b>={<i>interface</i>|<i>host</i>}]
 
 <p><i>parameter</i>:
 
@@ -135,6 +136,52 @@ library recognizes.  This is typically <b>libwww</b>, <b>curl</b>, and
 <dd>These options, which must be used together, cause the client to
 authenticate itself to the server, if the server requires it, using
 HTTP Basic Authentication and the specified username and password.
+
+<dt><b>-curlinterface</b>={<i>interface</i>|<i>host</i>}
+
+<dd>
+This option gives the &quot;interface&quot; option for a Curl XML transport.
+
+<p>The exact meaning of this option is up to the Curl library, and the
+best documentation for it is the manual for the 'curl' program that comes
+with the Curl library.
+
+<p>But essentially, it chooses the local network interface through which
+to send the RPC.  It causes the Curl library to perform a
+&quot;bind&quot; operation on the socket it uses for the
+communication.  It can be the name of a network interface (e.g. on
+Linux, &quot;eth1&quot;) or an IP address of the interface or a host
+name that resolves to the IP address of the interface.  Unfortunately,
+you can't explicitly state which form you're specifying, so there's
+some ambiguity.
+
+<p>Examples:
+
+<ul>
+
+<li>
+<kbd>
+-interface=eth1
+</kbd>
+
+<li>
+<kbd>
+-interface=64.171.19.66
+</kbd>
+
+<li>
+<kbd>
+-interface=giraffe.giraffe-data.com
+</kbd>
+
+</ul>
+
+<p>If the transport is not Curl, this option is worse than useless.
+It causes <b>xmlrpc</b> to pass arbitrary bits to the transport as its
+parameters, which the transport may interpret in an unpredictable way.
+
+<p>You must specify a transport with <b>-transport</b> if you specify
+this option.  Ordinarily, that option must be <b>-transport=curl</b>.
 
 </body>
 

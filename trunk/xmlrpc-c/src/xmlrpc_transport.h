@@ -17,11 +17,13 @@ struct clientTransport;
 **=========================================================================
 */
 typedef void (*transport_create)(
-    xmlrpc_env *              const envP,
-    int                       const flags,
-    const char *              const appname,
-    const char *              const appversion,
-    struct clientTransport ** const handlePP);
+    xmlrpc_env *                     const envP,
+    int                              const flags,
+    const char *                     const appname,
+    const char *                     const appversion,
+    const struct xmlrpc_xportparms * const transportparmsP,
+    size_t                           const transportparm_size,
+    struct clientTransport **        const handlePP);
     
 typedef void (*transport_destroy)(
     struct clientTransport * const clientTransportP);

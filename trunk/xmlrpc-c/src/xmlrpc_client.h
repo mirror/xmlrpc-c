@@ -10,10 +10,11 @@
 #ifndef  _XMLRPC_CLIENT_H_
 #define  _XMLRPC_CLIENT_H_ 1
 
+#include <xmlrpc.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
 
 /*=========================================================================
 **  Initialization and Shutdown
@@ -31,16 +32,31 @@ xmlrpc_client_init(int          const flags,
                    const char * const appname,
                    const char * const appversion);
 
-struct xmlrpc_clientparms {
-    const char * transport;
+struct xportparms;
+    /* This is a "base class".  The struct is never complete; you're
+       supposed to cast between struct xportparms * and 
+       "struct ..._xportparms *" in order to use it.  
+    */
+
+struct xmlrpc_curl_xportparms {
+    const char * interface;
 };
 
-#define XMLRPC_CP_MEMBER_OFFSET(mbrname) \
-  ((unsigned int)(char*)&((struct xmlrpc_clientparms *)0)->mbrname)
-#define XMLRPC_CP_MEMBER_SIZE(mbrname) \
-  sizeof(((struct xmlrpc_clientparms *)0)->mbrname)
+
+#define XMLRPC_CXPSIZE(mbrname) \
+    XMLRPC_STRUCTSIZE(struct xmlrpc_curl_xportparms, mbrname)
+
+/* XMLRPC_CXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
+
+struct xmlrpc_clientparms {
+    const char *               transport;
+    struct xmlrpc_xportparms * transportparmsP;
+        /* Cast a "struct ..._xportparms *" to fit here */
+    size_t                     transportparm_size;
+};
+
 #define XMLRPC_CPSIZE(mbrname) \
-  (XMLRPC_CP_MEMBER_OFFSET(mbrname) + XMLRPC_CP_MEMBER_SIZE(mbrname))
+  XMLRPC_STRUCTSIZE(struct xmlrpc_clientparms, mbrname)
 
 /* XMLRPC_CPSIZE(xyz) is the minimum size a struct xmlrpc_clientparms
    must be to include the 'xyz' member.  This is essential to forward and
@@ -50,12 +66,12 @@ struct xmlrpc_clientparms {
 */
 
 void 
-xmlrpc_client_init2(xmlrpc_env *                const env,
-                    int                         const flags,
-                    const char *                const appname,
-                    const char *                const appversion,
-                    struct xmlrpc_clientparms * const clientparms,
-                    unsigned int                const parm_size);
+xmlrpc_client_init2(xmlrpc_env *                      const env,
+                    int                               const flags,
+                    const char *                      const appname,
+                    const char *                      const appversion,
+                    const struct xmlrpc_clientparms * const clientparms,
+                    unsigned int                      const parm_size);
 
 extern void
 xmlrpc_client_cleanup(void);

@@ -64,6 +64,10 @@ struct cmdlineInfo {
         /* Name of XML transport he wants to use.  NULL if he has no 
            preference.
         */
+    const char *  curlinterface;
+        /* "network interface" parameter for the Curl transport.  (Not
+           valid if 'transport' names a non-Curl transport).
+        */
 };
 
 
@@ -119,6 +123,27 @@ processArguments(xmlrpc_env *         const envP,
 
 
 static void
+chooseTransport(xmlrpc_env *  const envP ATTR_UNUSED,
+                cmdlineParser const cp,
+                const char ** const transportPP) {
+    
+    const char * transportOpt = cmd_getOptionValueString(cp, "transport");
+    const char * curlinterfaceOpt = 
+        cmd_getOptionValueString(cp, "curlinterface");
+
+    if (transportOpt) {
+        *transportPP = transportOpt;
+    } else {
+        if (curlinterfaceOpt)
+            *transportPP = strdup("curl");
+        else
+            *transportPP = NULL;
+    }
+}
+
+
+
+static void
 parseCommandLine(xmlrpc_env *         const envP,
                  int                  const argc,
                  const char **        const argv,
@@ -131,6 +156,7 @@ parseCommandLine(xmlrpc_env *         const envP,
     cmd_defineOption(cp, "transport", OPTTYPE_STRING);
     cmd_defineOption(cp, "username",  OPTTYPE_STRING);
     cmd_defineOption(cp, "password",  OPTTYPE_STRING);
+    cmd_defineOption(cp, "curlinterface",  OPTTYPE_STRING);
 
     cmd_processOptions(cp, argc, argv, &error);
 
@@ -138,16 +164,20 @@ parseCommandLine(xmlrpc_env *         const envP,
         setError(envP, "Command syntax error.  %s", error);
         strfree(error);
     } else {
-        cmdlineP->transport = cmd_getOptionValueString(cp, "transport");
-
         cmdlineP->username  = cmd_getOptionValueString(cp, "username");
         cmdlineP->password  = cmd_getOptionValueString(cp, "password");
 
         if (cmdlineP->username && !cmdlineP->password)
             setError(envP, "When you specify -username, you must also "
                      "specify -password.");
-        else
+        else {
+            cmdlineP->curlinterface = 
+                cmd_getOptionValueString(cp, "curlinterface");
+
+            chooseTransport(envP, cp, &cmdlineP->transport);
+
             processArguments(envP, cp, cmdlineP);
+        }
     }
     cmd_destroyOptionParser(cp);
 }
@@ -163,6 +193,12 @@ freeCmdline(struct cmdlineInfo const cmdline) {
     strfree(cmdline.methodName);
     if (cmdline.transport)
         strfree(cmdline.transport);
+    if (cmdline.curlinterface)
+        strfree(cmdline.curlinterface);
+    if (cmdline.username)
+        strfree(cmdline.username);
+    if (cmdline.password)
+        strfree(cmdline.password);
     for (i = 0; i < cmdline.paramCount; ++i)
         strfree(cmdline.params[i]);
 }
@@ -591,6 +627,7 @@ dumpResult(xmlrpc_value * const resultP) {
 static void
 doCall(xmlrpc_env *               const envP,
        const char *               const transport,
+       const char *               const curlinterface,
        const xmlrpc_server_info * const serverInfoP,
        const char *               const methodName,
        xmlrpc_value *             const paramArrayP,
@@ -602,14 +639,29 @@ doCall(xmlrpc_env *               const envP,
 
     clientparms.transport = transport;
 
+    if (curlinterface) {
+        struct xmlrpc_curl_xportparms * curlXportParmsP;
+        MALLOCVAR(curlXportParmsP);
+
+        curlXportParmsP->interface = curlinterface;
+        
+        clientparms.transportparmsP = (struct xmlrpc_xportparms *) 
+            curlXportParmsP;
+        clientparms.transportparm_size = XMLRPC_CXPSIZE(interface);
+    } else {
+        clientparms.transportparmsP = NULL;
+        clientparms.transportparm_size = 0;
+    }
     xmlrpc_client_init2(envP, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, 
-                        &clientparms, XMLRPC_CPSIZE(transport));
+                        &clientparms, XMLRPC_CPSIZE(transportparm_size));
     if (!envP->fault_occurred) {
         *resultPP = xmlrpc_client_call_server_params(
             envP, serverInfoP, methodName, paramArrayP);
     
         xmlrpc_client_cleanup();
     }
+    if (clientparms.transportparmsP)
+        free(clientparms.transportparmsP);
 }
 
 
@@ -660,7 +712,7 @@ main(int           const argc,
                      &serverInfoP);
     die_if_fault_occurred(&env);
 
-    doCall(&env, cmdline.transport, serverInfoP, 
+    doCall(&env, cmdline.transport, cmdline.curlinterface, serverInfoP, 
            cmdline.methodName, paramArrayP, 
            &resultP);
     die_if_fault_occurred(&env);

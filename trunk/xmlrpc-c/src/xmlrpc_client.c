@@ -155,13 +155,72 @@ setupTransport(xmlrpc_env * const envP,
 
 
 
+static void
+getTransportParmsFromClientParms(
+    xmlrpc_env *                      const envP,
+    const struct xmlrpc_clientparms * const clientparmsP,
+    unsigned int                      const parm_size,
+    const struct xmlrpc_xportparms ** const transportparmsPP,
+    size_t *                          const transportparm_sizeP) {
+
+    if (parm_size < XMLRPC_CPSIZE(transportparmsP) ||
+        clientparmsP->transportparmsP == NULL) {
+
+        *transportparmsPP = NULL;
+        *transportparm_sizeP = 0;
+    } else {
+        *transportparmsPP = clientparmsP->transportparmsP;
+        if (parm_size < XMLRPC_CPSIZE(transportparm_size))
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTERNAL_ERROR,
+                "Your 'clientparms' argument contains the "
+                "transportparmsP member, but no transportparms_size member");
+        else
+            *transportparm_sizeP = clientparmsP->transportparm_size;
+    }
+}
+
+
+
+static void
+getTransportInfo(xmlrpc_env *                      const envP,
+                 const struct xmlrpc_clientparms * const clientparmsP,
+                 unsigned int                      const parm_size,
+                 const char **                     const transportNameP,
+                 const struct xmlrpc_xportparms ** const transportparmsPP,
+                 size_t *                          const transportparm_sizeP) {
+
+    getTransportParmsFromClientParms(
+        envP, clientparmsP, parm_size, 
+        transportparmsPP, transportparm_sizeP);
+    
+    if (!envP->fault_occurred) {
+        if (parm_size < XMLRPC_CPSIZE(transport) ||
+            clientparmsP->transport == NULL) {
+
+            /* He didn't specify a transport.  Use the default */
+
+            *transportNameP = xmlrpc_client_get_default_transport(envP);
+            if (*transportparmsPP)
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_INTERNAL_ERROR,
+                    "You specified transport parameters, but did not "
+                    "specify a transport type.  Parameters are specific to "
+                    "a particular type.");
+        } else
+            *transportNameP = clientparmsP->transport;
+    }
+}
+
+
+
 void 
-xmlrpc_client_init2(xmlrpc_env *                const envP,
-                    int                         const flags,
-                    const char *                const appname,
-                    const char *                const appversion,
-                    struct xmlrpc_clientparms * const clientparmsP,
-                    unsigned int                const parm_size) {
+xmlrpc_client_init2(xmlrpc_env *                      const envP,
+                    int                               const flags,
+                    const char *                      const appname,
+                    const char *                      const appversion,
+                    const struct xmlrpc_clientparms * const clientparmsP,
+                    unsigned int                      const parm_size) {
 
     if (clientInitialized)
         xmlrpc_env_set_fault_formatted(
@@ -171,18 +230,17 @@ xmlrpc_client_init2(xmlrpc_env *                const envP,
             "reinitialize).");
     else {
         const char * transportName;
+        const struct xmlrpc_xportparms * transportparmsP;
+        size_t transportparm_size;
 
-        if (parm_size < XMLRPC_CPSIZE(transport) ||
-            clientparmsP->transport == NULL) {
-            /* He didn't specify a transport.  Use the default */
-            transportName = xmlrpc_client_get_default_transport(envP);
-        } else
-            transportName = clientparmsP->transport;
+        getTransportInfo(envP, clientparmsP, parm_size, &transportName, 
+                         &transportparmsP, &transportparm_size);
 
         if (!envP->fault_occurred) {
             setupTransport(envP, transportName);
             if (!envP->fault_occurred) {
                 clientTransportOps.create(envP, flags, appname, appversion,
+                                          transportparmsP, transportparm_size,
                                           &client.transportP);
                 if (!envP->fault_occurred)
                     clientInitialized = TRUE;

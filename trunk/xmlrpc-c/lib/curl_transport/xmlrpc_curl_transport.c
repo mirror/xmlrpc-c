@@ -45,6 +45,17 @@ struct clientTransport {
            from the time the user requests it until the time the user 
            acknowledges it is done.
         */
+    const char * interface;
+        /* This identifies the network interface on the local side to
+           use for the session.  It is an ASCIIZ string in the form
+           that the Curl recognizes for setting its CURLOPT_INTERFACE
+           option (also the --interface option of the Curl program).
+           E.g. "9.1.72.189" or "giraffe-data.com" or "eth0".  
+
+           It isn't necessarily valid, but it does have a terminating NUL.
+
+           NULL means we have no preference.
+        */
 };
 
 typedef struct {
@@ -139,16 +150,20 @@ initWindowsStuff(xmlrpc_env * const envP) {
 }
 
 
-
 static void 
-create(xmlrpc_env *              const envP,
-       int                       const flags ATTR_UNUSED,
-       const char *              const appname ATTR_UNUSED,
-       const char *              const appversion ATTR_UNUSED,
-       struct clientTransport ** const handlePP) {
+create(xmlrpc_env *                     const envP,
+       int                              const flags ATTR_UNUSED,
+       const char *                     const appname ATTR_UNUSED,
+       const char *                     const appversion ATTR_UNUSED,
+       const struct xmlrpc_xportparms * const transportparmsP,
+       size_t                           const parm_size,
+       struct clientTransport **        const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
+    struct xmlrpc_curl_xportparms * const curlXportParmsP = 
+        (struct xmlrpc_curl_xportparms *) transportparmsP;
+
     struct clientTransport * transportP;
 
     initWindowsStuff(envP);
@@ -173,9 +188,23 @@ create(xmlrpc_env *              const envP,
         /* The above makes it look like Curl is not re-entrant.  We should
            check into that.
         */
+        
+        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(interface))
+            transportP->interface = NULL;
+        else if (curlXportParmsP->interface == NULL)
+            transportP->interface = NULL;
+        else {
+            transportP->interface = strdup(curlXportParmsP->interface);
+            if (transportP->interface == NULL)
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_INTERNAL_ERROR,
+                    "Unable to allocate space for interface name.");
+        }
 
-        *handlePP = transportP;
+        if (envP->fault_occurred)
+            free(transportP);
     }
+    *handlePP = transportP;
 }
 
 
@@ -193,13 +222,16 @@ termWindowStuff(void) {
 static void 
 destroy(struct clientTransport * const clientTransportP) {
 /*----------------------------------------------------------------------------
-   This does the 'destroy' operation for a Libwww client transport.
+   This does the 'destroy' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(clientTransportP != NULL);
 
     XMLRPC_ASSERT(list_is_empty(&clientTransportP->rpcList));
 
     pthread_mutex_destroy(&clientTransportP->listLock);
+
+    if (clientTransportP->interface)
+        strfree(clientTransportP->interface);
 
     curl_global_cleanup();
 
@@ -259,12 +291,16 @@ createCurlHeaderList(xmlrpc_env *               const envP,
 
 static void
 setupCurlSession(xmlrpc_env *       const envP,
-                 CURL *             const curlSessionP,
                  curlTransaction *  const curlTransactionP,
+                 const char *       const interface,
                  xmlrpc_mem_block * const callXmlP,
                  xmlrpc_mem_block * const responseXmlP) {
 
+    CURL * const curlSessionP = curlTransactionP->curlSessionP;
+
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1 );
+    if (interface)
+        curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE, interface);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
     XMLRPC_MEMBLOCK_APPEND(char, envP, callXmlP, "\0", 1);
     if (!envP->fault_occurred) {
@@ -287,6 +323,7 @@ setupCurlSession(xmlrpc_env *       const envP,
 
 static void
 createCurlTransaction(xmlrpc_env *               const envP,
+                      const char *               const interface,
                       const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *         const callXmlP,
                       xmlrpc_mem_block *         const responseXmlP,
@@ -319,7 +356,7 @@ createCurlTransaction(xmlrpc_env *               const envP,
                                      &curlTransactionP->headerList);
 
                 if (!envP->fault_occurred)
-                    setupCurlSession(envP, curlSessionP, curlTransactionP,
+                    setupCurlSession(envP, curlTransactionP, interface,
                                      callXmlP, responseXmlP);
 
                 if (envP->fault_occurred)
@@ -482,7 +519,7 @@ rpcCreate(xmlrpc_env *               const envP,
         rpcP->responseXmlP = responseXmlP;
         rpcP->threadExists = FALSE;
 
-        createCurlTransaction(envP, serverP,
+        createCurlTransaction(envP, clientTransportP->interface, serverP,
                               callXmlP, responseXmlP, 
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
