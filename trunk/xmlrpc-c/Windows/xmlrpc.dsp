@@ -93,8 +93,7 @@ SOURCE=..\lib\util\casprintf.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\win32_pthreads.c
-# ADD CPP /I "../lib/util/include"
+SOURCE=..\lib\util\pthreadx_win32.c
 # End Source File
 # Begin Source File
 
@@ -107,7 +106,6 @@ SOURCE=..\src\xmlrpc_authcookie.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_base64.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
@@ -116,7 +114,6 @@ SOURCE=..\src\xmlrpc_cgi.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_client.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
@@ -126,12 +123,10 @@ SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_data.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_expat.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
@@ -141,32 +136,26 @@ SOURCE=..\src\xmlrpc_libxml2.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_parse.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_registry.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_serialize.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_server_abyss.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_server_w32httpsys.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_struct.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
@@ -175,17 +164,14 @@ SOURCE=..\src\xmlrpc_strutil.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_support.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_utf8.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
 SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.c
-# ADD CPP /I "../lib/util/include"
 # End Source File
 # Begin Source File
 
@@ -202,6 +188,10 @@ SOURCE=..\lib\util\include\bool.h
 # Begin Source File
 
 SOURCE=..\lib\util\include\mallocvar.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\util\include\pthreadx.h
 # End Source File
 # Begin Source File
 
@@ -234,10 +224,6 @@ SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.h
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_int.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_pthreads.h
 # End Source File
 # Begin Source File
 
