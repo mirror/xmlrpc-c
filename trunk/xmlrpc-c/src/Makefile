@@ -216,3 +216,5 @@ dep: dep-common
 include $(SRCDIR)/Makefile.common
 
 xmlrpc_client.lo: transport_config.h
+
+include Makefile.depend
