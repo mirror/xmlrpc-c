@@ -120,7 +120,7 @@ abyss_bool ConnProcess(TConn *c)
 void ConnClose(TConn *c)
 {
     if (c->hasOwnThread)
-        ThreadClose(c->thread);
+        ThreadClose(&c->thread);
 }
 
 abyss_bool ConnKill(TConn *c)
