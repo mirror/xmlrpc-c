@@ -1,6 +1,6 @@
 0.9.8 - Eric Kidd <eric.kidd@pobox.com> - 19 February 2001
 
-  * Luke Howard, Rosimildo daSIlva: Build fixes.
+  * J. Alan Eldridge, Rosimildo daSIlva: Build fixes.
   * Send 'encoding="UTF-8"' in XML prologue.
 
 0.9.7 - Eric Kidd <eric.kidd@pobox.com> - 14 February 2001
