@@ -44,7 +44,6 @@ using namespace std;
 //  XmlRpcFault
 //=========================================================================
 //  A C++ exception class representing an XML-RPC fault.
-//  XXX - Our handling of const needs more thought.
 
 class XmlRpcFault {
 
@@ -52,13 +51,13 @@ private:
     xmlrpc_env   mFault;
 
     XmlRpcFault& operator= (const XmlRpcFault& f)
-                     { (void) f; XMLRPC_NO_ASSIGNMENT }
+        { (void) f; XMLRPC_NO_ASSIGNMENT }
 
 public:
-                 XmlRpcFault (const XmlRpcFault &fault);
-                 XmlRpcFault (const int faultCode, const string faultString);
-                 XmlRpcFault (const xmlrpc_env *env);
-                ~XmlRpcFault (void);
+    XmlRpcFault (const XmlRpcFault &fault);
+    XmlRpcFault (const int faultCode, const string faultString);
+    XmlRpcFault (const xmlrpc_env *env);
+    ~XmlRpcFault (void);
 
     int          getFaultCode (void) const;
     string       getFaultString (void) const;
@@ -90,14 +89,18 @@ private:
 
     void         throwMe (void) const;
     XmlRpcEnv&   operator= (const XmlRpcEnv& e)
-                     { (void) e; XMLRPC_NO_ASSIGNMENT }
+        { (void) e; XMLRPC_NO_ASSIGNMENT }
 
 public:
-                 XmlRpcEnv (const XmlRpcEnv &env);
-                 XmlRpcEnv (void) { xmlrpc_env_init(&mEnv); }
-                ~XmlRpcEnv (void) { xmlrpc_env_clean(&mEnv); }
-
-    bool         hasFaultOccurred (void) const { return mEnv.fault_occurred; }
+    XmlRpcEnv (const XmlRpcEnv &env);
+    XmlRpcEnv (void) { xmlrpc_env_init(&mEnv); }
+    ~XmlRpcEnv (void) { xmlrpc_env_clean(&mEnv); }
+    
+    bool         faultOccurred (void) const { return mEnv.fault_occurred; };
+    bool         hasFaultOccurred (void) const { return faultOccurred(); };
+        /* hasFaultOccurred() is for backward compatibility.
+           faultOccurred() is a superior name for this.
+        */
     XmlRpcFault  getFault (void) const;
 
     void         throwIfFaultOccurred (void) const;
@@ -106,17 +109,31 @@ public:
 };
 
 inline void XmlRpcEnv::throwIfFaultOccurred (void) const {
-    if (hasFaultOccurred())
-	throwMe();
+    if (faultOccurred())
+        throwMe();
 }
 
 
 //=========================================================================
 //  XmlRpcValue
 //=========================================================================
-//  This class represents a reference to an XML-RPC value.
-//  It *always* owns exactly one live reference, and will call
-//  xmlrpc_DECREF when destroyed.
+//  An object in this class is an XML-RPC value.
+//
+//  We have a complex structure to allow C code mixed in with C++ code
+//  which uses this class to refer to the same XML-RPC value object.
+//  This is especially important because there aren't proper C++ facilities
+//  for much of Xmlrpc-c; you have to use the C facilities even if you'd
+//  rather use proper C++.
+//
+//  The XmlRpcValue object internally represents the value as an
+//  xmlrpc_value.  It hold one reference to the xmlrpc_value.  Users
+//  of XmlRpcValue never see that xmlrpc_value, but C code can.  the
+//  C code might create the xmlrpc_value and then bind it to an XmlRpcValue,
+//  or it might get the xmlrpc_value handle from the XmlRpcValue.  Finally,
+//  C code can simply use the XmlRpcValue where an xmlrpc_value handle is
+//  required and it gets converted automatically.
+//
+//  So reference counting for the xmlrpc_value is quite a nightmare.
 
 class XmlRpcValue {
 
@@ -125,18 +142,18 @@ private:
 
 public:
     enum ReferenceBehavior {
-	MAKE_REFERENCE,
-	CONSUME_REFERENCE
+        MAKE_REFERENCE,
+        CONSUME_REFERENCE
     };
 
     typedef xmlrpc_int32 int32;
-
-                  XmlRpcValue (void);
-                  XmlRpcValue (xmlrpc_value *value,
-			       ReferenceBehavior behavior = MAKE_REFERENCE);
-                  XmlRpcValue (const XmlRpcValue& value);
-                 ~XmlRpcValue (void);
-
+    
+    XmlRpcValue (void);
+    XmlRpcValue (xmlrpc_value *value,
+                 ReferenceBehavior behavior = MAKE_REFERENCE);
+    XmlRpcValue (const XmlRpcValue& value);
+    ~XmlRpcValue (void);
+    
     XmlRpcValue&  operator= (const XmlRpcValue& value);
 
     // Accessing the value's type (think of this as lightweight RTTI).
@@ -159,7 +176,7 @@ public:
     static XmlRpcValue makeArray    (void);
     static XmlRpcValue makeStruct   (void);
     static XmlRpcValue makeBase64   (const unsigned char *const data,
-				     size_t len);
+                                     size_t len);
     /*
     // An interface to xmlrpc_build_value.
     static XmlRpcValue buildValue (const char *const format, ...);
@@ -178,7 +195,7 @@ public:
     // This returns an internal pointer which will become invalid when
     // all references to the underlying value are destroyed.
     void         getBase64      (const unsigned char *& out_data,
-				 size_t& out_len) const;
+                                 size_t& out_len) const;
 
     /*
     // An interface to xmlrpc_parse_value.
@@ -198,18 +215,17 @@ public:
     XmlRpcValue  structGetValue (const string& key) const;
     void         structSetValue (const string& key, const XmlRpcValue& value);
     void         structGetKeyAndValue (const int index,
-				       string& out_key,
-				       XmlRpcValue& out_value) const;
+                                       string& out_key,
+                                       XmlRpcValue& out_value) const;
 };
 
 inline XmlRpcValue::XmlRpcValue (xmlrpc_value *value,
-				 ReferenceBehavior behavior) 
+                                 ReferenceBehavior behavior) 
 {
     mValue = value;
 
-    // We rely on the optimizer to eliminate this test in normal conditions.
     if (behavior == MAKE_REFERENCE)
-	xmlrpc_INCREF(value);
+        xmlrpc_INCREF(value);
 }
 
 inline XmlRpcValue::XmlRpcValue (const XmlRpcValue& value) {
@@ -264,28 +280,28 @@ public:
 
     XmlRpcValue call (string method_name, XmlRpcValue param_array);
     void call_asynch (string method_name,
-		      XmlRpcValue param_array,
-		      xmlrpc_response_handler callback,
-		      void* user_data);
+                      XmlRpcValue param_array,
+                      xmlrpc_response_handler callback,
+                      void* user_data);
     void event_loop_asynch (unsigned long milliseconds);
 };
 
 inline void XmlRpcClient::call_asynch(string method_name,
-				             XmlRpcValue param_array,
-					     xmlrpc_response_handler callback,
-					     void* user_data)
+                                      XmlRpcValue param_array,
+                                      xmlrpc_response_handler callback,
+                                      void* user_data)
 {
     xmlrpc_client_call_asynch_params(
-				  const_cast<char*>(mServerUrl.c_str()),
-				  const_cast<char*>(method_name.c_str()),
-				  callback,
-				  user_data,
-				  param_array.borrowReference());
+        mServerUrl.c_str(),
+        method_name.c_str(),
+        callback,
+        user_data,
+        param_array.borrowReference());
 }
 
 inline void XmlRpcClient::event_loop_asynch(unsigned long milliseconds)
 {
-	xmlrpc_client_event_loop_finish_asynch_timeout(milliseconds);
+    xmlrpc_client_event_loop_finish_asynch_timeout(milliseconds);
 }
 
 
@@ -301,16 +317,15 @@ inline XmlRpcClient::XmlRpcClient (const XmlRpcClient& client)
 }
 
 inline XmlRpcClient& XmlRpcClient::operator= (const XmlRpcClient& client) {
-    if (this == &client)
-	return *this;
-    mServerUrl = client.mServerUrl;
+    if (this != &client)
+        mServerUrl = client.mServerUrl;
     return *this;
 }
 
 inline void XmlRpcClient::Initialize (string appname, string appversion) {
     xmlrpc_client_init(XMLRPC_CLIENT_NO_FLAGS,
-		       const_cast<char*>(appname.c_str()),
-		       const_cast<char*>(appversion.c_str()));
+                       appname.c_str(),
+                       appversion.c_str());
 }
 
 inline void XmlRpcClient::Terminate (void) {
@@ -318,14 +333,14 @@ inline void XmlRpcClient::Terminate (void) {
 }
 
 inline XmlRpcValue XmlRpcClient::call (string method_name,
-				       XmlRpcValue param_array)
+                       XmlRpcValue param_array)
 {
     XmlRpcEnv env;
     xmlrpc_value *result =
-	xmlrpc_client_call_params(env,
-				  const_cast<char*>(mServerUrl.c_str()),
-				  const_cast<char*>(method_name.c_str()),
-				  param_array.borrowReference());
+    xmlrpc_client_call_params(env,
+                              mServerUrl.c_str(),
+                              method_name.c_str(),
+                              param_array.borrowReference());
     env.throwIfFaultOccurred();
     return XmlRpcValue(result, XmlRpcValue::CONSUME_REFERENCE);
 }
@@ -338,27 +353,27 @@ class XmlRpcGenSrv {
 
 private:
 
-	xmlrpc_registry*	mRegistry;
+    xmlrpc_registry*    mRegistry;
 
-	xmlrpc_mem_block* alloc (XmlRpcEnv& env, const string& body) const; 
+    xmlrpc_mem_block* alloc (XmlRpcEnv& env, const string& body) const; 
 
 public:
 
-	XmlRpcGenSrv (int flags);
-	~XmlRpcGenSrv (void);
+    XmlRpcGenSrv (int flags);
+    ~XmlRpcGenSrv (void);
 
-	xmlrpc_registry* getRegistry (void) const;
+    xmlrpc_registry* getRegistry (void) const;
 
-	XmlRpcGenSrv&	addMethod (const string& name,
-				   xmlrpc_method method,
-				   void *data);
-	XmlRpcGenSrv&	addMethod (const string& name,
-				   xmlrpc_method method,
-				   void* data,
-				   const string& signature,
-				   const string& help);
+    XmlRpcGenSrv&   addMethod (const string& name,
+                               xmlrpc_method method,
+                               void *data);
+    XmlRpcGenSrv&   addMethod (const string& name,
+                               xmlrpc_method method,
+                               void* data,
+                               const string& signature,
+                               const string& help);
 
-	string handle (const string& body) const;
+    string handle (const string& body) const;
 };
 
 inline XmlRpcGenSrv::XmlRpcGenSrv (int flags) {
@@ -373,12 +388,12 @@ inline XmlRpcGenSrv::XmlRpcGenSrv (int flags) {
 
 inline XmlRpcGenSrv::~XmlRpcGenSrv (void) {
 
-	xmlrpc_registry_free (mRegistry);
+    xmlrpc_registry_free (mRegistry);
 }
 
 inline xmlrpc_registry* XmlRpcGenSrv::getRegistry () const {
 
-	return mRegistry;
+    return mRegistry;
 }
 
 #undef XMLRPC_NO_ASSIGNMENT
