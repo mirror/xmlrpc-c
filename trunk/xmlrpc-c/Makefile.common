@@ -64,15 +64,27 @@ $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
-$(BUILDDIR)/lib/util/casprintf.lo:
+$(BUILDDIR)/lib/util/casprintf.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/util/Makefile $(notdir $@) 
 
-$(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la:
+$(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
 	    $(notdir $@)
 
-$(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la:
+$(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/src/libxmlrpc.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/src/libxmlrpc_client.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/src/libxmlrpc_server.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
 	    $(notdir $@)
 
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
