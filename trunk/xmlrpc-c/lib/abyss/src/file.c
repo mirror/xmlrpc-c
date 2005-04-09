@@ -49,7 +49,7 @@
 ** File
 *********************************************************************/
 
-abyss_bool FileOpen(TFile *f, const char *name,uint32 attrib)
+abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib))!=(-1));
@@ -58,7 +58,7 @@ abyss_bool FileOpen(TFile *f, const char *name,uint32 attrib)
 #endif
 }
 
-abyss_bool FileOpenCreate(TFile *f, const char *name, uint32 attrib)
+abyss_bool FileOpenCreate(TFile *f, const char *name, uint32_t attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
@@ -67,16 +67,16 @@ abyss_bool FileOpenCreate(TFile *f, const char *name, uint32 attrib)
 #endif
 }
 
-abyss_bool FileWrite(TFile *f, void *buffer, uint32 len)
+abyss_bool FileWrite(TFile *f, void *buffer, uint32_t len)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
-	return (_write(*f,buffer,len)==(int32)len);
+	return (_write(*f,buffer,len)==(int32_t)len);
 #else
-	return (write(*f,buffer,len)==(int32)len);
+	return (write(*f,buffer,len)==(int32_t)len);
 #endif
 }
 
-int32 FileRead(TFile *f, void *buffer, uint32 len)
+int32_t FileRead(TFile *f, void *buffer, uint32_t len)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_read(*f,buffer,len));
@@ -85,7 +85,7 @@ int32 FileRead(TFile *f, void *buffer, uint32 len)
 #endif
 }
 
-abyss_bool FileSeek(TFile *f, uint64 pos, uint32 attrib)
+abyss_bool FileSeek(TFile *f, uint64_t pos, uint32_t attrib)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_lseek(*f,pos,attrib)!=(-1));
@@ -94,7 +94,7 @@ abyss_bool FileSeek(TFile *f, uint64 pos, uint32 attrib)
 #endif
 }
 
-uint64 FileSize(TFile *f)
+uint64_t FileSize(TFile *f)
 {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
 	return (_filelength(*f));

@@ -50,7 +50,7 @@ void ConnFree(TConn *c)
 	free(c);
 }
 
-uint32 THREAD_ENTRYTYPE ConnJob(TConn *c)
+uint32_t THREAD_ENTRYTYPE ConnJob(TConn *c)
 {
 	c->connected=TRUE;
 	(c->job)(c);
@@ -143,11 +143,11 @@ void ConnReadInit(TConn *c)
 	c->inbytes=c->outbytes=0;
 }
 
-abyss_bool ConnRead(TConn *c,uint32 timeout)
+abyss_bool ConnRead(TConn *c,uint32_t timeout)
 {
 	while (SocketWait(&(c->socket),TRUE,FALSE,timeout*1000)==1)
 	{
-		uint32 y,x=SocketAvailableReadBytes(&(c->socket));
+		uint32_t y,x=SocketAvailableReadBytes(&(c->socket));
 		
 		/* Avoid lost connections */
 		if (x<=0)
@@ -184,17 +184,17 @@ abyss_bool ConnRead(TConn *c,uint32 timeout)
 	return FALSE;
 }
 			
-abyss_bool ConnWrite(TConn *c,void *buffer,uint32 size)
+abyss_bool ConnWrite(TConn *c,void *buffer,uint32_t size)
 {
 	c->outbytes+=size;
 	return SocketWrite(&(c->socket),buffer,size);
 }
 
-abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
-			void *buffer,uint32 buffersize,uint32 rate)
+abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
+			void *buffer,uint32_t buffersize,uint32_t rate)
 {
-	uint64 y,bytesread=0;
-	uint32 waittime;
+	uint64_t y,bytesread=0;
+	uint32_t waittime;
 
 	if (rate>0)
 	{
@@ -231,11 +231,11 @@ abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64 start,uint64 end,
 	return (bytesread>end-start);
 }
 
-abyss_bool ConnReadLine(TConn *c,char **z,uint32 timeout)
+abyss_bool ConnReadLine(TConn *c,char **z,uint32_t timeout)
 {
 	char *p,*t;
 	abyss_bool first=TRUE;
-	uint32 to,start;
+	uint32_t to,start;
 
 	p=*z=c->buffer+c->bufferpos;
 	start=clock();

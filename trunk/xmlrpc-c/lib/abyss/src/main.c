@@ -52,7 +52,7 @@
 
 #include "abyss.h"
 
-void Answer(TSession *r, uint16 statuscode, char *buffer)
+void Answer(TSession *r, uint16_t statuscode, char *buffer)
 {
 	ResponseChunked(r);
 
@@ -110,12 +110,12 @@ abyss_bool HandleDump(TSession *r)
 
 abyss_bool HandleStatus(TSession *r)
 {
-	uint32 status;
+	uint32_t status;
 
 	if (sscanf(r->uri,"/status/%d",&status)<=0)
 		return FALSE;
 
-	ResponseStatus(r,(uint16)status);
+	ResponseStatus(r,(uint16_t)status);
 
 	return TRUE;
 }

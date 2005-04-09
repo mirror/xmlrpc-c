@@ -112,7 +112,7 @@ abyss_bool ThreadKill(TThread *t)
 #endif	/* ABYSS_WIN32 */
 }
 
-void ThreadWait(uint32 ms)
+void ThreadWait(uint32_t ms)
 {
 #ifdef ABYSS_WIN32
 	Sleep(ms);

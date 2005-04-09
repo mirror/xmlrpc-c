@@ -4,11 +4,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
-#include <getopt.h>
 
 #include "mallocvar.h"
 #include "bool.h"
 #include "casprintf.h"
+#include "getoptx.h"
 
 #include "cmdline_parser.h"
 
@@ -36,11 +36,11 @@ struct cmdlineParserCtl {
 
 
 
-static struct option *
+static struct optionx *
 createLongOptsArray(struct optionDesc * const optionDescArray,
                     unsigned int        const numOptions) {
 
-    struct option * longopts; 
+    struct optionx * longopts; 
 
     MALLOCARRAY(longopts, numOptions+1);
     if (longopts != NULL) {
@@ -61,7 +61,10 @@ createLongOptsArray(struct optionDesc * const optionDescArray,
             longopts[i].flag = NULL;
             longopts[i].val = i;
         }
-        longopts[numOptions] = (struct option) {0, 0, 0, 0};
+        longopts[numOptions].name = 0;
+        longopts[numOptions].has_arg = 0;
+        longopts[numOptions].flag = 0;
+        longopts[numOptions].val = 0;
     }
     return longopts;
 }
@@ -139,11 +142,10 @@ processOption(struct optionDesc * const optionP,
 
 static void
 extractArguments(struct cmdlineParserCtl * const cpP,
-                 int                       const argc,
-                 const char **             const argv,
-                 int                       const optind) {
+                 unsigned int              const argc,
+                 const char **             const argv) {
     
-    cpP->numArguments = argc - optind;
+    cpP->numArguments = argc - getopt_argstart();
     MALLOCARRAY(cpP->argumentArray, cpP->numArguments);
 
     if (cpP->argumentArray == NULL) {
@@ -153,7 +155,7 @@ extractArguments(struct cmdlineParserCtl * const cpP,
         unsigned int i;
 
         for (i = 0; i < cpP->numArguments; ++i) {
-            cpP->argumentArray[i] = strdup(argv[optind + i]);
+            cpP->argumentArray[i] = strdup(argv[getopt_argstart() + i]);
             if (cpP->argumentArray[i] == NULL) {
                 fprintf(stderr, "Unable to allocate memory for Argument %u\n",
                         i);
@@ -171,14 +173,14 @@ cmd_processOptions(cmdlineParser   const cpP,
                    const char **   const argv, 
                    const char **   const errorP) {
 
-    struct option * longopts;
+    struct optionx * longopts;
 
     longopts = createLongOptsArray(cpP->optionDescArray, cpP->numOptions);
 
     if (longopts == NULL) 
         casprintf(errorP, "Unable to get memory for longopts array");
     else {
-        bool endOfOptions;
+        int endOfOptions;
         unsigned int i;
 
         *errorP = NULL;
@@ -191,25 +193,27 @@ cmd_processOptions(cmdlineParser   const cpP,
         endOfOptions = FALSE;  /* initial value */
             
         while (!endOfOptions && !*errorP) {
-            int rc;
-            int longoptsIndex;
-            
-            opterr = 0; 
+            int const opterr0 = 0;
                 /* Don't let getopt_long_only() print an error message */
+            unsigned int longoptsIndex;
+            const char * unrecognizedOption;
+            const char * optarg;
             
-            rc = getopt_long_only(argc, (char**) argv, "", longopts, 
-                                  &longoptsIndex);
-            if (rc < 0)
-                endOfOptions = TRUE;
-             else if (rc == '?') {
-                 casprintf(errorP, "Unrecognized option: '%s'", 
-                           argv[optind-1]);
-            } else
-                processOption(&cpP->optionDescArray[longoptsIndex], optarg,
-                              errorP);
+            getopt_long_onlyx(argc, (char**) argv, "", longopts, 
+                              &longoptsIndex, opterr0,
+                              &endOfOptions, &optarg, &unrecognizedOption);
+                              
+            if (unrecognizedOption)
+                casprintf(errorP, "Unrecognized option: '%s'", 
+                          unrecognizedOption);
+            else {
+                if (!endOfOptions)
+                    processOption(&cpP->optionDescArray[longoptsIndex], optarg,
+                                  errorP);
+            }
         }
-
-        extractArguments(cpP, argc, argv, optind);
+        if (!*errorP)
+            extractArguments(cpP, argc, argv);
 
         free(longopts);
     }

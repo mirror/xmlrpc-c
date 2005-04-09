@@ -25,9 +25,6 @@
 
 #include "xmlrpc_config.h"
 
-#undef PACKAGE
-#undef VERSION
-
 #include <stddef.h>
 
 #include "bool.h"
@@ -37,10 +34,19 @@
 #include "xmlrpc_client.h"
 #include "xmlrpc_client_int.h"
 
-/* Include our libwww headers. */
+/* The libwww interface */
+
+/* These headers mistakenly define the macro PACKAGE.  As
+   xmlrpc_config.h already defines PACKAGE according to the package we're
+   actually part of, this causes a conflict.  So we undef here and then
+   to avoid possible problems with an incorrect PACKAGE, we undef it again
+   after.
+*/
+#undef PACKAGE
 #include "WWWLib.h"
 #include "WWWHTTP.h"
 #include "WWWInit.h"
+#undef PACKAGE
 
 /* Include our libwww SSL headers, if available. */
 #if HAVE_LIBWWW_SSL

@@ -79,7 +79,7 @@ abyss_bool SocketCreate(TSocket *s)
     if (rc < 0)
 		return FALSE;
     else {
-        int32 n=1;
+        int32_t n=1;
         *s = rc;
         RET(setsockopt(*s,SOL_SOCKET,SO_REUSEADDR,(char*)&n,sizeof(n)));
     }
@@ -94,16 +94,16 @@ abyss_bool SocketClose(TSocket *s)
 #endif	/* ABYSS_WIN32 */
 }
 
-uint32 SocketWrite(TSocket *s, char *buffer, uint32 len)
+uint32_t SocketWrite(TSocket *s, char *buffer, uint32_t len)
 {
 	return send(*s,buffer,len,0);
 }
 
 
 
-uint32 SocketRead(TSocket * const socketP, 
+uint32_t SocketRead(TSocket * const socketP, 
                   char *    const buffer, 
-                  uint32    const len) {
+                  uint32_t    const len) {
     int rc;
     rc = recv(*socketP, buffer, len, 0);
     if (ABYSS_TRACE_SOCKET) {
@@ -119,9 +119,9 @@ uint32 SocketRead(TSocket * const socketP,
 
 
 
-uint32 SocketPeek(TSocket *s, char *buffer, uint32 len)
+uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len)
 {
-	int32 r=recv(*s,buffer,len,MSG_PEEK);
+	int32_t r=recv(*s,buffer,len,MSG_PEEK);
 
 	if (r==(-1))
 #ifdef ABYSS_WIN32
@@ -134,7 +134,7 @@ uint32 SocketPeek(TSocket *s, char *buffer, uint32 len)
 	return r;
 }
 
-abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16 port)
+abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16_t port)
 {
 	struct sockaddr_in name;
 
@@ -145,7 +145,7 @@ abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16 port)
 	RET(connect(*s,(struct sockaddr *)&name,sizeof(name)));
 }
 
-abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port)
+abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16_t port)
 {
 	struct sockaddr_in name;
 
@@ -159,9 +159,9 @@ abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16 port)
 	RET(bind(*s,(struct sockaddr *)&name,sizeof(name)));
 }
 
-abyss_bool SocketListen(TSocket *s, uint32 backlog)
+abyss_bool SocketListen(TSocket *s, uint32_t backlog)
 {
-	int32 n=-1;
+	int32_t n=-1;
 
 	/* Disable the naggle algorithm to make persistant connections faster */
 	setsockopt(*s, IPPROTO_TCP,TCP_NODELAY,(char *)&n,sizeof(n));
@@ -172,7 +172,7 @@ abyss_bool SocketListen(TSocket *s, uint32 backlog)
 abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
 {
 	struct sockaddr_in sa;
-	uint32 size=sizeof(sa);
+	socklen_t size=sizeof(sa);
     abyss_bool connected;
 
     connected = FALSE;
@@ -193,7 +193,7 @@ abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
 	return connected;
 }
 
-uint32 SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32 timems)
+uint32_t SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32_t timems)
 {
 	fd_set rfds,wfds;
 #ifdef ABYSS_WIN32
@@ -239,14 +239,14 @@ uint32 SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32 timems)
 
 abyss_bool SocketBlocking(TSocket *s, abyss_bool b)
 {
-	uint32 x=b;
+	uint32_t x=b;
 
 	RET(ioctlsocket(*s,FIONBIO,&x));
 }
 
-uint32 SocketAvailableReadBytes(TSocket *s)
+uint32_t SocketAvailableReadBytes(TSocket *s)
 {
-	uint32 x;
+	uint32_t x;
 
 	if (ioctlsocket(*s,FIONREAD,&x)!=0)
 		x=0;
@@ -254,7 +254,7 @@ uint32 SocketAvailableReadBytes(TSocket *s)
 	return x;
 }
 
-uint32 SocketError()
+uint32_t SocketError()
 {
 #ifdef ABYSS_WIN32
 	return WSAGetLastError();

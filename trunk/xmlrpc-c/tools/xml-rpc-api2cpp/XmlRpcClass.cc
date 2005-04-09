@@ -2,7 +2,9 @@
 #include <stdexcept>
 #include <vector>
 
-#include <XmlRpcCpp.h>
+using namespace std;
+
+#include "XmlRpcCpp.h"
 #include "DataType.h"
 #include "XmlRpcFunction.h"
 #include "XmlRpcClass.h"

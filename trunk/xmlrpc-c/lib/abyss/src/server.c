@@ -76,11 +76,11 @@ abyss_bool ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate)
 	TFileFind findhandle;
 	char *p,z1[26],z2[20],z3[9],u,*z4;
 	TList list;
-	int16 i;
-	uint32 k;
+	int16_t i;
+	uint32_t k;
 	abyss_bool text=FALSE;
 	abyss_bool ascending=TRUE;
-	uint16 sort=1;	/* 1=by name, 2=by date */
+	uint16_t sort=1;	/* 1=by name, 2=by date */
 	struct tm ftm;
 	TPool pool;
 	TDate date;
@@ -327,8 +327,8 @@ abyss_bool ServerFileHandler(TSession *r,char *z,TDate *filedate)
 {
 	char *mediatype;
 	TFile file;
-	uint64 filesize,start,end;
-	uint16 i;
+	uint64_t filesize,start,end;
+	uint16_t i;
 	TDate date;
 	char *p;
 
@@ -432,7 +432,7 @@ abyss_bool ServerDefaultHandlerFunc(TSession *r)
 {
 	char *p,z[4096];
 	TFileStat fs;
-	uint16 i;
+	uint16_t i;
 	abyss_bool endingslash=FALSE;
 	TDate objdate;
 
@@ -545,7 +545,7 @@ abyss_bool ServerDefaultHandlerFunc(TSession *r)
 
 abyss_bool ServerCreate(TServer *srv,
                         const char *name,
-                        uint16 port,
+                        uint16_t port,
                         const char *filespath,
                         const char *logfilename)
 {
@@ -585,7 +585,7 @@ void ServerFree(TServer *srv)
 void ServerFunc(TConn *c)
 {
 	TSession r;
-	uint32 i,ka;
+	uint32_t i,ka;
 	abyss_bool treated;
 	URIHandler *hl=(URIHandler *)(c->server)->handlers.item;
 
@@ -664,7 +664,7 @@ void ServerInit(TServer *srv)
 
 	if (!SocketListen(&srv->listensock,MAX_CONN))
 		TraceExit("Can't listen\n");
-};
+}
 
 /* With pthread configuration, our connections run as threads of a
    single address space, so we manage a pool of connection
@@ -685,7 +685,7 @@ FALSE;
 static void 
 ServerRunThreaded(TServer *srv)
 {
-	uint32 i;
+	uint32_t i;
 	TSocket s,ns;
 	TIPAddr peerIpAddr;
 	TConn *c;
@@ -900,7 +900,7 @@ void LogClose(TServer *srv)
 abyss_bool SessionLog(TSession *s)
 {
 	char z[1024];
-	uint32 n;
+	uint32_t n;
 
 	if (s->requestline == NULL)
 		return FALSE;

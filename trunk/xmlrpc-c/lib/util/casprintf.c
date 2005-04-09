@@ -9,9 +9,9 @@
 
 
 static __inline__ void
-simpleVasprintf(const char ** const retvalP,
-                const char *  const fmt,
-                va_list             varargs) {
+simpleVasprintf(char **      const retvalP,
+                const char * const fmt,
+                va_list            varargs) {
 /*----------------------------------------------------------------------------
    This is a poor man's implementation of vasprintf(), of GNU fame.
 -----------------------------------------------------------------------------*/
@@ -46,21 +46,33 @@ simpleVasprintf(const char ** const retvalP,
 
 
 
-void GNU_PRINTF_ATTR(2,3)
-casprintf(const char ** const retvalP, const char * const fmt, ...) {
+void
+cvasprintf(const char ** const retvalP,
+           const char *  const fmt,
+           va_list             varargs) {
 
-    char *retval;
-
-    va_list varargs;  /* mysterious structure used by variable arg facility */
-
-    va_start(varargs, fmt); /* start up the mysterious variable arg facility */
+    char * retval;
 
 #if HAVE_ASPRINTF
     vasprintf(&retval, fmt, varargs);
 #else
     simpleVasprintf(&retval, fmt, varargs);
 #endif
+
     *retvalP = retval;
+}
+
+
+void GNU_PRINTF_ATTR(2,3)
+casprintf(const char ** const retvalP, const char * const fmt, ...) {
+
+    va_list varargs;  /* mysterious structure used by variable arg facility */
+
+    va_start(varargs, fmt); /* start up the mysterious variable arg facility */
+
+    cvasprintf(retvalP, fmt, varargs);
+
+    va_end(varargs);
 }
 
 
@@ -69,6 +81,3 @@ void
 strfree(const char * const string) {
     free((void *)string);
 }
-
-
-

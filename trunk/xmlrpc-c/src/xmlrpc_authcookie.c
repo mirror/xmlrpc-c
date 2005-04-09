@@ -29,40 +29,43 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "mallocvar.h"
 #include "xmlrpc.h"
 
 /* set cookie function */
-void xmlrpc_authcookie_set ( xmlrpc_env *env, 
-			const char *username, 
-			const char *password ) {
-    char *unencoded;
-    xmlrpc_mem_block *token;
+void 
+xmlrpc_authcookie_set(xmlrpc_env * const envP, 
+                      const char * const username, 
+                      const char * const password) {
 
-    /* Check asserts. */
-    XMLRPC_ASSERT_ENV_OK(env);
+    char * unencoded;
+    xmlrpc_mem_block * token;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(username);
     XMLRPC_ASSERT_PTR_OK(password);
 
-    /* Clear out memory. */
-    unencoded = (char *) malloc ( sizeof ( char * ) );
-    token = NULL;
-
     /* Create unencoded string/hash. */
+
+    MALLOCARRAY(unencoded,(strlen(username) + strlen(password) + 1 + 1));
     sprintf(unencoded, "%s:%s", username, password);
-
+    
     /* Create encoded string. */
-    token = xmlrpc_base64_encode_without_newlines(env, unencoded,
-				strlen(unencoded));
-    XMLRPC_FAIL_IF_FAULT(env);
+    token = xmlrpc_base64_encode_without_newlines(
+        envP, (unsigned char *)unencoded, strlen(unencoded));
+    if (!envP->fault_occurred) {
+        /* Set HTTP_COOKIE_AUTH to the character representation of the
+        ** encoded string. */
+        setenv("HTTP_COOKIE_AUTH", 
+               XMLRPC_MEMBLOCK_CONTENTS(char, token),
+               1);
 
-    /* Set HTTP_COOKIE_AUTH to the character representation of the
-    ** encoded string. */
-    setenv("HTTP_COOKIE_AUTH", XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, token),
-		1);
-
- cleanup:
-    if (token) xmlrpc_mem_block_free(token);
+        xmlrpc_mem_block_free(token);
+    }
+    free(unencoded);
 }
+
+
 
 char *xmlrpc_authcookie ( void ) {
     return getenv("HTTP_COOKIE_AUTH");

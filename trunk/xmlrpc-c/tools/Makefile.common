@@ -30,7 +30,7 @@ XMLRPC_LIBS = $(LIBXMLRPC) $(LIBXMLRPC_CPP) $(LIBXMLRPC_CLIENT) \
 
 UTIL_DIR = $(BUILDDIR)/lib/util
 
-BUILDABLE_UTILS = casprintf.o cmdline_parser.o
+BUILDABLE_UTILS = casprintf.o cmdline_parser.o getoptx.o
 
 $(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)

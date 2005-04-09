@@ -4,7 +4,9 @@
 #ifndef _SystemProxy_H_
 #define _SystemProxy_H_ 1
 
-#include <XmlRpcCpp.h>
+#include <string>
+
+#include "XmlRpcCpp.h"
 
 class SystemProxy {
     XmlRpcClient mClient;
@@ -12,7 +14,7 @@ class SystemProxy {
 public:
     SystemProxy (const XmlRpcClient& client)
         : mClient(client) {}
-    SystemProxy (const string& server_url)
+    SystemProxy (const std::string& server_url)
         : mClient(XmlRpcClient(server_url)) {}
     SystemProxy (const SystemProxy& o)
         : mClient(o.mClient) {}
@@ -29,10 +31,10 @@ public:
        signatures. Each signature is an array of strings. The first item of
        each signature is the return type, and any others items are
        parameter types. */
-    XmlRpcValue /*array*/ methodSignature (string string1);
+    XmlRpcValue /*array*/ methodSignature (std::string string1);
 
     /* Given the name of a method, return a help string. */
-    string methodHelp (string string1);
+    string methodHelp (std::string string1);
 
     /* Process an array of calls, and return an array of results. Calls
        should be structs of the form {'methodName': string, 'params':

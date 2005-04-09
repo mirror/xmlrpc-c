@@ -341,7 +341,7 @@ typedef enum {
     XMLRPC_TYPE_STRUCT   = 7,
     XMLRPC_TYPE_C_PTR    = 8,
     XMLRPC_TYPE_NIL      = 9,
-    XMLRPC_TYPE_DEAD     = 0xDEAD,
+    XMLRPC_TYPE_DEAD     = 0xDEAD
 } xmlrpc_type;
 
 /* These are *always* allocated on the heap. No exceptions. */
@@ -469,14 +469,14 @@ xmlrpc_read_string_w_lp(xmlrpc_env *     const envP,
 #endif
 
 xmlrpc_value *
-xmlrpc_base64_new(xmlrpc_env *          const envP,
-                  unsigned int          const length,
-                  const unsigned char * const bytestringValue);
+xmlrpc_base64_new(xmlrpc_env *          const envP, 
+                  size_t                const length,
+                  const unsigned char * const value);
 
 void
 xmlrpc_read_base64(xmlrpc_env *           const envP,
                    const xmlrpc_value *   const valueP,
-                   unsigned int *         const lengthP,
+                   size_t *               const lengthP,
                    const unsigned char ** const bytestringValueP);
 
 xmlrpc_value *

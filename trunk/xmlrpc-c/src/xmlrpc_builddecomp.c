@@ -694,7 +694,7 @@ readDatetimeStr(xmlrpc_env *         const envP,
 static void
 readBase64(xmlrpc_env *           const envP,
            const xmlrpc_value *   const valueP,
-           unsigned int *         const lengthP,
+           size_t *               const lengthP,
            const unsigned char ** const byteStringValueP,
            xmlrpc_bool            const oldstyleMemMgmt) {
 

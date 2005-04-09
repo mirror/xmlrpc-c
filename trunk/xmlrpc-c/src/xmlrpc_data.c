@@ -530,12 +530,12 @@ xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
 void
 xmlrpc_read_base64(xmlrpc_env *           const envP,
                    const xmlrpc_value *   const valueP,
-                   unsigned int *         const lengthP,
+                   size_t *               const lengthP,
                    const unsigned char ** const byteStringValueP) {
 
     validateType(envP, valueP, XMLRPC_TYPE_BASE64);
     if (!envP->fault_occurred) {
-        unsigned int const size = 
+        size_t const size = 
             XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
         const char * const contents = 
             XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
@@ -549,7 +549,7 @@ xmlrpc_read_base64(xmlrpc_env *           const envP,
                 "for byte string.", size);
         else {
             memcpy(byteStringValue, contents, size);
-            *byteStringValueP = byteStringValue;
+            *byteStringValueP = (const unsigned char *)byteStringValue;
             *lengthP = size;
         }
     }
@@ -565,8 +565,10 @@ xmlrpc_read_base64_old(xmlrpc_env *           const envP,
 
     validateType(envP, valueP, XMLRPC_TYPE_BASE64);
     if (!envP->fault_occurred) {
-        *lengthP =          XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
-        *byteStringValueP = XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+        *lengthP =
+            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+        *byteStringValueP = (const unsigned char *)
+            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
     }
 }
 

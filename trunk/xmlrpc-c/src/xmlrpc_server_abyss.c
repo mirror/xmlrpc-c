@@ -65,9 +65,10 @@ static void die_if_fault_occurred(xmlrpc_env *env) {
 */
 
 static void 
-send_xml_data (TSession * const r, 
-               char *     const buffer, 
-               uint64     const len) {
+sendXmlData(xmlrpc_env * const envP,
+            TSession *   const r, 
+            char *       const buffer, 
+            size_t       const len) {
 
     const char * http_cookie = NULL;
         /* This used to set http_cookie to getenv("HTTP_COOKIE"), but
@@ -96,14 +97,22 @@ send_xml_data (TSession * const r,
 
         free(cookie_response);
     }   
- 
-    ResponseContentType(r, "text/xml; charset=\"utf-8\"");
-    ResponseContentLength(r, len);
     
-    ResponseWrite(r);
-    
-    HTTPWrite(r, buffer, len);
-    HTTPWriteEnd(r);
+    if ((size_t)(uint32_t)len != len)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR,
+            "XML-RPC method generated a response too "
+            "large for Abyss to send");
+    else {
+        uint32_t const abyssLen = (uint32_t)len;
+        ResponseContentType(r, "text/xml; charset=\"utf-8\"");
+        ResponseContentLength(r, abyssLen);
+        
+        ResponseWrite(r);
+        
+        HTTPWrite(r, buffer, abyssLen);
+        HTTPWriteEnd(r);
+    }
 }
 
 
@@ -118,7 +127,7 @@ static void
 send_error(TSession *   const abyssSessionP, 
            unsigned int const status) {
 
-    ResponseStatus(abyssSessionP, (uint16) status);
+    ResponseStatus(abyssSessionP, (uint16_t) status);
     ResponseError(abyssSessionP);
 }
 
@@ -160,11 +169,11 @@ get_buffer_data(TSession * const r,
 static void
 getBody(xmlrpc_env *        const envP,
         TSession *          const abyssSessionP,
-        unsigned int        const contentSize,
+        size_t              const contentSize,
         xmlrpc_mem_block ** const bodyP) {
 /*----------------------------------------------------------------------------
-   Get the entire body from the Abyss session and return it as the new
-   memblock *bodyP.
+   Get the entire body, which is of size 'contentSize' bytes, from the
+   Abyss session and return it as the new memblock *bodyP.
 
    The first chunk of the body may already be in Abyss's buffer.  We
    retrieve that before reading more.
@@ -266,7 +275,7 @@ validateContentType(TSession *     const httpRequestP,
 
 static void
 processContentLength(TSession *     const httpRequestP,
-                     unsigned int * const inputLenP,
+                     size_t *       const inputLenP,
                      unsigned int * const httpErrorP) {
 /*----------------------------------------------------------------------------
   Make sure the content length is present and non-zero.  This is
@@ -279,12 +288,23 @@ processContentLength(TSession *     const httpRequestP,
     if (content_length == NULL)
         *httpErrorP = 411;
     else {
-        int const contentLengthValue = atoi(content_length);
-        if (contentLengthValue <= 0)
+        unsigned long contentLengthValue;
+        char * tail;
+        
+        contentLengthValue = strtoul(content_length, &tail, 10);
+        
+        if (errno != 0)
+            *httpErrorP = 400;
+        else if (*tail != '\0')
+            *httpErrorP = 400;
+        else if (contentLengthValue < 1)
+            *httpErrorP = 400;
+        else if ((unsigned long)(size_t)contentLengthValue 
+                 != contentLengthValue)
             *httpErrorP = 400;
         else {
             *httpErrorP = 0;
-            *inputLenP = (unsigned int)contentLengthValue;
+            *inputLenP = (size_t)contentLengthValue;
         }
     }
 }
@@ -302,10 +322,12 @@ static const char * trace_abyss;
 
 static void
 processCall(TSession * const abyssSessionP,
-            int        const inputLen) {
+            size_t     const contentSize) {
 /*----------------------------------------------------------------------------
    Handle an RPC request.  This is an HTTP request that has the proper form
    to be one of our RPCs.
+
+   Its content length is 'contentSize' bytes.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
 
@@ -314,17 +336,14 @@ processCall(TSession * const abyssSessionP,
 
     xmlrpc_env_init(&env);
 
-    /* SECURITY: Make sure our content length is legal.
-       XXX - We can cast 'inputLen' because we know it's >= 0, yes? 
-    */
-    if ((size_t) inputLen > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+    if (contentSize > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
         xmlrpc_env_set_fault_formatted(
             &env, XMLRPC_LIMIT_EXCEEDED_ERROR,
-            "XML-RPC request too large (%d bytes)", inputLen);
+            "XML-RPC request too large (%d bytes)", contentSize);
     else {
         xmlrpc_mem_block *body;
         /* Read XML data off the wire. */
-        getBody(&env, abyssSessionP, inputLen, &body);
+        getBody(&env, abyssSessionP, contentSize, &body);
         if (!env.fault_occurred) {
             xmlrpc_mem_block * output;
             /* Process the RPC. */
@@ -334,9 +353,9 @@ processCall(TSession * const abyssSessionP,
                 XMLRPC_MEMBLOCK_SIZE(char, body));
             if (!env.fault_occurred) {
             /* Send our the result. */
-                send_xml_data(abyssSessionP, 
-                              XMLRPC_MEMBLOCK_CONTENTS(char, output),
-                              XMLRPC_MEMBLOCK_SIZE(char, output));
+                sendXmlData(&env, abyssSessionP, 
+                            XMLRPC_MEMBLOCK_CONTENTS(char, output),
+                            XMLRPC_MEMBLOCK_SIZE(char, output));
                 
                 XMLRPC_MEMBLOCK_FREE(char, output);
             }
@@ -395,13 +414,13 @@ xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
                     send_error(r, httpError);
                 else {
                     unsigned int httpError;
-                    int inputLen;
+                    size_t contentSize;
 
-                    processContentLength(r, &inputLen, &httpError);
+                    processContentLength(r, &contentSize, &httpError);
                     if (httpError)
                         send_error(r, httpError);
 
-                    processCall(r, inputLen);
+                    processCall(r, contentSize);
                 }
             }
         }

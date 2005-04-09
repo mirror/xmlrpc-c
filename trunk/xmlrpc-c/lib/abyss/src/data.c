@@ -56,7 +56,7 @@ void ListInitAutoFree(TList *sl)
 
 void ListFree(TList *sl)
 {
-	uint16 i;
+	uint16_t i;
 
 	if (sl->item)
 	{
@@ -123,9 +123,9 @@ abyss_bool ListAddFromString(TList *list,char *c)
 	return TRUE;
 }
 
-abyss_bool ListFindString(TList *sl,char *str,uint16 *index)
+abyss_bool ListFindString(TList *sl,char *str,uint16_t *index)
 {
-	uint16 i;
+	uint16_t i;
 
 	if (sl->item && str)
 		for (i=0;i<sl->size;i++)
@@ -142,7 +142,7 @@ abyss_bool ListFindString(TList *sl,char *str,uint16 *index)
 ** Buffer
 *********************************************************************/
 
-abyss_bool BufferAlloc(TBuffer *buf,uint32 memsize)
+abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
 {
 	/* ************** Implement the static buffers ***/
 	buf->staticid=0;
@@ -172,7 +172,7 @@ void BufferFree(TBuffer *buf)
 	buf->staticid=0;
 }
 
-abyss_bool BufferRealloc(TBuffer *buf,uint32 memsize)
+abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize)
 {
 	if (buf->staticid)
 	{
@@ -223,7 +223,7 @@ abyss_bool StringAlloc(TString *s)
 
 abyss_bool StringConcat(TString *s,char *s2)
 {
-	uint32 len=strlen(s2);
+	uint32_t len=strlen(s2);
 
 	if (len+s->size+1>s->buffer.size)
 		if (!BufferRealloc(&(s->buffer),((len+s->size+1+256)/256)*256))
@@ -236,7 +236,7 @@ abyss_bool StringConcat(TString *s,char *s2)
 
 abyss_bool StringBlockConcat(TString *s,char *s2,char **ref)
 {
-	uint32 len=strlen(s2)+1;
+	uint32_t len=strlen(s2)+1;
 
 	if (len+s->size>s->buffer.size)
 		if (!BufferRealloc(&(s->buffer),((len+s->size+1+256)/256)*256))
@@ -263,9 +263,9 @@ char *StringData(TString *s)
 ** Hash
 *********************************************************************/
 
-uint16 Hash16(char *s)
+uint16_t Hash16(char *s)
 {
-	uint16 i=0;
+	uint16_t i=0;
    while( *s ) i = i * 37 + ( *s++ );
 	return i;
 }
@@ -282,7 +282,7 @@ void TableInit(TTable *t)
 
 void TableFree(TTable *t)
 {
-	uint16 i;
+	uint16_t i;
 
 	if (t->item)
 	{
@@ -299,9 +299,9 @@ void TableFree(TTable *t)
 	TableInit(t);
 }
 
-abyss_bool TableFindIndex(TTable *t,char *name,uint16 *index)
+abyss_bool TableFindIndex(TTable *t,char *name,uint16_t *index)
 {
-	uint16 i,hash=Hash16(name);
+	uint16_t i,hash=Hash16(name);
 
 	if ((t->item) && (t->size>0) && (*index<t->size))
 	{
@@ -319,7 +319,7 @@ abyss_bool TableFindIndex(TTable *t,char *name,uint16 *index)
 
 abyss_bool TableAddReplace(TTable *t,char *name,char *value)
 {
-	uint16 i=0;
+	uint16_t i=0;
 
 	if (TableFindIndex(t,name,&i))
 	{
@@ -366,7 +366,7 @@ abyss_bool TableAdd(TTable *t,char *name,char *value)
 
 char *TableFind(TTable *t,char *name)
 {
-	uint16 i=0;
+	uint16_t i=0;
 
 	if (TableFindIndex(t,name,&i))
 		return t->item[i].value;
@@ -378,7 +378,7 @@ char *TableFind(TTable *t,char *name)
 ** Pool
 *********************************************************************/
 
-TPoolZone *PoolZoneAlloc(uint32 zonesize)
+TPoolZone *PoolZoneAlloc(uint32_t zonesize)
 {
 	TPoolZone *pz;
 
@@ -393,7 +393,7 @@ TPoolZone *PoolZoneAlloc(uint32 zonesize)
 	return pz;
 }
 
-abyss_bool PoolCreate(TPool *p,uint32 zonesize)
+abyss_bool PoolCreate(TPool *p,uint32_t zonesize)
 {
 	p->zonesize=zonesize;
 	if (MutexCreate(&p->mutex))
@@ -406,11 +406,11 @@ abyss_bool PoolCreate(TPool *p,uint32 zonesize)
 	return TRUE;
 }
 
-void *PoolAlloc(TPool *p,uint32 size)
+void *PoolAlloc(TPool *p,uint32_t size)
 {
 	TPoolZone *pz,*npz;
 	void *x;
-	uint32 zonesize;
+	uint32_t zonesize;
 
 	if (size==0)
 		return NULL;

@@ -50,7 +50,7 @@
 ** Configuration Files Parsing Functions
 *********************************************************************/
 
-abyss_bool ConfReadLine(TFile *f,char *buffer,uint32 len)
+abyss_bool ConfReadLine(TFile *f,char *buffer,uint32_t len)
 {
 	abyss_bool r=TRUE;
 	char c,*p,*z=buffer;
@@ -127,7 +127,7 @@ char *ConfGetToken(char **p)
 		};
 }
 
-abyss_bool ConfReadInt(char *p,int32 *n,int32 min,int32 max)
+abyss_bool ConfReadInt(char *p,int32_t *n,int32_t min,int32_t max)
 {
 	char *e;
 
@@ -195,7 +195,7 @@ abyss_bool ConfReadServerFile(const char *filename,TServer *srv)
 	TFile f;
 	char z[512],*p;
 	char *option;
-	int32 n,line=0;
+	int32_t n,line=0;
 	TFileStat fs;
 
 	if (!FileOpen(&f,filename,O_RDONLY))
@@ -282,7 +282,7 @@ abyss_bool ConfReadServerFile(const char *filename,TServer *srv)
 #ifdef _UNIX
 					if (*p=='#')
 					{
-						int32 n;
+						int32_t n;
 
 						if (!ConfReadInt(p+1,&n,0,0))
 							TraceExit("Bad user number '%s'",p);

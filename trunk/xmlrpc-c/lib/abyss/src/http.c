@@ -211,7 +211,7 @@ void RequestFree(TSession *r)
 abyss_bool RequestRead(TSession *r)
 {
 	char *n,*t,*p;
-	uint32 vmin,vmaj;
+	uint32_t vmin,vmaj;
 	abyss_bool ret,singleline=FALSE;
 
 	/* Ignore CRLFs in the beginning of the request (RFC2068-P30) */
@@ -468,7 +468,7 @@ abyss_bool RequestValidURI(TSession *r)
 	if (r->host)
 		if (p=strchr(r->host,':'))
 		{
-			uint32 port=0;
+			uint32_t port=0;
 
 			*p='\0';
 			p++;
@@ -496,7 +496,7 @@ abyss_bool RequestValidURI(TSession *r)
 
 abyss_bool RequestValidURIPath(TSession *r)
 {
-	uint32 i=0;
+	uint32_t i=0;
 	char *p=r->uri;
 
 	if (*p=='/')
@@ -563,7 +563,7 @@ abyss_bool RequestAuth(TSession *r,char *credential,char *user,char *pass)
 ** Range
 *********************************************************************/
 
-abyss_bool RangeDecode(char *str,uint64 filesize,uint64 *start,uint64 *end)
+abyss_bool RangeDecode(char *str,uint64_t filesize,uint64_t *start,uint64_t *end)
 {
 	char *ss;
 
@@ -598,10 +598,10 @@ abyss_bool RangeDecode(char *str,uint64 filesize,uint64 *start,uint64 *end)
 ** HTTP
 *********************************************************************/
 
-char *HTTPReasonByStatus(uint16 code)
+char *HTTPReasonByStatus(uint16_t code)
 {
 	static struct _HTTPReasons {
-		uint16 status;
+		uint16_t status;
 		char *reason;
 	} *r,reasons[] = 
 	{
@@ -656,12 +656,12 @@ char *HTTPReasonByStatus(uint16 code)
 	return "No Reason";
 }
 
-int32 HTTPRead(TSession *s,char *buffer,uint32 len)
+int32_t HTTPRead(TSession *s,char *buffer,uint32_t len)
 {
 	return 0;
 }
 
-abyss_bool HTTPWrite(TSession *s,char *buffer,uint32 len)
+abyss_bool HTTPWrite(TSession *s,char *buffer,uint32_t len)
 {
 	if (s->chunkedwrite && s->chunkedwritemode)
 	{
@@ -723,14 +723,14 @@ abyss_bool ResponseChunked(TSession *r)
 	return TRUE;
 }
 
-void ResponseStatus(TSession *r,uint16 code)
+void ResponseStatus(TSession *r,uint16_t code)
 {
 	r->status=code;
 }
 
 void ResponseStatusErrno(TSession *r)
 {
-	uint16 code;
+	uint16_t code;
 
 	switch (errno)
 	{
@@ -757,7 +757,7 @@ void ResponseWrite(TSession *r)
 	abyss_bool connclose=TRUE;
 	char z[64];
 	TTableItem *ti;
-	uint16 i;
+	uint16_t i;
 	char *reason;
 
 	/* if status == 0 then this is an error */
@@ -828,7 +828,7 @@ abyss_bool ResponseContentType(TSession *r,char *type)
 	return ResponseAddField(r,"Content-type",type);
 }
 
-abyss_bool ResponseContentLength(TSession *r,uint64 len)
+abyss_bool ResponseContentLength(TSession *r,uint64_t len)
 {
 	char z[32];
 
@@ -853,7 +853,7 @@ void MIMETypeInit()
 
 abyss_bool MIMETypeAdd(char *type,char *ext)
 {
-	uint16 index;
+	uint16_t index;
 
 	if (ListFindString(&_MIMETypes,type,&index))
 		type=_MIMETypes.item[index];
@@ -874,7 +874,7 @@ abyss_bool MIMETypeAdd(char *type,char *ext)
 
 char *MIMETypeFromExt(char *ext)
 {
-	uint16 extindex;
+	uint16_t extindex;
 
 	if (!ListFindString(&_MIMEExt,ext,&extindex))
 		return NULL;
@@ -914,8 +914,8 @@ char *MIMETypeGuessFromFile(char *filename)
 	
 	if (FileOpen(&file,filename,O_BINARY | O_RDONLY))
 	{
-		uint8 buffer[80],c;
-		int32 len,i,n=0;
+		uint8_t buffer[80],c;
+		int32_t len,i,n=0;
 
 		i=len=FileRead(&file,buffer,80);
 
@@ -953,7 +953,7 @@ static char *_DateMonth[12]=
 	"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
 };
 
-static int32 _DateTimeBias=0;
+static int32_t _DateTimeBias=0;
 static char _DateTimeBiasStr[6]="";
 
 abyss_bool DateToString(TDate *tm,char *s)
@@ -990,7 +990,7 @@ abyss_bool DateToLogString(TDate *tm,char *s)
 
 abyss_bool DateDecode(char *s,TDate *tm)
 {
-	uint32 n=0;
+	uint32_t n=0;
 
 	/* Ignore spaces, day name and spaces */
 	while ((*s==' ') || (*s=='\t'))
@@ -1040,9 +1040,9 @@ abyss_bool DateDecode(char *s,TDate *tm)
 	return (mktime(tm)!=(time_t)(-1));
 }
 
-int32 DateCompare(TDate *d1,TDate *d2)
+int32_t DateCompare(TDate *d1,TDate *d2)
 {
-	int32 x;
+	int32_t x;
 
 	if ((x=d1->tm_year-d2->tm_year)==0)
 		if ((x=d1->tm_mon-d2->tm_mon)==0)
@@ -1109,7 +1109,7 @@ void Base64Encode(char *s,char *d)
 		'4','5','6','7','8','9','+','/'
 	};
 
-	uint32 i,length=strlen(s);
+	uint32_t i,length=strlen(s);
 	char *p=d;
 	
 	/* Transform the 3x8 bits to 4x6 bits, as required by base64. */

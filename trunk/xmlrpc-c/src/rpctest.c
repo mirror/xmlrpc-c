@@ -897,33 +897,36 @@ test_value_string_wide(void) {}
 static void
 test_value_base64(void) {
 
+    /* Test <base64> data. */
+
+    unsigned char const data1[5] = {'a', '\0', 'b', '\n', 'c'};
+    unsigned char const data2[3] = {'a', '\0', 'b'};
+
     xmlrpc_value * v;
     xmlrpc_env env;
     const unsigned char * data;
     size_t len;
 
-    /* Test <base64> data. */
-
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_base64_new(&env, 5, "a\0b\nc");
+    v = xmlrpc_base64_new(&env, sizeof(data1), data1);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
     xmlrpc_read_base64(&env, v, &len, &data);
     TEST_NO_FAULT(&env);
-    TEST(memcmp(data, "a\0b\nc", 5) == 0);
-    TEST(len == 5);
+    TEST(memcmp(data, data1, sizeof(data1)) == 0);
+    TEST(len == sizeof(data1));
     xmlrpc_DECREF(v);
     free((void*)data);
 
-    v = xmlrpc_build_value(&env, "6", "a\0b", (size_t) 3);
+    v = xmlrpc_build_value(&env, "6", data2, sizeof(data2));
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
     xmlrpc_decompose_value(&env, v, "6", &data, &len);
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
-    TEST(len == 3);
-    TEST(memcmp(data, "a\0b", len) == 0);
+    TEST(len == sizeof(data2));
+    TEST(memcmp(data, data1, sizeof(data2)) == 0);
     strfree(data);
 
     xmlrpc_env_clean(&env);
