@@ -10,6 +10,8 @@
 #ifndef MALLOCVAR_INCLUDED
 #define MALLOCVAR_INCLUDED
 
+#include "xmlrpc_config.h"
+
 #include <limits.h>
 #include <stdlib.h>
 
