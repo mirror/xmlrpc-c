@@ -7,7 +7,9 @@
 # directory.  A real application program would instead use xmlrpc-c-config
 # and get the Xmlrpc-c libraries from their installed home.
 
+# @srcdir@ and @top_srcdir@ are useless because they can be relative.
 
+SRCDIR="@BUILDDIR@"  # until we figure out how to do it right
 BUILDDIR="@BUILDDIR@"
 ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND@"
 MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
@@ -33,13 +35,14 @@ fi
 needCpp=no
 
 the_libs="${BUILDDIR}/src/.libs/libxmlrpc.a ${LIBXML}"
-the_includes="-I ${BUILDDIR}/src"
+the_includes="-I${SRCDIR}/src"
 sopath="${BUILDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do
   case $1 in
     c++)
       needCpp=yes
+      the_includes="-I${SRCDIR}/src/cpp $the_includes"
       ;;
     cgi-server)
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
@@ -50,7 +53,7 @@ while test $# -gt 0; do
       the_libs="${BUILDDIR}/lib/abyss/src/.libs/libxmlrpc_abyss.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
-      the_includes="-I${BUILDDIR}/lib/abyss/src $the_includes"
+      the_includes="-I${SRCDIR}/lib/abyss/src $the_includes"
       sopath="${BUILDDIR}/lib/abyss/src/.libs:$sopath"
       ;;
     client)
@@ -79,7 +82,7 @@ while test $# -gt 0; do
         # libraries.  So a C++ client program gets linked with server
         # libraries.
         the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-        the_libs="${BUILDDIR}/src/libxmlrpc_cpp.a $the_libs"
+        the_libs="${BUILDDIR}/src/cpp/libxmlrpc_cpp.a $the_libs"
         fi
       ;;
     --version)
