@@ -21,7 +21,7 @@ sample_add(xmlrpc_env *   const env,
     z = x + y;
 
     /* Return our result. */
-    return xmlrpc_build_value(env, "i", z);
+    return xmlrpc_int_new(env, z);
 }
 
 
