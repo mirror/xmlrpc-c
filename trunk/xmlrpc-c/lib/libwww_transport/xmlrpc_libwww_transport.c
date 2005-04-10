@@ -65,10 +65,36 @@
 struct clientTransport {
     int saved_flags;
     HTList *xmlrpc_conversions;
+    HTAssocList * cookieListP;
+        /* This is a list of all the cookies that the server has set,
+           via responses to prior requests.
+        */
     bool tracingOn;
 };
 
 static struct clientTransport clientTransport;
+
+
+typedef struct {
+/*----------------------------------------------------------------------------
+   This object represents one RPC.
+-----------------------------------------------------------------------------*/
+    struct clientTransport * clientTransportP;
+
+    /* These fields are used when performing synchronous calls. */
+    bool is_done;
+    int http_status;
+
+    /* Low-level information used by libwww. */
+    HTRequest *request;
+    HTChunk *response_data;
+    HTParentAnchor *source_anchor;
+    HTAnchor *dest_anchor;
+
+    transport_asynch_complete complete;
+    struct call_info * callInfoP; 
+} rpc;
+
 
 
 /*=========================================================================
@@ -76,8 +102,57 @@ static struct clientTransport clientTransport;
 **=========================================================================
 */
 
+static void
+initLibwww(const char * const appname,
+           const char * const appversion) {
+    
+    /* We initialize the library using a robot profile, because we don't
+    ** care about redirects or HTTP authentication, and we want to
+    ** reduce our application footprint as much as possible. */
+    HTProfile_newRobot(appname, appversion);
+
+    /* Ilya Goldberg <igg@mit.edu> provided the following code to access
+    ** SSL-protected servers. */
+#if HAVE_LIBWWW_SSL
+    /* Set the SSL protocol method. By default, it is the highest
+    ** available protocol. Setting it up to SSL_V23 allows the client
+    ** to negotiate with the server and set up either TSLv1, SSLv3,
+    ** or SSLv2 */
+    HTSSL_protMethod_set(HTSSL_V23);
+    
+    /* Set the certificate verification depth to 2 in order to be able to
+    ** validate self-signed certificates */
+    HTSSL_verifyDepth_set(2);
+    
+    /* Register SSL stuff for handling ssl access. The parameter we pass
+    ** is NO because we can't be pre-emptive with POST */
+    HTSSLhttps_init(NO);
+#endif /* HAVE_LIBWWW_SSL */
+    
+    /* For interoperability with Frontier, we need to tell libwww *not*
+    ** to send 'Expect: 100-continue' headers. But if we're not sending
+    ** these, we shouldn't wait for them. So set our built-in delays to
+    ** the smallest legal values. */
+    HTTP_setBodyWriteDelay (SMALLEST_LEGAL_LIBWWW_TIMEOUT,
+                            SMALLEST_LEGAL_LIBWWW_TIMEOUT);
+    
+    /* We attempt to disable all of libwww's chatty, interactive
+    ** prompts. Let's hope this works. */
+    HTAlert_setInteractive(NO);
+    
+    /* Here are some alternate setup calls which will help greatly
+    ** with debugging, should the need arise.
+    **
+    ** HTProfile_newNoCacheClient(appname, appversion);
+    ** HTAlert_setInteractive(YES);
+    ** HTPrint_setCallback(printer);
+    ** HTTrace_setCallback(tracer); */
+}
+
+
+
 static void 
-create(xmlrpc_env *                     const envP ATTR_UNUSED,
+create(xmlrpc_env *                     const envP,
        int                              const flags,
        const char *                     const appname,
        const char *                     const appversion,
@@ -98,50 +173,15 @@ create(xmlrpc_env *                     const envP ATTR_UNUSED,
     *handlePP = clientTransportP;
 
     clientTransportP->saved_flags = flags;
-    if (!(clientTransportP->saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
-    
-        /* We initialize the library using a robot profile, because we don't
-        ** care about redirects or HTTP authentication, and we want to
-        ** reduce our application footprint as much as possible. */
-        HTProfile_newRobot(appname, appversion);
 
-        /* Ilya Goldberg <igg@mit.edu> provided the following code to access
-        ** SSL-protected servers. */
-#if HAVE_LIBWWW_SSL
-        /* Set the SSL protocol method. By default, it is the highest
-        ** available protocol. Setting it up to SSL_V23 allows the client
-        ** to negotiate with the server and set up either TSLv1, SSLv3,
-        ** or SSLv2 */
-        HTSSL_protMethod_set(HTSSL_V23);
-
-        /* Set the certificate verification depth to 2 in order to be able to
-        ** validate self-signed certificates */
-        HTSSL_verifyDepth_set(2);
-
-        /* Register SSL stuff for handling ssl access. The parameter we pass
-        ** is NO because we can't be pre-emptive with POST */
-        HTSSLhttps_init(NO);
-#endif /* HAVE_LIBWWW_SSL */
-    
-        /* For interoperability with Frontier, we need to tell libwww *not*
-        ** to send 'Expect: 100-continue' headers. But if we're not sending
-        ** these, we shouldn't wait for them. So set our built-in delays to
-        ** the smallest legal values. */
-        HTTP_setBodyWriteDelay (SMALLEST_LEGAL_LIBWWW_TIMEOUT,
-                                SMALLEST_LEGAL_LIBWWW_TIMEOUT);
-    
-        /* We attempt to disable all of libwww's chatty, interactive
-        ** prompts. Let's hope this works. */
-        HTAlert_setInteractive(NO);
-
-        /* Here are some alternate setup calls which will help greatly
-        ** with debugging, should the need arise.
-        **
-        ** HTProfile_newNoCacheClient(appname, appversion);
-        ** HTAlert_setInteractive(YES);
-        ** HTPrint_setCallback(printer);
-        ** HTTrace_setCallback(tracer); */
-    }
+    clientTransportP->cookieListP = HTAssocList_new();
+    if (clientTransportP->cookieListP == NULL)
+        xmlrpc_faultf(envP, "libwww unable to create a (empty) cookie list");
+    else {
+        if (!(clientTransportP->saved_flags & 
+              XMLRPC_CLIENT_SKIP_LIBWWW_INIT))
+            initLibwww(appname, appversion);
+    }    
 
     /* Set up our list of conversions for XML-RPC requests. This is a
     ** massively stripped-down version of the list in libwww's HTInit.c.
@@ -169,6 +209,7 @@ destroy(struct clientTransport * const clientTransportP) {
     if (!(clientTransportP->saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
         HTProfile_delete();
     }
+    HTAssocList_delete(clientTransportP->cookieListP);
 }
 
 
@@ -234,66 +275,77 @@ set_fault_from_http_request(xmlrpc_env * const envP,
 
 
 
-/*=========================================================================
-  HTCookie callback to check for auth cookie and set it.
-=========================================================================*/
-
 PRIVATE BOOL 
 xmlrpc_authcookie_store(HTRequest * const request ATTR_UNUSED, 
-                        HTCookie *  const cookie, 
+                        HTCookie *  const cookieP,
                         void *      const param ATTR_UNUSED) {
+/*----------------------------------------------------------------------------
+  This is the callback from libwww to tell us the server (according to
+  its response) wants us to store a cookie (and include it in future
+  requests).
+-----------------------------------------------------------------------------*/
+    rpc * const rpcP = HTRequest_context(request);
+    struct clientTransport * const clientTransportP = rpcP->clientTransportP;
 
-    /* First check to see if the cookie exists at all. */
-    if (cookie) {
-        /* Check for auth cookie. */
-        if (!strcasecmp("auth", HTCookie_name(cookie)))
-            /* Set auth cookie as HTTP_COOKIE_AUTH. */
-            setenv("HTTP_COOKIE_AUTH", HTCookie_value(cookie), 1);
-    }
-    return YES;
+    BOOL retval;
+
+    if (cookieP)
+        retval = HTAssocList_replaceObject(clientTransportP->cookieListP,
+                                           HTCookie_name(cookieP),
+                                           HTCookie_value(cookieP));
+    else
+        retval = YES;
+
+    return retval;
 }
 
 
 
-/*=========================================================================
-  HTCookie callback to get auth value and store it in cookie.
-=========================================================================*/
+static HTAssocList *
+alistDup(HTAssocList * const listToCopyP) {
+/*----------------------------------------------------------------------------
+   Create a copy of the libwww associative list.
+-----------------------------------------------------------------------------*/
+    HTAssocList * copyP;
+    HTAssocList * cursor = listToCopyP;
+
+    copyP = HTAssocList_new();
+
+    if (copyP != NULL) {
+        xmlrpc_bool error;
+        error = FALSE; /* initial value */
+        while (cursor && !error) {
+            HTCookie * const cookieP = HTAssocList_nextObject(cursor);
+
+            BOOL success;
+
+            success = HTAssocList_addObject(copyP, 
+                                            HTCookie_name(cookieP),
+                                            HTCookie_value(cookieP));
+            error = !success;
+        }
+        if (error) {
+            HTAssocList_delete(copyP);
+            copyP = NULL;
+        }
+    }
+    return copyP;
+}
+
+
 
 PRIVATE HTAssocList *
 xmlrpc_authcookie_grab(HTRequest * const request ATTR_UNUSED,
                        void *      const param ATTR_UNUSED) {
-
-    /* Create associative list for cookies. */
-    HTAssocList *alist = HTAssocList_new();
-
-    /* If HTTP_COOKIE_AUTH is set, pass that to the list. */
-    if (getenv("HTTP_COOKIE_AUTH") != NULL)
-        HTAssocList_addObject(alist, "auth", getenv("HTTP_COOKIE_AUTH"));
-
-    return alist;
-}
-
-
-
-typedef struct {
 /*----------------------------------------------------------------------------
-   This object represents one RPC.
+  This is the callback from libwww to get the cookies to include in a
+  request (presumably values the server set via a prior response).
 -----------------------------------------------------------------------------*/
-    struct clientTransport * clientTransportP;
+    rpc * const rpcP = HTRequest_context(request);
+    struct clientTransport * const clientTransportP = rpcP->clientTransportP;
 
-    /* These fields are used when performing synchronous calls. */
-    bool is_done;
-    int http_status;
-
-    /* Low-level information used by libwww. */
-    HTRequest *request;
-    HTChunk *response_data;
-    HTParentAnchor *source_anchor;
-    HTAnchor *dest_anchor;
-
-    transport_asynch_complete complete;
-    struct call_info * callInfoP; 
-} rpc;
+    return alistDup(clientTransportP->cookieListP);
+}
 
 
 
