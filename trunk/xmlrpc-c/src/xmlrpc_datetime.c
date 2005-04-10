@@ -129,6 +129,63 @@ parseDateNumbers(const char * const t,
 }
 
 
+#ifdef HAVE_SETENV
+xmlrpc_bool const haveSetenv = TRUE;
+#else
+xmlrpc_bool const haveSetenv = FALSE;
+static void
+setenv(const char * const name ATTR_UNUSED,
+       const char * const value ATTR_UNUSED,
+       int          const replace ATTR_UNUSED) {
+    assert(FALSE);
+}
+#endif
+
+static void
+makeTimezoneUtc(xmlrpc_env *  const envP,
+                const char ** const oldTzP) {
+
+    const char * const tz = getenv("TZ");
+
+    if (haveSetenv) {
+        if (tz) {
+            *oldTzP = strdup(tz);
+            if (*oldTzP == NULL)
+                xmlrpc_faultf(envP, "Unable to get memory to save TZ "
+                              "environment variable.");
+        } else
+            *oldTzP = NULL;
+
+        if (!envP->fault_occurred)
+            setenv("TZ", "", 1);
+    } else {
+        if (tz && strlen(tz) == 0) {
+            /* Everything's fine.  Nothing to change or restore */
+        } else {
+            /* Note that putenv() is not sufficient.  You can't restore
+               the original value with that, because it sets a pointer into
+               your own storage.
+            */
+            xmlrpc_faultf(envP, "Your TZ environment variable is not a "
+                          "null string and your C library does not have "
+                          "setenv(), so we can't change it.");
+        }
+    }
+}
+    
+
+
+static void
+restoreTimezone(const char * const oldTz) {
+
+    if (haveSetenv) {
+        setenv("TZ", oldTz, 1);
+        free((char*)oldTz);
+    }
+}
+
+
+
 static void
 mkAbsTime(xmlrpc_env * const envP,
           struct tm    const brokenTime,
@@ -143,25 +200,19 @@ mkAbsTime(xmlrpc_env * const envP,
        argument, and we have absolute time.  So we fake it out
        by temporarily setting the timezone to UTC.
     */
-    if (getenv("TZ"))
-        oldTz = strdup(getenv("TZ"));
-    else
-        oldTz = NULL;
-    
-    setenv("TZ", "", 1);
-    
-    mktimeWork = brokenTime;
-    mktimeResult = mktime(&mktimeWork);
-        
-    if (oldTz) {
-        setenv("TZ", oldTz, 1);
-        free((char*)oldTz);
-    }
+    makeTimezoneUtc(envP, &oldTz);
 
-    if (mktimeResult == (time_t)-1)
-        xmlrpc_faultf(envP, "Does not indicate a valid date");
-    else
-        *timeValueP = mktimeResult;
+    if (!envP->fault_occurred) {
+        mktimeWork = brokenTime;
+        mktimeResult = mktime(&mktimeWork);
+
+        restoreTimezone(oldTz);
+
+        if (mktimeResult == (time_t)-1)
+            xmlrpc_faultf(envP, "Does not indicate a valid date");
+        else
+            *timeValueP = mktimeResult;
+    }
 }
  
 
