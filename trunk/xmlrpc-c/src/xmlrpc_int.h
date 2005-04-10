@@ -60,6 +60,14 @@ typedef struct {
 } _struct_member;
 
 
+void
+xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
+                         xmlrpc_value ** const valPP);
+
+const char *
+xmlrpc_typeName(xmlrpc_type const type);
+
+
 struct _xmlrpc_registry {
     int _introspection_enabled;
     xmlrpc_value *_methods;

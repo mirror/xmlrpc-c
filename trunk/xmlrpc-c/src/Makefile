@@ -52,7 +52,7 @@ else
 endif
 
 LIBXMLRPC_OBJS = xmlrpc_support.lo xmlrpc_data.lo xmlrpc_builddecomp.lo \
-		 xmlrpc_array.lo xmlrpc_struct.lo \
+		 xmlrpc_datetime.lo xmlrpc_array.lo xmlrpc_struct.lo \
 	         $(XMLRPC_XML_PARSER) xmlrpc_parse.lo \
                  xmlrpc_serialize.lo xmlrpc_base64.lo \
 		 xmlrpc_utf8.lo xmlrpc_authcookie.lo xmlrpc_strutil.lo

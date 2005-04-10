@@ -179,6 +179,25 @@ xmlrpc_array_get_item(xmlrpc_env *         const envP,
 
 
 
+xmlrpc_value *
+xmlrpc_array_new(xmlrpc_env * const envP) {
+/*----------------------------------------------------------------------------
+   Create an empty array xmlrpc_value.
+-----------------------------------------------------------------------------*/
+    xmlrpc_value * arrayP;
+
+    xmlrpc_createXmlrpcValue(envP, &arrayP);
+    if (!envP->fault_occurred) {
+        arrayP->_type = XMLRPC_TYPE_ARRAY;
+        XMLRPC_MEMBLOCK_INIT(xmlrpc_value*, envP, &arrayP->_block, 0);
+        if (envP->fault_occurred)
+            free(arrayP);
+    }
+    return arrayP;
+}
+
+
+
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 ** Copyright (C) 2001 by Eric Kidd. All rights reserved.
 **

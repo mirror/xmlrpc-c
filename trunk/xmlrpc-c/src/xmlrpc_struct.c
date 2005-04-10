@@ -66,38 +66,22 @@ xmlrpc_destroyStruct(xmlrpc_value * const structP) {
 */
 
 xmlrpc_value *
-xmlrpc_struct_new(xmlrpc_env* env)
-{
-    xmlrpc_value *strct;
-    int strct_valid;
+xmlrpc_struct_new(xmlrpc_env * const envP) {
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    xmlrpc_value * valP;
 
-    /* Set up error handling preconditions. */
-    strct = NULL;
-    strct_valid = 0;
+    XMLRPC_ASSERT_ENV_OK(envP);
 
-    /* Allocate and fill out an empty structure. */
-    strct = (xmlrpc_value*) malloc(sizeof(xmlrpc_value));
-    XMLRPC_FAIL_IF_NULL(strct, env, XMLRPC_INTERNAL_ERROR,
-                        "Could not allocate memory for struct");
-    strct->_refcount = 1;
-    strct->_type = XMLRPC_TYPE_STRUCT;
-    XMLRPC_MEMBLOCK_INIT(_struct_member, env, &strct->_block, 0);
-    XMLRPC_FAIL_IF_FAULT(env);
-    strct_valid = 1;
+    xmlrpc_createXmlrpcValue(envP, &valP);
+    if (!envP->fault_occurred) {
+        valP->_type = XMLRPC_TYPE_STRUCT;
 
- cleanup:
-    if (env->fault_occurred) {
-        if (strct) {
-            if (strct_valid)
-                xmlrpc_DECREF(strct);
-            else
-                free(strct);
-        }
-        return NULL;
+        XMLRPC_MEMBLOCK_INIT(_struct_member, envP, &valP->_block, 0);
+
+        if (envP->fault_occurred)
+            free(valP);
     }
-    return strct;
+    return valP;
 }
 
 

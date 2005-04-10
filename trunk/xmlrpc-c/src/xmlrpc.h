@@ -5,6 +5,7 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+#include <time.h>
 
 #ifdef HAVE_UNICODE_WCHAR
 #include <wchar.h>
@@ -175,6 +176,14 @@ xmlrpc_env_set_fault_formatted (xmlrpc_env * const envP,
                                 int          const code,
                                 const char * const format, 
                                 ...);
+
+/* This one infers XMLRPC_INTERNAL_ERROR and has a shorter name.
+   So a cal takes up less source code space.
+*/
+void
+xmlrpc_faultf(xmlrpc_env * const envP,
+              const char * const format,
+              ...);
 
 /* A simple debugging assertion. */
 #define XMLRPC_ASSERT_ENV_OK(env) \
@@ -404,26 +413,19 @@ xmlrpc_value *
 xmlrpc_datetime_new_str(xmlrpc_env * const envP,
                         const char * const value);
 
+xmlrpc_value *
+xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
+                        time_t       const value);
+
 void
 xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          const char **        const stringValueP);
 
-#if 0
-/* This is not implemented yet.  We also need a version that takes
-   the datetime in struct timespec format, and it wouldn't hurt to
-   extend XML-RPC so other kinds of times, e.g. subsecond times,
-   are possible.
-*/
-xmlrpc_value *
-xmlrpc_datetime_new_sec(xmlrpc_env * const envP,
-                        time_t       const timeValue);
-
 void
 xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP);
-#endif
 
 xmlrpc_value *
 xmlrpc_string_new(xmlrpc_env * const envP,

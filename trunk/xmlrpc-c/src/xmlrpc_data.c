@@ -8,6 +8,8 @@
 #include <string.h>
 
 #include "bool.h"
+#include "mallocvar.h"
+
 #include "xmlrpc.h"
 #include "xmlrpc_int.h"
 
@@ -104,8 +106,8 @@ xmlrpc_DECREF (xmlrpc_value * const valueP) {
     Utiltiies
 =========================================================================*/
 
-static const char *
-typeName(xmlrpc_type const type) {
+const char *
+xmlrpc_typeName(xmlrpc_type const type) {
 
     switch(type) {
 
@@ -178,7 +180,7 @@ validateType(xmlrpc_env *         const envP,
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
             "type %s was expected.", 
-            typeName(valueP->_type), typeName(expectedType));
+            xmlrpc_typeName(valueP->_type), xmlrpc_typeName(expectedType));
     }
 }
 
@@ -229,38 +231,7 @@ xmlrpc_read_double(xmlrpc_env *         const envP,
 }
 
 
-
-void
-xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
-                         const xmlrpc_value * const valueP,
-                         const char **        const stringValueP) {
-    
-    validateType(envP, valueP, XMLRPC_TYPE_DATETIME);
-    if (!envP->fault_occurred) {
-        const char * const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
-        *stringValueP = strdup(contents);
-        if (*stringValueP == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate space "
-                "for datetime string");
-    }
-}
-
-
-
-void
-xmlrpc_read_datetime_str_old(xmlrpc_env *         const envP,
-                             const xmlrpc_value * const valueP,
-                             const char **        const stringValueP) {
-    
-    validateType(envP, valueP, XMLRPC_TYPE_DATETIME);
-    if (!envP->fault_occurred) {
-        *stringValueP = XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
-    }
-}
-
-
+/* datetime stuff is in xmlrpc_datetime.c */
 
 static void
 accessStringValue(xmlrpc_env *         const envP,
@@ -607,9 +578,9 @@ xmlrpc_type xmlrpc_value_type (xmlrpc_value* value)
 
 
 
-static void
-createXmlrpcValue(xmlrpc_env *    const envP,
-                  xmlrpc_value ** const valPP) {
+void
+xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
+                         xmlrpc_value ** const valPP) {
 /*----------------------------------------------------------------------------
    Create a blank xmlrpc_value to be filled in.
 
@@ -617,7 +588,7 @@ createXmlrpcValue(xmlrpc_env *    const envP,
 -----------------------------------------------------------------------------*/
     xmlrpc_value * valP;
 
-    valP = (xmlrpc_value*) malloc(sizeof(xmlrpc_value));
+    MALLOCVAR(valP);
     if (!valP)
         xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
                              "Could not allocate memory for xmlrpc_value");
@@ -635,7 +606,7 @@ xmlrpc_int_new(xmlrpc_env * const envP,
 
     xmlrpc_value * valP;
 
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type    = XMLRPC_TYPE_INT;
@@ -652,7 +623,7 @@ xmlrpc_bool_new(xmlrpc_env * const envP,
 
     xmlrpc_value * valP;
 
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_BOOL;
@@ -669,7 +640,7 @@ xmlrpc_double_new(xmlrpc_env * const envP,
 
     xmlrpc_value * valP;
 
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_DOUBLE;
@@ -689,39 +660,13 @@ xmlrpc_double_new(xmlrpc_env * const envP,
 
 
 xmlrpc_value *
-xmlrpc_datetime_new_str(xmlrpc_env * const envP, 
-                        const char * const value) {
-
-    xmlrpc_value * valP;
-
-    createXmlrpcValue(envP, &valP);
-
-    if (!envP->fault_occurred) {
-        valP->_type = XMLRPC_TYPE_DATETIME;
-
-        XMLRPC_TYPED_MEM_BLOCK_INIT(
-            char, envP, &valP->_block, strlen(value) + 1);
-        if (!envP->fault_occurred) {
-            char * const contents =
-                XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &valP->_block);
-            strcpy(contents, value);
-        }
-        if (envP->fault_occurred)
-            free(valP);
-    }
-    return valP;
-}
-
-
-
-xmlrpc_value *
 xmlrpc_string_new_lp(xmlrpc_env * const envP, 
                      size_t       const length,
                      const char * const value) {
 
     xmlrpc_value * valP;
 
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_STRING;
@@ -758,7 +703,7 @@ xmlrpc_string_w_new_lp(xmlrpc_env *    const envP,
     xmlrpc_value * valP;
 
     /* Initialize our XML-RPC value. */
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_STRING;
@@ -817,7 +762,7 @@ xmlrpc_base64_new(xmlrpc_env *          const envP,
 
     xmlrpc_value * valP;
 
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_BASE64;
@@ -836,22 +781,7 @@ xmlrpc_base64_new(xmlrpc_env *          const envP,
 
 
 
-xmlrpc_value *
-xmlrpc_array_new(xmlrpc_env *    const envP) {
-/*----------------------------------------------------------------------------
-   Create an empty array xmlrpc_value.
------------------------------------------------------------------------------*/
-    xmlrpc_value * arrayP;
-
-    createXmlrpcValue(envP, &arrayP);
-    if (!envP->fault_occurred) {
-        arrayP->_type = XMLRPC_TYPE_ARRAY;
-        XMLRPC_TYPED_MEM_BLOCK_INIT(xmlrpc_value*, envP, &arrayP->_block, 0);
-        if (envP->fault_occurred)
-            free(arrayP);
-    }
-    return arrayP;
-}
+/* array stuff is in xmlrpc_array.c */
 
 
 
@@ -861,7 +791,7 @@ xmlrpc_cptr_new(xmlrpc_env *    const envP,
 
     xmlrpc_value * valP;
 
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_C_PTR;
@@ -876,7 +806,7 @@ xmlrpc_value *
 xmlrpc_nil_new(xmlrpc_env *    const envP) {
     xmlrpc_value * valP;
 
-    createXmlrpcValue(envP, &valP);
+    xmlrpc_createXmlrpcValue(envP, &valP);
     if (!envP->fault_occurred)
         valP->_type = XMLRPC_TYPE_NIL;
 
