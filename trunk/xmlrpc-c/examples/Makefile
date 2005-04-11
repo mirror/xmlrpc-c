@@ -32,8 +32,7 @@ CLIENTPROGS_C = \
   xmlrpc_asynch_client \
 
 CLIENTPROGS_CPP = \
-  meerkat-app-list \
-  interop-client \
+  meerkat-app-list
 
 SERVERPROGS_CGI = \
   sample-cgi.cgi
