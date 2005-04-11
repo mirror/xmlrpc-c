@@ -5,11 +5,7 @@
 #include <iostream>
 #include <strstream>
 
-using std::ends;
-using std::endl;
-using std::cout;
-using std::cerr;
-using std::ostrstream;
+using namespace std;
 
 #include <XmlRpcCpp.h>
 

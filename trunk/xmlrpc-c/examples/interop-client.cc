@@ -5,13 +5,7 @@
 #include <fstream>
 #include <stdexcept>
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ifstream;
-using std::ofstream;
-using std::domain_error;
-using std::logic_error;
+using namespace std;
 
 #include <XmlRpcCpp.h>
 
