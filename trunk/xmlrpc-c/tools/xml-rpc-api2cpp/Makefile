@@ -33,7 +33,7 @@ xml-rpc-api2cpp: \
   $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
-%.o:%.cc
+%.o:%.cpp
 	$(LIBTOOL) --mode=compile $(CXX) -c $(CFLAGS) $<
 
 include Makefile.depend
