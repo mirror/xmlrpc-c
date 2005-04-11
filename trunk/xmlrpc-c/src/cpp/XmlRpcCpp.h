@@ -41,8 +41,8 @@ class XmlRpcFault {
 private:
     xmlrpc_env   mFault;
 
-    XmlRpcFault& operator= (const XmlRpcFault& f)
-        { (void) f; abort(); }
+    XmlRpcFault& operator= (XmlRpcFault const& f)
+        { if (true || f.getFaultCode()) abort();}
 
 public:
     XmlRpcFault (const XmlRpcFault &fault);
@@ -79,8 +79,8 @@ private:
     xmlrpc_env   mEnv;
 
     void         throwMe (void) const;
-    XmlRpcEnv&   operator= (const XmlRpcEnv& e)
-        { (void) e; abort(); }
+    XmlRpcEnv&   operator= (XmlRpcEnv const& e)
+        { if (true || e.faultOccurred()) abort();}
 
 public:
     XmlRpcEnv (const XmlRpcEnv &env);

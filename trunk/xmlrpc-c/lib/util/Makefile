@@ -10,7 +10,7 @@ include $(BUILDDIR)/Makefile.config
 include $(SRCDIR)/Makefile.common
 
 .PHONY: all
-all: casprintf.lo cmdline_parser.lo getoptx.lo
+all: casprintf.lo cmdline_parser.lo getoptx.lo girerr.o
 
 INCLUDES = -Iinclude -I$(BUILDDIR)
 
@@ -18,6 +18,11 @@ CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
 %.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $<
+
+
+girerr.o:%.o:%.cpp
+	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
+
 
 include Makefile.depend
 

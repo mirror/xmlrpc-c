@@ -209,7 +209,7 @@ TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
 	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
-DEP_SOURCES = $(wildcard *.c *.cpp *.cc)
+DEP_SOURCES = $(wildcard *.c *.cpp)
 
 # This is a filter to turn "foo.o:" rules into "foo.o foo.lo:" because Libtool
 # uses .lo for object files.  I'd like to purge the build of Libtool some day

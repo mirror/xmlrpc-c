@@ -3,7 +3,13 @@
 
 1.3 - not yet
 
-  * Use __inline on AIX
+  * BJH: Builds on AIX - new __inline definition, uint32_t instead of uint32,
+    et al.
+
+  * BJH: Add xmlrpc_datetime_new_sec(), xmlrpc_read_datetime_sec().
+
+  * BJH: libwww transport does all cookies, not just "auth".  It no longer
+    uses an environment variable for auth.
 
 1.2 - April 4, 2005
 

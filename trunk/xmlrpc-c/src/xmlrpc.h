@@ -493,9 +493,9 @@ xmlrpc_array_size(xmlrpc_env *         const env,
 /* Append an item to an XML-RPC array.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
 extern void
-xmlrpc_array_append_item (xmlrpc_env*   env,
-                          xmlrpc_value* array,
-                          xmlrpc_value* value);
+xmlrpc_array_append_item (xmlrpc_env   * envP,
+                          xmlrpc_value * arrayP,
+                          xmlrpc_value * valueP);
 
 void
 xmlrpc_array_read_item(xmlrpc_env *         const envP,

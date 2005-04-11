@@ -640,6 +640,64 @@ test_value_double(void) {
 
 
 static void
+test_value_datetime(void) {
+
+    const char * datestring = "19980717T14:08:55";
+    time_t const datetime = 900684535;
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    const char * ds;
+    time_t dt;
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_datetime_new_str(&env, datestring);
+    TEST_NO_FAULT(&env);
+    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
+
+    xmlrpc_read_datetime_str(&env, v, &ds);
+    TEST_NO_FAULT(&env);
+    TEST(strcmp(ds, datestring) == 0);
+    strfree(ds);
+
+    xmlrpc_read_datetime_sec(&env, v, &dt);
+    TEST_NO_FAULT(&env);
+    TEST(dt == datetime);
+
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_datetime_new_sec(&env, datetime);
+    TEST_NO_FAULT(&env);
+    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
+
+    xmlrpc_read_datetime_str(&env, v, &ds);
+    TEST_NO_FAULT(&env);
+    TEST(strcmp(ds, datestring) == 0);
+    strfree(ds);
+
+    xmlrpc_read_datetime_sec(&env, v, &dt);
+    TEST_NO_FAULT(&env);
+    TEST(dt == datetime);
+
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_build_value(&env, "8", datestring);
+    TEST_NO_FAULT(&env);
+    TEST(v != NULL);
+    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
+    xmlrpc_decompose_value(&env, v, "8", &ds);
+    xmlrpc_DECREF(v);
+    TEST_NO_FAULT(&env);
+    TEST(strcmp(ds, datestring) == 0);
+    strfree(ds);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 test_value_string_no_null(void) {
 
     xmlrpc_value * v;
@@ -1425,6 +1483,7 @@ test_value(void) {
     test_value_integer();
     test_value_bool();
     test_value_double();
+    test_value_datetime();
     test_value_string_no_null();
     test_value_string_null();
     test_value_string_wide();
