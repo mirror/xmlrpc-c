@@ -9,7 +9,7 @@ include $(BUILDDIR)/Makefile.config
 
 include ../Makefile.common
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
+INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src -I$(SRCDIR)/src/cpp
 
 CFLAGS = $(INCLUDES) $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 

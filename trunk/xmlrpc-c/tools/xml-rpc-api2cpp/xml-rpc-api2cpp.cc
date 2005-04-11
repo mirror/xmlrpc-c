@@ -7,7 +7,7 @@
 #include "XmlRpcClass.h"
 #include "SystemProxy.h"
 
-using std::logic_error;
+using namespace std;
 
 #define NAME           "xml-rpc-api2cpp"
 #define VERSION        "0.1"

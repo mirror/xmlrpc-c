@@ -5,8 +5,7 @@
 #include <XmlRpcCpp.h>
 #include "DataType.h"
 
-using std::ends;
-using std::domain_error;
+using namespace std;
 
 
 

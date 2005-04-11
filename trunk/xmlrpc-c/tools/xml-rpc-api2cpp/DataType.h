@@ -1,3 +1,4 @@
+#include <string>
 
 class DataType {
     std::string mTypeName;
