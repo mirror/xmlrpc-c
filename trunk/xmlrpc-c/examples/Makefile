@@ -89,7 +89,7 @@ gen_sample_add_xml:%:%.o
 %.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<
 
-%.o:%.cc
+%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
 *.c: config.h xmlrpc_amconfig.h
