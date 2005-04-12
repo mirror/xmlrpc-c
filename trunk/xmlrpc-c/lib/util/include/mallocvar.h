@@ -25,6 +25,8 @@ mallocProduct(void **      const resultP,
    return NULL without allocating anything.  Also return NULL if the malloc
    fails.
 
+   If either factor is zero, malloc a single byte.
+
    Note that malloc() actually takes a size_t size argument, so the
    proper test would be whether the size can be represented by size_t,
    not unsigned int.  But there is no reliable indication available to
@@ -32,10 +34,14 @@ mallocProduct(void **      const resultP,
    assume size_t is at least as expressive as unsigned int and that
    nobody really needs to allocate more than 4GB of memory.
 -----------------------------------------------------------------------------*/
-    if (UINT_MAX / factor2 < factor1) 
-        *resultP = NULL;
-    else 
-        *resultP = malloc(factor1 * factor2); 
+    if (factor1 == 0 || factor2 == 0)
+        *resultP = malloc(1);
+    else {
+        if (UINT_MAX / factor2 < factor1) 
+            *resultP = NULL;
+        else 
+            *resultP = malloc(factor1 * factor2); 
+    }
 }
 
 
