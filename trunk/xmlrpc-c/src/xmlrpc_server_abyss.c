@@ -352,7 +352,7 @@ processCall(TSession * const abyssSessionP,
                 XMLRPC_MEMBLOCK_CONTENTS(char, body),
                 XMLRPC_MEMBLOCK_SIZE(char, body));
             if (!env.fault_occurred) {
-            /* Send our the result. */
+                /* Send out the result. */
                 sendXmlData(&env, abyssSessionP, 
                             XMLRPC_MEMBLOCK_CONTENTS(char, output),
                             XMLRPC_MEMBLOCK_SIZE(char, output));
