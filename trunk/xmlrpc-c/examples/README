@@ -17,12 +17,11 @@ implements a single XML-RPC method called 'sample.add'.  All it does is
 add two numbers and return the sum.  You can run such a server like
 this:
 
-  $ ./xmlrpc_sample_add_server abyss.conf
+  $ ./xmlrpc_sample_add_server 8080
 
-The server this runs is based on the Abyss HTTP server.  The file
-'abyss.conf' in the example is a very simple Abyss configuration
-file.  It sets up the server to listen for XML-RPC requests on TCP
-Port 8080.  It puts log information in /tmp, so be sure to look there.
+The server this runs is based on the Abyss HTTP server.  file.  The
+argument tell it to listen on TCP Port 8080 for RPCs.  It puts log
+information in /tmp, so be sure to look there.
 
 A client program that goes along with this server is
 'xmlrpc_sample_add_client'.  All this client does is make an XML-RPC
