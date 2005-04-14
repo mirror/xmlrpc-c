@@ -64,16 +64,13 @@ typedef double xmlrpc_double;
 /*=========================================================================
 **  Assertions and Debugging
 **=========================================================================
-**  We use xmlrpc_assert for internal sanity checks. For example:
-**
-**    xmlrpc_assert(ptr != NULL);
-**
-**  Assertions are only evaluated when debugging code is turned on. (To
-**  turn debugging off, define NDEBUG.) Some rules for using assertions:
-**
-**    1) Assertions should never have side effects.
-**    2) Assertions should never be used for run-time error checking.
-**       Instead, they should be used to check for "can't happen" errors.
+**  Note that an assertion is _not_ a directive to check a condition and
+**  crash if it isn't true.  It is an assertion that the condition _is_
+**  true.  This assertion helps people to read the code.  The program
+**  may also check the assertion as it runs, and if it conflicts with reality,
+**  recognize that the program is incorrect and abort it.  In practice,
+**  it does this checking when the program was compiled without the NDEBUG
+**  macro defined.
 */
 
 #ifndef NDEBUG
@@ -356,16 +353,6 @@ typedef enum {
 /* These are *always* allocated on the heap. No exceptions. */
 typedef struct _xmlrpc_value xmlrpc_value;
 
-#define XMLRPC_ASSERT_VALUE_OK(val) \
-    XMLRPC_ASSERT((val) != NULL && (val)->_type != XMLRPC_TYPE_DEAD)
-
-/* A handy type-checking routine. */
-#define XMLRPC_TYPE_CHECK(env,v,t) \
-    do \
-        if ((v)->_type != (t)) \
-            XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Expected " #t); \
-    while (0)
-
 void
 xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
 
@@ -480,6 +467,11 @@ xmlrpc_read_base64(xmlrpc_env *           const envP,
                    const xmlrpc_value *   const valueP,
                    size_t *               const lengthP,
                    const unsigned char ** const bytestringValueP);
+
+void
+xmlrpc_read_base64_size(xmlrpc_env *           const envP,
+                        const xmlrpc_value *   const valueP,
+                        size_t *               const lengthP);
 
 xmlrpc_value *
 xmlrpc_array_new(xmlrpc_env * const envP);

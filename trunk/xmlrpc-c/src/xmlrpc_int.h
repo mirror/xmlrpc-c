@@ -53,6 +53,17 @@ struct _xmlrpc_value {
 #endif
 };
 
+#define XMLRPC_ASSERT_VALUE_OK(val) \
+    XMLRPC_ASSERT((val) != NULL && (val)->_type != XMLRPC_TYPE_DEAD)
+
+/* A handy type-checking routine. */
+#define XMLRPC_TYPE_CHECK(env,v,t) \
+    do \
+        if ((v)->_type != (t)) \
+            XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Expected " #t); \
+    while (0)
+
+
 typedef struct {
     unsigned char key_hash;
     xmlrpc_value *key;

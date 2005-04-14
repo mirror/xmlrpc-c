@@ -546,6 +546,18 @@ xmlrpc_read_base64_old(xmlrpc_env *           const envP,
 
 
 void
+xmlrpc_read_base64_size(xmlrpc_env *           const envP,
+                        const xmlrpc_value *   const valueP,
+                        size_t *               const lengthP) {
+
+    validateType(envP, valueP, XMLRPC_TYPE_BASE64);
+    if (!envP->fault_occurred)
+        *lengthP = XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+}
+
+
+
+void
 xmlrpc_read_nil(xmlrpc_env *   const envP,
                 xmlrpc_value * const valueP) {
 /*----------------------------------------------------------------------------
