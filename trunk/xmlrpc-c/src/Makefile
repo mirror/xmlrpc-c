@@ -9,7 +9,11 @@ include $(BUILDDIR)/Makefile.config
 
 default: all
 
-SUBDIRS = cpp
+SUBDIRS =
+
+ifeq ($(ENABLE_CPLUSPLUS),yes)
+  SUBDIRS += cpp
+endif
 
 WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
 CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
