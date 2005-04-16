@@ -12,13 +12,12 @@ namespace xmlrpc_c {
 
 
 class value {
-
-    // This is a handle for the malloc'ed xmlrpc_value C object.
-    // Nobody should create a pointer to xmlrpc_c::value object; it's
-    // supposed to be an automatic (i.e. stack) variable.
-
+    // This is a handle.  You don't wnat to create a pointer to this;
+    // it is in fact a pointer itself.
 public:
-    value(xmlrpc_value * valueP);
+    value();
+        // This creates a placeholder.  It can't be used for anything, but
+        // holds memory.  instantiate() can turn it into a real object.
 
     value(xmlrpc_c::value const &value);
 
@@ -40,9 +39,13 @@ public:
 
     type_t type() const;
 
-    // These really don't fit as public, but I couldn't find any other
-    // way to let the xmlprc_c::value_array() and xmlrpc_c::value_struct
-    // constructors work.
+    xmlrpc_c::value&
+    operator=(xmlrpc_c::value const&);
+
+    // The following are not meant to be public to users, but just to
+    // other Xmlrpc-c library modules.  If we ever go to a pure C++
+    // implementation, not based on C xmlrpc_value objects, this shouldn't
+    // be necessary.
 
     void
     append_to_c_array(xmlrpc_value * const arrayP) const;
@@ -51,17 +54,18 @@ public:
     add_to_c_struct(xmlrpc_value * const structP,
                     string         const key) const;
 
-protected:
-    value() {};  // must be followed up with instantiate()
-
-    void
-    instantiate(xmlrpc_value * const valueP);
-
     xmlrpc_value *
     c_value() const;
 
-private:
+    value(xmlrpc_value * valueP);
+
+    void
+    instantiate(xmlrpc_value * const valueP);
+        // Work only on a placeholder object created by the no-argument
+        // constructor.
+
     xmlrpc_value * c_valueP;
+        // NULL means this is merely a placeholder object.
 };
 
 
@@ -69,6 +73,10 @@ private:
 class value_int : public value {
 public:
     value_int(int const cvalue);
+
+    value_int(xmlrpc_c::value const baseValue);
+
+    operator int() const;
 };
 
 
@@ -76,6 +84,10 @@ public:
 class value_double : public value {
 public:
     value_double(double const cvalue);
+
+    value_double(xmlrpc_c::value const baseValue);
+
+    operator double() const;
 };
 
 
@@ -83,6 +95,10 @@ public:
 class value_boolean : public value {
 public:
     value_boolean(bool const cvalue);
+
+    value_boolean(xmlrpc_c::value const baseValue);
+
+    operator bool() const;
 };
 
 
@@ -93,6 +109,10 @@ public:
     value_datetime(time_t const cvalue);
     value_datetime(struct timeval const& cvalue);
     value_datetime(struct timespec const& cvalue);
+
+    value_datetime(xmlrpc_c::value const baseValue);
+
+    operator time_t() const;
 };
 
 
@@ -100,6 +120,10 @@ public:
 class value_string : public value {
 public:
     value_string(std::string const& cvalue);
+
+    value_string(xmlrpc_c::value const baseValue);
+
+    operator string() const;
 };
 
 
@@ -107,13 +131,31 @@ public:
 class value_bytestring : public value {
 public:
     value_bytestring(std::vector<unsigned char> const& cvalue);
+
+    value_bytestring(xmlrpc_c::value const baseValue);
+
+    // You can't cast to a vector because the compiler can't tell which
+    // constructor to use (complains about ambiguity).  So we have this:
+    vector<unsigned char>
+    vector_uchar_value() const;
+
+    size_t
+    length() const;
 };
 
 
 
 class value_array : public value {
 public:
-    value_array(vector<xmlrpc_c::value> const& cvalue);
+    value_array(std::vector<xmlrpc_c::value> const& cvalue);
+
+    value_array(xmlrpc_c::value const baseValue);
+
+    vector<xmlrpc_c::value>
+    vector_value_value() const;
+
+    unsigned int
+    size() const;
 };
 
 
@@ -121,6 +163,10 @@ public:
 class value_struct : public value {
 public:
     value_struct(std::map<std::string, xmlrpc_c::value> const& cvalue);
+
+    value_struct(xmlrpc_c::value const baseValue);
+
+    operator std::map<std::string, xmlrpc_c::value>() const;
 };
 
 
@@ -128,6 +174,8 @@ public:
 class value_nil : public value {
 public:
     value_nil();
+
+    value_nil(xmlrpc_c::value const baseValue);
 };
 
 

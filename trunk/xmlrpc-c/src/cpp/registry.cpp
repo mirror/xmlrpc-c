@@ -1,16 +1,88 @@
 #include <string>
 #include <memory>
+#include <list>
+#include <algorithm>
 
 #include "girerr.hpp"
-using girerr::throwf;
 using girerr::error;
 #include "xmlrpc.h"
 #include "xmlrpc.hpp"
 #include "registry.hpp"
 
 using std::string;
+using namespace std;
+
 
 namespace xmlrpc_c {
+
+
+method::~method() {
+    if (this->refcount > 0)
+        throw(error("Destroying referenced object"));
+}
+
+
+
+void
+method::incref() {
+    ++this->refcount;
+}
+
+
+
+void
+method::decref(bool * const unreferencedP) {
+
+    if (this->refcount == 0)
+        throw(error("Decrementing ref count of unreferenced object"));
+    --this->refcount;
+    *unreferencedP = (this->refcount == 0);
+}
+ 
+
+
+method_ptr::method_ptr() : methodP(NULL) {};
+
+
+
+method_ptr::method_ptr(method * const _methodP) {
+    this->methodP = _methodP;
+    this->methodP->incref();
+}
+
+
+
+method_ptr::method_ptr(method_ptr const& methodPtr) { // copy constructor
+    this->methodP = methodPtr.methodP;
+    this->methodP->incref();
+}
+    
+ 
+
+method_ptr::~method_ptr() {
+    bool dead;
+    this->methodP->decref(&dead);
+    if (dead)
+        delete(this->methodP);
+}
+ 
+
+   
+method_ptr
+method_ptr::operator=(method_ptr const& methodPtr) {
+    if (this->methodP != NULL)
+        throw(error("Already instantiated"));
+    this->methodP = methodPtr.methodP;
+    this->methodP->incref();
+    return *this;
+}
+
+
+
+method *
+method_ptr::get() const {
+    return methodP;
+}
 
 
 
@@ -51,7 +123,7 @@ vectorFromXmlrpcArray(xmlrpc_value * const arrayP) {
 
     unsigned int const arraySize = xmlrpc_array_size(&env, arrayP);
 
-    vector<xmlrpc_c::value> retval;
+    vector<xmlrpc_c::value> retval(arraySize);
     
     for (unsigned int i = 0; i < arraySize; ++i) {
         xmlrpc_value * arrayItemP;
@@ -78,10 +150,12 @@ c_executeMethod(xmlrpc_env *   const envP,
 
    If we had a pure C++ registry, this would be unnecessary.
 -----------------------------------------------------------------------------*/
-    xmlrpc_c::method * const methodP = (xmlrpc_c::method *) methodPtr;
+    xmlrpc_c::method * const methodP = 
+        static_cast<xmlrpc_c::method *>(methodPtr);
     vector<xmlrpc_c::value> const params(vectorFromXmlrpcArray(paramArrayP));
 
-    xmlrpc_c::value * resultP;
+
+    const xmlrpc_c::value * resultP;
 
     try {
         methodP->execute(params, &resultP);
@@ -89,30 +163,33 @@ c_executeMethod(xmlrpc_env *   const envP,
         xmlrpc_env_set_fault(envP, fault.faultCode, 
                              fault.faultDescription.c_str()); 
     }
-    auto_ptr<xmlrpc_c::value> autoResultP(resultP);
-
+    // The following declaration makes *resultP get destroyed as we exit
+    auto_ptr<xmlrpc_c::value> 
+        autoResultP(const_cast<xmlrpc_c::value *>(resultP));
+    
     return resultP->c_value();
 }
-
-
-xmlrpc_method const c_executeMethodP = &c_executeMethod;
+ 
 
 
 void
-registry::addMethod(string           const name,
-                    xmlrpc_c::method const method) {
+registry::addMethod(string               const name,
+                    xmlrpc_c::method_ptr const methodPtr) {
+
+
+    this->methodList.push_back(methodPtr);
 
     xmlrpc_env env;
     
     xmlrpc_env_init(&env);
 
-    // In the pure C++ version we will just add a pointer to the method
-    // to a list along with the method's name.
+    xmlrpc_c::method * const methodP(methodPtr.get());
 
 	xmlrpc_registry_add_method_w_doc(
         &env, this->c_registryP, NULL,
         name.c_str(), &c_executeMethod, 
-        (void*) &method, method.signature().c_str(), method.help().c_str());
+        (void*) methodP, 
+        methodP->signature().c_str(), methodP->help().c_str());
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
@@ -137,11 +214,13 @@ registry::processCall(string    const& body,
 
     xmlrpc_env_init(&env);
 
-    // For the pure C++ version, this will have to parse the XML 'body'
-    // into a method name and parameters, look up the method name in
-    // the registry, call the method's execute() method, then marshall
-    // the result into XML and return it as *responsePP.  This will be
-    // more or less like what xmlrpc_registry_process_call() does.
+    // For the pure C++ version, this will have to parse the XML
+    // 'body' into a method name and parameters, look up the method
+    // name in the registry, call the method's execute() method, then
+    // marshall the result into XML and return it as *responsePP.  It
+    // will also have to execute system methods (e.g. self
+    // description) itself.  This will be more or less like what
+    // xmlrpc_registry_process_call() does.
 
     output = xmlrpc_registry_process_call(
         &env, this->c_registryP, NULL, body.c_str(), body.length());
@@ -155,6 +234,10 @@ registry::processCall(string    const& body,
     xmlrpc_mem_block_free (output);
 }
 
+xmlrpc_registry *
+registry::c_registry() const {
 
+    return this->c_registryP;
+}
 
 }  // namespace

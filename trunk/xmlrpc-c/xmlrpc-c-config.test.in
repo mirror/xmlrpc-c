@@ -43,6 +43,7 @@ while test $# -gt 0; do
     c++)
       needCpp=yes
       the_includes="-I${SRCDIR}/src/cpp $the_includes"
+      the_libs="${BUILDDIR}/src/cpp/libxmlrpc++.a $the_libs"
       ;;
     cgi-server)
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
@@ -53,6 +54,9 @@ while test $# -gt 0; do
       the_libs="${BUILDDIR}/lib/abyss/src/.libs/libxmlrpc_abyss.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BUILDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+        fi
       the_includes="-I${SRCDIR}/lib/abyss/src $the_includes"
       sopath="${BUILDDIR}/lib/abyss/src/.libs:$sopath"
       ;;
@@ -77,7 +81,8 @@ while test $# -gt 0; do
         the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
         fi
       if test "${needCpp}" = "yes"; then
-        # Unfortunately, there is just one CPP library for both client
+        # Now the legacy C++ library.  Unfortunately, there is just 
+        # one legacy CPP library for both client
         # and server, and it needs both client and server base
         # libraries.  So a C++ client program gets linked with server
         # libraries.

@@ -3,11 +3,14 @@
 #include <iomanip>
 #include <vector>
 #include <sstream>
+#include <memory>
+#include <time.h>
 
 #include "girerr.hpp"
 using girerr::error;
 #include "xmlrpc.hpp"
 #include "XmlRpcCpp.h"
+#include "registry.hpp"
 using namespace xmlrpc_c;
 
 using namespace std;
@@ -317,6 +320,232 @@ testSuite::run() {
 }
 
 
+
+class intTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "intTestSuite";
+    }
+    virtual void runtests() {
+        value_int int1(7);
+        TEST(static_cast<int>(int1) == 7);
+        value_int int2(-7);
+        TEST(static_cast<int>(int2) == -7);
+        value val1(int1);
+        TEST(val1.type() == value::TYPE_INT);
+        value_int int3(val1);
+        TEST(static_cast<int>(int3) == 7);
+        try {
+            value_int int4(value_double(3.7));
+            TEST_FAILED("invalid cast double-int suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class doubleTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "doubleTestSuite";
+    }
+    virtual void runtests() {
+        value_double double1(3.14);
+        TEST(static_cast<double>(double1) == 3.14);
+        value val1(double1);
+        TEST(val1.type() == value::TYPE_DOUBLE);
+        value_double double2(val1);
+        TEST(static_cast<double>(double2) == 3.14);
+        try {
+            value_double double4(value_int(4));
+            TEST_FAILED("invalid cast int-double suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class booleanTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "booleanTestSuite";
+    }
+    virtual void runtests() {
+        value_boolean boolean1(true); 
+        TEST(static_cast<bool>(boolean1) == true);
+        value_boolean boolean2(false);
+        TEST(static_cast<bool>(boolean2) == false);
+        value val1(boolean1);
+        TEST(val1.type() == value::TYPE_BOOLEAN);
+        value_boolean boolean3(val1);
+        TEST(static_cast<bool>(boolean3) == true);
+        try {
+            value_boolean boolean4(value_int(4));
+            TEST_FAILED("invalid cast int-boolean suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class datetimeTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "datetimeTestSuite";
+    }
+    virtual void runtests() {
+        time_t const testTime(900684535);
+        value_datetime datetime1("19980717T14:08:55");
+        TEST(static_cast<time_t>(datetime1) == testTime);
+        value_datetime datetime2(testTime);
+        TEST(static_cast<time_t>(datetime2) == testTime);
+        value val1(datetime1);
+        TEST(val1.type() == value::TYPE_DATETIME);
+        value_datetime datetime3(val1);
+        TEST(static_cast<time_t>(datetime3) == testTime);
+        try {
+            value_datetime datetime4(value_int(4));
+            TEST_FAILED("invalid cast int-datetime suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class stringTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "stringTestSuite";
+    }
+    virtual void runtests() {
+        value_string string1("hello world");
+        TEST(static_cast<string>(string1) == "hello world");
+        value_string string2("embedded\0null");
+        TEST(static_cast<string>(string2) == "embedded\0null");
+        value val1(string1);
+        TEST(val1.type() == value::TYPE_STRING);
+        value_string string3(val1);
+        TEST(static_cast<string>(string3) == "hello world");
+        try {
+            value_string string4(value_int(4));
+            TEST_FAILED("invalid cast int-string suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class bytestringTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "bytestringTestSuite";
+    }
+    virtual void runtests() {
+        unsigned char bytestringArray[] = {0x10, 0x11, 0x12, 0x13, 0x14};
+        vector<unsigned char> 
+            bytestringData(&bytestringArray[0], &bytestringArray[4]);
+        value_bytestring bytestring1(bytestringData);
+
+        vector<unsigned char> const dataReadBack1(
+            bytestring1.vector_uchar_value());
+        TEST(dataReadBack1 == bytestringData);
+        value val1(bytestring1);
+        TEST(val1.type() == value::TYPE_BYTESTRING);
+        value_bytestring bytestring2(val1);
+        vector<unsigned char> const dataReadBack2(
+            bytestring2.vector_uchar_value());
+        TEST(dataReadBack2 == bytestringData);
+        try {
+            value_bytestring bytestring4(value_int(4));
+            TEST_FAILED("invalid cast int-bytestring suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class arrayTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "arrayTestSuite";
+    }
+    virtual void runtests() {
+        vector<value> arrayData;
+        arrayData.push_back(value_int(7));
+        arrayData.push_back(value_double(2.78));
+        arrayData.push_back(value_string("hello world"));
+        value_array array1(arrayData);
+
+        TEST(array1.size() == 3);
+        vector<value> dataReadBack1(array1.vector_value_value());
+        TEST(dataReadBack1[0].type() ==  value::TYPE_INT);
+        TEST(static_cast<int>(value_int(dataReadBack1[0])) == 7);
+        TEST(dataReadBack1[1].type() ==  value::TYPE_DOUBLE);
+        TEST(static_cast<double>(value_double(dataReadBack1[1])) == 2.78);
+        TEST(dataReadBack1[2].type() ==  value::TYPE_STRING);
+        TEST(static_cast<string>(value_string(dataReadBack1[2])) == 
+             "hello world");
+
+        value val1(array1);
+        TEST(val1.type() == value::TYPE_ARRAY);
+        value_array array2(val1);
+        TEST(array2.size() == 3);
+        try {
+            value_array array4(value_int(4));
+            TEST_FAILED("invalid cast int-array suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class structTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "structTestSuite";
+    }
+    virtual void runtests() {
+        map<string, value> structData;
+        pair<string, value> member("the_integer", value_int(9));
+        structData.insert(member);
+        
+        value_struct struct1(structData);
+
+        map<string, value> dataReadBack(struct1);
+
+        TEST(static_cast<int>(value_int(dataReadBack["the_integer"])) == 9);
+
+        value val1(struct1);
+        TEST(val1.type() == value::TYPE_STRUCT);
+        value_struct struct2(val1);
+        try {
+            value_struct struct4(value_int(4));
+            TEST_FAILED("invalid cast int-struct suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class nilTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "nilTestSuite";
+    }
+    virtual void runtests() {
+        value_nil nil1;
+        value val1(nil1);
+        TEST(val1.type() == value::TYPE_NIL);
+        value_nil nil2(val1);
+        try {
+            value_nil nil4(value_int(4));
+            TEST_FAILED("invalid cast int-nil suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
 class valueTestSuite : public testSuite {
 
 public:
@@ -325,32 +554,105 @@ public:
     }
     virtual void runtests() {
 
-        value_int int1(7);
-        value_double double1(3.14);
-        value_boolean boolean1(true);
-        value_datetime datetime1("19980717T14:08:55");
-        value_string string1("hello world");
+        intTestSuite().run();
+        doubleTestSuite().run();
+        booleanTestSuite().run();
+        datetimeTestSuite().run();
+        stringTestSuite().run();
+        bytestringTestSuite().run();
+        arrayTestSuite().run();
+        structTestSuite().run();
+        nilTestSuite().run();
+    }
+};
+
+
+namespace {
+string const noElementFoundXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodResponse>\r\n"
+    "<fault>\r\n"
+    "<value><struct>\r\n"
+    "<member><name>faultCode</name>\r\n"
+    "<value><i4>-503</i4></value></member>\r\n"
+    "<member><name>faultString</name>\r\n"
+    "<value><string>Call is not valid XML.  "
+    "no element found</string></value></member>\r\n"
+    "</struct></value>\r\n"
+    "</fault>\r\n"
+    "</methodResponse>\r\n"
+    );
+}
+
+string const sampleAddCallXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodCall>\r\n"
+    "<methodName>sample.add</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><i4>5</i4></value></param>\r\n"
+    "<param><value><i4>7</i4></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n"
+);
+
+string const sampleAddResponseXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodResponse>\r\n"
+    "<params>\r\n"
+    "<param><value><i4>12</i4></value></param>\r\n"
+    "</params>\r\n"
+    "</methodResponse>\r\n"
+);
+
+
+class registryTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "registryTestSuite";
+    }
+    virtual void runtests() {
+
+        class sampleAddMethod : public method {
+        public:
+            sampleAddMethod() {
+                this->_signature = "ii";
+                this->_help = "This method adds two integers together";
+            }
+            void
+            execute(vector<value>  const params,
+                    const value ** const retvalPP) {
+                
+                value_int const addend(params[0]);
+                value_int const adder(params[1]);
+                
+                *retvalPP = new value_int((int)addend + (int)adder);
+            }
+            virtual void
+            test() const {
+                cout << "sampleAddMethod.test() running" << endl;
+            }
+        };
+
+        xmlrpc_c::registry myRegistry;
         
-        unsigned char bytestringArray[] = {0x10, 0x11, 0x12, 0x13, 0x14};
-        vector<unsigned char> 
-            bytestringData(&bytestringArray[0], &bytestringArray[4]);
-        value_bytestring bytestring1(bytestringData);
+        myRegistry.addMethod("sample.add", 
+                             xmlrpc_c::method_ptr(new sampleAddMethod));
         
-        vector<xmlrpc_c::value> arrayData;
-        arrayData.push_back(int1);
-        arrayData.push_back(double1);
-        arrayData.push_back(boolean1);
-        arrayData.push_back(datetime1);
-        arrayData.push_back(string1);
-        arrayData.push_back(bytestring1);
-        value_array array1(arrayData);
-        
-        map<string, xmlrpc_c::value> structData;
-        structData.insert(pair<string, xmlrpc_c::value>("the_integer", int1));
-        
-        value_struct struct1(structData);
-        
-        value_nil nil1;
+        {
+            string * responseP;
+            myRegistry.processCall("", &responseP);
+            auto_ptr<string> responseAuto(responseP);
+            TEST(*responseP == noElementFoundXml);
+        }
+        {
+            string * responseP;
+            cout << "about to processCall()" << endl;
+            myRegistry.processCall(sampleAddCallXml, &responseP);
+            cout << "back from processCall()" << endl;
+            auto_ptr<string> responseAuto(responseP);
+            TEST(*responseP == sampleAddResponseXml);
+        }
     }
 };
 
@@ -373,6 +675,7 @@ main(int argc, char** argv) {
     try {
         // Add your test suites here.
         valueTestSuite().run();
+        registryTestSuite().run();
 
         testXmlRpcCpp();
 

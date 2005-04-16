@@ -29,12 +29,12 @@ endif
 LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
 
-LIBXMLRPCPP_OBJS = xmlrpc_value.o
-LIBXMLRPC_SERVERPP_OBJS = registry.o
+LIBXMLRPCPP_OBJS = value.o
+LIBXMLRPC_SERVERPP_OBJS = registry.o server_abyss.o
 
 INCLUDES = -I $(BUILDDIR)/src -I$(BUILDDIR) -I$(SRCDIR) \
 	   -I$(SRCDIR)/lib/util/include \
-	   $(LIBXML_INCLUDES) \
+	   $(LIBXML_INCLUDES) -I$(SRCDIR)/lib/abyss/src \
 
 # We always statically-link our C++ code because it's tiny, and C++ is
 # no good at shared libraries, anyway.  It's actually getting bigger,
@@ -45,8 +45,7 @@ INCLUDES = -I $(BUILDDIR)/src -I$(BUILDDIR) -I$(SRCDIR) \
 # libxmlrpc_cpp.a is the legacy C++ wrapper library.  The others are the
 # more elaborate replacements.
 
-#TARGET_LIBRARIES = libxmlrpc_cpp.a libxmlrpc++.a libxmlrpc_server++.a
-TARGET_LIBRARIES = libxmlrpc_cpp.a
+TARGET_LIBRARIES = libxmlrpc_cpp.a libxmlrpc++.a libxmlrpc_server++.a
 
 TARGET_PROGS = cpptest
 
@@ -54,13 +53,13 @@ all: $(TARGET_LIBRARIES) $(TARGET_PROGS)
 
 LDFLAGS = $(LADD)
 
-cpptest:%:%.o XmlRpcCpp.o libxmlrpc_cpp.a $(LIBXMLRPC) $(LIBXMLRPC_SERVER) \
-  $(LIBXML)
+cpptest:%:%.o libxmlrpc++.a libxmlrpc_server++.a libxmlrpc_cpp.a \
+  $(LIBXMLRPC) $(LIBXMLRPC_SERVER) $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 LIBLDFLAGS = $(LADD)
 
-libxmlrpc_cpp.a: xmlrpc_value.o XmlRpcCpp.o
+libxmlrpc_cpp.a: XmlRpcCpp.o
 	-rm -f $@
 	$(AR) cru $@ $^
 	$(RANLIB) $@
