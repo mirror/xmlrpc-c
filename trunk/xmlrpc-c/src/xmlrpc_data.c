@@ -21,26 +21,34 @@ destroyValue(xmlrpc_value * const valueP) {
     /* First, we need to destroy this value's contents, if any. */
     switch (valueP->_type) {
     case XMLRPC_TYPE_INT:
+        break;
+        
     case XMLRPC_TYPE_BOOL:
+        break;
+
     case XMLRPC_TYPE_DOUBLE:
         break;
-        
-    case XMLRPC_TYPE_ARRAY:
-        xmlrpc_destroyArrayContents(valueP);
+
+    case XMLRPC_TYPE_DATETIME:
+        xmlrpc_mem_block_clean(&valueP->_block);
         break;
-        
+
     case XMLRPC_TYPE_STRING:
 #ifdef HAVE_UNICODE_WCHAR
         if (valueP->_wcs_block)
             xmlrpc_mem_block_free(valueP->_wcs_block);
 #endif /* HAVE_UNICODE_WCHAR */
-        /* Fall through. */
-
-    case XMLRPC_TYPE_DATETIME:
+        xmlrpc_mem_block_clean(&valueP->_block);
+        break;
+        
     case XMLRPC_TYPE_BASE64:
         xmlrpc_mem_block_clean(&valueP->_block);
         break;
 
+    case XMLRPC_TYPE_ARRAY:
+        xmlrpc_destroyArrayContents(valueP);
+        break;
+        
     case XMLRPC_TYPE_STRUCT:
         xmlrpc_destroyStruct(valueP);
         break;
