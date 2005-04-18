@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#include <XmlRpcCpp.h>
+#include <xmlrpc-c/oldcppwrapper.hpp>
 
 #define NAME           "XML-RPC C++ Meerkat Query Demo"
 #define VERSION        "0.1"

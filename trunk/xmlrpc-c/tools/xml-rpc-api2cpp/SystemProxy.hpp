@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "XmlRpcCpp.h"
+#include "xmlrpc-c/oldcppwrapper.hpp"
 
 class SystemProxy {
     XmlRpcClient mClient;

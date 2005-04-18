@@ -12,7 +12,6 @@
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/server_abyss.h"
-#include "server_abyss_int.h"
 
 
 /*=========================================================================
@@ -389,7 +388,7 @@ static const char * trace_abyss;
 **  more documentation.
 */
 
-xmlrpc_bool 
+static xmlrpc_bool 
 xmlrpc_server_abyss_rpc2_handler(TSession * const abyssSessionP) {
 /*----------------------------------------------------------------------------
    Our job is to look at this HTTP request that the Abyss server is
@@ -462,7 +461,7 @@ xmlrpc_server_abyss_rpc2_handler(TSession * const abyssSessionP) {
 **  for more documentation.
 */
 
-xmlrpc_bool 
+static xmlrpc_bool 
 xmlrpc_server_abyss_default_handler (TSession * const r) {
 
     if (trace_abyss)
