@@ -68,7 +68,7 @@ while test $# -gt 0; do
   case $1 in
     c++)
       needCpp=yes
-      the_libs="-lxmlrpc++.a $the_libs"
+      the_libs="-lxmlrpc++ $the_libs"
       ;;
     cgi-server)
       the_libs="-lxmlrpc_server $the_libs"
