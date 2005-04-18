@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include <xmlrpc.h>
-#include <xmlrpc_cgi.h>
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/cgi.h"
 
 #include "version.h"
 

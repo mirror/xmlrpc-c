@@ -8,13 +8,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <xmlrpc.h>
-#include <xmlrpc_client.h>
-
 #include "config.h"  /* information about this build environment */
 #include "casprintf.h"
 #include "mallocvar.h"
 #include "cmdline_parser.h"
+
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/client.h"
 
 #define NAME "xmlrpc_transport command line program"
 #define VERSION "1.0"

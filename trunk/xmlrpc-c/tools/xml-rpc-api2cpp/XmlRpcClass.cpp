@@ -4,10 +4,11 @@
 
 using namespace std;
 
-#include "XmlRpcCpp.h"
-#include "DataType.h"
-#include "XmlRpcFunction.h"
-#include "XmlRpcClass.h"
+#include "xmlrpc-c/oldcppwrapper.hpp"
+
+#include "DataType.hpp"
+#include "XmlRpcFunction.hpp"
+#include "XmlRpcClass.hpp"
 
 
 //=========================================================================

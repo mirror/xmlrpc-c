@@ -30,8 +30,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
 
 #define CRLF "\015\012"
 #define SMALL_BUFFER_SZ (128)

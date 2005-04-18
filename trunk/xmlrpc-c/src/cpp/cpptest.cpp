@@ -8,9 +8,9 @@
 
 #include "girerr.hpp"
 using girerr::error;
-#include "xmlrpc.hpp"
-#include "XmlRpcCpp.h"
-#include "registry.hpp"
+#include "xmlrpc-c/base.hpp"
+#include "xmlrpc-c/oldcppwrapper.hpp"
+#include "xmlrpc-c/registry.hpp"
 using namespace xmlrpc_c;
 
 using namespace std;
@@ -584,7 +584,7 @@ string const noElementFoundXml(
     );
 }
 
-string const sampleAddCallXml(
+string const sampleAddGoodCallXml(
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
     "<methodCall>\r\n"
     "<methodName>sample.add</methodName>\r\n"
@@ -595,12 +595,37 @@ string const sampleAddCallXml(
     "</methodCall>\r\n"
 );
 
-string const sampleAddResponseXml(
+string const sampleAddGoodResponseXml(
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
     "<methodResponse>\r\n"
     "<params>\r\n"
     "<param><value><i4>12</i4></value></param>\r\n"
     "</params>\r\n"
+    "</methodResponse>\r\n"
+);
+
+
+string const sampleAddBadCallXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodCall>\r\n"
+    "<methodName>sample.add</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><i4>5</i4></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n"
+);
+
+string const sampleAddBadResponseXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodResponse>\r\n"
+    "<fault>\r\n"
+    "<value><struct>\r\n"
+    "<member><name>faultCode</name>\r\n"
+    "<value><i4>-501</i4></value></member>\r\n"
+    "<member><name>faultString</name>\r\n"
+    "<value><string>Need two parameters</string></value></member>\r\n"
+    "</struct></value>\r\n"
+    "</fault>\r\n"
     "</methodResponse>\r\n"
 );
 
@@ -623,6 +648,9 @@ public:
             execute(vector<value>  const params,
                     const value ** const retvalPP) {
                 
+                if (params.size() != 2)
+                    throw(fault("Need two parameters", fault::CODE_TYPE));
+
                 value_int const addend(params[0]);
                 value_int const adder(params[1]);
                 
@@ -647,11 +675,16 @@ public:
         }
         {
             string * responseP;
-            cout << "about to processCall()" << endl;
-            myRegistry.processCall(sampleAddCallXml, &responseP);
-            cout << "back from processCall()" << endl;
+            myRegistry.processCall(sampleAddGoodCallXml, &responseP);
             auto_ptr<string> responseAuto(responseP);
-            TEST(*responseP == sampleAddResponseXml);
+            TEST(*responseP == sampleAddGoodResponseXml);
+        }
+        {
+            string * responseP;
+            cout << "about to processCall()" << endl;
+            myRegistry.processCall(sampleAddBadCallXml, &responseP);
+            auto_ptr<string> responseAuto(responseP);
+            TEST(*responseP == sampleAddBadResponseXml);
         }
     }
 };

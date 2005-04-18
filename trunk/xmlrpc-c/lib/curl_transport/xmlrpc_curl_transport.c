@@ -19,10 +19,10 @@
 #include "linklist.h"
 #include "casprintf.h"
 #include "pthreadx.h"
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
-#include "xmlrpc_client.h"
-#include "xmlrpc_client_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/client.h"
+#include "xmlrpc-c/client_int.h"
 
 #include <curl/curl.h>
 #include <curl/types.h>

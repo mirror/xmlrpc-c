@@ -124,10 +124,11 @@ install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
 	  else :; fi; \
 	done
 
-INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(DESTDIR)$(HEADERINST_DIR)/$$p 
+HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)$(HEADERINST_PREFIX)
+INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(HEADERDESTDIR)/$$p 
 
 install-headers: $(HEADERS_TO_INSTALL)
-	$(MKINSTALLDIRS) $(DESTDIR)$(HEADERINST_DIR)
+	$(MKINSTALLDIRS) $(HEADERDESTDIR)
 	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
 	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
 	  echo " $(INSTALL_HDR_CMD)"; \

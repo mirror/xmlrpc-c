@@ -1,8 +1,8 @@
 #include <cassert>
 
-#include <xmlrpc.hpp>
-#include <registry.hpp>
-#include <server_abyss.hpp>
+#include <xmlrpc-c/base.hpp>
+#include <xmlrpc-c/registry.hpp>
+#include <xmlrpc-c/server_abyss.hpp>
 
 using namespace std;
 
@@ -17,12 +17,16 @@ public:
     }
     void
     execute(vector<xmlrpc_c::value>  const params,
-            const xmlrpc_c::value ** const retvalP) {
+            const xmlrpc_c::value ** const retvalPP) {
 
-        xmlrpc_c::value_int addend(params[0]);
-        xmlrpc_c::value_int adder(params[1]);
-
-        *retvalP = new xmlrpc_c::value_int((int)addend + (int)adder);
+        if (params.size() != 2)
+            throw(xmlrpc_c::fault("Wrong number of parameters"));
+        else {
+            xmlrpc_c::value_int addend(params[0]);
+            xmlrpc_c::value_int adder(params[1]);
+            
+            *retvalPP = new xmlrpc_c::value_int((int)addend + (int)adder);
+        }
     }
 };
 

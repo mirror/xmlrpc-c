@@ -36,7 +36,7 @@
 
 #include "xmlrpc_config.h"
 
-#include "xmlrpc.h"
+#include "xmlrpc-c/base.h"
 
 #define CRLF    "\015\012"
 #define CR      '\015'

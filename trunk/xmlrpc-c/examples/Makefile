@@ -31,9 +31,6 @@ CLIENTPROGS_C = \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
 
-CLIENTPROGS_CPP = \
-  meerkat-app-list
-
 SERVERPROGS_CGI = \
   sample-cgi.cgi
 
@@ -45,9 +42,6 @@ SERVERPROGS_ABYSS = \
 PROGS = $(CLIENTPROGS_C) $(SERVERPROGS_ABYSS) \
   gen_sample_add_xml
 
-ifeq ($(ENABLE_CPLUSPLUS),yes)
-  PROGS += $(CLIENTPROGS_CPP) 
-endif
 ifeq ($(ENABLE_CGI_SERVER),yes)
   PROGS += $(SERVERPROGS_CGI) 
 endif
@@ -56,9 +50,6 @@ INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++ client abyss-server --cflags)
 
 LDADD_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) client --ldadd)
-
-LDADD_CLIENT_CPP = \
-  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
 
 LDADD_SERVER_ABYSS = \
   $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
@@ -71,11 +62,16 @@ LDADD_BASE = \
 
 all: $(PROGS)
 
+ifeq ($(ENABLE_CPLUSPLUS),yes)
+  all: cpp/all
+endif
+
+.PHONY: cpp/all
+cpp/all:
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
 $(CLIENTPROGS_C):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
-
-$(CLIENTPROGS_CPP):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT_CPP)
 
 $(SERVERPROGS_CGI):%.cgi:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_CGI)
@@ -88,9 +84,6 @@ gen_sample_add_xml:%:%.o
 
 %.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<
-
-%.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
 *.c: config.h xmlrpc_amconfig.h
 

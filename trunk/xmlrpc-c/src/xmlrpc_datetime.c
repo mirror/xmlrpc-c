@@ -7,8 +7,8 @@
 #include <assert.h>
 
 #include "bool.h"
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
 
 
 /* Future work: the XMLRPC_TYPE_DATETIME xmlrpc_value should store the

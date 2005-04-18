@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#include <xmlrpc.h>
+#include <xmlrpc-c/base.h>
 
 #include "config.h"
 

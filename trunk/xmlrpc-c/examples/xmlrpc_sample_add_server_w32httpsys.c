@@ -35,11 +35,11 @@
    directories with Visual Studio" so the newer headers are found.
 */
 
-#include <xmlrpc.h>
-#include <xmlrpc_server.h>
-#include "xmlrpc_server_w32httpsys.h"
 #include <string.h>
 #include <stdio.h>
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/server.h>
+#include <xmlrpc-c/server_w32httpsys.h>
 
 
 /*  SECURITY NOTE: Using HTTP Authorization

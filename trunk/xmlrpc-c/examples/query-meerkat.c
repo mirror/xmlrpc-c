@@ -20,8 +20,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <xmlrpc.h>
-#include <xmlrpc_client.h>
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/client.h>
 
 #include "config.h"  /* information about this build environment */
 

@@ -30,7 +30,7 @@
 #include <string.h>
 
 #include "mallocvar.h"
-#include "xmlrpc.h"
+#include "xmlrpc-c/base.h"
 
 /* set cookie function */
 void 

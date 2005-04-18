@@ -31,9 +31,9 @@
 
 #include "xmlrpc_config.h"
 
-#include "xmlrpc.h"
-#include "xmlrpc_server.h"
-#include "xmlrpc_xmlparser.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/server.h"
+#include "xmlrpc-c/xmlparser.h"
 
 #define CRLF    "\015\012"
 #define INT_MAX (2147483647)

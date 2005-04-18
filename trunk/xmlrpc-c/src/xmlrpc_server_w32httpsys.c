@@ -43,14 +43,14 @@
 #define _UNICODE
 #endif
 
-#include <xmlrpc.h>
-#include <xmlrpc_server.h>
-#include "xmlrpc_server_w32httpsys.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/server.h"
+#include "xmlrpc-c/server_w32httpsys.h"
 #include "version.h"
 
-#include    <http.h>
-#include    <windows.h>
-#include    <strsafe.h>
+#include <http.h>
+#include <windows.h>
+#include <strsafe.h>
 
 #pragma comment( lib, "httpapi" )
 

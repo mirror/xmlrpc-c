@@ -5,9 +5,9 @@
 
 #include "girerr.hpp"
 using girerr::error;
-#include "xmlrpc.h"
-#include "xmlrpc.hpp"
-#include "registry.hpp"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base.hpp"
+#include "xmlrpc-c/registry.hpp"
 
 using std::string;
 using namespace std;
@@ -149,25 +149,45 @@ c_executeMethod(xmlrpc_env *   const envP,
    registry.
 
    If we had a pure C++ registry, this would be unnecessary.
+
+   Since we can't throw an error back to the C code, we catch anything
+   the XML-RPC method's execute() method throws, and any error we
+   encounter in processing the result it returns, and turn it into an
+   XML-RPC method failure.  This will cause a leak if the execute()
+   method actually created a result, since it will not get destroyed.
 -----------------------------------------------------------------------------*/
     xmlrpc_c::method * const methodP = 
         static_cast<xmlrpc_c::method *>(methodPtr);
     vector<xmlrpc_c::value> const params(vectorFromXmlrpcArray(paramArrayP));
 
-
-    const xmlrpc_c::value * resultP;
+    xmlrpc_value * retval;
 
     try {
-        methodP->execute(params, &resultP);
-    } catch (xmlrpc_c::fault fault) {
-        xmlrpc_env_set_fault(envP, fault.faultCode, 
-                             fault.faultDescription.c_str()); 
+        const xmlrpc_c::value * resultP;
+
+        try {
+            methodP->execute(params, &resultP);
+        } catch (xmlrpc_c::fault fault) {
+            xmlrpc_env_set_fault(envP, fault.getCode(), 
+                                 fault.getDescription().c_str()); 
+        }
+        if (envP->fault_occurred)
+            retval = NULL;
+        else {
+            // The following declaration makes *resultP get destroyed
+            auto_ptr<xmlrpc_c::value> 
+                autoResultP(const_cast<xmlrpc_c::value *>(resultP));
+            retval = resultP->c_value();
+        }
+    } catch (...) {
+        xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
+                             "Unexpected error executing the code for this "
+                             "particular method, detected by the Xmlrpc-c "
+                             "method registry code.  The method did not "
+                             "fail; rather, it did not complete at all.");
+        retval = NULL;
     }
-    // The following declaration makes *resultP get destroyed as we exit
-    auto_ptr<xmlrpc_c::value> 
-        autoResultP(const_cast<xmlrpc_c::value *>(resultP));
-    
-    return resultP->c_value();
+    return retval;
 }
  
 

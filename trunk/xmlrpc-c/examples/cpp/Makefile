@@ -28,7 +28,10 @@ XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
 SERVERPROGS_ABYSS = \
   xmlrpc_sample_add_server
 
-PROGS = $(SERVERPROGS_ABYSS)
+CLIENTPROGS = \
+  meerkat-app-list
+
+PROGS = $(SERVERPROGS_ABYSS) $(CLIENTPROGS)
 
 INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++ client abyss-server --cflags)
 
@@ -42,6 +45,9 @@ all: $(PROGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
+
+$(CLIENTPROGS):%:%.o
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_BASE)
 
 %.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CFLAGS) $<

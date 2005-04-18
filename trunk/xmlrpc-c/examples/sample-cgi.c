@@ -1,7 +1,7 @@
 /* A simple CGI-based XML-RPC server written in C. */
 
-#include <xmlrpc.h>
-#include <xmlrpc_cgi.h>
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/cgi.h>
 
 #include "config.h"  /* information about this build environment */
 

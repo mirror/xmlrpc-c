@@ -34,9 +34,9 @@
 
 #include "girerr.hpp"
 using girerr::error;
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
-#include "xmlrpc.hpp"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/base.hpp"
 
 
 namespace {

@@ -35,14 +35,13 @@ fi
 needCpp=no
 
 the_libs="${BUILDDIR}/src/.libs/libxmlrpc.a ${LIBXML}"
-the_includes="-I${SRCDIR}/src"
+the_includes="-I${SRCDIR}/include"
 sopath="${BUILDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do
   case $1 in
     c++)
       needCpp=yes
-      the_includes="-I${SRCDIR}/src/cpp $the_includes"
       the_libs="${BUILDDIR}/src/cpp/libxmlrpc++.a $the_libs"
       ;;
     cgi-server)

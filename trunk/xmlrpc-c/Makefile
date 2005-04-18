@@ -1,4 +1,4 @@
-# The make files for this pacakge exploit features of GNU Make that
+# The make files for this package exploit features of GNU Make that
 # other Makes do not have.  Because it is a common mistake for users
 # to try to build with a different Make, we have this make file that
 # does nothing but tell the user to use GNU Make.

@@ -29,8 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
 
 #define KEY_ERROR_BUFFER_SZ (32)
 

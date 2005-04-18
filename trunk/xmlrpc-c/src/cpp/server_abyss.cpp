@@ -5,11 +5,11 @@
 
 #include "girerr.hpp"
 using girerr::error;
-#include "xmlrpc.h"
-#include "xmlrpc.hpp"
-#include "xmlrpc_server_abyss.h"
-#include "registry.hpp"
-#include "server_abyss.hpp"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base.hpp"
+#include "xmlrpc-c/server_abyss.h"
+#include "xmlrpc-c/registry.hpp"
+#include "xmlrpc-c/server_abyss.hpp"
 
 
 namespace xmlrpc_c {

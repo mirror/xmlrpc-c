@@ -10,8 +10,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
 
 
 void

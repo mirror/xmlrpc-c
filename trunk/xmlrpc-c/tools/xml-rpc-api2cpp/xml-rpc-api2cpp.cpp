@@ -1,11 +1,12 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <XmlRpcCpp.h>
-#include "DataType.h"
-#include "XmlRpcFunction.h"
-#include "XmlRpcClass.h"
-#include "SystemProxy.h"
+#include "xmlrpc-c/oldcppwrapper.hpp"
+
+#include "DataType.hpp"
+#include "XmlRpcFunction.hpp"
+#include "XmlRpcClass.hpp"
+#include "SystemProxy.hpp"
 
 using namespace std;
 

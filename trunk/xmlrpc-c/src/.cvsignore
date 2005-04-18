@@ -4,4 +4,3 @@ rpctest.static
 cpptest
 efrpctest
 efrpctest_wrapper
-transport_config.h

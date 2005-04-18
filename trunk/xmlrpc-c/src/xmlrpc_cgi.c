@@ -36,9 +36,9 @@
 #include <fcntl.h> 
 #endif 
 
-#include "xmlrpc.h"
-#include "xmlrpc_server.h"
-#include "xmlrpc_cgi.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/server.h"
+#include "xmlrpc-c/cgi.h"
 
 
 /*=========================================================================

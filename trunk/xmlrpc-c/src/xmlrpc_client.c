@@ -37,10 +37,10 @@
 
 #include "bool.h"
 #include "mallocvar.h"
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
-#include "xmlrpc_client.h"
-#include "xmlrpc_client_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/client.h"
+#include "xmlrpc-c/client_int.h"
 /* transport_config.h defines XMLRPC_DEFAULT_TRANSPORT,
     MUST_BUILD_WININET_CLIENT, MUST_BUILD_CURL_CLIENT,
     MUST_BUILD_LIBWWW_CLIENT 

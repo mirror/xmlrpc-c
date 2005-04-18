@@ -1,30 +1,4 @@
-/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
-**
-** There is more copyright information in the bottom half of this file. 
-** Please see it for more details. */
+/* Copyright information is at the end of the file */
 
 #include "xmlrpc_config.h"
 
@@ -34,11 +8,11 @@
 
 #include "abyss.h"
 
-#include "xmlrpc.h"
-#include "xmlrpc_server.h"
-#include "xmlrpc_int.h"
-#include "xmlrpc_server_abyss.h"
-#include "xmlrpc_server_abyss_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/server.h"
+#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/server_abyss.h"
+#include "server_abyss_int.h"
 
 
 /*=========================================================================
@@ -310,19 +284,43 @@ processContentLength(TSession *     const httpRequestP,
 }
 
 
-/****************************************************************************
-    Abyss handlers (to be registered with and called by Abyss)
-****************************************************************************/
-
-/* XXX - This variable is *not* currently threadsafe. Once the server has
-** been started, it must be treated as read-only. */
-static xmlrpc_registry *global_registryP;
-
-static const char * trace_abyss;
 
 static void
-processCall(TSession * const abyssSessionP,
-            size_t     const contentSize) {
+traceHandlerCalled(TSession * const abyssSessionP) {
+    
+    const char * methodDesc;
+
+    fprintf(stderr, "xmlrpc_server_abyss RPC2 handler called.\n");
+
+    fprintf(stderr, "URI = '%s'\n", abyssSessionP->uri);
+
+    switch (abyssSessionP->method) {
+    case m_unknown: methodDesc = "unknown";   break;
+    case m_get:     methodDesc = "get";       break;
+    case m_put:     methodDesc = "put";       break;
+    case m_head:    methodDesc = "head";      break;
+    case m_post:    methodDesc = "post";      break;
+    case m_delete:  methodDesc = "delete";    break;
+    case m_trace:   methodDesc = "trace";     break;
+    case m_options: methodDesc = "m_options"; break;
+    default:        methodDesc = "?";
+    }
+    fprintf(stderr, "HTTP method = '%s'\n", methodDesc);
+
+    if (abyssSessionP->query)
+        fprintf(stderr, "query (component of URL)='%s'\n",
+                abyssSessionP->query);
+    else
+        fprintf(stderr, "URL has no query component\n");
+}
+
+
+
+static void
+processCall(TSession *        const abyssSessionP,
+            size_t            const contentSize,
+            xmlrpc_registry * const registryP,
+            const char *      const trace) {
 /*----------------------------------------------------------------------------
    Handle an RPC request.  This is an HTTP request that has the proper form
    to be one of our RPCs.
@@ -331,7 +329,7 @@ processCall(TSession * const abyssSessionP,
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
 
-    if (trace_abyss)
+    if (trace)
         fprintf(stderr, "xmlrpc_server_abyss RPC2 handler processing RPC.\n");
 
     xmlrpc_env_init(&env);
@@ -348,7 +346,7 @@ processCall(TSession * const abyssSessionP,
             xmlrpc_mem_block * output;
             /* Process the RPC. */
             output = xmlrpc_registry_process_call(
-                &env, global_registryP, NULL, 
+                &env, registryP, NULL, 
                 XMLRPC_MEMBLOCK_CONTENTS(char, body),
                 XMLRPC_MEMBLOCK_SIZE(char, body));
             if (!env.fault_occurred) {
@@ -374,6 +372,16 @@ processCall(TSession * const abyssSessionP,
 
 
 
+/****************************************************************************
+    Abyss handlers (to be registered with and called by Abyss)
+****************************************************************************/
+
+/* XXX - This variable is *not* currently threadsafe. Once the server has
+** been started, it must be treated as read-only. */
+static xmlrpc_registry *global_registryP;
+
+static const char * trace_abyss;
+
 /*=========================================================================
 **  xmlrpc_server_abyss_rpc2_handler
 **=========================================================================
@@ -382,17 +390,30 @@ processCall(TSession * const abyssSessionP,
 */
 
 xmlrpc_bool 
-xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
+xmlrpc_server_abyss_rpc2_handler(TSession * const abyssSessionP) {
+/*----------------------------------------------------------------------------
+   Our job is to look at this HTTP request that the Abyss server is
+   trying to process and see if we can handle it.  If it's an XML-RPC
+   call for this XML-RPC server, we handle it.  If it's not, we refuse
+   it and Abyss can try some other handler.
 
+   Our return code is TRUE to mean we handled it; FALSE to mean we didn't.
+
+   Note that failing the request counts as handling it, and not handling
+   it does not mean we failed it.
+-----------------------------------------------------------------------------*/
     xmlrpc_bool retval;
 
     if (trace_abyss)
-        fprintf(stderr, "xmlrpc_server_abyss RPC2 handler called.\n");
+        traceHandlerCalled(abyssSessionP);
 
     /* We handle only requests to /RPC2, the default XML-RPC URL.
        Everything else we pass through to other handlers. 
     */
-    if (strcmp(r->uri, "/RPC2") != 0)
+    if (strcmp(abyssSessionP->uri, "/RPC2") != 0)
+        /* Note that abyssSessionP->uri is not the whole URI.  It is just
+           the "file name" part of it.
+        */
         retval = FALSE;
     else {
         retval = TRUE;
@@ -400,27 +421,29 @@ xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
         /* We understand only the POST HTTP method.  For anything else, return
            "405 Method Not Allowed". 
         */
-        if (r->method != m_post)
-            send_error(r, 405);
+        if (abyssSessionP->method != m_post)
+            send_error(abyssSessionP, 405);
         else {
             unsigned int httpError;
-            storeCookies(r, &httpError);
+            storeCookies(abyssSessionP, &httpError);
             if (httpError)
-                send_error(r, httpError);
+                send_error(abyssSessionP, httpError);
             else {
                 unsigned int httpError;
-                validateContentType(r, &httpError);
+                validateContentType(abyssSessionP, &httpError);
                 if (httpError)
-                    send_error(r, httpError);
+                    send_error(abyssSessionP, httpError);
                 else {
                     unsigned int httpError;
                     size_t contentSize;
 
-                    processContentLength(r, &contentSize, &httpError);
+                    processContentLength(abyssSessionP, 
+                                         &contentSize, &httpError);
                     if (httpError)
-                        send_error(r, httpError);
+                        send_error(abyssSessionP, httpError);
 
-                    processCall(r, contentSize);
+                    processCall(abyssSessionP, contentSize, global_registryP,
+                                trace_abyss);
                 }
             }
         }
@@ -441,6 +464,10 @@ xmlrpc_server_abyss_rpc2_handler (TSession * const r) {
 
 xmlrpc_bool 
 xmlrpc_server_abyss_default_handler (TSession * const r) {
+
+    if (trace_abyss)
+        fprintf(stderr, "xmlrpc_server_abyss default handler called.\n");
+
     send_error(r, 404);
 
     return TRUE;
@@ -935,3 +962,35 @@ xmlrpc_server_abyss_add_method_w_doc (char *        const method_name,
     die_if_fault_occurred(&env);
     xmlrpc_env_clean(&env);    
 }
+
+
+
+/*
+** Copyright (C) 2001 by First Peer, Inc. All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission. 
+**  
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE.
+**
+** There is more copyright information in the bottom half of this file. 
+** Please see it for more details. 
+*/

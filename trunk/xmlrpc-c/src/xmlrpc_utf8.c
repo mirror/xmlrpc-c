@@ -40,7 +40,7 @@
 
 #include "xmlrpc_config.h"
 
-#include "xmlrpc.h"
+#include "xmlrpc-c/base.h"
 
 #ifdef HAVE_UNICODE_WCHAR
 

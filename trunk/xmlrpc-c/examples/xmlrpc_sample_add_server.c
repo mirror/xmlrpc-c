@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <xmlrpc.h>
-#include <xmlrpc_server.h>
-#include <xmlrpc_server_abyss.h>
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/server.h>
+#include <xmlrpc-c/server_abyss.h>
 
 #include "config.h"  /* information about this build environment */
 

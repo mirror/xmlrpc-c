@@ -31,9 +31,9 @@
 #include <errno.h>
 #include <ctype.h>
 
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
-#include "xmlrpc_xmlparser.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/xmlparser.h"
 
 
 /*=========================================================================

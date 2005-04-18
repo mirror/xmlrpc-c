@@ -2,8 +2,8 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <XmlRpcCpp.h>
-#include "DataType.h"
+#include "xmlrpc-c/oldcppwrapper.hpp"
+#include "DataType.hpp"
 
 using namespace std;
 

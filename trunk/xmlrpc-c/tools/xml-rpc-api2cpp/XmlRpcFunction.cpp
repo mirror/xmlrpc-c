@@ -1,9 +1,9 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <XmlRpcCpp.h>
-#include "DataType.h"
-#include "XmlRpcFunction.h"
+#include "xmlrpc-c/oldcppwrapper.hpp"
+#include "DataType.hpp"
+#include "XmlRpcFunction.hpp"
 
 using std::domain_error;
 using std::endl;

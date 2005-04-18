@@ -29,10 +29,10 @@ endif
 LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
 
-LIBXMLRPCPP_OBJS = value.o
+LIBXMLRPCPP_OBJS = value.o fault.o
 LIBXMLRPC_SERVERPP_OBJS = registry.o server_abyss.o
 
-INCLUDES = -I $(BUILDDIR)/src -I$(BUILDDIR) -I$(SRCDIR) \
+INCLUDES = -I $(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
 	   -I$(SRCDIR)/lib/util/include \
 	   $(LIBXML_INCLUDES) -I$(SRCDIR)/lib/abyss/src \
 
@@ -53,7 +53,7 @@ all: $(TARGET_LIBRARIES) $(TARGET_PROGS)
 
 LDFLAGS = $(LADD)
 
-cpptest:%:%.o libxmlrpc++.a libxmlrpc_server++.a libxmlrpc_cpp.a \
+cpptest:%:%.o libxmlrpc_server++.a libxmlrpc++.a libxmlrpc_cpp.a \
   $(LIBXMLRPC) $(LIBXMLRPC_SERVER) $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
@@ -103,7 +103,6 @@ install: install-common
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local
 clean-local:
-	rm -f transport_config.h
 	rm -f $(TARGET_PROGS)
 
 distclean: clean distclean-common

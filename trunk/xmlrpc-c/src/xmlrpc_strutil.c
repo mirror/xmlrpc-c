@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
 #include "xmlrpc_config.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
 
 
 

@@ -30,8 +30,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "xmlrpc.h"
-#include "xmlrpc_int.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
 
 #ifdef EFENCE
         /* when looking for corruption don't allocate extra slop */
