@@ -11,6 +11,16 @@
   * BJH: libwww transport does all cookies, not just "auth".  It no longer
     uses an environment variable for auth.
 
+  * BJH: new C++ library designed for pure C++ applications
+    (Application never sees the underlying C structures or reference
+    counts).  Has value, fault, and registry classes.  No client
+    facilities yet.
+
+  * BJH: interface header files renamed from xmlrpc_xxx to xmlrpc-c/xxx
+    (old names installed a symbolic links for backward compatibility).
+
+  * BJH: Fix mysterious disablement of forking Abyss (ServerRunForked()).
+
 1.2 - April 4, 2005
 
   * SAB: Win32 http.sys server: Add new project and sample as 

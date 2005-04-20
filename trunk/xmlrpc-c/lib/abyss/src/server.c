@@ -783,7 +783,7 @@ ServerRun(TServer * const serverP) {
     if (usingPthreadsForConnections)
         ServerRunThreaded(serverP);
     else
-        ServerRunForked(NULL);
+        ServerRunForked(serverP);
 }
 
 
