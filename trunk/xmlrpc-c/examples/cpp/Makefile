@@ -38,6 +38,9 @@ INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++ client abyss-server --cflags)
 LDADD_SERVER_ABYSS = \
   $(shell $(XMLRPC_C_CONFIG) c++ abyss-server --ldadd)
 
+LDADD_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
+
 LDADD_BASE = \
   $(shell $(XMLRPC_C_CONFIG) --ldadd)
 
@@ -47,7 +50,7 @@ $(SERVERPROGS_ABYSS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
 
 $(CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_BASE)
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
 
 %.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CFLAGS) $<

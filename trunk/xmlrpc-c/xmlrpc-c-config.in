@@ -92,7 +92,8 @@ while test $# -gt 0; do
         # and server, and it needs both client and server base
         # libraries.  So a C++ server program gets linked with client
         # libraries.
-        the_libs="-lxmlrpc_server++ -lxmlrpc_cpp -lxmlrpc_client $the_libs"
+        the_libs="-lxmlrpc_cpp -lxmlrpc_client $the_libs"
+        the_libs="-lxmlrpc_server++ -lxmlrpc_server_abyss++ $the_libs"
         fi
       ;;
     client)

@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <string>
 #include <memory>
 #include <list>
@@ -11,9 +12,76 @@ using girerr::error;
 
 using std::string;
 using namespace std;
-
+using namespace xmlrpc_c;
 
 namespace xmlrpc_c {
+
+
+param_list::param_list(unsigned int paramCount = 0) {
+
+    this->paramVector.reserve(paramCount);
+}
+
+
+ 
+void
+param_list::add(xmlrpc_c::value const param) {
+
+    this->paramVector.push_back(param);
+}
+
+
+
+int
+param_list::getInt(unsigned int const paramNumber,
+                   int          const minimum = -INT_MAX,
+                   int          const maximum = INT_MAX) const {
+
+    if (paramNumber >= this->paramVector.size())
+        throw(fault("Not enough parameters", fault::CODE_TYPE));
+
+    if (this->paramVector[paramNumber].type() != value::TYPE_INT)
+        throw(fault("Parameter that is supposed to be integer is not", 
+                    fault::CODE_TYPE));
+
+    int const intvalue(static_cast<int>(
+        value_int(this->paramVector[paramNumber])));
+
+    if (intvalue < minimum)
+        throw(fault("Integer parameter too low", fault::CODE_TYPE));
+
+    if (intvalue > maximum)
+        throw(fault("Integer parameter too high", fault::CODE_TYPE));
+
+    return intvalue;
+}
+
+
+
+bool
+param_list::getBoolean(unsigned int const paramNumber) const {
+
+    if (paramNumber >= this->paramVector.size())
+        throw(fault("Not enough parameters", fault::CODE_TYPE));
+
+    if (this->paramVector[paramNumber].type() != value::TYPE_BOOLEAN)
+        throw(fault("Parameter that is supposed to be boolean is not", 
+                    fault::CODE_TYPE));
+
+    return static_cast<bool>(value_boolean(this->paramVector[paramNumber]));
+}
+
+
+
+void
+param_list::verifyEnd(unsigned int const paramNumber) const {
+
+    if (paramNumber < this->paramVector.size())
+        throw(fault("Too many parameters", fault::CODE_TYPE));
+    if (paramNumber > this->paramVector.size())
+        throw(fault("Not enough parameters", fault::CODE_TYPE));
+}
+
 
 
 method::~method() {
@@ -107,10 +175,11 @@ registry::~registry(void) {
 
 
 
-static vector<xmlrpc_c::value>
-vectorFromXmlrpcArray(xmlrpc_value * const arrayP) {
+static xmlrpc_c::param_list
+pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
 /*----------------------------------------------------------------------------
-   Convert an XML-RPC array in C (not C++) form to an STL vector.
+   Convert an XML-RPC array in C (not C++) form to a parameter list object
+   that can be passed to a method execute method.
 
    This is glue code to allow us to hook up C++ Xmlrpc-c code to 
    C Xmlrpc-c code.
@@ -123,16 +192,17 @@ vectorFromXmlrpcArray(xmlrpc_value * const arrayP) {
 
     unsigned int const arraySize = xmlrpc_array_size(&env, arrayP);
 
-    vector<xmlrpc_c::value> retval(arraySize);
+    xmlrpc_c::param_list paramList(arraySize);
     
     for (unsigned int i = 0; i < arraySize; ++i) {
         xmlrpc_value * arrayItemP;
         xmlrpc_array_read_item(&env, arrayP, i, &arrayItemP);
 
-        retval[i] = xmlrpc_c::value(arrayItemP);
+        paramList.add(xmlrpc_c::value(arrayItemP));
+        
         xmlrpc_DECREF(arrayItemP);
     }
-    return retval;
+    return paramList;
 }
 
 
@@ -158,7 +228,7 @@ c_executeMethod(xmlrpc_env *   const envP,
 -----------------------------------------------------------------------------*/
     xmlrpc_c::method * const methodP = 
         static_cast<xmlrpc_c::method *>(methodPtr);
-    vector<xmlrpc_c::value> const params(vectorFromXmlrpcArray(paramArrayP));
+    xmlrpc_c::param_list const paramList(pListFromXmlrpcArray(paramArrayP));
 
     xmlrpc_value * retval;
 
@@ -166,7 +236,7 @@ c_executeMethod(xmlrpc_env *   const envP,
         const xmlrpc_c::value * resultP;
 
         try {
-            methodP->execute(params, &resultP);
+            methodP->execute(paramList, &resultP);
         } catch (xmlrpc_c::fault fault) {
             xmlrpc_env_set_fault(envP, fault.getCode(), 
                                  fault.getDescription().c_str()); 

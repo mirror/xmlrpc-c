@@ -30,7 +30,8 @@ LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
 
 LIBXMLRPCPP_OBJS = value.o fault.o
-LIBXMLRPC_SERVERPP_OBJS = registry.o server_abyss.o
+LIBXMLRPC_SERVERPP_OBJS = registry.o
+LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
 
 INCLUDES = -I $(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
 	   -I$(SRCDIR)/lib/util/include \
@@ -45,7 +46,11 @@ INCLUDES = -I $(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
 # libxmlrpc_cpp.a is the legacy C++ wrapper library.  The others are the
 # more elaborate replacements.
 
-TARGET_LIBRARIES = libxmlrpc_cpp.a libxmlrpc++.a libxmlrpc_server++.a
+TARGET_LIBRARIES = \
+  libxmlrpc_cpp.a \
+  libxmlrpc++.a \
+  libxmlrpc_server++.a \
+  libxmlrpc_server_abyss++.a \
 
 TARGET_PROGS = cpptest
 
@@ -53,7 +58,8 @@ all: $(TARGET_LIBRARIES) $(TARGET_PROGS)
 
 LDFLAGS = $(LADD)
 
-cpptest:%:%.o libxmlrpc_server++.a libxmlrpc++.a libxmlrpc_cpp.a \
+cpptest:%:%.o libxmlrpc_server_abyss++.a libxmlrpc_server++.a \
+  libxmlrpc++.a libxmlrpc_cpp.a \
   $(LIBXMLRPC) $(LIBXMLRPC_SERVER) $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
@@ -70,6 +76,11 @@ libxmlrpc++.a: $(LIBXMLRPCPP_OBJS)
 	$(RANLIB) $@
 
 libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_OBJS)
+	-rm -f $@
+	$(AR) cru $@ $^
+	$(RANLIB) $@
+
+libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
 	-rm -f $@
 	$(AR) cru $@ $^
 	$(RANLIB) $@

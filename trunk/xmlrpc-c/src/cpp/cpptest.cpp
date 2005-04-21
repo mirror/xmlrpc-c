@@ -623,7 +623,7 @@ string const sampleAddBadResponseXml(
     "<member><name>faultCode</name>\r\n"
     "<value><i4>-501</i4></value></member>\r\n"
     "<member><name>faultString</name>\r\n"
-    "<value><string>Need two parameters</string></value></member>\r\n"
+    "<value><string>Not enough parameters</string></value></member>\r\n"
     "</struct></value>\r\n"
     "</fault>\r\n"
     "</methodResponse>\r\n"
@@ -645,20 +645,15 @@ public:
                 this->_help = "This method adds two integers together";
             }
             void
-            execute(vector<value>  const params,
-                    const value ** const retvalPP) {
+            execute(xmlrpc_c::param_list const& paramList,
+                    const value **       const  retvalPP) {
                 
-                if (params.size() != 2)
-                    throw(fault("Need two parameters", fault::CODE_TYPE));
+                int const addend(paramList.getInt(0));
+                int const adder(paramList.getInt(1));
 
-                value_int const addend(params[0]);
-                value_int const adder(params[1]);
+                paramList.verifyEnd(2);
                 
-                *retvalPP = new value_int((int)addend + (int)adder);
-            }
-            virtual void
-            test() const {
-                cout << "sampleAddMethod.test() running" << endl;
+                *retvalPP = new value_int(addend + adder);
             }
         };
 
@@ -681,7 +676,6 @@ public:
         }
         {
             string * responseP;
-            cout << "about to processCall()" << endl;
             myRegistry.processCall(sampleAddBadCallXml, &responseP);
             auto_ptr<string> responseAuto(responseP);
             TEST(*responseP == sampleAddBadResponseXml);

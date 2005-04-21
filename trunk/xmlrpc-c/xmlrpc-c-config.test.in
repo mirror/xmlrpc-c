@@ -55,6 +55,7 @@ while test $# -gt 0; do
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
       if test "${needCpp}" = "yes"; then
         the_libs="${BUILDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+        the_libs="${BUILDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
         fi
       the_includes="-I${SRCDIR}/lib/abyss/src $the_includes"
       sopath="${BUILDDIR}/lib/abyss/src/.libs:$sopath"

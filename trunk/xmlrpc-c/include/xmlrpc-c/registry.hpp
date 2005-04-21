@@ -1,7 +1,7 @@
-#include <iostream>
 #ifndef REGISTRY_HPP_INCLUDED
 #define REGISTRY_HPP_INCLUDED
 
+#include <limits.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -10,6 +10,33 @@
 #include <xmlrpc-c/base.hpp>
 
 namespace xmlrpc_c {
+
+
+class param_list {
+/*----------------------------------------------------------------------------
+   A parameter list of an XML-RPC call.
+-----------------------------------------------------------------------------*/
+public:
+    param_list(unsigned int paramCount = 0);
+
+    void
+    add(xmlrpc_c::value const param);
+
+    int
+    getInt(unsigned int const paramNumber,
+           int          const minimum = -INT_MAX,
+           int          const maximum = INT_MAX) const;
+
+    bool
+    getBoolean(unsigned int const paramNumber) const;
+
+    void
+    verifyEnd(unsigned int const paramNumber) const;
+
+private:
+    std::vector<xmlrpc_c::value> paramVector;
+};
+
 
 
 class method {
@@ -34,13 +61,9 @@ public:
     // Caller to be able to treat an integer as an integer, not just
     // as a generic value.
     virtual void
-    execute(std::vector<xmlrpc_c::value> const params,
-            const xmlrpc_c::value **     const resultPP) = 0;
+    execute(xmlrpc_c::param_list     const& paramList,
+            const xmlrpc_c::value ** const  resultPP) = 0;
 
-    virtual void
-    test() const {
-        cout << "default test() running" << endl;
-    }
     std::string signature() const { return _signature; };
     std::string help() const { return _help; };
 
@@ -53,6 +76,7 @@ public:
 protected:
     std::string _signature;
     std::string _help;
+
 private:
     unsigned int refcount;
 };
@@ -66,10 +90,13 @@ private:
            this->_help = "This method adds two integers together";
        }
        void
-       execute(std::vector<xmlrpc_c::value> const params,
-               const xmlrpc_c::value **     const retvalPP) {
+       execute(xmlrpc_c::param_list     const paramList,
+               const xmlrpc_c::value ** const retvalPP) {
           
-           *retvalPP = new xmlrpc_c::value((int)params[0] + (int)params[1]);
+           int const addend(paramList.getInt(0));
+           int const adder(paramList.getInt(1));
+
+           *retvalPP = new xmlrpc_c::value(addend, adder);
       }
    };
 
