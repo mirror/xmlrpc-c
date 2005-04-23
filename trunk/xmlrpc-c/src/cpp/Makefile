@@ -29,9 +29,14 @@ endif
 LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
 
-LIBXMLRPCPP_OBJS = value.o fault.o
+LIBXMLRPCPP_OBJS = value.o fault.o param_list.o
 LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
+
+LIB_OBJS = \
+  $(LIBXMLRPCPP_OBJS) \
+  $(LIBXMLRPC_SERVERPP_OBJS) \
+  $(LIBXMLRPC_SERVER_ABYSSPP_OBJS) \
 
 INCLUDES = -I $(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
 	   -I$(SRCDIR)/lib/util/include \
@@ -93,10 +98,7 @@ cpptest.o:%.o:%.cpp
 XmlRpcCpp.o:%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
-$(LIBXMLRPCPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
-
-$(LIBXMLRPC_SERVERPP_OBJS):%.o:%.cpp
+$(LIB_OBJS):%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
 
 LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)

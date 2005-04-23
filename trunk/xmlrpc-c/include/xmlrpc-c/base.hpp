@@ -1,10 +1,12 @@
 #ifndef XMLRPC_HPP_INCLUDED
 #define XMLRPC_HPP_INCLUDED
 
+#include <climits>
+#include <cfloat>
+#include <ctime>
 #include <vector>
 #include <map>
 #include <string>
-#include <time.h>
 
 #include "xmlrpc-c/base.h"
 
@@ -219,6 +221,65 @@ public:
 private:
     xmlrpc_c::fault::code_t const code;
     std::string const description;
+};
+
+class param_list {
+/*----------------------------------------------------------------------------
+   A parameter list of an XML-RPC call.
+-----------------------------------------------------------------------------*/
+public:
+    param_list(unsigned int const paramCount = 0);
+
+    void
+    add(xmlrpc_c::value const param);
+
+    unsigned int
+    size() const;
+
+    xmlrpc_c::value operator[](unsigned int const subscript) const;
+
+    int
+    getInt(unsigned int const paramNumber,
+           int          const minimum = INT_MIN,
+           int          const maximum = INT_MAX) const;
+
+    bool
+    getBoolean(unsigned int const paramNumber) const;
+
+    double
+    getDouble(unsigned int const paramNumber,
+              double       const minimum = DBL_MIN,
+              double       const maximum = DBL_MAX) const;
+
+    enum time_constraint {TC_ANY, TC_NO_PAST, TC_NO_FUTURE};
+
+    time_t
+    getDatetime_sec(unsigned int    const paramNumber,
+                    time_constraint const constraint
+                        = param_list::TC_ANY) const;
+
+    string
+    getString(unsigned int const paramNumber) const;
+
+    std::vector<unsigned char>
+    getBytestring(unsigned int const paramNumber) const;
+
+    std::vector<xmlrpc_c::value>
+    getArray(unsigned int const paramNumber,
+             unsigned int const minSize = 0,
+             unsigned int const maxSize = UINT_MAX) const;
+
+    std::map<string, xmlrpc_c::value>
+    getStruct(unsigned int const paramNumber) const;
+
+    void
+    getNil(unsigned int const paramNumber) const;
+
+    void
+    verifyEnd(unsigned int const paramNumber) const;
+
+private:
+    std::vector<xmlrpc_c::value> paramVector;
 };
 
 } // namespace

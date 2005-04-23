@@ -1,7 +1,6 @@
 #ifndef REGISTRY_HPP_INCLUDED
 #define REGISTRY_HPP_INCLUDED
 
-#include <limits.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -10,33 +9,6 @@
 #include <xmlrpc-c/base.hpp>
 
 namespace xmlrpc_c {
-
-
-class param_list {
-/*----------------------------------------------------------------------------
-   A parameter list of an XML-RPC call.
------------------------------------------------------------------------------*/
-public:
-    param_list(unsigned int paramCount = 0);
-
-    void
-    add(xmlrpc_c::value const param);
-
-    int
-    getInt(unsigned int const paramNumber,
-           int          const minimum = -INT_MAX,
-           int          const maximum = INT_MAX) const;
-
-    bool
-    getBoolean(unsigned int const paramNumber) const;
-
-    void
-    verifyEnd(unsigned int const paramNumber) const;
-
-private:
-    std::vector<xmlrpc_c::value> paramVector;
-};
-
 
 
 class method {

@@ -630,6 +630,69 @@ string const sampleAddBadResponseXml(
 );
 
 
+class paramListTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "paramListTestSuite";
+    }
+    virtual void runtests() {
+
+        param_list paramList1;
+        TEST(paramList1.size() == 0);
+
+        paramList1.add(value_int(7));
+        paramList1.add(value_boolean(true));
+        paramList1.add(value_double(3.14));
+        time_t const timeZero(0);
+        paramList1.add(value_datetime(timeZero));
+        time_t const timeFuture(time(NULL)+100);
+        paramList1.add(value_datetime(timeFuture));
+        paramList1.add(value_string("hello world"));
+        unsigned char bytestringArray[] = {0x10, 0x11, 0x12, 0x13, 0x14};
+        vector<unsigned char> 
+            bytestringData(&bytestringArray[0], &bytestringArray[4]);
+        paramList1.add(value_bytestring(bytestringData));
+        vector<value> arrayData;
+        arrayData.push_back(value_int(7));
+        arrayData.push_back(value_double(2.78));
+        arrayData.push_back(value_string("hello world"));
+        paramList1.add(value_array(arrayData));
+        map<string, value> structData;
+        pair<string, value> member("the_integer", value_int(9));
+        structData.insert(member);
+        paramList1.add(value_struct(structData));
+        paramList1.add(value_nil());
+
+        TEST(paramList1.size() == 10);
+
+        TEST(paramList1.getInt(0) == 7);
+        TEST(paramList1.getInt(0, 7) == 7);
+        TEST(paramList1.getInt(0, -5, 7) == 7);
+        TEST(paramList1.getBoolean(1) == true);
+        TEST(paramList1.getDouble(2) == 3.14);
+        TEST(paramList1.getDouble(2, 1) == 3.14);
+        TEST(paramList1.getDouble(2, 1, 4) == 3.14);
+        TEST(paramList1.getDatetime_sec(3) == 0);
+        TEST(paramList1.getDatetime_sec(3, param_list::TC_ANY) == timeZero);
+        TEST(paramList1.getDatetime_sec(3, param_list::TC_NO_FUTURE) 
+             == timeZero);
+        TEST(paramList1.getDatetime_sec(4, param_list::TC_NO_PAST)
+             == timeFuture);
+        TEST(paramList1.getString(5) == "hello world");
+        TEST(paramList1.getBytestring(6)[0] == 0x10);
+        TEST(paramList1.getArray(7).size() == 3);
+        TEST(paramList1.getArray(7, 3).size() == 3);
+        TEST(paramList1.getArray(7, 1, 3).size() == 3);
+        paramList1.getStruct(8)["the_integer"];
+        paramList1.getNil(9);
+        paramList1.verifyEnd(10);
+
+        param_list paramList2(5);
+        TEST(paramList2.size() == 0);
+    }
+};
+
 class registryTestSuite : public testSuite {
 
 public:
@@ -702,6 +765,7 @@ main(int argc, char** argv) {
     try {
         // Add your test suites here.
         valueTestSuite().run();
+        paramListTestSuite().run();
         registryTestSuite().run();
 
         testXmlRpcCpp();

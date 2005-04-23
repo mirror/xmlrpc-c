@@ -16,15 +16,15 @@ Provide an interface for Abyss servers where the user accepts the TCP
 connection and passes to Xmlrpc-c the open socket.  This would be
 useful for inetd servers, among others.
 
+Document the new pure C++ (base.hpp, etc.) interface.
+
+Make a pure C++ client interface.
+
 Implement pluggable XML transports on the server side like on the
 client side.
 
 Create a non-XML non-HTTP efficient transport, client and server.
 The tools/binmode-rpc-kit/ directory might be useful.
-
-Have a pure C++ object oriented interface (no C paradigms showing
-through).  In particular, use shared pointers for xmlrpc_value so user
-doesn't see reference counts.
 
 Make clients and servers reentrant (this requires getting or making
 reentrant HTTP libraries).
@@ -57,9 +57,6 @@ IMPLEMENTATION CHANGES
 
 Replace dynamically created make files with static ones based on GNU make.
 
-Move interface headers to the stuff in src/ into include/ .  No make file
-outside of src/ should compile with -I for src/ .
-
 Use function pointers to access cleanup code in xmlrpc_DECREF?
 
 Or even better: Should we create some kind of class-like system to declare
@@ -69,5 +66,5 @@ Fix abstract XML parser API to access children via functions named
 xml_element_child(env,elem,index) and xml_element_child_count(env,elem).
 Clean up corresponding client code.
 
-Make a more compact form of setting an error condition than
-xmlrpc_env_set_fault_formatted(envP, XMLRPC_INTERNAL_ERROR, ...).
+Make the C++ implementation less based on the C functions
+
