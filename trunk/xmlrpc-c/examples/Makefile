@@ -32,7 +32,7 @@ CLIENTPROGS_C = \
   xmlrpc_asynch_client \
 
 SERVERPROGS_CGI = \
-  sample-cgi.cgi
+  xnlrpc_sample_add_server.cgi
 
 SERVERPROGS_ABYSS = \
   xmlrpc_loop_server \
@@ -73,7 +73,7 @@ cpp/all:
 $(CLIENTPROGS_C):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
 
-$(SERVERPROGS_CGI):%.cgi:%.o
+$(SERVERPROGS_CGI):%.cgi:%_cgi.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_CGI)
 
 $(SERVERPROGS_ABYSS):%:%.o

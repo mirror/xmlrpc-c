@@ -3,6 +3,10 @@
 
 1.3 - not yet
 
+  * BJH: Break up 'rpctest', rename to 'test'.
+
+  * BJH: Renamed CGI stuff, add non-builtin-registry style of CGI server.
+
   * BJH: Builds on AIX - new __inline definition, uint32_t instead of uint32,
     et al.
 

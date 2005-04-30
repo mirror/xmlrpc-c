@@ -9,8 +9,8 @@ include $(BUILDDIR)/Makefile.config
 
 HEADERS_TO_INSTALL = \
   xmlrpc-c/base.h \
-  xmlrpc-c/server.h \
   xmlrpc-c/client.h \
+  xmlrpc-c/server.h \
   xmlrpc-c/server_abyss.h \
   xmlrpc-c/server_w32httpsys.h \
   xmlrpc-c/oldcppwrapper.h \
@@ -21,7 +21,7 @@ HEADERS_TO_INSTALL = \
 HEADERINST_PREFIX = /xmlrpc-c
 
 ifeq ($(ENABLE_CGI_SERVER),yes)
-  HEADERS_TO_INSTALL += xmlrpc-c/cgi.h
+  HEADERS_TO_INSTALL += xmlrpc-c/server_cgi.h
 endif
 
 default: all
