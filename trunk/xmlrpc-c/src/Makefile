@@ -19,8 +19,6 @@ WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
 CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
 LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
 
-TESTDATADIR = $(SRCDIR)/src/testdata
-
 CASPRINTF_OBJ = $(BUILDDIR)/lib/util/casprintf.lo
 
 TRANSPORT_OBJS =
@@ -78,27 +76,12 @@ TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_client.la libxmlrpc_server.la \
      libxmlrpc_server_abyss.la
 
 ifeq ($(ENABLE_CGI_SERVER),yes)
-  TARGET_LTLIBRARIES += libxmlrpc_cgi.la
+  TARGET_LTLIBRARIES += libxmlrpc_server_cgi.la
 endif
 
-PROGS = rpctest
-
-ifeq ($(ENABLE_EFENCE),yes)
-  TARGET_TESTPROGS += efrpctest efrpctest_wrapper
-endif
-
-all: $(TARGET_LTLIBRARIES) $(TARGET_LIBRARIES) $(PROGS) $(SUBDIRS:%=%/all)
+all: $(TARGET_LTLIBRARIES) $(TARGET_LIBRARIES) $(SUBDIRS:%=%/all)
 
 LDFLAGS = $(LADD)
-
-rpctest:%:%.o libxmlrpc.la libxmlrpc_server.la $(LIBXML)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
-
-rpctest.static:rpctest.o .libs/libxmlrpc.a .libs/libxmlrpc_server.a $(LIBXML)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
-
-efrpctest: rpctest.o libxmlrpc.la libxmlrpc_server.la $(LIBXML)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^ -lefence
 
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
 
@@ -114,13 +97,10 @@ libxmlrpc_server.la: xmlrpc_registry.lo
 libxmlrpc_server_abyss.la: xmlrpc_server_abyss.lo
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
-libxmlrpc_cgi.la: xmlrpc_cgi.lo
+libxmlrpc_server_cgi.la: xmlrpc_server_cgi.lo
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
-rpctest.o:%.o:%.c
-	$(CC) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
 
 $(LIB_OBJS):%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
@@ -133,24 +113,18 @@ $(LIBXMLRPC_SERVER_ABYSS_OBJS):%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(ABYSS_INCLUDES) \
 	  $(CFLAGS) $<
 
-xmlrpc_cgi.lo:%.lo:%.c
+xmlrpc_server_cgi.lo:%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) \
 	  $(CFLAGS) $<
 
 $(TRANSPORT_OBJS): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-efrpctest_wrapper: efrpctest_wrapper.sh
-	cp $< $@
-	chmod +x $@
-
 LTLIBRARIES_TO_INSTALL = $(TARGET_LTLIBRARIES)
 LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
 
-check: rpctest
-	for tst in $^; do \
-	  ./$$tst; \
-	done;
+check:
+	$(MAKE) -C test check
 
 .PHONY: install
 install: install-common
@@ -158,7 +132,6 @@ install: install-common
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local
 clean-local: cpp/clean
-	rm -f $(PROGS) rpctest.static
 
 distclean: clean distclean-common
 
