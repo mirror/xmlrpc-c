@@ -16,17 +16,15 @@ public:
         this->_help = "This method adds two integers together";
     }
     void
-    execute(vector<xmlrpc_c::value>  const params,
-            const xmlrpc_c::value ** const retvalPP) {
-
-        if (params.size() != 2)
-            throw(xmlrpc_c::fault("Wrong number of parameters"));
-        else {
-            xmlrpc_c::value_int addend(params[0]);
-            xmlrpc_c::value_int adder(params[1]);
-            
-            *retvalPP = new xmlrpc_c::value_int((int)addend + (int)adder);
-        }
+    execute(xmlrpc_c::param_list     const& paramList,
+            const xmlrpc_c::value ** const  retvalPP) {
+        
+        int const addend(paramList.getInt(0));
+        int const adder(paramList.getInt(1));
+        
+        paramList.verifyEnd(2);
+        
+        *retvalPP = new xmlrpc_c::value_int(addend + adder);
     }
 };
 
