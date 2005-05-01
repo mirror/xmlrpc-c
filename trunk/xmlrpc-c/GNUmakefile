@@ -87,7 +87,7 @@ install-compat-hdr:
 	  $(LN_S) xmlrpc-c/oldxmlrpc.h         xmlrpc.h; \
 	  $(LN_S) xmlrpc-c/client.h            xmlrpc_client.h; \
 	  $(LN_S) xmlrpc-c/server.h            xmlrpc_server.h; \
-	  $(LN_S) xmlrpc-c/cgi.h               xmlrpc_cgi.h; \
+	  $(LN_S) xmlrpc-c/server_cgi.h        xmlrpc_cgi.h; \
 	  $(LN_S) xmlrpc-c/server_abyss.h      xmlrpc_server_abyss.h; \
 	  $(LN_S) xmlrpc-c/server_w32httpsys.h xmlrpc_server_w32httpsys.h; \
 	  $(LN_S) xmlrpc-c/oldcppwrapper.hpp   XmlRpcCpp.h ;\

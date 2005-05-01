@@ -170,23 +170,6 @@ AC_MSG_RESULT($enable_cgi_server)
 ENABLE_CGI_SERVER=$enable_cgi_server
 AC_SUBST(ENABLE_CGI_SERVER)
 
-dnl Set up the appropriate Makefile substitutions.
-LIBXMLRPC_CGI_LA=
-XMLRPC_CGI_H=
-SAMPLE_CGI_CGI=
-INTEROP_CGI=
-if test x"$enable_cgi_server" != xno; then
-    FEATURE_LIST="cgi-server $FEATURE_LIST"
-    LIBXMLRPC_CGI_LA=libxmlrpc_cgi.la
-    XMLRPC_CGI_H=xmlrpc_cgi.h
-    SAMPLE_CGI_CGI=sample-cgi.cgi
-    INTEROP_CGI=interop.cgi
-fi
-AC_SUBST(LIBXMLRPC_CGI_LA)
-AC_SUBST(XMLRPC_CGI_H)
-AC_SUBST(SAMPLE_CGI_CGI)
-AC_SUBST(INTEROP_CGI)
-
 dnl Check to see if we should build our C++ stuff.
 AC_MSG_CHECKING(whether to build C++ wrappers and tools)
 AC_ARG_ENABLE(cplusplus,
@@ -666,7 +649,6 @@ AC_OUTPUT(xmlrpc-c-config \
           Makefile.config \
           xmlrpc_config.h \
           xmlrpc-c.spec \
-          src/testdata/Makefile \
           doc/Makefile \
           lib/expat/Makefile \
           lib/expat/xmlparse/Makefile \

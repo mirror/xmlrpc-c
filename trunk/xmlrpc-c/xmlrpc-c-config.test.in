@@ -46,7 +46,7 @@ while test $# -gt 0; do
       ;;
     cgi-server)
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_cgi.a $the_libs"
+      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_cgi.a $the_libs"
       ;;
     abyss-server)
       the_libs="@LIBABYSS_LDADD@ $the_libs"
