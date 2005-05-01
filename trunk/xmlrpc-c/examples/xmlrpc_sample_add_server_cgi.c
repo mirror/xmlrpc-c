@@ -5,7 +5,7 @@
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
-#include <xmlrpc-c/cgi.h>
+#include <xmlrpc-c/server_cgi.h>
 
 #include "config.h"  /* information about this build environment */
 
@@ -34,17 +34,14 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
-    xmlrpc_server_abyss_parms serverparm;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
 
-    if (argc-1 != 1) {
-        fprintf(stderr, "You must specify 1 argument:  The TCP port "
-                "number on which the server will accept connections "
-                "for RPCs.  You specified %d arguments.\n",  argc-1);
+    if (argc-1 > 0 && argv==argv) {
+        fprintf(stderr, "There are no arguments to a CGI script\n");
         exit(1);
     }
-    
+
     xmlrpc_env_init(&env);
 
     registryP = xmlrpc_registry_new(&env);
@@ -52,7 +49,7 @@ main(int           const argc,
     xmlrpc_registry_add_method(
         &env, registryP, NULL, "sample.add", &sample_add, NULL);
 
-    xmlrpc_cgi_process_call2(registryP);
+    xmlrpc_server_cgi_process_call(registryP);
 
     xmlrpc_registry_free(registryP);
 
