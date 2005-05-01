@@ -45,6 +45,12 @@ struct clientTransport {
            from the time the user requests it until the time the user 
            acknowledges it is done.
         */
+    CURL * syncCurlSessionP;
+        /* Handle for a Curl library session object that we use for
+           all synchronous RPCs.  An async RPC has one of its own,
+           and consequently does not share things such as persistent
+           connections and cookies with any other RPC.
+        */
     const char * networkInterface;
         /* This identifies the network interface on the local side to
            use for the session.  It is an ASCIIZ string in the form
@@ -70,12 +76,13 @@ struct clientTransport {
 };
 
 typedef struct {
-    /* This is all stuff that really ought to be in the CURL object,
+    /* This is all stuff that really ought to be in a Curl object,
        but the Curl library is a little too simple for that.  So we
-       build a layer on top of it, and call it a "transaction," as
-       distinct from the Curl "session" represented by the CURL object.  */
+       build a layer on top of Curl, and define this "transaction," as
+       an object subordinate to a Curl "session."
+       */
     CURL * curlSessionP;
-        /* Handle for Curl library session object */
+        /* Handle for the Curl session that hosts this transaction */
     char curlError[CURL_ERROR_SIZE];
         /* Error message from Curl */
     struct curl_slist * headerList;
@@ -87,6 +94,12 @@ typedef struct {
 
 typedef struct {
     struct list_head link;  /* link in transport's list of RPCs */
+    CURL * curlSessionP;
+        /* The Curl session we use for this transaction.  Note that only
+           one RPC at a time can use a particular Curl session, so this
+           had better not be a session that some other RPC is using
+           simultaneously.
+        */
     curlTransaction * curlTransactionP;
         /* The object which does the HTTP transaction, with no knowledge
            of XML-RPC or Xmlrpc-c.
@@ -166,6 +179,84 @@ initWindowsStuff(xmlrpc_env * const envP) {
 }
 
 
+
+static void
+getXportParms(xmlrpc_env *  const envP,
+              const struct xmlrpc_curl_xportparms * const curlXportParmsP,
+              size_t        const parmSize,
+              const char ** const networkInterfaceP,
+              xmlrpc_bool * const sslVerifyPeerP,
+              xmlrpc_bool * const sslVerifyHostP) {
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
+        *networkInterfaceP = NULL;
+    else if (curlXportParmsP->network_interface == NULL)
+        *networkInterfaceP = NULL;
+    else {
+        *networkInterfaceP = strdup(curlXportParmsP->network_interface);
+        if (*networkInterfaceP == NULL)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTERNAL_ERROR,
+                "Unable to allocate space for network interface name.");
+        
+        if (!curlXportParmsP || 
+            parmSize < XMLRPC_CXPSIZE(no_ssl_verifypeer))
+            *sslVerifyPeerP = TRUE;
+        else
+            *sslVerifyPeerP = !curlXportParmsP->no_ssl_verifypeer;
+        
+        if (!curlXportParmsP || 
+            parmSize < XMLRPC_CXPSIZE(no_ssl_verifyhost))
+            *sslVerifyHostP = TRUE;
+        else
+            *sslVerifyHostP = !curlXportParmsP->no_ssl_verifyhost;
+
+        if (envP->fault_occurred)
+            strfree(*networkInterfaceP);
+    }
+}
+
+
+
+static void
+createSyncCurlSession(xmlrpc_env * const envP,
+                      CURL **      const curlSessionPP) {
+/*----------------------------------------------------------------------------
+   Create a Curl session to be used for multiple serial transactions.
+   The Curl session we create is not complete -- it still has to be
+   further set up for each particular transaction.
+
+   We can't set up anything here that changes from one transaction to the
+   next.
+
+   We don't bother setting up anything that has to be set up for an
+   asynchronous transaction because code that is common between synchronous
+   and asynchronous transactions takes care of that anyway.
+
+   That leaves things such as cookies that don't exist for asynchronous
+   transactions, and are common to multiple serial synchronous
+   transactions.
+-----------------------------------------------------------------------------*/
+    CURL * const curlSessionP = curl_easy_init();
+
+    if (curlSessionP == NULL)
+        xmlrpc_faultf(envP, "Could not create Curl session.  "
+                      "curl_easy_init() failed.");
+    else {
+        *curlSessionPP = curlSessionP;
+    }
+}
+
+
+
+static void
+destroySyncCurlSession(CURL * const curlSessionP) {
+
+    curl_easy_cleanup(curlSessionP);
+}
+
+
+
 static void 
 create(xmlrpc_env *                     const envP,
        int                              const flags ATTR_UNUSED,
@@ -205,28 +296,17 @@ create(xmlrpc_env *                     const envP,
            check into that.
         */
         
-        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(network_interface))
-            transportP->networkInterface = NULL;
-        else if (curlXportParmsP->network_interface == NULL)
-            transportP->networkInterface = NULL;
-        else {
-            transportP->networkInterface =
-                strdup(curlXportParmsP->network_interface);
-            if (transportP->networkInterface == NULL)
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_INTERNAL_ERROR,
-                    "Unable to allocate space for network interface name.");
-        }
-        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(no_ssl_verifypeer))
-            transportP->sslVerifyPeer = TRUE;
-        else
-            transportP->sslVerifyPeer = !curlXportParmsP->no_ssl_verifypeer;
+        getXportParms(envP, curlXportParmsP, parm_size,
+                      &transportP->networkInterface,
+                      &transportP->sslVerifyPeer,
+                      &transportP->sslVerifyHost);
 
-        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(no_ssl_verifyhost))
-            transportP->sslVerifyHost = TRUE;
-        else
-            transportP->sslVerifyHost = !curlXportParmsP->no_ssl_verifyhost;
+        if (!envP->fault_occurred) {
+            createSyncCurlSession(envP, &transportP->syncCurlSessionP);
 
+            if (envP->fault_occurred)
+                strfree(transportP->networkInterface);
+        }                 
         if (envP->fault_occurred)
             free(transportP);
     }
@@ -254,12 +334,14 @@ destroy(struct clientTransport * const clientTransportP) {
 
     XMLRPC_ASSERT(list_is_empty(&clientTransportP->rpcList));
 
-    pthread_mutex_destroy(&clientTransportP->listLock);
+    destroySyncCurlSession(clientTransportP->syncCurlSessionP);
 
     if (clientTransportP->networkInterface)
         strfree(clientTransportP->networkInterface);
 
     curl_global_cleanup();
+
+    pthread_mutex_destroy(&clientTransportP->listLock);
 
     termWindowStuff();
 
@@ -354,6 +436,7 @@ setupCurlSession(xmlrpc_env *       const envP,
 
 static void
 createCurlTransaction(xmlrpc_env *               const envP,
+                      CURL *                     const curlSessionP,
                       const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *         const callXmlP,
                       xmlrpc_mem_block *         const responseXmlP,
@@ -366,39 +449,25 @@ createCurlTransaction(xmlrpc_env *               const envP,
 
     MALLOCVAR(curlTransactionP);
     if (curlTransactionP == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "No memory to create Curl transaction.");
+        xmlrpc_faultf(envP, "No memory to create Curl transaction.");
     else {
-        CURL * const curlSessionP = curl_easy_init();
-    
-        if (curlSessionP == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR,
-                "Could not create Curl session.  curl_easy_init() failed.");
+        curlTransactionP->curlSessionP = curlSessionP;
+
+        curlTransactionP->serverUrl = strdup(serverP->_server_url);
+        if (curlTransactionP->serverUrl == NULL)
+            xmlrpc_faultf(envP, "Out of memory to store server URL.");
         else {
-            curlTransactionP->curlSessionP = curlSessionP;
-
-            curlTransactionP->serverUrl = strdup(serverP->_server_url);
-            if (curlTransactionP->serverUrl == NULL)
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_INTERNAL_ERROR,
-                    "Out of memory to store server URL.");
-            else {
-                createCurlHeaderList(envP, serverP, 
-                                     &curlTransactionP->headerList);
-
-                if (!envP->fault_occurred)
-                    setupCurlSession(envP, curlTransactionP,
-                                     callXmlP, responseXmlP,
-                                     networkInterface, 
-                                     sslVerifyPeer, sslVerifyHost);
-
-                if (envP->fault_occurred)
-                    strfree(curlTransactionP->serverUrl);
-            }
+            createCurlHeaderList(envP, serverP, 
+                                 &curlTransactionP->headerList);
+            
+            if (!envP->fault_occurred)
+                setupCurlSession(envP, curlTransactionP,
+                                 callXmlP, responseXmlP,
+                                 networkInterface, 
+                                 sslVerifyPeer, sslVerifyHost);
+            
             if (envP->fault_occurred)
-                curl_easy_cleanup(curlSessionP);
+                strfree(curlTransactionP->serverUrl);
         }
         if (envP->fault_occurred)
             free(curlTransactionP);
@@ -413,7 +482,6 @@ destroyCurlTransaction(curlTransaction * const curlTransactionP) {
 
     curl_slist_free_all(curlTransactionP->headerList);
     strfree(curlTransactionP->serverUrl);
-    curl_easy_cleanup(curlTransactionP->curlSessionP);
 
     free(curlTransactionP);
 }
@@ -498,35 +566,32 @@ doAsyncRpc(void * arg) {
 
 
 static void
-createRpcThread(xmlrpc_env *              const envP,
-                rpc *                     const rpcP,
-                pthread_t *               const threadP) {
+createThread(xmlrpc_env * const envP,
+             void * (*threadRoutine)(void *),
+             rpc *        const rpcP,
+             pthread_t *  const threadP) {
 
     int rc;
 
-    rc = pthread_create(threadP, NULL, doAsyncRpc, rpcP);
+    rc = pthread_create(threadP, NULL, threadRoutine, rpcP);
     switch (rc) {
     case 0: 
         break;
     case EAGAIN:
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "pthread_create() failed:  System Resources exceeded.");
+        xmlrpc_faultf(envP, "pthread_create() failed.  "
+                      "System resources exceeded.");
         break;
     case EINVAL:
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "pthread_create() failed:  Param Error for attr.");
+        xmlrpc_faultf(envP, "pthread_create() failed.  "
+                      "Parameter error");
         break;
     case ENOMEM:
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "pthread_create() failed:  No memory for new thread.");
+        xmlrpc_faultf(envP, "pthread_create() failed.  "
+                      "No memory for new thread.");
         break;
     default:
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "pthread_create() failed: Unrecognized error code %d.", rc);
+        xmlrpc_faultf(envP, "pthread_create() failed.  "
+                      "Unrecognized error code %d.", rc);
         break;
     }
 }
@@ -534,8 +599,9 @@ createRpcThread(xmlrpc_env *              const envP,
 
 
 static void
-rpcCreate(xmlrpc_env *               const envP,
+createRpc(xmlrpc_env *               const envP,
           struct clientTransport *   const clientTransportP,
+          CURL *                     const curlSessionP,
           const xmlrpc_server_info * const serverP,
           xmlrpc_mem_block *         const callXmlP,
           xmlrpc_mem_block *         const responseXmlP,
@@ -556,7 +622,9 @@ rpcCreate(xmlrpc_env *               const envP,
         rpcP->responseXmlP = responseXmlP;
         rpcP->threadExists = FALSE;
 
+        rpcP->curlSessionP = curlSessionP;
         createCurlTransaction(envP,
+                              curlSessionP,
                               serverP,
                               callXmlP, responseXmlP, 
                               clientTransportP->networkInterface, 
@@ -564,19 +632,13 @@ rpcCreate(xmlrpc_env *               const envP,
                               clientTransportP->sslVerifyHost,
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
-            if (complete) {
-                createRpcThread(envP, rpcP, &rpcP->thread);
-                if (!envP->fault_occurred)
-                    rpcP->threadExists = TRUE;
-            }
-            if (!envP->fault_occurred) {
-                list_init_header(&rpcP->link, rpcP);
-                pthread_mutex_lock(&clientTransportP->listLock);
-                list_add_head(&clientTransportP->rpcList, &rpcP->link);
-                pthread_mutex_unlock(&clientTransportP->listLock);
-            }
+            list_init_header(&rpcP->link, rpcP);
+            pthread_mutex_lock(&clientTransportP->listLock);
+            list_add_head(&clientTransportP->rpcList, &rpcP->link);
+            pthread_mutex_unlock(&clientTransportP->listLock);
+            
             if (envP->fault_occurred)
-                    destroyCurlTransaction(rpcP->curlTransactionP);
+                destroyCurlTransaction(rpcP->curlTransactionP);
         }
         if (envP->fault_occurred)
             free(rpcP);
@@ -587,7 +649,7 @@ rpcCreate(xmlrpc_env *               const envP,
 
 
 static void 
-rpcDestroy(rpc * const rpcP) {
+destroyRpc(rpc * const rpcP) {
 
     XMLRPC_ASSERT_PTR_OK(rpcP);
     XMLRPC_ASSERT(!rpcP->threadExists);
@@ -598,6 +660,27 @@ rpcDestroy(rpc * const rpcP) {
 
     free(rpcP);
 }
+
+
+
+static void
+performRpc(xmlrpc_env * const envP,
+           rpc *        const rpcP) {
+
+    performCurlTransaction(envP, rpcP->curlTransactionP);
+}
+
+
+
+static void
+startRpc(xmlrpc_env * const envP,
+         rpc *        const rpcP) {
+
+    createThread(envP, &doAsyncRpc, rpcP, &rpcP->thread);
+    if (!envP->fault_occurred)
+        rpcP->threadExists = TRUE;
+}
+
 
 
 static void 
@@ -621,15 +704,31 @@ sendRequest(xmlrpc_env *               const envP,
 
     responseXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
     if (!envP->fault_occurred) {
-        rpcCreate(envP, clientTransportP, serverP, callXmlP, responseXmlP,
-                  complete, callInfoP,
-                  &rpcP);
+        CURL * const curlSessionP = curl_easy_init();
+    
+        if (curlSessionP == NULL)
+            xmlrpc_faultf(envP, "Could not create Curl session.  "
+                          "curl_easy_init() failed.");
+        else {
+            createRpc(envP, clientTransportP, curlSessionP, serverP,
+                      callXmlP, responseXmlP,
+                      complete, callInfoP,
+                      &rpcP);
 
+            if (!envP->fault_occurred) {
+                startRpc(envP, rpcP);
+                
+                if (envP->fault_occurred)
+                    destroyRpc(rpcP);
+            }
+            if (envP->fault_occurred)
+                curl_easy_cleanup(curlSessionP);
+        }
         if (envP->fault_occurred)
             XMLRPC_MEMBLOCK_FREE(char, responseXmlP);
     }
-    /* The user's eventual finish_asynch call will destroy this RPC
-       and response buffer
+    /* The user's eventual finish_asynch call will destroy this RPC,
+       Curl session, and response buffer
     */
 }
 
@@ -652,7 +751,9 @@ finishRpc(struct list_head * const headerP,
 
     XMLRPC_MEMBLOCK_FREE(char, rpcP->responseXmlP);
 
-    rpcDestroy(rpcP);
+    curl_easy_cleanup(rpcP->curlSessionP);
+
+    destroyRpc(rpcP);
 
     return NULL;
 }
@@ -699,14 +800,18 @@ call(xmlrpc_env *               const envP,
 
     responseXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
     if (!envP->fault_occurred) {
-        rpcCreate(envP, clientTransportP, serverP, callXmlP, responseXmlP,
-                  NULL, NULL, &rpcP);
+        createRpc(envP, clientTransportP, clientTransportP->syncCurlSessionP,
+                  serverP,
+                  callXmlP, responseXmlP,
+                  NULL, NULL,
+                  &rpcP);
+
         if (!envP->fault_occurred) {
-            performCurlTransaction(envP, rpcP->curlTransactionP);
-            
+            performRpc(envP, rpcP);
+
             *responsePP = responseXmlP;
             
-            rpcDestroy(rpcP);
+            destroyRpc(rpcP);
         }
         if (envP->fault_occurred)
             XMLRPC_MEMBLOCK_FREE(char, responseXmlP);
