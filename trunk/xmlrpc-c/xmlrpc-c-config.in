@@ -72,7 +72,7 @@ while test $# -gt 0; do
       ;;
     cgi-server)
       the_libs="-lxmlrpc_server $the_libs"
-      the_libs="-lxmlrpc_cgi $the_libs"
+      the_libs="-lxmlrpc_server_cgi $the_libs"
       if test "${needCpp}" = "yes"; then
         # Unfortunately, there is just one CPP library for both client
         # and server, and it needs both client and server base
