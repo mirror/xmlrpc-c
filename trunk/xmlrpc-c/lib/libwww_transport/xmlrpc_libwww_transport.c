@@ -65,9 +65,9 @@
 struct clientTransport {
     int saved_flags;
     HTList *xmlrpc_conversions;
-    HTAssocList * cookieListP;
-        /* This is a list of all the cookies that the server has set,
-           via responses to prior requests.
+    void * cookieJarP;
+        /* This is a collection of all the cookies that servers have set
+           via responses to prior requests.  It's not implemented today.
         */
     bool tracingOn;
 };
@@ -97,10 +97,22 @@ typedef struct {
 
 
 
-/*=========================================================================
-**  Initialization and Shutdown
-**=========================================================================
-*/
+static void
+createCookieJar(xmlrpc_env * const envP ATTR_UNUSED,
+                void **      const cookieJarP ATTR_UNUSED) {
+
+    /* Cookies not implemented yet */
+}
+
+
+
+static void
+destroyCookieJar(void * cookieJarP ATTR_UNUSED) {
+
+    /* Cookies not implemented yet */
+}
+
+
 
 static void
 initLibwww(const char * const appname,
@@ -174,23 +186,24 @@ create(xmlrpc_env *                     const envP,
 
     clientTransportP->saved_flags = flags;
 
-    clientTransportP->cookieListP = HTAssocList_new();
-    if (clientTransportP->cookieListP == NULL)
-        xmlrpc_faultf(envP, "libwww unable to create a (empty) cookie list");
-    else {
+    createCookieJar(envP, &clientTransportP->cookieJarP);
+    if (!envP->fault_occurred) {
         if (!(clientTransportP->saved_flags & 
               XMLRPC_CLIENT_SKIP_LIBWWW_INIT))
             initLibwww(appname, appversion);
-    }    
 
-    /* Set up our list of conversions for XML-RPC requests. This is a
-    ** massively stripped-down version of the list in libwww's HTInit.c.
-    ** XXX - This is hackish; 10.0 is an arbitrary, large quality factor
-    ** designed to override the built-in converter for XML. */
-    clientTransportP->xmlrpc_conversions = HTList_new();
-    HTConversion_add(clientTransportP->xmlrpc_conversions, "text/xml", "*/*",
-                     HTThroughLine, 10.0, 0.0, 0.0);
+        /* Set up our list of conversions for XML-RPC requests. This is a
+        ** massively stripped-down version of the list in libwww's HTInit.c.
+        ** XXX - This is hackish; 10.0 is an arbitrary, large quality factor
+        ** designed to override the built-in converter for XML. */
+        clientTransportP->xmlrpc_conversions = HTList_new();
+        HTConversion_add(clientTransportP->xmlrpc_conversions, 
+                         "text/xml", "*/*",
+                         HTThroughLine, 10.0, 0.0, 0.0);
 
+        if (envP->fault_occurred)
+            destroyCookieJar(clientTransportP->cookieJarP);
+    }
     if (getenv("XMLRPC_LIBWWW_TRACE"))
         clientTransportP->tracingOn = TRUE;
     else
@@ -209,7 +222,7 @@ destroy(struct clientTransport * const clientTransportP) {
     if (!(clientTransportP->saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
         HTProfile_delete();
     }
-    HTAssocList_delete(clientTransportP->cookieListP);
+    destroyCookieJar(clientTransportP->cookieJarP);
 }
 
 
@@ -276,25 +289,27 @@ set_fault_from_http_request(xmlrpc_env * const envP,
 
 
 static BOOL 
-setCookie(HTRequest * const request ATTR_UNUSED, 
-          HTCookie *  const cookieP,
+setCookie(HTRequest * const request,
+          HTCookie *  const cookieP ATTR_UNUSED,
           void *      const param ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
   This is the callback from libwww to tell us the server (according to
   its response) wants us to store a cookie (and include it in future
   requests).
+
+  We assume that the cookies "domain" is the server's host name
+  (there are options on the libwww connection to make libwww call this
+  callback only when that's the case).
 -----------------------------------------------------------------------------*/
     rpc * const rpcP = HTRequest_context(request);
     struct clientTransport * const clientTransportP = rpcP->clientTransportP;
 
     BOOL retval;
 
-    if (cookieP)
-        retval = HTAssocList_replaceObject(clientTransportP->cookieListP,
-                                           HTCookie_name(cookieP),
-                                           HTCookie_value(cookieP));
-    else
-        retval = YES;
+    /* Avoid unused variable warning */
+    if (clientTransportP->cookieJarP == clientTransportP->cookieJarP) {}
+    /* Cookies are not implemented today */
+    retval = NO;
 
     return retval;
 }
@@ -302,36 +317,22 @@ setCookie(HTRequest * const request ATTR_UNUSED,
 
 
 static HTAssocList *
-cookiesForHost(const char *  const host,
-               HTAssocList * const cookieJarP) {
+cookiesForHost(const char * const host ATTR_UNUSED,
+               void *       const cookieJarP ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
   Find and return all the cookies in jar 'cookieJarP' that are for the
   host 'host'.
 -----------------------------------------------------------------------------*/
     HTAssocList * hisCookiesP;
-    HTAssocList * cursor = cookieJarP;
 
     hisCookiesP = HTAssocList_new();
 
-    if (hisCookiesP != NULL) {
-        xmlrpc_bool error;
-        error = FALSE; /* initial value */
-        while (cursor && !error) {
-            HTCookie * const cookieP = HTAssocList_nextObject(cursor);
-
-            if (strcmp(HTCookie_domain(cookieP), host) == 0) {
-                BOOL success;
-
-                success = HTAssocList_addObject(hisCookiesP,
-                                                HTCookie_name(cookieP),
-                                                HTCookie_value(cookieP));
-                error = !success;
-            }
-        }
-        if (error) {
-            HTAssocList_delete(hisCookiesP);
-            hisCookiesP = NULL;
-        }
+    if (hisCookiesP) {
+        /* Cookies are not implemented yet */
+        /* Library/Examples/cookie.c in the w3c-libwww source tree contains
+           an example of constructing the cookie list we are supposed to
+           return.  But today, we return an empty list.
+        */
     }
     return hisCookiesP;
 }
@@ -351,7 +352,7 @@ findCookie(HTRequest * const request,
         HTAnchor_address((HTAnchor *) HTRequest_anchor(request));
     const char * const host = HTParse(addr, "", PARSE_HOST);
 
-    return cookiesForHost(host, clientTransportP->cookieListP);
+    return cookiesForHost(host, clientTransportP->cookieJarP);
 }
 
 
@@ -439,6 +440,9 @@ rpcCreate(xmlrpc_env *               const envP,
     HTCookie_setCookieMode(HT_COOKIE_ACCEPT | 
                            HT_COOKIE_SEND | 
                            HT_COOKIE_SAME_HOST);
+
+    /* Cookies aren't implemented today; reset. */
+    HTCookie_setCookieMode(0);
     
     /* Create a HTRequest object. */
     rpcP->request = HTRequest_new();

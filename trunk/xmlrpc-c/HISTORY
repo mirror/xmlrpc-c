@@ -12,8 +12,10 @@
 
   * BJH: Add xmlrpc_datetime_new_sec(), xmlrpc_read_datetime_sec().
 
-  * BJH: libwww transport does all cookies, not just "auth".  It no longer
-    uses an environment variable for auth.
+  * BJH: libwww transport does not do the weird handling of the "auth"
+    cookie.  It used to have a global cookie (one cookie shared by all
+    servers) called "auth", which it maintained in an environment
+    variable.
 
   * BJH: new C++ library designed for pure C++ applications
     (Application never sees the underlying C structures or reference
