@@ -32,7 +32,7 @@ CLIENTPROGS_C = \
   xmlrpc_asynch_client \
 
 SERVERPROGS_CGI = \
-  xnlrpc_sample_add_server.cgi
+  xmlrpc_sample_add_server.cgi
 
 SERVERPROGS_ABYSS = \
   xmlrpc_loop_server \
