@@ -275,10 +275,10 @@ set_fault_from_http_request(xmlrpc_env * const envP,
 
 
 
-PRIVATE BOOL 
-xmlrpc_authcookie_store(HTRequest * const request ATTR_UNUSED, 
-                        HTCookie *  const cookieP,
-                        void *      const param ATTR_UNUSED) {
+static BOOL 
+setCookie(HTRequest * const request ATTR_UNUSED, 
+          HTCookie *  const cookieP,
+          void *      const param ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
   This is the callback from libwww to tell us the server (according to
   its response) wants us to store a cookie (and include it in future
@@ -302,49 +302,56 @@ xmlrpc_authcookie_store(HTRequest * const request ATTR_UNUSED,
 
 
 static HTAssocList *
-alistDup(HTAssocList * const listToCopyP) {
+cookiesForHost(const char *  const host,
+               HTAssocList * const cookieJarP) {
 /*----------------------------------------------------------------------------
-   Create a copy of the libwww associative list.
+  Find and return all the cookies in jar 'cookieJarP' that are for the
+  host 'host'.
 -----------------------------------------------------------------------------*/
-    HTAssocList * copyP;
-    HTAssocList * cursor = listToCopyP;
+    HTAssocList * hisCookiesP;
+    HTAssocList * cursor = cookieJarP;
 
-    copyP = HTAssocList_new();
+    hisCookiesP = HTAssocList_new();
 
-    if (copyP != NULL) {
+    if (hisCookiesP != NULL) {
         xmlrpc_bool error;
         error = FALSE; /* initial value */
         while (cursor && !error) {
             HTCookie * const cookieP = HTAssocList_nextObject(cursor);
 
-            BOOL success;
+            if (strcmp(HTCookie_domain(cookieP), host) == 0) {
+                BOOL success;
 
-            success = HTAssocList_addObject(copyP, 
-                                            HTCookie_name(cookieP),
-                                            HTCookie_value(cookieP));
-            error = !success;
+                success = HTAssocList_addObject(hisCookiesP,
+                                                HTCookie_name(cookieP),
+                                                HTCookie_value(cookieP));
+                error = !success;
+            }
         }
         if (error) {
-            HTAssocList_delete(copyP);
-            copyP = NULL;
+            HTAssocList_delete(hisCookiesP);
+            hisCookiesP = NULL;
         }
     }
-    return copyP;
+    return hisCookiesP;
 }
 
 
 
-PRIVATE HTAssocList *
-xmlrpc_authcookie_grab(HTRequest * const request ATTR_UNUSED,
-                       void *      const param ATTR_UNUSED) {
+static HTAssocList *
+findCookie(HTRequest * const request,
+           void *      const param ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
   This is the callback from libwww to get the cookies to include in a
   request (presumably values the server set via a prior response).
 -----------------------------------------------------------------------------*/
     rpc * const rpcP = HTRequest_context(request);
     struct clientTransport * const clientTransportP = rpcP->clientTransportP;
+    const char * const addr = 
+        HTAnchor_address((HTAnchor *) HTRequest_anchor(request));
+    const char * const host = HTParse(addr, "", PARSE_HOST);
 
-    return alistDup(clientTransportP->cookieListP);
+    return cookiesForHost(host, clientTransportP->cookieListP);
 }
 
 
@@ -428,9 +435,11 @@ rpcCreate(xmlrpc_env *               const envP,
 
     /* Start cookie handler. */
     HTCookie_init();
-    HTCookie_setCallbacks(xmlrpc_authcookie_store, NULL,
-                          xmlrpc_authcookie_grab, NULL);
-
+    HTCookie_setCallbacks(setCookie, NULL, findCookie, NULL);
+    HTCookie_setCookieMode(HT_COOKIE_ACCEPT | 
+                           HT_COOKIE_SEND | 
+                           HT_COOKIE_SAME_HOST);
+    
     /* Create a HTRequest object. */
     rpcP->request = HTRequest_new();
     XMLRPC_FAIL_IF_NULL(rpcP, envP, XMLRPC_INTERNAL_ERROR,
@@ -518,6 +527,9 @@ rpcDestroy(rpc * const rpcP) {
     ** libwww for something else, so please feel free to comment it out. */
     /* XMLRPC_ASSERT(HTAnchor_document(rpcP->dest_anchor) == NULL);
      */
+
+    HTCookie_deleteCallbacks();
+    HTCookie_terminate();
 
     free(rpcP);
 }
