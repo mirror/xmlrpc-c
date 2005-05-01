@@ -67,6 +67,8 @@ by a program rather than a person to be of use.
 [<b>-transport=</b><i>transportname</i>]
 [<b>-username=</b><i>username</i> <b>-password=</b><i>password</i>]
 [<b>-curlinterface</b>={<i>interface</i>|<i>host</i>}]
+[<b>-curlnoverifypeer</b>]
+[<b>-curlnoverifyhost</b>]
 
 <p><i>parameter</i>:
 
@@ -192,14 +194,46 @@ some ambiguity.
 
 </ul>
 
-<p>If the transport is not Curl, this option is worse than useless.
-It causes <b>xmlrpc</b> to pass arbitrary bits to the transport as its
-parameters, which the transport may interpret in an unpredictable way.
+<p>You must specify <b>-transport=curl</b> if you specify this option.
 
-<p>You must specify a transport with <b>-transport</b> if you specify
-this option.  Ordinarily, that option must be <b>-transport=curl</b>.
+<dt><b>-curlnoverifypeer</b>
+
+<dd>
+This option gives the &quot;no_ssl_verifypeer&quot; option for the Curl
+XML transport, which is essentially the CURLOPT_SSL_VERIFYPEER option
+of the Curl library.
+
+<p>See the <b>curl_easy_setopt()</b> man page for details on this, but
+essentially it means that the client does not authenticate the server's
+certificate of identity -- it just believes whatever the server says.
+
+<p>You may want to use <b>-curlnoverifyhost</b> as well.  Since you're
+not authenticating the server's identity, there's not much sense in
+checking it.
+
+<p>You must specify <b>-transport=curl</b> if you specify this option.
+
+
+<dt><b>-curlnoverifyhost</b>
+
+<dd>
+This option gives the &quot;no_ssl_verifyhost&quot; option for the Curl
+XML transport, which is essentially the CURLOPT_SSL_VERIFYHOST option
+of the Curl library.
+
+<p>See the <b>curl_easy_setopt()</b> man page for details on this, but
+essentially it means that the client does not verify the server's
+identity.  It just assumes that if the server answers the IP address
+of the server as indicated by the URL (probably via host name), then
+it's the intended server.
+
+<p>You may want to use <b>-curlnoverifypeer</b> as well.  As long as
+you don't care who the server says it is, there's no point in
+authenticating its identity.
+
+<p>You must specify <b>-transport=curl</b> if you specify this option.
+
 
 </dl>
 
 </body>
-

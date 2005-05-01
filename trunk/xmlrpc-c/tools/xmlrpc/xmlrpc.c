@@ -68,6 +68,8 @@ struct cmdlineInfo {
         /* "network interface" parameter for the Curl transport.  (Not
            valid if 'transport' names a non-Curl transport).
         */
+    xmlrpc_bool   curlnoverifypeer;
+    xmlrpc_bool   curlnoverifyhost;
 };
 
 
@@ -128,13 +130,14 @@ chooseTransport(xmlrpc_env *  const envP ATTR_UNUSED,
                 const char ** const transportPP) {
     
     const char * transportOpt = cmd_getOptionValueString(cp, "transport");
-    const char * curlinterfaceOpt = 
-        cmd_getOptionValueString(cp, "curlinterface");
 
     if (transportOpt) {
         *transportPP = transportOpt;
     } else {
-        if (curlinterfaceOpt)
+        if (cmd_optionIsPresent(cp, "curlinterface") || 
+            cmd_optionIsPresent(cp, "curlnoverifypeer") ||
+            cmd_optionIsPresent(cp, "curlnoverifyhost"))
+
             *transportPP = strdup("curl");
         else
             *transportPP = NULL;
@@ -153,10 +156,12 @@ parseCommandLine(xmlrpc_env *         const envP,
 
     const char * error;
 
-    cmd_defineOption(cp, "transport", OPTTYPE_STRING);
-    cmd_defineOption(cp, "username",  OPTTYPE_STRING);
-    cmd_defineOption(cp, "password",  OPTTYPE_STRING);
-    cmd_defineOption(cp, "curlinterface",  OPTTYPE_STRING);
+    cmd_defineOption(cp, "transport",        OPTTYPE_STRING);
+    cmd_defineOption(cp, "username",         OPTTYPE_STRING);
+    cmd_defineOption(cp, "password",         OPTTYPE_STRING);
+    cmd_defineOption(cp, "curlinterface",    OPTTYPE_STRING);
+    cmd_defineOption(cp, "curlnoverifypeer", OPTTYPE_STRING);
+    cmd_defineOption(cp, "curlnoverifyhost", OPTTYPE_STRING);
 
     cmd_processOptions(cp, argc, argv, &error);
 
@@ -171,10 +176,21 @@ parseCommandLine(xmlrpc_env *         const envP,
             setError(envP, "When you specify -username, you must also "
                      "specify -password.");
         else {
+            chooseTransport(envP, cp, &cmdlineP->transport);
+
             cmdlineP->curlinterface = 
                 cmd_getOptionValueString(cp, "curlinterface");
+            cmdlineP->curlnoverifypeer =
+                cmd_optionIsPresent(cp, "curlnoverifypeer");
+            cmdlineP->curlnoverifyhost =
+                cmd_optionIsPresent(cp, "curlnoverifyhost");
 
-            chooseTransport(envP, cp, &cmdlineP->transport);
+            if (strcmp(cmdlineP->transport, "curl") != 0 &&
+                (cmdlineP->curlinterface ||
+                 cmdlineP->curlnoverifypeer ||
+                 cmdlineP->curlnoverifyhost)
+                setError(envP, "You may not specify a Curl transport "
+                         "option unless you also specify -transport=curl");
 
             processArguments(envP, cp, cmdlineP);
         }
@@ -704,6 +720,8 @@ static void
 doCall(xmlrpc_env *               const envP,
        const char *               const transport,
        const char *               const curlinterface,
+       xmlrpc_bool                const curlnoverifypeer,
+       xmlrpc_bool                const curlnoverifyhost,
        const xmlrpc_server_info * const serverInfoP,
        const char *               const methodName,
        xmlrpc_value *             const paramArrayP,
@@ -715,15 +733,17 @@ doCall(xmlrpc_env *               const envP,
 
     clientparms.transport = transport;
 
-    if (curlinterface) {
+    if (strcmp(transport, "curl") == 0) {
         struct xmlrpc_curl_xportparms * curlXportParmsP;
         MALLOCVAR(curlXportParmsP);
 
         curlXportParmsP->network_interface = curlinterface;
+        curlXportParmsP->no_ssl_verifypeer = curlnoverifypeer;
+        curlXportParmsP->no_ssl_verifyhost = curlnoverifyhost;
         
         clientparms.transportparmsP = (struct xmlrpc_xportparms *) 
             curlXportParmsP;
-        clientparms.transportparm_size = XMLRPC_CXPSIZE(network_interface);
+        clientparms.transportparm_size = XMLRPC_CXPSIZE(no_ssl_verifyhost);
     } else {
         clientparms.transportparmsP = NULL;
         clientparms.transportparm_size = 0;
@@ -788,7 +808,9 @@ main(int           const argc,
                      &serverInfoP);
     die_if_fault_occurred(&env);
 
-    doCall(&env, cmdline.transport, cmdline.curlinterface, serverInfoP, 
+    doCall(&env, cmdline.transport, cmdline.curlinterface,
+           cmdline.curlnoverifypeer, cmdline.curlnoverifyhost,
+           serverInfoP,
            cmdline.methodName, paramArrayP, 
            &resultP);
     die_if_fault_occurred(&env);
