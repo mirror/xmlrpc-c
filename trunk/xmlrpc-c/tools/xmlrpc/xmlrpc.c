@@ -185,10 +185,12 @@ parseCommandLine(xmlrpc_env *         const envP,
             cmdlineP->curlnoverifyhost =
                 cmd_optionIsPresent(cp, "curlnoverifyhost");
 
-            if (strcmp(cmdlineP->transport, "curl") != 0 &&
+            if ((!cmdlineP->transport || 
+                 strcmp(cmdlineP->transport, "curl") != 0)
+                &&
                 (cmdlineP->curlinterface ||
                  cmdlineP->curlnoverifypeer ||
-                 cmdlineP->curlnoverifyhost)
+                 cmdlineP->curlnoverifyhost))
                 setError(envP, "You may not specify a Curl transport "
                          "option unless you also specify -transport=curl");
 
@@ -733,7 +735,7 @@ doCall(xmlrpc_env *               const envP,
 
     clientparms.transport = transport;
 
-    if (strcmp(transport, "curl") == 0) {
+    if (transport && strcmp(transport, "curl") == 0) {
         struct xmlrpc_curl_xportparms * curlXportParmsP;
         MALLOCVAR(curlXportParmsP);
 
