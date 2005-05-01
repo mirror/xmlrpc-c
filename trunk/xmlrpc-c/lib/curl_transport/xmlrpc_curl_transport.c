@@ -56,14 +56,24 @@ struct clientTransport {
 
            NULL means we have no preference.
         */
+    xmlrpc_bool sslVerifyPeer;
+        /* In an SSL connection, we should authenticate the server's SSL
+           certificate -- refuse to talk to him if it isn't authentic.
+           This is equivalent to Curl's CURLOPT_SSL_VERIFY_PEER option.
+        */
+    xmlrpc_bool sslVerifyHost;
+        /* In an SSL connection, we should verify that the server's
+           certificate (independently of whether the certificate is
+           authentic) indicates the host name that is in the URL we
+           are using for the server.
+        */
 };
 
 typedef struct {
     /* This is all stuff that really ought to be in the CURL object,
        but the Curl library is a little too simple for that.  So we
        build a layer on top of it, and call it a "transaction," as
-       distinct from the Curl "session" represented by the CURL object.
-    */
+       distinct from the Curl "session" represented by the CURL object.  */
     CURL * curlSessionP;
         /* Handle for Curl library session object */
     char curlError[CURL_ERROR_SIZE];
@@ -207,6 +217,15 @@ create(xmlrpc_env *                     const envP,
                     envP, XMLRPC_INTERNAL_ERROR,
                     "Unable to allocate space for network interface name.");
         }
+        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(no_ssl_verifypeer))
+            transportP->sslVerifyPeer = TRUE;
+        else
+            transportP->sslVerifyPeer = !curlXportParmsP->no_ssl_verifypeer;
+
+        if (!curlXportParmsP || parm_size < XMLRPC_CXPSIZE(no_ssl_verifyhost))
+            transportP->sslVerifyHost = TRUE;
+        else
+            transportP->sslVerifyHost = !curlXportParmsP->no_ssl_verifyhost;
 
         if (envP->fault_occurred)
             free(transportP);
@@ -299,9 +318,11 @@ createCurlHeaderList(xmlrpc_env *               const envP,
 static void
 setupCurlSession(xmlrpc_env *       const envP,
                  curlTransaction *  const curlTransactionP,
-                 const char *       const networkInterface,
                  xmlrpc_mem_block * const callXmlP,
-                 xmlrpc_mem_block * const responseXmlP) {
+                 xmlrpc_mem_block * const responseXmlP,
+                 const char *       const networkInterface,
+                 xmlrpc_bool        const sslVerifyPeer,
+                 xmlrpc_bool        const sslVerifyHost) {
 
     CURL * const curlSessionP = curlTransactionP->curlSessionP;
 
@@ -309,6 +330,9 @@ setupCurlSession(xmlrpc_env *       const envP,
     if (networkInterface)
         curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE, networkInterface);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
+    curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER, sslVerifyPeer);
+    curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYHOST,
+                     sslVerifyHost ? 2 : 0);
     XMLRPC_MEMBLOCK_APPEND(char, envP, callXmlP, "\0", 1);
     if (!envP->fault_occurred) {
         curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS, 
@@ -330,10 +354,12 @@ setupCurlSession(xmlrpc_env *       const envP,
 
 static void
 createCurlTransaction(xmlrpc_env *               const envP,
-                      const char *               const networkInterface,
                       const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *         const callXmlP,
                       xmlrpc_mem_block *         const responseXmlP,
+                      const char *               const networkInterface,
+                      xmlrpc_bool                const sslVerifyPeer,
+                      xmlrpc_bool                const sslVerifyHost,
                       curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
@@ -363,8 +389,10 @@ createCurlTransaction(xmlrpc_env *               const envP,
                                      &curlTransactionP->headerList);
 
                 if (!envP->fault_occurred)
-                    setupCurlSession(envP, curlTransactionP, networkInterface,
-                                     callXmlP, responseXmlP);
+                    setupCurlSession(envP, curlTransactionP,
+                                     callXmlP, responseXmlP,
+                                     networkInterface, 
+                                     sslVerifyPeer, sslVerifyHost);
 
                 if (envP->fault_occurred)
                     strfree(curlTransactionP->serverUrl);
@@ -528,9 +556,12 @@ rpcCreate(xmlrpc_env *               const envP,
         rpcP->responseXmlP = responseXmlP;
         rpcP->threadExists = FALSE;
 
-        createCurlTransaction(envP, clientTransportP->networkInterface, 
+        createCurlTransaction(envP,
                               serverP,
                               callXmlP, responseXmlP, 
+                              clientTransportP->networkInterface, 
+                              clientTransportP->sslVerifyPeer,
+                              clientTransportP->sslVerifyHost,
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (complete) {

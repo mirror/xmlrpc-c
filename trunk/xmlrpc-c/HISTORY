@@ -3,6 +3,8 @@
 
 1.3 - not yet
 
+  * BJH: Add Curl SSL_NO_VERIFYPEER, SSL_NO_VERIFYHOST control.
+
   * BJH: Break up 'rpctest', rename to 'test'.
 
   * BJH: Renamed CGI stuff, add non-builtin-registry style of CGI server.
