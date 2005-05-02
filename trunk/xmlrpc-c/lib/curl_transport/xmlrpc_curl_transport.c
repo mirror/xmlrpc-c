@@ -243,6 +243,19 @@ createSyncCurlSession(xmlrpc_env * const envP,
         xmlrpc_faultf(envP, "Could not create Curl session.  "
                       "curl_easy_init() failed.");
     else {
+        /* The following is a trick.  CURLOPT_COOKIEFILE is the name
+           of the file containing the initial cookies for the Curl
+           session.  But setting it is also what turns on the cookie
+           function itself, whereby the Curl library accepts and
+           stores cookies from the server and sends them back on
+           future requests.  We don't have a file of initial cookies, but
+           we want to turn on cookie function, so we set the option to
+           something we know does not validly name a file.  Curl will
+           ignore the error and just start up cookie function with no
+           initial cookies.
+        */
+        curl_easy_setopt(curlSessionP, CURLOPT_COOKIEFILE, "");
+
         *curlSessionPP = curlSessionP;
     }
 }
@@ -408,7 +421,7 @@ setupCurlSession(xmlrpc_env *       const envP,
 
     CURL * const curlSessionP = curlTransactionP->curlSessionP;
 
-    curl_easy_setopt(curlSessionP, CURLOPT_POST, 1 );
+    curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
     if (networkInterface)
         curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE, networkInterface);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
