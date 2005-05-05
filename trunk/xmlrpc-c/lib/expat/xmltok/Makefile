@@ -36,12 +36,12 @@ tags: TAGS
 distdir:
 
 .PHONY: install
-install:
+install: install-common
 
 .PHONY: dep
 dep: dep-common
 
-LT_LIBRARIES_TO_INSTALL = libxmlrpc_xmltok.la
+LTLIBRARIES_TO_INSTALL = libxmlrpc_xmltok.la
 
 LIBXMLRPC_XMLTOK_OBJS = xmltok.lo xmlrole.lo
 
