@@ -758,7 +758,6 @@ call_info_free(call_info * const callInfoP) {
 
 static void
 call_info_new(xmlrpc_env *               const envP,
-              const xmlrpc_server_info * const serverP,
               const char *               const methodName,
               xmlrpc_value *             const paramArrayP,
               call_info **               const callInfoPP) {
@@ -1009,7 +1008,7 @@ sendRequest(xmlrpc_env *             const envP,
 
     call_info * callInfoP;
 
-    call_info_new(envP, serverP, methodName, argP, &callInfoP);
+    call_info_new(envP, methodName, argP, &callInfoP);
     if (!envP->fault_occurred) {
         call_info_set_asynch_data(envP, callInfoP, 
                                   serverP->_server_url, methodName,
