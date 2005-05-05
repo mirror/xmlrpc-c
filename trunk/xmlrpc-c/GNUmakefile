@@ -53,7 +53,7 @@ else
     ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
 	echo '"wininet";' >>$@
     else
-	echo '"libwww";' >>$@
+	@echo 'ERROR: no client XML transport configured'; rm $@; false
     endif
   endif
 endif

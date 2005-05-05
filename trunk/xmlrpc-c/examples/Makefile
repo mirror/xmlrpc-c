@@ -24,7 +24,7 @@ LDFLAGS = $(LADD)
 # found in the user's PATH.
 XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
 
-CLIENTPROGS_C = \
+CLIENTPROGS = \
   auth_client \
   query-meerkat \
   synch_client \
@@ -39,8 +39,12 @@ SERVERPROGS_ABYSS = \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
-PROGS = $(CLIENTPROGS_C) $(SERVERPROGS_ABYSS) \
+PROGS = $(SERVERPROGS_ABYSS) \
   gen_sample_add_xml
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += $(CLIENTPROGS)
+endif
 
 ifeq ($(ENABLE_CGI_SERVER),yes)
   PROGS += $(SERVERPROGS_CGI) 
@@ -70,7 +74,7 @@ endif
 cpp/all:
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(CLIENTPROGS_C):%:%.o
+$(CLIENTPROGS):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
 
 $(SERVERPROGS_CGI):%.cgi:%_cgi.o

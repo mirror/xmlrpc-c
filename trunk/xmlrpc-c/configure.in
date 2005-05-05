@@ -33,7 +33,7 @@ dnl =======================================================================
 FEATURE_LIST=
 
 AC_ARG_ENABLE(wininet-client,
-  [  --disable-wininet-client  Don't build the Wininet client module], , 
+  [  --disable-wininet-client  Don't build the Wininet client transport], , 
 enable_wininet_client=maybe)
 
 if test $enable_wininet_client = maybe; then
@@ -48,13 +48,13 @@ else
   MUST_BUILD_WININET_CLIENT=$enable_wininet_client
 fi
 
-AC_MSG_CHECKING(whether to build Wininet client module)
+AC_MSG_CHECKING(whether to build Wininet client XML transport module)
 AC_MSG_RESULT($MUST_BUILD_WININET_CLIENT)
 AC_SUBST(MUST_BUILD_WININET_CLIENT)
 
 
 AC_ARG_ENABLE(curl-client,
-  [  --disable-curl-client     Don't build the Curl client module], , 
+  [  --disable-curl-client     Don't build the Curl client transport], , 
 enable_curl_client=maybe)
 
 if test $enable_curl_client = maybe; then
@@ -69,13 +69,13 @@ else
   MUST_BUILD_CURL_CLIENT=$enable_curl_client
 fi
 
-AC_MSG_CHECKING(whether to build cURL client module)
+AC_MSG_CHECKING(whether to build Curl client XML transport module)
 AC_MSG_RESULT($MUST_BUILD_CURL_CLIENT)
 AC_SUBST(MUST_BUILD_CURL_CLIENT)
 
 
 AC_ARG_ENABLE(libwww-client,
-  [  --disable-libwww-client   Don't build the Libwww client module], , 
+  [  --disable-libwww-client   Don't build the Libwww client transport], , 
 enable_libwww_client=maybe)
 
 if test $enable_libwww_client = maybe; then
@@ -90,13 +90,13 @@ else
   MUST_BUILD_LIBWWW_CLIENT=$enable_libwww_client
 fi
 
-AC_MSG_CHECKING(whether to build Libwww client module)
+AC_MSG_CHECKING(whether to build Libwww client XML transport module)
 AC_MSG_RESULT($MUST_BUILD_LIBWWW_CLIENT)
 AC_SUBST(MUST_BUILD_LIBWWW_CLIENT)
 
 
 if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-  AC_MSG_NOTICE(You are not building any client XML transport.  The client facilities will be useless.)
+  AC_MSG_NOTICE([We are not building any client XML transport, therefore we will not build the client library at all.])
 fi
 
 

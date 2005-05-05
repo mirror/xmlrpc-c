@@ -72,8 +72,12 @@ INCLUDES = -I$(BUILDDIR) -I$(SRCDIR) \
 	   $(TRANSPORT_INCLUDES) \
 	   $(LIBXML_INCLUDES) \
 
-TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_client.la libxmlrpc_server.la \
+TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_server.la \
      libxmlrpc_server_abyss.la
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  TARGET_LTLIBRARIES += libxmlrpc_client.la
+endif
 
 ifeq ($(ENABLE_CGI_SERVER),yes)
   TARGET_LTLIBRARIES += libxmlrpc_server_cgi.la
