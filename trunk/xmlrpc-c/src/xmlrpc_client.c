@@ -265,7 +265,6 @@ xmlrpc_client_cleanup() {
 
 static void
 makeCallXml(xmlrpc_env *               const envP,
-            const xmlrpc_server_info * const serverP,
             const char *               const methodName,
             xmlrpc_value *             const paramArrayP,
             xmlrpc_mem_block **        const callXmlPP) {
@@ -277,10 +276,6 @@ makeCallXml(xmlrpc_env *               const envP,
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INTERNAL_ERROR,
             "method name argument is NULL pointer");
-    else if (serverP == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "server info argument is NULL pointer");
     else {
         xmlrpc_mem_block * callXmlP;
 
@@ -340,7 +335,7 @@ clientCallServerParams(xmlrpc_env *               const envP,
 
     xmlrpc_mem_block * callXmlP;
 
-    makeCallXml(envP, serverP, methodName, paramArrayP, &callXmlP);
+    makeCallXml(envP, methodName, paramArrayP, &callXmlP);
     
     if (!envP->fault_occurred) {
         xmlrpc_mem_block * respXmlP;
@@ -787,7 +782,7 @@ call_info_new(xmlrpc_env *               const envP,
         /* Clear contents. */
         memset(callInfoP, 0, sizeof(*callInfoP));
         
-        makeCallXml(envP, serverP, methodName, paramArrayP, &callXmlP);
+        makeCallXml(envP, methodName, paramArrayP, &callXmlP);
 
         if (!envP->fault_occurred) {
             xmlrpc_traceXml("XML-RPC CALL", 
