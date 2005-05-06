@@ -6,7 +6,7 @@
 
 namespace girerr {
 
-class error : public exception {
+class error : public std::exception {
 public:
     error(std::string const& what_arg) : _what(what_arg) {};
     virtual const char *

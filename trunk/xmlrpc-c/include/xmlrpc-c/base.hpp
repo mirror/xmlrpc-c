@@ -54,7 +54,7 @@ public:
 
     void
     add_to_c_struct(xmlrpc_value * const structP,
-                    string         const key) const;
+                    std::string    const key) const;
 
     xmlrpc_value *
     c_value() const;
@@ -125,7 +125,7 @@ public:
 
     value_string(xmlrpc_c::value const baseValue);
 
-    operator string() const;
+    operator std::string() const;
 };
 
 
@@ -258,7 +258,7 @@ public:
                     time_constraint const constraint
                         = param_list::TC_ANY) const;
 
-    string
+    std::string
     getString(unsigned int const paramNumber) const;
 
     std::vector<unsigned char>
@@ -269,7 +269,7 @@ public:
              unsigned int const minSize = 0,
              unsigned int const maxSize = UINT_MAX) const;
 
-    std::map<string, xmlrpc_c::value>
+    std::map<std::string, xmlrpc_c::value>
     getStruct(unsigned int const paramNumber) const;
 
     void

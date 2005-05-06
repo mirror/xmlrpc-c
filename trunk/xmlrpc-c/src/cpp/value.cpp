@@ -38,6 +38,7 @@ using girerr::error;
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/base.hpp"
 
+using namespace std;
 
 namespace {
 
@@ -352,13 +353,13 @@ value_boolean::value_boolean(xmlrpc_c::value const baseValue) {
 
 
 
-value_datetime::value_datetime(std::string const cppvalue) {
+value_datetime::value_datetime(string const cppvalue) {
 
     class cWrapper {
     public:
         xmlrpc_value * valueP;
         
-        cWrapper(std::string const cppvalue) {
+        cWrapper(string const cppvalue) {
             xmlrpc_env env;
             xmlrpc_env_init(&env);
             
@@ -432,13 +433,13 @@ value_datetime::operator time_t() const {
 
 
 
-value_string::value_string(std::string const& cppvalue) {
+value_string::value_string(string const& cppvalue) {
     
     class cWrapper {
     public:
         xmlrpc_value * valueP;
         
-        cWrapper(std::string const cppvalue) {
+        cWrapper(string const cppvalue) {
             xmlrpc_env env;
             xmlrpc_env_init(&env);
             
@@ -482,13 +483,13 @@ value_string::operator string() const {
 
 
 value_bytestring::value_bytestring(
-    std::vector<unsigned char> const& cppvalue) {
+    vector<unsigned char> const& cppvalue) {
 
     class cWrapper {
     public:
         xmlrpc_value * valueP;
         
-        cWrapper(std::vector<unsigned char> const& cppvalue) {
+        cWrapper(vector<unsigned char> const& cppvalue) {
             xmlrpc_env env;
             xmlrpc_env_init(&env);
             
