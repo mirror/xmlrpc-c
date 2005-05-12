@@ -124,11 +124,12 @@ install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
 	  else :; fi; \
 	done
 
-HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)$(HEADERINST_PREFIX)
+HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
 INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(HEADERDESTDIR)/$$p 
 
 install-headers: $(HEADERS_TO_INSTALL)
 	$(MKINSTALLDIRS) $(HEADERDESTDIR)
+	$(MKINSTALLDIRS) $(HEADERDESTDIR)/xmlrpc-c
 	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
 	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
 	  echo " $(INSTALL_HDR_CMD)"; \

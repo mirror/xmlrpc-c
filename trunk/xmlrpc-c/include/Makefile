@@ -8,18 +8,21 @@ VPATH = .:$(SRCDIR)
 include $(BUILDDIR)/Makefile.config
 
 HEADERS_TO_INSTALL = \
+  xmlrpc-c/oldxmlrpc.h \
   xmlrpc-c/base.h \
-  xmlrpc-c/client.h \
   xmlrpc-c/server.h \
   xmlrpc-c/server_abyss.h \
   xmlrpc-c/server_w32httpsys.h \
-  xmlrpc-c/oldcppwrapper.h \
+  xmlrpc-c/oldcppwrapper.hpp \
   xmlrpc-c/base.hpp \
   xmlrpc-c/registry.hpp \
   xmlrpc-c/server_abyss.hpp \
 
 HEADERINST_PREFIX = /xmlrpc-c
 
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  HEADERS_TO_INSTALL += xmlrpc-c/client.h
+endif
 ifeq ($(ENABLE_CGI_SERVER),yes)
   HEADERS_TO_INSTALL += xmlrpc-c/server_cgi.h
 endif
