@@ -14,7 +14,7 @@ using namespace xmlrpc_c;
 namespace xmlrpc_c {
 
 
-param_list::param_list(unsigned int const paramCount = 0) {
+paramList::paramList(unsigned int const paramCount = 0) {
 
     this->paramVector.reserve(paramCount);
 }
@@ -22,7 +22,7 @@ param_list::param_list(unsigned int const paramCount = 0) {
 
  
 void
-param_list::add(xmlrpc_c::value const param) {
+paramList::add(xmlrpc_c::value const param) {
 
     this->paramVector.push_back(param);
 }
@@ -30,18 +30,18 @@ param_list::add(xmlrpc_c::value const param) {
 
 
 unsigned int
-param_list::size() const {
+paramList::size() const {
     return this->paramVector.size();
 }
 
 
 
 xmlrpc_c::value 
-param_list::operator[](unsigned int const subscript) const {
+paramList::operator[](unsigned int const subscript) const {
 
     if (subscript >= this->paramVector.size())
         throw(girerr::error(
-            "Subscript of xmlrpc_c::param_list out of bounds"));
+            "Subscript of xmlrpc_c::paramList out of bounds"));
 
     return this->paramVector[subscript];
 }
@@ -49,7 +49,7 @@ param_list::operator[](unsigned int const subscript) const {
 
 
 int
-param_list::getInt(unsigned int const paramNumber,
+paramList::getInt(unsigned int const paramNumber,
                    int          const minimum = INT_MIN,
                    int          const maximum = INT_MAX) const {
 
@@ -75,7 +75,7 @@ param_list::getInt(unsigned int const paramNumber,
 
 
 bool
-param_list::getBoolean(unsigned int const paramNumber) const {
+paramList::getBoolean(unsigned int const paramNumber) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -90,7 +90,7 @@ param_list::getBoolean(unsigned int const paramNumber) const {
 
 
 double
-param_list::getDouble(unsigned int const paramNumber,
+paramList::getDouble(unsigned int const paramNumber,
                       double       const minimum = DBL_MIN,
                       double       const maximum = DBL_MAX) const {
 
@@ -119,10 +119,10 @@ param_list::getDouble(unsigned int const paramNumber,
 
 
 time_t
-param_list::getDatetime_sec(
+paramList::getDatetime_sec(
     unsigned int                const paramNumber,
-    param_list::time_constraint const constraint 
-        = param_list::TC_ANY) const {
+    paramList::time_constraint const constraint 
+        = paramList::TC_ANY) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -158,7 +158,7 @@ param_list::getDatetime_sec(
 
 
 string
-param_list::getString(unsigned int const paramNumber) const {
+paramList::getString(unsigned int const paramNumber) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -173,7 +173,7 @@ param_list::getString(unsigned int const paramNumber) const {
 
 
 std::vector<unsigned char>
-param_list::getBytestring(unsigned int const paramNumber) const {
+paramList::getBytestring(unsigned int const paramNumber) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -189,7 +189,7 @@ param_list::getBytestring(unsigned int const paramNumber) const {
 
 
 std::vector<xmlrpc_c::value>
-param_list::getArray(unsigned int const paramNumber,
+paramList::getArray(unsigned int const paramNumber,
                      unsigned int const minSize = 0,
                      unsigned int const maxSize = UINT_MAX) const {
 
@@ -218,7 +218,7 @@ param_list::getArray(unsigned int const paramNumber,
 
 
 std::map<string, xmlrpc_c::value>
-param_list::getStruct(unsigned int const paramNumber) const {
+paramList::getStruct(unsigned int const paramNumber) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -236,7 +236,7 @@ param_list::getStruct(unsigned int const paramNumber) const {
 
 
 void
-param_list::getNil(unsigned int const paramNumber) const {
+paramList::getNil(unsigned int const paramNumber) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -249,7 +249,7 @@ param_list::getNil(unsigned int const paramNumber) const {
 
 
 void
-param_list::verifyEnd(unsigned int const paramNumber) const {
+paramList::verifyEnd(unsigned int const paramNumber) const {
 
     if (paramNumber < this->paramVector.size())
         throw(fault("Too many parameters", fault::CODE_TYPE));

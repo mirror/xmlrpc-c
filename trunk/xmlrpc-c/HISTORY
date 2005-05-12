@@ -3,6 +3,11 @@
 
 1.3 - not yet
 
+  * BJH: Fix bug: 'make install' doesn't install libxmlrpc_xmltok.
+    
+  * BJH: Don't build client library if not building any client XML      
+    transport.
+
   * BJH: Make Curl do cookies (session only) and persistent connections.
     This is only for calls through the synchronous interface, and the
     synchronous interface is no longer thread safe -- you can have only
@@ -26,8 +31,7 @@
 
   * BJH: new C++ library designed for pure C++ applications
     (Application never sees the underlying C structures or reference
-    counts).  Has value, fault, and registry classes.  No client
-    facilities yet.
+    counts).
 
   * BJH: interface header files renamed from xmlrpc_xxx to xmlrpc-c/xxx
     (old names installed a symbolic links for backward compatibility).

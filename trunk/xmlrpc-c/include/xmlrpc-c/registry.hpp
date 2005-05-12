@@ -33,7 +33,7 @@ public:
     // Caller to be able to treat an integer as an integer, not just
     // as a generic value.
     virtual void
-    execute(xmlrpc_c::param_list     const& paramList,
+    execute(xmlrpc_c::paramList      const& paramList,
             const xmlrpc_c::value ** const  resultPP) = 0;
 
     std::string signature() const { return _signature; };

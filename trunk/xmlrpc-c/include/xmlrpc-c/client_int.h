@@ -28,9 +28,6 @@ extern xmlrpc_server_info *
 xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *aserver);
 
 
-/* A timeout in milliseconds. */
-typedef unsigned long timeout_t;
-
 /*=========================================================================
 ** Transport Implementation functions.
 **=========================================================================
@@ -43,7 +40,7 @@ typedef unsigned long timeout_t;
 ** Note that ANY event loop call will return immediately if there are
 ** no outstanding XML-RPC calls. */
 extern void
-xmlrpc_client_event_loop_run_general (int flags, timeout_t milliseconds);
+xmlrpc_client_event_loop_run_general (int flags, xmlrpc_timeout milliseconds);
 
 /* Run the event loop forever. The loop will exit if someone calls
 ** xmlrpc_client_event_loop_end. */
@@ -55,7 +52,7 @@ xmlrpc_client_event_loop_run (void);
 ** (Note that ANY event loop call will return immediately if there are
 ** no outstanding XML-RPC calls.) */
 extern void
-xmlrpc_client_event_loop_run_timeout (timeout_t milliseconds);
+xmlrpc_client_event_loop_run_timeout (xmlrpc_timeout milliseconds);
 
 /* End the running event loop immediately. This can also be accomplished
 ** by calling the corresponding function in libwww.

@@ -9,7 +9,9 @@ include $(BUILDDIR)/Makefile.config
 
 default: all
 
-TESTDATADIR = $(SRCDIR)/src/testdata
+WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
+CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
+LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
@@ -28,19 +30,31 @@ endif
 
 LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
+LIBXMLRPC_CLIENT = $(BUILDDIR)/src/libxmlrpc_client.la
 
-LIBXMLRPCPP_OBJS = value.o fault.o param_list.o
+LIBXMLRPCPP_OBJS = value.o fault.o param_list.o xml.o
 LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
+LIBXMLRPC_CLIENTPP_OBJS = client.o
 
-LIB_OBJS = \
-  $(LIBXMLRPCPP_OBJS) \
-  $(LIBXMLRPC_SERVERPP_OBJS) \
-  $(LIBXMLRPC_SERVER_ABYSSPP_OBJS) \
+TRANSPORT_OBJS =
+ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
+  TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
+endif
+ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
+  TRANSPORT_OBJS += $(CURL_TRANSPORT_DIR)/xmlrpc_curl_transport.lo
+endif
+ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
+  TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
+endif
 
-INCLUDES = -I $(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
-	   -I$(SRCDIR)/lib/util/include \
-	   $(LIBXML_INCLUDES) -I$(SRCDIR)/lib/abyss/src \
+TRANSPORT_INCLUDES = \
+  -I$(WININET_TRANSPORT_DIR) \
+  -I$(CURL_TRANSPORT_DIR) \
+  -I$(LIBWWW_TRANSPORT_DIR) \
+
+BASIC_INCLUDES = -I $(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
+  -I$(SRCDIR)/lib/util/include
 
 # We always statically-link our C++ code because it's tiny, and C++ is
 # no good at shared libraries, anyway.  It's actually getting bigger,
@@ -56,16 +70,24 @@ TARGET_LIBRARIES = \
   libxmlrpc++.a \
   libxmlrpc_server++.a \
   libxmlrpc_server_abyss++.a \
+  libxmlrpc_client++.a \
 
 TARGET_PROGS = cpptest
 
 all: $(TARGET_LIBRARIES) $(TARGET_PROGS)
 
-LDFLAGS = $(LADD)
+ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
+  LDFLAGS += $(shell curl-config --libs) -lpthread
+endif
+ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
+  LDFLAGS += $(shell libwww-config --libs)
+endif
+
+LDFLAGS += $(LADD)
 
 cpptest:%:%.o libxmlrpc_server_abyss++.a libxmlrpc_server++.a \
-  libxmlrpc++.a libxmlrpc_cpp.a \
-  $(LIBXMLRPC) $(LIBXMLRPC_SERVER) $(LIBXML)
+  libxmlrpc_client++.a libxmlrpc++.a libxmlrpc_cpp.a \
+  $(LIBXMLRPC) $(LIBXMLRPC_SERVER) $(LIBXMLRPC_CLIENT) $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 LIBLDFLAGS = $(LADD)
@@ -90,16 +112,38 @@ libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
 	$(AR) cru $@ $^
 	$(RANLIB) $@
 
+libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS) $(TRANSPORT_OBJS)
+	-rm -f $@
+	$(AR) cru $@ $^
+	$(RANLIB) $@
+
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 cpptest.o:%.o:%.cpp
-	$(CXX) -c $(INCLUDES) -DTESTDATADIR=\"$(TESTDATADIR)\" $(CFLAGS) $<
+	$(CXX) -c $(BASIC_INCLUDES) $(CFLAGS) $<
 
 XmlRpcCpp.o:%.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
+	$(CXX) -c $(BASIC_INCLUDES) $(CFLAGS) $<
 
-$(LIB_OBJS):%.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
+$(LIBXMLRPCPP_OBJS):%.o:%.cpp
+	$(CXX) -c $(BASIC_INCLUDES) $(CFLAGS) $<
+
+SERVER_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES)
+
+$(LIBXMLRPC_SERVERPP_OBJS):%.o:%.cpp
+	$(CXX) -c $(SERVER_INCLUDES) $(CFLAGS) $<
+
+SERVER_ABYSS_INCLUDES = $(SERVER_INCLUDES) -I$(SRCDIR)/lib/abyss/src
+
+$(LIBXMLRPC_SERVER_ABYSSPP_OBJS):%.o:%.cpp
+	$(CXX) -c $(SERVER_ABYSS_INCLUDES) $(CFLAGS) $<
+
+CLIENT_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
+
+$(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
+	$(CXX) -c $(CLIENT_INCLUDES) $(CFLAGS) $<
+
+
 
 LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
 HEADERS_TO_INSTALL = xmlrpc.hpp xmlrpc_server.hpp \
@@ -119,6 +163,11 @@ clean-local:
 	rm -f $(TARGET_PROGS)
 
 distclean: clean distclean-common
+
+# INCLUDES and DEP_SOURCES are used by dep-common target
+INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
+  $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) $(TRANSPORT_INCLUDES)
+DEP_SOURCES = *.cpp
 
 .PHONY: dep
 dep: dep-common

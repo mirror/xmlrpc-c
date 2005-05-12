@@ -55,7 +55,7 @@ void CALLBACK statusCallback (HINTERNET hInternet,
                           unsigned long dwStatusInformationLength);
 
 
-struct clientTransport {
+struct xmlrpc_client_transport {
     pthread_mutex_t listLock;
     struct list_head rpcList;
         /* List of all RPCs that exist for this transport.  An RPC exists
@@ -93,13 +93,13 @@ typedef struct {
     xmlrpc_mem_block * responseXmlP;
     xmlrpc_bool threadExists;
     pthread_t thread;
-    transport_asynch_complete complete;
+    xmlrpc_transport_asynch_complete complete;
         /* Routine to call to complete the RPC after it is complete HTTP-wise.
            NULL if none.
         */
-    struct call_info * callInfoP;
+    struct xmlrpc_call_info * callInfoP;
         /* User's identifier for this RPC */
-	struct clientTransport * clientTransportP;
+	struct xmlrpc_client_transport * clientTransportP;
 } rpc;
 
 static void
@@ -342,7 +342,7 @@ static void get_wininet_response (	xmlrpc_env *      const envP,
 static void
 performWinInetTransaction(xmlrpc_env *      const envP,
                        winInetTransaction * const winInetTransactionP,
-					   struct clientTransport * const clientTransportP) {
+					   struct xmlrpc_client_transport * const clientTransportP) {
 	LPTSTR pMsg = NULL;
 	LPVOID pMsgMem = NULL;
 
@@ -576,12 +576,12 @@ createRpcThread(xmlrpc_env *              const envP,
 
 static void
 rpcCreate(xmlrpc_env *             const envP,
-          struct clientTransport * const clientTransportP,
+          struct xmlrpc_client_transport * const clientTransportP,
           const xmlrpc_server_info * const serverP,
           xmlrpc_mem_block *       const callXmlP,
           xmlrpc_mem_block *       const responseXmlP,
-          transport_asynch_complete      complete, 
-          struct call_info *       const callInfoP,
+          xmlrpc_transport_asynch_complete      complete, 
+          struct xmlrpc_call_info *       const callInfoP,
           rpc **                   const rpcPP) {
 
     rpc * rpcP;
@@ -741,11 +741,11 @@ create(xmlrpc_env *              const envP,
        const char *              const appversion ATTR_UNUSED,
 	   const struct xmlrpc_xportparms * const transportparmsP,
        size_t                    const parm_size,
-       struct clientTransport ** const handlePP) {
+       struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a WinInet client transport.
 -----------------------------------------------------------------------------*/
-    struct clientTransport * transportP;
+    struct xmlrpc_client_transport * transportP;
 
 	struct xmlrpc_wininet_xportparms * const wininetXportParmsP = 
 		(struct xmlrpc_wininet_xportparms *) transportparmsP;
@@ -775,7 +775,7 @@ create(xmlrpc_env *              const envP,
 
 
 static void 
-destroy(struct clientTransport * const clientTransportP) {
+destroy(struct xmlrpc_client_transport * const clientTransportP) {
 /*----------------------------------------------------------------------------
    This does the 'destroy' operation for a WinInet client transport.
 -----------------------------------------------------------------------------*/
@@ -795,11 +795,11 @@ destroy(struct clientTransport * const clientTransportP) {
 
 static void 
 sendRequest(xmlrpc_env *             const envP, 
-            struct clientTransport * const clientTransportP,
+            struct xmlrpc_client_transport * const clientTransportP,
             const xmlrpc_server_info * const serverP,
             xmlrpc_mem_block *       const callXmlP,
-            transport_asynch_complete      complete,
-            struct call_info *       const callInfoP) {
+            xmlrpc_transport_asynch_complete      complete,
+            struct xmlrpc_call_info *       const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
    the server.
@@ -827,9 +827,9 @@ sendRequest(xmlrpc_env *             const envP,
 }
 
 static void 
-finishAsynch(struct clientTransport * const clientTransportP,
-             enum timeoutType         const timeoutType ATTR_UNUSED,
-             timeout_t                const timeout ATTR_UNUSED) {
+finishAsynch(struct xmlrpc_client_transport * const clientTransportP,
+             xmlrpc_timeoutType         const timeoutType ATTR_UNUSED,
+             xmlrpc_timeout                const timeout ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    Wait for the threads of all outstanding RPCs to exit and destroy those
    RPCs.
@@ -850,7 +850,7 @@ finishAsynch(struct clientTransport * const clientTransportP,
 
 static void
 call(xmlrpc_env *             const envP,
-     struct clientTransport * const clientTransportP,
+     struct xmlrpc_client_transport * const clientTransportP,
      const xmlrpc_server_info * const serverP,
      xmlrpc_mem_block *       const callXmlP,
      xmlrpc_mem_block **      const responsePP) {
@@ -881,7 +881,7 @@ call(xmlrpc_env *             const envP,
 }
 
 
-struct clientTransportOps xmlrpc_wininet_transport_ops = {
+struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops = {
     &create,
     &destroy,
     &sendRequest,

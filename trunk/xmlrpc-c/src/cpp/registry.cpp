@@ -105,7 +105,7 @@ registry::~registry(void) {
 
 
 
-static xmlrpc_c::param_list
+static xmlrpc_c::paramList
 pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
 /*----------------------------------------------------------------------------
    Convert an XML-RPC array in C (not C++) form to a parameter list object
@@ -122,7 +122,7 @@ pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
 
     unsigned int const arraySize = xmlrpc_array_size(&env, arrayP);
 
-    xmlrpc_c::param_list paramList(arraySize);
+    xmlrpc_c::paramList paramList(arraySize);
     
     for (unsigned int i = 0; i < arraySize; ++i) {
         xmlrpc_value * arrayItemP;
@@ -158,7 +158,7 @@ c_executeMethod(xmlrpc_env *   const envP,
 -----------------------------------------------------------------------------*/
     xmlrpc_c::method * const methodP = 
         static_cast<xmlrpc_c::method *>(methodPtr);
-    xmlrpc_c::param_list const paramList(pListFromXmlrpcArray(paramArrayP));
+    xmlrpc_c::paramList const paramList(pListFromXmlrpcArray(paramArrayP));
 
     xmlrpc_value * retval;
 

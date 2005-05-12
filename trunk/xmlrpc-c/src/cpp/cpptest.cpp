@@ -8,9 +8,11 @@
 
 #include "girerr.hpp"
 using girerr::error;
+#include "transport_config.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/oldcppwrapper.hpp"
 #include "xmlrpc-c/registry.hpp"
+#include "xmlrpc-c/client.hpp"
 using namespace xmlrpc_c;
 
 using namespace std;
@@ -75,8 +77,50 @@ logFailedTest(const char * const fileName,
     } while (0)
 
 
+
+#define EXPECT_ERROR(statement) \
+    do { try { statement } catch (error) {break;} \
+      throw(fileLineError(__FILE__, __LINE__, "Didn't get expected error")); \
+    } while (0)
+
 #define trickToStraightenOutEmacsIndentation \
 ;
+
+namespace {
+error
+fileLineError(string       const filename,
+              unsigned int const lineNumber,
+              string       const description) {
+    
+    ostringstream combined;
+    
+    combined << filename << ":" << lineNumber << " " << description;
+    
+    return error(combined.str());
+}
+} // namespace
+
+
+
+class sampleAddMethod : public method {
+public:
+    sampleAddMethod() {
+        this->_signature = "ii";
+        this->_help = "This method adds two integers together";
+    }
+    void
+    execute(xmlrpc_c::paramList const& paramList,
+            const value **      const  retvalPP) {
+        
+        int const addend(paramList.getInt(0));
+        int const adder(paramList.getInt(1));
+        
+        paramList.verifyEnd(2);
+        
+        *retvalPP = new value_int(addend + adder);
+    }
+};
+
 
 //=========================================================================
 //  Test Suites
@@ -638,7 +682,7 @@ public:
     }
     virtual void runtests() {
 
-        param_list paramList1;
+        paramList paramList1;
         TEST(paramList1.size() == 0);
 
         paramList1.add(value_int(7));
@@ -674,10 +718,10 @@ public:
         TEST(paramList1.getDouble(2, 1) == 3.14);
         TEST(paramList1.getDouble(2, 1, 4) == 3.14);
         TEST(paramList1.getDatetime_sec(3) == 0);
-        TEST(paramList1.getDatetime_sec(3, param_list::TC_ANY) == timeZero);
-        TEST(paramList1.getDatetime_sec(3, param_list::TC_NO_FUTURE) 
+        TEST(paramList1.getDatetime_sec(3, paramList::TC_ANY) == timeZero);
+        TEST(paramList1.getDatetime_sec(3, paramList::TC_NO_FUTURE) 
              == timeZero);
-        TEST(paramList1.getDatetime_sec(4, param_list::TC_NO_PAST)
+        TEST(paramList1.getDatetime_sec(4, paramList::TC_NO_PAST)
              == timeFuture);
         TEST(paramList1.getString(5) == "hello world");
         TEST(paramList1.getBytestring(6)[0] == 0x10);
@@ -688,7 +732,7 @@ public:
         paramList1.getNil(9);
         paramList1.verifyEnd(10);
 
-        param_list paramList2(5);
+        paramList paramList2(5);
         TEST(paramList2.size() == 0);
     }
 };
@@ -700,25 +744,6 @@ public:
         return "registryTestSuite";
     }
     virtual void runtests() {
-
-        class sampleAddMethod : public method {
-        public:
-            sampleAddMethod() {
-                this->_signature = "ii";
-                this->_help = "This method adds two integers together";
-            }
-            void
-            execute(xmlrpc_c::param_list const& paramList,
-                    const value **       const  retvalPP) {
-                
-                int const addend(paramList.getInt(0));
-                int const adder(paramList.getInt(1));
-
-                paramList.verifyEnd(2);
-                
-                *retvalPP = new value_int(addend + adder);
-            }
-        };
 
         xmlrpc_c::registry myRegistry;
         
@@ -746,6 +771,183 @@ public:
     }
 };
 
+
+
+class clientXmlTransportTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "clientXmlTransportTestSuite";
+    }
+    virtual void runtests() {
+#if MUST_BUILD_CURL_CLIENT
+        clientXmlTransport_curl transportc0;
+        clientXmlTransport_curl transportc1("eth0");
+        clientXmlTransport_curl transportc2("eth0", true);
+        clientXmlTransport_curl transportc3("eth0", true, true);
+#else
+        EXPECT_ERROR(clientXmlTransport_curl transportc0;);
+        EXPECT_ERROR(clientXmlTransport_curl transportc1("eth0"););
+        EXPECT_ERROR(clientXmlTransport_curl transportc0("eth0", true););
+        EXPECT_ERROR(clientXmlTransport_curl transportc0("eth0", true, true););
+#endif
+
+#if MUST_BUILD_LIBWWW_CLIENT
+        clientXmlTransport_libwww transportl0;
+        clientXmlTransport_libwww transportl1("getbent");
+        clientXmlTransport_libwww transportl2("getbent", "1.0");
+#else
+        EXPECT_ERROR(clientXmlTransport_libwww transportl0;);
+        EXPECT_ERROR(clientXmlTransport_libwww transportl1("getbent"););
+        EXPECT_ERROR(clientXmlTransport_libwww transportl2("getbent", "1.0"););
+#endif
+#if MUST_BUILD_WININET_CLIENT
+        clientXmlTransport_wininet transportw0;
+        clientXmlTransport_wininet transportw1(true);
+#else
+        EXPECT_ERROR(clientXmlTransport_wininet transportw0;);
+        EXPECT_ERROR(clientXmlTransport_wininet transportw1(true););
+#endif
+    }
+};
+
+
+
+class clientSimpleTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "clientSimpleTestSuite";
+    }
+    virtual void runtests() {
+        clientSimple clientS0;
+        paramList paramList0;
+
+        value result0;
+
+        // These will fail because there's no such server
+        EXPECT_ERROR(clientS0.call("http://mf.comm", "biteme", &result0););
+
+        EXPECT_ERROR(
+            clientS0.call("http://mf.comm", "biteme", "s", &result0, "hard");
+            );
+
+        EXPECT_ERROR(
+            clientS0.call("http://mf.comm", "biteme", paramList0, &result0);
+            );
+    }
+};
+        
+
+
+class carriageParm_direct : public carriageParm {
+public:
+    carriageParm_direct(registry * const registryP) : registryP(registryP) {}
+
+    registry * registryP;
+};
+
+
+class clientXmlTransport_direct : public clientXmlTransport {
+
+public:    
+    void
+    call(xmlrpc_c::carriageParm * const  carriageParmP,
+         string                   const& callXml,
+         string *                 const  responseXmlP) {
+
+        carriageParm_direct * const parmP =
+            dynamic_cast<carriageParm_direct *>(carriageParmP);
+
+        if (parmP == NULL)
+            throw(error("Carriage parameter passed to the direct "
+                        "transport is not type carriageParm_direct"));
+
+        string * responseP;
+        parmP->registryP->processCall(callXml, &responseP);
+        auto_ptr<string> responseAuto(responseP);
+        *responseXmlP = *responseP;
+    }
+};
+
+class clientDirectTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+  The object of this class tests the client facilities by using a specially
+  client XML transport we define ourselves and an XML-RPC server we build
+  ourselves.  We build the server out of a xmlrpc_c::registry object and
+  our transport just delivers XML directly to the registry object and gets
+  the response XML from it and delivers that back.  There's no network or
+  socket or pipeline or anything -- the transport actually executes the
+  XML-RPC method.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "clientDirectTestSuite";
+    }
+    virtual void runtests() {
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", method_ptr(new sampleAddMethod));
+        
+        carriageParm_direct carriageParmDirect(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        clientXml clientDirect(&transportDirect);
+        paramList paramListSampleAdd;
+        paramListSampleAdd.add(value_int(5));
+        paramListSampleAdd.add(value_int(7));
+        rpc rpcSampleAdd("sample.add", paramListSampleAdd);
+        rpcSampleAdd.call(&clientDirect, &carriageParmDirect);
+        value_int const resultDirect(rpcSampleAdd.getResult());
+        TEST(static_cast<int>(resultDirect) == 12);
+    }
+};
+
+
+
+class clientTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "clientTestSuite";
+    }
+    virtual void runtests() {
+        clientDirectTestSuite().run();
+
+        clientXmlTransportTestSuite().run();
+
+        carriageParm_http0 carriageParm1("http://suckthis.comm");
+        carriageParm_curl0 carriageParm2("http://suckthis.comm");
+        carriageParm_libwww0 carriageParm3("http://suckthis.comm");
+        carriageParm_wininet0 carriageParm4("http://suckthis.comm");
+
+#if MUST_BUILD_CURL_CLIENT
+        clientXmlTransport_curl transportc0;
+        clientXml client0(&transportc0);
+        connection connection0(&client0, &carriageParm1);
+        
+        paramList paramList0;
+
+        rpc rpc0("blowme", paramList0);
+
+        // The following fail because the named server does not exist
+
+        EXPECT_ERROR(value result0(rpc0.getResult()););
+
+        EXPECT_ERROR(rpc0.call(&client0, &carriageParm2););
+
+        EXPECT_ERROR(rpc0.call(connection0););
+
+        EXPECT_ERROR(rpc0.start(&client0, &carriageParm2););
+
+        EXPECT_ERROR(rpc0.start(connection0););
+
+        EXPECT_ERROR(value result0(rpc0.getResult()););
+
+#endif
+        clientSimpleTestSuite().run();
+    }
+};
+
 //=========================================================================
 //  Test Driver
 //=========================================================================
@@ -767,6 +969,7 @@ main(int argc, char** argv) {
         valueTestSuite().run();
         paramListTestSuite().run();
         registryTestSuite().run();
+        clientTestSuite().run();
 
         testXmlRpcCpp();
 

@@ -38,7 +38,7 @@
 
 
 
-struct clientTransport {
+struct xmlrpc_client_transport {
     pthread_mutex_t listLock;
     struct list_head rpcList;
         /* List of all RPCs that exist for this transport.  An RPC exists
@@ -107,11 +107,11 @@ typedef struct {
     xmlrpc_mem_block * responseXmlP;
     xmlrpc_bool threadExists;
     pthread_t thread;
-    transport_asynch_complete complete;
+    xmlrpc_transport_asynch_complete complete;
         /* Routine to call to complete the RPC after it is complete HTTP-wise.
            NULL if none.
         */
-    struct call_info * callInfoP;
+    struct xmlrpc_call_info * callInfoP;
         /* User's identifier for this RPC */
 } rpc;
 
@@ -271,20 +271,20 @@ destroySyncCurlSession(CURL * const curlSessionP) {
 
 
 static void 
-create(xmlrpc_env *                     const envP,
-       int                              const flags ATTR_UNUSED,
-       const char *                     const appname ATTR_UNUSED,
-       const char *                     const appversion ATTR_UNUSED,
-       const struct xmlrpc_xportparms * const transportparmsP,
-       size_t                           const parm_size,
-       struct clientTransport **        const handlePP) {
+create(xmlrpc_env *                      const envP,
+       int                               const flags ATTR_UNUSED,
+       const char *                      const appname ATTR_UNUSED,
+       const char *                      const appversion ATTR_UNUSED,
+       const struct xmlrpc_xportparms *  const transportparmsP,
+       size_t                            const parm_size,
+       struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
     struct xmlrpc_curl_xportparms * const curlXportParmsP = 
         (struct xmlrpc_curl_xportparms *) transportparmsP;
 
-    struct clientTransport * transportP;
+    struct xmlrpc_client_transport * transportP;
 
     initWindowsStuff(envP);
 
@@ -339,7 +339,7 @@ termWindowStuff(void) {
 
 
 static void 
-destroy(struct clientTransport * const clientTransportP) {
+destroy(struct xmlrpc_client_transport * const clientTransportP) {
 /*----------------------------------------------------------------------------
    This does the 'destroy' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
@@ -612,15 +612,15 @@ createThread(xmlrpc_env * const envP,
 
 
 static void
-createRpc(xmlrpc_env *               const envP,
-          struct clientTransport *   const clientTransportP,
-          CURL *                     const curlSessionP,
-          const xmlrpc_server_info * const serverP,
-          xmlrpc_mem_block *         const callXmlP,
-          xmlrpc_mem_block *         const responseXmlP,
-          transport_asynch_complete        complete, 
-          struct call_info *         const callInfoP,
-          rpc **                     const rpcPP) {
+createRpc(xmlrpc_env *                     const envP,
+          struct xmlrpc_client_transport * const clientTransportP,
+          CURL *                           const curlSessionP,
+          const xmlrpc_server_info *       const serverP,
+          xmlrpc_mem_block *               const callXmlP,
+          xmlrpc_mem_block *               const responseXmlP,
+          xmlrpc_transport_asynch_complete       complete, 
+          struct xmlrpc_call_info *        const callInfoP,
+          rpc **                           const rpcPP) {
 
     rpc * rpcP;
 
@@ -697,12 +697,12 @@ startRpc(xmlrpc_env * const envP,
 
 
 static void 
-sendRequest(xmlrpc_env *               const envP, 
-            struct clientTransport *   const clientTransportP,
-            const xmlrpc_server_info * const serverP,
-            xmlrpc_mem_block *         const callXmlP,
-            transport_asynch_complete        complete,
-            struct call_info *         const callInfoP) {
+sendRequest(xmlrpc_env *                     const envP, 
+            struct xmlrpc_client_transport * const clientTransportP,
+            const xmlrpc_server_info *       const serverP,
+            xmlrpc_mem_block *               const callXmlP,
+            xmlrpc_transport_asynch_complete       complete,
+            struct xmlrpc_call_info *        const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
    the server.
@@ -774,9 +774,10 @@ finishRpc(struct list_head * const headerP,
 
 
 static void 
-finishAsynch(struct clientTransport * const clientTransportP ATTR_UNUSED,
-             enum timeoutType         const timeoutType ATTR_UNUSED,
-             timeout_t                const timeout ATTR_UNUSED) {
+finishAsynch(
+    struct xmlrpc_client_transport * const clientTransportP ATTR_UNUSED,
+    xmlrpc_timeoutType               const timeoutType ATTR_UNUSED,
+    xmlrpc_timeout                   const timeout ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    Wait for the threads of all outstanding RPCs to exit and destroy those
    RPCs.
@@ -797,11 +798,11 @@ finishAsynch(struct clientTransport * const clientTransportP ATTR_UNUSED,
 
 
 static void
-call(xmlrpc_env *               const envP,
-     struct clientTransport *   const clientTransportP,
-     const xmlrpc_server_info * const serverP,
-     xmlrpc_mem_block *         const callXmlP,
-     xmlrpc_mem_block **        const responsePP) {
+call(xmlrpc_env *                     const envP,
+     struct xmlrpc_client_transport * const clientTransportP,
+     const xmlrpc_server_info *       const serverP,
+     xmlrpc_mem_block *               const callXmlP,
+     xmlrpc_mem_block **              const responsePP) {
 
     xmlrpc_mem_block * responseXmlP;
     rpc * rpcP;
@@ -833,7 +834,7 @@ call(xmlrpc_env *               const envP,
 
 
 
-struct clientTransportOps xmlrpc_curl_transport_ops = {
+struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops = {
     &create,
     &destroy,
     &sendRequest,

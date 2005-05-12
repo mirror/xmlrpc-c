@@ -32,10 +32,10 @@ xmlrpc_client_init(int          const flags,
                    const char * const appname,
                    const char * const appversion);
 
-struct xportparms;
+struct xmlrpc_xportparms;
     /* This is a "base class".  The struct is never complete; you're
-       supposed to cast between struct xportparms * and 
-       "struct ..._xportparms *" in order to use it.  
+       supposed to cast between struct xmlrpc_xportparms * and 
+       "struct xmlrpc_..._xportparms *" in order to use it.  
     */
 
 struct xmlrpc_curl_xportparms {

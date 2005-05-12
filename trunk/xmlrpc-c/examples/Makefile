@@ -101,6 +101,7 @@ include $(SRCDIR)/Makefile.common
 .PHONY: clean
 clean: clean-common
 	rm -f $(PROGS) config.h xmlrpc_amconfig.h
+	$(MAKE) -C cpp clean
 
 .PHONY: distclean
 distclean: clean

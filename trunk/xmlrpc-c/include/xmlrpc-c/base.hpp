@@ -223,12 +223,12 @@ private:
     std::string const description;
 };
 
-class param_list {
+class paramList {
 /*----------------------------------------------------------------------------
    A parameter list of an XML-RPC call.
 -----------------------------------------------------------------------------*/
 public:
-    param_list(unsigned int const paramCount = 0);
+    paramList(unsigned int const paramCount = 0);
 
     void
     add(xmlrpc_c::value const param);
@@ -256,7 +256,7 @@ public:
     time_t
     getDatetime_sec(unsigned int    const paramNumber,
                     time_constraint const constraint
-                        = param_list::TC_ANY) const;
+                        = paramList::TC_ANY) const;
 
     std::string
     getString(unsigned int const paramNumber) const;

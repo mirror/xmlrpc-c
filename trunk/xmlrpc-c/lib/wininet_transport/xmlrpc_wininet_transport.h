@@ -3,6 +3,6 @@
 
 #include "xmlrpc-c/transport.h"
 
-extern struct clientTransportOps xmlrpc_wininet_transport_ops;
+extern struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops;
 
 #endif

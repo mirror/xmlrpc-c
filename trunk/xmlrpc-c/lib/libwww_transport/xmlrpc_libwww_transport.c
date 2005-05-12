@@ -62,7 +62,7 @@
 #define XMLRPC_CLIENT_USE_TIMEOUT   (2)
 
 
-struct clientTransport {
+struct xmlrpc_client_transport {
     int saved_flags;
     HTList *xmlrpc_conversions;
     void * cookieJarP;
@@ -72,14 +72,14 @@ struct clientTransport {
     bool tracingOn;
 };
 
-static struct clientTransport clientTransport;
+static struct xmlrpc_client_transport clientTransport;
 
 
 typedef struct {
 /*----------------------------------------------------------------------------
    This object represents one RPC.
 -----------------------------------------------------------------------------*/
-    struct clientTransport * clientTransportP;
+    struct xmlrpc_client_transport * clientTransportP;
 
     /* These fields are used when performing synchronous calls. */
     bool is_done;
@@ -91,8 +91,8 @@ typedef struct {
     HTParentAnchor *source_anchor;
     HTAnchor *dest_anchor;
 
-    transport_asynch_complete complete;
-    struct call_info * callInfoP; 
+    xmlrpc_transport_asynch_complete complete;
+    struct xmlrpc_call_info * callInfoP; 
 } rpc;
 
 
@@ -164,13 +164,13 @@ initLibwww(const char * const appname,
 
 
 static void 
-create(xmlrpc_env *                     const envP,
-       int                              const flags,
-       const char *                     const appname,
-       const char *                     const appversion,
-       const struct xmlrpc_xportparms * const transportParmsP ATTR_UNUSED,
-       size_t                           const parm_size ATTR_UNUSED,
-       struct clientTransport **        const handlePP) {
+create(xmlrpc_env *                      const envP,
+       int                               const flags,
+       const char *                      const appname,
+       const char *                      const appversion,
+       const struct xmlrpc_xportparms *  const transportParmsP ATTR_UNUSED,
+       size_t                            const parm_size ATTR_UNUSED,
+       struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Libwww client transport.
 -----------------------------------------------------------------------------*/
@@ -181,7 +181,7 @@ create(xmlrpc_env *                     const envP,
        
        So we use a global variable ('clientTransport') for our transport state.
     */
-    struct clientTransport * const clientTransportP = &clientTransport;
+    struct xmlrpc_client_transport * const clientTransportP = &clientTransport;
     *handlePP = clientTransportP;
 
     clientTransportP->saved_flags = flags;
@@ -213,7 +213,7 @@ create(xmlrpc_env *                     const envP,
 
 
 static void 
-destroy(struct clientTransport * const clientTransportP) {
+destroy(struct xmlrpc_client_transport * const clientTransportP) {
 /*----------------------------------------------------------------------------
    This does the 'destroy' operation for a Libwww client transport.
 -----------------------------------------------------------------------------*/
@@ -302,7 +302,8 @@ setCookie(HTRequest * const request,
   callback only when that's the case).
 -----------------------------------------------------------------------------*/
     rpc * const rpcP = HTRequest_context(request);
-    struct clientTransport * const clientTransportP = rpcP->clientTransportP;
+    struct xmlrpc_client_transport * const clientTransportP = 
+        rpcP->clientTransportP;
 
     BOOL retval;
 
@@ -347,7 +348,8 @@ findCookie(HTRequest * const request,
   request (presumably values the server set via a prior response).
 -----------------------------------------------------------------------------*/
     rpc * const rpcP = HTRequest_context(request);
-    struct clientTransport * const clientTransportP = rpcP->clientTransportP;
+    struct xmlrpc_client_transport * const clientTransportP = 
+        rpcP->clientTransportP;
     const char * const addr = 
         HTAnchor_address((HTAnchor *) HTRequest_anchor(request));
     const char * const host = HTParse(addr, "", PARSE_HOST);
@@ -410,13 +412,13 @@ createDestAnchor(xmlrpc_env *               const envP,
 
 
 static void
-rpcCreate(xmlrpc_env *               const envP,
-          struct clientTransport *   const clientTransportP,
-          const xmlrpc_server_info * const serverP,
-          xmlrpc_mem_block *         const xmlP,
-          transport_asynch_complete        complete, 
-          struct call_info *         const callInfoP,
-          rpc                   **   const rpcPP) {
+rpcCreate(xmlrpc_env *                       const envP,
+          struct xmlrpc_client_transport *   const clientTransportP,
+          const xmlrpc_server_info *         const serverP,
+          xmlrpc_mem_block *                 const xmlP,
+          xmlrpc_transport_asynch_complete         complete, 
+          struct xmlrpc_call_info *          const callInfoP,
+          rpc **                             const rpcPP) {
 
     rpc *rpcP;
     HTRqHd request_headers;
@@ -510,7 +512,17 @@ rpcDestroy(rpc * const rpcP) {
     XMLRPC_ASSERT(rpcP->request != XMLRPC_BAD_POINTER);
     XMLRPC_ASSERT(rpcP->response_data != XMLRPC_BAD_POINTER);
 
-    /* Flush our request object and the data we got back. */
+    /* Junji Kanemaru reports on 05.04.11 that with asynch calls, he
+       get a segfault, and reversing the order of deleting the request
+       and the response chunk buffer cured it.  But we find no reason
+       that should be so, so we're waiting for someone to arrive at an
+       explanation before changing anything.  HTRequest_delete() does
+       destroy the output stream, and the output stream refers to the
+       response chunk, but HTRequest_delete() explicitly refrains from
+       destroying the response chunk.  And the response chunk does not
+       refer to the request.
+    */
+
     HTRequest_delete(rpcP->request);
     rpcP->request = XMLRPC_BAD_POINTER;
     HTChunk_delete(rpcP->response_data);
@@ -600,11 +612,11 @@ synch_terminate_handler(HTRequest *  const request,
 
 
 static void
-call(xmlrpc_env *               const envP,
-     struct clientTransport *   const clientTransportP,
-     const xmlrpc_server_info * const serverP,
-     xmlrpc_mem_block *         const xmlP,
-     xmlrpc_mem_block **        const responsePP) {
+call(xmlrpc_env *                     const envP,
+     struct xmlrpc_client_transport * const clientTransportP,
+     const xmlrpc_server_info *       const serverP,
+     xmlrpc_mem_block *               const xmlP,
+     xmlrpc_mem_block **              const responsePP) {
 /*----------------------------------------------------------------------------
    This does the 'call' operation for a Libwww client transport.
 -----------------------------------------------------------------------------*/
@@ -690,9 +702,9 @@ unregister_asynch_call(void) {
 
 
 static int 
-timer_callback(HTTimer *timer ATTR_UNUSED,
-               void *user_data ATTR_UNUSED,
-               HTEventType event) {
+timer_callback(HTTimer *   const timer ATTR_UNUSED,
+               void *      const user_data ATTR_UNUSED,
+               HTEventType const event) {
 /*----------------------------------------------------------------------------
   A handy timer callback which cancels the running event loop. 
 -----------------------------------------------------------------------------*/
@@ -708,8 +720,8 @@ timer_callback(HTTimer *timer ATTR_UNUSED,
 
 
 static void 
-eventLoopRun(int       const flags, 
-             timeout_t const milliseconds) {
+eventLoopRun(int            const flags, 
+             xmlrpc_timeout const milliseconds) {
 /*----------------------------------------------------------------------------
    Process all responses from outstanding requests as they come in.
    Return when there are no more outstanding responses.
@@ -771,9 +783,10 @@ eventLoopRun(int       const flags,
 
 
 static void 
-finishAsynch(struct clientTransport * const clientTransportP ATTR_UNUSED,
-             enum timeoutType         const timeoutType,
-             timeout_t                const timeout) {
+finishAsynch(
+    struct xmlrpc_client_transport * const clientTransportP ATTR_UNUSED,
+    xmlrpc_timeoutType               const timeoutType,
+    xmlrpc_timeout                   const timeout) {
 /*----------------------------------------------------------------------------
    This does the 'finish_asynch' operation for a Libwww client transport.
 -----------------------------------------------------------------------------*/
@@ -792,9 +805,13 @@ asynch_terminate_handler(HTRequest *  const request,
    Handle the completion of a libwww request.
 
    This is the bottom half of the xmlrpc_libwww_transport asynchronous
-   call dispatcher.  It's what the dispatcher registers with libwww so
-   that libwww calls it when a request that xmlrpc_libwww_transport
-   submitted to it is complete.
+   call dispatcher.  It's what the dispatcher registers with libwww as
+   a "local after filter" so that libwww calls it when a request that
+   xmlrpc_libwww_transport submitted to it is complete.
+
+   We destroy the RPC, including the request which is our argument.
+   Strange as that may seem, it is apparently legal for an after filter
+   to destroy the request that was passed to it -- or not.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
     rpc * rpcP;
@@ -832,12 +849,12 @@ asynch_terminate_handler(HTRequest *  const request,
 
 
 static void 
-sendRequest(xmlrpc_env *               const envP, 
-            struct clientTransport *   const clientTransportP,
-            const xmlrpc_server_info * const serverP,
-            xmlrpc_mem_block *         const xmlP,
-            transport_asynch_complete        complete,
-            struct call_info *         const callInfoP) {
+sendRequest(xmlrpc_env *                     const envP, 
+            struct xmlrpc_client_transport * const clientTransportP,
+            const xmlrpc_server_info *       const serverP,
+            xmlrpc_mem_block *               const xmlP,
+            xmlrpc_transport_asynch_complete       complete,
+            struct xmlrpc_call_info *        const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
    the server.
@@ -894,7 +911,7 @@ sendRequest(xmlrpc_env *               const envP,
 
 
 
-struct clientTransportOps xmlrpc_libwww_transport_ops = {
+struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops = {
     &create,
     &destroy,
     &sendRequest,

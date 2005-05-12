@@ -61,13 +61,13 @@ struct xmlrpc_client {
 /*----------------------------------------------------------------------------
    This represents a client object.
 -----------------------------------------------------------------------------*/
-    struct clientTransport * transportP;
-    struct clientTransportOps clientTransportOps;
+    struct xmlrpc_client_transport *   transportP;
+    struct xmlrpc_client_transport_ops clientTransportOps;
 };
 
 
 
-typedef struct call_info
+typedef struct xmlrpc_call_info
 {
     /* These fields are used when performing asynchronous calls.
     ** The _asynch_data_holder contains server_url, method_name and
@@ -82,7 +82,7 @@ typedef struct call_info
     /* The serialized XML data passed to this call. We keep this around
     ** for use by our source_anchor field. */
     xmlrpc_mem_block *serialized_xml;
-} call_info;
+} xmlrpc_call_info;
 
 static bool clientInitialized = FALSE;
 
@@ -569,7 +569,7 @@ xmlrpc_client_event_loop_finish_asynch(void) {
 
 
 void 
-xmlrpc_client_event_loop_finish_asynch_timeout(timeout_t const timeout) {
+xmlrpc_client_event_loop_finish_asynch_timeout(xmlrpc_timeout const timeout) {
     XMLRPC_ASSERT(clientInitialized);
     client.clientTransportOps.finish_asynch(
         client.transportP, timeout_yes, timeout);
@@ -578,13 +578,13 @@ xmlrpc_client_event_loop_finish_asynch_timeout(timeout_t const timeout) {
 
 
 static void 
-call_info_set_asynch_data(xmlrpc_env *   const env,
-                          call_info *    const info,
-                          const char *   const server_url,
-                          const char *   const method_name,
-                          xmlrpc_value * const argP,
+call_info_set_asynch_data(xmlrpc_env *       const env,
+                          xmlrpc_call_info * const info,
+                          const char *       const server_url,
+                          const char *       const method_name,
+                          xmlrpc_value *     const argP,
                           xmlrpc_response_handler callback,
-                          void *         const user_data) {
+                          void *             const user_data) {
 
     xmlrpc_value *holder;
 
@@ -737,7 +737,7 @@ void xmlrpc_server_info_free (xmlrpc_server_info *server)
 */
 
 static void 
-call_info_free(call_info * const callInfoP) {
+call_info_free(xmlrpc_call_info * const callInfoP) {
 
     /* Assume the worst.. That only parts of the call_info are valid. */
 
@@ -760,12 +760,12 @@ static void
 call_info_new(xmlrpc_env *               const envP,
               const char *               const methodName,
               xmlrpc_value *             const paramArrayP,
-              call_info **               const callInfoPP) {
+              xmlrpc_call_info **        const callInfoPP) {
 /*----------------------------------------------------------------------------
    Create a call_info object.  A call_info object represents an XML-RPC
    call.
 -----------------------------------------------------------------------------*/
-    call_info * callInfoP;
+    struct xmlrpc_call_info * callInfoP;
 
     XMLRPC_ASSERT_PTR_OK(paramArrayP);
     XMLRPC_ASSERT_PTR_OK(callInfoPP);
@@ -944,9 +944,9 @@ xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverP,
 
 
 static void
-asynchComplete(call_info *        const callInfoP,
-               xmlrpc_mem_block * const responseXmlP,
-               xmlrpc_env         const transportEnv) {
+asynchComplete(struct xmlrpc_call_info * const callInfoP,
+               xmlrpc_mem_block *        const responseXmlP,
+               xmlrpc_env                const transportEnv) {
 /*----------------------------------------------------------------------------
    Complete an asynchronous XML-RPC call request.
 
@@ -1006,7 +1006,7 @@ sendRequest(xmlrpc_env *             const envP,
             void *                   const userData,
             xmlrpc_value *           const argP) {
 
-    call_info * callInfoP;
+    xmlrpc_call_info * callInfoP;
 
     call_info_new(envP, methodName, argP, &callInfoP);
     if (!envP->fault_occurred) {
