@@ -331,12 +331,13 @@ class testSuite {
    You don't normally keep an object of this class around.  You don't
    even give it a name.  You simply refer to a literal object, like so:
 
-     myTestSuite().run()
+     myTestSuite().run(0)
 -----------------------------------------------------------------------------*/
 public:
-    void run();
+    void run(unsigned int const indentation);
 
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         throw(error("test suite does not have a runtests() method"));
     };
     virtual string suiteName() {
@@ -345,10 +346,11 @@ public:
 };
 
 void
-testSuite::run() {
+testSuite::run(unsigned int const indentation) {
     try {
-        cout << "Running " << suiteName() << endl;
-        runtests();
+        cout << string(indentation*2, ' ') 
+             << "Running " << suiteName() << endl;
+        runtests(indentation);
     } catch (error thisError) {
         throw(error(suiteName() + string(" failed.  ") + thisError.what()));
     } catch (XmlRpcFault thisFault) {
@@ -360,7 +362,8 @@ testSuite::run() {
         throw(error(suiteName() + string(" failed.  ") +
                     string("It threw an unexpected type of object")));
     }
-    cout << suiteName() << " tests passed." << endl;
+    cout << string(indentation*2, ' ') 
+         << suiteName() << " tests passed." << endl;
 }
 
 
@@ -370,7 +373,8 @@ public:
     virtual string suiteName() {
         return "intTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         value_int int1(7);
         TEST(static_cast<int>(int1) == 7);
         value_int int2(-7);
@@ -393,7 +397,8 @@ public:
     virtual string suiteName() {
         return "doubleTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         value_double double1(3.14);
         TEST(static_cast<double>(double1) == 3.14);
         value val1(double1);
@@ -414,7 +419,8 @@ public:
     virtual string suiteName() {
         return "booleanTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         value_boolean boolean1(true); 
         TEST(static_cast<bool>(boolean1) == true);
         value_boolean boolean2(false);
@@ -437,7 +443,8 @@ public:
     virtual string suiteName() {
         return "datetimeTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         time_t const testTime(900684535);
         value_datetime datetime1("19980717T14:08:55");
         TEST(static_cast<time_t>(datetime1) == testTime);
@@ -461,7 +468,8 @@ public:
     virtual string suiteName() {
         return "stringTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         value_string string1("hello world");
         TEST(static_cast<string>(string1) == "hello world");
         value_string string2("embedded\0null");
@@ -484,7 +492,8 @@ public:
     virtual string suiteName() {
         return "bytestringTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         unsigned char bytestringArray[] = {0x10, 0x11, 0x12, 0x13, 0x14};
         vector<unsigned char> 
             bytestringData(&bytestringArray[0], &bytestringArray[4]);
@@ -513,7 +522,8 @@ public:
     virtual string suiteName() {
         return "arrayTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         vector<value> arrayData;
         arrayData.push_back(value_int(7));
         arrayData.push_back(value_double(2.78));
@@ -548,7 +558,8 @@ public:
     virtual string suiteName() {
         return "structTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         map<string, value> structData;
         pair<string, value> member("the_integer", value_int(9));
         structData.insert(member);
@@ -576,7 +587,8 @@ public:
     virtual string suiteName() {
         return "nilTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
         value_nil nil1;
         value val1(nil1);
         TEST(val1.type() == value::TYPE_NIL);
@@ -596,17 +608,17 @@ public:
     virtual string suiteName() {
         return "valueTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
 
-        intTestSuite().run();
-        doubleTestSuite().run();
-        booleanTestSuite().run();
-        datetimeTestSuite().run();
-        stringTestSuite().run();
-        bytestringTestSuite().run();
-        arrayTestSuite().run();
-        structTestSuite().run();
-        nilTestSuite().run();
+        intTestSuite().run(indentation+1);
+        doubleTestSuite().run(indentation+1);
+        booleanTestSuite().run(indentation+1);
+        datetimeTestSuite().run(indentation+1);
+        stringTestSuite().run(indentation+1);
+        bytestringTestSuite().run(indentation+1);
+        arrayTestSuite().run(indentation+1);
+        structTestSuite().run(indentation+1);
+        nilTestSuite().run(indentation+1);
     }
 };
 
@@ -680,7 +692,9 @@ public:
     virtual string suiteName() {
         return "paramListTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+
+        if (indentation == indentation){}
 
         paramList paramList1;
         TEST(paramList1.size() == 0);
@@ -743,12 +757,13 @@ public:
     virtual string suiteName() {
         return "registryTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
 
         xmlrpc_c::registry myRegistry;
         
         myRegistry.addMethod("sample.add", 
-                             xmlrpc_c::method_ptr(new sampleAddMethod));
+                             xmlrpc_c::methodPtr(new sampleAddMethod));
         
         {
             string * responseP;
@@ -779,7 +794,8 @@ public:
     virtual string suiteName() {
         return "clientXmlTransportTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         clientXmlTransport_curl transportc1("eth0");
@@ -819,7 +835,9 @@ public:
     virtual string suiteName() {
         return "clientSimpleTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
+
         clientSimple clientS0;
         paramList paramList0;
 
@@ -870,24 +888,80 @@ public:
     }
 };
 
+
+
+class clientDirectAsyncTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+   See clientDirectTestSuite for a description of how we use a
+   clientXmlTransport_direct object to test client functions.
+
+   The object of this class tests the async client functions.  With
+   clientXmlTransport_direct, these are pretty simple because the
+   transport doesn't even implement an asynchronous interface; it
+   relies on the base class' emulation of start() using call().
+
+   Some day, we should add true asynchronous capability to
+   clientXmlTransport_direct and really test things.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "clientDirectAsyncTestSuite";
+    }
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
+        
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        
+        carriageParm_direct carriageParmDirect(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        clientXml clientDirect(&transportDirect);
+        paramList paramListSampleAdd1;
+        paramListSampleAdd1.add(value_int(5));
+        paramListSampleAdd1.add(value_int(7));
+        paramList paramListSampleAdd2;
+        paramListSampleAdd2.add(value_int(30));
+        paramListSampleAdd2.add(value_int(-10));
+
+        rpcPtr const rpcSampleAdd1P("sample.add", paramListSampleAdd1);
+        rpcSampleAdd1P->start(&clientDirect, &carriageParmDirect);
+        rpcPtr const rpcSampleAdd2P("sample.add", paramListSampleAdd2);
+        rpcSampleAdd2P->start(&clientDirect, &carriageParmDirect);
+        
+        TEST(rpcSampleAdd1P->isFinished());
+        value_int const result1(rpcSampleAdd1P->getResult());
+        TEST(static_cast<int>(result1) == 12);
+        
+        TEST(rpcSampleAdd2P->isFinished());
+        value_int const result2(rpcSampleAdd2P->getResult());
+        TEST(static_cast<int>(result2) == 20);
+
+        EXPECT_ERROR(clientDirect.finishAsync(timeout()););
+        EXPECT_ERROR(clientDirect.finishAsync(timeout(50)););
+    }
+};
+
+
+
 class clientDirectTestSuite : public testSuite {
 /*----------------------------------------------------------------------------
-  The object of this class tests the client facilities by using a specially
-  client XML transport we define ourselves and an XML-RPC server we build
-  ourselves.  We build the server out of a xmlrpc_c::registry object and
-  our transport just delivers XML directly to the registry object and gets
-  the response XML from it and delivers that back.  There's no network or
-  socket or pipeline or anything -- the transport actually executes the
-  XML-RPC method.
+  The object of this class tests the client facilities by using a
+  special client XML transport defined above and an XML-RPC server we
+  build ourselves and run inline.  We build the server out of a
+  xmlrpc_c::registry object and our transport just delivers XML
+  directly to the registry object and gets the response XML from it
+  and delivers that back.  There's no network or socket or pipeline or
+  anything -- the transport actually executes the XML-RPC method.
 -----------------------------------------------------------------------------*/
 public:
     virtual string suiteName() {
         return "clientDirectTestSuite";
     }
-    virtual void runtests() {
+    virtual void runtests(unsigned int const indentation) {
         registry myRegistry;
         
-        myRegistry.addMethod("sample.add", method_ptr(new sampleAddMethod));
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
         
         carriageParm_direct carriageParmDirect(&myRegistry);
         clientXmlTransport_direct transportDirect;
@@ -895,10 +969,21 @@ public:
         paramList paramListSampleAdd;
         paramListSampleAdd.add(value_int(5));
         paramListSampleAdd.add(value_int(7));
-        rpc rpcSampleAdd("sample.add", paramListSampleAdd);
-        rpcSampleAdd.call(&clientDirect, &carriageParmDirect);
-        value_int const resultDirect(rpcSampleAdd.getResult());
-        TEST(static_cast<int>(resultDirect) == 12);
+        {
+            rpcPtr rpcSampleAddP("sample.add", paramListSampleAdd);
+            rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcSampleAddP->isFinished());
+            value_int const resultDirect(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(resultDirect) == 12);
+        }
+        {
+            rpcPtr const rpcSampleAddP("sample.add", paramListSampleAdd);
+            rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
+            value_int const resultDirect(rpcSampleAddP->getResult());
+            TEST(rpcSampleAddP->isFinished());
+            TEST(static_cast<int>(resultDirect) == 12);
+        }
+        clientDirectAsyncTestSuite().run(indentation+1);
     }
 };
 
@@ -910,10 +995,12 @@ public:
     virtual string suiteName() {
         return "clientTestSuite";
     }
-    virtual void runtests() {
-        clientDirectTestSuite().run();
+    virtual void runtests(unsigned int const indentation) {
+        if (indentation == indentation){}
 
-        clientXmlTransportTestSuite().run();
+        clientDirectTestSuite().run(indentation+1);
+
+        clientXmlTransportTestSuite().run(indentation+1);
 
         carriageParm_http0 carriageParm1("http://suckthis.comm");
         carriageParm_curl0 carriageParm2("http://suckthis.comm");
@@ -927,24 +1014,39 @@ public:
         
         paramList paramList0;
 
-        rpc rpc0("blowme", paramList0);
+        rpcPtr rpc0P("blowme", paramList0);
 
-        // The following fail because the named server does not exist
+        // This fails because RPC has not been executed
+        EXPECT_ERROR(value result(rpc0P->getResult()););
 
-        EXPECT_ERROR(value result0(rpc0.getResult()););
+        // This fails because server doesn't exist
+        EXPECT_ERROR(rpc0P->call(&client0, &carriageParm2););
 
-        EXPECT_ERROR(rpc0.call(&client0, &carriageParm2););
+        rpcPtr rpc1P("blowme", paramList0);
+        // This fails because server doesn't exist
+        EXPECT_ERROR(rpc1P->call(connection0););
 
-        EXPECT_ERROR(rpc0.call(connection0););
+        rpcPtr rpc2P("blowme", paramList0);
 
-        EXPECT_ERROR(rpc0.start(&client0, &carriageParm2););
+        rpc2P->start(&client0, &carriageParm2);
 
-        EXPECT_ERROR(rpc0.start(connection0););
+        client0.finishAsync(timeout());
 
-        EXPECT_ERROR(value result0(rpc0.getResult()););
+        // This fails because the RPC failed because server doesn't exist
+        EXPECT_ERROR(value result(rpc2P->getResult()););
 
+        // This fails because the RPC has already been executed
+        EXPECT_ERROR(rpc2P->start(connection0););
+
+        rpcPtr rpc3P("blowme", paramList0);
+        rpc3P->start(connection0);
+
+        client0.finishAsync(timeout());
+        
+        // This fails because the RPC failed because server doesn't exist
+        EXPECT_ERROR(value result(rpc3P->getResult()););
 #endif
-        clientSimpleTestSuite().run();
+        clientSimpleTestSuite().run(indentation+1);
     }
 };
 
@@ -954,7 +1056,7 @@ public:
 
 int 
 main(int argc, char** argv) {
-
+    
     int retval;
 
     if (argc-1 > 0) {
@@ -966,10 +1068,10 @@ main(int argc, char** argv) {
 
     try {
         // Add your test suites here.
-        valueTestSuite().run();
-        paramListTestSuite().run();
-        registryTestSuite().run();
-        clientTestSuite().run();
+        valueTestSuite().run(0);
+        paramListTestSuite().run(0);
+        registryTestSuite().run(0);
+        clientTestSuite().run(0);
 
         testXmlRpcCpp();
 

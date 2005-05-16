@@ -121,9 +121,6 @@ xmlrpc_server_cgi.lo:%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) \
 	  $(CFLAGS) $<
 
-$(TRANSPORT_OBJS): FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
 LTLIBRARIES_TO_INSTALL = $(TARGET_LTLIBRARIES)
 LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
 

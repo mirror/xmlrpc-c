@@ -4,6 +4,8 @@
 #include <string>
 
 #include <xmlrpc-c/base.hpp>
+#include <xmlrpc-c/timeout.hpp>
+#include <xmlrpc-c/client.h>
 
 namespace xmlrpc_c {
 
@@ -48,12 +50,14 @@ protected:
 };
 
 
+
 class carriageParm_curl0 : public xmlrpc_c::carriageParm_http0 {
 
 public:
     carriageParm_curl0(std::string const serverUrl);
 
 };
+
 
 
 class carriageParm_libwww0 : public xmlrpc_c::carriageParm_http0 {
@@ -72,6 +76,84 @@ public:
 };
 
 
+
+class rpc;
+
+
+
+class rpcPtr {
+public:
+    rpcPtr();
+    ~rpcPtr();
+
+    rpcPtr(xmlrpc_c::rpc * const rpcP);
+
+    rpcPtr(xmlrpc_c::rpcPtr const& rpcPtr); // copy constructor
+    
+    rpcPtr(std::string         const  methodName,
+           xmlrpc_c::paramList const& paramList);
+
+    xmlrpc_c::rpc *
+    operator->() const;
+
+    rpcPtr
+    operator=(xmlrpc_c::rpcPtr const& rpcPtr);
+
+private:
+    xmlrpc_c::rpc * rpcP;
+};
+
+
+
+class xmlTransaction {
+
+public:
+    xmlTransaction();
+
+    virtual
+    ~xmlTransaction();
+
+    void
+    incref();
+
+    void
+    decref(bool * const unreferencedP);
+
+    virtual void
+    finish(string const& responseXml) const;
+
+    virtual void
+    finishErr(girerr::error const& error) const;
+
+private:
+    pthread_mutex_t lock;
+    unsigned int refcount;
+};
+
+
+
+class xmlTransactionPtr {
+public:
+    xmlTransactionPtr();
+    ~xmlTransactionPtr();
+
+    xmlTransactionPtr(xmlrpc_c::xmlTransaction * const xmlTransactionP);
+
+    xmlTransactionPtr(xmlrpc_c::xmlTransactionPtr const& xmlTransactionPtr);
+        // copy constructor
+    
+    xmlrpc_c::xmlTransaction *
+    operator->() const;
+
+    xmlTransactionPtr
+    operator=(xmlrpc_c::xmlTransactionPtr const& xmlTransactionPtr);
+
+private:
+    xmlrpc_c::xmlTransaction * xmlTransactionP;
+};
+
+
+
 class clientXmlTransport {
 /*----------------------------------------------------------------------------
    An object which transports XML to and from an XML-RPC server for an
@@ -87,6 +169,20 @@ public:
     call(xmlrpc_c::carriageParm * const  carriageParmP,
          std::string              const& callXml,
          std::string *            const  responseXmlP) = 0;
+
+    virtual void
+    start(xmlrpc_c::carriageParm *    const  carriageParmP,
+          std::string                 const& callXml,
+          xmlrpc_c::xmlTransactionPtr const& xmlTranP);
+
+    virtual void
+    finishAsync(xmlrpc_c::timeout const timeout);
+
+    static void
+    asyncComplete(
+        struct xmlrpc_call_info * const callInfoP,
+        xmlrpc_mem_block *        const responseXmlMP,
+        xmlrpc_env                const transportEnv);
 };
 
 
@@ -104,6 +200,15 @@ public:
          std::string              const& callXml,
          std::string *            const  responseXmlP);
     
+    void
+    clientXmlTransport_http::start(
+        xmlrpc_c::carriageParm *    const  carriageParmP,
+        std::string                 const& callXml,
+        xmlrpc_c::xmlTransactionPtr const& xmlTranP);
+        
+    virtual void
+    finishAsync(xmlrpc_c::timeout const timeout);
+
 protected:
     clientXmlTransport_http() {} // ensure no one can create
     struct xmlrpc_client_transport *           c_transportP;
@@ -159,6 +264,12 @@ public:
          std::string              const  methodName,
          xmlrpc_c::paramList      const& paramList,
          xmlrpc_c::value *        const  resultP) = 0;
+
+    virtual void
+    start(xmlrpc_c::carriageParm * const  carriageParmP,
+          std::string              const  methodName,
+          xmlrpc_c::paramList      const& paramList,
+          xmlrpc_c::rpcPtr         const& rpcP);
 };
 
 
@@ -177,9 +288,19 @@ public:
          xmlrpc_c::paramList      const& paramList,
          xmlrpc_c::value *        const  resultP);
 
+    virtual void
+    start(xmlrpc_c::carriageParm * const  carriageParmP,
+          std::string              const  methodName,
+          xmlrpc_c::paramList      const& paramList,
+          xmlrpc_c::rpcPtr         const& rpcP);
+
+    virtual void
+    finishAsync(xmlrpc_c::timeout const timeout);
+
 private:
     xmlrpc_c::clientXmlTransport * transportP;
 };
+
 
 
 class connection {
@@ -202,17 +323,32 @@ public:
     xmlrpc_c::carriageParm * carriageParmP;
 };
 
+
+
 class rpc {
 /*----------------------------------------------------------------------------
    An RPC.  An RPC consists of method name, parameters, and result.  It
    does not specify in any way how the method name and parameters get
    turned into a result.  It does not presume XML or HTTP.
------------------------------------------------------------------------------*/
-public:
-    rpc(std::string          const  methodName,
-        xmlrpc_c::paramList  const& paramList);
 
-    virtual ~rpc();
+   You don't create an object of this class directly.  All references to
+   an rpc object should be by an rpcPtr object.  Create a new RPC by
+   creating a new rpcPtr.  Accordingly, our constructors and destructors
+   are protected, but available to our friend class rpcPtr.
+
+   In order to do asynchronous RPCs, you normally have to create a derived
+   class that defines a useful notifyComplete().  If you do that, you'll
+   want to make sure the derived class objects get accessed only via rpcPtrs
+   as well.
+-----------------------------------------------------------------------------*/
+    friend xmlrpc_c::rpcPtr;
+
+public:
+    void
+    incref();
+
+    void
+    decref(bool * const unreferencedP);
 
     void
     call(xmlrpc_c::client       * const clientP,
@@ -228,8 +364,17 @@ public:
     void
     start(xmlrpc_c::connection const& connection);
     
+    void
+    finish(xmlrpc_c::value const& result);
+
+    void
+    finishErr(girerr::error const& error);
+
+    void
+    finishFail(xmlrpc_c::fault const& fault);
+
     virtual void
-    finish();
+    notifyComplete();
 
     xmlrpc_c::value
     getResult() const;
@@ -237,12 +382,48 @@ public:
     bool
     isFinished() const;
 
+protected:
+    rpc(std::string         const  methodName,
+        xmlrpc_c::paramList const& paramList);
+
+    virtual ~rpc();
+
 private:
-    bool finished;
+    pthread_mutex_t lock;
+
+    enum state {
+        STATE_UNFINISHED,  // RPC is running or not started yet
+        STATE_ERROR,   // We couldn't execute the RPC
+        STATE_FAILED,  // RPC executed successfully, but failed per XML-RPC
+        STATE_SUCCEEDED,   // RPC is done, no exception
+    };
+    state state;
+    girerr::error * errorP;     // Defined only in STATE_ERROR
+    xmlrpc_c::fault * faultP;   // Defined only in STATE_FAILED
     std::string methodName;
     xmlrpc_c::paramList paramList;
     xmlrpc_c::value result;
+    unsigned int refcount;
 };
+
+
+
+class xmlTransaction_rpc : public xmlrpc_c::xmlTransaction {
+
+public:
+    xmlTransaction_rpc(xmlrpc_c::rpcPtr const& rpcP);
+
+    void
+    finish(string const& responseXml) const;
+
+    void
+    finishErr(error const& error) const;
+
+private:
+    xmlrpc_c::rpcPtr rpcP;
+};
+
+
 
 class clientSimple {
 

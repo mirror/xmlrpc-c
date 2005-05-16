@@ -14,6 +14,12 @@ using namespace xmlrpc_c;
 namespace xmlrpc_c {
 
 
+method::method() : 
+        _signature("?"),
+        _help("No help is available for this method"),
+        refcount(0)
+        {};
+
 method::~method() {
     if (this->refcount > 0)
         throw(error("Destroying referenced object"));
@@ -39,25 +45,26 @@ method::decref(bool * const unreferencedP) {
  
 
 
-method_ptr::method_ptr() : methodP(NULL) {};
+methodPtr::methodPtr() : methodP(NULL) {};
 
 
 
-method_ptr::method_ptr(method * const _methodP) {
+methodPtr::methodPtr(method * const _methodP) {
     this->methodP = _methodP;
     this->methodP->incref();
 }
 
 
 
-method_ptr::method_ptr(method_ptr const& methodPtr) { // copy constructor
+methodPtr::methodPtr(methodPtr const& methodPtr) { // copy constructor
     this->methodP = methodPtr.methodP;
-    this->methodP->incref();
+    if (this->methodP)
+        this->methodP->incref();
 }
     
  
 
-method_ptr::~method_ptr() {
+methodPtr::~methodPtr() {
     bool dead;
     this->methodP->decref(&dead);
     if (dead)
@@ -66,8 +73,8 @@ method_ptr::~method_ptr() {
  
 
    
-method_ptr
-method_ptr::operator=(method_ptr const& methodPtr) {
+methodPtr
+methodPtr::operator=(methodPtr const& methodPtr) {
     if (this->methodP != NULL)
         throw(error("Already instantiated"));
     this->methodP = methodPtr.methodP;
@@ -78,7 +85,7 @@ method_ptr::operator=(method_ptr const& methodPtr) {
 
 
 method *
-method_ptr::get() const {
+methodPtr::get() const {
     return methodP;
 }
 
@@ -193,8 +200,8 @@ c_executeMethod(xmlrpc_env *   const envP,
 
 
 void
-registry::addMethod(string               const name,
-                    xmlrpc_c::method_ptr const methodPtr) {
+registry::addMethod(string              const name,
+                    xmlrpc_c::methodPtr const methodPtr) {
 
 
     this->methodList.push_back(methodPtr);

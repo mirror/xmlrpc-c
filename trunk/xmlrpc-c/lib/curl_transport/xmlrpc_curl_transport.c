@@ -567,7 +567,6 @@ doAsyncRpc(void * arg) {
 }
 
 #else
-
 static void *
 doAsyncRpc(void * arg) {
     doAsyncRpc2(arg);

@@ -20,11 +20,7 @@ class method {
    execute() method.
 -----------------------------------------------------------------------------*/
 public:
-    method() : 
-        _signature("?"),
-        _help("No help is available for this method"),
-        refcount(0)
-        {};
+    method();
 
     virtual ~method();
 
@@ -75,7 +71,7 @@ private:
 
    Example of creating such a method:
 
-   method_ptr const sampleAddMethodP(new sample_add);
+   methodPtr const sampleAddMethodP(new sample_add);
 
    You pass around, copy, etc. the handle sampleAddMethodP and when
    the last copy of the handle is gone, the sample_add object itself
@@ -84,7 +80,7 @@ private:
 */
 
 
-class method_ptr {
+class methodPtr {
 /*----------------------------------------------------------------------------
    This is a handle for a xmlrpc_c::method.  It maintains the reference
    count in the xmlrpc_c::method and destroys it when the count goes to
@@ -92,22 +88,22 @@ class method_ptr {
    goes away.
 -----------------------------------------------------------------------------*/
 public:
-    method_ptr();
-    method_ptr(xmlrpc_c::method * const _methodP);
+    methodPtr();
+    methodPtr(xmlrpc_c::method * const _methodP);
 
-    method_ptr(xmlrpc_c::method_ptr const& methodPtr);
+    methodPtr(xmlrpc_c::methodPtr const& methodPtr);
     
-    ~method_ptr();
+    ~methodPtr();
     
-    method_ptr
-    operator=(method_ptr const& methodPtr);
+    methodPtr
+    operator=(xmlrpc_c::methodPtr const& methodPtr);
 
     xmlrpc_c::method *
     get() const;
         // Ordinarily, this would not be exposed, but we need this in
         // order to interface with the C registry code, which registers
         // a C pointer.  In a pure C++ implementation, we'd just
-        // register a copy of the method_ptr object and our 'methodP'
+        // register a copy of the methodPtr object and our 'methodP'
         // member would be totally private.
 
 private:
@@ -129,8 +125,8 @@ public:
     ~registry();
 
     void
-    registry::addMethod(string               const name,
-                        xmlrpc_c::method_ptr const methodP);
+    registry::addMethod(string              const name,
+                        xmlrpc_c::methodPtr const methodP);
     
     void
     registry::processCall(std::string    const& body,
@@ -149,7 +145,7 @@ private:
            object.
         */
 
-    list<xmlrpc_c::method_ptr> methodList;
+    list<xmlrpc_c::methodPtr> methodList;
         /* This is a list of all the method objects (actually, pointers
            to them).  But since the real registry is the C registry object,
            all this list is for is to maintain references to the objects

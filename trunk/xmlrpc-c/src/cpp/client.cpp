@@ -11,6 +11,7 @@
 
 #include <string>
 
+#include "pthreadx.h"
 #include "girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/base.h"
@@ -38,6 +39,7 @@ using girerr::error;
 
 using namespace std;
 using namespace xmlrpc_c;
+
 
 
 namespace {
@@ -164,7 +166,181 @@ carriageParm_wininet0::carriageParm_wininet0(
 
 
 
-clientXmlTransport::~clientXmlTransport() {
+xmlTransaction::xmlTransaction() {
+    
+    int rc;
+
+    rc = pthread_mutex_init(&this->lock, NULL);
+
+    if (rc != 0)
+        throw(error("Unable to initialize pthread mutex"));
+
+    this->refcount   = 0;
+}
+
+
+
+xmlTransaction::~xmlTransaction() {
+    if (this->refcount > 0)
+        throw(error("Destroying referenced object"));
+
+    int rc;
+
+    rc = pthread_mutex_destroy(&this->lock);
+
+    if (rc != 0)
+        throw(error("Unable to destroy pthread mutex"));
+}
+
+
+
+void
+xmlTransaction::incref() {
+    pthread_mutex_lock(&this->lock);
+    ++this->refcount;
+    pthread_mutex_unlock(&this->lock);
+}
+
+
+
+void
+xmlTransaction::decref(bool * const unreferencedP) {
+
+    if (this->refcount == 0)
+        throw(error("Decrementing ref count of unreferenced object"));
+    pthread_mutex_lock(&this->lock);
+    --this->refcount;
+    *unreferencedP = (this->refcount == 0);
+    pthread_mutex_unlock(&this->lock);
+}
+ 
+
+
+void
+xmlTransaction::finish(string const& responseXml) const {
+
+    xml::trace("XML-RPC RESPONSE", responseXml);
+}
+
+
+
+void
+xmlTransaction::finishErr(error const& error) const {
+
+    if (error.what()) {}
+}
+
+
+
+// TODO: use a template or base class to do the common stuff between
+// rpcPtr, xmlTransactionPtr, and methodPtr. 
+
+xmlTransactionPtr::xmlTransactionPtr() : xmlTransactionP(NULL) {}
+
+
+
+xmlTransactionPtr::xmlTransactionPtr(xmlTransaction * const xmlTransactionP) {
+
+    this->xmlTransactionP = xmlTransactionP;
+    xmlTransactionP->incref();
+}
+    
+ 
+
+xmlTransactionPtr::xmlTransactionPtr(xmlTransactionPtr const& xmlTranP) {
+    // copy constructor
+    this->xmlTransactionP = xmlTranP.xmlTransactionP;
+    if (this->xmlTransactionP)
+        this->xmlTransactionP->incref();
+}
+    
+ 
+
+xmlTransactionPtr::~xmlTransactionPtr() {
+    bool dead;
+    this->xmlTransactionP->decref(&dead);
+    if (dead)
+        delete(this->xmlTransactionP);
+}
+
+
+ 
+xmlTransactionPtr
+xmlTransactionPtr::operator=(xmlTransactionPtr const& xmlTransactionPtr) {
+    if (this->xmlTransactionP != NULL)
+        throw(error("Already instantiated"));
+    this->xmlTransactionP = xmlTransactionPtr.xmlTransactionP;
+    this->xmlTransactionP->incref();
+    return *this;
+}
+
+   
+
+xmlTransaction *
+xmlTransactionPtr::operator->() const {
+    return this->xmlTransactionP;
+}
+
+
+
+clientXmlTransport::~clientXmlTransport() {}
+
+
+
+void
+clientXmlTransport::start(carriageParm *    const  carriageParmP,
+                          string            const& callXml,
+                          xmlTransactionPtr const& xmlTranP) {
+    
+    string responseXml;
+
+    this->call(carriageParmP, callXml, &responseXml);
+
+    xmlTranP->finish(responseXml);
+}
+
+
+
+void
+clientXmlTransport::finishAsync(xmlrpc_c::timeout const timeout) {
+    if (timeout.finite == timeout.finite)
+        throw(error("This class does not have finishAsync()"));
+}
+
+
+
+void
+clientXmlTransport::asyncComplete(
+    struct xmlrpc_call_info * const callInfoP,
+    xmlrpc_mem_block *        const responseXmlMP,
+    xmlrpc_env                const transportEnv) {
+
+    xmlTransactionPtr * const xmlTranPP =
+        reinterpret_cast<xmlTransactionPtr *>(callInfoP);
+
+    try {
+        if (transportEnv.fault_occurred) {
+            (*xmlTranPP)->finishErr(error(transportEnv.fault_string));
+        } else {
+            string const responseXml(
+                XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlMP),
+                XMLRPC_MEMBLOCK_SIZE(char, responseXmlMP));
+            (*xmlTranPP)->finish(responseXml);
+        }
+    } catch(error const error) {
+        /* We can't throw an error back to C code, and the async_complete
+           interface does not provide for failure, so we define ->finish()
+           as not being capable of throwing an error.
+        */
+        assert(false);
+    }
+    delete(xmlTranPP);
+
+    /* Ordinarily, *xmlTranPP is the last reference to **xmlTranPP
+       (The xmlTransaction), so it will get destroyed too.  But
+       ->finish() could conceivably create a new reference to
+       **xmlTranPP, and then it would keep living.
+    */
 }
 
 
@@ -207,6 +383,62 @@ clientXmlTransport_http::call(
     
     *responseXmlP = string(XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlMP),
                            XMLRPC_MEMBLOCK_SIZE(char, responseXmlMP));
+}
+
+
+
+void
+clientXmlTransport_http::start(
+    carriageParm *    const  carriageParmP,
+    string            const& callXml,
+    xmlTransactionPtr const& xmlTranP) {
+
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+
+    carriageParm_http0 * const carriageParmHttpP =
+        dynamic_cast<carriageParm_http0 *>(carriageParmP);
+
+    if (carriageParmHttpP == NULL)
+        throw(error("HTTP client XML transport called with carriage "
+                    "parameter object not of type carriageParm_http"));
+
+    memblockStringWrapper callXmlM(callXml);
+
+    /* xmlTranP2 is the reference to the XML transaction that is held by
+       the running transaction, in C code.  It lives in dynamically allocated
+       storage and xmlTranP2P points to it.
+    */
+    xmlTransactionPtr * const xmlTranP2P(new xmlTransactionPtr(xmlTranP));
+
+    try {
+        this->c_transportOpsP->send_request(
+            &env,
+            this->c_transportP,
+            carriageParmHttpP->c_serverInfoP,
+            callXmlM.memblockP,
+            &this->asyncComplete,
+            reinterpret_cast<xmlrpc_call_info *>(xmlTranP2P));
+
+        if (env.fault_occurred)
+            throw(error(env.fault_string));
+    } catch (...) {
+        delete xmlTranP2P;
+        throw;
+    }
+}
+
+
+
+void
+clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
+
+    xmlrpc_timeoutType const c_timeoutType(
+        timeout.finite ? timeout_yes : timeout_no);
+    xmlrpc_timeout const c_timeout(timeout.duration);
+
+    this->c_transportOpsP->finish_asynch(
+        this->c_transportP, c_timeoutType, c_timeout);
 }
 
 
@@ -325,6 +557,27 @@ clientXmlTransport_wininet::~clientXmlTransport_wininet() {
 
 
 
+void
+client::start(carriageParm * const  carriageParmP,
+              string         const  methodName,
+              paramList      const& paramList,
+              rpcPtr         const& rpcP) {
+/*----------------------------------------------------------------------------
+   Start an RPC, wait for it to complete, and finish it.
+
+   Usually, a derived class overrides this with something that does
+   not wait for the RPC to complete, but rather arranges for something
+   to finish the RPC later when the RPC does complete.
+-----------------------------------------------------------------------------*/
+    value result;
+
+    call(carriageParmP, methodName, paramList, &result);
+
+    rpcP->finish(result);
+}
+
+
+
 clientXml::clientXml(clientXmlTransport * const transportP) :
     transportP(transportP) {}
      
@@ -352,6 +605,34 @@ clientXml::call(carriageParm * const  carriageParmP,
  
 
 
+void
+clientXml::start(carriageParm * const  carriageParmP,
+                 string         const  methodName,
+                 paramList      const& paramList,
+                 rpcPtr         const& rpcP) {
+
+    string callXml;
+
+    xml::generateCall(methodName, paramList, &callXml);
+    
+    xml::trace("XML-RPC CALL", callXml);
+
+    xmlTransactionPtr xmlTranP(new xmlTransaction_rpc(rpcP));
+
+    this->transportP->start(carriageParmP, callXml, xmlTranP);
+}
+ 
+
+
+void
+clientXml::finishAsync(xmlrpc_c::timeout const timeout) {
+
+    transportP->finishAsync(timeout);
+}
+
+
+
+
 connection::connection(client *       const clientP,
                        carriageParm * const carriageParmP) :
     clientP(clientP), carriageParmP(carriageParmP) {}
@@ -362,27 +643,70 @@ connection::~connection() {}
 
 
 
-rpc::rpc(string    const  methodName,
+rpc::rpc(string              const  methodName,
          xmlrpc_c::paramList const& paramList) {
+    
+    int rc;
 
+    rc = pthread_mutex_init(&this->lock, NULL);
+
+    if (rc != 0)
+        throw(error("Unable to initialize pthread mutex"));
+
+    this->state      = STATE_UNFINISHED;
     this->methodName = methodName;
     this->paramList  = paramList;
-    this->finished   = false;
+    this->refcount   = 1;
 }
 
 
 
 rpc::~rpc() {
+    if (this->refcount > 0)
+        throw(error("Destroying referenced object"));
 
+    int rc;
+
+    rc = pthread_mutex_destroy(&this->lock);
+
+    if (rc != 0)
+        throw(error("Unable to destroy pthread mutex"));
+
+    if (this->state == STATE_ERROR)
+        delete(this->errorP);
+    if (this->state == STATE_FAILED)
+        delete(this->faultP);
 }
 
+
+
+void
+rpc::incref() {
+    pthread_mutex_lock(&this->lock);
+    ++this->refcount;
+    pthread_mutex_unlock(&this->lock);
+}
+
+
+
+void
+rpc::decref(bool * const unreferencedP) {
+
+    if (this->refcount == 0)
+        throw(error("Decrementing ref count of unreferenced object"));
+    pthread_mutex_lock(&this->lock);
+    --this->refcount;
+    *unreferencedP = (this->refcount == 0);
+    pthread_mutex_unlock(&this->lock);
+}
+ 
 
 
 void
 rpc::call(client       * const clientP,
           carriageParm * const carriageParmP) {
 
-    if (this->finished)
+    if (this->state != STATE_UNFINISHED)
         throw(error("Attempt to execute an RPC that has already been "
                     "executed"));
 
@@ -391,7 +715,7 @@ rpc::call(client       * const clientP,
                   this->paramList,
                   &this->result);
 
-    this->finished = true;
+    this->state = STATE_SUCCEEDED;
 }
 
 
@@ -409,9 +733,14 @@ void
 rpc::start(client       * const clientP,
            carriageParm * const carriageParmP) {
     
-    // Asynchronicity not coded yet
+    if (this->state != STATE_UNFINISHED)
+        throw(error("Attempt to execute an RPC that has already been "
+                    "executed"));
 
-    this->call(clientP, carriageParmP);
+    clientP->start(carriageParmP,
+                   this->methodName,
+                   this->paramList,
+                   rpcPtr(this));
 }
 
 
@@ -419,30 +748,56 @@ rpc::start(client       * const clientP,
 void
 rpc::start(xmlrpc_c::connection const& connection) {
     
-    // Asynchronicity not coded yet
-
-    this->call(connection);
+    this->start(connection.clientP, connection.carriageParmP);
 }
 
 
 
 void
-rpc::finish() {
-/*----------------------------------------------------------------------------
-   Anyone who does RPCs asynchronously will want to make his own class
-   derived from 'rpc' and override this with a finish() that does
-   something.
+rpc::finish(value const& result) {
 
-   Typically, finish() will queue the RPC so some other thread will
-   deal with the fact that the RPC is finished.
+    this->state = STATE_SUCCEEDED;
+    this->result = result;
+    this->notifyComplete();
+}
+
+
+
+void
+rpc::finishErr(error const& error) {
+
+    this->state = STATE_ERROR;
+    this->errorP = new girerr::error(error);
+    this->notifyComplete();
+}
+
+
+
+void
+rpc::finishFail(fault const& fault) {
+
+    this->state = STATE_FAILED;
+    this->faultP = new xmlrpc_c::fault(fault);
+    this->notifyComplete();
+}
+
+
+
+void
+rpc::notifyComplete() {
+/*----------------------------------------------------------------------------
+   Anyone who does RPCs asynchronously and doesn't use polling will
+   want to make his own class derived from 'rpc' and override this
+   with a notifyFinish() that does something.
+
+   Typically, notifyFinish() will queue the RPC so some other thread
+   will deal with the fact that the RPC is finished.
 
 
    In the absence of the aforementioned queueing, the RPC becomes
    unreferenced as soon as our Caller releases his reference, so the
    RPC gets destroyed when we return.
 -----------------------------------------------------------------------------*/
-
-
 
 }
 
@@ -451,8 +806,20 @@ rpc::finish() {
 value
 rpc::getResult() const {
 
-    if (!this->finished)
+    switch (this->state) {
+    case STATE_UNFINISHED:
         throw(error("Attempt to get result of RPC that is not finished."));
+        break;
+    case STATE_ERROR:
+        throw(*this->errorP);
+        break;
+    case STATE_FAILED:
+        throw(*this->faultP);
+        break;
+    case STATE_SUCCEEDED: {
+        // All normal
+    }
+    }
 
     return this->result;
 }
@@ -461,7 +828,96 @@ rpc::getResult() const {
 
 bool
 rpc::isFinished() const {
-    return this->finished;
+    return (this->state != STATE_UNFINISHED);
+}
+
+
+
+rpcPtr::rpcPtr() : rpcP(NULL) {}
+
+
+
+rpcPtr::rpcPtr(rpc * const rpcP) {
+
+    this->rpcP = rpcP;
+    rpcP->incref();
+}
+    
+ 
+
+rpcPtr::rpcPtr(rpcPtr const& rpcPtr) { // copy constructor
+
+    this->rpcP = rpcPtr.rpcP;
+    if (this->rpcP)
+        this->rpcP->incref();
+}
+    
+ 
+
+rpcPtr::rpcPtr(string              const  methodName,
+               xmlrpc_c::paramList const& paramList) {
+
+    this->rpcP = new rpc(methodName, paramList);
+}
+
+
+
+rpcPtr::~rpcPtr() {
+    bool dead;
+    this->rpcP->decref(&dead);
+    if (dead) {
+        delete(this->rpcP);
+    }
+}
+
+
+ 
+rpcPtr
+rpcPtr::operator=(rpcPtr const& rpcPtr) {
+    if (this->rpcP != NULL)
+        throw(error("Already instantiated"));
+    this->rpcP = rpcPtr.rpcP;
+    this->rpcP->incref();
+    return *this;
+}
+
+   
+
+rpc *
+rpcPtr::operator->() const {
+    return this->rpcP;
+}
+
+
+
+xmlTransaction_rpc::xmlTransaction_rpc(rpcPtr const& rpcP) :
+    rpcP(rpcP) {}
+
+
+
+void
+xmlTransaction_rpc::finish(string const& responseXml) const {
+
+    xml::trace("XML-RPC RESPONSE", responseXml);
+
+    value result;
+
+    try {
+        xml::parseResponse(responseXml, &result);
+        this->rpcP->finish(result);
+    } catch (fault const fault) {
+        this->rpcP->finishFail(fault);
+    } catch (error const error) {
+        this->rpcP->finishErr(error);
+    }
+}
+
+
+
+void
+xmlTransaction_rpc::finishErr(error const& error) const {
+
+    this->rpcP->finishErr(error);
 }
 
 
@@ -498,11 +954,11 @@ clientSimple::call(string  const serverUrl,
 
     carriageParm_http0 carriageParm(serverUrl);
 
-    rpc rpc(methodName, paramList());
+    rpcPtr rpcPtr(methodName, paramList());
 
-    rpc.call(this->clientP, &carriageParm);
+    rpcPtr->call(this->clientP, &carriageParm);
     
-    *resultP = rpc.getResult();
+    *resultP = rpcPtr->getResult();
 }
 
 
@@ -583,9 +1039,9 @@ clientSimple::call(string  const serverUrl,
                 paramList.add(value(paramP));
             }
         }
-        rpc rpc(methodName, paramList);
-        rpc.call(this->clientP, &carriageParm);
-        *resultP = rpc.getResult();
+        rpcPtr rpcPtr(methodName, paramList);
+        rpcPtr->call(this->clientP, &carriageParm);
+        *resultP = rpcPtr->getResult();
     }
 }
 
@@ -598,12 +1054,12 @@ clientSimple::call(string    const  serverUrl,
                    value *   const  resultP) {
     
     carriageParm_http0 carriageParm(serverUrl);
-
-    rpc rpc(methodName, paramList);
-
-    rpc.call(this->clientP, &carriageParm);
     
-    *resultP = rpc.getResult();
+    rpcPtr rpcPtr(methodName, paramList);
+
+    rpcPtr->call(this->clientP, &carriageParm);
+    
+    *resultP = rpcPtr->getResult();
 }
 
 

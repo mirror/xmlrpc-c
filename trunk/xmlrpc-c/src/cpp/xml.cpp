@@ -106,8 +106,15 @@ parseResponse(string  const& responseXml,
     c_resultP = 
         xmlrpc_parse_response(&env, responseXml.c_str(), responseXml.size());
 
+    /* Unfortunately, xmlrpc_parse_response() does not distinguish between
+       unparseable XML and XML that cleanly indicates an RPC failure or
+       other failure on the server end.  We'll fix that some day, but for
+       now, we just assume any failure is an XML-RPC RPC failure.
+    */
+
     if (env.fault_occurred)
-        throw(error(env.fault_string));
+        throw(fault(env.fault_string, 
+                    static_cast<fault::code_t>(env.fault_code)));
 
     *resultP = value(c_resultP);
 }

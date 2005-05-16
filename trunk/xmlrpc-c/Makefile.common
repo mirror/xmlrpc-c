@@ -75,6 +75,18 @@ $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
 	    $(notdir $@)
 
+$(BUILDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/curl_transport/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libwww_transport/Makefile \
+	    $(notdir $@)
+
 $(BUILDDIR)/src/libxmlrpc.la: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
 	    $(notdir $@)
