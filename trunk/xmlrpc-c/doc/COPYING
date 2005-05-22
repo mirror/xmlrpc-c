@@ -1,17 +1,32 @@
-This software package is covered by the XML-RPC C Library License.
-Additionally, certain parts of this library are derived from pre-existing
-code, which may carry its own license.
+The copyright owners of this package license the public to copy it
+(and do other things with it which are controlled by copyright law)
+under a few simple conditions.
 
-In particular, the Expat Licence applies to the contents of the directory
-lib/expat, the ABYSS Web Server License applies to the contents of the
-directory lib/abyss and parts of the file src/xmlrpc_abyss.c, and the
-Python 1.5.2 license applies to parts of the file src/xmlrpc_base64.c.
+Each source files describes the copyright license for that particular
+file.  This file summarizes the licenses for your convenience.
 
-And as for the tools/ directory, you'll have to examine the licenses on
-your own.
+All the code written specifically for Xmlrpc-c, which is most
+of the code, and the aggregation, is licensed under the
+XML-RPC FOR C/C++ license shown below.
+
+Some of the code was written for another purpose and copied into
+Xmlrpc-c.  Its copyright owners license the code under a different
+license:
+
+The Expat Licence applies to the contents of the directory lib/expat,
+the ABYSS Web Server License applies to the contents of the directory
+lib/abyss and parts of the file src/xmlrpc_abyss.c.
+
+The Python 1.5.2 license applies to parts of the file
+src/xmlrpc_base64.c.
+
+And as for the tools/ directory, you'll have to examine the licenses
+on your own.
+
+These same licenses have been offered throughout Xmlrpc-c's history.
 
 
-                     XML-RPC C Library License
+                     XML-RPC For C/C++ License
                      -------------------------
 
 Copyright (C) 2001 by First Peer, Inc. All rights reserved.

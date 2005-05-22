@@ -1,4 +1,4 @@
-This is the source code for XML-RPC for C/C++, or Xmlrpc-c for short.
+This is the source code for XML-RPC for C/C++, called Xmlrpc-c for short.
 
 XML-RPC for C/C++ is programming libraries and related tools to help you
 write an XML-RPC server or client in C or C++.
@@ -15,22 +15,29 @@ See the Xmlrpc-c website at:
 PREREQUISITES
 -------------
 
-To build a useful XML-RPC client library, you'll need to have at least
-one HTTP library.  The standard configuration uses the W3C Libwww library
-(Version 5.3.2 or newer).  You can also configure the build to use
-Curl or Wininet.
+To build a useful Xmlrpc-c client library, you'll need to have at
+least one HTTP library.  Xmlrpc-c knows how to use W3C Libwww (Version
+5.3.2 or newer), Curl, and Wininet.  The configurator gives you the
+option of building libraries that use any or all of these, and
+defaults to every one you appear to have installed.  If you don't
+appear to have any installed, the configurator causes the build to
+omit client facilities altogether.
 
-There are some old instructions on getting W3C Libwww in the file
-GETTING_LIBWWW.  I haven't checked them recently, so I don't know how
-valid they are.
+Information about W3C Libwww, including how to get it are at
+<http://www.w3.org/Library>.
 
-The libraries need an XML parser/builder library.  An old version of
-Expat is included in the package and used by default, so there's no
-actual prerequisite here.  But if you separately obtain Libxml2, you can
+For Curl, see <http://curl.haxx.se>.
+
+Wininet comes with Windows, and isn't available for any other platform.
+
+You also need an XML parser/builder library.  An old version of Expat
+is included in the package and used by default, so there's no actual
+prerequisite here.  But if you separately obtain Libxml2, you can
 configure the build to use that instead.  There's no really pressing
 reason to do that, though.
 
-Once that's done, you can type:
+Once you have the prerequisite libraries installed, you can issue
+these commands:
 
   $ ./configure
   $ make
@@ -39,18 +46,29 @@ Once that's done, you can type:
 (There's supposed to be a 'make check' step in there too, to validate
 that everything built OK, but it's broken right now - 2005.01.07).
 
-You may want to pass a '--prefix' argument to configure. See './configure
---help' for details.
-
 To see it work, start a simple server like this:
 
-  $ examples/xmlrpc_sample_add_server examples/abyss.conf
+  $ examples/xmlrpc_sample_add_server 8080
 
 Then run a client that does an RPC to this server:
 
   $ examples/xmlrpc_sample_add_client
 
 Also try other sample servers and clients, described in examples/README.
+
+
+You may want to pass a '--prefix' argument to 'configure'.  See
+'./configure --help' for details.
+
+You may also want to disable client XML transports that you won't be
+using.  In particular, the Libwww transport can be inconvenient, because
+it typically uses about 20 shared libraries.  Any XML-RPC client
+program that uses Xmlrpc-c, whether or not the program uses any of the
+libwww facilities, must attach all those libraries, and that can take
+a significant amount of time.
+
+See './configure --help' for the options that disable certain transports.
+
 
 
 WINDOWS
@@ -61,17 +79,8 @@ build and use Xmlrpc-c on Windows, see the file
 Windows/ReadMeWin32.txt.
 
 
+ADDITIONAL INFORMATION
+----------------------
 
-CREDITS
--------
-
-Funding for the project that created the original Xmlrpc-c was
-provided in part by the good folks at First Peer, Inc., producers of
-P2P applications.
-
-Eric Kidd developed the original Xmlrpc-c and maintained it up through
-January 2001.
-
-Bryan Henderson took over as maintainer in October 2004.
-
-For more history, see the HISTORY file.
+See the doc/ directory of the source tree for information about the
+source code.  User documentation is on the web, as described above.

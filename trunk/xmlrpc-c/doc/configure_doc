@@ -1,3 +1,10 @@
+Xmlrpc-c's 'configure' program is a GNU Autoconf configurator -- i.e.
+it is created by GNU Autoconf.  This is the standard configurator you
+find throughout the open source software world.  Here are the instructions
+for 'configure' from GNU Autoconf; in most packages, you find these in
+a file called INSTALL.
+
+
 Basic Installation
 ==================
 

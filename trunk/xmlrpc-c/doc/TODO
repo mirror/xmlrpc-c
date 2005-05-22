@@ -18,8 +18,6 @@ useful for inetd servers, among others.
 
 Document the new pure C++ (base.hpp, etc.) interface.
 
-Make a pure C++ client interface.
-
 Implement pluggable XML transports on the server side like on the
 client side.
 
