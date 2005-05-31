@@ -265,8 +265,7 @@ xmlrpc_serialize_base64_data(xmlrpc_env *       const envP,
         
         XMLRPC_MEMBLOCK_APPEND(char, envP, output, contents, size);
         
-        if (envP->fault_occurred)
-            XMLRPC_MEMBLOCK_FREE(char, encoded);
+        XMLRPC_MEMBLOCK_FREE(char, encoded);
     }
 }
 
