@@ -539,7 +539,7 @@ xmlrpc_read_base64(xmlrpc_env *           const envP,
 void
 xmlrpc_read_base64_old(xmlrpc_env *           const envP,
                        const xmlrpc_value *   const valueP,
-                       unsigned int *         const lengthP,
+                       size_t *               const lengthP,
                        const unsigned char ** const byteStringValueP) {
 
     validateType(envP, valueP, XMLRPC_TYPE_BASE64);
