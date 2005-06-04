@@ -51,6 +51,36 @@ methodPtr::operator->() const {
 
 
 
+defaultMethod::~defaultMethod() {}
+
+
+
+defaultMethodPtr::defaultMethodPtr() {}
+
+
+defaultMethodPtr::defaultMethodPtr(defaultMethod * const methodP) {
+    this->instantiate(methodP);
+}
+
+
+
+defaultMethod *
+defaultMethodPtr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<defaultMethod *>(p);
+}
+
+
+
+defaultMethod *
+defaultMethod::self() {
+
+    return this;
+}
+
+
+
 registry::registry() {
 
     xmlrpc_env env;
@@ -137,6 +167,8 @@ c_executeMethod(xmlrpc_env *   const envP,
         } catch (xmlrpc_c::fault fault) {
             xmlrpc_env_set_fault(envP, fault.getCode(), 
                                  fault.getDescription().c_str()); 
+        } catch (girerr::error error) {
+            xmlrpc_env_set_fault(envP, 0, error.what());
         }
         if (envP->fault_occurred)
             retval = NULL;
@@ -146,6 +178,61 @@ c_executeMethod(xmlrpc_env *   const envP,
         xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
                              "Unexpected error executing the code for this "
                              "particular method, detected by the Xmlrpc-c "
+                             "method registry code.  The method did not "
+                             "fail; rather, it did not complete at all.");
+        retval = NULL;
+    }
+    return retval;
+}
+ 
+
+
+static xmlrpc_value *
+c_executeDefaultMethod(xmlrpc_env *   const envP,
+                       const char *   const , // host
+                       const char *   const methodName,
+                       xmlrpc_value * const paramArrayP,
+                       void *         const methodPtr) {
+/*----------------------------------------------------------------------------
+   This is a function designed to be called via a C registry to
+   execute an XML-RPC method, but use a C++ method object to do the
+   work.  You register this function as the default method function and a
+   pointer to the C++ default method object as the method data in the C
+   registry.
+
+   If we had a pure C++ registry, this would be unnecessary.
+
+   Since we can't throw an error back to the C code, we catch anything
+   the XML-RPC method's execute() method throws, and any error we
+   encounter in processing the result it returns, and turn it into an
+   XML-RPC method failure.  This will cause a leak if the execute()
+   method actually created a result, since it will not get destroyed.
+-----------------------------------------------------------------------------*/
+    xmlrpc_c::defaultMethod * const methodP = 
+        static_cast<xmlrpc_c::defaultMethod *>(methodPtr);
+    xmlrpc_c::paramList const paramList(pListFromXmlrpcArray(paramArrayP));
+
+    xmlrpc_value * retval;
+
+    try {
+        xmlrpc_c::value result;
+
+        try {
+            methodP->execute(methodName, paramList, &result);
+        } catch (xmlrpc_c::fault fault) {
+            xmlrpc_env_set_fault(envP, fault.getCode(), 
+                                 fault.getDescription().c_str()); 
+        } catch (girerr::error error) {
+            xmlrpc_env_set_fault(envP, 0, error.what());
+        }
+        if (envP->fault_occurred)
+            retval = NULL;
+        else
+            retval = result.cValue();
+    } catch (...) {
+        xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
+                             "Unexpected error executing the default "
+                             "method code, detected by the Xmlrpc-c "
                              "method registry code.  The method did not "
                              "fail; rather, it did not complete at all.");
         retval = NULL;
@@ -181,40 +268,68 @@ registry::addMethod(string              const name,
 
 
 void
-registry::processCall(string    const& body,
-                      string ** const  responsePP) const {
-/*----------------------------------------------------------------------------
-   Process an XML-RPC call whose XML (HTTP body) is 'body'.
+registry::setDefaultMethod(defaultMethodPtr const methodPtr) {
 
-   Return the response XML as *responsePP.  Caller must delete this string.
+    xmlrpc_env env;
+    
+    xmlrpc_env_init(&env);
+
+    this->defaultMethodP = methodPtr;
+
+    xmlrpc_c::defaultMethod * const methodP(methodPtr->self());
+
+    xmlrpc_registry_set_default_method(
+        &env, this->c_registryP, &c_executeDefaultMethod, (void*) methodP);
+
+    if (env.fault_occurred)
+        throw(error(env.fault_string));
+}
+
+
+
+void
+registry::disableIntrospection() {
+
+    xmlrpc_registry_disable_introspection(this->c_registryP);
+}
+
+
+
+void
+registry::processCall(string   const& callXml,
+                      string * const  responseXmlP) const {
+/*----------------------------------------------------------------------------
+   Process an XML-RPC call whose XML is 'callXml'.
+
+   Return the response XML as *responseXmlP.
 
    If we are unable to execute the call, we throw an error.  But if
    the call executes and the method merely fails in an XML-RPC sense, we
-   don't.  In that case, responseP indicates the failure.
+   don't.  In that case, *responseXmlP indicates the failure.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
     xmlrpc_mem_block * output;
 
     xmlrpc_env_init(&env);
 
-    // For the pure C++ version, this will have to parse the XML
-    // 'body' into a method name and parameters, look up the method
-    // name in the registry, call the method's execute() method, then
-    // marshall the result into XML and return it as *responsePP.  It
-    // will also have to execute system methods (e.g. self
-    // description) itself.  This will be more or less like what
+    // For the pure C++ version, this will have to parse 'callXml'
+    // into a method name and parameters, look up the method name in
+    // the registry, call the method's execute() method, then marshall
+    // the result into XML and return it as *responseXmlP.  It will
+    // also have to execute system methods (e.g. introspection)
+    // itself.  This will be more or less like what
     // xmlrpc_registry_process_call() does.
 
     output = xmlrpc_registry_process_call(
-        &env, this->c_registryP, NULL, body.c_str(), body.length());
+        &env, this->c_registryP, NULL, callXml.c_str(), callXml.length());
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
 
-    *responsePP = new string(XMLRPC_MEMBLOCK_CONTENTS(char, output),
-                             XMLRPC_MEMBLOCK_SIZE(char, output));
+    *responseXmlP = string(XMLRPC_MEMBLOCK_CONTENTS(char, output),
+                           XMLRPC_MEMBLOCK_SIZE(char, output));
     
-    xmlrpc_mem_block_free (output);
+    xmlrpc_mem_block_free(output);
 }
 
 xmlrpc_registry *

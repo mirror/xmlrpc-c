@@ -14,7 +14,7 @@ using girerr::error;
 
 namespace xmlrpc_c {
 
-server_abyss::server_abyss(
+serverAbyss::serverAbyss(
     xmlrpc_c::registry const& registry,
     unsigned int       const  portNumber = 8080,
     string             const& logFileName = NULL,
@@ -40,7 +40,7 @@ server_abyss::server_abyss(
 }
 
 
-server_abyss::~server_abyss() {
+serverAbyss::~serverAbyss() {
 }
 
 
@@ -146,7 +146,7 @@ setAdditionalServerParms(
 
 
 void
-server_abyss::run() {
+serverAbyss::run() {
 
     xmlrpc_env env;
     xmlrpc_env_init(&env);

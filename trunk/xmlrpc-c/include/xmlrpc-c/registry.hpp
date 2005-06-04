@@ -86,7 +86,29 @@ public:
     operator->() const;
 };
 
+class defaultMethod : public girmem::autoObject {
 
+public:
+    virtual ~defaultMethod();
+
+    virtual void
+    execute(std::string         const& methodName,
+            xmlrpc_c::paramList const& paramList,
+            xmlrpc_c::value *   const  resultP) = 0;
+
+    xmlrpc_c::defaultMethod * self();  // analogous to 'method' class
+};
+
+class defaultMethodPtr : public girmem::autoObjectPtr {
+
+public:
+    defaultMethodPtr();
+
+    defaultMethodPtr(xmlrpc_c::defaultMethod * const methodP);
+
+    xmlrpc_c::defaultMethod *
+    operator->() const;
+};
 
 class registry {
 /*----------------------------------------------------------------------------
@@ -101,15 +123,21 @@ public:
     ~registry();
 
     void
-    registry::addMethod(string              const name,
-                        xmlrpc_c::methodPtr const methodP);
+    addMethod(string              const name,
+              xmlrpc_c::methodPtr const methodP);
+
+    void
+    setDefaultMethod(xmlrpc_c::defaultMethodPtr const methodP);
+
+    void
+    disableIntrospection();
     
     void
-    registry::processCall(std::string    const& body,
-                          std::string ** const  responsePP) const;
+    processCall(std::string   const& body,
+                std::string * const  responseP) const;
 
     xmlrpc_registry *
-    registry::c_registry() const;
+    c_registry() const;
         /* This is meant to be private except to other objects in the
            Xmlrpc-c library.
         */
@@ -121,11 +149,17 @@ private:
            object.
         */
 
-    list<xmlrpc_c::methodPtr> methodList;
+    std::list<xmlrpc_c::methodPtr> methodList;
         /* This is a list of all the method objects (actually, pointers
            to them).  But since the real registry is the C registry object,
            all this list is for is to maintain references to the objects
            to which the C registry points so that they continue to exist.
+        */
+    xmlrpc_c::defaultMethodPtr defaultMethodP;
+        /* The real identifier of the default method is the C registry
+           object; this member exists only to maintain a reference to the
+           object to which the C registry points so that it will continue
+           to exist.
         */
 };
 } // namespace

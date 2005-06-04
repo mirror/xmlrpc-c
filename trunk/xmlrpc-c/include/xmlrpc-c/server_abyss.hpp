@@ -5,10 +5,10 @@
 
 namespace xmlrpc_c {
 
-class server_abyss {
+class serverAbyss {
     
 public:
-server_abyss::server_abyss(
+serverAbyss::serverAbyss(
     xmlrpc_c::registry const& registry,
     unsigned int       const  portNumber = 8080,
     string             const& logFileName = NULL,
@@ -17,7 +17,7 @@ server_abyss::server_abyss(
     unsigned int       const  timeout = 0,
     bool               const  dontAdvertise = false
     );
-    ~server_abyss();
+    ~serverAbyss();
     
     void run();
     

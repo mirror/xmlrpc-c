@@ -41,14 +41,14 @@ main(int           const argc,
 
     myRegistry.addMethod("sample.add", sampleAddMethodP);
 
-    xmlrpc_c::server_abyss myAbyssServer(
+    xmlrpc_c::serverAbyss myAbyssServer(
         myRegistry,
         8080,              // TCP port on which to listen
         "/tmp/xmlrpc_log"  // Log file
         );
 
     myAbyssServer.run();
-    // xmlrpc_c::server_abyss.run() never returns
+    // xmlrpc_c::serverAbyss.run() never returns
     assert(false);
 
     return 0;

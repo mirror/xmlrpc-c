@@ -123,6 +123,19 @@ public:
 };
 
 
+
+class nameMethod : public defaultMethod {
+
+    void
+    execute(string              const& methodName,
+            xmlrpc_c::paramList const& ,  // paramList
+            value *             const  retvalP) {
+        
+        *retvalP = value_string(string("no such method: ") + methodName);
+    }
+};
+
+
 //=========================================================================
 //  Test Suites
 //=========================================================================
@@ -634,7 +647,6 @@ string const noElementFoundXml(
     "</fault>\r\n"
     "</methodResponse>\r\n"
     );
-}
 
 string const sampleAddGoodCallXml(
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
@@ -645,7 +657,7 @@ string const sampleAddGoodCallXml(
     "<param><value><i4>7</i4></value></param>\r\n"
     "</params>\r\n"
     "</methodCall>\r\n"
-);
+    );
 
 string const sampleAddGoodResponseXml(
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
@@ -654,7 +666,7 @@ string const sampleAddGoodResponseXml(
     "<param><value><i4>12</i4></value></param>\r\n"
     "</params>\r\n"
     "</methodResponse>\r\n"
-);
+    );
 
 
 string const sampleAddBadCallXml(
@@ -665,7 +677,7 @@ string const sampleAddBadCallXml(
     "<param><value><i4>5</i4></value></param>\r\n"
     "</params>\r\n"
     "</methodCall>\r\n"
-);
+    );
 
 string const sampleAddBadResponseXml(
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
@@ -679,7 +691,46 @@ string const sampleAddBadResponseXml(
     "</struct></value>\r\n"
     "</fault>\r\n"
     "</methodResponse>\r\n"
-);
+    );
+
+
+string const nonexistentMethodCallXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodCall>\r\n"
+    "<methodName>nosuchmethod</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><i4>5</i4></value></param>\r\n"
+    "<param><value><i4>7</i4></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n"
+    );
+
+string const nonexistentMethodYesDefResponseXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodResponse>\r\n"
+    "<params>\r\n"
+    "<param><value><string>no such method: nosuchmethod</string>"
+    "</value></param>\r\n"
+    "</params>\r\n"
+    "</methodResponse>\r\n"
+    );
+
+string const nonexistentMethodNoDefResponseXml(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+    "<methodResponse>\r\n"
+    "<fault>\r\n"
+    "<value><struct>\r\n"
+    "<member><name>faultCode</name>\r\n"
+    "<value><i4>-506</i4></value></member>\r\n"
+    "<member><name>faultString</name>\r\n"
+    "<value><string>Method 'nosuchmethod' not defined</string></value>"
+    "</member>\r\n"
+    "</struct></value>\r\n"
+    "</fault>\r\n"
+    "</methodResponse>\r\n"
+    );
+
+} // namespace
 
 
 class paramListTestSuite : public testSuite {
@@ -747,6 +798,77 @@ public:
     }
 };
 
+class registryRegMethodTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "registryRegMethodTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+
+        xmlrpc_c::registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", 
+                             xmlrpc_c::methodPtr(new sampleAddMethod));
+        
+        myRegistry.disableIntrospection();
+        {
+            string response;
+            myRegistry.processCall("", &response);
+            TEST(response == noElementFoundXml);
+        }
+        {
+            string response;
+            myRegistry.processCall(sampleAddGoodCallXml, &response);
+            TEST(response == sampleAddGoodResponseXml);
+        }
+        {
+            string response;
+            myRegistry.processCall(sampleAddBadCallXml, &response);
+            TEST(response == sampleAddBadResponseXml);
+        }
+    }
+};
+
+
+
+class registryDefaultMethodTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "registryDefaultMethodTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+
+        xmlrpc_c::registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        {
+            string response;
+            myRegistry.processCall(sampleAddGoodCallXml, &response);
+            TEST(response == sampleAddGoodResponseXml);
+        }
+        {
+            string response;
+            myRegistry.processCall(nonexistentMethodCallXml, &response);
+            TEST(response == nonexistentMethodNoDefResponseXml);
+        }
+        // We're actually violating the spirit of setDefaultMethod by
+        // doing this to a registry that's already been used, but as long
+        // as it works, it's a convenient way to implement this test.
+        myRegistry.setDefaultMethod(defaultMethodPtr(new nameMethod));
+
+        {
+            string response;
+            myRegistry.processCall(nonexistentMethodCallXml, &response);
+            TEST(response == nonexistentMethodYesDefResponseXml);
+        }
+    }
+};
+
+
+
 class registryTestSuite : public testSuite {
 
 public:
@@ -754,31 +876,9 @@ public:
         return "registryTestSuite";
     }
     virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
 
-        xmlrpc_c::registry myRegistry;
-        
-        myRegistry.addMethod("sample.add", 
-                             xmlrpc_c::methodPtr(new sampleAddMethod));
-        
-        {
-            string * responseP;
-            myRegistry.processCall("", &responseP);
-            auto_ptr<string> responseAuto(responseP);
-            TEST(*responseP == noElementFoundXml);
-        }
-        {
-            string * responseP;
-            myRegistry.processCall(sampleAddGoodCallXml, &responseP);
-            auto_ptr<string> responseAuto(responseP);
-            TEST(*responseP == sampleAddGoodResponseXml);
-        }
-        {
-            string * responseP;
-            myRegistry.processCall(sampleAddBadCallXml, &responseP);
-            auto_ptr<string> responseAuto(responseP);
-            TEST(*responseP == sampleAddBadResponseXml);
-        }
+        registryRegMethodTestSuite().run(indentation+1);
+        registryDefaultMethodTestSuite().run(indentation+1);
     }
 };
 
@@ -877,10 +977,7 @@ public:
             throw(error("Carriage parameter passed to the direct "
                         "transport is not type carriageParm_direct"));
 
-        string * responseP;
-        parmP->registryP->processCall(callXml, &responseP);
-        auto_ptr<string> responseAuto(responseP);
-        *responseXmlP = *responseP;
+        parmP->registryP->processCall(callXml, responseXmlP);
     }
 };
 
