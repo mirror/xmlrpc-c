@@ -67,19 +67,24 @@ cpp_libs=
 while test $# -gt 0; do
   case $1 in
     c++)
+      the_libs="-lxmlrpc_cpp $the_libs"
+
+      # Unfortunately, there is just one legacy CPP library for
+      # everything, and it needs all the C libraries -- base, client,
+      # and server.  So all legacy C++ programs get linked with client
+      # and server libraries, whether they need them or not.
+
+      the_libs="-lxmlrpc_server_abyss $the_libs"
+      the_libs="-lxmlrpc_server $the_libs"
+      the_libs="-lxmlrpc_client $the_libs"
+      ;;
+    c++2)
       needCpp=yes
       the_libs="-lxmlrpc++ $the_libs"
       ;;
     cgi-server)
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server_cgi $the_libs"
-      if test "${needCpp}" = "yes"; then
-        # Unfortunately, there is just one CPP library for both client
-        # and server, and it needs both client and server base
-        # libraries.  So a C++ client program gets linked with server
-        # libraries.
-        the_libs="-lxmlrpc_cpp -lxmlrpc_client $the_libs"
-        fi
       ;;
     abyss-server)
       the_libs="@LIBABYSS_LDADD@ $the_libs"
@@ -87,13 +92,8 @@ while test $# -gt 0; do
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server_abyss $the_libs"
       if test "${needCpp}" = "yes"; then
-        # Unfortunately, in the legacy C++ interface, there is just one 
-        # CPP library for both client
-        # and server, and it needs both client and server base
-        # libraries.  So a C++ server program gets linked with client
-        # libraries.
-        the_libs="-lxmlrpc_cpp -lxmlrpc_client $the_libs"
-        the_libs="-lxmlrpc_server++ -lxmlrpc_server_abyss++ $the_libs"
+        the_libs="-lxmlrpc_server++ $the_libs"
+        the_libs="-lxmlrpc_server_abyss++ $the_libs"
         fi
       ;;
     client)
@@ -118,12 +118,7 @@ while test $# -gt 0; do
         the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
       fi
       if test "${needCpp}" = "yes"; then
-        # Unfortunately, in the legacy C++ interface, there is just one 
-        # C++ library for both client
-        # and server, and it needs both client and server base
-        # libraries.  So a C++ client program gets linked with server
-        # libraries.
-        the_libs="-lxmlrpc_cpp -lxmlrpc_server $the_libs"
+        the_libs="-lxmlrpc_client++ $the_libs"
         fi
       ;;
     --version)

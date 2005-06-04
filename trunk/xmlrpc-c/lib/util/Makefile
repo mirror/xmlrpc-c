@@ -19,11 +19,6 @@ CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 %.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $<
 
-
-girerr.o:%.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
-
-
 include Makefile.depend
 
 .PHONY: clean distclean

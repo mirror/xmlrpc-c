@@ -6,13 +6,14 @@
 #include <memory>
 #include <time.h>
 
-#include "girerr.hpp"
+#include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "transport_config.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/oldcppwrapper.hpp"
 #include "xmlrpc-c/registry.hpp"
 #include "xmlrpc-c/client.hpp"
+#include "xmlrpc-c/client_simple.hpp"
 using namespace xmlrpc_c;
 
 using namespace std;
@@ -353,11 +354,6 @@ testSuite::run(unsigned int const indentation) {
         runtests(indentation);
     } catch (error thisError) {
         throw(error(suiteName() + string(" failed.  ") + thisError.what()));
-    } catch (XmlRpcFault thisFault) {
-        throw(error(suiteName() + string(" failed.  ") +
-                    string("An Xmlrpc-c function threw an XmlRpcFault with "
-                           "fault string ") + 
-                    thisFault.getFaultString()));
     } catch (...) {
         throw(error(suiteName() + string(" failed.  ") +
                     string("It threw an unexpected type of object")));
@@ -500,13 +496,13 @@ public:
         value_bytestring bytestring1(bytestringData);
 
         vector<unsigned char> const dataReadBack1(
-            bytestring1.vector_uchar_value());
+            bytestring1.vectorUcharValue());
         TEST(dataReadBack1 == bytestringData);
         value val1(bytestring1);
         TEST(val1.type() == value::TYPE_BYTESTRING);
         value_bytestring bytestring2(val1);
         vector<unsigned char> const dataReadBack2(
-            bytestring2.vector_uchar_value());
+            bytestring2.vectorUcharValue());
         TEST(dataReadBack2 == bytestringData);
         try {
             value_bytestring bytestring4(value_int(4));
@@ -517,36 +513,20 @@ public:
 
 
 
-class arrayTestSuite : public testSuite {
+class nilTestSuite : public testSuite {
 public:
     virtual string suiteName() {
-        return "arrayTestSuite";
+        return "nilTestSuite";
     }
     virtual void runtests(unsigned int const indentation) {
         if (indentation == indentation){}
-        vector<value> arrayData;
-        arrayData.push_back(value_int(7));
-        arrayData.push_back(value_double(2.78));
-        arrayData.push_back(value_string("hello world"));
-        value_array array1(arrayData);
-
-        TEST(array1.size() == 3);
-        vector<value> dataReadBack1(array1.vector_value_value());
-        TEST(dataReadBack1[0].type() ==  value::TYPE_INT);
-        TEST(static_cast<int>(value_int(dataReadBack1[0])) == 7);
-        TEST(dataReadBack1[1].type() ==  value::TYPE_DOUBLE);
-        TEST(static_cast<double>(value_double(dataReadBack1[1])) == 2.78);
-        TEST(dataReadBack1[2].type() ==  value::TYPE_STRING);
-        TEST(static_cast<string>(value_string(dataReadBack1[2])) == 
-             "hello world");
-
-        value val1(array1);
-        TEST(val1.type() == value::TYPE_ARRAY);
-        value_array array2(val1);
-        TEST(array2.size() == 3);
+        value_nil nil1;
+        value val1(nil1);
+        TEST(val1.type() == value::TYPE_NIL);
+        value_nil nil2(val1);
         try {
-            value_array array4(value_int(4));
-            TEST_FAILED("invalid cast int-array suceeded");
+            value_nil nil4(value_int(4));
+            TEST_FAILED("invalid cast int-nil suceeded");
         } catch (error) {}
     }
 };
@@ -582,20 +562,36 @@ public:
 
 
 
-class nilTestSuite : public testSuite {
+class arrayTestSuite : public testSuite {
 public:
     virtual string suiteName() {
-        return "nilTestSuite";
+        return "arrayTestSuite";
     }
     virtual void runtests(unsigned int const indentation) {
         if (indentation == indentation){}
-        value_nil nil1;
-        value val1(nil1);
-        TEST(val1.type() == value::TYPE_NIL);
-        value_nil nil2(val1);
+        vector<value> arrayData;
+        arrayData.push_back(value_int(7));
+        arrayData.push_back(value_double(2.78));
+        arrayData.push_back(value_string("hello world"));
+        value_array array1(arrayData);
+
+        TEST(array1.size() == 3);
+        vector<value> dataReadBack1(array1.vectorValueValue());
+        TEST(dataReadBack1[0].type() ==  value::TYPE_INT);
+        TEST(static_cast<int>(value_int(dataReadBack1[0])) == 7);
+        TEST(dataReadBack1[1].type() ==  value::TYPE_DOUBLE);
+        TEST(static_cast<double>(value_double(dataReadBack1[1])) == 2.78);
+        TEST(dataReadBack1[2].type() ==  value::TYPE_STRING);
+        TEST(static_cast<string>(value_string(dataReadBack1[2])) == 
+             "hello world");
+
+        value val1(array1);
+        TEST(val1.type() == value::TYPE_ARRAY);
+        value_array array2(val1);
+        TEST(array2.size() == 3);
         try {
-            value_nil nil4(value_int(4));
-            TEST_FAILED("invalid cast int-nil suceeded");
+            value_array array4(value_int(4));
+            TEST_FAILED("invalid cast int-array suceeded");
         } catch (error) {}
     }
 };
@@ -616,9 +612,9 @@ public:
         datetimeTestSuite().run(indentation+1);
         stringTestSuite().run(indentation+1);
         bytestringTestSuite().run(indentation+1);
-        arrayTestSuite().run(indentation+1);
-        structTestSuite().run(indentation+1);
         nilTestSuite().run(indentation+1);
+        structTestSuite().run(indentation+1);
+        arrayTestSuite().run(indentation+1);
     }
 };
 
@@ -916,7 +912,7 @@ public:
         
         carriageParm_direct carriageParmDirect(&myRegistry);
         clientXmlTransport_direct transportDirect;
-        clientXml clientDirect(&transportDirect);
+        client_xml clientDirect(&transportDirect);
         paramList paramListSampleAdd1;
         paramListSampleAdd1.add(value_int(5));
         paramListSampleAdd1.add(value_int(7));
@@ -930,10 +926,12 @@ public:
         rpcSampleAdd2P->start(&clientDirect, &carriageParmDirect);
         
         TEST(rpcSampleAdd1P->isFinished());
+        TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result1(rpcSampleAdd1P->getResult());
         TEST(static_cast<int>(result1) == 12);
         
         TEST(rpcSampleAdd2P->isFinished());
+        TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result2(rpcSampleAdd2P->getResult());
         TEST(static_cast<int>(result2) == 20);
 
@@ -965,24 +963,32 @@ public:
         
         carriageParm_direct carriageParmDirect(&myRegistry);
         clientXmlTransport_direct transportDirect;
-        clientXml clientDirect(&transportDirect);
+        client_xml clientDirect(&transportDirect);
         paramList paramListSampleAdd;
         paramListSampleAdd.add(value_int(5));
         paramListSampleAdd.add(value_int(7));
+        paramList paramListEmpty;
         {
+            /* Test a successful RPC */
             rpcPtr rpcSampleAddP("sample.add", paramListSampleAdd);
             rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
             TEST(rpcSampleAddP->isFinished());
+            TEST(rpcSampleAddP->isSuccessful());
+            EXPECT_ERROR(fault fault0(rpcSampleAddP->getFault()););
             value_int const resultDirect(rpcSampleAddP->getResult());
             TEST(static_cast<int>(resultDirect) == 12);
         }
         {
-            rpcPtr const rpcSampleAddP("sample.add", paramListSampleAdd);
+            /* Test a failed RPC */
+            rpcPtr const rpcSampleAddP("sample.add", paramListEmpty);
             rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
-            value_int const resultDirect(rpcSampleAddP->getResult());
             TEST(rpcSampleAddP->isFinished());
-            TEST(static_cast<int>(resultDirect) == 12);
+            TEST(!rpcSampleAddP->isSuccessful());
+            EXPECT_ERROR(value result(rpcSampleAddP->getResult()););
+            fault const fault0(rpcSampleAddP->getFault());
+            TEST(fault0.getCode() == fault::CODE_TYPE);
         }
+
         clientDirectAsyncTestSuite().run(indentation+1);
     }
 };
@@ -1009,7 +1015,7 @@ public:
 
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
-        clientXml client0(&transportc0);
+        client_xml client0(&transportc0);
         connection connection0(&client0, &carriageParm1);
         
         paramList paramList0;

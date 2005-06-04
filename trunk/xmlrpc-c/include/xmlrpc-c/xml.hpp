@@ -13,8 +13,13 @@ generateCall(std::string         const& methodName,
              std::string *       const  callXmlP);
     
 void
-parseResponse(std::string       const& responseXml,
-              xmlrpc_c::value * const  resultP);
+parseSuccessfulResponse(std::string       const& responseXml,
+                        xmlrpc_c::value * const  resultP);
+
+void
+parseResponse(std::string            const& responseXml,
+              xmlrpc_c::rpcOutcome * const  outcomeP);
+
 
 void
 trace(std::string const& label,

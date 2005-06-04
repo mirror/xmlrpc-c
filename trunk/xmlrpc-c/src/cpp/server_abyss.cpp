@@ -3,7 +3,7 @@
 #include <sys/signal.h>
 #include <sys/wait.h>
 
-#include "girerr.hpp"
+#include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"

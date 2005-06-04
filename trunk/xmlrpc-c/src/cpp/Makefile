@@ -32,10 +32,10 @@ LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
 LIBXMLRPC_CLIENT = $(BUILDDIR)/src/libxmlrpc_client.la
 
-LIBXMLRPCPP_OBJS = value.o fault.o param_list.o xml.o
+LIBXMLRPCPP_OBJS = girmem.o value.o fault.o outcome.o param_list.o xml.o
 LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
-LIBXMLRPC_CLIENTPP_OBJS = client.o
+LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o
 
 TRANSPORT_OBJS =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
@@ -146,8 +146,6 @@ $(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
 
 
 LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
-HEADERS_TO_INSTALL = xmlrpc.hpp xmlrpc_server.hpp \
-		     XmlRpcCpp.h
 
 check: cpptest
 	for tst in $^; do \

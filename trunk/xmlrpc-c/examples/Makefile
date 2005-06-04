@@ -50,7 +50,7 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
   PROGS += $(SERVERPROGS_CGI) 
 endif
 
-INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++ client abyss-server --cflags)
+INCLUDES = $(shell $(XMLRPC_C_CONFIG) client abyss-server --cflags)
 
 LDADD_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) client --ldadd)

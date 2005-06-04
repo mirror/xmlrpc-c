@@ -288,7 +288,7 @@ void xmlrpc_mem_block_resize
 
 /* Append data to an existing xmlrpc_mem_block. */
 void xmlrpc_mem_block_append
-    (xmlrpc_env* env, xmlrpc_mem_block* block, void *data, size_t len);
+    (xmlrpc_env* env, xmlrpc_mem_block* block, const void *data, size_t len);
 
 #define XMLRPC_MEMBLOCK_NEW(type,env,size) \
     xmlrpc_mem_block_new((env), sizeof(type) * (size))

@@ -344,13 +344,14 @@ xmlrpc_mem_block_resize (xmlrpc_env *       const env,
     return;
 }
 
-/* Append data to an existing xmlrpc_mem_block. */
+
+
 void 
 xmlrpc_mem_block_append(xmlrpc_env *       const env,
                         xmlrpc_mem_block * const block,
-                        void *             const data, 
-                        size_t             const len)
-{
+                        const void *       const data, 
+                        size_t             const len) {
+
     int size;
 
     XMLRPC_ASSERT_ENV_OK(env);

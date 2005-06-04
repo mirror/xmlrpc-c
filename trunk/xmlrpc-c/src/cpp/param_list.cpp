@@ -3,7 +3,7 @@
 #include <ctime>
 #include <string>
 
-#include "girerr.hpp"
+#include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
@@ -120,8 +120,8 @@ paramList::getDouble(unsigned int const paramNumber,
 
 time_t
 paramList::getDatetime_sec(
-    unsigned int                const paramNumber,
-    paramList::time_constraint const constraint 
+    unsigned int              const paramNumber,
+    paramList::timeConstraint const constraint 
         = paramList::TC_ANY) const {
 
     if (paramNumber >= this->paramVector.size())
@@ -184,7 +184,7 @@ paramList::getBytestring(unsigned int const paramNumber) const {
         throw(fault("Parameter that is supposed to be a byte string is not", 
                     fault::CODE_TYPE));
 
-    return value_bytestring(*paramP).vector_uchar_value();
+    return value_bytestring(*paramP).vectorUcharValue();
 }
 
 
@@ -212,7 +212,7 @@ paramList::getArray(unsigned int const paramNumber,
         throw(fault("Array parameter has too many elements",
                     fault::CODE_TYPE));
 
-    return value_array(*paramP).vector_value_value();
+    return value_array(*paramP).vectorValueValue();
 }
 
 

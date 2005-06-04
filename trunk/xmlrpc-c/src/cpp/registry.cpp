@@ -2,7 +2,7 @@
 #include <memory>
 #include <algorithm>
 
-#include "girerr.hpp"
+#include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
@@ -184,7 +184,7 @@ c_executeMethod(xmlrpc_env *   const envP,
             // The following declaration makes *resultP get destroyed
             auto_ptr<xmlrpc_c::value> 
                 autoResultP(const_cast<xmlrpc_c::value *>(resultP));
-            retval = resultP->c_value();
+            retval = resultP->cValue();
         }
     } catch (...) {
         xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,

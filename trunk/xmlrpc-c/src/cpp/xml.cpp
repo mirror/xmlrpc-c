@@ -1,6 +1,6 @@
 #include <string>
 
-#include "girerr.hpp"
+#include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
@@ -29,7 +29,7 @@ cArrayFromParamList(paramList const& paramList) {
              ++i) {
             
             xmlrpc_array_append_item(&env, paramArrayP,
-                                     paramList[i].c_value());
+                                     paramList[i].cValue());
         }
     }
     if (env.fault_occurred) {
@@ -92,8 +92,8 @@ generateCall(string    const& methodName,
 
 
 void
-parseResponse(string  const& responseXml,
-              value * const  resultP) {
+parseResponse(string       const& responseXml,
+              rpcOutcome * const  outcomeP) {
 /*----------------------------------------------------------------------------
    Parse the XML for an XML-RPC response into an XML-RPC result value.
 -----------------------------------------------------------------------------*/
@@ -111,12 +111,31 @@ parseResponse(string  const& responseXml,
        other failure on the server end.  We'll fix that some day, but for
        now, we just assume any failure is an XML-RPC RPC failure.
     */
-
     if (env.fault_occurred)
-        throw(fault(env.fault_string, 
-                    static_cast<fault::code_t>(env.fault_code)));
+        *outcomeP =
+            rpcOutcome(fault(env.fault_string,
+                             static_cast<fault::code_t>(env.fault_code)));
+    else
+        *outcomeP = rpcOutcome(value(c_resultP));
+}
 
-    *resultP = value(c_resultP);
+
+
+void
+parseSuccessfulResponse(string  const& responseXml,
+                        value * const  resultP) {
+/*----------------------------------------------------------------------------
+   Same as parseResponse(), but expects the response to indicate success;
+   throws an error if it doesn't.
+-----------------------------------------------------------------------------*/
+    rpcOutcome outcome;
+
+    parseResponse(responseXml, &outcome);
+
+    if (!outcome.succeeded())
+        throw(error("RPC failed.  " + outcome.getFault().getDescription()));
+
+    *resultP = outcome.getResult();
 }
 
 

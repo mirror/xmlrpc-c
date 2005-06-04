@@ -32,7 +32,7 @@
 #include <vector>
 #include <time.h>
 
-#include "girerr.hpp"
+#include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
@@ -85,7 +85,7 @@ public:
 namespace xmlrpc_c {
 
 value::value() {
-    this->c_valueP = NULL;
+    this->cValueP = NULL;
 }
 
 
@@ -98,7 +98,7 @@ value::value(xmlrpc_value * const valueP) {  // default constructor
 
 
 value::value(xmlrpc_c::value const& value) {  // copy constructor
-    this->c_valueP = value.c_value();
+    this->cValueP = value.cValue();
 }
 
 
@@ -106,18 +106,18 @@ value::value(xmlrpc_c::value const& value) {  // copy constructor
 xmlrpc_c::value&
 value::operator=(xmlrpc_c::value const& value) {
 
-    if (this->c_valueP != NULL)
+    if (this->cValueP != NULL)
         throw(error("Assigning to already instantiated xmlrpc_c::value"));
 
-    this->c_valueP = value.c_value();
+    this->cValueP = value.cValue();
     return *this;  // The result of the (a = b) expression
 }
 
 
 
 value::~value() {
-    if (this->c_valueP) {
-        xmlrpc_DECREF(this->c_valueP);
+    if (this->cValueP) {
+        xmlrpc_DECREF(this->cValueP);
     }
 }
 
@@ -127,31 +127,31 @@ void
 value::instantiate(xmlrpc_value * const valueP) {
 
     xmlrpc_INCREF(valueP);
-    this->c_valueP = valueP;
+    this->cValueP = valueP;
 }
 
 
 
 xmlrpc_value *
-value::c_value() const {
+value::cValue() const {
 
-    if (this->c_valueP) {
-        xmlrpc_INCREF(this->c_valueP);  // For Caller
+    if (this->cValueP) {
+        xmlrpc_INCREF(this->cValueP);  // For Caller
     }
-    return this->c_valueP;
+    return this->cValueP;
 }
 
 
 
 void
-value::append_to_c_array(xmlrpc_value * const arrayP) const {
+value::appendToCArray(xmlrpc_value * const arrayP) const {
 /*----------------------------------------------------------------------------
   Append this value to the C array 'arrayP'.
 ----------------------------------------------------------------------------*/
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
-    xmlrpc_array_append_item(&env, arrayP, this->c_valueP);
+    xmlrpc_array_append_item(&env, arrayP, this->cValueP);
     
     if (env.fault_occurred)
         throw(error(env.fault_string));
@@ -160,8 +160,8 @@ value::append_to_c_array(xmlrpc_value * const arrayP) const {
 
 
 void
-value::add_to_c_struct(xmlrpc_value * const structP,
-                       string         const key) const {
+value::addToCStruct(xmlrpc_value * const structP,
+                    string         const key) const {
 /*----------------------------------------------------------------------------
   Add this value to the C array 'arrayP' with key 'key'.
 ----------------------------------------------------------------------------*/
@@ -170,7 +170,7 @@ value::add_to_c_struct(xmlrpc_value * const structP,
 
     xmlrpc_struct_set_value_n(&env, structP,
                               key.c_str(), key.length(),
-                              this->c_valueP);
+                              this->cValueP);
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
@@ -189,7 +189,7 @@ value::type() const {
         value::type_t y;
     } u;
 
-    u.x = xmlrpc_value_type(this->c_valueP);
+    u.x = xmlrpc_value_type(this->cValueP);
 
     return u.y;
 }
@@ -227,7 +227,7 @@ value_int::value_int(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_INT)
         throw(error("Not integer type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
@@ -240,7 +240,7 @@ value_int::operator int() const {
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
-    xmlrpc_read_int(&env, this->c_valueP, &retval);
+    xmlrpc_read_int(&env, this->cValueP, &retval);
     if (env.fault_occurred)
         throw(error(env.fault_string));
 
@@ -278,7 +278,7 @@ value_double::value_double(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_DOUBLE)
         throw(error("Not double type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
@@ -291,7 +291,7 @@ value_double::operator double() const {
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
-    xmlrpc_read_double(&env, this->c_valueP, &retval);
+    xmlrpc_read_double(&env, this->cValueP, &retval);
     if (env.fault_occurred)
         throw(error(env.fault_string));
 
@@ -333,7 +333,7 @@ value_boolean::operator bool() const {
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
-    xmlrpc_read_bool(&env, this->c_valueP, &retval);
+    xmlrpc_read_bool(&env, this->cValueP, &retval);
     if (env.fault_occurred)
         throw(error(env.fault_string));
 
@@ -347,7 +347,7 @@ value_boolean::value_boolean(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_BOOLEAN)
         throw(error("Not boolean type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
@@ -411,7 +411,7 @@ value_datetime::value_datetime(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_DATETIME)
         throw(error("Not datetime type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
@@ -424,7 +424,7 @@ value_datetime::operator time_t() const {
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
-    xmlrpc_read_datetime_sec(&env, this->c_valueP, &retval);
+    xmlrpc_read_datetime_sec(&env, this->cValueP, &retval);
     if (env.fault_occurred)
         throw(error(env.fault_string));
 
@@ -464,7 +464,7 @@ value_string::value_string(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_STRING)
         throw(error("Not string type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
@@ -475,7 +475,7 @@ value_string::operator string() const {
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
-    cStringWrapper adapter(this->c_valueP);
+    cStringWrapper adapter(this->cValueP);
 
     return string(adapter.str, adapter.length);
 }
@@ -511,7 +511,7 @@ value_bytestring::value_bytestring(
 
 
 vector<unsigned char>
-value_bytestring::vector_uchar_value() const {
+value_bytestring::vectorUcharValue() const {
 
     class cWrapper {
     public:
@@ -531,7 +531,7 @@ value_bytestring::vector_uchar_value() const {
         }
     };
     
-    cWrapper wrapper(this->c_valueP);
+    cWrapper wrapper(this->cValueP);
 
     return vector<unsigned char>(&wrapper.contents[0], 
                                  &wrapper.contents[wrapper.length]);
@@ -546,7 +546,7 @@ value_bytestring::length() const {
     xmlrpc_env_init(&env);
     
     size_t length;
-    xmlrpc_read_base64_size(&env, this->c_valueP, &length);
+    xmlrpc_read_base64_size(&env, this->cValueP, &length);
     if (env.fault_occurred)
         throw(error(env.fault_string));
 
@@ -560,7 +560,7 @@ value_bytestring::value_bytestring(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_BYTESTRING)
         throw(error("Not byte string type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
@@ -589,7 +589,7 @@ value_array::value_array(vector<xmlrpc_c::value> const& cppvalue) {
     
     vector<xmlrpc_c::value>::const_iterator i;
     for (i = cppvalue.begin(); i != cppvalue.end(); ++i)
-        i->append_to_c_array(wrapper.valueP);
+        i->appendToCArray(wrapper.valueP);
 
     this->instantiate(wrapper.valueP);
 }
@@ -601,21 +601,21 @@ value_array::value_array(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_ARRAY)
         throw(error("Not array type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
 
 
 vector<xmlrpc_c::value>
-value_array::vector_value_value() const {
+value_array::vectorValueValue() const {
 
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
     unsigned int arraySize;
 
-    arraySize = xmlrpc_array_size(&env, this->c_valueP);
+    arraySize = xmlrpc_array_size(&env, this->cValueP);
     if (env.fault_occurred)
         throw(error(env.fault_string));
     
@@ -643,7 +643,7 @@ value_array::vector_value_value() const {
             }
         };
 
-        cWrapper wrapper(this->c_valueP, i);
+        cWrapper wrapper(this->cValueP, i);
 
         retval[i].instantiate(wrapper.valueP);
     }
@@ -661,7 +661,7 @@ value_array::size() const {
 
     unsigned int arraySize;
 
-    arraySize = xmlrpc_array_size(&env, this->c_valueP);
+    arraySize = xmlrpc_array_size(&env, this->cValueP);
     if (env.fault_occurred)
         throw(error(env.fault_string));
     
@@ -696,7 +696,7 @@ value_struct::value_struct(
     for (i = cppvalue.begin(); i != cppvalue.end(); ++i) {
         xmlrpc_c::value mapvalue(i->second);
         string          mapkey(i->first);
-        mapvalue.add_to_c_struct(wrapper.valueP, mapkey);
+        mapvalue.addToCStruct(wrapper.valueP, mapkey);
     }
     
     this->instantiate(wrapper.valueP);
@@ -709,7 +709,7 @@ value_struct::value_struct(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_STRUCT)
         throw(error("Not struct type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 
@@ -722,7 +722,7 @@ value_struct::operator map<string, xmlrpc_c::value>() const {
 
     unsigned int structSize;
 
-    structSize = xmlrpc_struct_size(&env, this->c_valueP);
+    structSize = xmlrpc_struct_size(&env, this->cValueP);
     if (env.fault_occurred)
         throw(error(env.fault_string));
     
@@ -752,7 +752,7 @@ value_struct::operator map<string, xmlrpc_c::value>() const {
             }
         };
 
-        cMemberWrapper memberWrapper(this->c_valueP, i);
+        cMemberWrapper memberWrapper(this->cValueP, i);
 
         cStringWrapper keyWrapper(memberWrapper.keyP);
 
@@ -797,7 +797,7 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
     if (baseValue.type() != xmlrpc_c::value::TYPE_NIL)
         throw(error("Not nil type.  See type() method"));
     else {
-        this->instantiate(baseValue.c_valueP);
+        this->instantiate(baseValue.cValueP);
     }
 }
 

@@ -16,7 +16,7 @@ public:
         this->_help = "This method adds two integers together";
     }
     void
-    execute(xmlrpc_c::param_list     const& paramList,
+    execute(xmlrpc_c::paramList      const& paramList,
             const xmlrpc_c::value ** const  retvalPP) {
         
         int const addend(paramList.getInt(0));
@@ -38,7 +38,7 @@ main(int           const argc,
     };
     xmlrpc_c::registry myRegistry;
 
-    xmlrpc_c::method_ptr const sampleAddMethodP(new sampleAddMethod);
+    xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);
 
     myRegistry.addMethod("sample.add", sampleAddMethodP);
 

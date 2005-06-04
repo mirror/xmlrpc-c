@@ -26,28 +26,42 @@ XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
 
 
 SERVERPROGS_ABYSS = \
-  xmlrpc_sample_add_server
+  xmlrpc_sample_add_server \
 
-CLIENTPROGS = \
+LEGACY_CLIENTPROGS = \
   meerkat-app-list
 
-PROGS = $(SERVERPROGS_ABYSS) $(CLIENTPROGS)
+CLIENTPROGS = \
+  xmlrpc_sample_add_client \
+  sample_add_client_complex \
 
-INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++ client abyss-server --cflags)
+PROGS = $(SERVERPROGS_ABYSS)
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)
+endif
+
+INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 
 LDADD_SERVER_ABYSS = \
-  $(shell $(XMLRPC_C_CONFIG) c++ abyss-server --ldadd)
+  $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --ldadd)
 
 LDADD_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
+  $(shell $(XMLRPC_C_CONFIG) c++2 client --ldadd)
 
 LDADD_BASE = \
-  $(shell $(XMLRPC_C_CONFIG) --ldadd)
+  $(shell $(XMLRPC_C_CONFIG) c++2 --ldadd)
+
+LDADD_LEGACY_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
 
 all: $(PROGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
+
+$(LEGACY_CLIENTPROGS):%:%.o
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_LEGACY_CLIENT)
 
 $(CLIENTPROGS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)

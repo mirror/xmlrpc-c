@@ -21,7 +21,7 @@ public:
         // This creates a placeholder.  It can't be used for anything, but
         // holds memory.  instantiate() can turn it into a real object.
 
-    value(xmlrpc_c::value const &value);
+    value(xmlrpc_c::value const &value);  // copy constructor
 
     ~value();
 
@@ -50,14 +50,14 @@ public:
     // be necessary.
 
     void
-    append_to_c_array(xmlrpc_value * const arrayP) const;
+    appendToCArray(xmlrpc_value * const arrayP) const;
 
     void
-    add_to_c_struct(xmlrpc_value * const structP,
+    addToCStruct(xmlrpc_value * const structP,
                     std::string    const key) const;
 
     xmlrpc_value *
-    c_value() const;
+    cValue() const;
 
     value(xmlrpc_value * valueP);
 
@@ -66,7 +66,7 @@ public:
         // Work only on a placeholder object created by the no-argument
         // constructor.
 
-    xmlrpc_value * c_valueP;
+    xmlrpc_value * cValueP;
         // NULL means this is merely a placeholder object.
 };
 
@@ -83,17 +83,6 @@ public:
 
 
 
-class value_double : public value {
-public:
-    value_double(double const cvalue);
-
-    value_double(xmlrpc_c::value const baseValue);
-
-    operator double() const;
-};
-
-
-
 class value_boolean : public value {
 public:
     value_boolean(bool const cvalue);
@@ -101,6 +90,28 @@ public:
     value_boolean(xmlrpc_c::value const baseValue);
 
     operator bool() const;
+};
+
+
+
+class value_string : public value {
+public:
+    value_string(std::string const& cvalue);
+
+    value_string(xmlrpc_c::value const baseValue);
+
+    operator std::string() const;
+};
+
+
+
+class value_double : public value {
+public:
+    value_double(double const cvalue);
+
+    value_double(xmlrpc_c::value const baseValue);
+
+    operator double() const;
 };
 
 
@@ -119,17 +130,6 @@ public:
 
 
 
-class value_string : public value {
-public:
-    value_string(std::string const& cvalue);
-
-    value_string(xmlrpc_c::value const baseValue);
-
-    operator std::string() const;
-};
-
-
-
 class value_bytestring : public value {
 public:
     value_bytestring(std::vector<unsigned char> const& cvalue);
@@ -139,7 +139,7 @@ public:
     // You can't cast to a vector because the compiler can't tell which
     // constructor to use (complains about ambiguity).  So we have this:
     vector<unsigned char>
-    vector_uchar_value() const;
+    vectorUcharValue() const;
 
     size_t
     length() const;
@@ -147,17 +147,11 @@ public:
 
 
 
-class value_array : public value {
+class value_nil : public value {
 public:
-    value_array(std::vector<xmlrpc_c::value> const& cvalue);
+    value_nil();
 
-    value_array(xmlrpc_c::value const baseValue);
-
-    vector<xmlrpc_c::value>
-    vector_value_value() const;
-
-    unsigned int
-    size() const;
+    value_nil(xmlrpc_c::value const baseValue);
 };
 
 
@@ -173,11 +167,17 @@ public:
 
 
 
-class value_nil : public value {
+class value_array : public value {
 public:
-    value_nil();
+    value_array(std::vector<xmlrpc_c::value> const& cvalue);
 
-    value_nil(xmlrpc_c::value const baseValue);
+    value_array(xmlrpc_c::value const baseValue);
+
+    vector<xmlrpc_c::value>
+    vectorValueValue() const;
+
+    unsigned int
+    size() const;
 };
 
 
@@ -209,6 +209,8 @@ public:
         CODE_INVALID_UTF8           = -510,
     };
 
+    fault();
+
     fault(std::string             const _faultString,
           xmlrpc_c::fault::code_t const _faultCode 
               = xmlrpc_c::fault::CODE_UNSPECIFIED
@@ -216,11 +218,34 @@ public:
     
     xmlrpc_c::fault::code_t getCode() const;
 
-    std::string  getDescription() const;
+    std::string getDescription() const;
 
 private:
-    xmlrpc_c::fault::code_t const code;
-    std::string const description;
+    bool                    valid;
+    xmlrpc_c::fault::code_t code;
+    std::string             description;
+};
+
+class rpcOutcome {
+/*----------------------------------------------------------------------------
+  The outcome of a validly executed RPC -- either an XML-RPC fault
+  or an XML-RPC value of the result.
+-----------------------------------------------------------------------------*/
+public:
+    rpcOutcome();
+    rpcOutcome(xmlrpc_c::value const result);
+    rpcOutcome(xmlrpc_c::fault const fault);
+    bool succeeded() const;
+    xmlrpc_c::fault getFault() const;
+    xmlrpc_c::value getResult() const;
+private:
+    bool valid;
+        // This is false in a placeholder variable -- i.e. an object you
+        // create with the no-argument constructor, which is waiting to be
+        // assigned a value.  When false, nothing below is valid.
+    bool _succeeded;
+    xmlrpc_c::value result;  // valid if 'succeeded'
+    xmlrpc_c::fault fault;   // valid if not 'succeeded'
 };
 
 class paramList {
@@ -251,11 +276,11 @@ public:
               double       const minimum = DBL_MIN,
               double       const maximum = DBL_MAX) const;
 
-    enum time_constraint {TC_ANY, TC_NO_PAST, TC_NO_FUTURE};
+    enum timeConstraint {TC_ANY, TC_NO_PAST, TC_NO_FUTURE};
 
     time_t
-    getDatetime_sec(unsigned int    const paramNumber,
-                    time_constraint const constraint
+    getDatetime_sec(unsigned int   const paramNumber,
+                    timeConstraint const constraint
                         = paramList::TC_ANY) const;
 
     std::string

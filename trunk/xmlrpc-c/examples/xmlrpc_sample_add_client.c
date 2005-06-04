@@ -32,7 +32,7 @@ main(int           const argc,
     xmlrpc_env env;
     xmlrpc_value *result;
     xmlrpc_int32 sum;
-    char * const url = "http://localhost:8080/RPC2";
+    char * const serverUrl = "http://localhost:8080/RPC2";
     char * const methodName = "sample.add";
 
     if (argc-1 > 0) {
@@ -49,10 +49,10 @@ main(int           const argc,
 
     printf("Making XMLRPC call to server url '%s' method '%s' "
            "to request the sum "
-           "of 5 and 7...\n", url, methodName);
+           "of 5 and 7...\n", serverUrl, methodName);
 
     /* Make the remote procedure call */
-    result = xmlrpc_client_call(&env, url, methodName,
+    result = xmlrpc_client_call(&env, serverUrl, methodName,
                                 "(ii)", (xmlrpc_int32) 5, (xmlrpc_int32) 7);
     die_if_fault_occurred(&env);
     
