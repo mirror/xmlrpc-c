@@ -16,15 +16,15 @@ public:
         this->_help = "This method adds two integers together";
     }
     void
-    execute(xmlrpc_c::paramList      const& paramList,
-            const xmlrpc_c::value ** const  retvalPP) {
+    execute(xmlrpc_c::paramList const& paramList,
+            xmlrpc_c::value *   const  retvalP) {
         
         int const addend(paramList.getInt(0));
         int const adder(paramList.getInt(1));
         
         paramList.verifyEnd(2);
         
-        *retvalPP = new xmlrpc_c::value_int(addend + adder);
+        *retvalP = xmlrpc_c::value_int(addend + adder);
     }
 };
 
@@ -34,8 +34,7 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
-    if (argc && argv) {  // defeat unused parameter warning
-    };
+    if (argc && argv) {}  // defeat unused parameter warning
     xmlrpc_c::registry myRegistry;
 
     xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);

@@ -20,6 +20,16 @@ method::method() :
         refcount(0)
         {};
 
+
+
+method *
+method::self() {
+
+    return this;
+}
+
+
+
 method::~method() {
     if (this->refcount > 0)
         throw(error("Destroying referenced object"));
@@ -82,6 +92,10 @@ methodPtr::operator=(methodPtr const& methodPtr) {
     return *this;
 }
 
+method *
+methodPtr::operator->() const {
+    return this->methodP;
+}
 
 
 method *
@@ -170,22 +184,18 @@ c_executeMethod(xmlrpc_env *   const envP,
     xmlrpc_value * retval;
 
     try {
-        const xmlrpc_c::value * resultP;
+        xmlrpc_c::value result;
 
         try {
-            methodP->execute(paramList, &resultP);
+            methodP->execute(paramList, &result);
         } catch (xmlrpc_c::fault fault) {
             xmlrpc_env_set_fault(envP, fault.getCode(), 
                                  fault.getDescription().c_str()); 
         }
         if (envP->fault_occurred)
             retval = NULL;
-        else {
-            // The following declaration makes *resultP get destroyed
-            auto_ptr<xmlrpc_c::value> 
-                autoResultP(const_cast<xmlrpc_c::value *>(resultP));
-            retval = resultP->cValue();
-        }
+        else
+            retval = result.cValue();
     } catch (...) {
         xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
                              "Unexpected error executing the code for this "
@@ -210,7 +220,7 @@ registry::addMethod(string              const name,
     
     xmlrpc_env_init(&env);
 
-    xmlrpc_c::method * const methodP(methodPtr.get());
+    xmlrpc_c::method * const methodP(methodPtr->self());
 
 	xmlrpc_registry_add_method_w_doc(
         &env, this->c_registryP, NULL,

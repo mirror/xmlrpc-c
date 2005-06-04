@@ -111,14 +111,14 @@ public:
     }
     void
     execute(xmlrpc_c::paramList const& paramList,
-            const value **      const  retvalPP) {
+            value *             const  retvalP) {
         
         int const addend(paramList.getInt(0));
         int const adder(paramList.getInt(1));
         
         paramList.verifyEnd(2);
         
-        *retvalPP = new value_int(addend + adder);
+        *retvalP = value_int(addend + adder);
     }
 };
 

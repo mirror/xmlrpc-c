@@ -24,13 +24,9 @@ public:
 
     virtual ~method();
 
-    // The reason execute() returns a pointer to a value instead of
-    // the value itself is that the value is polymorphic.  We want
-    // Caller to be able to treat an integer as an integer, not just
-    // as a generic value.
     virtual void
-    execute(xmlrpc_c::paramList      const& paramList,
-            const xmlrpc_c::value ** const  resultPP) = 0;
+    execute(xmlrpc_c::paramList const& paramList,
+            xmlrpc_c::value *   const  resultP) = 0;
 
     std::string signature() const { return _signature; };
     std::string help() const { return _help; };
@@ -40,6 +36,15 @@ public:
 
     void
     decref(bool * const unreferencedP);
+
+    // self() is a strange concession to the fact that we interface with
+    // C code.  C code needs a regular pointer to this method, but our
+    // C++ interface carefully prevents one from making such a pointer,
+    // since it would be an uncounted reference.  So users of self() must
+    // make sure that the reference it returns is always subordinate to a
+    // methodPtr reference.
+
+    xmlrpc_c::method * self();
 
 protected:
     std::string _signature;
@@ -58,13 +63,13 @@ private:
            this->_help = "This method adds two integers together";
        }
        void
-       execute(xmlrpc_c::param_list     const paramList,
-               const xmlrpc_c::value ** const retvalPP) {
+       execute(xmlrpc_c::param_list    const paramList,
+               const xmlrpc_c::value * const retvalP) {
           
            int const addend(paramList.getInt(0));
            int const adder(paramList.getInt(1));
 
-           *retvalPP = new xmlrpc_c::value(addend, adder);
+           *retvalP = xmlrpc_c::value(addend, adder);
       }
    };
 
@@ -99,6 +104,9 @@ public:
     operator=(xmlrpc_c::methodPtr const& methodPtr);
 
     xmlrpc_c::method *
+    operator->() const;
+
+    xmlrpc_c::method *
     get() const;
         // Ordinarily, this would not be exposed, but we need this in
         // order to interface with the C registry code, which registers
@@ -114,9 +122,9 @@ private:
 
 class registry {
 /*----------------------------------------------------------------------------
-   An XMLRPC-C server method registry.  An XMLRPC-C server transport
+   An Xmlrpc-c server method registry.  An Xmlrpc-c server transport
    (e.g.  an HTTP server) uses this object to process an incoming
-   XMLRPC-C call.
+   Xmlrpc-c call.
 -----------------------------------------------------------------------------*/
 
 public:
