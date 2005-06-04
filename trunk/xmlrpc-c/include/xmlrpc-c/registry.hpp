@@ -6,12 +6,13 @@
 #include <list>
 
 #include <xmlrpc-c/server.h>
+#include <xmlrpc-c/girmem.hpp>
 #include <xmlrpc-c/base.hpp>
 
 namespace xmlrpc_c {
 
 
-class method {
+class method : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An XML-RPC method.
 
@@ -31,12 +32,6 @@ public:
     std::string signature() const { return _signature; };
     std::string help() const { return _help; };
 
-    void
-    incref();
-
-    void
-    decref(bool * const unreferencedP);
-
     // self() is a strange concession to the fact that we interface with
     // C code.  C code needs a regular pointer to this method, but our
     // C++ interface carefully prevents one from making such a pointer,
@@ -49,14 +44,11 @@ public:
 protected:
     std::string _signature;
     std::string _help;
-
-private:
-    unsigned int refcount;
 };
 
 /* Example of a specific method class:
 
-   class sample_add : public method {
+   class sample_add : public xmlrpc_c::method {
    public:
        sample_add() {
            this->_signature = "ii";
@@ -85,37 +77,13 @@ private:
 */
 
 
-class methodPtr {
-/*----------------------------------------------------------------------------
-   This is a handle for a xmlrpc_c::method.  It maintains the reference
-   count in the xmlrpc_c::method and destroys it when the count goes to
-   zero, so the xmlrpc_c::method object lives until the last handle to it
-   goes away.
------------------------------------------------------------------------------*/
-public:
-    methodPtr();
-    methodPtr(xmlrpc_c::method * const _methodP);
+class methodPtr : public girmem::autoObjectPtr {
 
-    methodPtr(xmlrpc_c::methodPtr const& methodPtr);
-    
-    ~methodPtr();
-    
-    methodPtr
-    operator=(xmlrpc_c::methodPtr const& methodPtr);
+public:
+    methodPtr(xmlrpc_c::method * const methodP);
 
     xmlrpc_c::method *
     operator->() const;
-
-    xmlrpc_c::method *
-    get() const;
-        // Ordinarily, this would not be exposed, but we need this in
-        // order to interface with the C registry code, which registers
-        // a C pointer.  In a pure C++ implementation, we'd just
-        // register a copy of the methodPtr object and our 'methodP'
-        // member would be totally private.
-
-private:
-    xmlrpc_c::method * methodP;
 };
 
 

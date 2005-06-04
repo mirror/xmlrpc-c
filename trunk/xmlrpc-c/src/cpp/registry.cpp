@@ -4,6 +4,9 @@
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+#include "xmlrpc-c/girmem.hpp"
+using girmem::autoObject;
+using girmem::autoObjectPtr;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/registry.hpp"
@@ -16,8 +19,7 @@ namespace xmlrpc_c {
 
 method::method() : 
         _signature("?"),
-        _help("No help is available for this method"),
-        refcount(0)
+        _help("No help is available for this method")
         {};
 
 
@@ -30,77 +32,21 @@ method::self() {
 
 
 
-method::~method() {
-    if (this->refcount > 0)
-        throw(error("Destroying referenced object"));
+method::~method() {}
+
+
+
+methodPtr::methodPtr(method * const methodP) {
+    this->instantiate(methodP);
 }
 
 
-
-void
-method::incref() {
-    ++this->refcount;
-}
-
-
-
-void
-method::decref(bool * const unreferencedP) {
-
-    if (this->refcount == 0)
-        throw(error("Decrementing ref count of unreferenced object"));
-    --this->refcount;
-    *unreferencedP = (this->refcount == 0);
-}
- 
-
-
-methodPtr::methodPtr() : methodP(NULL) {};
-
-
-
-methodPtr::methodPtr(method * const _methodP) {
-    this->methodP = _methodP;
-    this->methodP->incref();
-}
-
-
-
-methodPtr::methodPtr(methodPtr const& methodPtr) { // copy constructor
-    this->methodP = methodPtr.methodP;
-    if (this->methodP)
-        this->methodP->incref();
-}
-    
- 
-
-methodPtr::~methodPtr() {
-    bool dead;
-    this->methodP->decref(&dead);
-    if (dead)
-        delete(this->methodP);
-}
- 
-
-   
-methodPtr
-methodPtr::operator=(methodPtr const& methodPtr) {
-    if (this->methodP != NULL)
-        throw(error("Already instantiated"));
-    this->methodP = methodPtr.methodP;
-    this->methodP->incref();
-    return *this;
-}
 
 method *
 methodPtr::operator->() const {
-    return this->methodP;
-}
 
-
-method *
-methodPtr::get() const {
-    return methodP;
+    autoObject * const p(this->objectP);
+    return dynamic_cast<method *>(p);
 }
 
 
