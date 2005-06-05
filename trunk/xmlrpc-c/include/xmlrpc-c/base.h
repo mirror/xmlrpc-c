@@ -175,7 +175,7 @@ xmlrpc_env_set_fault_formatted (xmlrpc_env * const envP,
                                 ...);
 
 /* This one infers XMLRPC_INTERNAL_ERROR and has a shorter name.
-   So a cal takes up less source code space.
+   So a call takes up less source code space.
 */
 void
 xmlrpc_faultf(xmlrpc_env * const envP,
