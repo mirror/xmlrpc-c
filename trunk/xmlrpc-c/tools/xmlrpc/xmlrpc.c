@@ -70,6 +70,7 @@ struct cmdlineInfo {
         */
     xmlrpc_bool   curlnoverifypeer;
     xmlrpc_bool   curlnoverifyhost;
+    const char *  curluseragent;
 };
 
 
@@ -136,7 +137,8 @@ chooseTransport(xmlrpc_env *  const envP ATTR_UNUSED,
     } else {
         if (cmd_optionIsPresent(cp, "curlinterface") || 
             cmd_optionIsPresent(cp, "curlnoverifypeer") ||
-            cmd_optionIsPresent(cp, "curlnoverifyhost"))
+            cmd_optionIsPresent(cp, "curlnoverifyhost") ||
+            cmd_optionIsPresent(cp, "curluseragent"))
 
             *transportPP = strdup("curl");
         else
@@ -162,6 +164,7 @@ parseCommandLine(xmlrpc_env *         const envP,
     cmd_defineOption(cp, "curlinterface",    OPTTYPE_STRING);
     cmd_defineOption(cp, "curlnoverifypeer", OPTTYPE_STRING);
     cmd_defineOption(cp, "curlnoverifyhost", OPTTYPE_STRING);
+    cmd_defineOption(cp, "curluseragent",    OPTTYPE_STRING);
 
     cmd_processOptions(cp, argc, argv, &error);
 
@@ -184,13 +187,16 @@ parseCommandLine(xmlrpc_env *         const envP,
                 cmd_optionIsPresent(cp, "curlnoverifypeer");
             cmdlineP->curlnoverifyhost =
                 cmd_optionIsPresent(cp, "curlnoverifyhost");
+            cmdlineP->curluseragent =
+                cmd_getOptionValueString(cp, "curluseragent");
 
             if ((!cmdlineP->transport || 
                  strcmp(cmdlineP->transport, "curl") != 0)
                 &&
                 (cmdlineP->curlinterface ||
                  cmdlineP->curlnoverifypeer ||
-                 cmdlineP->curlnoverifyhost))
+                 cmdlineP->curlnoverifyhost ||
+                 cmdlineP->curluseragent))
                 setError(envP, "You may not specify a Curl transport "
                          "option unless you also specify -transport=curl");
 
@@ -213,6 +219,8 @@ freeCmdline(struct cmdlineInfo const cmdline) {
         strfree(cmdline.transport);
     if (cmdline.curlinterface)
         strfree(cmdline.curlinterface);
+    if (cmdline.curluseragent)
+        strfree(cmdline.curluseragent);
     if (cmdline.username)
         strfree(cmdline.username);
     if (cmdline.password)
@@ -724,6 +732,7 @@ doCall(xmlrpc_env *               const envP,
        const char *               const curlinterface,
        xmlrpc_bool                const curlnoverifypeer,
        xmlrpc_bool                const curlnoverifyhost,
+       const char *               const curluseragent,
        const xmlrpc_server_info * const serverInfoP,
        const char *               const methodName,
        xmlrpc_value *             const paramArrayP,
@@ -742,10 +751,11 @@ doCall(xmlrpc_env *               const envP,
         curlXportParmsP->network_interface = curlinterface;
         curlXportParmsP->no_ssl_verifypeer = curlnoverifypeer;
         curlXportParmsP->no_ssl_verifyhost = curlnoverifyhost;
+        curlXportParmsP->user_agent        = curluseragent;
         
         clientparms.transportparmsP = (struct xmlrpc_xportparms *) 
             curlXportParmsP;
-        clientparms.transportparm_size = XMLRPC_CXPSIZE(no_ssl_verifyhost);
+        clientparms.transportparm_size = XMLRPC_CXPSIZE(user_agent);
     } else {
         clientparms.transportparmsP = NULL;
         clientparms.transportparm_size = 0;
@@ -812,6 +822,7 @@ main(int           const argc,
 
     doCall(&env, cmdline.transport, cmdline.curlinterface,
            cmdline.curlnoverifypeer, cmdline.curlnoverifyhost,
+           cmdline.curluseragent,
            serverInfoP,
            cmdline.methodName, paramArrayP, 
            &resultP);

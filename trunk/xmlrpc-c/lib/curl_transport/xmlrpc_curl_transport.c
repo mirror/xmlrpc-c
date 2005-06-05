@@ -17,12 +17,14 @@
 #include "bool.h"
 #include "mallocvar.h"
 #include "linklist.h"
+#include "sstring.h"
 #include "casprintf.h"
 #include "pthreadx.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
+#include "version.h"
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -72,6 +74,12 @@ struct xmlrpc_client_transport {
            certificate (independently of whether the certificate is
            authentic) indicates the host name that is in the URL we
            are using for the server.
+        */
+    const char * userAgent;
+        /* Prefix for the User-Agent HTTP header, reflecting facilities
+           outside of Xmlrpc-c.  The actual User-Agent header consists
+           of this prefix plus information about Xmlrpc-c.  NULL means
+           none.
         */
 };
 
@@ -186,7 +194,13 @@ getXportParms(xmlrpc_env *  const envP,
               size_t        const parmSize,
               const char ** const networkInterfaceP,
               xmlrpc_bool * const sslVerifyPeerP,
-              xmlrpc_bool * const sslVerifyHostP) {
+              xmlrpc_bool * const sslVerifyHostP,
+              const char ** const userAgentP) {
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(user_agent))
+        *userAgentP = NULL;
+    else
+        *userAgentP = strdup(curlXportParmsP->user_agent);
 
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
         *networkInterfaceP = NULL;
@@ -308,11 +322,12 @@ create(xmlrpc_env *                      const envP,
         /* The above makes it look like Curl is not re-entrant.  We should
            check into that.
         */
-        
+
         getXportParms(envP, curlXportParmsP, parm_size,
                       &transportP->networkInterface,
                       &transportP->sslVerifyPeer,
-                      &transportP->sslVerifyHost);
+                      &transportP->sslVerifyHost,
+                      &transportP->userAgent);
 
         if (!envP->fault_occurred) {
             createSyncCurlSession(envP, &transportP->syncCurlSessionP);
@@ -351,6 +366,8 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 
     if (clientTransportP->networkInterface)
         strfree(clientTransportP->networkInterface);
+    if (clientTransportP->userAgent)
+        strfree(clientTransportP->userAgent);
 
     curl_global_cleanup();
 
@@ -364,48 +381,110 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 
 
 static void
+addHeader(xmlrpc_env * const envP,
+          struct curl_slist ** const headerListP,
+          const char *         const headerText) {
+
+    struct curl_slist * newHeaderList;
+    newHeaderList = curl_slist_append(*headerListP, headerText);
+    if (newHeaderList == NULL)
+        xmlrpc_faultf(envP,
+                      "Could not add header '%s'.  "
+                      "curl_slist_append() failed.", headerText);
+    else
+        *headerListP = newHeaderList;
+}
+
+
+
+static void
+addContentTypeHeader(xmlrpc_env *         const envP,
+                     struct curl_slist ** const headerListP) {
+    
+    addHeader(envP, headerListP, "Content-Type: text/xml");
+}
+
+
+
+static void
+addUserAgentHeader(xmlrpc_env *         const envP,
+                   struct curl_slist ** const headerListP,
+                   const char *         const userAgent) {
+    
+    if (userAgent) {
+        curl_version_info_data * const curlInfoP =
+            curl_version_info(CURLVERSION_NOW);
+        char curlVersion[32];
+        const char * userAgentHeader;
+        
+        SSPRINTF(curlVersion, "%u.%u.%u",
+                (curlInfoP->version_num >> 16) && 0xff,
+                (curlInfoP->version_num >>  8) && 0xff,
+                (curlInfoP->version_num >>  0) && 0xff
+            );
+                  
+        casprintf(&userAgentHeader,
+                  "User-Agent: %s Xmlrpc-c/%s Curl/%s",
+                  userAgent, XMLRPC_C_VERSION, curlVersion);
+        
+        if (userAgentHeader == NULL)
+            xmlrpc_faultf(envP, "Couldn't allocate memory for "
+                          "User-Agent header");
+        else {
+            addHeader(envP, headerListP, userAgentHeader);
+            
+            strfree(userAgentHeader);
+        }
+    }
+}
+
+
+
+static void
+addAuthorizationHeader(xmlrpc_env *         const envP,
+                       struct curl_slist ** const headerListP,
+                       const char *         const basicAuthInfo) {
+
+    if (basicAuthInfo) {
+        const char * authorizationHeader;
+            
+        casprintf(&authorizationHeader, "Authorization: %s", basicAuthInfo);
+            
+        if (authorizationHeader == NULL)
+            xmlrpc_faultf(envP, "Couldn't allocate memory for "
+                          "Authorization header");
+        else {
+            addHeader(envP, headerListP, authorizationHeader);
+
+            strfree(authorizationHeader);
+        }
+    }
+}
+
+
+
+static void
 createCurlHeaderList(xmlrpc_env *               const envP,
                      const xmlrpc_server_info * const serverP,
+                     const char *               const userAgent,
                      struct curl_slist **       const headerListP) {
 
     struct curl_slist * headerList;
 
-    headerList = NULL;  /* initial value */
+    headerList = NULL;  /* initial value - empty list */
 
-    headerList = curl_slist_append(headerList, "Content-Type: text/xml");
-
-    if (headerList == NULL)
-        xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, 
-                "Could not add header.  curl_slist_append() failed.");
-    else {
-        /* Send an authorization header if we need one. */
-        if (serverP->_http_basic_auth) {
-            /* Make the authentication header "Authorization: " */
-
-            const char * authHeader;
-            
-            casprintf(&authHeader, "Authorization: %s",
-                      serverP->_http_basic_auth);
-            
-            if (authHeader == NULL)
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_INTERNAL_ERROR,
-                    "Couldn't allocate memory for authentication header");
-            else {
-                headerList = curl_slist_append(headerList, authHeader);
-                if (headerList == NULL)
-                    xmlrpc_env_set_fault_formatted(
-                        envP, XMLRPC_INTERNAL_ERROR,
-                        "Could not add authentication header.  "
-                        "curl_slist_append() failed.");
-                strfree(authHeader);
-            }
+    addContentTypeHeader(envP, &headerList);
+    if (!envP->fault_occurred) {
+        addUserAgentHeader(envP, &headerList, userAgent);
+        if (!envP->fault_occurred) {
+            addAuthorizationHeader(envP, &headerList, 
+                                   serverP->_http_basic_auth);
         }
-        if (envP->fault_occurred)
-            free(headerList);
     }
-    *headerListP = headerList;
+    if (envP->fault_occurred)
+        curl_slist_free_all(headerList);
+    else
+        *headerListP = headerList;
 }
 
 
@@ -456,6 +535,7 @@ createCurlTransaction(xmlrpc_env *               const envP,
                       const char *               const networkInterface,
                       xmlrpc_bool                const sslVerifyPeer,
                       xmlrpc_bool                const sslVerifyHost,
+                      const char *               const userAgent,
                       curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
@@ -470,7 +550,7 @@ createCurlTransaction(xmlrpc_env *               const envP,
         if (curlTransactionP->serverUrl == NULL)
             xmlrpc_faultf(envP, "Out of memory to store server URL.");
         else {
-            createCurlHeaderList(envP, serverP, 
+            createCurlHeaderList(envP, serverP, userAgent,
                                  &curlTransactionP->headerList);
             
             if (!envP->fault_occurred)
@@ -642,6 +722,7 @@ createRpc(xmlrpc_env *                     const envP,
                               clientTransportP->networkInterface, 
                               clientTransportP->sslVerifyPeer,
                               clientTransportP->sslVerifyHost,
+                              clientTransportP->userAgent,
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             list_init_header(&rpcP->link, rpcP);

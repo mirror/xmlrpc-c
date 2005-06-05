@@ -17,6 +17,7 @@
 #include "parse_xml.h"
 #include "cgi.h"
 #include "xml_data.h"
+#include "client.h"
 
 /*=========================================================================
 **  Test Harness
@@ -878,6 +879,9 @@ main(int     argc,
 #ifdef HAVE_UNICODE_WCHAR
     test_utf8_coding();
 #endif /* HAVE_UNICODE_WCHAR */
+
+    printf("\n");
+    test_client();
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",

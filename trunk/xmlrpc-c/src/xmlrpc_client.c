@@ -170,10 +170,9 @@ getTransportParmsFromClientParms(
     } else {
         *transportparmsPP = clientparmsP->transportparmsP;
         if (parm_size < XMLRPC_CPSIZE(transportparm_size))
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR,
-                "Your 'clientparms' argument contains the "
-                "transportparmsP member, but no transportparms_size member");
+            xmlrpc_faultf(envP, "Your 'clientparms' argument contains the "
+                          "transportparmsP member, "
+                          "but no transportparms_size member");
         else
             *transportparm_sizeP = clientparmsP->transportparm_size;
     }

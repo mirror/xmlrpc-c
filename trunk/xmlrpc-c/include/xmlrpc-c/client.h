@@ -42,6 +42,7 @@ struct xmlrpc_curl_xportparms {
     const char * network_interface;
     xmlrpc_bool  no_ssl_verifypeer;
     xmlrpc_bool  no_ssl_verifyhost;
+    const char * user_agent;
 };
 
 
