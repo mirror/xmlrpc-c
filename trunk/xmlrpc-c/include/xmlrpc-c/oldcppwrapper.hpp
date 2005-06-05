@@ -370,11 +370,9 @@ public:
     std::string handle (const std::string& body) const;
 };
 
-inline XmlRpcGenSrv::XmlRpcGenSrv (int flags) {
+inline XmlRpcGenSrv::XmlRpcGenSrv (int) {
 
     XmlRpcEnv env;
-
-    if (flags == flags){};
 
     mRegistry = xmlrpc_registry_new (env);
     env.throwIfFaultOccurred();        

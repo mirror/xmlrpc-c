@@ -350,8 +350,7 @@ class testSuite {
 public:
     void run(unsigned int const indentation);
 
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         throw(error("test suite does not have a runtests() method"));
     };
     virtual string suiteName() {
@@ -382,8 +381,7 @@ public:
     virtual string suiteName() {
         return "intTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         value_int int1(7);
         TEST(static_cast<int>(int1) == 7);
         value_int int2(-7);
@@ -406,8 +404,7 @@ public:
     virtual string suiteName() {
         return "doubleTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         value_double double1(3.14);
         TEST(static_cast<double>(double1) == 3.14);
         value val1(double1);
@@ -428,8 +425,7 @@ public:
     virtual string suiteName() {
         return "booleanTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         value_boolean boolean1(true); 
         TEST(static_cast<bool>(boolean1) == true);
         value_boolean boolean2(false);
@@ -452,8 +448,7 @@ public:
     virtual string suiteName() {
         return "datetimeTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         time_t const testTime(900684535);
         value_datetime datetime1("19980717T14:08:55");
         TEST(static_cast<time_t>(datetime1) == testTime);
@@ -477,8 +472,7 @@ public:
     virtual string suiteName() {
         return "stringTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         value_string string1("hello world");
         TEST(static_cast<string>(string1) == "hello world");
         value_string string2("embedded\0null");
@@ -501,8 +495,7 @@ public:
     virtual string suiteName() {
         return "bytestringTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         unsigned char bytestringArray[] = {0x10, 0x11, 0x12, 0x13, 0x14};
         vector<unsigned char> 
             bytestringData(&bytestringArray[0], &bytestringArray[4]);
@@ -531,8 +524,7 @@ public:
     virtual string suiteName() {
         return "nilTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         value_nil nil1;
         value val1(nil1);
         TEST(val1.type() == value::TYPE_NIL);
@@ -551,8 +543,7 @@ public:
     virtual string suiteName() {
         return "structTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         map<string, value> structData;
         pair<string, value> member("the_integer", value_int(9));
         structData.insert(member);
@@ -580,8 +571,7 @@ public:
     virtual string suiteName() {
         return "arrayTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         vector<value> arrayData;
         arrayData.push_back(value_int(7));
         arrayData.push_back(value_double(2.78));
@@ -739,9 +729,7 @@ public:
     virtual string suiteName() {
         return "paramListTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
 
         paramList paramList1;
         TEST(paramList1.size() == 0);
@@ -890,8 +878,7 @@ public:
     virtual string suiteName() {
         return "clientXmlTransportTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         clientXmlTransport_curl transportc1("eth0");
@@ -931,8 +918,7 @@ public:
     virtual string suiteName() {
         return "clientSimpleTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
 
         clientSimple clientS0;
         paramList paramList0;
@@ -1000,8 +986,7 @@ public:
     virtual string suiteName() {
         return "clientDirectAsyncTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
+    virtual void runtests(unsigned int const) {
         
         registry myRegistry;
         
@@ -1099,7 +1084,6 @@ public:
         return "clientTestSuite";
     }
     virtual void runtests(unsigned int const indentation) {
-        if (indentation == indentation){}
 
         clientDirectTestSuite().run(indentation+1);
 
@@ -1158,13 +1142,13 @@ public:
 //=========================================================================
 
 int 
-main(int argc, char** argv) {
+main(int argc, char**) {
     
     int retval;
 
     if (argc-1 > 0) {
         cout << "Program takes no arguments" << endl;
-        if (argv) {};  // defeat compiler warning about unused parm
+        exit(1);
     }
 
     bool testsPassed;

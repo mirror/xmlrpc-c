@@ -181,9 +181,8 @@ xmlTransaction::finish(string const& responseXml) const {
 
 
 void
-xmlTransaction::finishErr(error const& error) const {
+xmlTransaction::finishErr(error const&) const {
 
-    if (error.what()) {}
 }
 
 

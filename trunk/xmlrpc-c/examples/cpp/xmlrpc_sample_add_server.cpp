@@ -31,10 +31,9 @@ public:
 
 
 int 
-main(int           const argc, 
-     const char ** const argv) {
+main(int           const, 
+     const char ** const) {
 
-    if (argc && argv) {}  // defeat unused parameter warning
     xmlrpc_c::registry myRegistry;
 
     xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);

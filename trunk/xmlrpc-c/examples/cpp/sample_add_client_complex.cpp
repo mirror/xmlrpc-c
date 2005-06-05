@@ -23,10 +23,9 @@
 using namespace std;
 
 int
-main(int argc, char **argv) {
+main(int argc, char **) {
 
     if (argc-1 > 0) {
-        if (argv) {}
         cerr << "This program has no arguments" << endl;
         exit(1);
     }
