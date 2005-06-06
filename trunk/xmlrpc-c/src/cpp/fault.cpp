@@ -12,7 +12,7 @@ fault::fault() : valid(false) {};
     
 fault::fault(string                  const _description,
              xmlrpc_c::fault::code_t const _code
-                 = xmlrpc_c::fault::CODE_UNSPECIFIED) :
+             ) :
     valid(true),
     code(_code),
     description(_description)

@@ -42,10 +42,8 @@ void XmlRpcClass::addFunction (const XmlRpcFunction& function)
     mFunctions.push_back(function);
 }
 
-void XmlRpcClass::printDeclaration (ostream& out)
+void XmlRpcClass::printDeclaration (ostream&)
 {
-    static ostream& warningKiller = out;
-
     cout << "class " << mClassName << " {" << endl;
     cout << "    XmlRpcClient mClient;" << endl;
     cout << endl;
@@ -71,10 +69,8 @@ void XmlRpcClass::printDeclaration (ostream& out)
     cout << "};" << endl;    
 }
 
-void XmlRpcClass::printDefinition (ostream& out)
+void XmlRpcClass::printDefinition (ostream&)
 {
-    static ostream& warningKiller = out;
-    
     vector<XmlRpcFunction>::iterator f;
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
 	f->printDefinitions(cout, mClassName);

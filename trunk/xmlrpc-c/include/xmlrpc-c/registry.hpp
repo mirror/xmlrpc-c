@@ -123,7 +123,7 @@ public:
     ~registry();
 
     void
-    addMethod(string              const name,
+    addMethod(std::string         const name,
               xmlrpc_c::methodPtr const methodP);
 
     void

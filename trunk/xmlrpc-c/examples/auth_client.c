@@ -8,6 +8,7 @@
 ** But certain XML-RPC servers, including Zope, rely heavily on HTTP
 ** basic authentication. Here's how to talk to them. */
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <xmlrpc-c/base.h>

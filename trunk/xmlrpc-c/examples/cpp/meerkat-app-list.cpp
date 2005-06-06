@@ -3,7 +3,7 @@
 // http://www.oreillynet.com/pub/a/rss/2000/11/14/meerkat_xmlrpc.html */
 
 #include <iostream>
-#include <strstream>
+#include <sstream>
 
 using namespace std;
 
@@ -17,12 +17,9 @@ using namespace std;
 static void list_apps (int hours) {
 
     // Build our time_period parameter.
-    ostrstream time_period_stream;
+    ostringstream time_period_stream;
     time_period_stream << hours << "HOUR" << ends;
     string time_period = time_period_stream.str();
-
-    // (Ask the ostrstream to reclaim ownership of its buffer.)
-    time_period_stream.freeze(false);
 
     // Assemble our meerkat query recipe.
     XmlRpcValue recipe = XmlRpcValue::makeStruct();

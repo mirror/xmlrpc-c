@@ -11,18 +11,19 @@ using girerr::error;
 #include "xmlrpc-c/registry.hpp"
 #include "xmlrpc-c/server_abyss.hpp"
 
+using namespace std;
+using namespace xmlrpc_c;
 
 namespace xmlrpc_c {
 
 serverAbyss::serverAbyss(
     xmlrpc_c::registry const& registry,
-    unsigned int       const  portNumber = 8080,
-    string             const& logFileName = NULL,
-    unsigned int       const  keepaliveTimeout = 0,
-    unsigned int       const  keepaliveMaxConn = 0,
-    unsigned int       const  timeout = 0,
-    bool               const  dontAdvertise = false
-    ) {
+    unsigned int       const  portNumber,
+    string             const& logFileName,
+    unsigned int       const  keepaliveTimeout,
+    unsigned int       const  keepaliveMaxConn,
+    unsigned int       const  timeout,
+    bool               const  dontAdvertise) {
    
     this->registryP = &registry;
     this->logFileName = logFileName;

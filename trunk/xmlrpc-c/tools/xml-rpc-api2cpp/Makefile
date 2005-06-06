@@ -11,7 +11,7 @@ include ../Makefile.common
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include
 
-CFLAGS = $(INCLUDES) $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 LDFLAGS = $(CLIENT_LDFLAGS) $(LADD)
 
@@ -34,7 +34,7 @@ xml-rpc-api2cpp: \
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 %.o:%.cpp
-	$(LIBTOOL) --mode=compile $(CXX) -c $(CFLAGS) $<
+	$(LIBTOOL) --mode=compile $(CXX) -c $(CXXFLAGS) $<
 
 include Makefile.depend
 

@@ -34,7 +34,7 @@ public:
     XmlRpcValue /*array*/ methodSignature (std::string string1);
 
     /* Given the name of a method, return a help string. */
-    string methodHelp (std::string string1);
+    std::string methodHelp (std::string string1);
 
     /* Process an array of calls, and return an array of results. Calls
        should be structs of the form {'methodName': string, 'params':

@@ -11,7 +11,7 @@ public:
 serverAbyss::serverAbyss(
     xmlrpc_c::registry const& registry,
     unsigned int       const  portNumber = 8080,
-    string             const& logFileName = NULL,
+    std::string        const& logFileName = NULL,
     unsigned int       const  keepaliveTimeout = 0,
     unsigned int       const  keepaliveMaxConn = 0,
     unsigned int       const  timeout = 0,
@@ -28,8 +28,8 @@ private:
     
     const xmlrpc_c::registry * registryP;
     
-    string       configFileName;
-    string       logFileName;
+    std::string  configFileName;
+    std::string  logFileName;
     unsigned int portNumber;
     unsigned int keepaliveTimeout;
     unsigned int keepaliveMaxConn;

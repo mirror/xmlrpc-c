@@ -138,7 +138,7 @@ public:
 
     // You can't cast to a vector because the compiler can't tell which
     // constructor to use (complains about ambiguity).  So we have this:
-    vector<unsigned char>
+    std::vector<unsigned char>
     vectorUcharValue() const;
 
     size_t
@@ -173,7 +173,7 @@ public:
 
     value_array(xmlrpc_c::value const baseValue);
 
-    vector<xmlrpc_c::value>
+    std::vector<xmlrpc_c::value>
     vectorValueValue() const;
 
     unsigned int

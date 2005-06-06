@@ -14,6 +14,9 @@ using girerr::error;
 
 #include "xmlrpc-c/client_simple.hpp"
 
+using namespace std;
+using namespace xmlrpc_c;
+
 namespace xmlrpc_c {
 
 

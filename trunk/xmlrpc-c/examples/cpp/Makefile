@@ -76,35 +76,12 @@ config.h:
 xmlrpc_amconfig.h:
 	$(LN_S) $(BUILDDIR)/$@ .
 
-include $(SRCDIR)/Makefile.common
-
 .PHONY: clean
-clean: clean-common
+clean:
 	rm -f $(PROGS) config.h xmlrpc_amconfig.h
 
 .PHONY: distclean
 distclean: clean
-
-BINDIR=$(DESTDIR)$(bindir)
-
-FILENAME_GENERATOR = "echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'"
-
-INSTCMD =  "$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p \
-  $(BINDIR)/`$(FILENAME_GENERATOR)`"
-
-.PHONY: install
-install: $(PROGS)
-	@$(NORMAL_INSTALL)
-	$(MKINSTALLDIRS) $(BINDIR)
-	@list='$(bin_PROGRAMS)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    echo "$(INSTCMD)"; $(INSTCMD); \
-	  else :; \
-          fi; \
-	done
-
-.PHONY: check
-check:
 
 .PHONY: dep depend
 dep depend:

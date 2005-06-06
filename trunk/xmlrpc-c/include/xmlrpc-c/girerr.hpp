@@ -4,15 +4,19 @@
 #include <string>
 #include <exception>
 
-namespace girerr {
-
 #define HAVE_GIRERR_ERROR
+
+namespace girerr {
 
 class error : public std::exception {
 public:
-    error(std::string const& what_arg) : _what(what_arg) {};
+    error(std::string const& what_arg) : _what(what_arg) {}
+
+    ~error() throw() {}
+
     virtual const char *
-    what() const { return this->_what.c_str(); };
+    what() const throw() { return this->_what.c_str(); };
+
 private:
     std::string _what;
 };

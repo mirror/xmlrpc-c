@@ -164,11 +164,11 @@ c_executeMethod(xmlrpc_env *   const envP,
 
         try {
             methodP->execute(paramList, &result);
-        } catch (xmlrpc_c::fault fault) {
-            xmlrpc_env_set_fault(envP, fault.getCode(), 
-                                 fault.getDescription().c_str()); 
-        } catch (girerr::error error) {
-            xmlrpc_env_set_fault(envP, 0, error.what());
+        } catch (xmlrpc_c::fault caughtFault) {
+            xmlrpc_env_set_fault(envP, caughtFault.getCode(), 
+                                 caughtFault.getDescription().c_str()); 
+        } catch (girerr::error caughtError) {
+            xmlrpc_env_set_fault(envP, 0, caughtError.what());
         }
         if (envP->fault_occurred)
             retval = NULL;
@@ -219,11 +219,11 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
 
         try {
             methodP->execute(methodName, paramList, &result);
-        } catch (xmlrpc_c::fault fault) {
-            xmlrpc_env_set_fault(envP, fault.getCode(), 
-                                 fault.getDescription().c_str()); 
-        } catch (girerr::error error) {
-            xmlrpc_env_set_fault(envP, 0, error.what());
+        } catch (xmlrpc_c::fault caughtFault) {
+            xmlrpc_env_set_fault(envP, caughtFault.getCode(), 
+                                 caughtFault.getDescription().c_str()); 
+        } catch (girerr::error caughtError) {
+            xmlrpc_env_set_fault(envP, 0, caughtError.what());
         }
         if (envP->fault_occurred)
             retval = NULL;

@@ -33,7 +33,7 @@ class clientTransactionPtr;
 
 class clientTransaction : public girmem::autoObject {
 
-    friend clientTransactionPtr;
+    friend class clientTransactionPtr;
 
 public:
     virtual void
@@ -147,11 +147,11 @@ class xmlTransactionPtr;
 
 class xmlTransaction : public girmem::autoObject {
 
-    friend xmlTransactionPtr;
+    friend class xmlTransactionPtr;
 
 public:
     virtual void
-    finish(string const& responseXml) const;
+    finish(std::string const& responseXml) const;
 
     virtual void
     finishErr(girerr::error const& error) const;
@@ -286,7 +286,7 @@ public:
     xmlTransaction_client(xmlrpc_c::clientTransactionPtr const& tranP);
 
     void
-    finish(string const& responseXml) const;
+    finish(std::string const& responseXml) const;
 
     void
     finishErr(girerr::error const& error) const;

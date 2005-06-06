@@ -243,7 +243,7 @@ clientXmlTransport::asyncComplete(
                 XMLRPC_MEMBLOCK_SIZE(char, responseXmlMP));
             (*xmlTranPP)->finish(responseXml);
         }
-    } catch(error const error) {
+    } catch(error) {
         /* We can't throw an error back to C code, and the async_complete
            interface does not provide for failure, so we define ->finish()
            as not being capable of throwing an error.
@@ -360,9 +360,9 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
 
 
 clientXmlTransport_curl::clientXmlTransport_curl(
-    string const networkInterface = "",
-    bool   const noSslVerifyPeer = false,
-    bool   const noSslVerifyHost = false) {
+    string const networkInterface,
+    bool   const noSslVerifyPeer,
+    bool   const noSslVerifyHost) {
 
 #if MUST_BUILD_CURL_CLIENT
     struct xmlrpc_curl_xportparms transportParms; 
@@ -402,8 +402,8 @@ clientXmlTransport_curl::~clientXmlTransport_curl() {
 
 
 clientXmlTransport_libwww::clientXmlTransport_libwww(
-    string const appname = "",
-    string const appversion = "") {
+    string const appname,
+    string const appversion) {
 
 #if MUST_BUILD_LIBWWW_CLIENT
     this->c_transportOpsP = &xmlrpc_libwww_transport_ops;
@@ -436,7 +436,7 @@ clientXmlTransport_libwww::~clientXmlTransport_libwww() {
 
 
 clientXmlTransport_wininet::clientXmlTransport_wininet(
-    bool const allowInvalidSslCerts = false
+    bool const allowInvalidSslCerts
     ) {
 
 #if MUST_BUILD_WININET_CLIENT
@@ -796,8 +796,8 @@ xmlTransaction_client::finish(string const& responseXml) const {
         xml::parseResponse(responseXml, &outcome);
 
         this->tranP->finish(outcome);
-    } catch (error const error) {
-        this->tranP->finishErr(error);
+    } catch (error const caughtError) {
+        this->tranP->finishErr(caughtError);
     }
 }
 

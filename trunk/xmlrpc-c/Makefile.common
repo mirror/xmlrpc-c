@@ -14,17 +14,20 @@
 LIBTOOL = $(SRCDIR)/libtool
 LINK = $(LIBTOOL) --mode=link $(CCLD)
 
-GCC_C_WARNINGS = -Wall -Wmissing-declarations -Wundef -Wimplicit \
-                 -W -Winline \
-	         -Wstrict-prototypes -Wmissing-prototypes
+GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline
   # We need -Wwrite-strings after we fix all the missing consts
+
+GCC_C_WARNINGS = $(GCC_WARNINGS) \
+  -Wmissing-declarations -Wstrict-prototypes -Wmissing-prototypes
+
+GCC_CXX_WARNINGS = $(GCC_WARNINGS) -Woverloaded-virtual -Wsynth
 
 ifeq ($(C_COMPILER_GNU),yes)
   CFLAGS_COMMON = $(GCC_C_WARNINGS) -fno-common -g
 endif
 
 ifeq ($(CXX_COMPILER_GNU),yes)
-  CXXFLAGS_COMMON = $(GCC_C_WARNINGS) -Woverloaded-virtual -Wsynth
+  CXXFLAGS_COMMON = $(GCC_CXX_WARNINGS)
 endif
 
 DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)

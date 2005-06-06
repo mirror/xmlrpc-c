@@ -7,7 +7,7 @@ namespace girmem {
 class autoObjectPtr;
 
 class autoObject {
-    friend autoObjectPtr;
+    friend class autoObjectPtr;
 
 public:
     void incref();

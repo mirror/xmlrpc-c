@@ -67,7 +67,9 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
-1.3 - not yet
+1.03 - not yet
+
+  * BJH: Add User-Agent to Curl transport, Xmlrpc program.
 
   * BJH: Fix bug: xmlrpc_serialize_base64_data() doesn't free working
     storage.
@@ -107,7 +109,7 @@ DETAILED RELEASE HISTORY:
 
   * BJH: Fix mysterious disablement of forking Abyss (ServerRunForked()).
 
-1.2 - April 4, 2005
+1.02 - April 4, 2005
 
   * SAB: Win32 http.sys server: Add new project and sample as 
     an alternative to Abyss on current Win32 platforms.  Does
@@ -141,7 +143,7 @@ DETAILED RELEASE HISTORY:
   * SAB: WinInet Transport: Fix bad authentication header.
   
 
-1.1 - January 8, 2005
+1.01 - January 8, 2005
 
   * SAB: Windows works again; new build strategy.
 
@@ -170,7 +172,7 @@ DETAILED RELEASE HISTORY:
 
   * BJH: Add xmlrpc_array_read_item().
 
-1.0 - October 25, 2004
+1.00 - October 25, 2004
   * New modular client XML transport structure.  Curl and Wininet transports
     (in addition to existing libwww).
   * Bryan Henderson: create Makefile.config; make examples/ directory use

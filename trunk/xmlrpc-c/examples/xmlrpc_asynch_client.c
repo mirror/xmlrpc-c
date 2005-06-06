@@ -5,6 +5,7 @@
    simultaneously.
 */
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <xmlrpc-c/base.h>

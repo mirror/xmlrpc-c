@@ -14,7 +14,7 @@ using namespace xmlrpc_c;
 namespace xmlrpc_c {
 
 
-paramList::paramList(unsigned int const paramCount = 0) {
+paramList::paramList(unsigned int const paramCount) {
 
     this->paramVector.reserve(paramCount);
 }
@@ -50,8 +50,8 @@ paramList::operator[](unsigned int const subscript) const {
 
 int
 paramList::getInt(unsigned int const paramNumber,
-                   int          const minimum = INT_MIN,
-                   int          const maximum = INT_MAX) const {
+                   int          const minimum,
+                   int          const maximum) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -91,8 +91,8 @@ paramList::getBoolean(unsigned int const paramNumber) const {
 
 double
 paramList::getDouble(unsigned int const paramNumber,
-                      double       const minimum = DBL_MIN,
-                      double       const maximum = DBL_MAX) const {
+                      double       const minimum,
+                      double       const maximum) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -121,8 +121,7 @@ paramList::getDouble(unsigned int const paramNumber,
 time_t
 paramList::getDatetime_sec(
     unsigned int              const paramNumber,
-    paramList::timeConstraint const constraint 
-        = paramList::TC_ANY) const {
+    paramList::timeConstraint const constraint) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -190,8 +189,8 @@ paramList::getBytestring(unsigned int const paramNumber) const {
 
 std::vector<xmlrpc_c::value>
 paramList::getArray(unsigned int const paramNumber,
-                     unsigned int const minSize = 0,
-                     unsigned int const maxSize = UINT_MAX) const {
+                     unsigned int const minSize,
+                     unsigned int const maxSize) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));

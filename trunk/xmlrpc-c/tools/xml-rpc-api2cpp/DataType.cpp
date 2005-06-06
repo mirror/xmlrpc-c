@@ -123,14 +123,12 @@ public:
     virtual string outputConversionFragment (const string& var_name) const;
 };
 
-string VoidDataType::parameterFragment (const string& base_name) const {
-    static const string& warningKiller = base_name;
+string VoidDataType::parameterFragment (const string&) const {
     throw domain_error("Can't handle functions with 'void' arguments'");
     
 }
 
-string VoidDataType::inputConversionFragment (const string& base_name) const {
-    static const string& warningKiller = base_name;
+string VoidDataType::inputConversionFragment (const string&) const {
     throw domain_error("Can't handle functions with 'void' arguments'");
 }
 
@@ -138,8 +136,7 @@ string VoidDataType::returnTypeFragment () const {
     return "void";
 }
 
-string VoidDataType::outputConversionFragment (const string& var_name) const {
-    static const string& warningKiller = var_name;
+string VoidDataType::outputConversionFragment (const string&) const {
     return "/* Return value ignored. */";
 }
 
