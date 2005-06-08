@@ -53,7 +53,7 @@ TRANSPORT_INCLUDES = \
   -I$(CURL_TRANSPORT_DIR) \
   -I$(LIBWWW_TRANSPORT_DIR) \
 
-BASIC_INCLUDES = -I $(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
+BASIC_INCLUDES = -I$(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
   -I$(SRCDIR)/lib/util/include
 
 # We always statically-link our C++ code because it's tiny, and C++ is
