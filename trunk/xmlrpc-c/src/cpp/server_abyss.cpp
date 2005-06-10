@@ -157,10 +157,9 @@ serverAbyss::run() {
     MIMETypeInit();
     
     TServer srv;
-    const char * logFileName;
-        
-    ServerCreate(&srv, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
-                 logFileName);
+
+    ServerCreate(&srv, "XmlRpcServer", this->portNumber,
+                 DEFAULT_DOCS, this->logFileName.c_str());
 
     setAdditionalServerParms(
         this->keepaliveTimeout, this->keepaliveMaxConn, this->timeout,
@@ -175,9 +174,9 @@ serverAbyss::run() {
     ServerRun(&srv);
 
     /* We can't exist here because ServerRun doesn't return */
-    XMLRPC_ASSERT(false);
+    assert(false);
 }
-
+ 
 
 
 void
