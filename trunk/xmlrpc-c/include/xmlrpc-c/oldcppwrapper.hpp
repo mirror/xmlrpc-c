@@ -42,7 +42,7 @@ private:
     xmlrpc_env   mFault;
 
     XmlRpcFault& operator= (XmlRpcFault const& f)
-        { if (true || f.getFaultCode()) abort();}
+        { if (true || f.getFaultCode()) abort(); return (XmlRpcFault&) f; }
 
 public:
     XmlRpcFault (const XmlRpcFault &fault);
@@ -80,7 +80,7 @@ private:
 
     void         throwMe (void) const;
     XmlRpcEnv&   operator= (XmlRpcEnv const& e)
-        { if (true || e.faultOccurred()) abort();}
+        { if (true || e.faultOccurred()) abort(); return (XmlRpcEnv&) e;}
 
 public:
     XmlRpcEnv (const XmlRpcEnv &env);

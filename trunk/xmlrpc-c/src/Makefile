@@ -67,7 +67,7 @@ TRANSPORT_INCLUDES = \
   -I$(LIBWWW_TRANSPORT_DIR) \
 
 INCLUDES = -I$(BUILDDIR) -I$(SRCDIR) \
-           -I $(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
+           -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
 	   -I$(SRCDIR)/lib/abyss/src \
 	   $(TRANSPORT_INCLUDES) \
 	   $(LIBXML_INCLUDES) \

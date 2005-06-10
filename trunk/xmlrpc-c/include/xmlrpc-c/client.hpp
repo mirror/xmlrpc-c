@@ -371,7 +371,7 @@ private:
         STATE_UNFINISHED,  // RPC is running or not started yet
         STATE_ERROR,       // We couldn't execute the RPC
         STATE_FAILED,      // RPC executed successfully, but failed per XML-RPC
-        STATE_SUCCEEDED,   // RPC is done, no exception
+        STATE_SUCCEEDED    // RPC is done, no exception
     };
     state state;
     girerr::error * errorP;     // Defined only in STATE_ERROR

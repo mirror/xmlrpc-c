@@ -36,7 +36,7 @@ public:
         TYPE_STRUCT     = 7,
         TYPE_C_PTR      = 8,
         TYPE_NIL        = 9,
-        TYPE_DEAD       = 0xDEAD,
+        TYPE_DEAD       = 0xDEAD
     };
 
     type_t type() const;
@@ -206,7 +206,7 @@ public:
         CODE_REQUEST_REFUSED        = -507,
         CODE_INTROSPECTION_DISABLED = -508,
         CODE_LIMIT_EXCEEDED         = -509,
-        CODE_INVALID_UTF8           = -510,
+        CODE_INVALID_UTF8           = -510
     };
 
     fault();

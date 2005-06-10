@@ -1,7 +1,7 @@
 #include <cassert>
 #include <string>
 #include <memory>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/wait.h>
 
 #include "xmlrpc-c/girerr.hpp"
