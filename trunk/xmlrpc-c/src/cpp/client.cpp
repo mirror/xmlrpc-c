@@ -9,6 +9,7 @@
   help from internal C utility libraries).
 =============================================================================*/
 
+#include <cassert>
 #include <string>
 
 #include "xmlrpc-c/girerr.hpp"
