@@ -176,7 +176,7 @@ public:
     std::vector<xmlrpc_c::value>
     vectorValueValue() const;
 
-    unsigned int
+    size_t
     size() const;
 };
 
