@@ -1,3 +1,4 @@
+#include "pthreadx.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/girmem.hpp"
