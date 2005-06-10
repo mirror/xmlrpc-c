@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "abyss.h"
+#include "xmlrpc-c/abyss.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"

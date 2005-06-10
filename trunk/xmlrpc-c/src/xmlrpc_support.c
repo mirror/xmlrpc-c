@@ -388,6 +388,7 @@ xmlrpc_traceXml(const char * const label,
             fprintf(stderr, "%s contains %u nonprintable characters.\n", 
                     label, nonPrintableCount);
 
-        fprintf(stderr, "%s:\n %.*s\n", label, (int)xmlLength, xml);
+        fprintf(stderr, "%s:\n\n", label);
+        fprintf(stderr, "%.*s\n", (int)xmlLength, xml);
     }
 }

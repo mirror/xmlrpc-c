@@ -360,12 +360,13 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
 
 
 
+#if MUST_BUILD_CURL_CLIENT
+
 clientXmlTransport_curl::clientXmlTransport_curl(
     string const networkInterface,
     bool   const noSslVerifyPeer,
     bool   const noSslVerifyHost) {
 
-#if MUST_BUILD_CURL_CLIENT
     struct xmlrpc_curl_xportparms transportParms; 
 
     transportParms.network_interface = 
@@ -385,14 +386,16 @@ clientXmlTransport_curl::clientXmlTransport_curl(
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
+}
 #else
+
+clientXmlTransport_curl::clientXmlTransport_curl(string, bool, bool) {
+
     throw("There is no Curl client XML transport in this XML-RPC client "
           "library");
-    if (networkInterface || noSslVerifyPeer || noSslVerifyHost) {
-        /* eliminate unused parameter compiler warning */
-    }
-#endif
 }
+
+#endif
  
 
 
@@ -402,11 +405,13 @@ clientXmlTransport_curl::~clientXmlTransport_curl() {
 }
 
 
+
+#if MUST_BUILD_LIBWWW_CLIENT
+
 clientXmlTransport_libwww::clientXmlTransport_libwww(
     string const appname,
     string const appversion) {
 
-#if MUST_BUILD_LIBWWW_CLIENT
     this->c_transportOpsP = &xmlrpc_libwww_transport_ops;
 
     xmlrpc_env env;
@@ -418,15 +423,16 @@ clientXmlTransport_libwww::clientXmlTransport_libwww(
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
+}
+
 #else
+ clientXmlTransport_libwww::clientXmlTransport_libwww(string, string) {
+
     throw(error("There is no Libwww client XML transport "
                 "in this XML-RPC client library"));
-    if (appname || appversion) {
-        /* eliminate unused parameter compiler warning */
-    }
-#endif
 }
- 
+
+#endif
 
 
 clientXmlTransport_libwww::~clientXmlTransport_libwww() {
@@ -436,11 +442,12 @@ clientXmlTransport_libwww::~clientXmlTransport_libwww() {
 
 
 
+#if MUST_BUILD_WININET_CLIENT
+
 clientXmlTransport_wininet::clientXmlTransport_wininet(
     bool const allowInvalidSslCerts
     ) {
 
-#if MUST_BUILD_WININET_CLIENT
     struct xmlrpc_wininet_xportparms transportParms; 
 
     transportParms.allowInvalidSSLCerts = allowInvalidSslCerts;
@@ -456,14 +463,17 @@ clientXmlTransport_wininet::clientXmlTransport_wininet(
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
+}
+
 #else
+
+clientXmlTransport_wininet::clientXmlTransport_wininet(bool) {
+
     throw(error("There is no Wininet client XML transport "
                 "in this XML-RPC client library"));
-    if (allowInvalidSslCerts) {
-        /* eliminate unused parameter compiler warning */
-    }
-#endif
 }
+
+#endif
  
 
 

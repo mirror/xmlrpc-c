@@ -76,8 +76,10 @@ config.h:
 xmlrpc_amconfig.h:
 	$(LN_S) $(BUILDDIR)/$@ .
 
+include $(SRCDIR)/Makefile.common
+
 .PHONY: clean
-clean:
+clean: clean-common
 	rm -f $(PROGS) config.h xmlrpc_amconfig.h
 
 .PHONY: distclean

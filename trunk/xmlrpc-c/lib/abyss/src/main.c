@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
 **
 ** main.c
 **
@@ -30,7 +30,7 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE.
 **
-*******************************************************************************/
+******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,252 +43,252 @@
 /* Must check this
 #include <sys/io.h>
 */
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
 
 #ifdef _UNIX
 #include <sys/signal.h>
 #include <sys/wait.h>
 #endif
 
-#include "abyss.h"
+#include "xmlrpc-c/abyss.h"
 
 void Answer(TSession *r, uint16_t statuscode, char *buffer)
 {
-	ResponseChunked(r);
+    ResponseChunked(r);
 
-	ResponseStatus(r,statuscode);
+    ResponseStatus(r,statuscode);
 
-	ResponseContentType(r,"text/html");
+    ResponseContentType(r,"text/html");
 
-	ResponseWrite(r);
-	
-	HTTPWrite(r,"<HTML><BODY>",12);
-	
-	HTTPWrite(r,buffer,strlen(buffer));
+    ResponseWrite(r);
+    
+    HTTPWrite(r,"<HTML><BODY>",12);
+    
+    HTTPWrite(r,buffer,strlen(buffer));
 
-	HTTPWrite(r,"</BODY></HTML>",14);
+    HTTPWrite(r,"</BODY></HTML>",14);
 
-	HTTPWriteEnd(r);
+    HTTPWriteEnd(r);
 }
 
 abyss_bool HandleTime(TSession *r)
 {
-	char z[50];
-	time_t ltime;
-	TDate date;
+    char z[50];
+    time_t ltime;
+    TDate date;
 
-	if (strcmp(r->uri,"/time")!=0)
-		return FALSE;
+    if (strcmp(r->uri,"/time")!=0)
+        return FALSE;
 
-	if (!RequestAuth(r,"Mot de passe","moez","hello"))
-		return TRUE;
+    if (!RequestAuth(r,"Mot de passe","moez","hello"))
+        return TRUE;
 
-	time( &ltime );
-	DateFromGMT(&date,ltime);
-	
+    time( &ltime );
+    DateFromGMT(&date,ltime);
+    
 
-	strcpy(z,"The time is ");
-	DateToString(&date,z+strlen(z));
+    strcpy(z,"The time is ");
+    DateToString(&date,z+strlen(z));
 
-	Answer(r,200,z);
+    Answer(r,200,z);
 
-	return TRUE;
+    return TRUE;
 }
 
 abyss_bool HandleDump(TSession *r)
 {
-	char z[50];
+    char z[50];
 
-	if (strcmp(r->uri,"/name")!=0)
-		return FALSE;
+    if (strcmp(r->uri,"/name")!=0)
+        return FALSE;
 
-	sprintf(z,"Server name is %s", (r->server)->name );
-	Answer(r,200,z);
+    sprintf(z,"Server name is %s", (r->server)->name );
+    Answer(r,200,z);
 
-	return TRUE;
+    return TRUE;
 }
 
 abyss_bool HandleStatus(TSession *r)
 {
-	uint32_t status;
+    uint32_t status;
 
-	if (sscanf(r->uri,"/status/%d",&status)<=0)
-		return FALSE;
+    if (sscanf(r->uri,"/status/%d",&status)<=0)
+        return FALSE;
 
-	ResponseStatus(r,(uint16_t)status);
+    ResponseStatus(r,(uint16_t)status);
 
-	return TRUE;
+    return TRUE;
 }
 
 abyss_bool HandleMIMEType(TSession *r)
 {
-	char *m;
+    char *m;
 
-	if (strncmp(r->uri,"/mime/",6)!=0)
-		return FALSE;
+    if (strncmp(r->uri,"/mime/",6)!=0)
+        return FALSE;
 
-	m=MIMETypeFromExt(r->uri+6);
-	if (!m)
-		m="(none)";
+    m=MIMETypeFromExt(r->uri+6);
+    if (!m)
+        m="(none)";
 
-	Answer(r,200,m);
+    Answer(r,200,m);
 
-	return TRUE;
+    return TRUE;
 }
 
 #ifdef _UNIX
 static void sigterm(int sig)
 {
-	TraceExit("Signal %d received. Exiting...\n",sig);
+    TraceExit("Signal %d received. Exiting...\n",sig);
 }
 
 static void sigchld(int sig)
 {
-	pid_t pid;
-	int status;
+    pid_t pid;
+    int status;
 
-	/* Reap defunct children until there aren't any more. */
-	for (;;)
-	{
-		pid = waitpid( (pid_t) -1, &status, WNOHANG );
+    /* Reap defunct children until there aren't any more. */
+    for (;;)
+    {
+        pid = waitpid( (pid_t) -1, &status, WNOHANG );
 
-		/* none left */
-		if (pid==0)
-		    break;
+        /* none left */
+        if (pid==0)
+            break;
 
-		if (pid<0)
-		{
-			/* because of ptrace */
-			if (errno==EINTR)	
-				continue;
+        if (pid<0)
+        {
+            /* because of ptrace */
+            if (errno==EINTR)   
+                continue;
 
-			break;
-		}
-	}
+            break;
+        }
+    }
 }
 #endif _UNIX
 
 void copyright()
 {
-	printf("ABYSS Web Server version "SERVER_VERSION"\n(C) Moez Mahfoudh - 2000\n\n");
+    printf("ABYSS Web Server version "SERVER_VERSION"\n(C) Moez Mahfoudh - 2000\n\n");
 }
 
 void help(char *name)
 {
-	copyright();
-	printf("Usage: %s [-h] [-c configuration file]\n\n",name);
+    copyright();
+    printf("Usage: %s [-h] [-c configuration file]\n\n",name);
 }
 
 int main(int argc,char **argv)
 {
-	TServer srv;
-	char *p,*conffile=DEFAULT_CONF_FILE;
-	abyss_bool err=FALSE;
-	char *name=argv[0];
+    TServer srv;
+    char *p,*conffile=DEFAULT_CONF_FILE;
+    abyss_bool err=FALSE;
+    char *name=argv[0];
 
-	while (p=*(++argv))
-	{
-		if ((*p=='-') && (*(p+1)))
-			if (*(p+2)=='\0')
-				switch (*(p+1))
-				{
-				case 'c':
-					argv++;
-					if (*argv)
-						conffile=*argv;
-					else
-						err=TRUE;
-					break;
-				case 'h':
-					help(name);
-					exit(0);
-				default:
-					err=TRUE;
-				}
-			else
-				err=TRUE;
-		else
-			err=TRUE;
-	};
+    while (p=*(++argv))
+    {
+        if ((*p=='-') && (*(p+1)))
+            if (*(p+2)=='\0')
+                switch (*(p+1))
+                {
+                case 'c':
+                    argv++;
+                    if (*argv)
+                        conffile=*argv;
+                    else
+                        err=TRUE;
+                    break;
+                case 'h':
+                    help(name);
+                    exit(0);
+                default:
+                    err=TRUE;
+                }
+            else
+                err=TRUE;
+        else
+            err=TRUE;
+    };
 
-	if (err)
-	{
-		help(name);
-		exit(1);
-	};
+    if (err)
+    {
+        help(name);
+        exit(1);
+    };
 
 #ifdef ABYSS_WIN32
-	copyright();
-	printf("\nPress Ctrl+C to stop the server\n");
+    copyright();
+    printf("\nPress Ctrl+C to stop the server\n");
 #endif
 
-	DateInit();
+    DateInit();
 
-	MIMETypeInit();
+    MIMETypeInit();
 
-	ServerCreate(&srv,"HTTPServer",80,DEFAULT_DOCS,NULL);
+    ServerCreate(&srv,"HTTPServer",80,DEFAULT_DOCS,NULL);
 
-	ConfReadServerFile(conffile,&srv);
+    ConfReadServerFile(conffile,&srv);
 
-	ServerAddHandler(&srv,HandleTime);
-	ServerAddHandler(&srv,HandleDump);
-	ServerAddHandler(&srv,HandleStatus);
-	ServerAddHandler(&srv,HandleMIMEType);
+    ServerAddHandler(&srv,HandleTime);
+    ServerAddHandler(&srv,HandleDump);
+    ServerAddHandler(&srv,HandleStatus);
+    ServerAddHandler(&srv,HandleMIMEType);
 
-	ServerInit(&srv);
+    ServerInit(&srv);
 
 #ifdef _UNIX
-	/* Catch various termination signals. */
-	signal(SIGTERM,sigterm);
-	signal(SIGINT,sigterm);
-	signal(SIGHUP,sigterm);
-	signal(SIGUSR1,sigterm);
+    /* Catch various termination signals. */
+    signal(SIGTERM,sigterm);
+    signal(SIGINT,sigterm);
+    signal(SIGHUP,sigterm);
+    signal(SIGUSR1,sigterm);
 
-	/* Catch defunct children. */
-	signal(SIGCHLD,sigchld);
-	/* Become a daemon */
-	switch (fork())
-	{
-	case 0:
-		break;
-	case -1:
-	    TraceExit("Unable to become a daemon");
-	default:
-	    exit(0);
-	};
+    /* Catch defunct children. */
+    signal(SIGCHLD,sigchld);
+    /* Become a daemon */
+    switch (fork())
+    {
+    case 0:
+        break;
+    case -1:
+        TraceExit("Unable to become a daemon");
+    default:
+        exit(0);
+    };
 
 #if !defined( _NO_USERS ) && !defined( __CYGWIN32__ )
-	setsid();
-	/* Change the current user if we are root */
-	if (getuid()==0)
-	{
-		if (srv.uid==(-1))
-			TraceExit("Can't run under root privileges. Please add a User option in your configuration file.");
+    setsid();
+    /* Change the current user if we are root */
+    if (getuid()==0)
+    {
+        if (srv.uid==(-1))
+            TraceExit("Can't run under root privileges. Please add a User option in your configuration file.");
 
-		if (setgroups(0,NULL)==(-1))
-			TraceExit("Failed to setup the group.");
+        if (setgroups(0,NULL)==(-1))
+            TraceExit("Failed to setup the group.");
 
-		if (srv.gid!=(-1))
-			if (setgid(srv.gid)==(-1))
-				TraceExit("Failed to change the group.");
-		
-		if (setuid(srv.uid)==(-1))
-			TraceExit("Failed to change the user.");
-	};
+        if (srv.gid!=(-1))
+            if (setgid(srv.gid)==(-1))
+                TraceExit("Failed to change the group.");
+        
+        if (setuid(srv.uid)==(-1))
+            TraceExit("Failed to change the user.");
+    };
 #endif
 
-	if (srv.pidfile!=(-1))
-	{
-		char z[16];
+    if (srv.pidfile!=(-1))
+    {
+        char z[16];
 
-		sprintf(z,"%d",getpid());
-		FileWrite(&srv.pidfile,z,strlen(z));
-		FileClose(&srv.pidfile);
-	};
+        sprintf(z,"%d",getpid());
+        FileWrite(&srv.pidfile,z,strlen(z));
+        FileClose(&srv.pidfile);
+    };
 
 #endif
 
-	ServerRun(&srv);
+    ServerRun(&srv);
 
-	return 0;
+    return 0;
 }

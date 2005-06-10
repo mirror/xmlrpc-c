@@ -16,26 +16,26 @@ Provide an interface for Abyss servers where the user accepts the TCP
 connection and passes to Xmlrpc-c the open socket.  This would be
 useful for inetd servers, among others.
 
-Document the new pure C++ (base.hpp, etc.) interface.
+Document the xmlrpc-c/server_abyss.hpp interface.
 
 Implement pluggable XML transports on the server side like on the
 client side.
 
 Create a non-XML non-HTTP efficient transport, client and server.
-The tools/binmode-rpc-kit/ directory might be useful.
+The tools/binmode-rpc-kit/ directory might be useful.  Consider XDR.
 
 Make clients and servers reentrant (this requires getting or making
 reentrant HTTP libraries).
 
-Change the argument order of asynchronous response callbacks to be more
-consistent with the xmlrpc_client_call_asynch function. Also take a look at
-the server method callback.
+Change the argument order of asynchronous response callbacks to be
+more consistent with the xmlrpc_client_call_asynch function.  Also
+take a look at the server method callback.
 
 Make an optional destructor function for XMLRPC_TYPE_C_PTR.
 
-Return XMLRPC_LIMIT_EXCEEDED_ERROR when nesting limits are
-exceeded. This will break binary and source API compatibility in a very
-minor way.
+Return XMLRPC_LIMIT_EXCEEDED_ERROR when nesting limits are exceeded.
+This will break binary and source API compatibility in a very minor
+way.
 
 Make a Perl interface to Xmlrpc-c libraries.  This would be better than the
 existing Perl RPC::XML modules because the latter are Perl all the way down
@@ -64,5 +64,5 @@ Fix abstract XML parser API to access children via functions named
 xml_element_child(env,elem,index) and xml_element_child_count(env,elem).
 Clean up corresponding client code.
 
-Make the C++ implementation less based on the C functions
+Make the C++ server implementation less based on the C functions.
 

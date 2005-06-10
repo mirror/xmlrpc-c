@@ -653,10 +653,6 @@ AC_OUTPUT(xmlrpc-c-config \
           lib/expat/xmlparse/Makefile \
           lib/expat/xmlwf/Makefile \
           lib/expat/sample/Makefile \
-          lib/abyss/Makefile \
-          lib/abyss/htdocs/Makefile \
-          lib/abyss/conf/Makefile \
-          lib/abyss/src/Makefile \
           )
 chmod +x xmlrpc-c-config
 chmod +x xmlrpc-c-config.test

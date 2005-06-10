@@ -1,36 +1,15 @@
-/*******************************************************************************
-**
-** abyss.h
-**
-** This file is part of the ABYSS Web server project.
-**
-** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission.
-** 
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
-**
-*******************************************************************************/
+/*****************************************************************************
+                                 abyss.h
+******************************************************************************
+
+  This file is the interface header for the Abyss HTTP server component of
+  XML-RPC For C/C++ (Xmlrpc-c).
+
+  The Abyss component of Xmlrpc-c is based on the independently developed
+  and distributed Abyss web server package from 2001.
+
+  Copyright information is at the end of the file.
+****************************************************************************/
 
 #ifndef _ABYSS_H_
 #define _ABYSS_H_
@@ -41,10 +20,6 @@ extern "C" {
 #endif
 
 #include <inttypes.h>
-
-/*********************************************************************
-** EDIT THE FOLLOWING LINES TO MEET YOUR CONFIGURATION NEEDS
-*********************************************************************/
 
 /*********************************************************************
 ** Paths and so on...
@@ -468,6 +443,7 @@ typedef struct _TConn
 	TThread thread;
 	abyss_bool connected;
 	abyss_bool inUse;
+    const char * trace;
 	void (*job)(struct _TConn *);
 	char buffer[BUFFER_SIZE];
 } TConn;
@@ -687,4 +663,35 @@ abyss_bool SessionLog(TSession *s);
 }
 #endif
 
+/*****************************************************************************
+** Here is the copyright notice from the Abyss web server project file from
+** which this file is derived.
+**
+** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
+** All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission.
+** 
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE.
+**
+******************************************************************************/
 #endif	/* _ABYSS_H_ */

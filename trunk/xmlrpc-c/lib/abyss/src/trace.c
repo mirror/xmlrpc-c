@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
 **
 ** trace.c
 **
@@ -30,38 +30,38 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE.
 **
-*******************************************************************************/
+******************************************************************************/
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "abyss.h"
+#include "xmlrpc-c/abyss.h"
 
 /*********************************************************************
 ** Tracing functions
 *********************************************************************/
 
-void TraceVMsg(char *fmt,va_list argptr)
-{
-	vprintf(fmt,argptr);
-	printf("\n");
+static void
+TraceVMsg(char *fmt,va_list argptr) {
+    vprintf(fmt,argptr);
+    printf("\n");
 }
 
 void TraceMsg(char *fmt,...)
 {
-	va_list argptr;
+    va_list argptr;
 
-	va_start(argptr,fmt);
-	TraceVMsg(fmt,argptr);
-	va_end(argptr);
+    va_start(argptr,fmt);
+    TraceVMsg(fmt,argptr);
+    va_end(argptr);
 }
 
 void TraceExit(char *fmt,...)
 {
-	va_list argptr;
+    va_list argptr;
 
-	va_start(argptr,fmt);
-	TraceVMsg(fmt,argptr);
-	va_end(argptr);
-	exit(1);
+    va_start(argptr,fmt);
+    TraceVMsg(fmt,argptr);
+    va_end(argptr);
+    exit(1);
 }

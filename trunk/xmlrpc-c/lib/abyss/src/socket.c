@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
 **
 ** socket.c
 **
@@ -30,15 +30,15 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE.
 **
-*******************************************************************************/
+******************************************************************************/
 
-#include "abyss.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "xmlrpc-c/abyss.h"
 
 #ifdef ABYSS_WIN32
-#define  EINTR		WSAEINTR
+#define  EINTR      WSAEINTR
 #endif
 
 static abyss_bool ABYSS_TRACE_SOCKET;
@@ -51,25 +51,25 @@ abyss_bool SocketInit()
 {
     abyss_bool retval;
 #ifdef ABYSS_WIN32
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	int err;
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    int err;
  
-	wVersionRequested = MAKEWORD( 2, 0 );
+    wVersionRequested = MAKEWORD( 2, 0 );
  
-	err = WSAStartup( wVersionRequested, &wsaData );
-	retval = ( err == 0 );
+    err = WSAStartup( wVersionRequested, &wsaData );
+    retval = ( err == 0 );
 #else
-	retval = TRUE;
+    retval = TRUE;
     ABYSS_TRACE_SOCKET = (getenv("ABYSS_TRACE_SOCKET") != NULL);
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
     if (ABYSS_TRACE_SOCKET)
         fprintf(stderr, "Abyss socket layer will trace socket traffic "
                 "due to ABYSS_TRACE_SOCKET environment variable\n");
     return retval;
 }
 
-#define RET(x)	return ((x)!=(-1))
+#define RET(x)  return ((x)!=(-1))
 
 abyss_bool SocketCreate(TSocket *s)
 {
@@ -77,7 +77,7 @@ abyss_bool SocketCreate(TSocket *s)
 
     rc =socket(AF_INET,SOCK_STREAM,0);
     if (rc < 0)
-		return FALSE;
+        return FALSE;
     else {
         int32_t n=1;
         *s = rc;
@@ -88,15 +88,15 @@ abyss_bool SocketCreate(TSocket *s)
 abyss_bool SocketClose(TSocket *s)
 {
 #ifdef ABYSS_WIN32
-	RET(closesocket(*s));
+    RET(closesocket(*s));
 #else
-	RET(close(*s));
-#endif	/* ABYSS_WIN32 */
+    RET(close(*s));
+#endif  /* ABYSS_WIN32 */
 }
 
 uint32_t SocketWrite(TSocket *s, char *buffer, uint32_t len)
 {
-	return send(*s,buffer,len,0);
+    return send(*s,buffer,len,0);
 }
 
 
@@ -121,144 +121,144 @@ uint32_t SocketRead(TSocket * const socketP,
 
 uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len)
 {
-	int32_t r=recv(*s,buffer,len,MSG_PEEK);
+    int32_t r=recv(*s,buffer,len,MSG_PEEK);
 
-	if (r==(-1))
+    if (r==(-1))
 #ifdef ABYSS_WIN32
-		if (SocketError()==WSAEMSGSIZE)
+        if (SocketError()==WSAEMSGSIZE)
 #else
-		if (SocketError()==EMSGSIZE)
+        if (SocketError()==EMSGSIZE)
 #endif
-			return len;
+            return len;
 
-	return r;
+    return r;
 }
 
 abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16_t port)
 {
-	struct sockaddr_in name;
+    struct sockaddr_in name;
 
-	name.sin_family=AF_INET;
-	name.sin_port=htons(port);
-	name.sin_addr=*addr;
+    name.sin_family=AF_INET;
+    name.sin_port=htons(port);
+    name.sin_addr=*addr;
 
-	RET(connect(*s,(struct sockaddr *)&name,sizeof(name)));
+    RET(connect(*s,(struct sockaddr *)&name,sizeof(name)));
 }
 
 abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16_t port)
 {
-	struct sockaddr_in name;
+    struct sockaddr_in name;
 
-	name.sin_family=AF_INET;
-	name.sin_port=htons(port);
-	if (addr)
-		name.sin_addr=*addr;
-	else
-		name.sin_addr.s_addr=INADDR_ANY;
+    name.sin_family=AF_INET;
+    name.sin_port=htons(port);
+    if (addr)
+        name.sin_addr=*addr;
+    else
+        name.sin_addr.s_addr=INADDR_ANY;
 
-	RET(bind(*s,(struct sockaddr *)&name,sizeof(name)));
+    RET(bind(*s,(struct sockaddr *)&name,sizeof(name)));
 }
 
 abyss_bool SocketListen(TSocket *s, uint32_t backlog)
 {
-	int32_t n=-1;
+    int32_t n=-1;
 
-	/* Disable the naggle algorithm to make persistant connections faster */
-	setsockopt(*s, IPPROTO_TCP,TCP_NODELAY,(char *)&n,sizeof(n));
+    /* Disable the naggle algorithm to make persistant connections faster */
+    setsockopt(*s, IPPROTO_TCP,TCP_NODELAY,(char *)&n,sizeof(n));
 
-	RET(listen(*s,backlog));
+    RET(listen(*s,backlog));
 }
 
 abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
 {
-	struct sockaddr_in sa;
-	socklen_t size=sizeof(sa);
+    struct sockaddr_in sa;
+    socklen_t size=sizeof(sa);
     abyss_bool connected;
 
     connected = FALSE;
-	for (;;) {
+    for (;;) {
         int rc;
         rc = accept(*s,(struct sockaddr *)&sa,&size);
         if (rc >= 0)
-		{
+        {
             connected = TRUE;
             *ns = rc;
-			*ip=sa.sin_addr;
-			break;
-		}
-		else
-			if (SocketError()!=EINTR)
-				break;
-    }	
-	return connected;
+            *ip=sa.sin_addr;
+            break;
+        }
+        else
+            if (SocketError()!=EINTR)
+                break;
+    }   
+    return connected;
 }
 
 uint32_t SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32_t timems)
 {
-	fd_set rfds,wfds;
+    fd_set rfds,wfds;
 #ifdef ABYSS_WIN32
-	TIMEVAL tv;
+    TIMEVAL tv;
 #else
-	struct timeval tv;
-#endif	/* ABYSS_WIN32 */
+    struct timeval tv;
+#endif  /* ABYSS_WIN32 */
 
-	FD_ZERO(&rfds);
-	FD_ZERO(&wfds);
+    FD_ZERO(&rfds);
+    FD_ZERO(&wfds);
 
-	if (rd)
-		FD_SET(*s,&rfds);
+    if (rd)
+        FD_SET(*s,&rfds);
 
-	if (wr)
-		FD_SET(*s,&wfds);
+    if (wr)
+        FD_SET(*s,&wfds);
 
-	tv.tv_sec=timems/1000;
-	tv.tv_usec=timems%1000;
+    tv.tv_sec=timems/1000;
+    tv.tv_usec=timems%1000;
 
 
-	for (;;)
-		switch(select((*s)+1,&rfds,&wfds,NULL,
-			(timems==TIME_INFINITE?NULL:&tv)))
-		{ 	
-		case 0:	/* time out */
-			return 0;
+    for (;;)
+        switch(select((*s)+1,&rfds,&wfds,NULL,
+            (timems==TIME_INFINITE?NULL:&tv)))
+        {   
+        case 0: /* time out */
+            return 0;
 
-		case (-1):	/* socket error */
-			if (SocketError()==EINTR)
-				break;
-			
-			return 0;
+        case (-1):  /* socket error */
+            if (SocketError()==EINTR)
+                break;
+            
+            return 0;
 
-		default:
-			if (FD_ISSET(*s,&rfds))
-				return 1;
-			if (FD_ISSET(*s,&wfds))
-				return 2;
-			return 0;
-		};
+        default:
+            if (FD_ISSET(*s,&rfds))
+                return 1;
+            if (FD_ISSET(*s,&wfds))
+                return 2;
+            return 0;
+        };
 }
 
 abyss_bool SocketBlocking(TSocket *s, abyss_bool b)
 {
-	uint32_t x=b;
+    uint32_t x=b;
 
-	RET(ioctlsocket(*s,FIONBIO,&x));
+    RET(ioctlsocket(*s,FIONBIO,&x));
 }
 
 uint32_t SocketAvailableReadBytes(TSocket *s)
 {
-	uint32_t x;
+    uint32_t x;
 
-	if (ioctlsocket(*s,FIONREAD,&x)!=0)
-		x=0;
+    if (ioctlsocket(*s,FIONREAD,&x)!=0)
+        x=0;
 
-	return x;
+    return x;
 }
 
 uint32_t SocketError()
 {
 #ifdef ABYSS_WIN32
-	return WSAGetLastError();
+    return WSAGetLastError();
 #else
-	return errno;
-#endif	/* ABYSS_WIN32 */
+    return errno;
+#endif  /* ABYSS_WIN32 */
 }
