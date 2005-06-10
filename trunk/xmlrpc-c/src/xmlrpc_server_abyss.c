@@ -514,7 +514,7 @@ xmlrpc_server_abyss_default_handler (TSession * const r) {
 #ifdef _WIN32
 #include <io.h>
 #else
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <grp.h>
 #endif  /* _WIN32 */
