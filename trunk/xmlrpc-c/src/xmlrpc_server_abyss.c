@@ -106,6 +106,16 @@ send_error(TSession *   const abyssSessionP,
 
 
 
+static void
+traceChunkRead(TSession * const abyssSessionP) {
+
+    fprintf(stderr, "XML-RPC handler got a chunk of %u bytes\n",
+            abyssSessionP->conn->buffersize -
+            abyssSessionP->conn->bufferpos);
+}
+
+
+
 /*=========================================================================
 **  get_buffer_data
 **=========================================================================
@@ -133,16 +143,44 @@ get_buffer_data(TSession * const r,
 
 
 
-/*=========================================================================
-**  get_body
-**=========================================================================
-**  Slurp the body of the request into an xmlrpc_mem_block.
-*/
+static void
+refillBufferFromConnection(xmlrpc_env * const envP,
+                           TSession *   const abyssSessionP,
+                           const char * const trace) {
+/*----------------------------------------------------------------------------
+   Get the next chunk of data from the connection into the buffer.
+-----------------------------------------------------------------------------*/
+    abyss_bool succeeded;
+            
+    /* Reset our read buffer & flush data from previous reads. */
+    ConnReadInit(abyssSessionP->conn);
+    
+    /* Read more network data into our buffer.  If we encounter a
+       timeout, exit immediately.  We're very forgiving about the
+       timeout here. We allow a full timeout per network read, which
+       would allow somebody to keep a connection alive nearly
+       indefinitely.  But it's hard to do anything intelligent here
+       without very complicated code.
+    */
+    succeeded = ConnRead(abyssSessionP->conn,
+                         abyssSessionP->server->timeout);
+    if (!succeeded)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TIMEOUT_ERROR, "Timed out waiting for "
+            "client to send its POST data");
+    else {
+        if (trace)
+            traceChunkRead(abyssSessionP);
+    }
+}
+
+
 
 static void
 getBody(xmlrpc_env *        const envP,
         TSession *          const abyssSessionP,
         size_t              const contentSize,
+        const char *        const trace,
         xmlrpc_mem_block ** const bodyP) {
 /*----------------------------------------------------------------------------
    Get the entire body, which is of size 'contentSize' bytes, from the
@@ -152,6 +190,10 @@ getBody(xmlrpc_env *        const envP,
    retrieve that before reading more.
 -----------------------------------------------------------------------------*/
     xmlrpc_mem_block * body;
+
+    if (trace)
+        fprintf(stderr, "XML-RPC handler processing body.  "
+                "Content Size = %u bytes\n", contentSize);
 
     body = xmlrpc_mem_block_new(envP, 0);
     if (!envP->fault_occurred) {
@@ -166,32 +208,9 @@ getBody(xmlrpc_env *        const envP,
                             &chunkPtr, &chunkLen);
             bytesRead += chunkLen;
 
-            XMLRPC_TYPED_MEM_BLOCK_APPEND(char, envP, body, 
-                                          chunkPtr, chunkLen);
-            
-            if (bytesRead < contentSize) {
-                /* Get the next chunk of data from the connection into the
-                   buffer 
-                */
-                abyss_bool succeeded;
-            
-                /* Reset our read buffer & flush data from previous reads. */
-                ConnReadInit(abyssSessionP->conn);
-            
-                /* Read more network data into our buffer. If we encounter
-                   a timeout, exit immediately. We're very forgiving about
-                   the timeout here. We allow a full timeout per network
-                   read, which would allow somebody to keep a connection
-                   alive nearly indefinitely. But it's hard to do anything
-                   intelligent here without very complicated code. 
-                */
-                succeeded = ConnRead(abyssSessionP->conn,
-                                     abyssSessionP->server->timeout);
-                if (!succeeded)
-                    xmlrpc_env_set_fault_formatted(
-                        envP, XMLRPC_TIMEOUT_ERROR, "Timed out waiting for "
-                        "client to send its POST data");
-            }
+            XMLRPC_MEMBLOCK_APPEND(char, envP, body, chunkPtr, chunkLen);
+            if (bytesRead < contentSize)
+                refillBufferFromConnection(envP, abyssSessionP, trace);
         }
         if (envP->fault_occurred)
             xmlrpc_mem_block_free(body);
@@ -258,26 +277,30 @@ processContentLength(TSession *     const httpRequestP,
 -----------------------------------------------------------------------------*/
     const char * const content_length = 
         RequestHeaderValue(httpRequestP, "content-length");
+
     if (content_length == NULL)
         *httpErrorP = 411;
     else {
-        unsigned long contentLengthValue;
-        char * tail;
-        
-        contentLengthValue = strtoul(content_length, &tail, 10);
-        
-        if (errno != 0)
-            *httpErrorP = 400;
-        else if (*tail != '\0')
-            *httpErrorP = 400;
-        else if (contentLengthValue < 1)
-            *httpErrorP = 400;
-        else if ((unsigned long)(size_t)contentLengthValue 
-                 != contentLengthValue)
+        if (content_length[0] == '\0')
             *httpErrorP = 400;
         else {
-            *httpErrorP = 0;
-            *inputLenP = (size_t)contentLengthValue;
+            unsigned long contentLengthValue;
+            char * tail;
+        
+            contentLengthValue = strtoul(content_length, &tail, 10);
+        
+            if (*tail != '\0')
+                /* There's non-numeric crap in the length */
+                *httpErrorP = 400;
+            else if (contentLengthValue < 1)
+                *httpErrorP = 400;
+            else if ((unsigned long)(size_t)contentLengthValue 
+                     != contentLengthValue)
+                *httpErrorP = 400;
+            else {
+                *httpErrorP = 0;
+                *inputLenP = (size_t)contentLengthValue;
+            }
         }
     }
 }
@@ -340,7 +363,7 @@ processCall(TSession *        const abyssSessionP,
     else {
         xmlrpc_mem_block *body;
         /* Read XML data off the wire. */
-        getBody(&env, abyssSessionP, contentSize, &body);
+        getBody(&env, abyssSessionP, contentSize, trace, &body);
         if (!env.fault_occurred) {
             xmlrpc_mem_block * output;
             /* Process the RPC. */
@@ -440,9 +463,10 @@ xmlrpc_server_abyss_rpc2_handler(TSession * const abyssSessionP) {
                                          &contentSize, &httpError);
                     if (httpError)
                         send_error(abyssSessionP, httpError);
-
-                    processCall(abyssSessionP, contentSize, global_registryP,
-                                trace_abyss);
+                    else 
+                        processCall(abyssSessionP, contentSize,
+                                    global_registryP,
+                                    trace_abyss);
                 }
             }
         }
