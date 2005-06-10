@@ -8,15 +8,15 @@ namespace xmlrpc_c {
 class serverAbyss {
     
 public:
-serverAbyss::serverAbyss(
-    xmlrpc_c::registry const& registry,
-    unsigned int       const  portNumber = 8080,
-    std::string        const& logFileName = NULL,
-    unsigned int       const  keepaliveTimeout = 0,
-    unsigned int       const  keepaliveMaxConn = 0,
-    unsigned int       const  timeout = 0,
-    bool               const  dontAdvertise = false
-    );
+    serverAbyss(
+        xmlrpc_c::registry const& registry,
+        unsigned int       const  portNumber = 8080,
+        std::string        const& logFileName = NULL,
+        unsigned int       const  keepaliveTimeout = 0,
+        unsigned int       const  keepaliveMaxConn = 0,
+        unsigned int       const  timeout = 0,
+        bool               const  dontAdvertise = false
+        );
     ~serverAbyss();
     
     void run();
