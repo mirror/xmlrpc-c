@@ -1,3 +1,4 @@
+#include <cassert>
 #include <string>
 #include <memory>
 #include <sys/signal.h>
