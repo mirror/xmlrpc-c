@@ -100,19 +100,16 @@ while test $# -gt 0; do
       the_libs="-lxmlrpc_client"
 
       if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
-        the_libdirs="-L@WININET_LIBDIR@ $the_libdirs"
         the_libs="@WININET_LDADD@ $the_libs"
         the_rpath="@WININET_RPATH@ $the_rpath"
         the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
       fi
       if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
-        the_libdirs="-L@CURL_LIBDIR@ $the_libdirs"
         the_libs="@CURL_LDADD@ -lpthread $the_libs"
         the_rpath="@CURL_RPATH@ $the_rpath"
         the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
       fi
       if test "${MUST_BUILD_LIBWWW_CLIENT}" = "yes"; then
-        the_libdirs="-L@LIBWWW_LIBDIR@ $the_libdirs"
         the_libs="@LIBWWW_LDADD@ $the_libs"
         the_rpath="@LIBWWW_RPATH@ $the_rpath"
         the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
