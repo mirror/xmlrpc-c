@@ -365,7 +365,8 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
 clientXmlTransport_curl::clientXmlTransport_curl(
     string const networkInterface,
     bool   const noSslVerifyPeer,
-    bool   const noSslVerifyHost) {
+    bool   const noSslVerifyHost,
+    string const userAgent) {
 
     struct xmlrpc_curl_xportparms transportParms; 
 
@@ -373,6 +374,8 @@ clientXmlTransport_curl::clientXmlTransport_curl(
         networkInterface.size() > 0 ? networkInterface.c_str() : NULL;
     transportParms.no_ssl_verifypeer = noSslVerifyPeer;
     transportParms.no_ssl_verifyhost = noSslVerifyHost;
+    transportParms.user_agent =
+        userAgent.size() > 0 ? userAgent.c_str() : NULL;
 
     this->c_transportOpsP = &xmlrpc_curl_transport_ops;
 
@@ -381,13 +384,13 @@ clientXmlTransport_curl::clientXmlTransport_curl(
 
     xmlrpc_curl_transport_ops.create(
         &env, 0, "", "", (xmlrpc_xportparms *)&transportParms,
-        XMLRPC_CXPSIZE(no_ssl_verifyhost),
+        XMLRPC_CXPSIZE(user_agent),
         &this->c_transportP);
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
 }
-#else
+#else  // MUST_BUILD_CURL_CLIENT
 
 clientXmlTransport_curl::clientXmlTransport_curl(string, bool, bool) {
 
@@ -425,7 +428,7 @@ clientXmlTransport_libwww::clientXmlTransport_libwww(
         throw(error(env.fault_string));
 }
 
-#else
+#else  // MUST_BUILD_LIBWWW_CLIENT
  clientXmlTransport_libwww::clientXmlTransport_libwww(string, string) {
 
     throw(error("There is no Libwww client XML transport "
@@ -465,7 +468,7 @@ clientXmlTransport_wininet::clientXmlTransport_wininet(
         throw(error(env.fault_string));
 }
 
-#else
+#else  // MUST_BUILD_WININET_CLIENT
 
 clientXmlTransport_wininet::clientXmlTransport_wininet(bool) {
 
