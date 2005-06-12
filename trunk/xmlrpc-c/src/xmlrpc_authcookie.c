@@ -32,7 +32,18 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/base.h"
 
-/* set cookie function */
+/*****************************************************************************
+  I don't see how these were expected to be used.  And I probably
+  broke it somehow at some point by removing code from somewhere else.
+  But I doubt that, whatever it's supposed to do, environment
+  variables are the right tool.
+
+  Note that on a platform that doesn't have SETENV,
+  xmlrpc_authcookie_set() is just a no-op.
+
+  -Bryan 2005.06.10
+****************************************************************************/
+
 void 
 xmlrpc_authcookie_set(xmlrpc_env * const envP, 
                       const char * const username, 
@@ -55,11 +66,13 @@ xmlrpc_authcookie_set(xmlrpc_env * const envP,
         envP, (unsigned char *)unencoded, strlen(unencoded));
     if (!envP->fault_occurred) {
         /* Set HTTP_COOKIE_AUTH to the character representation of the
-        ** encoded string. */
+           encoded string.
+        */
+#ifdef HAVE_SETENV
         setenv("HTTP_COOKIE_AUTH", 
                XMLRPC_MEMBLOCK_CONTENTS(char, token),
                1);
-
+#endif
         xmlrpc_mem_block_free(token);
     }
     free(unencoded);
