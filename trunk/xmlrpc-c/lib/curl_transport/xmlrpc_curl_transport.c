@@ -199,6 +199,8 @@ getXportParms(xmlrpc_env *  const envP,
 
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(user_agent))
         *userAgentP = NULL;
+    else if (curlXportParmsP->user_agent == NULL)
+        *userAgentP = NULL;
     else
         *userAgentP = strdup(curlXportParmsP->user_agent);
 
