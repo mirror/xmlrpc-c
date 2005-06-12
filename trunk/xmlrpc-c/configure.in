@@ -560,9 +560,8 @@ dnl Checks for build options.
 dnl =======================================================================
 
 AC_ARG_WITH(libwww-ssl,
-  [  --with-libwww-ssl       Include experimental libwww/SSL function.
-                             Please read doc/libwww-ssl.txt before trying this,
-                             or it probably won't work.])
+  [  --with-libwww-ssl       Include libwww SSL capability.]
+   ) 
 
 if test x"$enable_libwww_client" != xno; then
     AC_MSG_CHECKING(whether to use SSL with libwww)
