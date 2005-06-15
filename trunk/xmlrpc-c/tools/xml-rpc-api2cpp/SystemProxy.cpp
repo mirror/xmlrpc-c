@@ -4,6 +4,8 @@
 // out how stuff in this directory works, maybe we'll make it an automatically
 // generated file.  -Bryan 2005.06.05.
 
+#include <string>
+
 #include "xmlrpc-c/oldcppwrapper.hpp"
 #include "SystemProxy.hpp"
 
