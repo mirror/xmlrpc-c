@@ -44,6 +44,9 @@
 */
 #endif  /* ABYSS_WIN32 */
 #include <fcntl.h>
+
+#include "mallocvar.h"
+
 #include "xmlrpc-c/abyss.h"
 
 #define BOUNDARY    "##123456789###BOUNDARY"
@@ -557,43 +560,86 @@ ServerDefaultHandlerFunc(TSession *r) {
             return ServerFileHandler(r,z,NULL);
 }
 
-abyss_bool ServerCreate(TServer *srv,
-                        const char *name,
-                        uint16_t port,
-                        const char *filespath,
-                        const char *logfilename)
-{
-    srv->name=strdup(name);
-    srv->port=port;
-    srv->defaulthandler=ServerDefaultHandlerFunc;
-    srv->filespath=strdup(filespath);
-    srv->keepalivetimeout=15;
-    srv->keepalivemaxconn=30;
-    srv->timeout=15;
-    srv->advertise=TRUE;
+
+
+abyss_bool
+ServerCreate(TServer *    const srvP,
+             const char * const name,
+             uint16_t     const port,
+             const char * const filespath,
+             const char * const logfilename) {
+
+    abyss_bool success;
+
+    if (srvP->name)
+        srvP->name = strdup(name);
+    else
+        srvP->name = "unnamed";
+
+    srvP->port = port;
+
+    srvP->defaulthandler = ServerDefaultHandlerFunc;
+
+    if (filespath)
+        srvP->filespath = strdup(filespath);
+    else
+        srvP->filespath = strdup(DEFAULT_DOCS);
+
+    srvP->keepalivetimeout = 15;
+    srvP->keepalivemaxconn = 30;
+    srvP->timeout = 15;
+    srvP->advertise = TRUE;
 #ifdef _UNIX
-    srv->pidfile=srv->uid=srv->gid=(-1);
+    srvP->pidfile = srvP->uid = srvP->gid = -1;
 #endif  /* _UNIX */
 
-    ListInit(&srv->handlers);
-    ListInitAutoFree(&srv->defaultfilenames);
+    ListInit(&srvP->handlers);
+    ListInitAutoFree(&srvP->defaultfilenames);
 
     if (logfilename)
-        return LogOpen(srv,logfilename);
-    else
-    {
-        srv->logfile=(-1);
-        return TRUE;
-    };
+        success = LogOpen(srvP, logfilename);
+    else {
+        srvP->logfile = -1;
+        success = TRUE;
+    }
+    return success;
 }
 
-void ServerFree(TServer *srv)
-{
-    free(srv->name);
-    free(srv->filespath);
-    ListFree(&srv->handlers);
-    ListInitAutoFree(&srv->defaultfilenames);
-    LogClose(srv);
+
+
+static void
+terminateHandlers(TList * const handlersP) {
+/*----------------------------------------------------------------------------
+   Terminate all handlers in the list '*handlersP'.
+
+   I.e. call each handler's terminate function.
+-----------------------------------------------------------------------------*/
+    if (handlersP->item) {
+        unsigned int i;
+        for (i = handlersP->size; i > 0; --i) {
+            URIHandler2 * const handlerP = handlersP->item[i-1];
+            if (handlerP->term)
+                handlerP->term(handlerP);
+        }
+    }
+}
+
+
+
+void
+ServerFree(TServer * const srvP) {
+
+    free(srvP->name);
+
+    free(srvP->filespath);
+    
+    terminateHandlers(&srvP->handlers);
+
+    ListFree(&srvP->handlers);
+
+    ListInitAutoFree(&srvP->defaultfilenames);
+
+    LogClose(srvP);
 }
 
 
@@ -602,9 +648,8 @@ static void
 ServerFunc(TConn * c) {
 
     TSession r;
-    uint32_t i,ka;
-    abyss_bool treated;
-    URIHandler *hl=(URIHandler *)(c->server)->handlers.item;
+    uint32_t ka;
+    TList handlers = c->server->handlers;
 
     ka=c->server->keepalivemaxconn;
 
@@ -628,18 +673,21 @@ ServerFunc(TConn * c) {
                 else if (!RequestValidURI(&r))
                     ResponseStatus(&r,400);
                 else {
-                    i=c->server->handlers.size;
-                    treated=FALSE;
+                    abyss_bool handled;
+                    int i;
 
-                    while (i > 0) {
-                        --i;
-                        if ((hl[i])(&r)) {
-                            treated=TRUE;
-                            break;
-                        }
+                    for (i = c->server->handlers.size-1, handled = FALSE;
+                         i >= 0 && !handled;
+                         --i) {
+                        URIHandler2 * const handlerP = handlers.item[i];
+                        
+                        if (handlerP->handleReq2)
+                            handlerP->handleReq2(handlerP, &r, &handled);
+                        else if (handlerP->handleReq1)
+                            handled = handlerP->handleReq1(&r);
                     }
 
-                    if (!treated)
+                    if (!handled)
                         ((URIHandler)(c->server->defaulthandler))(&r);
                 }
             }
@@ -706,7 +754,7 @@ ServerRunThreaded(TServer *srv)
     /* Connection array from Heap. Small systems might not
      * have the "stack_size" required to have the array of
      * connections right on it */
-    c = (TConn *)malloc( sizeof( TConn ) * MAX_CONN );
+    MALLOCARRAY_NOFAIL(c, MAX_CONN);
 
     for (i=0;i<MAX_CONN;i++)
         c[i].inUse = FALSE;
@@ -862,14 +910,94 @@ void ServerRunOnce(TServer *srv)
     ServerRunOnce2(srv, ABYSS_BACKGROUND);
 }
 
-abyss_bool ServerAddHandler(TServer *srv,URIHandler handler)
-{
-    return ListAdd(&srv->handlers,handler);
+
+
+void
+ServerAddHandler2(TServer *     const srvP,
+                  URIHandler2 * const handlerArgP,
+                  abyss_bool *  const successP) {
+
+    URIHandler2 * handlerP;
+
+    MALLOCVAR(handlerP);
+    if (handlerP == NULL)
+        *successP = FALSE;
+    else {
+        *handlerP = *handlerArgP;
+
+        if (handlerP->init == NULL)
+            *successP = TRUE;
+        else
+            handlerP->init(handlerP, successP);
+
+        if (*successP) {
+            *successP = ListAdd(&srvP->handlers, handlerP);
+
+            if (!*successP) {
+                if (handlerP->term)
+                    handlerP->term(handlerP);
+            }
+        }
+        if (!*successP)
+            free(handlerP);
+    }
 }
 
-void ServerDefaultHandler(TServer *srv,URIHandler handler)
-{
-    srv->defaulthandler=handler;
+
+
+static void
+destroyHandler(URIHandler2 * const handlerP) {
+
+    free(handlerP);
+}
+
+
+
+static URIHandler2 *
+createHandler(URIHandler const function) {
+
+    URIHandler2 * handlerP;
+
+    MALLOCVAR(handlerP);
+    if (handlerP != NULL) {
+        handlerP->init       = NULL;
+        handlerP->term       = destroyHandler;
+        handlerP->userdata   = NULL;
+        handlerP->handleReq2 = NULL;
+        handlerP->handleReq1 = function;
+    }
+    return handlerP;
+}
+
+
+
+abyss_bool
+ServerAddHandler(TServer *  const srvP,
+                 URIHandler const function) {
+
+    URIHandler2 * handlerP;
+    abyss_bool success;
+
+    handlerP = createHandler(function);
+
+    if (handlerP == NULL)
+        success = FALSE;
+    else {
+        success = ListAdd(&srvP->handlers, handlerP);
+
+        if (!success)
+            free(handlerP);
+    }
+    return success;
+}
+
+
+
+void
+ServerDefaultHandler(TServer *  const srvP,
+                     URIHandler const handler) {
+
+    srvP->defaulthandler = handler;
 }
 
 abyss_bool LogOpen(TServer *srv, const char *filename) {

@@ -41,7 +41,7 @@
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/abyss.h"
-#include "data.h"
+#include "token.h"
 
 /*********************************************************************
 ** Request Parser
@@ -650,16 +650,18 @@ void ResponseError(TSession *r)
     ResponseWrite(r);
     
     sprintf(z,"<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
-        "<BODY><H1>Error %d</H1><P>%s</P>" SERVER_HTML_INFO 
-        "</BODY></HTML>",
-        r->status,r->status,reason);
+            "<BODY><H1>Error %d</H1><P>%s</P>" SERVER_HTML_INFO 
+            "</BODY></HTML>",
+            r->status,r->status,reason);
 
     ConnWrite(r->conn,z,strlen(z)); 
 }
 
 abyss_bool ResponseChunked(TSession *r)
 {
-    /* This is only a hope, things will be real only after a call of ResponseWrite */
+    /* This is only a hope, things will be real only after a call of
+       ResponseWrite
+    */
     r->chunkedwrite=(r->versionmajor>=1) && (r->versionminor>=1);
     r->chunkedwritemode=TRUE;
 

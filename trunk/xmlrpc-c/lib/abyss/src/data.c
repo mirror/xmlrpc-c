@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
 **
 ** list.c
 **
@@ -32,12 +32,15 @@
 **
 *******************************************************************************/
 
+#include <assert.h>
 #include <malloc.h>
 #include <string.h>
 
+#include "mallocvar.h"
+
 #include "xmlrpc-c/abyss.h"
 
-#include "data.h"
+#include "token.h"
 
 /*********************************************************************
 ** List
@@ -57,20 +60,35 @@ void ListInitAutoFree(TList *sl)
     sl->autofree=TRUE;
 }
 
-void ListFree(TList *sl)
-{
-    uint16_t i;
 
-    if (sl->item)
-    {
-        if (sl->autofree && sl->size)
-            for (i=sl->size;i>0;i--)
+
+void
+ListFree(TList * const sl) {
+
+    if (sl->item) {
+        if (sl->autofree) {
+            unsigned int i;
+            for (i = sl->size; i > 0; --i)
                 free(sl->item[i-1]);
             
+        }
         free(sl->item);
     }
+    sl->item = NULL;
+    sl->size = 0;
+    sl->maxsize = 0;
+}
 
-    ListInit(sl);
+
+
+void
+ListFreeItems(TList * const sl) {
+
+    if (sl->item) {
+        unsigned int i;
+        for (i = sl->size; i > 0; --i)
+            free(sl->item[i-1]);
+    }
 }
 
 
@@ -78,83 +96,54 @@ void ListFree(TList *sl)
 abyss_bool
 ListAdd(TList * const sl,
         void *  const str) {
+/*----------------------------------------------------------------------------
+   Add an item to the end of the list.
+-----------------------------------------------------------------------------*/
+    abyss_bool success;
 
-    if (sl->size>=sl->maxsize) {
+    if (sl->size >= sl->maxsize) {
+        uint16_t newSize = sl->maxsize + 16;
         void **newitem;
         
-        sl->maxsize+=16;
-
-        newitem=realloc(sl->item,(sl->maxsize)*sizeof(void *));
-        if (newitem)
-            sl->item=newitem;
-        else {
-            sl->maxsize-=16;
-            return FALSE;
+        newitem = realloc(sl->item, newSize * sizeof(void *));
+        if (newitem) {
+            sl->item    = newitem;
+            sl->maxsize = newSize;
         }
     }
 
-    sl->item[sl->size]=str;
-    ++sl->size;
-    return TRUE;
+    if (sl->size >= sl->maxsize)
+        success = FALSE;
+    else {
+        success = TRUE;
+        sl->item[sl->size++] = str;
+    }
+    return success;
 }
 
 
 
 void
-NextToken(char ** const p) {
+ListRemove(TList * const sl) {
+/*----------------------------------------------------------------------------
+   Remove the last item from the list.
+-----------------------------------------------------------------------------*/
 
-    abyss_bool gotToken;
+    assert(sl->size > 0);
 
-    gotToken = FALSE;
-
-    while (!gotToken) {
-        switch (**p) {
-        case '\t':
-        case ' ':
-            ++(*p);
-            break;
-        default:
-            gotToken = TRUE;
-        };
-    }
+    --sl->size;
 }
 
 
 
-char *
-GetToken(char ** const p) {
+abyss_bool
+ListAddFromString(TList * const list,
+                  char *  const stringArg) {
 
-    char * p0;
-        
-    p0 = *p;
-
-    while (1) {
-        switch (**p) {
-        case '\t':
-        case ' ':
-        case CR:
-        case LF:
-        case '\0':
-            if (p0 == *p)
-                return NULL;
-
-            if (**p) {
-                **p = '\0';
-                ++(*p);
-            };
-            return p0;
-
-        default:
-            ++(*p);
-        };
-    }
-}
-
-
-
-abyss_bool ListAddFromString(TList *list,char *c)
-{
     char *t,*p;
+    char * c;
+
+    c = stringArg;
 
     if (c)
         while (1)
@@ -180,7 +169,10 @@ abyss_bool ListAddFromString(TList *list,char *c)
     return TRUE;
 }
 
-abyss_bool ListFindString(TList *sl,char *str,uint16_t *index)
+abyss_bool
+ListFindString(TList *    const sl,
+               char *     const str,
+               uint16_t * const indexP)
 {
     uint16_t i;
 
@@ -188,7 +180,7 @@ abyss_bool ListFindString(TList *sl,char *str,uint16_t *index)
         for (i=0;i<sl->size;i++)
             if (strcmp(str,(char *)(sl->item[i]))==0)
             {
-                *index=i;
+                *indexP=i;
                 return TRUE;
             };
 

@@ -26,68 +26,69 @@ extern "C" {
 *********************************************************************/
 
 #ifdef ABYSS_WIN32
-#define DEFAULT_ROOT		"c:\\abyss"
-#define DEFAULT_DOCS		DEFAULT_ROOT"\\htdocs"
-#define DEFAULT_CONF_FILE	DEFAULT_ROOT"\\conf\\abyss.conf"
-#define DEFAULT_LOG_FILE	DEFAULT_ROOT"\\log\\abyss.log"
+#define DEFAULT_ROOT        "c:\\abyss"
+#define DEFAULT_DOCS        DEFAULT_ROOT"\\htdocs"
+#define DEFAULT_CONF_FILE   DEFAULT_ROOT"\\conf\\abyss.conf"
+#define DEFAULT_LOG_FILE    DEFAULT_ROOT"\\log\\abyss.log"
 #else
 #ifdef __rtems__
-#define DEFAULT_ROOT		"/abyss"
+#define DEFAULT_ROOT        "/abyss"
 #else
-#define DEFAULT_ROOT		"/usr/local/abyss"
+#define DEFAULT_ROOT        "/usr/local/abyss"
 #endif
-#define DEFAULT_DOCS		DEFAULT_ROOT"/htdocs"
-#define DEFAULT_CONF_FILE	DEFAULT_ROOT"/conf/abyss.conf"
-#define DEFAULT_LOG_FILE	DEFAULT_ROOT"/log/abyss.log"
+#define DEFAULT_DOCS        DEFAULT_ROOT"/htdocs"
+#define DEFAULT_CONF_FILE   DEFAULT_ROOT"/conf/abyss.conf"
+#define DEFAULT_LOG_FILE    DEFAULT_ROOT"/log/abyss.log"
 #endif
 
 /*********************************************************************
 ** Maximum numer of simultaneous connections
 *********************************************************************/
 
-#define MAX_CONN	16
-
-/*********************************************************************
-** DON'T CHANGE THE FOLLOWING LINES
-*********************************************************************/
+#define MAX_CONN    16
 
 /*********************************************************************
 ** Server Info Definitions
 *********************************************************************/
 
-#define SERVER_VERSION		"0.3"
-#define SERVER_HVERSION		"ABYSS/0.3"
-#define SERVER_HTML_INFO	"<p><HR><b><i><a href=\"http:\057\057abyss.linuxave.net\">ABYSS Web Server</a></i></b> version "SERVER_VERSION"<br>&copy; <a href=\"mailto:mmoez@bigfoot.com\">Moez Mahfoudh</a> - 2000</p>"
-#define SERVER_PLAIN_INFO	CRLF"--------------------------------------------------------------------------------"\
-							CRLF"ABYSS Web Server version "SERVER_VERSION CRLF"(C) Moez Mahfoudh - 2000"
+#define SERVER_VERSION      "0.3"
+#define SERVER_HVERSION     "ABYSS/0.3"
+#define SERVER_HTML_INFO \
+  "<p><HR><b><i><a href=\"http:\057\057abyss.linuxave.net\">" \
+  "ABYSS Web Server</a></i></b> version "SERVER_VERSION"<br>" \
+  "&copy; <a href=\"mailto:mmoez@bigfoot.com\">Moez Mahfoudh</a> - 2000</p>"
+#define SERVER_PLAIN_INFO \
+  CRLF "----------------------------------------" \
+       "----------------------------------------" \
+  CRLF "ABYSS Web Server version "SERVER_VERSION CRLF"(C) Moez Mahfoudh - 2000"
 
 /*********************************************************************
 ** General purpose definitions
 *********************************************************************/
 
 #ifdef ABYSS_WIN32
-#define strcasecmp(a,b)	stricmp((a),(b))
+#define strcasecmp(a,b) stricmp((a),(b))
 #else
-#define ioctlsocket(a,b,c)	ioctl((a),(b),(c))
-#endif	/* ABYSS_WIN32 */
+#define ioctlsocket(a,b,c)  ioctl((a),(b),(c))
+#endif  /* ABYSS_WIN32 */
 
 #ifndef NULL
 #define NULL ((void *)0)
-#endif	/* NULL */
+#endif  /* NULL */
 
 #ifndef TRUE
-#define TRUE	1
-#endif	/* TRUE */
+#define TRUE    1
+#endif  /* TRUE */
 
 #ifndef FALSE
 #define FALSE    0
 #endif  /* FALSE */
 
 #ifdef ABYSS_WIN32
-#define LBR	"\n"
+#define LBR "\n"
 #else
 #define LBR "\n"
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
 
 typedef int abyss_bool;
 
@@ -97,9 +98,9 @@ typedef int abyss_bool;
 
 typedef struct
 {
-	void *data;
-	uint32_t size;
-	uint32_t staticid;
+    void *data;
+    uint32_t size;
+    uint32_t staticid;
 } TBuffer;
 
 abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize);
@@ -113,8 +114,8 @@ void BufferFree(TBuffer *buf);
 
 typedef struct
 {
-	TBuffer buffer;
-	uint32_t size;
+    TBuffer buffer;
+    uint32_t size;
 } TString;
 
 abyss_bool StringAlloc(TString *s);
@@ -128,19 +129,40 @@ char *StringData(TString *s);
 ** List
 *********************************************************************/
 
-typedef struct
-{
-	void **item;
-	uint16_t size,maxsize;
-	abyss_bool autofree;
+typedef struct {
+    void **item;
+    uint16_t size;
+    uint16_t maxsize;
+    abyss_bool autofree;
 } TList;
 
-void ListInit(TList *sl);
-void ListInitAutoFree(TList *sl);
-void ListFree(TList *sl);
-abyss_bool ListAdd(TList *sl,void *str);
-abyss_bool ListAddFromString(TList *list,char *c);
-abyss_bool ListFindString(TList *sl,char *str,uint16_t *index);
+void
+ListInit(TList * const listP);
+
+void
+ListInitAutoFree(TList * const listP);
+
+void
+ListFree(TList * const listP);
+
+void
+ListFreeItems(TList * const listP);
+
+abyss_bool
+ListAdd(TList * const listP,
+        void *  const str);
+
+void
+ListRemove(TList * const listP);
+
+abyss_bool
+ListAddFromString(TList * const listP,
+                  char *  const c);
+
+abyss_bool
+ListFindString(TList *    const listP,
+               char *     const str,
+               uint16_t * const indexP);
 
 
 /*********************************************************************
@@ -149,14 +171,14 @@ abyss_bool ListFindString(TList *sl,char *str,uint16_t *index);
 
 typedef struct 
 {
-	char *name,*value;
-	uint16_t hash;
+    char *name,*value;
+    uint16_t hash;
 } TTableItem;
 
 typedef struct
 {
-	TTableItem *item;
-	uint16_t size,maxsize;
+    TTableItem *item;
+    uint16_t size,maxsize;
 } TTable;
 
 void TableInit(TTable *t);
@@ -177,7 +199,7 @@ char *TableFind(TTable *t,char *name);
 #else
 #define  THREAD_ENTRYTYPE
 #include <pthread.h>
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
 
 typedef uint32_t (THREAD_ENTRYTYPE *TThreadProc)(void *);
 #ifdef ABYSS_WIN32
@@ -185,7 +207,7 @@ typedef HANDLE TThread;
 #else
 typedef pthread_t TThread;
 typedef void* (*PTHREAD_START_ROUTINE)(void *);
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
 
 abyss_bool ThreadCreate(TThread *t,TThreadProc func,void *arg);
 abyss_bool ThreadRun(TThread *t);
@@ -203,7 +225,7 @@ void ThreadClose( TThread *t );
 typedef HANDLE TMutex;
 #else
 typedef pthread_mutex_t TMutex;
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
 
 abyss_bool MutexCreate(TMutex *m);
 abyss_bool MutexLock(TMutex *m);
@@ -218,17 +240,17 @@ void MutexFree(TMutex *m);
 
 typedef struct _TPoolZone
 {
-	char *pos,*maxpos;
-	struct _TPoolZone *next,*prev;
-/*	char data[0]; */
-	char data[1];
+    char *pos,*maxpos;
+    struct _TPoolZone *next,*prev;
+/*  char data[0]; */
+    char data[1];
 } TPoolZone;
 
 typedef struct
 {
-	TPoolZone *firstzone,*currentzone;
-	uint32_t zonesize;
-	TMutex mutex;
+    TPoolZone *firstzone,*currentzone;
+    uint32_t zonesize;
+    TMutex mutex;
 } TPool;
 
 abyss_bool PoolCreate(TPool *p,uint32_t zonesize);
@@ -263,22 +285,22 @@ char *PoolStrdup(TPool *p,char *s);
 #include <sys/ioctl.h>
 #endif
 
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
 
-#define TIME_INFINITE	0xffffffff
+#define TIME_INFINITE   0xffffffff
 
 #ifdef ABYSS_WIN32
 typedef SOCKET TSocket;
 #else
 typedef uint32_t TSocket;
-#endif	/* ABYSS_WIN32 */
+#endif  /* ABYSS_WIN32 */
 
 typedef struct in_addr TIPAddr;
 
-#define IPB1(x)	(((unsigned char *)(&x))[0])
-#define IPB2(x)	(((unsigned char *)(&x))[1])
-#define IPB3(x)	(((unsigned char *)(&x))[2])
-#define IPB4(x)	(((unsigned char *)(&x))[3])
+#define IPB1(x) (((unsigned char *)(&x))[0])
+#define IPB2(x) (((unsigned char *)(&x))[1])
+#define IPB3(x) (((unsigned char *)(&x))[2])
+#define IPB4(x) (((unsigned char *)(&x))[3])
 
 abyss_bool SocketInit(void);
 
@@ -313,31 +335,31 @@ uint32_t SocketAvailableReadBytes(TSocket *s);
 #include <limits.h>
 
 #ifndef NAME_MAX
-#define NAME_MAX	1024
+#define NAME_MAX    1024
 #endif
 
 #ifdef ABYSS_WIN32
 #ifndef __BORLANDC__
-#define O_APPEND	_O_APPEND
-#define O_CREAT 	_O_CREAT 
-#define O_EXCL		_O_EXCL
-#define O_RDONLY	_O_RDONLY
-#define O_RDWR		_O_RDWR 
-#define O_TRUNC	_O_TRUNC
-#define O_WRONLY	_O_WRONLY
-#define O_TEXT		_O_TEXT
-#define O_BINARY	_O_BINARY
+#define O_APPEND    _O_APPEND
+#define O_CREAT     _O_CREAT 
+#define O_EXCL      _O_EXCL
+#define O_RDONLY    _O_RDONLY
+#define O_RDWR      _O_RDWR 
+#define O_TRUNC _O_TRUNC
+#define O_WRONLY    _O_WRONLY
+#define O_TEXT      _O_TEXT
+#define O_BINARY    _O_BINARY
 #endif
 
-#define A_HIDDEN	_A_HIDDEN
-#define A_NORMAL	_A_NORMAL
-#define A_RDONLY	_A_RDONLY
-#define A_SUBDIR	_A_SUBDIR
+#define A_HIDDEN    _A_HIDDEN
+#define A_NORMAL    _A_NORMAL
+#define A_RDONLY    _A_RDONLY
+#define A_SUBDIR    _A_SUBDIR
 #else
-#define	A_SUBDIR	1
-#define O_BINARY	0
-#define O_TEXT		0
-#endif	/* ABYSS_WIN32 */
+#define A_SUBDIR    1
+#define O_BINARY    0
+#define O_TEXT      0
+#endif  /* ABYSS_WIN32 */
 
 #ifdef ABYSS_WIN32
 
@@ -351,10 +373,10 @@ typedef long TFileFind;
 typedef struct stat TFileStat;
 typedef struct finddata_t
 {
-	char name[NAME_MAX+1];
-	int attrib;
-	uint64_t size;
-	time_t time_write;
+    char name[NAME_MAX+1];
+    int attrib;
+    uint64_t size;
+    time_t time_write;
    WIN32_FIND_DATA data;
 } TFileInfo;
 typedef HANDLE TFileFind;
@@ -369,16 +391,16 @@ typedef struct stat TFileStat;
 
 typedef struct finddata_t
 {
-	char name[NAME_MAX+1];
-	int attrib;
-	uint64_t size;
-	time_t time_write;
+    char name[NAME_MAX+1];
+    int attrib;
+    uint64_t size;
+    time_t time_write;
 } TFileInfo;
 
 typedef struct 
 {
-	char path[NAME_MAX+1];
-	DIR *handle;
+    char path[NAME_MAX+1];
+    DIR *handle;
 } TFileFind;
 
 #endif
@@ -407,22 +429,22 @@ void FileFindClose(TFileFind *filefind);
 
 typedef struct _TServer
 {
-	TSocket listensock;
-	TFile logfile;
-	TMutex logmutex;
-	char *name;
-	char *filespath;
-	uint16_t port;
-	uint32_t keepalivetimeout,keepalivemaxconn,timeout;
-	TList handlers;
-	TList defaultfilenames;
-	void *defaulthandler;
-	abyss_bool advertise;
+    TSocket listensock;
+    TFile logfile;
+    TMutex logmutex;
+    char *name;
+    char *filespath;
+    uint16_t port;
+    uint32_t keepalivetimeout,keepalivemaxconn,timeout;
+    TList handlers;
+    TList defaultfilenames;
+    void *defaulthandler;
+    abyss_bool advertise;
 #ifndef _WIN32
-	uid_t uid;
-	gid_t gid;
-	TFile pidfile;
-#endif	
+    uid_t uid;
+    gid_t gid;
+    TFile pidfile;
+#endif  
 } TServer;
 
 
@@ -430,22 +452,22 @@ typedef struct _TServer
 ** Conn
 *********************************************************************/
 
-#define BUFFER_SIZE	4096 
+#define BUFFER_SIZE 4096 
 
 typedef struct _TConn
 {
-	TServer *server;
-	uint32_t buffersize,bufferpos;
-	uint32_t inbytes,outbytes;	
-	TSocket socket;
-	TIPAddr peerip;
+    TServer *server;
+    uint32_t buffersize,bufferpos;
+    uint32_t inbytes,outbytes;  
+    TSocket socket;
+    TIPAddr peerip;
     abyss_bool hasOwnThread;
-	TThread thread;
-	abyss_bool connected;
-	abyss_bool inUse;
+    TThread thread;
+    abyss_bool connected;
+    abyss_bool inUse;
     const char * trace;
-	void (*job)(struct _TConn *);
-	char buffer[BUFFER_SIZE];
+    void (*job)(struct _TConn *);
+    char buffer[BUFFER_SIZE];
 } TConn;
 
 TConn *ConnAlloc(void);
@@ -470,7 +492,7 @@ void ConnReadInit(TConn *c);
 abyss_bool ConnReadLine(TConn *c,char **z,uint32_t timems);
 
 abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
-			void *buffer,uint32_t buffersize,uint32_t rate);
+            void *buffer,uint32_t buffersize,uint32_t rate);
 
 
 /*********************************************************************
@@ -511,50 +533,50 @@ void Base64Encode(char *s,char *d);
 
 typedef enum
 {
-	m_unknown,m_get,m_put,m_head,m_post,m_delete,m_trace,m_options
+    m_unknown,m_get,m_put,m_head,m_post,m_delete,m_trace,m_options
 } TMethod;
 
 typedef struct
 {
-	TMethod method;
-	uint32_t nbfileds;
-	char *uri;
-	char *query;
-	char *host;
-	char *from;
-	char *useragent;
-	char *referer;
-	char *requestline;
-	char *user;
-	uint16_t port;
-	TList cookies;
-	TList ranges;
+    TMethod method;
+    uint32_t nbfileds;
+    char *uri;
+    char *query;
+    char *host;
+    char *from;
+    char *useragent;
+    char *referer;
+    char *requestline;
+    char *user;
+    uint16_t port;
+    TList cookies;
+    TList ranges;
 
-	uint16_t status;
-	TString header;
+    uint16_t status;
+    TString header;
 
-	abyss_bool keepalive,cankeepalive;
-	abyss_bool done;
+    abyss_bool keepalive,cankeepalive;
+    abyss_bool done;
 
-	TServer *server;
-	TConn *conn;
+    TServer *server;
+    TConn *conn;
 
-	uint8_t versionminor,versionmajor;
+    uint8_t versionminor,versionmajor;
 
-	TTable request_headers,response_headers;
+    TTable request_headers,response_headers;
 
-	TDate date;
+    TDate date;
 
-	abyss_bool chunkedwrite,chunkedwritemode;
+    abyss_bool chunkedwrite,chunkedwritemode;
 } TSession;
 
 /*********************************************************************
 ** Request
 *********************************************************************/
 
-#define CR		'\r'
-#define LF		'\n'
-#define CRLF	"\r\n"
+#define CR      '\r'
+#define LF      '\n'
+#define CRLF    "\r\n"
 
 abyss_bool RequestValidURI(TSession *r);
 abyss_bool RequestValidURIPath(TSession *r);
@@ -601,8 +623,6 @@ abyss_bool HTTPWriteEnd(TSession *s);
 ** Server (2/2)
 *********************************************************************/
 
-typedef abyss_bool (*URIHandler) (TSession *);
-
 abyss_bool ServerCreate(TServer *srv,
                         const char *name,
                         uint16_t port,
@@ -617,8 +637,39 @@ void ServerRunOnce(TServer *srv);
 void ServerRunOnce2(TServer *           const srv,
                     enum abyss_foreback const foregroundBackground);
 
-abyss_bool ServerAddHandler(TServer *srv,URIHandler handler);
-void ServerDefaultHandler(TServer *srv,URIHandler handler);
+typedef abyss_bool (*URIHandler) (TSession *); /* deprecated */
+
+struct URIHandler2;
+
+typedef void (*initHandlerFn)(struct URIHandler2 *,
+                              abyss_bool *);
+
+typedef void (*termHandlerFn)(struct URIHandler2 *);
+
+typedef void (*handleReq2Fn)(struct URIHandler2 *,
+                             TSession *,
+                             abyss_bool *);
+
+typedef struct URIHandler2 {
+    initHandlerFn init;
+    termHandlerFn term;
+    handleReq2Fn  handleReq2;
+    URIHandler    handleReq1;  /* deprecated */
+    void *        userdata;
+} URIHandler2;
+
+void
+ServerAddHandler2(TServer *     const srvP,
+                  URIHandler2 * const handlerP,
+                  abyss_bool *  const successP);
+
+abyss_bool
+ServerAddHandler(TServer * const srvP,
+                 URIHandler const handler);
+
+void
+ServerDefaultHandler(TServer *  const srvP,
+                     URIHandler const handler);
 
 abyss_bool LogOpen(TServer *srv, const char *filename);
 void LogWrite(TServer *srv,char *c);
@@ -694,4 +745,4 @@ abyss_bool SessionLog(TSession *s);
 ** SUCH DAMAGE.
 **
 ******************************************************************************/
-#endif	/* _ABYSS_H_ */
+#endif  /* _ABYSS_H_ */

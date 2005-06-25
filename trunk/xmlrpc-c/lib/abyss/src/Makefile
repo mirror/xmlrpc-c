@@ -19,6 +19,7 @@ all: libxmlrpc_abyss.la
 ABYSS_OBJS = \
   conf.lo \
   data.lo \
+  token.lo \
   trace.lo \
   file.lo \
   thread.lo \
