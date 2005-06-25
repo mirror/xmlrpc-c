@@ -18,6 +18,7 @@
 #include "cgi.h"
 #include "xml_data.h"
 #include "client.h"
+#include "server_abyss.h"
 
 /*=========================================================================
 **  Test Harness
@@ -385,8 +386,11 @@ process_call_helper (xmlrpc_env *env,
     return value;
 }
 
-static void test_method_registry (void)
-{
+
+
+static void
+test_method_registry(void) {
+
     xmlrpc_env env, env2;
     xmlrpc_value *arg_array, *value;
     xmlrpc_registry *registry;
@@ -875,6 +879,7 @@ main(int     argc,
     test_sample_files();
     printf("\n");
     test_server_cgi();
+    test_server_abyss();
 
 #ifdef HAVE_UNICODE_WCHAR
     test_utf8_coding();

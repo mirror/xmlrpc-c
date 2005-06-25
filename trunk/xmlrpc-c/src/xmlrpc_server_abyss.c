@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"
 
 #include "xmlrpc-c/base.h"
@@ -398,21 +399,37 @@ processCall(TSession *        const abyssSessionP,
     Abyss handlers (to be registered with and called by Abyss)
 ****************************************************************************/
 
-/* XXX - This variable is *not* currently threadsafe. Once the server has
-** been started, it must be treated as read-only. */
-static xmlrpc_registry *global_registryP;
-
 static const char * trace_abyss;
 
-/*=========================================================================
-**  xmlrpc_server_abyss_rpc2_handler
-**=========================================================================
-**  This handler processes all requests to '/RPC2'. See the header for
-**  more documentation.
-*/
 
-static xmlrpc_bool 
-xmlrpc_server_abyss_rpc2_handler(TSession * const abyssSessionP) {
+
+struct uriHandlerXmlrpc {
+/*----------------------------------------------------------------------------
+   This is the part of an Abyss HTTP request handler (aka URI handler)
+   that is specific to the Xmlrpc-c handler.
+-----------------------------------------------------------------------------*/
+    xmlrpc_registry * registryP;
+    const char *      filename;  /* malloc'ed */
+};
+
+
+
+static void
+termUriHandler(URIHandler2 * const this) {
+
+    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = this->userdata;
+
+    free((void*)uriHandlerXmlrpcP->filename);
+    free(uriHandlerXmlrpcP);
+    free(this);
+}
+
+
+
+static void
+handleXmlrpcReq(URIHandler2 * const this,
+                TSession *    const abyssSessionP,
+                abyss_bool *  const handledP) {
 /*----------------------------------------------------------------------------
    Our job is to look at this HTTP request that the Abyss server is
    trying to process and see if we can handle it.  If it's an XML-RPC
@@ -423,22 +440,24 @@ xmlrpc_server_abyss_rpc2_handler(TSession * const abyssSessionP) {
 
    Note that failing the request counts as handling it, and not handling
    it does not mean we failed it.
+
+   This is an Abyss HTTP Request handler -- type URIHandler2.
 -----------------------------------------------------------------------------*/
-    xmlrpc_bool retval;
+    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = this->userdata;
 
     if (trace_abyss)
         traceHandlerCalled(abyssSessionP);
 
-    /* We handle only requests to /RPC2, the default XML-RPC URL.
-       Everything else we pass through to other handlers. 
+    /* Note that abyssSessionP->uri is not the whole URI.  It is just
+       the "file name" part of it.
     */
-    if (strcmp(abyssSessionP->uri, "/RPC2") != 0)
-        /* Note that abyssSessionP->uri is not the whole URI.  It is just
-           the "file name" part of it.
+    if (strcmp(abyssSessionP->uri, uriHandlerXmlrpcP->filename) != 0)
+        /* It's for the filename (e.g. "/RPC2") that we're supposed to
+           handle.
         */
-        retval = FALSE;
+        *handledP = FALSE;
     else {
-        retval = TRUE;
+        *handledP = TRUE;
 
         /* We understand only the POST HTTP method.  For anything else, return
            "405 Method Not Allowed". 
@@ -465,15 +484,13 @@ xmlrpc_server_abyss_rpc2_handler(TSession * const abyssSessionP) {
                         send_error(abyssSessionP, httpError);
                     else 
                         processCall(abyssSessionP, contentSize,
-                                    global_registryP,
-                                    trace_abyss);
+                                    uriHandlerXmlrpcP->registryP, trace_abyss);
                 }
             }
         }
     }
     if (trace_abyss)
         fprintf(stderr, "xmlrpc_server_abyss RPC2 handler returning.\n");
-    return retval;
 }
 
 
@@ -748,19 +765,55 @@ xmlrpc_server_abyss_run(void) {
 
 
 void
-xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
-                                 xmlrpc_registry * const registryP) {
-
-    /* Abyss ought to have a way to register with a handler an argument
-       that gets passed to the handler every time it is called.  That's
-       where we should put the registry handle.  But we don't find such
-       a thing in Abyss, so we use the global variable 'global_registryP'.
-    */
-    global_registryP = registryP;
+xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
+                                TServer *         const srvP,
+                                const char *      const filename,
+                                xmlrpc_registry * const registryP) {
+    
+    struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
+    URIHandler2 * uriHandlerP;
+    abyss_bool success;
 
     trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
                                  
-    ServerAddHandler(srvP, xmlrpc_server_abyss_rpc2_handler);
+    MALLOCVAR_NOFAIL(uriHandlerP);
+
+    uriHandlerP->handleReq2 = handleXmlrpcReq;
+    uriHandlerP->handleReq1 = NULL;
+    uriHandlerP->init       = NULL;
+    uriHandlerP->term       = &termUriHandler;
+
+    MALLOCVAR_NOFAIL(uriHandlerXmlrpcP);
+
+    uriHandlerXmlrpcP->registryP = registryP;
+    uriHandlerXmlrpcP->filename  = strdup(filename);
+
+    uriHandlerP->userdata = uriHandlerXmlrpcP;
+
+    ServerAddHandler2(srvP, uriHandlerP, &success);
+
+    if (!success)
+        xmlrpc_faultf(envP, "Abyss failed to register the Xmlrpc-c request "
+                      "handler.  ServerAddHandler2() failed.");
+}
+
+
+
+void
+xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
+                                 xmlrpc_registry * const registryP) {
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
+                                 
+    xmlrpc_server_abyss_set_handler(&env, srvP, "/RPC2", registryP);
+    
+    if (env.fault_occurred)
+        abort();
+
     ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
 }
 

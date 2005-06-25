@@ -69,6 +69,16 @@ DETAILED RELEASE HISTORY:
 
 1.03 - not yet
 
+  * BJH: libxmlrpc_server_abyss: Add ability to set the /RPC2 handler
+    without also setting default handler, and to set handlers for files
+    other than /RPC2.
+
+  * BJH: libxmlrpc_server_abyss: Eliminate global variable for registry
+    handle.
+
+  * BJH: Abyss: allow user's request handlers to have context
+    (Add URIHandler2 type).
+
   * BJH: Add User-Agent to Curl transport, Xmlrpc program.
 
   * BJH: Fix bug: xmlrpc_serialize_base64_data() doesn't free working

@@ -76,6 +76,11 @@ void
 xmlrpc_server_abyss_set_handlers(struct _TServer * const srvP,
                                  xmlrpc_registry * const registryP);
 
+void
+xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
+                                struct _TServer * const srvP,
+                                const char *      const filename,
+                                xmlrpc_registry * const registryP);
 
 /*=========================================================================
 **  Handy Abyss Extensions
