@@ -231,7 +231,8 @@ class clientXmlTransport_curl : public xmlrpc_c::clientXmlTransport_http {
 public:
     clientXmlTransport_curl(std::string const networkInterface = "",
                             bool        const noSslVerifyPeer = false,
-                            bool        const noSslVerifyHost = false);
+                            bool        const noSslVerifyHost = false,
+                            std::string const userAgent = "");
 
     ~clientXmlTransport_curl();
 };
