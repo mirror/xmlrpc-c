@@ -14,9 +14,7 @@ default: all
 
 include $(BUILDDIR)/Makefile.config
 
-CXXFLAGS = 
-
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
 
 # If this were a real application, working from an installed copy of
@@ -67,7 +65,7 @@ $(CLIENTPROGS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
 
 %.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CFLAGS) $<
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
 
 *.c: config.h xmlrpc_amconfig.h
 
