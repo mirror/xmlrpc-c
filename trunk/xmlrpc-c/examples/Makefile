@@ -14,8 +14,6 @@ default: all
 
 include $(BUILDDIR)/Makefile.config
 
-CXXFLAGS = 
-
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
 
