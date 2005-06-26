@@ -29,7 +29,8 @@ MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
 usage="Usage: xmlrpc-c-config <feature> ... <option> ...
 
 The features are:
-  c++            C++ wrapper code
+  c++            legacy C++ wrapper API
+  c++2           modern C++ API
   client         client functions
   cgi-server     CGI-based server functions
   abyss-server   ABYSS-based server functions
