@@ -46,13 +46,16 @@ these commands:
 (There's supposed to be a 'make check' step in there too, to validate
 that everything built OK, but it's broken right now - 2005.01.07).
 
-To see it work, start a simple server like this:
+To see it work, run a simple server like this:
 
   $ examples/xmlrpc_sample_add_server 8080
 
 Then run a client that does an RPC to this server:
 
   $ examples/xmlrpc_sample_add_client
+
+(I don't mean to imply that the above are consecutive shell commands;
+They can't be, because the server program runs indefinitely).
 
 Also try other sample servers and clients, described in examples/README.
 
