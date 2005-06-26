@@ -83,7 +83,7 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
   TARGET_LTLIBRARIES += libxmlrpc_server_cgi.la
 endif
 
-all: $(TARGET_LTLIBRARIES) $(TARGET_LIBRARIES) $(SUBDIRS:%=%/all)
+all: $(TARGET_LTLIBRARIES) $(SUBDIRS:%=%/all)
 
 LDFLAGS = $(LADD)
 
@@ -122,13 +122,12 @@ xmlrpc_server_cgi.lo:%.lo:%.c
 	  $(CFLAGS) $<
 
 LTLIBRARIES_TO_INSTALL = $(TARGET_LTLIBRARIES)
-LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
 
 check:
 	$(MAKE) -C test check
 
 .PHONY: install
-install: install-common
+install: install-common $(SUBDIRS:%=%/install)
 
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local
