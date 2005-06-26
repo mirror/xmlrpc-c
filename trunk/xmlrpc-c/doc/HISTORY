@@ -67,7 +67,28 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
-1.03 - not yet
+1.03 - June 26, 2005
+
+  * BJH: new C++ libraries designed for pure C++ applications
+    (Application never sees the underlying C structures or reference
+    counts).
+
+  * BJH: Make Curl do cookies (session only) and persistent connections.
+    This is only for calls through the synchronous interface, and the
+    synchronous interface is no longer thread safe -- you can have only
+    one thread making calls through it.
+
+  * BJH: Add Curl SSL_NO_VERIFYPEER, SSL_NO_VERIFYHOST control.
+
+  * BJH: Add User-Agent to Curl transport, Xmlrpc program.
+
+  * BJH: libwww transport does not do the weird handling of the "auth"
+    cookie.  It used to have a global cookie (one cookie shared by all
+    servers) called "auth", which it maintained in an environment
+    variable.
+
+  * BJH: interface header files renamed from xmlrpc_xxx to xmlrpc-c/xxx
+    (old names installed a symbolic links for backward compatibility).
 
   * BJH: libxmlrpc_server_abyss: Add ability to set the /RPC2 handler
     without also setting default handler, and to set handlers for files
@@ -79,45 +100,24 @@ DETAILED RELEASE HISTORY:
   * BJH: Abyss: allow user's request handlers to have context
     (Add URIHandler2 type).
 
-  * BJH: Add User-Agent to Curl transport, Xmlrpc program.
-
-  * BJH: Fix bug: xmlrpc_serialize_base64_data() doesn't free working
-    storage.
-
-  * BJH: Fix bug: 'make install' doesn't install libxmlrpc_xmltok.
-    
-  * BJH: Don't build client library if not building any client XML      
-    transport.
-
-  * BJH: Make Curl do cookies (session only) and persistent connections.
-    This is only for calls through the synchronous interface, and the
-    synchronous interface is no longer thread safe -- you can have only
-    one thread making calls through it.
-
-  * BJH: Add Curl SSL_NO_VERIFYPEER, SSL_NO_VERIFYHOST control.
-
-  * BJH: Break up 'rpctest', rename to 'test'.
-
-  * BJH: Renamed CGI stuff, add non-builtin-registry style of CGI server.
+  * BJH: Add xmlrpc_datetime_new_sec(), xmlrpc_read_datetime_sec().
 
   * BJH: Builds on AIX - new __inline definition, uint32_t instead of uint32,
     et al.
 
-  * BJH: Add xmlrpc_datetime_new_sec(), xmlrpc_read_datetime_sec().
+  * BJH: Don't build client library if not building any client XML      
+    transport.
 
-  * BJH: libwww transport does not do the weird handling of the "auth"
-    cookie.  It used to have a global cookie (one cookie shared by all
-    servers) called "auth", which it maintained in an environment
-    variable.
-
-  * BJH: new C++ library designed for pure C++ applications
-    (Application never sees the underlying C structures or reference
-    counts).
-
-  * BJH: interface header files renamed from xmlrpc_xxx to xmlrpc-c/xxx
-    (old names installed a symbolic links for backward compatibility).
+  * BJH: Fix bug: xmlrpc_serialize_base64_data() doesn't free working
+    storage.
 
   * BJH: Fix mysterious disablement of forking Abyss (ServerRunForked()).
+
+  * BJH: Fix bug: 'make install' doesn't install libxmlrpc_xmltok.
+    
+  * BJH: Renamed CGI stuff, add non-builtin-registry style of CGI server.
+
+  * BJH: Break up 'rpctest', rename to 'test'.
 
 1.02 - April 4, 2005
 
@@ -136,6 +136,8 @@ DETAILED RELEASE HISTORY:
   * BJH: Add 'network_interface' option to Curl transport.
 
   * BJH: Add basic authentication to 'xmlrpc' program.
+
+  * BJH: Add 'xmlrpc_transport' tool.
 
   * SAB: Improve use of libCurl in Win32.  Add documentation
     and alter some project and configuration files.
