@@ -18,11 +18,13 @@ HEADERS_TO_INSTALL = \
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   HEADERS_TO_INSTALL += \
     xmlrpc-c/oldcppwrapper.hpp \
+    xmlrpc-c/girerr.hpp \
+    xmlrpc-c/girmem.hpp \
     xmlrpc-c/base.hpp \
     xmlrpc-c/timeout.hpp \
     xmlrpc-c/xml.hpp \
     xmlrpc-c/registry.hpp \
-    xmlrpc-c/server_abyss.hpp\
+    xmlrpc-c/server_abyss.hpp \
 
 endif
 

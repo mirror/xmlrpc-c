@@ -392,7 +392,7 @@ clientXmlTransport_curl::clientXmlTransport_curl(
 }
 #else  // MUST_BUILD_CURL_CLIENT
 
-clientXmlTransport_curl::clientXmlTransport_curl(string, bool, bool) {
+clientXmlTransport_curl::clientXmlTransport_curl(string, bool, bool, string) {
 
     throw("There is no Curl client XML transport in this XML-RPC client "
           "library");

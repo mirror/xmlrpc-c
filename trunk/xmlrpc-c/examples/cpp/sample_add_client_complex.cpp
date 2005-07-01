@@ -14,6 +14,7 @@
   facility.  It is for demonstration purposes.
 =============================================================================*/
 
+#include <cassert>
 #include <string>
 #include <iostream>
 #include <xmlrpc-c/girerr.hpp>

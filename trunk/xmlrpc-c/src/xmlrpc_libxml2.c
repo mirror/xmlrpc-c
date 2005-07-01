@@ -33,6 +33,7 @@
 #include <libxml/parser.h>
 
 #include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/xmlparser.h"
 
 /* Define the contents of our internal structure. */
@@ -358,9 +359,20 @@ static xmlSAXHandler sax_handler = {
     NULL,      /* warning */
     NULL,      /* error */
     NULL,      /* fatalError */
+    NULL,      /* getParameterEntity */
+    NULL,      /* cdataBlock */
+    NULL,      /* externalSubset */
+    1          /* initialized */
+    
+    /* Following are SAX2 fields. Any ifdef here? */ 
+
+    ,NULL,     /* _private */
+    NULL,      /* startElementNs */
+    NULL,      /* endElementNs */
+    NULL       /* serror */
 };
 
-xml_element *xml_parse (xmlrpc_env *env, char *xml_data, int xml_len)
+xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len)
 {
     parse_context context;
     xmlParserCtxt *parser;
