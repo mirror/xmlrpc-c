@@ -47,7 +47,7 @@ LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo
 LIBXMLRPC_SERVER_OBJS = xmlrpc_registry.lo
 LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
 
-ifeq ($(ENABLE_LIBXML2),yes)
+ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   XMLRPC_XML_PARSER = xmlrpc_libxml2.lo
 else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo

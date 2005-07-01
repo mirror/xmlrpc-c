@@ -14,7 +14,7 @@ endif
 LIBEXPAT = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
            $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
 
-ifneq ($(ENABLE_LIBXML2)x,x)
+ifneq ($(ENABLE_LIBXML2_BACKEND)x,x)
   LIBXML = $(LIBXML2_LIBS)
 else
   LIBXML = $(LIBEXPAT)

@@ -19,6 +19,7 @@
 #include <xmlrpc-c/girerr.hpp>
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/client.hpp>
+#include <cassert>
 
 using namespace std;
 
