@@ -5,8 +5,18 @@ SUBDIR = lib/abyss/src
 
 include $(SRCDIR)/Makefile.config
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
+CFLAGS = $(CFLAGS_COMMON)
+CFLAGS += -D_UNIX
+ifeq ($(ENABLE_ABYSS_THREADS),yes)
+CFLAGS += -D_THREAD
+endif
+CFLAGS += 
+CFLAGS +=  $(CFLAGS_PERSONAL) $(CADD)
+LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR)
+ifeq ($(ENABLE_ABYSS_THREADS),yes)
+LIBLDFLAGS += -lpthread
+endif
+LIBLDFLAGS += $(LADD)
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
 

@@ -169,7 +169,7 @@ abyss_bool SocketListen(TSocket *s, uint32_t backlog)
     RET(listen(*s,backlog));
 }
 
-abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip)
+abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip)
 {
     struct sockaddr_in sa;
     socklen_t size=sizeof(sa);

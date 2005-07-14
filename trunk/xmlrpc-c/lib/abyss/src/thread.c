@@ -141,7 +141,7 @@ ThreadExit(TThread * const t ATTR_UNUSED,
 #ifdef ABYSS_WIN32
     _endthreadex(ret_value);
 #elif defined(_THREAD)
-    pthread_exit(&ret_value);
+    pthread_exit((void*)&ret_value);
 #else
     ;
 #endif  /* ABYSS_WIN32 */
