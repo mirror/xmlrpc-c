@@ -743,68 +743,105 @@ FALSE;
 
 
 
+static void
+createConnectionPool(TConn ** const connectionPoolP) {
+
+    unsigned int i;
+
+    TConn * connectionPool;
+
+    MALLOCARRAY_NOFAIL(connectionPool, MAX_CONN);
+    
+    for (i = 0; i < MAX_CONN; ++i)
+        connectionPool[i].inUse = FALSE;
+
+    *connectionPoolP = connectionPool;
+}
+
+
+
+static void
+collectDeadConnections(TConn * const connectionPool) {
+/*----------------------------------------------------------------------------
+   Garbage-collect the resources associated with connections that are no
+   longer connected.  Thread resources, connection pool descriptor, etc.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
+    for (i = 0; i < MAX_CONN; ++i) {
+        TConn * const connectionP = &connectionPool[i];
+        if (connectionP->inUse && !connectionP->connected) {
+            ConnClose(connectionP);
+            connectionP->inUse = FALSE;
+        }
+    }
+}
+
+
+
+static void
+allocateConnection(TConn * const connectionPool,
+                   TConn ** const connectionPP) {
+    
+    unsigned int i;
+
+    collectDeadConnections(connectionPool);
+    
+    for (i = 0; i < MAX_CONN && connectionPool[i].inUse; ++i);
+    
+    if (i == MAX_CONN)
+        /* Every connection descriptor was in use. */
+        *connectionPP = NULL;
+    else
+        *connectionPP = &connectionPool[i];
+}
+
+
+
 static void 
-ServerRunThreaded(TServer *srv)
-{
-    uint32_t i;
-    TSocket s,ns;
+ServerRunThreaded(TServer * const srvP) {
+
+    TSocket const listenSocketP = srvP->listensock;
     TIPAddr peerIpAddr;
-    TConn *c;
+    TConn * connectionPool;
 
-    /* Connection array from Heap. Small systems might not
-     * have the "stack_size" required to have the array of
-     * connections right on it */
-    MALLOCARRAY_NOFAIL(c, MAX_CONN);
+    createConnectionPool(&connectionPool);
 
-    for (i=0;i<MAX_CONN;i++)
-        c[i].inUse = FALSE;
+    while (1) {
+        TSocket connectedSocketP;
+        TConn * connectionP;
 
-    s=srv->listensock;
+        allocateConnection(connectionPool, &connectionP);
 
-    while( 1 )
-    {
-        /* collect all threads resources for closed connections */
-        for (i=0;i<MAX_CONN;i++)
-        {
-            if( c[i].inUse && ( c[i].connected == FALSE ) )
-            {
-                ConnClose( &c[i] );
-                c[i].inUse = FALSE;
-            }
-        }
-        
-        for (i=0; i<MAX_CONN && c[i].inUse; ++i);
-
-        if (i==MAX_CONN)
-        {
-            /* Every connection descriptor was in use. */
+        if (connectionP == NULL)
             ThreadWait(2000);
-            continue;
-        };
-
-        if (SocketAccept(&s,&ns,&peerIpAddr))
-        {
+        else {
             abyss_bool success;
-            c[i].inUse = TRUE;
-            success = ConnCreate2(&c[i], srv, ns, peerIpAddr, &ServerFunc, 
-                                  ABYSS_BACKGROUND);
-            if (success)
-            {
-                ConnProcess(&c[i]);
-            }
-            else
-            {
-                SocketClose(&ns);
-                c[i].inUse = FALSE;
-            }
+
+            success = SocketAccept(&listenSocketP,
+                                   &connectedSocketP, &peerIpAddr);
+
+            if (success) {
+                abyss_bool success;
+                connectionP->inUse = TRUE;
+                success = ConnCreate2(connectionP, srvP,
+                                      connectedSocketP, peerIpAddr,
+                                      &ServerFunc, 
+                                      ABYSS_BACKGROUND);
+                if (success) {
+                    ConnProcess(connectionP);
+                } else {
+                    SocketClose(&connectedSocketP);
+                    connectionP->inUse = FALSE;
+                }
+            } else
+                TraceMsg("Socket Error=%d\n", SocketError());
         }
-        else
-            TraceMsg("Socket Error=%d\n", SocketError());
     }
     /* We never get here, but it's conceptually possible for someone to 
        terminate a server normally, so... 
     */
-    free( c );
+    free(connectionPool);
 }
 
 
@@ -862,7 +899,7 @@ ServerRun(TServer * const serverP) {
 
 
 static void
-closeParentSocketCopy(TSocket * socketP) {
+closeParentSocketCopy(TSocket * socketP ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    If we're doing forked connections, close the indicated socket because it
    is the parent's copy and the parent doesn't need it.  If we're doing
