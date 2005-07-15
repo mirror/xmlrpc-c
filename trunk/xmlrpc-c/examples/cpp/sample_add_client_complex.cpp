@@ -47,8 +47,6 @@ main(int argc, char **) {
 
         xmlrpc_c::carriageParm_curl0 myCarriageParm(serverUrl);
 
-        xmlrpc_c::value result;
-        
         myRpcP->call(&myClient, &myCarriageParm);
 
         assert(myRpcP->isFinished());
