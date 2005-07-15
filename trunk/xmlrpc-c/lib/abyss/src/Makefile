@@ -20,6 +20,8 @@ LIBLDFLAGS += $(LADD)
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
 
+LTLIBRARIES_TO_INSTALL = libxmlrpc_abyss.la
+
 default: all
 
 .PHONY: all
