@@ -53,11 +53,20 @@ else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo
 endif
 
-LIBXMLRPC_OBJS = xmlrpc_support.lo xmlrpc_data.lo xmlrpc_builddecomp.lo \
-		 xmlrpc_datetime.lo xmlrpc_array.lo xmlrpc_struct.lo \
-	         $(XMLRPC_XML_PARSER) xmlrpc_parse.lo \
-                 xmlrpc_serialize.lo xmlrpc_base64.lo \
-		 xmlrpc_utf8.lo xmlrpc_authcookie.lo xmlrpc_strutil.lo
+LIBXMLRPC_OBJS = \
+	xmlrpc_support.lo \
+	xmlrpc_data.lo \
+	xmlrpc_builddecomp.lo \
+	xmlrpc_datetime.lo \
+	xmlrpc_array.lo \
+	xmlrpc_struct.lo \
+	$(XMLRPC_XML_PARSER) \
+	xmlrpc_parse.lo \
+	xmlrpc_serialize.lo \
+	xmlrpc_base64.lo \
+	xmlrpc_utf8.lo \
+	xmlrpc_authcookie.lo \
+	xmlrpc_strutil.lo
 
 LIB_OBJS = $(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS)
 
@@ -130,7 +139,7 @@ check:
 install: install-common $(SUBDIRS:%=%/install)
 
 .PHONY: clean clean-local distclean
-clean: clean-common clean-local
+clean: clean-common clean-local $(SUBDIRS:%=%/clean)
 clean-local: test/clean
 
 distclean: clean distclean-common

@@ -1,7 +1,8 @@
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
-BUILDDIR = $(SRCDIR)
 endif
+SUBDIR = lib/util
+BUILDDIR = $(SRCDIR)
 
 default: all
 

@@ -98,21 +98,6 @@ extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 
 
 /*=========================================================================
-**  Strings
-**=======================================================================*/
-
-/* Traditional C strings are char *, because they come from a time before
-   there was 'const'.  Now, const char * makes a lot more sense.  Also,
-   in modern times, we tend to dynamically allocate memory for strings.
-   We need this free function accordingly.  Ordinary free() doesn't check
-   the type, and can generate a warning due to the 'const'.
-*/
-void
-xmlrpc_strfree(const char * const string);
-
-
-
-/*=========================================================================
 **  xmlrpc_env
 **=========================================================================
 **  XML-RPC represents runtime errors as <fault> elements. These contain

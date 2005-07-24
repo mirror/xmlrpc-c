@@ -315,7 +315,7 @@ abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16_t port);
 abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16_t port);
 
 abyss_bool SocketListen(TSocket *s, uint32_t backlog);
-abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip);
+abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip);
 
 uint32_t SocketError(void);
 

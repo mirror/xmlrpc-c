@@ -374,7 +374,7 @@ private:
         STATE_FAILED,      // RPC executed successfully, but failed per XML-RPC
         STATE_SUCCEEDED    // RPC is done, no exception
     };
-    state state;
+    enum state state;
     girerr::error * errorP;     // Defined only in STATE_ERROR
     xmlrpc_c::rpcOutcome outcome;
         // Defined only in STATE_FAILED and STATE_SUCCEEDED

@@ -32,21 +32,19 @@ LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
 LIBXMLRPC_CLIENT = $(BUILDDIR)/src/libxmlrpc_client.la
 
-LIBXMLRPCPP_OBJS = girmem.o value.o fault.o outcome.o param_list.o xml.o
+LIBXMLRPCPP_OBJS = \
+	base64.o \
+	fault.o \
+	girerr.o \
+	girmem.o \
+	outcome.o \
+	param_list.o \
+	value.o \
+	xml.o \
+
 LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
 LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o
-
-TRANSPORT_OBJS =
-ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
-  TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
-endif
-ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  TRANSPORT_OBJS += $(CURL_TRANSPORT_DIR)/xmlrpc_curl_transport.lo
-endif
-ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
-endif
 
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \
@@ -112,7 +110,7 @@ libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
 	$(AR) cru $@ $^
 	$(RANLIB) $@
 
-libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS) $(TRANSPORT_OBJS)
+libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS)
 	-rm -f $@
 	$(AR) cru $@ $^
 	$(RANLIB) $@

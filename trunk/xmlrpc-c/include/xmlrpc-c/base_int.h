@@ -14,6 +14,9 @@
 #ifndef  XMLRPC_INT_H_INCLUDED
 #define  XMLRPC_INT_H_INCLUDED
 
+#include <stdarg.h>
+#include <xmlrpc-c/base.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -103,12 +106,34 @@ xmlrpc_destroyStruct(xmlrpc_value * const structP);
 void
 xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
 
+
+/* GNU_PRINTF_ATTR lets the GNU compiler check printf-type
+   calls to be sure the arguments match the format string, thus preventing
+   runtime segmentation faults and incorrect messages.
+*/
+#ifdef __GNUC__
+#define GNU_PRINTF_ATTR(a,b) __attribute__ ((format (printf, a, b)))
+#else
+#define GNU_PRINTF_ATTR(a,b)
+#endif
+
+void
+xmlrpc_vasprintf(const char ** const retvalP,
+                 const char *  const fmt,
+                 va_list             varargs);
+
+void GNU_PRINTF_ATTR(2,3)
+xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...);
+
+void
+xmlrpc_strfree(const char * const string);
+
+
 const char * 
 xmlrpc_makePrintable(const char * const input);
 
 const char *
 xmlrpc_makePrintableChar(char const input);
-
 
 /*----------------------------------------------------------------------------
    The following are for use by the legacy xmlrpc_parse_value().  They don't

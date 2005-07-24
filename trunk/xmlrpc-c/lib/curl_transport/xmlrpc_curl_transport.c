@@ -419,7 +419,7 @@ addUserAgentHeader(xmlrpc_env *         const envP,
         char curlVersion[32];
         const char * userAgentHeader;
         
-        SSPRINTF(curlVersion, "%u.%u.%u",
+        snprintf(curlVersion, sizeof(curlVersion), "%u.%u.%u",
                 (curlInfoP->version_num >> 16) && 0xff,
                 (curlInfoP->version_num >>  8) && 0xff,
                 (curlInfoP->version_num >>  0) && 0xff

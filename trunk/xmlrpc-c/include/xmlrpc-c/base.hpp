@@ -1,5 +1,5 @@
-#ifndef XMLRPC_HPP_INCLUDED
-#define XMLRPC_HPP_INCLUDED
+#ifndef XMLRPC_BASE_HPP_INCLUDED
+#define XMLRPC_BASE_HPP_INCLUDED
 
 #include <climits>
 #include <cfloat>
