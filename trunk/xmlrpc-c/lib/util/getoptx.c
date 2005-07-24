@@ -23,27 +23,32 @@
 #pragma alloca
 #endif
 
+/* Note that on some systems, the header files above declare variables
+   for use with their native getopt facilities, and those variables have
+   the same names as we'd like to use.  So we use things like optargx
+   instead of optarg to avoid the collision.
+*/
 
 /* For communication from `getopt' to the caller.
    When `getopt' finds an option that takes an argument,
    the argument value is returned here.
 */
-static char *optarg = 0;
+static char *optargx = 0;
 
 /* Index in ARGV of the next element to be scanned.
    This is used for communication to and from the caller
-   and for communication between successive calls to getopt().
+   and for communication between successive calls to getoptx().
 
-   On entry to getopt(), zero means this is the first call; initialize.
+   On entry to getoptx(), zero means this is the first call; initialize.
 
-   When getopt() returns EOF, this is the index of the first of the
+   When getoptx() returns EOF, this is the index of the first of the
    non-option elements that the caller should itself scan.
 
    Otherwise, `optindx' communicates from one call to the next
    how much of ARGV has been scanned so far.  
 */
 
-static int optind = 0;
+static int optindx = 0;
 
 /* The next char to be scanned in the option-element
    in which the last option character we returned was found.
@@ -58,7 +63,7 @@ static char *nextchar;
    for unrecognized options.  
 */
 
-static int opterr;
+static int opterrx;
 
 /* Index in _GETOPT_LONG_OPTIONS of the long-named option actually found.
    Only valid when a long-named option was found. */
@@ -79,7 +84,7 @@ static int last_nonopt;
 /* Exchange two adjacent subsequences of ARGV.
    One subsequence is elements [first_nonopt,last_nonopt)
     which contains all the non-options that have been skipped so far.
-   The other is elements [last_nonopt,optind), which contains all
+   The other is elements [last_nonopt,optindx), which contains all
     the options processed since those non-options were skipped.
 
    `first_nonopt' and `last_nonopt' are relocated so that they describe
@@ -95,14 +100,14 @@ exchange(char ** const argv) {
 
     bcopy (&argv[first_nonopt], temp, nonopts_size);
     bcopy (&argv[last_nonopt], &argv[first_nonopt],
-           (optind - last_nonopt) * sizeof (char *));
-    bcopy (temp, &argv[first_nonopt + optind - last_nonopt],
+           (optindx - last_nonopt) * sizeof (char *));
+    bcopy (temp, &argv[first_nonopt + optindx - last_nonopt],
            nonopts_size);
 
     /* Update records for the slots the non-options now occupy.  */
 
-    first_nonopt += (optind - last_nonopt);
-    last_nonopt = optind;
+    first_nonopt += (optindx - last_nonopt);
+    last_nonopt = optindx;
 }
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters
@@ -110,29 +115,29 @@ exchange(char ** const argv) {
 
    If an element of ARGV starts with '-', and is not exactly "-" or "--",
    then it is an option element.  The characters of this element
-   (aside from the initial '-') are option characters.  If getopt()
+   (aside from the initial '-') are option characters.  If getoptx()
    is called repeatedly, it returns successively each of the option characters
    from each of the option elements.
 
-   If getopt() finds another option character, it returns that character,
-   updating `optind' and `nextchar' so that the next call to getopt() can
+   If getoptx() finds another option character, it returns that character,
+   updating `optindx' and `nextchar' so that the next call to getoptx() can
    resume the scan with the following option character or ARGV-element.
 
-   If there are no more option characters, getopt() returns `EOF'.
-   Then `optind' is the index in ARGV of the first ARGV-element
+   If there are no more option characters, getoptx() returns `EOF'.
+   Then `optindx' is the index in ARGV of the first ARGV-element
    that is not an option.  (The ARGV-elements have been permuted
    so that those that are not options now come last.)
 
    OPTSTRING is a string containing the legitimate option characters.
    If an option character is seen that is not listed in OPTSTRING,
-   return '?' after printing an error message.  If you set `opterr' to
+   return '?' after printing an error message.  If you set `opterrx' to
    zero, the error message is suppressed but we still return '?'.
 
    If a char in OPTSTRING is followed by a colon, that means it wants an arg,
    so the following text in the same ARGV-element, or the text of the following
-   ARGV-element, is returned in `optarg'.  Two colons mean an option that
+   ARGV-element, is returned in `optargx'.  Two colons mean an option that
    wants an optional arg; if there is text in the current ARGV-element,
-   it is returned in `optarg', otherwise `optarg' is set to zero.
+   it is returned in `optargx', otherwise `optargx' is set to zero.
 
    If OPTSTRING starts with `-', it requests a different method of handling the
    non-option ARGV-elements.  See the comments about RETURN_IN_ORDER, above.
@@ -142,23 +147,23 @@ exchange(char ** const argv) {
    or is an exact match for some defined option.  If they have an
    argument, it follows the option name in the same ARGV-element, separated
    from the option name by a `=', or else the in next ARGV-element.
-   getopt() returns 0 when it finds a long-named option.  */
+   getoptx() returns 0 when it finds a long-named option.  */
 
 static int
-getopt(int          const argc, 
-       char **      const argv, 
-       const char * const optstring) {
+getoptx(int          const argc, 
+        char **      const argv, 
+        const char * const optstring) {
 
-    optarg = 0;
+    optargx = 0;
 
     /* Initialize the internal data when the first call is made.
        Start processing options with ARGV-element 1 (since ARGV-element 0
        is the program name); the sequence of previously skipped
        non-option ARGV-elements is empty.  */
 
-    if (optind == 0)
+    if (optindx == 0)
     {
-        first_nonopt = last_nonopt = optind = 1;
+        first_nonopt = last_nonopt = optindx = 1;
 
         nextchar = 0;
 
@@ -169,47 +174,47 @@ getopt(int          const argc,
         /* If we have just processed some options following some non-options,
                exchange them so that the options come first.  */
 
-        if (first_nonopt != last_nonopt && last_nonopt != optind)
+        if (first_nonopt != last_nonopt && last_nonopt != optindx)
             exchange (argv);
-        else if (last_nonopt != optind)
-            first_nonopt = optind;
+        else if (last_nonopt != optindx)
+            first_nonopt = optindx;
 
             /* Now skip any additional non-options
                and extend the range of non-options previously skipped.  */
 
-        while (optind < argc
-               && (argv[optind][0] != '-'|| argv[optind][1] == 0)
-               && (argv[optind][0] != '+'|| argv[optind][1] == 0))
-            optind++;
-        last_nonopt = optind;
+        while (optindx < argc
+               && (argv[optindx][0] != '-'|| argv[optindx][1] == 0)
+               && (argv[optindx][0] != '+'|| argv[optindx][1] == 0))
+            optindx++;
+        last_nonopt = optindx;
 
         /* Special ARGV-element `--' means premature end of options.
            Skip it like a null option,
            then exchange with previous non-options as if it were an option,
            then skip everything else like a non-option.  */
 
-        if (optind != argc && !strcmp (argv[optind], "--"))
+        if (optindx != argc && !strcmp (argv[optindx], "--"))
         {
-            optind++;
+            optindx++;
 
-            if (first_nonopt != last_nonopt && last_nonopt != optind)
+            if (first_nonopt != last_nonopt && last_nonopt != optindx)
                 exchange (argv);
             else if (first_nonopt == last_nonopt)
-                first_nonopt = optind;
+                first_nonopt = optindx;
             last_nonopt = argc;
 
-            optind = argc;
+            optindx = argc;
         }
 
         /* If we have done all the ARGV-elements, stop the scan
            and back over any non-options that we skipped and permuted.  */
 
-        if (optind == argc)
+        if (optindx == argc)
         {
             /* Set the next-arg-index to point at the non-options
                that we previously skipped, so the caller will digest them.  */
             if (first_nonopt != last_nonopt)
-                optind = first_nonopt;
+                optindx = first_nonopt;
             return EOF;
         }
      
@@ -218,20 +223,20 @@ getopt(int          const argc,
            it by.  
         */
 
-        if ((argv[optind][0] != '-' || argv[optind][1] == 0)
-            && (argv[optind][0] != '+' || argv[optind][1] == 0))
+        if ((argv[optindx][0] != '-' || argv[optindx][1] == 0)
+            && (argv[optindx][0] != '+' || argv[optindx][1] == 0))
         {
-            optarg = argv[optind++];
+            optargx = argv[optindx++];
             return 1;
         }
 
         /* We have found another option-ARGV-element.
            Start decoding its characters.  */
 
-        nextchar = argv[optind] + 1;
+        nextchar = argv[optindx] + 1;
     }
 
-    if ((argv[optind][0] == '+' || (argv[optind][0] == '-'))
+    if ((argv[optindx][0] == '+' || (argv[optindx][0] == '-'))
         )
     {
         struct optionx *p;
@@ -270,7 +275,7 @@ getopt(int          const argc,
         if (ambig && !exact)
         {
             fprintf (stderr, "%s: option `%s' is ambiguous\n",
-                     argv[0], argv[optind]);
+                     argv[0], argv[optindx]);
             nextchar += strlen (nextchar);               
             return '?';
         }
@@ -278,28 +283,28 @@ getopt(int          const argc,
         if (pfound != 0)
         {
             option_index = indfound;
-            optind++;
+            optindx++;
             if (*s)
             {
                 if (pfound->has_arg > 0)
-                    optarg = s + 1;
+                    optargx = s + 1;
                 else
                 {
                     fprintf (stderr,
                              "%s: option `%c%s' doesn't allow an argument\n",
-                             argv[0], argv[optind - 1][0], pfound->name);
+                             argv[0], argv[optindx - 1][0], pfound->name);
                     nextchar += strlen (nextchar);               
                     return '?';
                 }
             }
             else if (pfound->has_arg)
             {
-                if (optind < argc)
-                    optarg = argv[optind++];
+                if (optindx < argc)
+                    optargx = argv[optindx++];
                 else if (pfound->has_arg != 2)
                 {
                     fprintf (stderr, "%s: option `%s' requires an argument\n",
-                             argv[0], argv[optind - 1]);
+                             argv[0], argv[optindx - 1]);
                     nextchar += strlen (nextchar);           
                     return '?';
                 }
@@ -309,11 +314,11 @@ getopt(int          const argc,
                 *(pfound->flag) = pfound->val;
             return 0;
         }
-        if (argv[optind][0] == '+' || index (optstring, *nextchar) == 0)
+        if (argv[optindx][0] == '+' || index (optstring, *nextchar) == 0)
         {
-            if (opterr != 0)
+            if (opterrx != 0)
                 fprintf (stderr, "%s: unrecognized option `%c%s'\n",
-                         argv[0], argv[optind][0], nextchar);
+                         argv[0], argv[optindx][0], nextchar);
             nextchar += strlen (nextchar);           
             return '?';
         }
@@ -325,16 +330,17 @@ getopt(int          const argc,
         char c = *nextchar++;
         char *temp = index (optstring, c);
 
-        /* Increment `optind' when we start to process its last character.  */
+        /* Increment `optindx' when we start to process its last character.  */
         if (*nextchar == 0)
-            optind++;
+            optindx++;
 
         if (temp == 0 || c == ':')
         {
-            if (opterr != 0)
+            if (opterrx != 0)
             {
                 if (c < 040 || c >= 0177)
-                    fprintf (stderr, "%s: unrecognized option, character code 0%o\n",
+                    fprintf (stderr, "%s: unrecognized option, "
+                             "character code 0%o\n",
                              argv[0], c);
                 else
                     fprintf (stderr, "%s: unrecognized option `-%c'\n",
@@ -349,11 +355,11 @@ getopt(int          const argc,
                 /* This is an option that accepts an argument optionally.  */
                 if (*nextchar != 0)
                 {
-                    optarg = nextchar;
-                    optind++;
+                    optargx = nextchar;
+                    optindx++;
                 }
                 else
-                    optarg = 0;
+                    optargx = 0;
                 nextchar = 0;
             }
             else
@@ -361,29 +367,33 @@ getopt(int          const argc,
                 /* This is an option that requires an argument.  */
                 if (*nextchar != 0)
                 {
-                    optarg = nextchar;
-                    /* If we end this ARGV-element by taking the rest as an arg,
-                       we must advance to the next element now.  */
-                    optind++;
+                    optargx = nextchar;
+                    /* If we end this ARGV-element by taking the rest
+                       as an arg, we must advance to the next element
+                       now.  
+                    */
+                    optindx++;
                 }
-                else if (optind == argc)
+                else if (optindx == argc)
                 {
-                    if (opterr != 0)
-                        fprintf (stderr, "%s: option `-%c' requires an argument\n",
+                    if (opterrx != 0)
+                        fprintf (stderr,
+                                 "%s: option `-%c' requires an argument\n",
                                  argv[0], c);
                     c = '?';
                 }
                 else
-                    /* We already incremented `optind' once;
-                       increment it again when taking next ARGV-elt as argument.  */
-                    optarg = argv[optind++];
+                    /* We already incremented `optindx' once;
+                       increment it again when taking next ARGV-elt as
+                       argument.
+                    */
+                    optargx = argv[optindx++];
                 nextchar = 0;
             }
         }
         return c;
     }
 }
-
 
 
 
@@ -400,14 +410,14 @@ getopt_long_onlyx(int              const argc,
 
     int rc;
 
-    opterr = opterrArg;
+    opterrx = opterrArg;
     _getopt_long_options = long_options;
-    rc = getopt (argc, argv, options);
+    rc = getoptx(argc, argv, options);
     if (rc == 0)
         *opt_index = option_index;
 
     if (rc == '?')
-        *unrecognized_option = argv[optind];
+        *unrecognized_option = argv[optindx];
     else
         *unrecognized_option = NULL;
 
@@ -416,7 +426,7 @@ getopt_long_onlyx(int              const argc,
     else
         *end_of_options = 0;
 
-    *optarg_arg = optarg;
+    *optarg_arg = optargx;
 }
      
 
@@ -429,7 +439,7 @@ getopt_argstart(void) {
    You call this after getopt_long_onlyx() has returned "end of
    options"
 -----------------------------------------------------------------------------*/
-    return optind;
+    return optindx;
 }
 
 
