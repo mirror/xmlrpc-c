@@ -98,7 +98,7 @@ while test $# -gt 0; do
         fi
       ;;
     client)
-      the_libs="-lxmlrpc_client"
+      the_libs="-lxmlrpc_client $the_libs"
 
       if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
         the_libs="@WININET_LDADD@ $the_libs"
