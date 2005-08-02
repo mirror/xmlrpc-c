@@ -423,7 +423,7 @@ xmlrpc_read_string_w(xmlrpc_env *     const envP,
                 "Unable to allocate space for %u-byte string", 
                 length);
         else {
-            memcpy(stringValue, wcontents, length);
+            memcpy(stringValue, wcontents, length * sizeof(wchar_t));
             stringValue[length] = '\0';
             
             *stringValueP = stringValue;
