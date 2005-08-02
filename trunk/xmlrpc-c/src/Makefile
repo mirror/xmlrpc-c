@@ -140,7 +140,8 @@ install: install-common $(SUBDIRS:%=%/install)
 
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local $(SUBDIRS:%=%/clean)
-clean-local: test/clean
+clean-local:
+	$(MAKE) -C test clean
 
 distclean: clean distclean-common
 
