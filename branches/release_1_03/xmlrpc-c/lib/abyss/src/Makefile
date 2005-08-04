@@ -61,7 +61,7 @@ tags: TAGS
 distdir:
 
 .PHONY: install
-install:
+install: install-common
 
 .PHONY: dep
 dep: dep-common

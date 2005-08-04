@@ -19,8 +19,11 @@
 extern "C" {
 #endif
 
+#ifdef ABYSS_WIN32
+#include "xmlrpc_config.h"
+#else
 #include <inttypes.h>
-
+#endif
 /*********************************************************************
 ** Paths and so on...
 *********************************************************************/

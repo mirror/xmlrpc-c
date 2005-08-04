@@ -1,3 +1,5 @@
+#pragma once
+
 /* From xmlrpc_amconfig.h */
   
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
@@ -63,19 +65,72 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-  #if !defined (vsnprintf)
-#define vsnprintf _vsnprintf
-  #endif
-  #if !defined (snprintf)
-#define snprintf _snprintf
-  #endif
+#if !defined (vsnprintf)
+  #define vsnprintf _vsnprintf
+#endif
+#if !defined (snprintf)
+  #define snprintf _snprintf
+#endif
+#if !defined (popen) 
+  #define popen _popen
+#endif
+
+
 #include <time.h>
 #include <WINSOCK.h>
 #include <direct.h>  /* for _chdir() */
 
+/* We are linking against the multithreaded versions
+   of the Microsoft runtimes - this makes gmtime 
+   equiv to gmtime_r in that Windows gmtime is threadsafe
+*/
+#if !defined (gmtime_r)
+static struct tm* gmtime_r(const time_t *timep, struct tm* result)
+{
+	struct tm *local;
+
+	local = gmtime(timep);
+	memcpy(result,local,sizeof(struct tm));
+	return result;
+}
+
+#endif
+
+#ifndef socklen_t
+typedef unsigned int socklen_t;
+#endif
+
+/* inttypes.h */
+#ifndef int8_t
+typedef signed char       int8_t;
+#endif
+#ifndef uint8_t
+typedef unsigned char     uint8_t;
+#endif
+#ifndef int16_t
+typedef signed short      int16_t;
+#endif
+#ifndef uint16_t
+typedef unsigned short    uint16_t;
+#endif
+#ifndef int32_t
+typedef signed int        int32_t;
+#endif
+#ifndef uint32_t
+typedef unsigned int      uint32_t;
+#endif
+#ifndef int64_t
+typedef __int64           int64_t;
+#endif
+#ifndef uint64_t
+typedef unsigned __int64  uint64_t;
+#endif
+
 #define __inline__ __inline
 
+#define HAVE_SETENV 1
 __inline BOOL setenv(const char* name, const char* value, int i) 
 {
 	return (SetEnvironmentVariable(name, value) != 0) ? TRUE : FALSE;
 }
+

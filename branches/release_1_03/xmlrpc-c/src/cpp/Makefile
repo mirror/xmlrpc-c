@@ -112,7 +112,7 @@ libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
 	$(AR) cru $@ $^
 	$(RANLIB) $@
 
-libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS) $(TRANSPORT_OBJS)
+libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS)
 	-rm -f $@
 	$(AR) cru $@ $^
 	$(RANLIB) $@

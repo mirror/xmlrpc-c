@@ -306,7 +306,7 @@ abyss_bool ConfReadServerFile(const char *filename,TServer *srv)
                             TraceExit("Unknown user '%s'",p);
         
                         srv->uid=pwd->pw_uid;
-                        if (srv->gid==(-1))
+                        if ((int)srv->gid==(-1))
                             srv->gid=pwd->pw_gid;
                     };
 #else

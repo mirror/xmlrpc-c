@@ -23,6 +23,61 @@
    after 2038.  We need to figure out something better.
 */
 
+
+#ifdef WIN32
+
+static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
+static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
+
+
+void UnixTimeToFileTime(const time_t t, LPFILETIME pft)
+{
+    // Note that LONGLONG is a 64-bit value
+    LONGLONG ll;
+    ll = Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
+    pft->dwLowDateTime = (DWORD)ll;
+    pft->dwHighDateTime = ll >> 32;
+}
+
+void UnixTimeToSystemTime(const time_t t, LPSYSTEMTIME pst)
+{
+    FILETIME ft;
+
+    UnixTimeToFileTime(t, &ft);
+    FileTimeToSystemTime(&ft, pst);
+}
+
+static void UnixTimeFromFileTime(xmlrpc_env *  const envP, LPFILETIME pft, time_t * const timeValueP) 
+{ 
+    LONGLONG ll;
+
+    ll = ((LONGLONG)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
+    /* convert to the Unix epoch */
+    ll -= (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
+    /* now convert to seconds */
+    ll /= SECS_TO_100NS; 
+
+    if ( (time_t)ll != ll )
+    {
+        //fail - value is too big for a time_t
+        xmlrpc_faultf(envP, "Does not indicate a valid date");
+        *timeValueP = (time_t)-1;
+        return;
+    }
+    *timeValueP = (time_t)ll;
+}
+
+static void UnixTimeFromSystemTime(xmlrpc_env *  const envP, LPSYSTEMTIME pst, time_t * const timeValueP) 
+{
+    FILETIME filetime;
+
+    SystemTimeToFileTime(pst, &filetime); 
+    UnixTimeFromFileTime(envP, &filetime, timeValueP); 
+}
+
+#endif
+
+
 static void
 validateDatetimeType(xmlrpc_env *         const envP,
                      const xmlrpc_value * const valueP) {
@@ -147,6 +202,11 @@ makeTimezoneUtc(xmlrpc_env *  const envP,
 
     const char * const tz = getenv("TZ");
 
+#ifdef WIN32
+	/* Windows implementation does not exist */
+	assert(TRUE);
+#endif
+
     if (haveSetenv) {
         if (tz) {
             *oldTzP = strdup(tz);
@@ -191,6 +251,31 @@ mkAbsTime(xmlrpc_env * const envP,
           struct tm    const brokenTime,
           time_t     * const timeValueP) {
 
+#ifdef WIN32
+    /* Windows Implementation */
+    SYSTEMTIME stbrokenTime;
+
+    stbrokenTime.wHour = brokenTime.tm_hour;
+    stbrokenTime.wMinute = brokenTime.tm_min;
+    stbrokenTime.wSecond = brokenTime.tm_sec;
+    stbrokenTime.wMonth = brokenTime.tm_mon;
+    stbrokenTime.wDay = brokenTime.tm_mday;
+    stbrokenTime.wYear = brokenTime.tm_year;
+    stbrokenTime.wMilliseconds = 0;
+
+    /* When the date string is parsed into the tm structure, it was
+       modified to decrement the month count by one and convert the
+       4 digit year to a two digit year.  We undo what the parser 
+       did to make it a true SYSTEMTIME structure, then convert this
+       structure into a UNIX time_t structure
+    */
+    stbrokenTime.wYear+=1900;
+    stbrokenTime.wMonth+=1;
+
+    UnixTimeFromSystemTime(envP, &stbrokenTime,timeValueP);
+
+#else
+
     time_t mktimeResult;
     const char * oldTz;
     struct tm mktimeWork;
@@ -213,6 +298,8 @@ mkAbsTime(xmlrpc_env * const envP,
         else
             *timeValueP = mktimeResult;
     }
+#endif
+
 }
  
 

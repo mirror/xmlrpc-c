@@ -40,10 +40,10 @@ RSC=rc.exe
 # PROP Output_Dir "Release\xmlrpc"
 # PROP Intermediate_Dir "Release\xmlrpc"
 # PROP Target_Dir ""
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../src" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /FR /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -65,10 +65,10 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmlrpc"
 # PROP Intermediate_Dir "Debug\xmlrpc"
 # PROP Target_Dir ""
-LINK32=link.exe -lib
 MTL=midl.exe
+LINK32=link.exe -lib
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../src" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -113,10 +113,6 @@ SOURCE=..\src\xmlrpc_builddecomp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc_cgi.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\xmlrpc_client.c
 # End Source File
 # Begin Source File
@@ -127,6 +123,10 @@ SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_data.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\xmlrpc_datetime.c
 # End Source File
 # Begin Source File
 
@@ -177,17 +177,29 @@ SOURCE=..\src\xmlrpc_utf8.c
 
 SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\src\XmlRpcCpp.cpp
-# End Source File
 # End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE="..\include\xmlrpc-c\abyss.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\base.h"
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\util\include\bool.h
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\client.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\client_int.h"
 # End Source File
 # Begin Source File
 
@@ -199,23 +211,35 @@ SOURCE=..\lib\util\include\pthreadx.h
 # End Source File
 # Begin Source File
 
+SOURCE="..\include\xmlrpc-c\server.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\server_abyss.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\server_cgi.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\server_w32httpsys.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\transport.h"
+# End Source File
+# Begin Source File
+
 SOURCE=..\transport_config.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc.h
+SOURCE="..\include\xmlrpc-c\transport_int.h"
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc_cgi.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_client.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_client_int.h
+SOURCE="..\include\xmlrpc-c\xmlparser.h"
 # End Source File
 # Begin Source File
 
@@ -227,39 +251,7 @@ SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc_int.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_server.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_server_abyss.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_server_abyss.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_server_w32httpsys.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_transport.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_xmlparser.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\XmlRpcCpp.h
 # End Source File
 # End Group
 # End Target

@@ -67,6 +67,23 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.03 - not yet
+
+  * SAB: Fix for Windows what broke between 1.02 and 1.03.
+
+  * SAB: Fix incorrect result of xmlrpc_read_string_w() (wrong-size memcpy()).
+
+  * BJH: Fix various things that don't compile on AIX.
+
+  * BJH: Fix bug: doesn't install libxmlrpc_abyss.
+
+  * BJH: Fix missing -l options in xmlrpc-c-config --client
+
+1.03.02 - July 20, 2005
+
+  * BJH: Fix for bug in which Abyss doesn't build with either thread or
+    fork capability.  (Add -D_UNIX and -D_THREAD compile options).
+
 1.03.01 - July 9, 2005
 
   * BJH: Fix for libxml2, no curl builds. make clean cleans test directory

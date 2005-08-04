@@ -48,6 +48,9 @@
 #include "xmlrpc-c/server_w32httpsys.h"
 #include "version.h"
 
+#if MUST_BUILD_HTTP_SYS_SERVER > 0
+
+/* See compilation note above if this header is not found! */
 #include <http.h>
 #include <windows.h>
 #include <strsafe.h>
@@ -917,3 +920,5 @@ Done:
 
     return;
 }
+
+#endif /* #if MUST_BUILD_HTTP_SYS_SERVER <> 0 */

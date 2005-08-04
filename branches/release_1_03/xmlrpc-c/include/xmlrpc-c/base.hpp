@@ -54,12 +54,12 @@ public:
 
     void
     addToCStruct(xmlrpc_value * const structP,
-                    std::string    const key) const;
+                    std::string const key) const;
 
     xmlrpc_value *
     cValue() const;
 
-    value(xmlrpc_value * valueP);
+    value(xmlrpc_value * const valueP);
 
     void
     instantiate(xmlrpc_value * const valueP);

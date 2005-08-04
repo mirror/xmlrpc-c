@@ -470,7 +470,7 @@ clientXmlTransport_wininet::clientXmlTransport_wininet(
 
 #else  // MUST_BUILD_WININET_CLIENT
 
-clientXmlTransport_wininet::clientXmlTransport_wininet(bool) {
+clientXmlTransport_wininet::clientXmlTransport_wininet(bool const) {
 
     throw(error("There is no Wininet client XML transport "
                 "in this XML-RPC client library"));

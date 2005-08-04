@@ -878,7 +878,10 @@ main(int     argc,
     test_xml_size_limit();
     test_sample_files();
     printf("\n");
+
+#ifndef WIN32 /* CGI unsupported in Windows */
     test_server_cgi();
+#endif 
     test_server_abyss();
 
 #ifdef HAVE_UNICODE_WCHAR
@@ -886,7 +889,10 @@ main(int     argc,
 #endif /* HAVE_UNICODE_WCHAR */
 
     printf("\n");
+
+#ifndef WIN32 /* TODO: Client test uses curl... */
     test_client();
+#endif 
 
     /* Summarize our test run. */
     printf("\nRan %d tests, %d failed, %.1f%% passed\n",

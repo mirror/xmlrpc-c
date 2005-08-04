@@ -26,6 +26,7 @@
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
+#include "pthreadx.h"
 
 #include <string.h>
 #include <stdlib.h>

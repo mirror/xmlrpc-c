@@ -45,16 +45,16 @@ die_if_fault_occurred (xmlrpc_env * const envP) {
 static void GNU_PRINTF_ATTR(2,3)
 setError(xmlrpc_env * const envP, const char format[], ...) {
     va_list args;
-    char * faultString;
+    const char * faultString;
 
     va_start(args, format);
 
-    vasprintf(&faultString, format, args);
+    cvasprintf(&faultString, format, args);
     va_end(args);
 
     xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR, faultString);
 
-    free(faultString);
+    strfree(faultString);
 }
       
 
