@@ -3,6 +3,8 @@
 #include "xmlrpc-c/girerr.hpp"
 #include "xmlrpc-c/base_int.h"
 
+using namespace std;
+
 namespace girerr {
 
 void
