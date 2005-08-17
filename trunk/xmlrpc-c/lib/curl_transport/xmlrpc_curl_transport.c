@@ -40,19 +40,28 @@
 
 
 
-struct xmlrpc_client_transport {
-    pthread_mutex_t listLock;
-    struct list_head rpcList;
-        /* List of all RPCs that exist for this transport.  An RPC exists
-           from the time the user requests it until the time the user 
-           acknowledges it is done.
-        */
-    CURL * syncCurlSessionP;
-        /* Handle for a Curl library session object that we use for
-           all synchronous RPCs.  An async RPC has one of its own,
-           and consequently does not share things such as persistent
-           connections and cookies with any other RPC.
-        */
+struct curlSetup {
+
+    /* This is all client transport properties that are implemented as
+       simple Curl session properties (i.e. the transport basically just
+       passed them through to Curl without looking at them).
+
+       People occasionally want to replace all this with something where
+       the Xmlrpc-c user simply does the curl_easy_setopt() call and this
+       code need not know about all these options.  Unfortunately, that's
+       a significant modularity violation.  Either the Xmlrpc-c user
+       controls the Curl object or he doesn't.  If he does, then he
+       shouldn't use libxmlrpc_client -- he should just copy some of this
+       code into his own program.  If he doesn't, then he should never see
+       the Curl library.
+
+       Speaking of modularity: the only reason this is a separate struct
+       is to make the code easier to manage.  Ideally, the fact that these
+       particular properties of the transport are implemented by simple
+       Curl session setup would be known only at the lowest level code
+       that does that setup.
+    */
+
     const char * networkInterface;
         /* This identifies the network interface on the local side to
            use for the session.  It is an ASCIIZ string in the form
@@ -75,12 +84,46 @@ struct xmlrpc_client_transport {
            authentic) indicates the host name that is in the URL we
            are using for the server.
         */
+
+    const char * sslCert;
+    const char * sslCertType;
+    const char * sslCertPasswd;
+    const char * sslKey;
+    const char * sslKeyType;
+    const char * sslKeyPasswd;
+    const char * sslEngine;
+    bool         sslEngineDefault;
+    unsigned int sslVersion;
+    const char * caInfo;
+    const char * caPath;
+    const char * randomFile;
+    const char * egdSocket;
+    const char * sslCipherList;
+};
+
+
+
+struct xmlrpc_client_transport {
+    pthread_mutex_t listLock;
+    struct list_head rpcList;
+        /* List of all RPCs that exist for this transport.  An RPC exists
+           from the time the user requests it until the time the user 
+           acknowledges it is done.
+        */
+    CURL * syncCurlSessionP;
+        /* Handle for a Curl library session object that we use for
+           all synchronous RPCs.  An async RPC has one of its own,
+           and consequently does not share things such as persistent
+           connections and cookies with any other RPC.
+        */
+    
     const char * userAgent;
         /* Prefix for the User-Agent HTTP header, reflecting facilities
            outside of Xmlrpc-c.  The actual User-Agent header consists
            of this prefix plus information about Xmlrpc-c.  NULL means
            none.
         */
+    struct curlSetup curlSetupStuff;
 };
 
 typedef struct {
@@ -155,7 +198,7 @@ collect(void *  const ptr,
 
 
 static void
-initWindowsStuff(xmlrpc_env * const envP) {
+initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
 
 #if defined (WIN32)
     /* This is CRITICAL so that cURL-Win32 works properly! */
@@ -180,56 +223,197 @@ initWindowsStuff(xmlrpc_env * const envP) {
         if (envP->fault_occurred)
             WSACleanup();
     }
-#else
-    if (0)
-        envP->fault_occurred = TRUE;  /* Avoid unused parm warning */
 #endif
 }
 
 
 
 static void
-getXportParms(xmlrpc_env *  const envP,
+getXportParms(xmlrpc_env *  const envP ATTR_UNUSED,
               const struct xmlrpc_curl_xportparms * const curlXportParmsP,
               size_t        const parmSize,
-              const char ** const networkInterfaceP,
-              xmlrpc_bool * const sslVerifyPeerP,
-              xmlrpc_bool * const sslVerifyHostP,
-              const char ** const userAgentP) {
+              struct xmlrpc_client_transport * const transportP) {
+/*----------------------------------------------------------------------------
+   Get the parameters out of *curlXportParmsP and update *transportP
+   to reflect them.
+
+   *curlXportParmsP is a 'parmSize' bytes long prefix of
+   struct xmlrpc_curl_xportparms.
+
+   curlXportParmsP is something the user created.  It's designed to be
+   friendly to the user, not to this program, and is encumbered by
+   lots of backward compatibility constraints.  In particular, the
+   user may have coded and/or compiled it at a time that struct
+   xmlrpc_curl_xportparms was smaller than it is now!
+
+   So that's why we don't simply attach a copy of *curlXportParmsP to
+   *transportP.
+
+   To the extent that *curlXportParmsP is too small to contain a parameter,
+   we return the default value for that parameter.
+
+   Special case:  curlXportParmsP == NULL means there is no input at all.
+   In that case, we return default values for everything.
+-----------------------------------------------------------------------------*/
+    struct curlSetup * const curlSetupP = &transportP->curlSetupStuff;
 
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(user_agent))
-        *userAgentP = NULL;
+        transportP->userAgent = NULL;
     else if (curlXportParmsP->user_agent == NULL)
-        *userAgentP = NULL;
+        transportP->userAgent = NULL;
     else
-        *userAgentP = strdup(curlXportParmsP->user_agent);
-
+        transportP->userAgent = strdup(curlXportParmsP->user_agent);
+    
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
-        *networkInterfaceP = NULL;
+        curlSetupP->networkInterface = NULL;
     else if (curlXportParmsP->network_interface == NULL)
-        *networkInterfaceP = NULL;
-    else {
-        *networkInterfaceP = strdup(curlXportParmsP->network_interface);
-        if (*networkInterfaceP == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR,
-                "Unable to allocate space for network interface name.");
-        
-        if (!curlXportParmsP || 
-            parmSize < XMLRPC_CXPSIZE(no_ssl_verifypeer))
-            *sslVerifyPeerP = TRUE;
-        else
-            *sslVerifyPeerP = !curlXportParmsP->no_ssl_verifypeer;
-        
-        if (!curlXportParmsP || 
-            parmSize < XMLRPC_CXPSIZE(no_ssl_verifyhost))
-            *sslVerifyHostP = TRUE;
-        else
-            *sslVerifyHostP = !curlXportParmsP->no_ssl_verifyhost;
+        curlSetupP->networkInterface = NULL;
+    else
+        curlSetupP->networkInterface =
+            strdup(curlXportParmsP->network_interface);
 
-        if (envP->fault_occurred)
-            strfree(*networkInterfaceP);
-    }
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(no_ssl_verifypeer))
+        curlSetupP->sslVerifyPeer = TRUE;
+    else
+        curlSetupP->sslVerifyPeer = !curlXportParmsP->no_ssl_verifypeer;
+        
+    if (!curlXportParmsP || 
+        parmSize < XMLRPC_CXPSIZE(no_ssl_verifyhost))
+        curlSetupP->sslVerifyHost = TRUE;
+    else
+        curlSetupP->sslVerifyHost = !curlXportParmsP->no_ssl_verifyhost;
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(ssl_cert))
+        curlSetupP->sslCert = NULL;
+    else if (curlXportParmsP->ssl_cert == NULL)
+        curlSetupP->sslCert = NULL;
+    else
+        curlSetupP->sslCert = strdup(curlXportParmsP->ssl_cert);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslcerttype))
+        curlSetupP->sslCertType = NULL;
+    else if (curlXportParmsP->sslcerttype == NULL)
+        curlSetupP->sslCertType = NULL;
+    else
+        curlSetupP->sslCertType = strdup(curlXportParmsP->sslcerttype);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslcertpasswd))
+        curlSetupP->sslCertPasswd = NULL;
+    else if (curlXportParmsP->sslcertpasswd == NULL)
+        curlSetupP->sslCertPasswd = NULL;
+    else
+        curlSetupP->sslCertPasswd = strdup(curlXportParmsP->sslcertpasswd);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkey))
+        curlSetupP->sslKey = NULL;
+    else if (curlXportParmsP->sslkey == NULL)
+        curlSetupP->sslKey = NULL;
+    else
+        curlSetupP->sslKey = strdup(curlXportParmsP->sslkey);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeytype))
+        curlSetupP->sslKeyType = NULL;
+    else if (curlXportParmsP->sslkeytype == NULL)
+        curlSetupP->sslKeyType = NULL;
+    else
+        curlSetupP->sslKeyType = strdup(curlXportParmsP->sslkeytype);
+    
+        if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeypasswd))
+        curlSetupP->sslKeyPasswd = NULL;
+    else if (curlXportParmsP->sslkeypasswd == NULL)
+        curlSetupP->sslKeyPasswd = NULL;
+    else
+        curlSetupP->sslKeyPasswd = strdup(curlXportParmsP->sslkeypasswd);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslengine))
+        curlSetupP->sslEngine = NULL;
+    else if (curlXportParmsP->sslengine == NULL)
+        curlSetupP->sslEngine = NULL;
+    else
+        curlSetupP->sslEngine = strdup(curlXportParmsP->sslengine);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslengine_default))
+        curlSetupP->sslEngineDefault = FALSE;
+    else
+        curlSetupP->sslEngineDefault = !!curlXportParmsP->sslengine_default;
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslversion))
+        curlSetupP->sslVersion = 0;
+    else if (curlXportParmsP->sslversion == 0)
+        curlSetupP->sslVersion = 0;
+    else
+        curlSetupP->sslVersion = curlXportParmsP->sslversion;
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(cainfo))
+        curlSetupP->caInfo = NULL;
+    else if (curlXportParmsP->cainfo == NULL)
+        curlSetupP->caInfo = NULL;
+    else
+        curlSetupP->caInfo = strdup(curlXportParmsP->cainfo);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(capath))
+        curlSetupP->caPath = NULL;
+    else if (curlXportParmsP->capath == NULL)
+        curlSetupP->caPath = NULL;
+    else
+        curlSetupP->caPath = strdup(curlXportParmsP->capath);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(randomfile))
+        curlSetupP->randomFile = NULL;
+    else if (curlXportParmsP->randomfile == NULL)
+        curlSetupP->randomFile = NULL;
+    else
+        curlSetupP->randomFile = strdup(curlXportParmsP->randomfile);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(egdsocket))
+        curlSetupP->egdSocket = NULL;
+    else if (curlXportParmsP->egdsocket == NULL)
+        curlSetupP->egdSocket = NULL;
+    else
+        curlSetupP->egdSocket = strdup(curlXportParmsP->egdsocket);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(ssl_cipher_list))
+        curlSetupP->sslCipherList = NULL;
+    else if (curlXportParmsP->ssl_cipher_list == NULL)
+        curlSetupP->sslCipherList = NULL;
+    else
+        curlSetupP->sslCipherList = strdup(curlXportParmsP->ssl_cipher_list);
+
+}
+
+
+
+static void
+freeXportParms(const struct xmlrpc_client_transport * const transportP) {
+
+    const struct curlSetup * const curlSetupP = &transportP->curlSetupStuff;
+
+    if (curlSetupP->sslCipherList)
+        strfree(curlSetupP->sslCipherList);
+    if (curlSetupP->egdSocket)
+        strfree(curlSetupP->egdSocket);
+    if (curlSetupP->randomFile)
+        strfree(curlSetupP->randomFile);
+    if (curlSetupP->caPath)
+        strfree(curlSetupP->caPath);
+    if (curlSetupP->caInfo)
+        strfree(curlSetupP->caInfo);
+    if (curlSetupP->sslEngine)
+        strfree(curlSetupP->sslEngine);
+    if (curlSetupP->sslKeyPasswd)
+        strfree(curlSetupP->sslKeyPasswd);
+    if (curlSetupP->sslKeyType)
+        strfree(curlSetupP->sslKeyType);
+    if (curlSetupP->sslKey)
+        strfree(curlSetupP->sslKey);
+    if (curlSetupP->sslCertType)
+        strfree(curlSetupP->sslCertType);
+    if (curlSetupP->sslCert)
+        strfree(curlSetupP->sslCert);
+    if (curlSetupP->networkInterface)
+        strfree(curlSetupP->networkInterface);
+    if (transportP->userAgent)
+        strfree(transportP->userAgent);
 }
 
 
@@ -249,9 +433,9 @@ createSyncCurlSession(xmlrpc_env * const envP,
    asynchronous transaction because code that is common between synchronous
    and asynchronous transactions takes care of that anyway.
 
-   That leaves things such as cookies that don't exist for asynchronous
-   transactions, and are common to multiple serial synchronous
-   transactions.
+   That leaves things, such as cookies, that don't exist for
+   asynchronous transactions, and are common to multiple serial
+   synchronous transactions.
 -----------------------------------------------------------------------------*/
     CURL * const curlSessionP = curl_easy_init();
 
@@ -325,17 +509,13 @@ create(xmlrpc_env *                      const envP,
            check into that.
         */
 
-        getXportParms(envP, curlXportParmsP, parm_size,
-                      &transportP->networkInterface,
-                      &transportP->sslVerifyPeer,
-                      &transportP->sslVerifyHost,
-                      &transportP->userAgent);
+        getXportParms(envP, curlXportParmsP, parm_size, transportP);
 
         if (!envP->fault_occurred) {
             createSyncCurlSession(envP, &transportP->syncCurlSessionP);
-
+            
             if (envP->fault_occurred)
-                strfree(transportP->networkInterface);
+                freeXportParms(transportP);
         }                 
         if (envP->fault_occurred)
             free(transportP);
@@ -366,10 +546,7 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 
     destroySyncCurlSession(clientTransportP->syncCurlSessionP);
 
-    if (clientTransportP->networkInterface)
-        strfree(clientTransportP->networkInterface);
-    if (clientTransportP->userAgent)
-        strfree(clientTransportP->userAgent);
+    freeXportParms(clientTransportP);
 
     curl_global_cleanup();
 
@@ -492,23 +669,69 @@ createCurlHeaderList(xmlrpc_env *               const envP,
 
 
 static void
-setupCurlSession(xmlrpc_env *       const envP,
-                 curlTransaction *  const curlTransactionP,
-                 xmlrpc_mem_block * const callXmlP,
-                 xmlrpc_mem_block * const responseXmlP,
-                 const char *       const networkInterface,
-                 xmlrpc_bool        const sslVerifyPeer,
-                 xmlrpc_bool        const sslVerifyHost) {
-
+setupCurlSession(xmlrpc_env *             const envP,
+                 curlTransaction *        const curlTransactionP,
+                 xmlrpc_mem_block *       const callXmlP,
+                 xmlrpc_mem_block *       const responseXmlP,
+                 const struct curlSetup * const curlSetupP) {
+/*----------------------------------------------------------------------------
+   Set up the Curl session for the transaction *curlTransactionP so that
+   a subsequent curl_easy_perform() will perform said transaction.
+-----------------------------------------------------------------------------*/
     CURL * const curlSessionP = curlTransactionP->curlSessionP;
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
-    if (networkInterface)
-        curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE, networkInterface);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
-    curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER, sslVerifyPeer);
+    curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
+                     curlSetupP->sslVerifyPeer);
     curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYHOST,
-                     sslVerifyHost ? 2 : 0);
+                     curlSetupP->sslVerifyHost ? 2 : 0);
+
+    if (curlSetupP->networkInterface)
+        curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE,
+                         curlSetupP->networkInterface);
+    if (curlSetupP->sslCert)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLCERT,
+                         curlSetupP->sslCert);
+    if (curlSetupP->sslCertType)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLCERTTYPE,
+                         curlSetupP->sslCertType);
+    if (curlSetupP->sslCertPasswd)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLCERTPASSWD,
+                         curlSetupP->sslCertPasswd);
+    if (curlSetupP->sslKey)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLKEY,
+                         curlSetupP->sslKey);
+    if (curlSetupP->sslKeyType)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLKEYTYPE,
+                         curlSetupP->sslKeyType);
+    if (curlSetupP->sslKeyPasswd)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLKEYPASSWD,
+                         curlSetupP->sslKeyPasswd);
+    if (curlSetupP->sslEngine)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE,
+                         curlSetupP->sslEngine);
+    if (curlSetupP->sslEngineDefault)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT);
+    if (curlSetupP->sslVersion)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSLVERSION,
+                         curlSetupP->sslVersion);
+    if (curlSetupP->caInfo)
+        curl_easy_setopt(curlSessionP, CURLOPT_CAINFO,
+                         curlSetupP->caInfo);
+    if (curlSetupP->caPath)
+        curl_easy_setopt(curlSessionP, CURLOPT_CAPATH,
+                         curlSetupP->caPath);
+    if (curlSetupP->randomFile)
+        curl_easy_setopt(curlSessionP, CURLOPT_RANDOM_FILE,
+                         curlSetupP->randomFile);
+    if (curlSetupP->egdSocket)
+        curl_easy_setopt(curlSessionP, CURLOPT_EGDSOCKET,
+                         curlSetupP->egdSocket);
+    if (curlSetupP->sslCipherList)
+        curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
+                         curlSetupP->sslCipherList);
+
     XMLRPC_MEMBLOCK_APPEND(char, envP, callXmlP, "\0", 1);
     if (!envP->fault_occurred) {
         curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS, 
@@ -534,10 +757,8 @@ createCurlTransaction(xmlrpc_env *               const envP,
                       const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *         const callXmlP,
                       xmlrpc_mem_block *         const responseXmlP,
-                      const char *               const networkInterface,
-                      xmlrpc_bool                const sslVerifyPeer,
-                      xmlrpc_bool                const sslVerifyHost,
                       const char *               const userAgent,
+                      const struct curlSetup *   const curlSetupStuffP,
                       curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
@@ -558,9 +779,8 @@ createCurlTransaction(xmlrpc_env *               const envP,
             if (!envP->fault_occurred)
                 setupCurlSession(envP, curlTransactionP,
                                  callXmlP, responseXmlP,
-                                 networkInterface, 
-                                 sslVerifyPeer, sslVerifyHost);
-            
+                                 curlSetupStuffP);
+
             if (envP->fault_occurred)
                 strfree(curlTransactionP->serverUrl);
         }
@@ -721,10 +941,8 @@ createRpc(xmlrpc_env *                     const envP,
                               curlSessionP,
                               serverP,
                               callXmlP, responseXmlP, 
-                              clientTransportP->networkInterface, 
-                              clientTransportP->sslVerifyPeer,
-                              clientTransportP->sslVerifyHost,
                               clientTransportP->userAgent,
+                              &clientTransportP->curlSetupStuff,
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             list_init_header(&rpcP->link, rpcP);

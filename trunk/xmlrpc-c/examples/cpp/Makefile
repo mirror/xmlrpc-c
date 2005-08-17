@@ -7,7 +7,7 @@
 
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
-BUILDDIR = $(SRCDIR)
+BUILDDIR = ../..
 endif
 
 default: all

@@ -39,10 +39,25 @@ struct xmlrpc_xportparms;
     */
 
 struct xmlrpc_curl_xportparms {
+    /* This is designed so that zero values are always the defaults. */
     const char * network_interface;
     xmlrpc_bool  no_ssl_verifypeer;
     xmlrpc_bool  no_ssl_verifyhost;
     const char * user_agent;
+    const char * ssl_cert;
+    const char * sslcerttype;
+    const char * sslcertpasswd;
+    const char * sslkey;
+    const char * sslkeytype;
+    const char * sslkeypasswd;
+    const char * sslengine;
+    xmlrpc_bool  sslengine_default;
+    unsigned int sslversion;
+    const char * cainfo;
+    const char * capath;
+    const char * randomfile;
+    const char * egdsocket;
+    const char * ssl_cipher_list;
 };
 
 

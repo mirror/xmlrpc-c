@@ -9,11 +9,13 @@
   help from internal C utility libraries).
 =============================================================================*/
 
+#include <stdlib.h>
 #include <cassert>
 #include <string>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+using girerr::throwf;
 #include "xmlrpc-c/girmem.hpp"
 using girmem::autoObjectPtr;
 using girmem::autoObject;
@@ -141,14 +143,6 @@ carriageParm_http0::setBasicAuth(string const username,
         throw(error(env.fault_string));
 }
 
-
-
-carriageParm_curl0::carriageParm_curl0(
-    string const serverUrl
-    ) {
-
-    this->instantiate(serverUrl);
-}
 
 
 carriageParm_libwww0::carriageParm_libwww0(
@@ -360,55 +354,6 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
 
 
 
-#if MUST_BUILD_CURL_CLIENT
-
-clientXmlTransport_curl::clientXmlTransport_curl(
-    string const networkInterface,
-    bool   const noSslVerifyPeer,
-    bool   const noSslVerifyHost,
-    string const userAgent) {
-
-    struct xmlrpc_curl_xportparms transportParms; 
-
-    transportParms.network_interface = 
-        networkInterface.size() > 0 ? networkInterface.c_str() : NULL;
-    transportParms.no_ssl_verifypeer = noSslVerifyPeer;
-    transportParms.no_ssl_verifyhost = noSslVerifyHost;
-    transportParms.user_agent =
-        userAgent.size() > 0 ? userAgent.c_str() : NULL;
-
-    this->c_transportOpsP = &xmlrpc_curl_transport_ops;
-
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
-    xmlrpc_curl_transport_ops.create(
-        &env, 0, "", "", (xmlrpc_xportparms *)&transportParms,
-        XMLRPC_CXPSIZE(user_agent),
-        &this->c_transportP);
-
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
-}
-#else  // MUST_BUILD_CURL_CLIENT
-
-clientXmlTransport_curl::clientXmlTransport_curl(string, bool, bool, string) {
-
-    throw("There is no Curl client XML transport in this XML-RPC client "
-          "library");
-}
-
-#endif
- 
-
-
-clientXmlTransport_curl::~clientXmlTransport_curl() {
-
-    this->c_transportOpsP->destroy(this->c_transportP);
-}
-
-
-
 #if MUST_BUILD_LIBWWW_CLIENT
 
 clientXmlTransport_libwww::clientXmlTransport_libwww(
@@ -505,6 +450,9 @@ clientTransactionPtr::operator->() const {
     return dynamic_cast<clientTransaction *>(p);
 }
 
+
+
+client::~client() {}
 
 
 void

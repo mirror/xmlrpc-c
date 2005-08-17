@@ -65,6 +65,8 @@ class client {
    XML and HTTP get used to perform the RPC.
 -----------------------------------------------------------------------------*/
 public:
+    virtual ~client();
+
     virtual void
     call(carriageParm *         const  carriageParmP,
          std::string            const  methodName,
@@ -226,9 +228,15 @@ protected:
     const struct xmlrpc_client_transport_ops * c_transportOpsP;
 };
 
+
 class clientXmlTransport_curl : public xmlrpc_c::clientXmlTransport_http {
 
 public:
+    enum optFormat {OPTFORMAT_1};
+
+    clientXmlTransport_curl(optFormat   const optFormat,
+                            std::string const optionString);
+
     clientXmlTransport_curl(std::string const networkInterface = "",
                             bool        const noSslVerifyPeer = false,
                             bool        const noSslVerifyHost = false,

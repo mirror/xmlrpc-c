@@ -32,7 +32,10 @@ main(int argc, char **) {
     }
 
     try {
-        xmlrpc_c::clientXmlTransport_curl myTransport;
+        xmlrpc_c::clientXmlTransport_curl myTransport(
+            xmlrpc_c::clientXmlTransport_curl::OPTFORMAT_1,
+            "no_ssl_verifyhost user_agent=sample_add/1.0");
+
         xmlrpc_c::client_xml myClient(&myTransport);
 
         string const methodName("sample.add");

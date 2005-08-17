@@ -2,24 +2,24 @@ ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
 endif
 SUBDIR = src/cpp
-BUILDDIR = $(SRCDIR)
+BUILDDIR = ../..
 VPATH = .:$(SRCDIR)
 
 include $(BUILDDIR)/Makefile.config
 
 default: all
 
-WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
-CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
-LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
+WININET_TRANSPORT_DIR = srcdir/lib/wininet_transport
+CURL_TRANSPORT_DIR    = srcdir/lib/curl_transport
+LIBWWW_TRANSPORT_DIR  = srcdir/lib/libwww_transport
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
   LIBXML = $(LIBXML2_LIBS)
 else
-  LIBXML_INCLUDES = -I$(SRCDIR)/lib/expat/xmlparse
-  LIBXML = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-           $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
+  LIBXML_INCLUDES = -Isrcdir/lib/expat/xmlparse
+  LIBXML = blddir/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
+           blddir/lib/expat/xmltok/libxmlrpc_xmltok.la
 endif
 
 ifeq ($(ENABLE_LIBXML2),yes)
@@ -28,9 +28,25 @@ else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo
 endif
 
-LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
-LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
-LIBXMLRPC_CLIENT = $(BUILDDIR)/src/libxmlrpc_client.la
+LIBXMLRPC = blddir/src/libxmlrpc.la
+LIBXMLRPC_SERVER = blddir/src/libxmlrpc_server.la
+LIBXMLRPC_CLIENT = blddir/src/libxmlrpc_client.la
+
+# We use the srcdir and blddir symbolic links simply to make the make
+# rules easier to read in the make output.  We could use $(SRCDIR) and
+# $(BUILDDIR) variables, but that makes the compile and link commands
+# a mile long.
+
+# This 'Makefile' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+Makefile: blddir srcdir
+
+blddir: $(BUILDDIR)
+	ln -s $< $@
+
+srcdir: $(SRCDIR)
+	ln -s $< $@
 
 LIBXMLRPCPP_OBJS = \
 	base64.o \
@@ -44,15 +60,15 @@ LIBXMLRPCPP_OBJS = \
 
 LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
-LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o
+LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o curl.o
 
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \
   -I$(CURL_TRANSPORT_DIR) \
   -I$(LIBWWW_TRANSPORT_DIR) \
 
-BASIC_INCLUDES = -I$(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
-  -I$(SRCDIR)/lib/util/include
+BASIC_INCLUDES = -Isrcdir/include -Iblddir -Isrcdir \
+  -Isrcdir/lib/util/include
 
 # We always statically-link our C++ code because it's tiny, and C++ is
 # no good at shared libraries, anyway.  It's actually getting bigger,
@@ -131,7 +147,7 @@ SERVER_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES)
 $(LIBXMLRPC_SERVERPP_OBJS):%.o:%.cpp
 	$(CXX) -c $(SERVER_INCLUDES) $(CXXFLAGS) $<
 
-SERVER_ABYSS_INCLUDES = $(SERVER_INCLUDES) -I$(SRCDIR)/lib/abyss/src
+SERVER_ABYSS_INCLUDES = $(SERVER_INCLUDES) -Isrcdir/lib/abyss/src
 
 $(LIBXMLRPC_SERVER_ABYSSPP_OBJS):%.o:%.cpp
 	$(CXX) -c $(SERVER_ABYSS_INCLUDES) $(CXXFLAGS) $<
@@ -153,12 +169,15 @@ check: cpptest
 .PHONY: install
 install: install-common
 
-.PHONY: clean clean-local distclean
+.PHONY: clean clean-local distclean distclean-local
 clean: clean-common clean-local
 clean-local:
 	rm -f $(TARGET_PROGS)
 
-distclean: clean distclean-common
+distclean: clean distclean-local distclean-common
+
+distclean-local:
+	rm -f blddir srcdir
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
 INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
