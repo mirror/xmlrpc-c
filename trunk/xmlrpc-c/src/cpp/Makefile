@@ -2,10 +2,12 @@ ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
 endif
 SUBDIR = src/cpp
-BUILDDIR = ../..
+# BLDDIR is for use in this file.  BUILDDIR is for Makefile.common.
+BLDDIR = ../..
+BUILDDIR = blddir
 VPATH = .:$(SRCDIR)
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 default: all
 
@@ -34,7 +36,7 @@ LIBXMLRPC_CLIENT = blddir/src/libxmlrpc_client.la
 
 # We use the srcdir and blddir symbolic links simply to make the make
 # rules easier to read in the make output.  We could use $(SRCDIR) and
-# $(BUILDDIR) variables, but that makes the compile and link commands
+# $(BLDDIR) variables, but that makes the compile and link commands
 # a mile long.
 
 # This 'Makefile' dependency makes sure the symlinks get built before
@@ -42,7 +44,7 @@ LIBXMLRPC_CLIENT = blddir/src/libxmlrpc_client.la
 
 Makefile: blddir srcdir
 
-blddir: $(BUILDDIR)
+blddir: $(BLDDIR)
 	ln -s $< $@
 
 srcdir: $(SRCDIR)

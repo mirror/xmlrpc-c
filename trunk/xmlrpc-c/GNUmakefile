@@ -7,7 +7,7 @@ VPATH = .:$(SRCDIR)
 
 include $(SRCDIR)/Makefile.config
 
-SUBDIRS = include src lib tools examples
+SUBDIRS = include lib src tools examples
 
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 

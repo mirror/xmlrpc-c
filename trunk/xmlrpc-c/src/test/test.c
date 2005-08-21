@@ -679,7 +679,7 @@ static void test_sample_files (void)
 **      http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 */
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 
 typedef struct {
     char *utf8;
@@ -760,6 +760,7 @@ static char *(bad_utf8[]) = {
 
     NULL
 };
+#endif  /* HAVE_UNICODE_WCHAR */
 
 /* This routine is missing on certain platforms.  This implementation
 ** *appears* to be correct. */
@@ -782,8 +783,10 @@ int wcsncmp(wchar_t *wcs1, wchar_t* wcs2, size_t len)
 #endif /* HAVE_WCSNCMP */
 #endif
 
-static void test_utf8_coding (void)
-{
+static void
+test_utf8_coding(void) {
+
+#if HAVE_UNICODE_WCHAR
     xmlrpc_env env, env2;
     utf8_and_wcs *good_data;
     char **bad_data;
@@ -841,11 +844,10 @@ static void test_utf8_coding (void)
         TEST(output == NULL);
         xmlrpc_env_clean(&env2);
     }
-
     xmlrpc_env_clean(&env);
+#endif  /* HAVE_UNICODE_WCHAR */
 }
 
-#endif /* HAVE_UNICODE_WCHAR */
 
 
 /*=========================================================================
@@ -884,9 +886,7 @@ main(int     argc,
 #endif 
     test_server_abyss();
 
-#ifdef HAVE_UNICODE_WCHAR
     test_utf8_coding();
-#endif /* HAVE_UNICODE_WCHAR */
 
     printf("\n");
 

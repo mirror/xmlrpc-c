@@ -42,7 +42,6 @@ struct _xmlrpc_value {
     */
     xmlrpc_mem_block _block;
 
-#ifdef HAVE_UNICODE_WCHAR
     xmlrpc_mem_block *_wcs_block;
         /* This is a copy of the string value in _block, but in UTF-16
            instead of UTF-8.  This member is not always present.  If NULL,
@@ -52,8 +51,10 @@ struct _xmlrpc_value {
            redundant with _block.
 
            This member is always NULL when the data type is not string.
+
+           This member is always NULL on a system that does not have
+           Unicode wchar functions.
         */
-#endif
 };
 
 #define XMLRPC_ASSERT_VALUE_OK(val) \

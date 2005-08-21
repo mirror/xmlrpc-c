@@ -96,23 +96,25 @@ cleanup:
 **  This routine almost certainly slows down our output.
 */
 
-#if !defined NDEBUG && defined HAVE_UNICODE_WCHAR
 
 static void 
-sanity_check_utf8(const char * const str,
-                  size_t       const len) {
+sanity_check_utf8(const char * const str ATTR_UNUSED,
+                  size_t       const len ATTR_UNUSED) {
 
+#if !defined NDEBUG
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
+#if HAVE_UNICODE_WCHAR
     xmlrpc_validate_utf8(&env, str, len);
+#endif
     if (env.fault_occurred)
         fprintf(stderr, "*** xmlrpc-c WARNING ***: %s (%s)\n",
                 "Application sending corrupted UTF-8 data to network",
                 env.fault_string);
     xmlrpc_env_clean(&env);
-}
 #endif
+}
 
 
 
@@ -137,10 +139,8 @@ escape_string(xmlrpc_env * const env,
     retval = NULL;
 
     /* Sanity-check this string before we print it. */
-#if !defined NDEBUG && defined HAVE_UNICODE_WCHAR
     sanity_check_utf8(str, len);
-#endif    
-
+    
     /* Calculate the amount of space we'll need. */
     needed = 0;
     for (i = 0; i < len; i++) {

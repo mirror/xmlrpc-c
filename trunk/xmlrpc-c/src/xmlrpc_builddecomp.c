@@ -62,7 +62,7 @@ getString(xmlrpc_env *    const envP,
 
 
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 static void
 mkWideString(xmlrpc_env *    const envP,
              wchar_t *       const wcs,
@@ -133,12 +133,12 @@ mkWideString(xmlrpc_env *    const envP,
 
 
 static void
-getWideString(xmlrpc_env *    const envP,
-              const char **   const formatP,
-              va_list *       const args,
-              xmlrpc_value ** const valPP) {
-#ifdef HAVE_UNICODE_WCHAR
+getWideString(xmlrpc_env *    const envP ATTR_UNUSED,
+              const char **   const formatP ATTR_UNUSED,
+              va_list *       const args ATTR_UNUSED,
+              xmlrpc_value ** const valPP ATTR_UNUSED) {
 
+#if HAVE_UNICODE_WCHAR
     wchar_t *wcs;
     size_t len;
     
@@ -648,6 +648,7 @@ readStringLp(xmlrpc_env *         const envP,
 
 
 
+#if HAVE_UNICODE_WCHAR
 static void
 readStringW(xmlrpc_env *     const envP,
             xmlrpc_value *   const valueP,
@@ -674,7 +675,7 @@ readStringWLp(xmlrpc_env *     const envP,
     } else
         xmlrpc_read_string_w_lp(envP, valueP, lengthP, stringValueP);
 }
-
+#endif
 
 
 static void
@@ -760,7 +761,7 @@ decomposeValue(xmlrpc_env *   const envP,
     break;
 
     case 'w': {
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
         const wchar_t ** const wcsptr = 
             (const wchar_t**) va_arg(*args, wchar_t**);
         if (**format == '#') {

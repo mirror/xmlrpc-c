@@ -218,15 +218,16 @@ xmlrpc_atod(xmlrpc_env *env, char *str, size_t strlen)
 */
 
 static xmlrpc_value *
-make_string(xmlrpc_env *env, char *cdata, size_t cdata_size)
-{
-#ifdef HAVE_UNICODE_WCHAR
-    xmlrpc_validate_utf8(env, cdata, cdata_size);
+make_string(xmlrpc_env * const envP,
+            char *       const cdata,
+            size_t       const cdata_size) {
+#if HAVE_UNICODE_WCHAR
+    xmlrpc_validate_utf8(envP, cdata, cdata_size);
 #endif
 
-    if (env->fault_occurred)
+    if (envP->fault_occurred)
         return NULL;
-    return xmlrpc_build_value(env, "s#", cdata, cdata_size);
+    return xmlrpc_build_value(envP, "s#", cdata, cdata_size);
 }
 
 
@@ -642,10 +643,10 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
     XMLRPC_FAIL_IF_FAULT(envP);
     CHECK_CHILD_COUNT(envP, name_elem, 0);
     cdata = xml_element_cdata(name_elem);
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
     xmlrpc_validate_utf8(envP, cdata, strlen(cdata));
+#endif
     XMLRPC_FAIL_IF_FAULT(envP);
-#endif /* HAVE_UNICODE_WCHAR */
     outMethodName = malloc(strlen(cdata) + 1);
     XMLRPC_FAIL_IF_NULL(outMethodName, envP, XMLRPC_INTERNAL_ERROR,
                         "Could not allocate memory for method name");

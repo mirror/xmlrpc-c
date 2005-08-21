@@ -34,10 +34,8 @@ destroyValue(xmlrpc_value * const valueP) {
         break;
 
     case XMLRPC_TYPE_STRING:
-#ifdef HAVE_UNICODE_WCHAR
         if (valueP->_wcs_block)
             xmlrpc_mem_block_free(valueP->_wcs_block);
-#endif /* HAVE_UNICODE_WCHAR */
         xmlrpc_mem_block_clean(&valueP->_block);
         break;
         
@@ -158,7 +156,7 @@ verifyNoNulls(xmlrpc_env * const envP,
 
 
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 
 static void
 verifyNoNullsW(xmlrpc_env *    const envP,
@@ -358,8 +356,7 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
 
 
 
-#ifdef HAVE_UNICODE_WCHAR
-static void
+static __inline__ void
 setupWcsBlock(xmlrpc_env *   const envP,
               xmlrpc_value * const valueP) {
 /*----------------------------------------------------------------------------
@@ -377,6 +374,8 @@ setupWcsBlock(xmlrpc_env *   const envP,
 }
 
 
+
+#if HAVE_UNICODE_WCHAR
 
 static void
 accessStringValueW(xmlrpc_env *     const envP,
@@ -671,14 +670,6 @@ xmlrpc_double_new(xmlrpc_env * const envP,
 
 
 
-#ifdef HAVE_UNICODE_WCHAR
-#define MAKE_WCS_BLOCK_NULL(val) ((val)->_wcs_block = NULL)
-#else
-#define MAKE_WCS_BLOCK_NULL(val) while (0) do {};
-#endif
-
-
-
 xmlrpc_value *
 xmlrpc_string_new_lp(xmlrpc_env * const envP, 
                      size_t       const length,
@@ -690,7 +681,7 @@ xmlrpc_string_new_lp(xmlrpc_env * const envP,
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_STRING;
-        MAKE_WCS_BLOCK_NULL(valP);
+        valP->_wcs_block = NULL;
         XMLRPC_MEMBLOCK_INIT(char, envP, &valP->_block, length + 1);
         if (!envP->fault_occurred) {
             char * const contents =
@@ -714,7 +705,7 @@ xmlrpc_string_new(xmlrpc_env * const envP,
 }
 
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 xmlrpc_value *
 xmlrpc_string_w_new_lp(xmlrpc_env *    const envP, 
                        size_t          const length,

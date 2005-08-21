@@ -284,7 +284,7 @@ test_value_string_null(void) {
 
 
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 
 /* Here is a 3-character, NUL-terminated string, once in UTF-8 chars,
    and once in UTF-16 wchar_ts.  Note that 2 of the UTF-16 characters
@@ -337,11 +337,13 @@ test_value_string_wide_build(void) {
 
     xmlrpc_DECREF(valueP);
 }
-
+#endif /* HAVE_UNICODE_WCHAR */
 
 
 static void 
 test_value_string_wide(void) {
+
+#if HAVE_UNICODE_WCHAR
     xmlrpc_env env;
     xmlrpc_value * valueP;
     const wchar_t * wcs;
@@ -444,11 +446,8 @@ test_value_string_wide(void) {
 
     xmlrpc_read_string_w(&env, valueP, &wcs);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+#endif /* HAVE_UNICODE_WCHAR */
 }
-#else
-static void 
-test_value_string_wide(void) {}
-#endif
 
 
 

@@ -42,7 +42,7 @@
 
 #include "xmlrpc-c/base.h"
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 
 /*=========================================================================
 **  Tables and Constants
@@ -207,7 +207,7 @@ decode_utf8(xmlrpc_env * const env,
             default:
                 XMLRPC_ASSERT("Error in UTF-8 decoder tables");
             }
-		    
+            
             /* Advance to the end of the sequence. */
             i += length;
             
@@ -237,7 +237,7 @@ decode_utf8(xmlrpc_env * const env,
     if (out_buff_len)
         *out_buff_len = out_pos;
     
- cleanup:
+            cleanup:
     if (env->fault_occurred) {
         if (out_buff_len)
             *out_buff_len = 0;
@@ -261,51 +261,45 @@ xmlrpc_validate_utf8 (xmlrpc_env * const env,
 }
 
 
-/*=========================================================================
-**  xmlrpc_utf8_to_wcs
-**=========================================================================
-**  Decode UTF-8 string to a "wide character string".  This function
-**  returns an xmlrpc_mem_block with an element type of wchar_t.  Don't
-**  try to intepret the block in a bytewise fashion--it won't work in
-**  any useful or portable fashion.
-*/
 
-xmlrpc_mem_block *xmlrpc_utf8_to_wcs (xmlrpc_env *env,
-				      char *utf8_data,
-				      size_t utf8_len)
-{
+xmlrpc_mem_block *
+xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
+                   const char * const utf8_data,
+                   size_t       const utf8_len) {
+/*----------------------------------------------------------------------------
+  Decode UTF-8 string to a "wide character string".  This function
+  returns an xmlrpc_mem_block with an element type of wchar_t.  Don't
+  try to intepret the block in a bytewise fashion--it won't work in
+  any useful or portable fashion.
+-----------------------------------------------------------------------------*/
     xmlrpc_mem_block *output;
     size_t wcs_length;
 
-    /* Error-handling preconditions. */
-    output = NULL;
-
     /* Allocate a memory block large enough to hold any possible output.
-    ** We assume that each byte of the input may decode to a whcar_t. */
-    output = XMLRPC_TYPED_MEM_BLOCK_NEW(wchar_t, env, utf8_len);
-    XMLRPC_FAIL_IF_FAULT(env);
+       We assume that each byte of the input may decode to a whcar_t.
+    */
+    output = XMLRPC_MEMBLOCK_NEW(wchar_t, envP, utf8_len);
+    if (!envP->fault_occurred) {
+        /* Decode the UTF-8 data. */
+        decode_utf8(envP, utf8_data, utf8_len,
+                    XMLRPC_MEMBLOCK_CONTENTS(wchar_t, output),
+                    &wcs_length);
+        if (!envP->fault_occurred) {
+            /* We can't have overrun our buffer. */
+            XMLRPC_ASSERT(wcs_length <= utf8_len);
 
-    /* Decode the UTF-8 data. */
-    decode_utf8(env, utf8_data, utf8_len,
-		XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, output),
-		&wcs_length);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Make sure we didn't overrun our buffer. */
-    XMLRPC_ASSERT(wcs_length <= utf8_len);
-
-    /* Correct the length of the memory block. */
-    XMLRPC_TYPED_MEM_BLOCK_RESIZE(wchar_t, env, output, wcs_length);
-    XMLRPC_FAIL_IF_FAULT(env);
-
- cleanup:
-    if (env->fault_occurred) {
-	if (output)
-	    xmlrpc_mem_block_free(output);
-	return NULL;
+            /* Correct the length of the memory block. */
+            XMLRPC_MEMBLOCK_RESIZE(wchar_t, envP, output, wcs_length);
+        }
+        if (envP->fault_occurred)
+            xmlrpc_mem_block_free(output);
     }
+    if (envP->fault_occurred)
+        output = NULL;
+
     return output;
 }
+
 
 
 /*=========================================================================
@@ -315,8 +309,8 @@ xmlrpc_mem_block *xmlrpc_utf8_to_wcs (xmlrpc_env *env,
 */
 
 xmlrpc_mem_block *xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
-				      wchar_t *wcs_data,
-				      size_t wcs_len)
+                                      wchar_t *wcs_data,
+                                      size_t wcs_len)
 {
     size_t estimate, bytes_used, i;
     xmlrpc_mem_block *output;
@@ -339,22 +333,22 @@ xmlrpc_mem_block *xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
     buffer = (unsigned char*) XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
     bytes_used = 0;
     for (i = 0; i < wcs_len; i++) {
-	wc = wcs_data[i];
-	if (wc <= 0x007F) {
-	    buffer[bytes_used++] = wc & 0x7F;
-	} else if (wc <= 0x07FF) {
-	    /* 110xxxxx 10xxxxxx */
-	    buffer[bytes_used++] = 0xC0 | (wc >> 6);
-	    buffer[bytes_used++] = 0x80 | (wc & 0x3F);
-	} else if (wc <= 0xFFFF) {
-	    /* 1110xxxx 10xxxxxx 10xxxxxx */
-	    buffer[bytes_used++] = 0xE0 | (wc >> 12);
-	    buffer[bytes_used++] = 0x80 | ((wc >> 6) & 0x3F);
-	    buffer[bytes_used++] = 0x80 | (wc & 0x3F);
-	} else {
-	    XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR,
-			"Don't know how to encode UCS-4 characters yet");
-	}
+        wc = wcs_data[i];
+        if (wc <= 0x007F) {
+            buffer[bytes_used++] = wc & 0x7F;
+        } else if (wc <= 0x07FF) {
+            /* 110xxxxx 10xxxxxx */
+            buffer[bytes_used++] = 0xC0 | (wc >> 6);
+            buffer[bytes_used++] = 0x80 | (wc & 0x3F);
+        } else if (wc <= 0xFFFF) {
+            /* 1110xxxx 10xxxxxx 10xxxxxx */
+            buffer[bytes_used++] = 0xE0 | (wc >> 12);
+            buffer[bytes_used++] = 0x80 | ((wc >> 6) & 0x3F);
+            buffer[bytes_used++] = 0x80 | (wc & 0x3F);
+        } else {
+            XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR,
+                        "Don't know how to encode UCS-4 characters yet");
+        }
     }
 
     /* Make sure we didn't overrun our buffer. */
@@ -366,11 +360,27 @@ xmlrpc_mem_block *xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
 
  cleanup:
     if (env->fault_occurred) {
-	if (output)
-	    xmlrpc_mem_block_free(output);
-	return NULL;
+        if (output)
+            xmlrpc_mem_block_free(output);
+        return NULL;
     }
     return output;
 }
 
+
+
+#else /* HAVE_UNICODE_WCHAR */
+
+xmlrpc_mem_block *
+xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
+                   const char * const utf8_data ATTR_UNUSED,
+                   size_t       const utf8_len ATTR_UNUSED) {
+
+    xmlrpc_faultf(envP, "INTERNAL ERROR: xmlrpc_utf8_to_wcs() called "
+                  "on a system that doesn't do Unicode!");
+
+    return NULL;
+}
 #endif /* HAVE_UNICODE_WCHAR */
+
+

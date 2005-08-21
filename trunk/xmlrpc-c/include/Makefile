@@ -7,6 +7,14 @@ VPATH = .:$(SRCDIR)
 
 include $(BUILDDIR)/Makefile.config
 
+default: all
+
+all: xmlrpc-c/config.h
+
+xmlrpc-c/config.h:
+	echo "#define XMLRPC_HAVE_UNICODE_WCHAR $(HAVE_UNICODE_WCHAR)" >$@
+
+
 HEADERS_TO_INSTALL = \
   xmlrpc-c/oldxmlrpc.h \
   xmlrpc-c/base.h \
@@ -55,6 +63,7 @@ install: install-common
 .PHONY: clean distclean dep
 clean:
 distclean:
+	rm -f xmlrpc-c/config.h
 dep:
 
 include $(SRCDIR)/Makefile.common
