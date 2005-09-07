@@ -44,7 +44,7 @@ struct curlSetup {
 
     /* This is all client transport properties that are implemented as
        simple Curl session properties (i.e. the transport basically just
-       passed them through to Curl without looking at them).
+       passes them through to Curl without looking at them).
 
        People occasionally want to replace all this with something where
        the Xmlrpc-c user simply does the curl_easy_setopt() call and this
