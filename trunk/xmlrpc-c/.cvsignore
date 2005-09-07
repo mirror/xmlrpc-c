@@ -15,4 +15,5 @@ xmlrpc-c-config.test
 xmlrpc-c-*.tar.gz
 xmlrpc-c.spec
 transport_config.h
+version.h
 

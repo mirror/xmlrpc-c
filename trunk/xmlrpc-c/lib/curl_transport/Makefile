@@ -1,5 +1,6 @@
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
+BUILDDIR = ../..
 endif
 
 include $(SRCDIR)/Makefile.config
