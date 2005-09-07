@@ -210,11 +210,38 @@ ConnRead(TConn *  const c,
 
 
             
-abyss_bool ConnWrite(TConn *c,void *buffer,uint32_t size)
-{
-    c->outbytes+=size;
-    return SocketWrite(&(c->socket),buffer,size);
+abyss_bool
+ConnWrite(TConn *  const connectionP,
+          void *   const buffer,
+          uint32_t const size) {
+
+    char * const buf = buffer;
+
+    size_t bytesSent;
+    abyss_bool error;
+
+    bytesSent = 0; /* initial value */
+    error = FALSE; /* initial value */
+    
+    for (bytesSent = 0, error = FALSE;
+         bytesSent < size && !error;
+        ) {
+        int rc;
+        
+        rc = SocketWrite(&connectionP->socket,
+                         &buf[bytesSent], size - bytesSent);
+        if (rc <= 0)
+            /* 0 means connection closed; < 0 means severe error */
+            error = TRUE;
+        else
+            bytesSent += rc;
+    }
+    connectionP->outbytes += bytesSent;
+
+    return !error;
 }
+
+
 
 abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
             void *buffer,uint32_t buffersize,uint32_t rate)

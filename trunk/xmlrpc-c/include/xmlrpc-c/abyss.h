@@ -310,7 +310,7 @@ abyss_bool SocketInit(void);
 abyss_bool SocketCreate(TSocket *s);
 abyss_bool SocketClose(TSocket *s);
 
-uint32_t SocketWrite(TSocket *s, char *buffer, uint32_t len);
+int SocketWrite(TSocket *s, char *buffer, uint32_t len);
 uint32_t SocketRead(TSocket *s, char *buffer, uint32_t len);
 uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len);
 
