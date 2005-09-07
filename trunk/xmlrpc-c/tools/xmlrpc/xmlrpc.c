@@ -274,7 +274,31 @@ buildInt(xmlrpc_env *    const envP,
         else
             *paramPP = xmlrpc_build_value(envP, "i", value);
     }
-} 
+}
+
+
+
+static void
+buildDouble(xmlrpc_env *    const envP,
+            const char *    const valueString,
+            xmlrpc_value ** const paramPP) {
+
+    if (strlen(valueString) < 1)
+        setError(envP, "\"Double\" argument has nothing after the 'd/'");
+    else {
+        double value;
+        char * tailptr;
+
+        value = strtod(valueString, &tailptr);
+
+        if (*tailptr != '\0')
+            setError(envP, 
+                     "\"Double\" argument has non-decimal crap in it: '%s'",
+                     tailptr);
+        else
+            *paramPP = xmlrpc_build_value(envP, "d", value);
+    }
+}
 
 
 
@@ -320,6 +344,8 @@ computeParameter(xmlrpc_env *    const envP,
         buildString(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "i/", 2) == 0) 
         buildInt(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "d/", 2) == 0) 
+        buildDouble(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "b/", 2) == 0)
         buildBool(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "n/", 2) == 0)
