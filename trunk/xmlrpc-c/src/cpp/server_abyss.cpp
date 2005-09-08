@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <signal.h>
+#include <errno.h>
 #include <sys/wait.h>
 
 #include "xmlrpc-c/girerr.hpp"

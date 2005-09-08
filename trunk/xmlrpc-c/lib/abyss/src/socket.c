@@ -1,45 +1,43 @@
 /******************************************************************************
-**
-** socket.c
-**
-** This file is part of the ABYSS Web server project.
-**
-** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission.
-** 
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
-**
+
+  Copyright information is at the end of the file.
 ******************************************************************************/
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "xmlrpc-c/abyss.h"
+#include <assert.h>
+#ifdef ABYSS_WIN32
+#include <winsock.h>
+#else
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <unistd.h>
+
+#ifdef HAVE_SYS_FILIO_H
+#include <sys/filio.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+
+#endif  /* ABYSS_WIN32 */
+
+#include "socket.h"
 
 #ifdef ABYSS_WIN32
 #define  EINTR      WSAEINTR
 #endif
+
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 static abyss_bool ABYSS_TRACE_SOCKET;
 
@@ -94,9 +92,35 @@ abyss_bool SocketClose(TSocket *s)
 #endif  /* ABYSS_WIN32 */
 }
 
-int SocketWrite(TSocket *s, char *buffer, uint32_t len)
-{
-    return send(*s,buffer,len,0);
+
+
+void
+SocketWrite(TSocket *             const socketP,
+            const unsigned char * const buffer,
+            uint32_t              const len,
+            abyss_bool *          const failedP) {
+
+    size_t bytesLeft;
+    abyss_bool error;
+
+    assert(sizeof(size_t) >= sizeof(len));
+
+    for (bytesLeft = len, error = FALSE;
+         bytesLeft > 0 && !error;
+        ) {
+        size_t const maxSend = (size_t)(-1) >> 1;
+
+        ssize_t rc;
+        
+        rc = send(*socketP, &buffer[len-bytesLeft],
+                  MIN(maxSend, bytesLeft), 0);
+        if (rc <= 0)
+            /* 0 means connection closed; < 0 means severe error */
+            error = TRUE;
+        else
+            bytesLeft -= rc;
+    }
+    *failedP = error;
 }
 
 
@@ -262,3 +286,35 @@ uint32_t SocketError()
     return errno;
 #endif  /* ABYSS_WIN32 */
 }
+
+
+
+/******************************************************************************
+**
+** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
+** All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission.
+** 
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE.
+**
+******************************************************************************/

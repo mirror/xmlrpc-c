@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"

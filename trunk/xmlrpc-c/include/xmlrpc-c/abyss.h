@@ -264,71 +264,6 @@ char *PoolStrdup(TPool *p,char *s);
 
 
 /*********************************************************************
-** Socket
-*********************************************************************/
-
-#ifdef ABYSS_WIN32
-#include <winsock.h>
-#else
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <unistd.h>
-
-#ifdef HAVE_SYS_FILIO_H
-#include <sys/filio.h>
-#endif
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#endif
-
-#endif  /* ABYSS_WIN32 */
-
-#define TIME_INFINITE   0xffffffff
-
-#ifdef ABYSS_WIN32
-typedef SOCKET TSocket;
-#else
-typedef uint32_t TSocket;
-#endif  /* ABYSS_WIN32 */
-
-typedef struct in_addr TIPAddr;
-
-#define IPB1(x) (((unsigned char *)(&x))[0])
-#define IPB2(x) (((unsigned char *)(&x))[1])
-#define IPB3(x) (((unsigned char *)(&x))[2])
-#define IPB4(x) (((unsigned char *)(&x))[3])
-
-abyss_bool SocketInit(void);
-
-abyss_bool SocketCreate(TSocket *s);
-abyss_bool SocketClose(TSocket *s);
-
-int SocketWrite(TSocket *s, char *buffer, uint32_t len);
-uint32_t SocketRead(TSocket *s, char *buffer, uint32_t len);
-uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len);
-
-abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16_t port);
-abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16_t port);
-
-abyss_bool SocketListen(TSocket *s, uint32_t backlog);
-abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip);
-
-uint32_t SocketError(void);
-
-uint32_t SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32_t timems);
-
-abyss_bool SocketBlocking(TSocket *s, abyss_bool b);
-uint32_t SocketAvailableReadBytes(TSocket *s);
-
-
-/*********************************************************************
 ** File
 *********************************************************************/
 
@@ -425,6 +360,27 @@ abyss_bool FileStat(char *filename,TFileStat *filestat);
 abyss_bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo);
 abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo);
 void FileFindClose(TFileFind *filefind);
+
+/*********************************************************************
+** Socket
+*********************************************************************/
+
+/* These should not be defined here, but they have to be because
+   struct _TServer and _Tconn, which also should not be defined here,
+   are.  Some day, we will make those private and then TSocket and
+   TIPAddr can be too.
+*/
+
+#include <netinet/in.h>
+
+#ifdef ABYSS_WIN32
+typedef SOCKET TSocket;
+#else
+typedef uint32_t TSocket;
+#endif  /* ABYSS_WIN32 */
+
+typedef struct in_addr TIPAddr;
+
 
 /*********************************************************************
 ** Server (1/2)

@@ -48,6 +48,7 @@
 #include "mallocvar.h"
 
 #include "xmlrpc-c/abyss.h"
+#include "socket.h"
 
 #define BOUNDARY    "##123456789###BOUNDARY"
 
