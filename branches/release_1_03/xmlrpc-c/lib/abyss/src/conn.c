@@ -212,8 +212,24 @@ ConnRead(TConn *  const c,
             
 abyss_bool ConnWrite(TConn *c,void *buffer,uint32_t size)
 {
+    char *buf = buffer;
+    int rc, off = 0;
+
+    while (TRUE) {
+        /* try sending data */
+        if ((rc = SocketWrite(&(c->socket),&buf[off],size - off)) <= 0)
+            return FALSE;
+
+        /* increase count */
+        off += rc;
+
+        /* check we're not finished writing */
+        if (off >= size)
+            break;
+    }
+
     c->outbytes+=size;
-    return SocketWrite(&(c->socket),buffer,size);
+    return TRUE;
 }
 
 abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,

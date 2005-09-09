@@ -94,7 +94,7 @@ abyss_bool SocketClose(TSocket *s)
 #endif  /* ABYSS_WIN32 */
 }
 
-uint32_t SocketWrite(TSocket *s, char *buffer, uint32_t len)
+int SocketWrite(TSocket *s, char *buffer, uint32_t len)
 {
     return send(*s,buffer,len,0);
 }

@@ -67,7 +67,17 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
-1.03.03 - not yet
+1.03.04 - September 9, 2005
+
+  * BJH: Make Abyss work with short writes to sockets.  Thanks 
+         Alistair John Strachan <s0348365@sms.ed.ac.uk>.
+
+  * BJH: Remove unused SSPRINTF definition that won't compile on AIX
+         because it has variable arguments.
+
+  * BJH: Fix Curl transport bug: arbitrary values for SSL verify options.
+
+1.03.03 - August 4, 2005
 
   * SAB: Fix for Windows what broke between 1.02 and 1.03.
 

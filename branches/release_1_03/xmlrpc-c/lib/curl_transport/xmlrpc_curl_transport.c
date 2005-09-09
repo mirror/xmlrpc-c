@@ -203,7 +203,19 @@ getXportParms(xmlrpc_env *  const envP,
         *userAgentP = NULL;
     else
         *userAgentP = strdup(curlXportParmsP->user_agent);
-
+    
+    if (!curlXportParmsP || 
+        parmSize < XMLRPC_CXPSIZE(no_ssl_verifypeer))
+        *sslVerifyPeerP = TRUE;
+    else
+        *sslVerifyPeerP = !curlXportParmsP->no_ssl_verifypeer;
+    
+    if (!curlXportParmsP || 
+        parmSize < XMLRPC_CXPSIZE(no_ssl_verifyhost))
+        *sslVerifyHostP = TRUE;
+    else
+        *sslVerifyHostP = !curlXportParmsP->no_ssl_verifyhost;
+    
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
         *networkInterfaceP = NULL;
     else if (curlXportParmsP->network_interface == NULL)
@@ -214,19 +226,6 @@ getXportParms(xmlrpc_env *  const envP,
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_INTERNAL_ERROR,
                 "Unable to allocate space for network interface name.");
-        
-        if (!curlXportParmsP || 
-            parmSize < XMLRPC_CXPSIZE(no_ssl_verifypeer))
-            *sslVerifyPeerP = TRUE;
-        else
-            *sslVerifyPeerP = !curlXportParmsP->no_ssl_verifypeer;
-        
-        if (!curlXportParmsP || 
-            parmSize < XMLRPC_CXPSIZE(no_ssl_verifyhost))
-            *sslVerifyHostP = TRUE;
-        else
-            *sslVerifyHostP = !curlXportParmsP->no_ssl_verifyhost;
-
         if (envP->fault_occurred)
             strfree(*networkInterfaceP);
     }

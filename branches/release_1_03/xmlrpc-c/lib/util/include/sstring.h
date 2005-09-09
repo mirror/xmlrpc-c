@@ -12,8 +12,4 @@
 #define SSTRCMP(A,B) \
 	(strncmp((A), (B), sizeof(A)))
 
-/* Format string into A with size checking */
-#define SSPRINTF(TARGET, REST...) \
-  (snprintf(TARGET, sizeof(TARGET) , ## REST)) 
-
 #endif
