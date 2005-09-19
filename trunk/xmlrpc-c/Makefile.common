@@ -214,6 +214,7 @@ distclean-common:
 # to failure, especially with built .h files.  Better not to burden the user,
 # who gains nothing from it, with that.
 #
+	rm -f version.h
 	cat /dev/null >Makefile.depend
 	rm -f TAGS
 

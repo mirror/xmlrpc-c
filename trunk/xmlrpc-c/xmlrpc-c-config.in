@@ -106,7 +106,7 @@ while test $# -gt 0; do
         the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
       fi
       if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
-        the_libs="@CURL_LDADD@ -lpthread $the_libs"
+        the_libs="@CURL_LDADD@ $the_libs"
         the_rpath="@CURL_RPATH@ $the_rpath"
         the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
       fi

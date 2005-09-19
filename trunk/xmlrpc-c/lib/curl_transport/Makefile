@@ -11,7 +11,7 @@ CURL_INCLUDES := $(shell curl-config --cflags)
 # of what any other compiler flag would do to our compile.
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = -lpthread $(LADD)
+LDFLAGS = $(LADD)
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
   $(CURL_INCLUDES)
@@ -45,3 +45,7 @@ include Makefile.depend
 
 xmlrpc_curl_transport.lo:%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+
+# Need this dependency for those who don't use Makefile.depend.
+# Without it, version.h doesn't get created.
+xmlrpc_curl_transport.lo: version.h

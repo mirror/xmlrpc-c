@@ -93,7 +93,7 @@ TARGET_PROGS = cpptest
 all: $(TARGET_LIBRARIES) $(TARGET_PROGS)
 
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  LDFLAGS += $(shell curl-config --libs) -lpthread
+  LDFLAGS += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   LDFLAGS += $(shell libwww-config --libs)

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
@@ -23,6 +24,12 @@ sample_add(xmlrpc_env *   const env,
 
     /* Add our two numbers. */
     z = x + y;
+
+    /* Sometimes, make it look hard (so client can see what it's like
+       to do an RPC that takes a while).
+    */
+    if (y == 1)
+        sleep(2);
 
     /* Return our result. */
     return xmlrpc_build_value(env, "i", z);
@@ -57,9 +64,9 @@ main(int           const argc,
        config_file_name to NULL: 
     */
     serverparm.config_file_name = NULL;
-    serverparm.registryP = registryP;
-    serverparm.port_number = atoi(argv[1]);
-    serverparm.log_file_name = "/tmp/xmlrpc_log";
+    serverparm.registryP        = registryP;
+    serverparm.port_number      = atoi(argv[1]);
+    serverparm.log_file_name    = "/tmp/xmlrpc_log";
 
     printf("Running XML-RPC server...\n");
 

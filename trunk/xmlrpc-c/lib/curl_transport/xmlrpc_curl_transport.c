@@ -15,11 +15,11 @@
 #include "xmlrpc_config.h"
 
 #include "bool.h"
+#include "girmath.h"
 #include "mallocvar.h"
 #include "linklist.h"
 #include "sstring.h"
 #include "casprintf.h"
-#include "pthreadx.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
@@ -29,6 +29,7 @@
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>
+#include <curl/multi.h>
 
 #if defined (WIN32) && defined(_DEBUG)
 #  include <crtdbg.h>
@@ -104,11 +105,9 @@ struct curlSetup {
 
 
 struct xmlrpc_client_transport {
-    pthread_mutex_t listLock;
-    struct list_head rpcList;
-        /* List of all RPCs that exist for this transport.  An RPC exists
-           from the time the user requests it until the time the user 
-           acknowledges it is done.
+    CURLM * curlMultiP;
+        /* The Curl multi manager that this transport uses to handle
+           multiple Curl sessions at the same time.
         */
     CURL * syncCurlSessionP;
         /* Handle for a Curl library session object that we use for
@@ -127,13 +126,33 @@ struct xmlrpc_client_transport {
 };
 
 typedef struct {
-    /* This is all stuff that really ought to be in a Curl object,
-       but the Curl library is a little too simple for that.  So we
-       build a layer on top of Curl, and define this "transaction," as
-       an object subordinate to a Curl "session."
-       */
+    /* This is all stuff that really ought to be in a Curl object, but
+       the Curl library is a little too simple for that.  So we build
+       a layer on top of Curl, and define this "transaction," as an
+       object subordinate to a Curl "session."  A Curl session has
+       zero or one transactions in progress.  The Curl session
+       "private data" is a pointer to the CurlTransaction object for
+       the current transaction.
+    */
     CURL * curlSessionP;
-        /* Handle for the Curl session that hosts this transaction */
+        /* Handle for the Curl session that hosts this transaction.
+           Note that only one transaction at a time can use a particular
+           Curl session, so this had better not be a session that some other
+           transaction is using simultaneously.
+        */
+    CURLM * curlMultiP;
+        /* The Curl multi manager which manages the above curl session,
+           if any.  An asynchronous process uses a Curl multi manager
+           to manage the in-progress Curl sessions and thereby in-progress
+           RPCs.  A synchronous process has no need of a Curl multi manager.
+        */
+    struct rpc * rpcP;
+        /* The RPC which this transaction serves.  (If this structure
+           were a true extension of the Curl library as described above,
+           this would be a void *, since the Curl library doesn't know what
+           an RPC is, but since we use it only for that, we might as well
+           use the specific type here).
+        */
     char curlError[CURL_ERROR_SIZE];
         /* Error message from Curl */
     struct curl_slist * headerList;
@@ -143,21 +162,12 @@ typedef struct {
 
 
 
-typedef struct {
-    struct list_head link;  /* link in transport's list of RPCs */
-    CURL * curlSessionP;
-        /* The Curl session we use for this transaction.  Note that only
-           one RPC at a time can use a particular Curl session, so this
-           had better not be a session that some other RPC is using
-           simultaneously.
-        */
+typedef struct rpc {
     curlTransaction * curlTransactionP;
         /* The object which does the HTTP transaction, with no knowledge
            of XML-RPC or Xmlrpc-c.
         */
     xmlrpc_mem_block * responseXmlP;
-    xmlrpc_bool threadExists;
-    pthread_t thread;
     xmlrpc_transport_asynch_complete complete;
         /* Routine to call to complete the RPC after it is complete HTTP-wise.
            NULL if none.
@@ -165,6 +175,49 @@ typedef struct {
     struct xmlrpc_call_info * callInfoP;
         /* User's identifier for this RPC */
 } rpc;
+
+
+static int
+timeDiffMillisec(struct timeval const minuend,
+                 struct timeval const subtractor) {
+
+    return (minuend.tv_sec - subtractor.tv_sec) * 1000 +
+        (minuend.tv_usec - subtractor.tv_usec + 500) / 1000;
+}
+
+
+
+static bool
+timeIsAfter(struct timeval const comparator,
+            struct timeval const comparand) {
+
+    if (comparator.tv_sec > comparand.tv_sec)
+        return TRUE;
+    else if (comparator.tv_sec < comparand.tv_sec)
+        return FALSE;
+    else {
+        /* Seconds are equal */
+        if (comparator.tv_usec > comparand.tv_usec)
+            return TRUE;
+        else
+            return FALSE;
+    }
+}
+
+
+
+static void
+addMilliseconds(struct timeval   const addend,
+                unsigned int     const adder,
+                struct timeval * const sumP) {
+
+    unsigned int newRawUsec;
+
+    newRawUsec = addend.tv_usec + adder * 1000;
+
+    sumP->tv_sec  = addend.tv_sec + newRawUsec / 1000000;
+    sumP->tv_usec = newRawUsec % 1000000;
+}
 
 
 
@@ -488,34 +541,36 @@ create(xmlrpc_env *                      const envP,
 
     initWindowsStuff(envP);
 
+    /* This is the main global constructor for the app.  Call this before
+       _any_ libcurl usage. If this fails, no libcurl functions may be
+       used, or havoc may be the result.
+    */
+    curl_global_init(CURL_GLOBAL_ALL);
+
+    /* The above makes it look like Curl is not re-entrant, and thus
+       one cannot have more than one instance of a Xmlrpc-c Curl transport
+       per program.  We should check into that.
+    */
+
     MALLOCVAR(transportP);
     if (transportP == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Unable to allocate transport descriptor.");
+        xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
-        pthread_mutex_init(&transportP->listLock, NULL);
+        transportP->curlMultiP = curl_multi_init();
         
-        list_make_empty(&transportP->rpcList);
+        if (transportP->curlMultiP == NULL)
+            xmlrpc_faultf(envP, "Unable to create Curl multi handle.");
+        else {
+            getXportParms(envP, curlXportParmsP, parm_size, transportP);
 
-        /*
-         * This is the main global constructor for the app. Call this before
-         * _any_ libcurl usage. If this fails, *NO* libcurl functions may be
-         * used, or havoc may be the result.
-         */
-        curl_global_init(CURL_GLOBAL_ALL);
-
-        /* The above makes it look like Curl is not re-entrant.  We should
-           check into that.
-        */
-
-        getXportParms(envP, curlXportParmsP, parm_size, transportP);
-
-        if (!envP->fault_occurred) {
-            createSyncCurlSession(envP, &transportP->syncCurlSessionP);
+            if (!envP->fault_occurred) {
+                createSyncCurlSession(envP, &transportP->syncCurlSessionP);
             
+                if (envP->fault_occurred)
+                    freeXportParms(transportP);
+            }
             if (envP->fault_occurred)
-                freeXportParms(transportP);
+                curl_multi_cleanup(transportP->curlMultiP);
         }                 
         if (envP->fault_occurred)
             free(transportP);
@@ -541,16 +596,25 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
    This does the 'destroy' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(clientTransportP != NULL);
-
-    XMLRPC_ASSERT(list_is_empty(&clientTransportP->rpcList));
-
+    
     destroySyncCurlSession(clientTransportP->syncCurlSessionP);
 
     freeXportParms(clientTransportP);
 
-    curl_global_cleanup();
+    {
+        /* We know the following is a no-op, because it is a condition of
+           destroying the transport that the transport not have any
+           outstanding RPCs.
+        */
+        int runningHandles;
 
-    pthread_mutex_destroy(&clientTransportP->listLock);
+        curl_multi_perform(clientTransportP->curlMultiP, &runningHandles);
+        
+        XMLRPC_ASSERT(runningHandles == 0);
+    }
+    curl_multi_cleanup(clientTransportP->curlMultiP);
+
+    curl_global_cleanup();
 
     termWindowStuff();
 
@@ -754,11 +818,13 @@ setupCurlSession(xmlrpc_env *             const envP,
 static void
 createCurlTransaction(xmlrpc_env *               const envP,
                       CURL *                     const curlSessionP,
+                      CURLM *                    const curlMultiP,
                       const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *         const callXmlP,
                       xmlrpc_mem_block *         const responseXmlP,
                       const char *               const userAgent,
                       const struct curlSetup *   const curlSetupStuffP,
+                      rpc *                      const rpcP,
                       curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
@@ -768,6 +834,8 @@ createCurlTransaction(xmlrpc_env *               const envP,
         xmlrpc_faultf(envP, "No memory to create Curl transaction.");
     else {
         curlTransactionP->curlSessionP = curlSessionP;
+        curlTransactionP->curlMultiP   = curlMultiP;
+        curlTransactionP->rpcP         = rpcP;
 
         curlTransactionP->serverUrl = strdup(serverP->_server_url);
         if (curlTransactionP->serverUrl == NULL)
@@ -804,6 +872,33 @@ destroyCurlTransaction(curlTransaction * const curlTransactionP) {
 
 
 static void
+getCurlTransactionError(curlTransaction * const curlTransactionP,
+                        xmlrpc_env *      const envP) {
+
+    CURLcode res;
+    long http_result;
+
+    res = curl_easy_getinfo(curlTransactionP->curlSessionP,
+                            CURLINFO_HTTP_CODE, &http_result);
+    
+    if (res != CURLE_OK)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR, 
+            "Curl performed the HTTP POST request, but was "
+            "unable to say what the HTTP result code was.  "
+            "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
+            curlTransactionP->curlError);
+    else {
+        if (http_result != 200)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_NETWORK_ERROR, "HTTP response: %ld",
+                http_result);
+    }
+}
+
+
+
+static void
 performCurlTransaction(xmlrpc_env *      const envP,
                        curlTransaction * const curlTransactionP) {
 
@@ -818,96 +913,8 @@ performCurlTransaction(xmlrpc_env *      const envP,
             envP, XMLRPC_NETWORK_ERROR, "Curl failed to perform "
             "HTTP POST request.  curl_easy_perform() says: %s", 
             curlTransactionP->curlError);
-    else {
-        CURLcode res;
-        long http_result;
-        res = curl_easy_getinfo(curlSessionP, CURLINFO_HTTP_CODE, 
-                                &http_result);
-
-        if (res != CURLE_OK)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, 
-                "Curl performed the HTTP POST request, but was "
-                "unable to say what the HTTP result code was.  "
-                "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
-                curlTransactionP->curlError);
-        else {
-            if (http_result != 200)
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_NETWORK_ERROR, "HTTP response: %ld",
-                    http_result);
-        }
-    }
-}
-
-
-
-static void
-doAsyncRpc2(void * const arg) {
-
-    rpc * const rpcP = arg;
-
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-
-    performCurlTransaction(&env, rpcP->curlTransactionP);
-
-    rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-#ifdef WIN32
-
-static unsigned __stdcall 
-doAsyncRpc(void * arg) {
-    doAsyncRpc2(arg);
-    return 0;
-}
-
-#else
-static void *
-doAsyncRpc(void * arg) {
-    doAsyncRpc2(arg);
-    return NULL;
-}
-
-#endif
-
-
-
-static void
-createThread(xmlrpc_env * const envP,
-             void * (*threadRoutine)(void *),
-             rpc *        const rpcP,
-             pthread_t *  const threadP) {
-
-    int rc;
-
-    rc = pthread_create(threadP, NULL, threadRoutine, rpcP);
-    switch (rc) {
-    case 0: 
-        break;
-    case EAGAIN:
-        xmlrpc_faultf(envP, "pthread_create() failed.  "
-                      "System resources exceeded.");
-        break;
-    case EINVAL:
-        xmlrpc_faultf(envP, "pthread_create() failed.  "
-                      "Parameter error");
-        break;
-    case ENOMEM:
-        xmlrpc_faultf(envP, "pthread_create() failed.  "
-                      "No memory for new thread.");
-        break;
-    default:
-        xmlrpc_faultf(envP, "pthread_create() failed.  "
-                      "Unrecognized error code %d.", rc);
-        break;
-    }
+    else
+        getCurlTransactionError(curlTransactionP, envP);
 }
 
 
@@ -927,29 +934,22 @@ createRpc(xmlrpc_env *                     const envP,
 
     MALLOCVAR(rpcP);
     if (rpcP == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "Couldn't allocate memory for rpc object");
+        xmlrpc_faultf(envP, "Couldn't allocate memory for rpc object");
     else {
-        rpcP->callInfoP = callInfoP;
-        rpcP->complete  = complete;
+        rpcP->callInfoP    = callInfoP;
+        rpcP->complete     = complete;
         rpcP->responseXmlP = responseXmlP;
-        rpcP->threadExists = FALSE;
 
-        rpcP->curlSessionP = curlSessionP;
         createCurlTransaction(envP,
                               curlSessionP,
+                              clientTransportP->curlMultiP,
                               serverP,
                               callXmlP, responseXmlP, 
                               clientTransportP->userAgent,
                               &clientTransportP->curlSetupStuff,
+                              rpcP,
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
-            list_init_header(&rpcP->link, rpcP);
-            pthread_mutex_lock(&clientTransportP->listLock);
-            list_add_head(&clientTransportP->rpcList, &rpcP->link);
-            pthread_mutex_unlock(&clientTransportP->listLock);
-            
             if (envP->fault_occurred)
                 destroyCurlTransaction(rpcP->curlTransactionP);
         }
@@ -965,11 +965,8 @@ static void
 destroyRpc(rpc * const rpcP) {
 
     XMLRPC_ASSERT_PTR_OK(rpcP);
-    XMLRPC_ASSERT(!rpcP->threadExists);
 
     destroyCurlTransaction(rpcP->curlTransactionP);
-
-    list_remove(&rpcP->link);
 
     free(rpcP);
 }
@@ -986,12 +983,38 @@ performRpc(xmlrpc_env * const envP,
 
 
 static void
+startCurlTransaction(xmlrpc_env *      const envP,
+                     curlTransaction * const curlTransactionP) {
+
+    CURLMcode rc;
+
+    /* A Curl session is serial -- it processes zero or one transaction
+       at a time.  We use the "private" attribute of the Curl session to
+       indicate which transaction it is presently processing.  This is
+       important when the transaction finishes, because libcurl will just
+       tell us that something finished on a particular session, not that
+       a particular transaction finished.
+    */
+    curl_easy_setopt(curlTransactionP->curlSessionP, CURLOPT_PRIVATE,
+                     curlTransactionP);
+
+    rc = curl_multi_add_handle(curlTransactionP->curlMultiP,
+                               curlTransactionP->curlSessionP);
+    
+    if (rc != CURLM_OK)
+        xmlrpc_faultf(envP, "Could not add Curl session to the "
+                      "curl multi manager.  curl_multi_add_handle() "
+                      "returns error code %d (%s)",
+                      rc, curl_multi_strerror(rc));
+}
+
+
+
+static void
 startRpc(xmlrpc_env * const envP,
          rpc *        const rpcP) {
 
-    createThread(envP, &doAsyncRpc, rpcP, &rpcP->thread);
-    if (!envP->fault_occurred)
-        rpcP->threadExists = TRUE;
+    startCurlTransaction(envP, rpcP->curlTransactionP);
 }
 
 
@@ -1024,10 +1047,9 @@ sendRequest(xmlrpc_env *                     const envP,
                           "curl_easy_init() failed.");
         else {
             createRpc(envP, clientTransportP, curlSessionP, serverP,
-                      callXmlP, responseXmlP,
-                      complete, callInfoP,
+                      callXmlP, responseXmlP, complete, callInfoP,
                       &rpcP);
-
+            
             if (!envP->fault_occurred) {
                 startRpc(envP, rpcP);
                 
@@ -1040,59 +1062,316 @@ sendRequest(xmlrpc_env *                     const envP,
         if (envP->fault_occurred)
             XMLRPC_MEMBLOCK_FREE(char, responseXmlP);
     }
-    /* The user's eventual finish_asynch call will destroy this RPC,
-       Curl session, and response buffer
+    /* If we're returning success, the user's eventual finish_asynch
+       call will destroy this RPC, Curl session, and response buffer
+       and remove the Curl session from the Curl multi manager.
+       (If we're returning failure, we didn't create any of those).
     */
 }
 
 
 
-static void * 
-finishRpc(struct list_head * const headerP, 
-          void *             const context ATTR_UNUSED) {
-    
-    rpc * const rpcP = headerP->itemP;
+static void
+finishCurlTransaction(xmlrpc_env * const envP ATTR_UNUSED,
+                      CURL *       const curlSessionP) {
+/*----------------------------------------------------------------------------
+  Handle the event that a Curl transaction has completed on the Curl
+  session identified by 'curlSessionP'.
 
-    if (rpcP->threadExists) {
-        void *status;
-        int result;
+  Tell the requester of the RPC which this transaction serves the
+  results.
 
-        result = pthread_join(rpcP->thread, &status);
-        
-        rpcP->threadExists = FALSE;
+  Remove the Curl session from its Curl multi manager and destroy the
+  Curl session, the XML response buffer, the Curl transaction, and the RPC.
+-----------------------------------------------------------------------------*/
+    curlTransaction * curlTransactionP;
+    rpc * rpcP;
+
+    curl_easy_getinfo(curlSessionP, CURLINFO_PRIVATE, &curlTransactionP);
+
+    rpcP = curlTransactionP->rpcP;
+
+    curl_multi_remove_handle(curlTransactionP->curlMultiP,
+                             curlTransactionP->curlSessionP);
+    {
+        xmlrpc_env env;
+
+        xmlrpc_env_init(&env);
+
+        getCurlTransactionError(curlTransactionP, &env);
+
+        rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
+
+        xmlrpc_env_clean(&env);
     }
+
+    curl_easy_cleanup(curlSessionP);
 
     XMLRPC_MEMBLOCK_FREE(char, rpcP->responseXmlP);
 
-    curl_easy_cleanup(rpcP->curlSessionP);
-
     destroyRpc(rpcP);
+}
 
-    return NULL;
+
+
+static struct timeval
+selectTimeout(xmlrpc_timeoutType const timeoutType,
+              struct timeval     const timeoutTime) {
+/*----------------------------------------------------------------------------
+   Return the value that should be used in the select() call to wait for
+   there to be work for the Curl multi manager to do, given that the user
+   wants to timeout according to 'timeoutType' and 'timeoutTime'.
+-----------------------------------------------------------------------------*/
+    unsigned int selectTimeoutMillisec;
+    struct timeval retval;
+
+    /* We assume there is work to do at least every 3 seconds, because
+       the Curl multi manager often has retries and other scheduled work
+       that doesn't involve file handles on which we can select().
+    */
+    switch (timeoutType) {
+    case timeout_no:
+        selectTimeoutMillisec = 3000;
+        break;
+    case timeout_yes: {
+        struct timeval nowTime;
+        int timeLeft;
+
+        gettimeofday(&nowTime, NULL);
+        timeLeft = timeDiffMillisec(timeoutTime, nowTime);
+
+        selectTimeoutMillisec = MIN(3000, MAX(0, timeLeft));
+    }
+    break;
+    }
+    retval.tv_sec = selectTimeoutMillisec / 1000;
+    retval.tv_usec = (selectTimeoutMillisec % 1000) * 1000;
+
+    return retval;
+}        
+
+
+
+static void
+processCurlMessages(xmlrpc_env * const envP,
+                    CURLM *      const curlMultiP) {
+        
+    bool endOfMessages;
+
+    endOfMessages = FALSE;   /* initial assumption */
+
+    while (!endOfMessages && !envP->fault_occurred) {
+        int remainingMsgCount;
+        CURLMsg * curlMsgP;
+        /* Here's another reason the Curl library is apparently not
+           re-entrant, so neither is this Xmlrpc-c transport.
+        */
+        
+        curlMsgP = curl_multi_info_read(curlMultiP, &remainingMsgCount);
+        
+        if (curlMsgP == NULL)
+            endOfMessages = TRUE;
+        else {
+            if (curlMsgP->msg == CURLMSG_DONE)
+                finishCurlTransaction(envP, curlMsgP->easy_handle);
+        }
+    }
+}
+
+
+
+static void
+waitForWork(xmlrpc_env *       const envP,
+            CURLM *            const curlMultiP,
+            xmlrpc_timeoutType const timeoutType,
+            struct timeval     const deadline) {
+    
+    int maxFd;
+    fd_set readFdSet;
+    fd_set writeFdSet;
+    fd_set exceptFdSet;
+    CURLMcode rc;
+        
+    /* curl_multi_fdset() doesn't return fdsets.  It adds to existing
+       ones (so you can easily do a select() on other fds and Curl
+       fds at the same time).  So we have to clear first:
+    */
+    FD_ZERO(&readFdSet);
+    FD_ZERO(&writeFdSet);
+    FD_ZERO(&exceptFdSet);
+    
+    rc = curl_multi_fdset(curlMultiP,
+                          &readFdSet, &writeFdSet, &exceptFdSet, &maxFd);
+    
+    if (rc != CURLM_OK)
+        xmlrpc_faultf(envP, "Impossible failure of curl_multi_fdset() "
+                      "with rc %d (%s)", rc, curl_multi_strerror(rc));
+    else {
+        if (maxFd == -1) {
+            /* There are no Curl file descriptors on which to wait.
+               So either there's work to do right now or all transactions
+               are already complete.
+            */
+        } else {
+            struct timeval selectTimeoutArg;
+            int rc;
+            
+            selectTimeoutArg = selectTimeout(timeoutType, deadline);
+
+            rc = select(maxFd+1, &readFdSet, &writeFdSet, &exceptFdSet,
+                        &selectTimeoutArg);
+            
+            if (rc < 0)
+                xmlrpc_faultf(envP, "Impossible failure of select() "
+                              "with errno %d (%s)",
+                              errno, strerror(errno));
+        }
+    }
+}
+
+
+
+static void
+doCurlWork(xmlrpc_env * const envP,
+           CURLM *      const curlMultiP,
+           bool *       const rpcStillRunningP) {
+/*----------------------------------------------------------------------------
+   Do whatever work is ready to be done by the Curl multi manager
+   identified by 'curlMultiP'.  This typically is transferring data on
+   an HTTP connection because the server is ready.
+
+   Return *rpcStillRunningP false if this work completes all of the
+   manager's transactions so that there is no reason to call us ever
+   again.
+
+   Where the multi manager completes an HTTP transaction, also complete
+   the associated RPC.
+-----------------------------------------------------------------------------*/
+    int runningHandles;
+    bool immediateWorkToDo;
+
+    immediateWorkToDo = TRUE;  /* initial assumption */
+
+    while (immediateWorkToDo && !envP->fault_occurred) {
+        CURLMcode rc;
+
+        rc = curl_multi_perform(curlMultiP, &runningHandles);
+
+        if (rc == CURLM_CALL_MULTI_PERFORM) {
+            /* There's still more work to do */
+        } else {
+            immediateWorkToDo = FALSE;
+
+            if (rc != CURLM_OK)
+                xmlrpc_faultf(envP,
+                              "Impossible failure of curl_multi_perform() "
+                              "with rc %d (%s)", rc, curl_multi_strerror(rc));
+        }
+    }
+
+    /* We either did all the work that's ready to do or hit an error. */
+
+    if (!envP->fault_occurred) {
+        /* The work we did may have resulted in asynchronous messages
+           (asynchronous to the thing the refer to, not to us, of course).
+           In particular the message "Curl transaction has completed".
+           So we process those now.
+        */
+        processCurlMessages(envP, curlMultiP);
+
+        *rpcStillRunningP = runningHandles > 0;
+    }
+}
+
+
+
+static void
+finishCurlSessions(xmlrpc_env *       const envP,
+                   CURLM *            const curlMultiP,
+                   xmlrpc_timeoutType const timeoutType,
+                   struct timeval     const deadline) {
+
+    bool rpcStillRunning;
+    bool timedOut;
+    
+    rpcStillRunning = TRUE;  /* initial assumption */
+    timedOut = FALSE;
+    
+    while (rpcStillRunning && !timedOut && !envP->fault_occurred) {
+        waitForWork(envP, curlMultiP, timeoutType, deadline);
+
+        if (!envP->fault_occurred) {
+            struct timeval nowTime;
+
+            doCurlWork(envP, curlMultiP, &rpcStillRunning);
+            
+            gettimeofday(&nowTime, NULL);
+            
+            timedOut = (timeoutType == timeout_yes &&
+                        timeIsAfter(nowTime, deadline));
+        }
+    }
 }
 
 
 
 static void 
 finishAsynch(
-    struct xmlrpc_client_transport * const clientTransportP ATTR_UNUSED,
-    xmlrpc_timeoutType               const timeoutType ATTR_UNUSED,
-    xmlrpc_timeout                   const timeout ATTR_UNUSED) {
+    struct xmlrpc_client_transport * const clientTransportP,
+    xmlrpc_timeoutType               const timeoutType,
+    xmlrpc_timeout                   const timeout) {
 /*----------------------------------------------------------------------------
-   Wait for the threads of all outstanding RPCs to exit and destroy those
-   RPCs.
+   Wait for the Curl multi manager to finish the Curl transactions for
+   all outstanding RPCs and destroy those RPCs.
 
    This does the 'finish_asynch' operation for a Curl client transport.
+
+   It would be cool to replace this with something analogous to the
+   Curl asynchronous interface: Have something like curl_multi_fdset()
+   that returns a bunch of file descriptors on which the user can wait
+   (along with possibly other file descriptors of his own) and
+   something like curl_multi_perform() to finish whatever RPCs are
+   ready to finish at that moment.  The implementation would be little
+   more than wrapping curl_multi_fdset() and curl_multi_perform().
 -----------------------------------------------------------------------------*/
-    /* We ignore any timeout request.  Some day, we should figure out how
-       to set an alarm and interrupt running threads.
+    xmlrpc_env env;
+
+    struct timeval waitTimeoutTime;
+        /* The datetime after which we should quit waiting */
+
+    xmlrpc_env_init(&env);
+    
+    if (timeoutType == timeout_yes) {
+        struct timeval waitStartTime;
+        gettimeofday(&waitStartTime, NULL);
+        addMilliseconds(waitStartTime, timeout, &waitTimeoutTime);
+    }
+
+    finishCurlSessions(&env, clientTransportP->curlMultiP,
+                       timeoutType, waitTimeoutTime);
+
+    /* If the above fails, it is catastrophic, because it means there is
+       no way to complete outstanding Curl transactions and RPCs, and
+       no way to release their resources.
+
+       We should at least expand this interface some day to push the
+       problem back up the user, but for now we just do this Hail Mary
+       response.
+
+       Note that a failure of finishCurlSessions() does not mean that
+       a session completed with an error or an RPC completed with an
+       error.  Those things are reported up through the user's 
+       xmlrpc_transport_asynch_complete routine.  A failure here is
+       something that stopped us from calling that.
     */
 
-    pthread_mutex_lock(&clientTransportP->listLock);
+    if (env.fault_occurred)
+        fprintf(stderr, "finishAsync() failed.  Xmlrpc-c Curl transport "
+                "is now in an unknown state and may not be able to "
+                "continue functioning.  Specifics of the failure: %s\n",
+                env.fault_string);
 
-    list_foreach(&clientTransportP->rpcList, finishRpc, NULL);
-
-    pthread_mutex_unlock(&clientTransportP->listLock);
+    xmlrpc_env_clean(&env);
 }
 
 

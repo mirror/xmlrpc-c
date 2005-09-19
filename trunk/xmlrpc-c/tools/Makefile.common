@@ -5,7 +5,7 @@ ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   CLIENT_LDFLAGS += $(shell libwww-config --libs)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  CLIENT_LDFLAGS += $(shell curl-config --libs) -lpthread
+  CLIENT_LDFLAGS += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   CLIENT_LDFLAGS += $(shell wininet-config --libs)

@@ -3,6 +3,10 @@
    simpler synchronous client xmlprc_sample_add_client.c, except that
    it adds 3 different pairs of numbers with the summation RPCs going on
    simultaneously.
+
+   Use this with xmlrpc_sample_add_server.  Note that that server
+   intentionally takes extra time to add 1 to anything, so you can see
+   our 5+1 RPC finish after our 5+0 and 5+2 RPCs.
 */
 
 #include <stdlib.h>
@@ -34,7 +38,7 @@ handle_sample_add_response(const char *   const server_url,
                            void *         const user_data ATTR_UNUSED,
                            xmlrpc_env *   const faultP,
                            xmlrpc_value * const resultP) {
-    
+
     xmlrpc_env env;
     xmlrpc_int addend, adder;
     
@@ -100,7 +104,9 @@ main(int           const argc,
     
     printf("RPCs all requested.  Waiting for & handling responses...\n");
 
-    /* The following is what calls handle_sample_add_response() (3 times) */
+    /* Wait for all RPCs to be done.  With some transports, this is also
+       what causes them to go.
+    */
     xmlrpc_client_event_loop_finish_asynch();
 
     printf("All RPCs finished.\n");

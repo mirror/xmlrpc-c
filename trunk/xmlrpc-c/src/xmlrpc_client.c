@@ -200,8 +200,7 @@ getTransportInfo(xmlrpc_env *                      const envP,
 
             *transportNameP = xmlrpc_client_get_default_transport(envP);
             if (*transportparmsPP)
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_INTERNAL_ERROR,
+                xmlrpc_faultf(envP,
                     "You specified transport parameters, but did not "
                     "specify a transport type.  Parameters are specific to "
                     "a particular type.");

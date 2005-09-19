@@ -7,7 +7,7 @@ include $(SRCDIR)/Makefile.config
 LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = -lpthread $(LADD)
+LDFLAGS = $(LADD)
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
   $(LIBWWW_INCLUDES)
