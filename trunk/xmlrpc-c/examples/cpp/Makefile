@@ -33,7 +33,12 @@ CLIENTPROGS = \
   xmlrpc_sample_add_client \
   sample_add_client_complex \
 
-PROGS = $(SERVERPROGS_ABYSS)
+# Build up PROGS:
+PROGS = 
+
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  PROGS += $(SERVERPROGS_ABYSS)
+endif
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)

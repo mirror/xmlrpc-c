@@ -37,8 +37,14 @@ SERVERPROGS_ABYSS = \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
-PROGS = $(SERVERPROGS_ABYSS) \
-  gen_sample_add_xml
+# Build up PROGS:
+PROGS = 
+
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  PROGS += $(SERVERPROGS_ABYSS)
+endif
+
+PROGS += gen_sample_add_xml
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   PROGS += $(CLIENTPROGS)
