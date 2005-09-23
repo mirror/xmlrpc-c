@@ -5,7 +5,9 @@ SUBDIR = lib
 
 include $(SRCDIR)/Makefile.config
 
-SUBDIRS = util
+# Build up SUBDIRS:
+SUBDIRS = 
+SUBDIRS += util libutil
 ifeq ($(ENABLE_ABYSS_SERVER),yes)
   SUBDIRS += abyss
 endif

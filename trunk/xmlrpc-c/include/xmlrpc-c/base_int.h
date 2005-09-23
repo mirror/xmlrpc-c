@@ -11,11 +11,12 @@
 ============================================================================*/
 
 
-#ifndef  XMLRPC_INT_H_INCLUDED
-#define  XMLRPC_INT_H_INCLUDED
+#ifndef  XMLRPC_C_BASE_INT_H_INCLUDED
+#define  XMLRPC_C_BASE_INT_H_INCLUDED
 
 #include <stdarg.h>
 #include <xmlrpc-c/base.h>
+#include <xmlrpc-c/util_int.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,11 +92,6 @@ struct _xmlrpc_registry {
 };
 
 
-/* When we deallocate a pointer in a struct, we often replace it with
-** this and throw in a few assertions here and there. */
-#define XMLRPC_BAD_POINTER ((void*) 0xDEADBEEF)
-
-
 void
 xmlrpc_traceXml(const char * const label, 
                 const char * const xml,
@@ -106,17 +102,6 @@ xmlrpc_destroyStruct(xmlrpc_value * const structP);
 
 void
 xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
-
-
-/* GNU_PRINTF_ATTR lets the GNU compiler check printf-type
-   calls to be sure the arguments match the format string, thus preventing
-   runtime segmentation faults and incorrect messages.
-*/
-#ifdef __GNUC__
-#define GNU_PRINTF_ATTR(a,b) __attribute__ ((format (printf, a, b)))
-#else
-#define GNU_PRINTF_ATTR(a,b)
-#endif
 
 void
 xmlrpc_vasprintf(const char ** const retvalP,

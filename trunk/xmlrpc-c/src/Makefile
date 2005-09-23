@@ -19,8 +19,6 @@ WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
 CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
 LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
 
-CASPRINTF_OBJ = $(BUILDDIR)/lib/util/casprintf.lo
-
 TRANSPORT_OBJS =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
@@ -54,7 +52,7 @@ else
 endif
 
 LIBXMLRPC_OBJS = \
-	xmlrpc_support.lo \
+	trace.lo \
 	xmlrpc_data.lo \
 	xmlrpc_builddecomp.lo \
 	xmlrpc_datetime.lo \
@@ -101,7 +99,7 @@ LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
 libxmlrpc.la: $(LIBXMLRPC_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
-libxmlrpc_client.la: xmlrpc_client.lo $(TRANSPORT_OBJS) $(CASPRINTF_OBJ)
+libxmlrpc_client.la: xmlrpc_client.lo $(TRANSPORT_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
 libxmlrpc_server.la: xmlrpc_registry.lo

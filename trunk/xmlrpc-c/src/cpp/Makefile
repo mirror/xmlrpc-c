@@ -2,7 +2,9 @@ ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
 endif
 SUBDIR = src/cpp
-# BLDDIR is for use in this file.  BUILDDIR is for Makefile.common.
+# BLDDIR is for use in places where a symbolic link won't work.
+# BUILDDIR is for places in Makefile.common that can use the 'blddir'
+# symbolic link (but in other directories, doesn't).
 BLDDIR = ../..
 BUILDDIR = blddir
 VPATH = .:$(SRCDIR)
@@ -10,6 +12,15 @@ VPATH = .:$(SRCDIR)
 include $(BLDDIR)/Makefile.config
 
 default: all
+
+LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
+
+# INCLUDES and DEP_SOURCES are used by dep-common target
+INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
+  $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) $(TRANSPORT_INCLUDES)
+DEP_SOURCES = *.cpp
+
+include $(SRCDIR)/Makefile.common
 
 WININET_TRANSPORT_DIR = srcdir/lib/wininet_transport
 CURL_TRANSPORT_DIR    = srcdir/lib/curl_transport
@@ -30,25 +41,10 @@ else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo
 endif
 
-LIBXMLRPC = blddir/src/libxmlrpc.la
-LIBXMLRPC_SERVER = blddir/src/libxmlrpc_server.la
-LIBXMLRPC_CLIENT = blddir/src/libxmlrpc_client.la
-
-# We use the srcdir and blddir symbolic links simply to make the make
-# rules easier to read in the make output.  We could use $(SRCDIR) and
-# $(BLDDIR) variables, but that makes the compile and link commands
-# a mile long.
-
 # This 'Makefile' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
 Makefile: blddir srcdir
-
-blddir: $(BLDDIR)
-	ln -s $< $@
-
-srcdir: $(SRCDIR)
-	ln -s $< $@
 
 LIBXMLRPCPP_OBJS = \
 	base64.o \
@@ -103,7 +99,8 @@ LDFLAGS += $(LADD)
 
 cpptest:%:%.o libxmlrpc_server_abyss++.a libxmlrpc_server++.a \
   libxmlrpc_client++.a libxmlrpc++.a libxmlrpc_cpp.a \
-  $(LIBXMLRPC) $(LIBXMLRPC_SERVER) $(LIBXMLRPC_CLIENT) $(LIBXML)
+  $(LIBXMLRPC_SERVER) $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) \
+  $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 LIBLDFLAGS = $(LADD)
@@ -161,8 +158,6 @@ $(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
 
 
 
-LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
-
 check: cpptest
 	for tst in $^; do \
 	  ./$$tst; \
@@ -179,16 +174,8 @@ clean-local:
 distclean: clean distclean-local distclean-common
 
 distclean-local:
-	rm -f blddir srcdir
-
-# INCLUDES and DEP_SOURCES are used by dep-common target
-INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
-  $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) $(TRANSPORT_INCLUDES)
-DEP_SOURCES = *.cpp
 
 .PHONY: dep
 dep: dep-common
-
-include $(SRCDIR)/Makefile.common
 
 include Makefile.depend

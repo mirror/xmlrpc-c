@@ -20,11 +20,6 @@ else
   LIBXML = $(LIBEXPAT)
 endif
 
-LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
-LIBXMLRPC_CPP = $(BUILDDIR)/src/cpp/libxmlrpc_cpp.a
-LIBXMLRPC_CLIENT = $(BUILDDIR)/src/libxmlrpc_client.la
-LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
-
 XMLRPC_LIBS = $(LIBXMLRPC) $(LIBXMLRPC_CPP) $(LIBXMLRPC_CLIENT) \
 	$(LIBXMLRPC_SERVER) $(LIBXML)
 

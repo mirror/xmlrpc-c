@@ -60,7 +60,7 @@ fi
 needCpp=no
 
 the_libdirs="-L@libdir@"
-the_libs="-lxmlrpc ${LIBXML}"
+the_libs="-lxmlrpc -lxmlrpc_util ${LIBXML}"
 the_rpath=
 the_wl_rpath=
 cpp_libs=

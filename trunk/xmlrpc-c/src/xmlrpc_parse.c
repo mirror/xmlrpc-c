@@ -39,7 +39,7 @@
 /*=========================================================================
 **  Data Format
 **=========================================================================
-**  All XML-RPC documents contain a single methodCall or methodResponse
+**  An XML-RPC document consists of a single methodCall or methodResponse
 **  element.
 **
 **  methodCall     methodName, params

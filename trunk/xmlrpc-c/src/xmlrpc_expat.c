@@ -28,7 +28,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <xmlparse.h>
+
+#include <xmlparse.h> /* Expat */
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"

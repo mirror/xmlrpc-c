@@ -13,7 +13,7 @@
 
 /* Future work: the XMLRPC_TYPE_DATETIME xmlrpc_value should store the
    datetime as something computation-friendly, not as a string.  The
-   client library should parse the string value and reject the XML if
+   XML-RPC XML parser should parse the string value and reject the XML if
    it isn't valid.
 
    But this file should remain the authority on datetimes, so the XML

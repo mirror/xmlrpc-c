@@ -34,7 +34,10 @@ fi
 
 needCpp=no
 
-the_libs="${BUILDDIR}/src/.libs/libxmlrpc.a ${LIBXML}"
+LIBXMLRPC="${BUILDDIR}/src/.libs/libxmlrpc.a"
+LIBXMLRPC_UTIL="${BUILDDIR}/lib/libutil/.libs/libxmlrpc_util.a"
+
+the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML}"
 the_includes="-I${SRCDIR}/include"
 sopath="${BUILDDIR}/src/.libs:$sopath"
 
