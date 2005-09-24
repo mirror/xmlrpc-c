@@ -35,6 +35,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_SYS_FILIO_H
+  #include <sys/filio.h>
+#endif
 #include "xmlrpc-c/abyss.h"
 
 #ifdef ABYSS_WIN32

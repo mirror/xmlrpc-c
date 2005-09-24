@@ -507,6 +507,9 @@ clientTransactionPtr::operator->() const {
 
 
 
+client::~client() {}
+
+
 void
 client::start(carriageParm *       const  carriageParmP,
               string               const  methodName,

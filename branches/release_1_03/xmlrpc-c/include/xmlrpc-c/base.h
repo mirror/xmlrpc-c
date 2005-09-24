@@ -54,7 +54,7 @@ typedef double xmlrpc_double;
 */
 
 #define _XMLRPC_STRUCT_MEMBER_OFFSET(TYPE, MBRNAME) \
-  ((unsigned int)(char*)&((TYPE *)0)->MBRNAME)
+  ((unsigned long)(char*)&((TYPE *)0)->MBRNAME)
 #define _XMLRPC_STRUCT_MEMBER_SIZE(TYPE, MBRNAME) \
   sizeof(((TYPE *)0)->MBRNAME)
 #define XMLRPC_STRUCTSIZE(TYPE, MBRNAME) \

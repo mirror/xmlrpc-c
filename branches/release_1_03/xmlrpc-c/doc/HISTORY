@@ -67,6 +67,21 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.05 - September 24, 2005
+
+  * BJH: Change int to long in XMLRPC_STRUCTSIZE to correct 64 bit
+         compile error.
+
+  * BJH: Add virtual destructor for client to quiet compiler warning.
+
+  * BJH: Don't try to build Abyss example programs if Abyss libraries not
+         built.
+
+  * BJH: Include <sys/filio.h> if it exists (i.e. Solaris).
+
+  * BJH: Include <stdlib.h> instead of <malloc.h>, which doesn't exist
+         in some environments.
+
 1.03.04 - September 9, 2005
 
   * BJH: Make Abyss work with short writes to sockets.  Thanks 

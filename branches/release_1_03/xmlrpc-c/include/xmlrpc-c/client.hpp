@@ -65,6 +65,8 @@ class client {
    XML and HTTP get used to perform the RPC.
 -----------------------------------------------------------------------------*/
 public:
+    virtual ~client();
+
     virtual void
     call(carriageParm *         const  carriageParmP,
          std::string            const  methodName,
