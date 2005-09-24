@@ -56,7 +56,7 @@ GENNMTAB = ../gennmtab/gennmtab
 
 nametab.h: $(GENNMTAB)
 	rm -f $@
-	$(GENNMTAB) >$@ || rm -f $@
+	$(GENNMTAB) >$@ || (rm -f $@ || false)
 
 $(GENNMTAB):
 	$(MAKE) -C $(dir $@) $(notdir $@)
