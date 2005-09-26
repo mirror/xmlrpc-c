@@ -3,6 +3,8 @@
   Copyright information is at the end of the file.
 ******************************************************************************/
 
+#include "xmlrpc_config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,7 +13,6 @@
 #include <winsock.h>
 #else
 #include <sys/types.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
