@@ -249,6 +249,18 @@ dnl =======================================================================
 # require too much testing.)
 AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
 
+# Above sets LIBS, which is not all that useful because we don't want
+# to include every library in every link.  It also sets
+# ac_cv_lib_socket_socket, which we use to pass more specific information
+# to the configuration files.
+
+if test $ac_cv_lib_socket_socket = yes; then
+  LSOCKET=-lsocket
+else
+  LSOCKET=
+fi
+AC_SUBST(LSOCKET)
+
 # For some reason, we don't seem to need this on Solaris.  If you do
 # need it, go ahead and try it.
 # AC_CHECK_FUNC(gethostent, , AC_CHECK_LIB(nsl, gethostent))
@@ -340,8 +352,6 @@ AC_SUBST(DIRECTORY_SEPARATOR)
 dnl =======================================================================
 dnl ABYSS Configuration
 dnl =======================================================================
-dnl Abyss doesn't pay any attention to xmlrpc_config.h, so we need to
-dnl pass it some flags on the command-line.
 
 AC_MSG_CHECKING(whether to use Abyss pthread function)
 AC_ARG_ENABLE(abyss-threads,
@@ -354,9 +364,7 @@ AC_SUBST(ENABLE_ABYSS_THREADS)
 
 if test x"$enable_abyss_threads" != xno; then
     CFLAGS="$CFLAGS -D_THREAD"
-    LIBABYSS_LDADD="-lpthread"
 fi
-AC_SUBST(LIBABYSS_LDADD)
 
 
 dnl =======================================================================

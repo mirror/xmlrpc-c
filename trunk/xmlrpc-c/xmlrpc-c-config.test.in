@@ -12,9 +12,11 @@
 SRCDIR="@BUILDDIR@"  # until we figure out how to do it right
 BUILDDIR="@BUILDDIR@"
 ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND@"
+ENABLE_ABYSS_THREADS="@ENABLE_ABYSS_THREADS@"
 MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
 MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
 MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
+LSOCKET="@LSOCKET@"
 
 if test $# -eq 0; then
       echo "You need to specify arguments"
@@ -63,7 +65,10 @@ while test $# -gt 0; do
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_cgi.a $the_libs"
       ;;
     abyss-server)
-      the_libs="@LIBABYSS_LDADD@ $the_libs"
+      if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
+        the_libs="-lpthread $the_libs"
+        fi
+      the_list = "${LSOCKET} $the_libs"
       the_libs="${BUILDDIR}/lib/abyss/src/.libs/libxmlrpc_abyss.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"

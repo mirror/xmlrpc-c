@@ -22,9 +22,11 @@ pkglibdir=$libdir/@PACKAGE@
 pkgincludedir=$includedir/@PACKAGE@
 
 ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND@"
+ENABLE_ABYSS_THREADS="@ENABLE_ABYSS_THREADS@"
 MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
 MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
 MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
+LSOCKET="@LSOCKET@"
 
 usage="Usage: xmlrpc-c-config <feature> ... <option> ...
 
@@ -88,7 +90,10 @@ while test $# -gt 0; do
       the_libs="-lxmlrpc_server_cgi $the_libs"
       ;;
     abyss-server)
-      the_libs="@LIBABYSS_LDADD@ $the_libs"
+      if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
+        the_libs="-lpthread $the_libs"
+        fi
+      the_list = "${LSOCKET} $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server_abyss $the_libs"
