@@ -25,7 +25,9 @@ serverAbyss::serverAbyss(
     unsigned int       const  keepaliveTimeout,
     unsigned int       const  keepaliveMaxConn,
     unsigned int       const  timeout,
-    bool               const  dontAdvertise) {
+    bool               const  dontAdvertise,
+    bool               const  socketBound,
+    xmlrpc_socket      const  socketFd) {
    
     this->registryP = &registry;
     this->logFileName = logFileName;
@@ -33,6 +35,8 @@ serverAbyss::serverAbyss(
     this->keepaliveMaxConn = keepaliveMaxConn;
     this->timeout = timeout;
     this->dontAdvertise = dontAdvertise;
+    this->socketBound = socketBound;
+    this->socketFd = socketFd;
     
     if (portNumber > 0xffff)
         throw(error("Port number exceeds the maximum possible port number "
@@ -159,8 +163,12 @@ serverAbyss::run() {
     
     TServer srv;
 
-    ServerCreate(&srv, "XmlRpcServer", this->portNumber,
-                 DEFAULT_DOCS, this->logFileName.c_str());
+    if (this->socketBound)
+        ServerCreateSocket(&srv, "XmlRpcServer", this->socketFd,
+                           DEFAULT_DOCS, this->logFileName.c_str());
+    else
+        ServerCreate(&srv, "XmlRpcServer", this->portNumber,
+                     DEFAULT_DOCS, this->logFileName.c_str());
 
     setAdditionalServerParms(
         this->keepaliveTimeout, this->keepaliveMaxConn, this->timeout,

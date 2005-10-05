@@ -40,6 +40,12 @@ typedef double xmlrpc_double;
        for mathematical completeness.
     */
 
+#ifdef _WIN32
+typedef SOCKET xmlrpc_socket;
+#else
+typedef int xmlrpc_socket;
+#endif
+
 #define XMLRPC_INT32_MAX (2147483647)
 #define XMLRPC_INT32_MIN (-XMLRPC_INT32_MAX - 1)
 

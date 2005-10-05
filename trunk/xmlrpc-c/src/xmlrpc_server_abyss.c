@@ -805,12 +805,12 @@ extractServerCreateParms(
         *socketBoundP = FALSE;
 
     if (*socketBoundP) {
-        if (parmSize < XMLRPC_APSIZE(socket_fd))
+        if (parmSize < XMLRPC_APSIZE(socket_handle))
             xmlrpc_faultf(envP, "socket_bound is true, but server parameter "
-                          "structure does not contain socket_fd (it's too "
+                          "structure does not contain socket_handle (it's too "
                           "short)");
         else
-            *socketFdP = parmsP->socket_bound;
+            *socketFdP = parmsP->socket_handle;
     } else {
         if (parmSize >= XMLRPC_APSIZE(port_number))
             *portNumberP = parmsP->port_number;

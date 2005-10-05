@@ -53,7 +53,7 @@ typedef struct {
     unsigned int      timeout;
     xmlrpc_bool       dont_advertise;
     xmlrpc_bool       socket_bound;
-    int               socket_fd;
+    xmlrpc_socket     socket_handle;
 } xmlrpc_server_abyss_parms;
 
 
@@ -62,7 +62,7 @@ typedef struct {
 
 /* XMLRPC_APSIZE(xyz) is the minimum size a struct xmlrpc_server_abyss_parms
    must be to include the 'xyz' member.  This is essential to forward and
-   backward compatbility, as new members will be added to the end of the
+   backward compatibility, as new members will be added to the end of the
    struct in future releases.  This is how the callee knows whether or
    not the caller is new enough to have supplied a certain parameter.
 */

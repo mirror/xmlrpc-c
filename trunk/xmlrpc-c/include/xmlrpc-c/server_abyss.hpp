@@ -15,7 +15,9 @@ public:
         unsigned int       const  keepaliveTimeout = 0,
         unsigned int       const  keepaliveMaxConn = 0,
         unsigned int       const  timeout = 0,
-        bool               const  dontAdvertise = false
+        bool               const  dontAdvertise = false,
+        bool               const  socketBound = false,
+        xmlrpc_socket      const  socketFd = 0
         );
     ~serverAbyss();
     
@@ -28,13 +30,15 @@ private:
     
     const xmlrpc_c::registry * registryP;
     
-    std::string  configFileName;
-    std::string  logFileName;
-    unsigned int portNumber;
-    unsigned int keepaliveTimeout;
-    unsigned int keepaliveMaxConn;
-    unsigned int timeout;
-    bool         dontAdvertise;
+    std::string   configFileName;
+    std::string   logFileName;
+    unsigned int  portNumber;
+    unsigned int  keepaliveTimeout;
+    unsigned int  keepaliveMaxConn;
+    unsigned int  timeout;
+    bool          dontAdvertise;
+    bool          socketBound;
+    xmlrpc_socket socketFd;
 };
 
 
