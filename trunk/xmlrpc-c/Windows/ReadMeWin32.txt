@@ -3,8 +3,8 @@ XMLRPC-C Win32 WinInet
 
 Please read this file in its entirety for configuration instructions.
 
-This release includes the option to compile the "http.sys" version of the
-XMLRPC-C server.  If you do not wish to build in the http.sys server,
+This release includes the option to compile an "http.sys" version of an
+XML-RPC server.  If you do not wish to build in the http.sys server,
 set the MUST_BUILD_HTTP_SYS_SERVER to 0 in the transport_config_win32.h and/or
 the transport_config.h file.  Successful conpilation requires installation 
 of the Microsoft Platform SDK for Windows XP SP2 (or later) to get the latest 
