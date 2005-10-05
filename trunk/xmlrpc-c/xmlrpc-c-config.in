@@ -93,7 +93,7 @@ while test $# -gt 0; do
       if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
         the_libs="-lpthread $the_libs"
         fi
-      the_list = "${LSOCKET} $the_libs"
+      the_libs="${LSOCKET} $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server_abyss $the_libs"
