@@ -34,6 +34,7 @@ ABYSS_OBJS = \
   thread.lo \
   http.lo \
   socket.lo \
+  session.lo \
   server.lo \
   conn.lo \
 

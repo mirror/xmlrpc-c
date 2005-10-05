@@ -94,6 +94,7 @@ extern "C" {
 #endif  /* ABYSS_WIN32 */
 
 typedef int abyss_bool;
+enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
 /*********************************************************************
 ** Buffer
@@ -264,195 +265,87 @@ char *PoolStrdup(TPool *p,char *s);
 
 
 /*********************************************************************
-** File
-*********************************************************************/
-
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <limits.h>
-
-#ifndef NAME_MAX
-#define NAME_MAX    1024
-#endif
-
-#ifdef ABYSS_WIN32
-#ifndef __BORLANDC__
-#define O_APPEND    _O_APPEND
-#define O_CREAT     _O_CREAT 
-#define O_EXCL      _O_EXCL
-#define O_RDONLY    _O_RDONLY
-#define O_RDWR      _O_RDWR 
-#define O_TRUNC _O_TRUNC
-#define O_WRONLY    _O_WRONLY
-#define O_TEXT      _O_TEXT
-#define O_BINARY    _O_BINARY
-#endif
-
-#define A_HIDDEN    _A_HIDDEN
-#define A_NORMAL    _A_NORMAL
-#define A_RDONLY    _A_RDONLY
-#define A_SUBDIR    _A_SUBDIR
-#else
-#define A_SUBDIR    1
-#define O_BINARY    0
-#define O_TEXT      0
-#endif  /* ABYSS_WIN32 */
-
-#ifdef ABYSS_WIN32
-
-#ifndef __BORLANDC__
-typedef struct _stati64 TFileStat;
-typedef struct _finddata_t TFileInfo;
-typedef long TFileFind;
-
-#else
-
-typedef struct stat TFileStat;
-typedef struct finddata_t
-{
-    char name[NAME_MAX+1];
-    int attrib;
-    uint64_t size;
-    time_t time_write;
-   WIN32_FIND_DATA data;
-} TFileInfo;
-typedef HANDLE TFileFind;
-#endif
-
-#else
-
-#include <unistd.h>
-#include <dirent.h>
-
-typedef struct stat TFileStat;
-
-typedef struct finddata_t
-{
-    char name[NAME_MAX+1];
-    int attrib;
-    uint64_t size;
-    time_t time_write;
-} TFileInfo;
-
-typedef struct 
-{
-    char path[NAME_MAX+1];
-    DIR *handle;
-} TFileFind;
-
-#endif
-
-typedef int TFile;
-
-abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib);
-abyss_bool FileOpenCreate(TFile *f, const char *name, uint32_t attrib);
-abyss_bool FileClose(TFile *f);
-
-abyss_bool FileWrite(TFile *f, void *buffer, uint32_t len);
-int32_t FileRead(TFile *f, void *buffer, uint32_t len);
-
-abyss_bool FileSeek(TFile *f, uint64_t pos, uint32_t attrib);
-uint64_t FileSize(TFile *f);
-
-abyss_bool FileStat(char *filename,TFileStat *filestat);
-
-abyss_bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo);
-abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo);
-void FileFindClose(TFileFind *filefind);
-
-/*********************************************************************
 ** Socket
 *********************************************************************/
-
-/* These should not be defined here, but they have to be because
-   struct _TServer and _Tconn, which also should not be defined here,
-   are.  Some day, we will make those private and then TSocket and
-   TIPAddr can be too.
-*/
-
-#include <netinet/in.h>
 
 #ifdef ABYSS_WIN32
 typedef SOCKET TSocket;
 #else
-typedef uint32_t TSocket;
+typedef int TSocket;
 #endif  /* ABYSS_WIN32 */
 
-typedef struct in_addr TIPAddr;
-
-
 /*********************************************************************
-** Server (1/2)
+** Connection
 *********************************************************************/
 
-typedef struct _TServer
-{
-    TSocket listensock;
-    TFile logfile;
-    TMutex logmutex;
-    char *name;
-    char *filespath;
-    uint16_t port;
-    uint32_t keepalivetimeout,keepalivemaxconn,timeout;
-    TList handlers;
-    TList defaultfilenames;
-    void *defaulthandler;
-    abyss_bool advertise;
-#ifndef _WIN32
-    uid_t uid;
-    gid_t gid;
-    TFile pidfile;
-#endif  
+typedef struct _TConn TConn;
+
+/*********************************************************************
+** Server
+*********************************************************************/
+
+typedef struct {
+    /* Before Xmlrpc-c 1.04, the internal server representation,
+       struct _TServer, was exposed to users and was the only way to
+       set certain parameters of the server.  Now, use the (new)
+       ServerSet...() functions.  Use the HAVE_ macros to determine
+       which method you have to use.
+    */
+    struct _TServer * srvP;
 } TServer;
 
+abyss_bool
+ServerCreate(TServer *    const serverP,
+             const char * const name,
+             uint16_t     const port,
+             const char * const filespath,
+             const char * const logfilename);
 
-/*********************************************************************
-** Conn
-*********************************************************************/
+abyss_bool
+ServerCreateSocket(TServer *    const serverP,
+                   const char * const name,
+                   TSocket      const socketFd,
+                   const char * const filespath,
+                   const char * const logfilename);
 
-#define BUFFER_SIZE 4096 
+void
+ServerFree(TServer * const serverP);
 
-typedef struct _TConn
-{
-    TServer *server;
-    uint32_t buffersize,bufferpos;
-    uint32_t inbytes,outbytes;  
-    TSocket socket;
-    TIPAddr peerip;
-    abyss_bool hasOwnThread;
-    TThread thread;
-    abyss_bool connected;
-    abyss_bool inUse;
-    const char * trace;
-    void (*job)(struct _TConn *);
-    char buffer[BUFFER_SIZE];
-} TConn;
+#define HAVE_SERVER_SET_KEEPALIVE_TIMEOUT 1
+void
+ServerSetKeepaliveTimeout(TServer * const serverP,
+                          uint32_t  const keepaliveTimeout);
 
-TConn *ConnAlloc(void);
-void ConnFree(TConn *c);
+#define HAVE_SERVER_SET_KEEPALIVE_MAX_CONN 1
+void
+ServerSetKeepaliveMaxConn(TServer * const serverP,
+                          uint32_t  const keepaliveMaxConn);
 
-enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
+#define HAVE_SERVER_SET_TIMEOUT 1
+void
+ServerSetTimeout(TServer * const serverP,
+                 uint32_t  const timeout);
 
-abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *));
-abyss_bool ConnCreate2(TConn *             const connectionP, 
-                       TServer *           const serverP,
-                       TSocket             const connectedSocket,
-                       TIPAddr             const peerIpAddr,
-                       void            ( *       func)(TConn *),
-                       enum abyss_foreback const foregroundBackground);
-abyss_bool ConnProcess(TConn *c);
-abyss_bool ConnKill(TConn *c);
-void ConnClose(TConn *c);
+#define HAVE_SERVER_SET_ADVERTISE 1
+void
+ServerSetAdvertise(TServer *  const serverP,
+                   abyss_bool const advertise);
 
-abyss_bool ConnWrite(TConn *c,void *buffer,uint32_t size);
-abyss_bool ConnRead(TConn *c, uint32_t timems);
-void ConnReadInit(TConn *c);
-abyss_bool ConnReadLine(TConn *c,char **z,uint32_t timems);
+void
+ServerInit(TServer * const serverP);
 
-abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
-            void *buffer,uint32_t buffersize,uint32_t rate);
+void
+ServerRun(TServer * const serverP);
 
+void
+ServerRunOnce(TServer * const serverP);
+
+void
+ServerRunOnce2(TServer *           const serverP,
+               enum abyss_foreback const foregroundBackground);
+
+void
+ServerDaemonize(TServer * const serverP);
 
 /*********************************************************************
 ** Range
@@ -490,15 +383,12 @@ void Base64Encode(char *s,char *d);
 ** Session
 *********************************************************************/
 
-typedef enum
-{
-    m_unknown,m_get,m_put,m_head,m_post,m_delete,m_trace,m_options
+typedef enum {
+    m_unknown, m_get, m_put, m_head, m_post, m_delete, m_trace, m_options
 } TMethod;
 
-typedef struct
-{
+typedef struct {
     TMethod method;
-    uint32_t nbfileds;
     char *uri;
     char *query;
     char *host;
@@ -507,27 +397,25 @@ typedef struct
     char *referer;
     char *requestline;
     char *user;
-    uint16_t port;
-    TList cookies;
-    TList ranges;
+} TRequestInfo;
 
-    uint16_t status;
-    TString header;
+typedef struct _TSession TSession;
 
-    abyss_bool keepalive,cankeepalive;
-    abyss_bool done;
+abyss_bool
+SessionRefillBuffer(TSession * const sessionP);
 
-    TServer *server;
-    TConn *conn;
+size_t
+SessionReadDataAvail(TSession * const sessionP);
 
-    uint8_t versionminor,versionmajor;
+void
+SessionGetReadData(TSession *    const sessionP, 
+                   size_t        const max, 
+                   const char ** const outStartP, 
+                   size_t *      const outLenP);
 
-    TTable request_headers,response_headers;
-
-    TDate date;
-
-    abyss_bool chunkedwrite,chunkedwritemode;
-} TSession;
+void
+SessionGetRequestInfo(TSession *            const sessionP,
+                      const TRequestInfo ** const requestInfoPP);
 
 /*********************************************************************
 ** Request
@@ -571,30 +459,10 @@ void ResponseError(TSession *r);
 ** HTTP
 *********************************************************************/
 
-char *HTTPReasonByStatus(uint16_t status);
-
 int32_t HTTPRead(TSession *s,char *buffer,uint32_t len);
 
 abyss_bool HTTPWrite(TSession *s,char *buffer,uint32_t len);
 abyss_bool HTTPWriteEnd(TSession *s);
-
-/*********************************************************************
-** Server (2/2)
-*********************************************************************/
-
-abyss_bool ServerCreate(TServer *srv,
-                        const char *name,
-                        uint16_t port,
-                        const char *filespath,
-                        const char *logfilename);
-
-void ServerFree(TServer *srv);
-
-void ServerInit(TServer *srv);
-void ServerRun(TServer *srv);
-void ServerRunOnce(TServer *srv);
-void ServerRunOnce2(TServer *           const srv,
-                    enum abyss_foreback const foregroundBackground);
 
 typedef abyss_bool (*URIHandler) (TSession *); /* deprecated */
 
@@ -630,9 +498,9 @@ void
 ServerDefaultHandler(TServer *  const srvP,
                      URIHandler const handler);
 
-abyss_bool LogOpen(TServer *srv, const char *filename);
-void LogWrite(TServer *srv,char *c);
-void LogClose(TServer *srv);
+void
+LogWrite(TServer *    const srvP,
+         const char * const c);
 
 
 /*********************************************************************

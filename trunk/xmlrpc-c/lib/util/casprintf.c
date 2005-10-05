@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "xmlrpc_config.h"  /* For HAVE_ASPRINTF, __inline__ */
-#include "xmlrpc-c/base_int.h"
+#include "casprintf.h"
 
 
 
@@ -47,10 +47,10 @@ simpleVasprintf(char **      const retvalP,
 
 
 void
-xmlrpc_vasprintf(const char ** const retvalP,
-                 const char *  const fmt,
-                 va_list             varargs) {
-    
+cvasprintf(const char ** const retvalP,
+           const char *  const fmt,
+           va_list             varargs) {
+
     char * retval;
 
 #if HAVE_ASPRINTF
@@ -64,13 +64,13 @@ xmlrpc_vasprintf(const char ** const retvalP,
 
 
 void GNU_PRINTF_ATTR(2,3)
-xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...) {
+casprintf(const char ** const retvalP, const char * const fmt, ...) {
 
     va_list varargs;  /* mysterious structure used by variable arg facility */
 
     va_start(varargs, fmt); /* start up the mysterious variable arg facility */
 
-    xmlrpc_vasprintf(retvalP, fmt, varargs);
+    cvasprintf(retvalP, fmt, varargs);
 
     va_end(varargs);
 }
@@ -78,6 +78,6 @@ xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...) {
 
 
 void
-xmlrpc_strfree(const char * const string) {
+strfree(const char * const string) {
     free((void *)string);
 }

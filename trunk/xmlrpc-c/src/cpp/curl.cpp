@@ -14,7 +14,6 @@
 #include <cassert>
 #include <string>
 
-#include "casprintf.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;

@@ -1,7 +1,7 @@
 #include <string>
 
-#include "xmlrpc-c/girerr.hpp"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/girerr.hpp"
 
 using namespace std;
 

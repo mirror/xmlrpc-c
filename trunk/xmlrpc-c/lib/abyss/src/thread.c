@@ -34,6 +34,8 @@
 
 #ifdef ABYSS_WIN32
 #include <process.h>
+#else
+#include <unistd.h>
 #endif
 
 #include "xmlrpc-c/abyss.h"

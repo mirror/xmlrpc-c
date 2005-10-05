@@ -30,7 +30,7 @@ include $(BUILDDIR)/Makefile.config
 include $(SRCDIR)/Makefile.common
 
 .PHONY: all
-all: cmdline_parser.lo getoptx.lo
+all: cmdline_parser.lo getoptx.lo casprintf.lo
 
 INCLUDES = -Iinclude -I$(BUILDDIR)
 

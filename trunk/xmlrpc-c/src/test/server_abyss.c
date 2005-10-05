@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdio.h>
 
 #include "xmlrpc_config.h"
@@ -31,6 +32,22 @@ test_server_abyss(void) {
 
     ServerCreate(&abyssServer, "testserver", 8080, NULL, NULL);
     
+    xmlrpc_server_abyss_set_handlers(&abyssServer, registryP);
+
+    xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC3", registryP);
+
+    TEST_NO_FAULT(&env);
+
+    ServerSetKeepaliveTimeout(&abyssServer, 60);
+    ServerSetKeepaliveMaxConn(&abyssServer, 10);
+    ServerSetTimeout(&abyssServer, 0);
+    ServerSetAdvertise(&abyssServer, FALSE);
+
+    ServerFree(&abyssServer);
+
+    ServerCreateSocket(&abyssServer, "testserver", STDIN_FILENO,
+                       "/home/http", "/tmp/logfile");
+
     xmlrpc_server_abyss_set_handlers(&abyssServer, registryP);
 
     xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC3", registryP);

@@ -127,7 +127,7 @@ setAdditionalServerParms(
     unsigned int       const keepaliveMaxConn,
     unsigned int       const timeout,
     bool               const dontAdvertise,
-    TServer *          const srvP) {
+    TServer *          const serverP) {
 
     /* The following ought to be parameters on ServerCreate(), but it
        looks like plugging them straight into the TServer structure is
@@ -135,12 +135,12 @@ setAdditionalServerParms(
     */
 
     if (keepaliveTimeout > 0)
-        srvP->keepalivetimeout = keepaliveTimeout;
+        ServerSetKeepaliveTimeout(serverP, keepaliveTimeout);
     if (keepaliveMaxConn > 0)
-        srvP->keepalivemaxconn = keepaliveMaxConn;
+        ServerSetKeepaliveMaxConn(serverP, keepaliveMaxConn);
     if (timeout > 0)
-        srvP->timeout = timeout;
-    srvP->advertise = !dontAdvertise;
+        ServerSetTimeout(serverP, timeout);
+    ServerSetAdvertise(serverP, !dontAdvertise);
 }
 
 

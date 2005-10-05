@@ -112,35 +112,7 @@ static void
 traceChunkRead(TSession * const abyssSessionP) {
 
     fprintf(stderr, "XML-RPC handler got a chunk of %u bytes\n",
-            abyssSessionP->conn->buffersize -
-            abyssSessionP->conn->bufferpos);
-}
-
-
-
-/*=========================================================================
-**  get_buffer_data
-**=========================================================================
-**  Extract some data from the TConn's underlying input buffer. Do not
-**  extract more than 'max'.
-*/
-
-static void
-get_buffer_data(TSession * const r, 
-                int        const max, 
-                char **    const out_start, 
-                int *      const out_len) {
-
-    /* Point to the start of our data. */
-    *out_start = &r->conn->buffer[r->conn->bufferpos];
-
-    /* Decide how much data to retrieve. */
-    *out_len = r->conn->buffersize - r->conn->bufferpos;
-    if (*out_len > max)
-        *out_len = max;
-
-    /* Update our buffer position. */
-    r->conn->bufferpos += *out_len;
+            (unsigned int)SessionReadDataAvail(abyssSessionP));
 }
 
 
@@ -153,19 +125,9 @@ refillBufferFromConnection(xmlrpc_env * const envP,
    Get the next chunk of data from the connection into the buffer.
 -----------------------------------------------------------------------------*/
     abyss_bool succeeded;
-            
-    /* Reset our read buffer & flush data from previous reads. */
-    ConnReadInit(abyssSessionP->conn);
-    
-    /* Read more network data into our buffer.  If we encounter a
-       timeout, exit immediately.  We're very forgiving about the
-       timeout here. We allow a full timeout per network read, which
-       would allow somebody to keep a connection alive nearly
-       indefinitely.  But it's hard to do anything intelligent here
-       without very complicated code.
-    */
-    succeeded = ConnRead(abyssSessionP->conn,
-                         abyssSessionP->server->timeout);
+
+    succeeded = SessionRefillBuffer(abyssSessionP);
+
     if (!succeeded)
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_TIMEOUT_ERROR, "Timed out waiting for "
@@ -200,14 +162,14 @@ getBody(xmlrpc_env *        const envP,
     body = xmlrpc_mem_block_new(envP, 0);
     if (!envP->fault_occurred) {
         unsigned int bytesRead;
-        char * chunkPtr;
+        const char * chunkPtr;
         int chunkLen;
 
         bytesRead = 0;
 
         while (!envP->fault_occurred && bytesRead < contentSize) {
-            get_buffer_data(abyssSessionP, contentSize - bytesRead, 
-                            &chunkPtr, &chunkLen);
+            SessionGetReadData(abyssSessionP, contentSize - bytesRead, 
+                               &chunkPtr, &chunkLen);
             bytesRead += chunkLen;
 
             XMLRPC_MEMBLOCK_APPEND(char, envP, body, chunkPtr, chunkLen);
@@ -313,12 +275,15 @@ static void
 traceHandlerCalled(TSession * const abyssSessionP) {
     
     const char * methodDesc;
+    const TRequestInfo * requestInfoP;
 
     fprintf(stderr, "xmlrpc_server_abyss RPC2 handler called.\n");
 
-    fprintf(stderr, "URI = '%s'\n", abyssSessionP->uri);
+    SessionGetRequestInfo(abyssSessionP, &requestInfoP);
 
-    switch (abyssSessionP->method) {
+    fprintf(stderr, "URI = '%s'\n", requestInfoP->uri);
+
+    switch (requestInfoP->method) {
     case m_unknown: methodDesc = "unknown";   break;
     case m_get:     methodDesc = "get";       break;
     case m_put:     methodDesc = "put";       break;
@@ -331,9 +296,9 @@ traceHandlerCalled(TSession * const abyssSessionP) {
     }
     fprintf(stderr, "HTTP method = '%s'\n", methodDesc);
 
-    if (abyssSessionP->query)
+    if (requestInfoP->query)
         fprintf(stderr, "query (component of URL)='%s'\n",
-                abyssSessionP->query);
+                requestInfoP->query);
     else
         fprintf(stderr, "URL has no query component\n");
 }
@@ -446,13 +411,17 @@ handleXmlrpcReq(URIHandler2 * const this,
 -----------------------------------------------------------------------------*/
     struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = this->userdata;
 
+    const TRequestInfo * requestInfoP;
+
     if (trace_abyss)
         traceHandlerCalled(abyssSessionP);
 
-    /* Note that abyssSessionP->uri is not the whole URI.  It is just
+    SessionGetRequestInfo(abyssSessionP, &requestInfoP);
+
+    /* Note that requestInfoP->uri is not the whole URI.  It is just
        the "file name" part of it.
     */
-    if (strcmp(abyssSessionP->uri, uriHandlerXmlrpcP->filename) != 0)
+    if (strcmp(requestInfoP->uri, uriHandlerXmlrpcP->filename) != 0)
         /* It's for the filename (e.g. "/RPC2") that we're supposed to
            handle.
         */
@@ -463,7 +432,7 @@ handleXmlrpcReq(URIHandler2 * const this,
         /* We understand only the POST HTTP method.  For anything else, return
            "405 Method Not Allowed". 
         */
-        if (abyssSessionP->method != m_post)
+        if (requestInfoP->method != m_post)
             send_error(abyssSessionP, 405);
         else {
             unsigned int httpError;
@@ -659,81 +628,13 @@ setupSignalHandlers(void) {
 
 
 static void
-setGroups(void) {
-
-#ifdef HAVE_SETGROUPS   
-    if (setgroups(0, NULL) == (-1))
-        TraceExit("Failed to setup the group.");
-#endif
-}
-
-
-
-static void
-daemonize(TServer * const srvP) {
-/*----------------------------------------------------------------------------
-   Turn Caller into a daemon (i.e. fork a child, then exit; the child
-   returns to Caller).
-
-   NOTE: It's ridiculous, but conventional, for us to do this.  It's
-   ridiculous because the task of daemonizing is not something
-   particular to Xmlrpc-c.  It ought to be done by a higher level.  In
-   fact, it should be done before the Xmlrpc-c server program is even
-   execed.  The user should run a "daemonize" program that creates a
-   daemon which execs the Xmlrpc-c server program.
------------------------------------------------------------------------------*/
-#ifndef _WIN32
-    /* Become a daemon */
-    switch (fork()) {
-    case 0:
-        break;
-    case -1:
-        TraceExit("Unable to become a daemon");
-    default:
-        /* We are the parent */
-        exit(0);
-    };
-    
-    setsid();
-
-    /* Change the current user if we are root */
-    if (getuid()==0) {
-        if (srvP->uid == (uid_t)-1)
-            TraceExit("Can't run under root privileges.  "
-                      "Please add a User option in your "
-                      "Abyss configuration file.");
-
-        setGroups();
-
-        if (srvP->gid != (gid_t)-1)
-            if (setgid(srvP->gid)==(-1))
-                TraceExit("Failed to change the group.");
-
-        
-        if (setuid(srvP->uid) == -1)
-            TraceExit("Failed to change the user.");
-    };
-    
-    if (srvP->pidfile!=(-1)) {
-        char z[16];
-    
-        sprintf(z,"%d",getpid());
-        FileWrite(&srvP->pidfile,z,strlen(z));
-        FileClose(&srvP->pidfile);
-    };
-#endif  /* _WIN32 */
-}
-
-
-
-static void
 runServerDaemon(TServer *  const srvP,
                 runfirstFn const runfirst,
                 void *     const runfirstArg) {
 
     setupSignalHandlers();
 
-    daemonize(srvP);
+    ServerDaemonize(srvP);
     
     /* We run the user supplied runfirst after forking, but before accepting
        connections (helpful when running with threads)
@@ -823,7 +724,7 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
 static void
 oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
                      const xmlrpc_server_abyss_parms * const parmsP,
-                     unsigned int                      const parm_size) {
+                     unsigned int                      const parmSize) {
 /*----------------------------------------------------------------------------
    This is the old deprecated interface, where the caller of the 
    xmlrpc_server_abyss API supplies an Abyss configuration file and
@@ -850,7 +751,7 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
         
     ServerInit(&srv);
     
-    if (parm_size >= XMLRPC_APSIZE(runfirst_arg)) {
+    if (parmSize >= XMLRPC_APSIZE(runfirst_arg)) {
         runfirst    = parmsP->runfirst;
         runfirstArg = parmsP->runfirst_arg;
     } else {
@@ -864,74 +765,114 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
 
 static void
 setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
-                         unsigned int                      const parm_size,
-                         TServer *                         const srvP) {
+                         unsigned int                      const parmSize,
+                         TServer *                         const serverP) {
 
     /* The following ought to be parameters on ServerCreate(), but it
        looks like plugging them straight into the TServer structure is
        the only way to set them.  
     */
 
-    if (parm_size >= XMLRPC_APSIZE(keepalive_timeout) &&
+    if (parmSize >= XMLRPC_APSIZE(keepalive_timeout) &&
         parmsP->keepalive_timeout > 0)
-            srvP->keepalivetimeout = parmsP->keepalive_timeout;
-    if (parm_size >= XMLRPC_APSIZE(keepalive_max_conn) &&
+        ServerSetKeepaliveTimeout(serverP, parmsP->keepalive_timeout);
+    if (parmSize >= XMLRPC_APSIZE(keepalive_max_conn) &&
         parmsP->keepalive_max_conn > 0)
-        srvP->keepalivemaxconn = parmsP->keepalive_max_conn;
-    if (parm_size >= XMLRPC_APSIZE(timeout) &&
+        ServerSetKeepaliveMaxConn(serverP, parmsP->keepalive_max_conn);
+    if (parmSize >= XMLRPC_APSIZE(timeout) &&
         parmsP->timeout > 0)
-        srvP->timeout = parmsP->timeout;
-    if (parm_size >= XMLRPC_APSIZE(dont_advertise))
-        srvP->advertise = !parmsP->dont_advertise;
+        ServerSetTimeout(serverP, parmsP->timeout);
+    if (parmSize >= XMLRPC_APSIZE(dont_advertise))
+        ServerSetAdvertise(serverP, !parmsP->dont_advertise);
 }
 
 
 
 static void
-normalLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
+extractServerCreateParms(
+    xmlrpc_env *                      const envP,
+    const xmlrpc_server_abyss_parms * const parmsP,
+    unsigned int                      const parmSize,
+    abyss_bool *                      const socketBoundP,
+    unsigned int *                    const portNumberP,
+    TSocket *                         const socketFdP,
+    const char **                     const logFileNameP) {
+                   
+
+    if (parmSize >= XMLRPC_APSIZE(socket_bound))
+        *socketBoundP = parmsP->socket_bound;
+    else
+        *socketBoundP = FALSE;
+
+    if (*socketBoundP) {
+        if (parmSize < XMLRPC_APSIZE(socket_fd))
+            xmlrpc_faultf(envP, "socket_bound is true, but server parameter "
+                          "structure does not contain socket_fd (it's too "
+                          "short)");
+        else
+            *socketFdP = parmsP->socket_bound;
+    } else {
+        if (parmSize >= XMLRPC_APSIZE(port_number))
+            *portNumberP = parmsP->port_number;
+        else
+            *portNumberP = 8080;
+
+        if (*portNumberP > 0xffff)
+            xmlrpc_faultf(envP,
+                          "TCP port number %u exceeds the maximum possible "
+                          "TCP port number (65535)",
+                          *portNumberP);
+    }
+    if (!envP->fault_occurred) {
+        if (parmSize >= XMLRPC_APSIZE(log_file_name))
+            *logFileNameP = strdup(parmsP->log_file_name);
+        else
+            *logFileNameP = NULL;
+    }
+}
+
+
+
+static void
+normalLevelAbyssRun(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
-                    unsigned int                      const parm_size) {
+                    unsigned int                      const parmSize) {
     
+    abyss_bool socketBound;
     unsigned int portNumber;
+    TSocket socketFd;
+    const char * logFileName;
     
     DateInit();
     MIMETypeInit();
 
-    if (parm_size >= XMLRPC_APSIZE(port_number))
-        portNumber = parmsP->port_number;
-    else
-        portNumber = 8080;
+    extractServerCreateParms(envP, parmsP, parmSize,
+                             &socketBound, &portNumber, &socketFd,
+                             &logFileName);
 
-    if (portNumber > 0xffff)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "TCP port number %u exceeds the maximum possible "
-            "TCP port number (65535)",
-            portNumber);
-    else {
-        TServer srv;
-        const char * logFileName;
+    if (!envP->fault_occurred) {
+        TServer server;
 
-        if (parm_size >= XMLRPC_APSIZE(log_file_name))
-            logFileName = parmsP->log_file_name;
+        if (socketBound)
+            ServerCreateSocket(&server, "XmlRpcServer", socketFd,
+                               DEFAULT_DOCS, logFileName);
         else
-            logFileName = NULL;
+            ServerCreate(&server, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
+                         logFileName);
 
-        ServerCreate(&srv, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
-                     logFileName);
+        setAdditionalServerParms(parmsP, parmSize, &server);
 
-        setAdditionalServerParms(parmsP, parm_size, &srv);
-
-        xmlrpc_server_abyss_set_handlers(&srv, parmsP->registryP);
+        xmlrpc_server_abyss_set_handlers(&server, parmsP->registryP);
         
-        ServerInit(&srv);
+        ServerInit(&server);
         
         setupSignalHandlers();
         
-        ServerRun(&srv);
+        ServerRun(&server);
 
         /* We can't exist here because ServerRun doesn't return */
         XMLRPC_ASSERT(FALSE);
+        xmlrpc_strfree(logFileName);
     }
 }
 
@@ -940,23 +881,22 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
-                    unsigned int                      const parm_size) {
+                    unsigned int                      const parmSize) {
  
     XMLRPC_ASSERT_ENV_OK(envP);
 
-    if (parm_size < XMLRPC_APSIZE(registryP))
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "You must specify members at least up through "
-            "'registryP' in the server parameters argument.  "
-            "That would mean the parameter size would be >= %u "
-            "but you specified a size of %u",
-            XMLRPC_APSIZE(registryP), parm_size);
+    if (parmSize < XMLRPC_APSIZE(registryP))
+        xmlrpc_faultf(envP,
+                      "You must specify members at least up through "
+                      "'registryP' in the server parameters argument.  "
+                      "That would mean the parameter size would be >= %u "
+                      "but you specified a size of %u",
+                      XMLRPC_APSIZE(registryP), parmSize);
     else {
         if (parmsP->config_file_name)
-            oldHighLevelAbyssRun(envP, parmsP, parm_size);
+            oldHighLevelAbyssRun(envP, parmsP, parmSize);
         else
-            normalLevelAbyssRun(envP, parmsP, parm_size);
+            normalLevelAbyssRun(envP, parmsP, parmSize);
     }
 }
 

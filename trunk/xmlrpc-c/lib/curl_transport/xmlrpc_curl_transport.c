@@ -19,7 +19,6 @@
 #include "mallocvar.h"
 #include "linklist.h"
 #include "sstring.h"
-#include "casprintf.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
@@ -442,31 +441,31 @@ freeXportParms(const struct xmlrpc_client_transport * const transportP) {
     const struct curlSetup * const curlSetupP = &transportP->curlSetupStuff;
 
     if (curlSetupP->sslCipherList)
-        strfree(curlSetupP->sslCipherList);
+        xmlrpc_strfree(curlSetupP->sslCipherList);
     if (curlSetupP->egdSocket)
-        strfree(curlSetupP->egdSocket);
+        xmlrpc_strfree(curlSetupP->egdSocket);
     if (curlSetupP->randomFile)
-        strfree(curlSetupP->randomFile);
+        xmlrpc_strfree(curlSetupP->randomFile);
     if (curlSetupP->caPath)
-        strfree(curlSetupP->caPath);
+        xmlrpc_strfree(curlSetupP->caPath);
     if (curlSetupP->caInfo)
-        strfree(curlSetupP->caInfo);
+        xmlrpc_strfree(curlSetupP->caInfo);
     if (curlSetupP->sslEngine)
-        strfree(curlSetupP->sslEngine);
+        xmlrpc_strfree(curlSetupP->sslEngine);
     if (curlSetupP->sslKeyPasswd)
-        strfree(curlSetupP->sslKeyPasswd);
+        xmlrpc_strfree(curlSetupP->sslKeyPasswd);
     if (curlSetupP->sslKeyType)
-        strfree(curlSetupP->sslKeyType);
+        xmlrpc_strfree(curlSetupP->sslKeyType);
     if (curlSetupP->sslKey)
-        strfree(curlSetupP->sslKey);
+        xmlrpc_strfree(curlSetupP->sslKey);
     if (curlSetupP->sslCertType)
-        strfree(curlSetupP->sslCertType);
+        xmlrpc_strfree(curlSetupP->sslCertType);
     if (curlSetupP->sslCert)
-        strfree(curlSetupP->sslCert);
+        xmlrpc_strfree(curlSetupP->sslCert);
     if (curlSetupP->networkInterface)
-        strfree(curlSetupP->networkInterface);
+        xmlrpc_strfree(curlSetupP->networkInterface);
     if (transportP->userAgent)
-        strfree(transportP->userAgent);
+        xmlrpc_strfree(transportP->userAgent);
 }
 
 
@@ -666,9 +665,9 @@ addUserAgentHeader(xmlrpc_env *         const envP,
                 (curlInfoP->version_num >>  0) && 0xff
             );
                   
-        casprintf(&userAgentHeader,
-                  "User-Agent: %s Xmlrpc-c/%s Curl/%s",
-                  userAgent, XMLRPC_C_VERSION, curlVersion);
+        xmlrpc_asprintf(&userAgentHeader,
+                        "User-Agent: %s Xmlrpc-c/%s Curl/%s",
+                        userAgent, XMLRPC_C_VERSION, curlVersion);
         
         if (userAgentHeader == NULL)
             xmlrpc_faultf(envP, "Couldn't allocate memory for "
@@ -676,7 +675,7 @@ addUserAgentHeader(xmlrpc_env *         const envP,
         else {
             addHeader(envP, headerListP, userAgentHeader);
             
-            strfree(userAgentHeader);
+            xmlrpc_strfree(userAgentHeader);
         }
     }
 }
@@ -691,7 +690,8 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
     if (basicAuthInfo) {
         const char * authorizationHeader;
             
-        casprintf(&authorizationHeader, "Authorization: %s", basicAuthInfo);
+        xmlrpc_asprintf(&authorizationHeader, "Authorization: %s",
+                        basicAuthInfo);
             
         if (authorizationHeader == NULL)
             xmlrpc_faultf(envP, "Couldn't allocate memory for "
@@ -699,7 +699,7 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
         else {
             addHeader(envP, headerListP, authorizationHeader);
 
-            strfree(authorizationHeader);
+            xmlrpc_strfree(authorizationHeader);
         }
     }
 }
@@ -850,7 +850,7 @@ createCurlTransaction(xmlrpc_env *               const envP,
                                  curlSetupStuffP);
 
             if (envP->fault_occurred)
-                strfree(curlTransactionP->serverUrl);
+                xmlrpc_strfree(curlTransactionP->serverUrl);
         }
         if (envP->fault_occurred)
             free(curlTransactionP);
@@ -864,7 +864,7 @@ static void
 destroyCurlTransaction(curlTransaction * const curlTransactionP) {
 
     curl_slist_free_all(curlTransactionP->headerList);
-    strfree(curlTransactionP->serverUrl);
+    xmlrpc_strfree(curlTransactionP->serverUrl);
 
     free(curlTransactionP);
 }

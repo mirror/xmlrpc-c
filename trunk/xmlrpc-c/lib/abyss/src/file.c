@@ -47,6 +47,7 @@
 #endif  /* ABYSS_WIN32 */
 
 #include "xmlrpc-c/abyss.h"
+#include "file.h"
 
 /*********************************************************************
 ** File
@@ -70,8 +71,10 @@ abyss_bool FileOpenCreate(TFile *f, const char *name, uint32_t attrib)
 #endif
 }
 
-abyss_bool FileWrite(TFile *f, void *buffer, uint32_t len)
-{
+abyss_bool
+FileWrite(TFile *      const f,
+          const void * const buffer,
+          uint32_t     const len) {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
     return (_write(*f,buffer,len)==(int32_t)len);
 #else
@@ -118,8 +121,11 @@ abyss_bool FileClose(TFile *f)
 #endif
 }
 
-abyss_bool FileStat(char *filename,TFileStat *filestat)
-{
+
+
+abyss_bool
+FileStat(const char * const filename,
+         TFileStat *  const filestat) {
 #if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
     return (_stati64(filename,filestat)!=(-1));
 #else
@@ -127,8 +133,12 @@ abyss_bool FileStat(char *filename,TFileStat *filestat)
 #endif
 }
 
-abyss_bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo)
-{
+
+
+abyss_bool
+FileFindFirst(TFileFind *  const filefind,
+              const char * const path,
+              TFileInfo *  const fileinfo) {
 #ifdef ABYSS_WIN32
     abyss_bool ret;
     char *p=path+strlen(path);
@@ -164,6 +174,8 @@ abyss_bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo)
     return FALSE;
 #endif
 }
+
+
 
 abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
 {

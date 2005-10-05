@@ -31,14 +31,12 @@
 
 #endif  /* ABYSS_WIN32 */
 
+#include "xmlrpc-c/util_int.h"
 #include "socket.h"
 
 #ifdef ABYSS_WIN32
 #define  EINTR      WSAEINTR
 #endif
-
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 static abyss_bool ABYSS_TRACE_SOCKET;
 
@@ -184,15 +182,19 @@ abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16_t port)
     RET(bind(*s,(struct sockaddr *)&name,sizeof(name)));
 }
 
-abyss_bool SocketListen(TSocket *s, uint32_t backlog)
-{
-    int32_t n=-1;
+abyss_bool
+SocketListen(const TSocket * const socketFdP,
+             uint32_t        const backlog) {
 
-    /* Disable the naggle algorithm to make persistant connections faster */
-    setsockopt(*s, IPPROTO_TCP,TCP_NODELAY,(char *)&n,sizeof(n));
+    int32_t const n = -1;
 
-    RET(listen(*s,backlog));
+    /* Disable the Nagle algorithm to make persistant connections faster */
+    setsockopt(*socketFdP, IPPROTO_TCP,TCP_NODELAY, &n, sizeof(n));
+
+    RET(listen(*socketFdP, backlog));
 }
+
+
 
 abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip)
 {

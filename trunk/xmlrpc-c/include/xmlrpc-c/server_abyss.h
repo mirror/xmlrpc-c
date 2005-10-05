@@ -3,13 +3,12 @@
 #ifndef  XMLRPC_SERVER_ABYSS_H_INCLUDED
 #define  XMLRPC_SERVER_ABYSS_H_INCLUDED
 
+#include "xmlrpc-c/abyss.h"
 #include "xmlrpc-c/server.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-struct _TServer;
 
 /*=========================================================================
 **  XML-RPC Server (based on Abyss)
@@ -53,7 +52,8 @@ typedef struct {
     unsigned int      keepalive_max_conn;
     unsigned int      timeout;
     xmlrpc_bool       dont_advertise;
-
+    xmlrpc_bool       socket_bound;
+    int               socket_fd;
 } xmlrpc_server_abyss_parms;
 
 
@@ -73,12 +73,12 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     unsigned int                      const parm_size);
 
 void
-xmlrpc_server_abyss_set_handlers(struct _TServer * const srvP,
+xmlrpc_server_abyss_set_handlers(TServer *         const serverP,
                                  xmlrpc_registry * const registryP);
 
 void
 xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
-                                struct _TServer * const srvP,
+                                TServer *         const serverP,
                                 const char *      const filename,
                                 xmlrpc_registry * const registryP);
 

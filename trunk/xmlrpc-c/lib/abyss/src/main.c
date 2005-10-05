@@ -246,47 +246,9 @@ int main(int argc,char **argv)
 
     /* Catch defunct children. */
     signal(SIGCHLD,sigchld);
-    /* Become a daemon */
-    switch (fork())
-    {
-    case 0:
-        break;
-    case -1:
-        TraceExit("Unable to become a daemon");
-    default:
-        exit(0);
-    };
-
-#if !defined( _NO_USERS ) && !defined( __CYGWIN32__ )
-    setsid();
-    /* Change the current user if we are root */
-    if (getuid()==0)
-    {
-        if (srv.uid==(-1))
-            TraceExit("Can't run under root privileges. Please add a User option in your configuration file.");
-
-        if (setgroups(0,NULL)==(-1))
-            TraceExit("Failed to setup the group.");
-
-        if (srv.gid!=(-1))
-            if (setgid(srv.gid)==(-1))
-                TraceExit("Failed to change the group.");
-        
-        if (setuid(srv.uid)==(-1))
-            TraceExit("Failed to change the user.");
-    };
 #endif
 
-    if (srv.pidfile!=(-1))
-    {
-        char z[16];
-
-        sprintf(z,"%d",getpid());
-        FileWrite(&srv.pidfile,z,strlen(z));
-        FileClose(&srv.pidfile);
-    };
-
-#endif
+    ServerDaemonize(srv);
 
     ServerRun(&srv);
 

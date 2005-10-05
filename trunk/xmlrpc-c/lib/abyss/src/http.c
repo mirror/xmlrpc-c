@@ -41,6 +41,9 @@
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/abyss.h"
+#include "server.h"
+#include "session.h"
+#include "conn.h"
 #include "token.h"
 
 /*********************************************************************
@@ -51,61 +54,84 @@
 ** Request
 *********************************************************************/
 
-void RequestInit(TSession *r,TConn *c)
-{
-    time_t t;
+static void
+initRequestInfo(TRequestInfo * const requestInfoP) {
 
-    time(&t);
-    r->date=*gmtime(&t);
+    requestInfoP->query     = NULL;
+    requestInfoP->host      = NULL;
+    requestInfoP->from      = NULL;
+    requestInfoP->useragent = NULL;
+    requestInfoP->referer   = NULL;
+    requestInfoP->user      = NULL;
+    requestInfoP->requestline=NULL;
 
-    r->keepalive=r->cankeepalive=FALSE;
-    r->query=NULL;
-    r->host=NULL;
-    r->from=NULL;
-    r->useragent=NULL;
-    r->referer=NULL;
-    r->user=NULL;
-    r->port=80;
-    r->versionmajor=0;
-    r->versionminor=9;
-    r->server=c->server;
-    r->conn=c;
-
-    r->done=FALSE;
-
-    r->chunkedwrite=r->chunkedwritemode=FALSE;
-
-    r->requestline=NULL;
-
-    ListInit(&r->cookies);
-    ListInit(&r->ranges);
-    TableInit(&r->request_headers);
-    TableInit(&r->response_headers);
-
-    r->status=0;
-
-    StringAlloc(&(r->header));
-}
-
-void RequestFree(TSession *r)
-{
-    if (r->requestline)
-        free(r->requestline);
-
-    if (r->user)
-        free(r->user);
-
-    ListFree(&r->cookies);
-    ListFree(&r->ranges);
-    TableFree(&r->request_headers);
-    TableFree(&r->response_headers);
-    StringFree(&(r->header));
 }
 
 
 
 static void
-readFirstLineOfRequest(TSession *   const r,
+freeRequestInfo(TRequestInfo * const requestInfoP) {
+
+    if (requestInfoP->requestline)
+        free(requestInfoP->requestline);
+
+    if (requestInfoP->user)
+        free(requestInfoP->user);
+}
+
+
+
+void
+RequestInit(TSession * const sessionP,
+            TConn *    const connectionP) {
+
+    time_t nowtime;
+
+    time(&nowtime);
+    sessionP->date = *gmtime(&nowtime);
+
+    sessionP->keepalive = FALSE;
+    sessionP->cankeepalive = FALSE;
+    initRequestInfo(&sessionP->request_info);
+
+    sessionP->port=80;
+    sessionP->versionmajor=0;
+    sessionP->versionminor=9;
+    sessionP->conn = connectionP;
+
+    sessionP->done = FALSE;
+
+    sessionP->chunkedwrite = FALSE;
+    sessionP->chunkedwritemode = FALSE;
+
+    ListInit(&sessionP->cookies);
+    ListInit(&sessionP->ranges);
+    TableInit(&sessionP->request_headers);
+    TableInit(&sessionP->response_headers);
+
+    sessionP->status=0;
+
+    StringAlloc(&(sessionP->header));
+}
+
+
+
+void
+RequestFree(TSession * const sessionP) {
+
+    freeRequestInfo(&sessionP->request_info);
+
+    ListFree(&sessionP->cookies);
+    ListFree(&sessionP->ranges);
+    TableFree(&sessionP->request_headers);
+    TableFree(&sessionP->response_headers);
+    StringFree(&(sessionP->header));
+}
+
+
+
+static void
+readFirstLineOfRequest(TSession *   const sessionP,
                        char **      const lineP,
                        abyss_bool * const errorP) {
 
@@ -114,10 +140,10 @@ readFirstLineOfRequest(TSession *   const r,
     /* Ignore CRLFs in the beginning of the request (RFC2068-P30) */
     do {
         abyss_bool success;
-        success = ConnReadLine(r->conn, lineP, r->server->timeout);
+        success = ConnReadLine(sessionP->conn, lineP);
         if (!success) {
             /* Request Timeout */
-            ResponseStatus(r, 408);
+            ResponseStatus(sessionP, 408);
             *errorP = TRUE;
         }
     } while ((*lineP)[0] == '\0' && !*errorP);
@@ -139,7 +165,7 @@ processFirstLineOfRequest(TSession *   const r,
     /* Jump over spaces */
     NextToken(&p);
 
-    r->requestline = strdup(p);
+    r->request_info.requestline = strdup(p);
     
     t = GetToken(&p);
     if (!t) {
@@ -148,21 +174,21 @@ processFirstLineOfRequest(TSession *   const r,
         *errorP = TRUE;
     } else {
         if (strcmp(t, "GET") == 0)
-            r->method = m_get;
+            r->request_info.method = m_get;
         else if (strcmp(p, "PUT") == 0)
-            r->method = m_put;
+            r->request_info.method = m_put;
         else if (strcmp(t, "OPTIONS") == 0)
-            r->method = m_options;
+            r->request_info.method = m_options;
         else if (strcmp(p, "DELETE") == 0)
-            r->method = m_delete;
+            r->request_info.method = m_delete;
         else if (strcmp(t, "POST") == 0)
-            r->method = m_post;
+            r->request_info.method = m_post;
         else if (strcmp(p, "TRACE") == 0)
-            r->method = m_trace;
+            r->request_info.method = m_trace;
         else if (strcmp(t, "HEAD") == 0)
-            r->method = m_head;
+            r->request_info.method = m_head;
         else
-            r->method = m_unknown;
+            r->request_info.method = m_unknown;
         
         /* URI and Query Decoding */
         NextToken(&p);
@@ -171,14 +197,14 @@ processFirstLineOfRequest(TSession *   const r,
         if (!t)
             *errorP = TRUE;
         else {
-            r->uri=t;
+            r->request_info.uri=t;
         
             RequestUnescapeURI(r);
         
             t=strchr(t,'?');
             if (t) {
                 *t = '\0';
-                r->query = t+1;
+                r->request_info.query = t+1;
             }
         
             NextToken(&p);
@@ -212,18 +238,18 @@ processFirstLineOfRequest(TSession *   const r,
 
 
 abyss_bool
-RequestRead(TSession * const r) {
+RequestRead(TSession * const sessionP) {
     char *n,*t,*p;
     abyss_bool ret;
     abyss_bool error;
     char * line1;
     abyss_bool moreLines;
 
-    readFirstLineOfRequest(r, &line1, &error);
+    readFirstLineOfRequest(sessionP, &line1, &error);
     if (error)
         return FALSE;
     
-    processFirstLineOfRequest(r, line1, &moreLines, &error);
+    processFirstLineOfRequest(sessionP, line1, &moreLines, &error);
     if (error)
         return FALSE;
     if (!moreLines)
@@ -232,88 +258,78 @@ RequestRead(TSession * const r) {
     /* Headers decoding */
     ret = TRUE;
 
-    for (;;)
-    {
-        if (!ConnReadLine(r->conn,&p,r->server->timeout))
-        {
+    for (;;) {
+        if (!ConnReadLine(sessionP->conn, &p)) {
             /* Request Timeout */
-            ResponseStatus(r,408);
+            ResponseStatus(sessionP, 408);
             return FALSE;
-        };
-
+        }
+        
         /* We have reached the empty line so all the request was read */
         if (!*p)
             return TRUE;
 
         NextToken(&p);
         
-        if (!(n=GetToken(&p)))
-        {
+        if (!(n=GetToken(&p))) {
             /* Bad Request */
-            ResponseStatus(r,400);
+            ResponseStatus(sessionP, 400);
             return FALSE;
-        };
+        }
 
         /* Valid Field name ? */
-        if (n[strlen(n)-1]!=':')
-        {
+        if (n[strlen(n)-1] != ':') {
             /* Bad Request */
-            ResponseStatus(r,400);
+            ResponseStatus(sessionP, 400);
             return FALSE;
-        };
+        }
 
-        n[strlen(n)-1]='\0';
+        n[strlen(n)-1] = '\0';
 
         NextToken(&p);
 
-        t=n;
-        while (*t)
-        {
+        t = n;
+        while (*t) {
             *t=tolower(*t);
             t++;
-        };
+        }
 
-        t=p;
+        t = p;
 
-        TableAdd(&r->request_headers,n,t);
+        TableAdd(&sessionP->request_headers, n, t);
 
-        if (strcmp(n,"connection")==0)
-        {
+        if (strcmp(n, "connection")==0) {
             /* must handle the jigsaw TE,keepalive */
-            if (strcasecmp(t,"keep-alive")==0)
-                r->keepalive=TRUE;
+            if (strcasecmp(t, "keep-alive") == 0)
+                sessionP->keepalive=TRUE;
             else
-                r->keepalive=FALSE;
-        }
-        else if (strcmp(n,"host")==0)
-            r->host=t;
-        else if (strcmp(n,"from")==0)
-            r->from=t;
-        else if (strcmp(n,"user-agent")==0)
-            r->useragent=t;
-        else if (strcmp(n,"referer")==0)
-            r->referer=t;
-        else if (strcmp(n,"range")==0)
-        {
-            if (strncmp(t,"bytes=",6)==0)
-                if (!ListAddFromString(&(r->ranges),t+6))
-                {
+                sessionP->keepalive=FALSE;
+        } else if (strcmp(n, "host") == 0)
+            sessionP->request_info.host = t;
+        else if (strcmp(n, "from") == 0)
+            sessionP->request_info.from = t;
+        else if (strcmp(n, "user-agent") == 0)
+            sessionP->request_info.useragent = t;
+        else if (strcmp(n, "referer") == 0)
+            sessionP->request_info.referer = t;
+        else if (strcmp(n, "range") == 0) {
+            if (strncmp(t, "bytes=", 6) == 0)
+                if (!ListAddFromString(&sessionP->ranges, t+6)) {
                     /* Bad Request */
-                    ResponseStatus(r,400);
+                    ResponseStatus(sessionP, 400);
                     return FALSE;
-                };
-        }
-        else if (strcmp(n,"cookies")==0)
-        {
-            if (!ListAddFromString(&(r->cookies),t))
-            {
+                }
+        } else if (strcmp(n, "cookies") == 0) {
+            if (!ListAddFromString(&sessionP->cookies, t)) {
                 /* Bad Request */
-                ResponseStatus(r,400);
+                ResponseStatus(sessionP, 400);
                 return FALSE;
-            };
-        };
-    };
+            }
+        }
+    }
 }
+
+
 
 char *RequestHeaderValue(TSession *r,char *name)
 {
@@ -324,7 +340,7 @@ abyss_bool RequestUnescapeURI(TSession *r)
 {
     char *x,*y,c,d;
 
-    x=y=r->uri;
+    x=y=r->request_info.uri;
 
     while (1)
         switch (*x)
@@ -367,24 +383,24 @@ RequestValidURI(TSession *r) {
 
     char *p;
 
-    if (!r->uri)
+    if (!r->request_info.uri)
         return FALSE;
 
-    if (*(r->uri)!='/') {
-        if (strncmp(r->uri,"http://",7)!=0)
+    if (*(r->request_info.uri)!='/') {
+        if (strncmp(r->request_info.uri,"http://",7)!=0)
             return FALSE;
         else {
-            r->uri+=7;
-            r->host=r->uri;
-            p=strchr(r->uri,'/');
+            r->request_info.uri+=7;
+            r->request_info.host=r->request_info.uri;
+            p=strchr(r->request_info.uri,'/');
 
             if (!p) {
-                r->uri="*";
+                r->request_info.uri="*";
                 return TRUE;
             };
 
-            r->uri=p;
-            p=r->host;
+            r->request_info.uri=p;
+            p=r->request_info.host;
 
             while (*p!='/') {
                 *(p-1)=*p;
@@ -394,13 +410,13 @@ RequestValidURI(TSession *r) {
             --p;
             *p='\0';
 
-            --r->host;
+            --r->request_info.host;
         };
     }
 
     /* Host and Port Decoding */
-    if (r->host) {
-        p=strchr(r->host,':');
+    if (r->request_info.host) {
+        p=strchr(r->request_info.host,':');
         if (p) {
             uint32_t port=0;
 
@@ -417,10 +433,10 @@ RequestValidURI(TSession *r) {
                 return FALSE;
         };
     }
-    if (strcmp(r->uri,"*")==0)
-        return (r->method!=m_options);
+    if (strcmp(r->request_info.uri,"*")==0)
+        return (r->request_info.method!=m_options);
 
-    if (strchr(r->uri,'*'))
+    if (strchr(r->request_info.uri,'*'))
         return FALSE;
 
     return TRUE;
@@ -430,7 +446,7 @@ RequestValidURI(TSession *r) {
 abyss_bool RequestValidURIPath(TSession *r)
 {
     uint32_t i=0;
-    char *p=r->uri;
+    char *p=r->request_info.uri;
 
     if (*p=='/')
     {
@@ -480,7 +496,7 @@ RequestAuth(TSession *r,char *credential,char *user,char *pass) {
                 Base64Encode(z,t);
 
                 if (strcmp(p,t)==0) {
-                    r->user=strdup(user);
+                    r->request_info.user=strdup(user);
                     return TRUE;
                 };
             };
@@ -534,12 +550,13 @@ abyss_bool RangeDecode(char *str,uint64_t filesize,uint64_t *start,uint64_t *end
 ** HTTP
 *********************************************************************/
 
-char *HTTPReasonByStatus(uint16_t code)
-{
+static const char *
+HTTPReasonByStatus(uint16_t const code) {
+
     static struct _HTTPReasons {
         uint16_t status;
-        char *reason;
-    } *r,reasons[] = 
+        const char * reason;
+    } *r, reasons[] = 
     {
         { 100,"Continue" }, 
         { 101,"Switching Protocols" }, 
@@ -581,13 +598,13 @@ char *HTTPReasonByStatus(uint16_t code)
         { 000, NULL }
     };
 
-    r=reasons;
+    r = &reasons[0];
 
-    while (r->status<=code)
-        if (r->status==code)
-            return (r->reason);
+    while (r->status <= code)
+        if (r->status == code)
+            return r->reason;
         else
-            r++;
+            ++r;
 
     return "No Reason";
 }
@@ -640,22 +657,26 @@ abyss_bool HTTPWriteEnd(TSession *s)
 ** Response
 *********************************************************************/
 
-void ResponseError(TSession *r)
-{
-    char *reason=HTTPReasonByStatus(r->status);
+void
+ResponseError(TSession * const sessionP) {
+
+    const char * const reason = HTTPReasonByStatus(sessionP->status);
     char z[500];
 
-    ResponseAddField(r,"Content-type","text/html");
+    ResponseAddField(sessionP, "Content-type", "text/html");
 
-    ResponseWrite(r);
+    ResponseWrite(sessionP);
     
-    sprintf(z,"<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
+    sprintf(z,
+            "<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
             "<BODY><H1>Error %d</H1><P>%s</P>" SERVER_HTML_INFO 
             "</BODY></HTML>",
-            r->status,r->status,reason);
+            sessionP->status, sessionP->status, reason);
 
-    ConnWrite(r->conn,z,strlen(z)); 
+    ConnWrite(sessionP->conn, z, strlen(z)); 
 }
+
+
 
 abyss_bool ResponseChunked(TSession *r)
 {
@@ -697,76 +718,77 @@ abyss_bool ResponseAddField(TSession *r,char *name,char *value)
     return TableAdd(&r->response_headers,name,value);
 }
 
-void ResponseWrite(TSession *r)
-{
+
+
+void
+ResponseWrite(TSession * const sessionP) {
+
+    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+
     abyss_bool connclose=TRUE;
     char z[64];
-    TTableItem *ti;
-    uint16_t i;
-    char *reason;
+    unsigned int i;
 
     /* if status == 0 then this is an error */
-    if (r->status==0)
-        r->status=500;
+    if (sessionP->status == 0)
+        sessionP->status = 500;
 
     /* the request was treated */
-    r->done=TRUE;
+    sessionP->done = TRUE;
 
-    reason=HTTPReasonByStatus(r->status);
-    sprintf(z,"HTTP/1.1 %d ",r->status);
-    ConnWrite(r->conn,z,strlen(z));
-    ConnWrite(r->conn,reason,strlen(reason));
-    ConnWrite(r->conn,CRLF,2);
-
-    /* generation of the connection field */
-    if ((r->status<400) && (r->keepalive) && (r->cankeepalive))
-        connclose=FALSE;
-
-    ResponseAddField(r,"Connection",
-        (connclose?"close":"Keep-Alive"));
-
-    if (!connclose)
     {
-        sprintf(z,"timeout=%u, max=%u",r->server->keepalivetimeout
-                ,r->server->keepalivemaxconn);
-
-        ResponseAddField(r,"Keep-Alive",z);
-
-        if (r->chunkedwrite && r->chunkedwritemode)
-        {
-            if (!ResponseAddField(r,"Transfer-Encoding","chunked"))
-            {
-                    r->chunkedwrite=FALSE;
-                    r->keepalive=FALSE;
-            };
-        };
+        const char * const reason = HTTPReasonByStatus(sessionP->status);
+        sprintf(z,"HTTP/1.1 %d ", sessionP->status);
+        ConnWrite(sessionP->conn, z, strlen(z));
+        ConnWrite(sessionP->conn, reason, strlen(reason));
+        ConnWrite(sessionP->conn, CRLF, 2);
     }
-    else
-    {
-        r->keepalive=FALSE;
-        r->chunkedwrite=FALSE;
-    };
+    /* generation of the connection field */
+    if ((sessionP->status < 400) &&
+        (sessionP->keepalive) && (sessionP->cankeepalive))
+        connclose = FALSE;
+
+    ResponseAddField(sessionP, "Connection",
+                     (connclose ? "close" : "Keep-Alive"));
+
+    if (!connclose) {
+        sprintf(z, "timeout=%u, max=%u",
+                srvP->keepalivetimeout, srvP->keepalivemaxconn);
+
+        ResponseAddField(sessionP, "Keep-Alive", z);
+
+        if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
+            if (!ResponseAddField(sessionP, "Transfer-Encoding", "chunked")) {
+                sessionP->chunkedwrite = FALSE;
+                sessionP->keepalive    = FALSE;
+            }
+        }
+    } else {
+        sessionP->chunkedwrite =FALSE;
+        sessionP->keepalive    =FALSE;
+    }
     
     /* generation of the date field */
-    if ((r->status>=200) && DateToString(&r->date,z))
-        ResponseAddField(r,"Date",z);
+    if ((sessionP->status >= 200) && DateToString(&sessionP->date, z))
+        ResponseAddField(sessionP, "Date", z);
 
     /* Generation of the server field */
-    if (r->server->advertise)
-        ResponseAddField(r,"Server",SERVER_HVERSION);
+    if (srvP->advertise)
+        ResponseAddField(sessionP, "Server", SERVER_HVERSION);
 
     /* send all the fields */
-    for (i=0;i<r->response_headers.size;i++)
-    {
-        ti=&r->response_headers.item[i];
-        ConnWrite(r->conn,ti->name,strlen(ti->name));
-        ConnWrite(r->conn,": ",2);
-        ConnWrite(r->conn,ti->value,strlen(ti->value));
-        ConnWrite(r->conn,CRLF,2);
-    };
+    for (i = 0; i < sessionP->response_headers.size; ++i) {
+        TTableItem * const ti = &sessionP->response_headers.item[i];
+        ConnWrite(sessionP->conn, ti->name, strlen(ti->name));
+        ConnWrite(sessionP->conn, ": ", 2);
+        ConnWrite(sessionP->conn, ti->value, strlen(ti->value));
+        ConnWrite(sessionP->conn, CRLF, 2);
+    }
 
-    ConnWrite(r->conn,CRLF,2);  
+    ConnWrite(sessionP->conn, CRLF, 2);  
 }
+
+
 
 abyss_bool ResponseContentType(TSession *r,char *type)
 {

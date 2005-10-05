@@ -1,37 +1,4 @@
-/*******************************************************************************
-**
-** server.c
-**
-** This file is part of the ABYSS Web server project.
-**
-** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission.
-** 
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
-**
-*******************************************************************************/
-
+/* Copyright information is at end of file */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,6 +6,8 @@
 #ifdef ABYSS_WIN32
 #include <io.h>
 #else
+#include <unistd.h>
+#include <grp.h>
 /* Check this
 #include <sys/io.h>
 */
@@ -46,8 +15,12 @@
 #include <fcntl.h>
 
 #include "mallocvar.h"
+#include "xmlrpc-c/base_int.h"
 
 #include "xmlrpc-c/abyss.h"
+#include "server.h"
+#include "session.h"
+#include "conn.h"
 #include "socket.h"
 
 #define BOUNDARY    "##123456789###BOUNDARY"
@@ -91,25 +64,25 @@ ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate) {
     TPool pool;
     TDate date;
 
-    if (r->query) {
-        if (strcmp(r->query,"plain")==0)
+    if (r->request_info.query) {
+        if (strcmp(r->request_info.query,"plain")==0)
             text=TRUE;
-        else if (strcmp(r->query,"name-up")==0)
+        else if (strcmp(r->request_info.query,"name-up")==0)
         {
             sort=1;
             ascending=TRUE;
         }
-        else if (strcmp(r->query,"name-down")==0)
+        else if (strcmp(r->request_info.query,"name-down")==0)
         {
             sort=1;
             ascending=FALSE;
         }
-        else if (strcmp(r->query,"date-up")==0)
+        else if (strcmp(r->request_info.query,"date-up")==0)
         {
             sort=2;
             ascending=TRUE;
         }
-        else if (strcmp(r->query,"date-down")==0)
+        else if (strcmp(r->request_info.query,"date-down")==0)
         {
             sort=2;
             ascending=FALSE;
@@ -155,7 +128,7 @@ ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate) {
         if (*fileinfo.name=='.') {
             if (strcmp(fileinfo.name,"..")==0)
             {
-                if (strcmp(r->uri,"/")==0)
+                if (strcmp(r->request_info.uri,"/")==0)
                     continue;
             }
             else
@@ -189,11 +162,11 @@ ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate) {
     ResponseChunked(r);
     ResponseWrite(r);
 
-    if (r->method!=m_head)
+    if (r->request_info.method!=m_head)
     {
         if (text)
         {
-            sprintf(z,"Index of %s" CRLF,r->uri);
+            sprintf(z,"Index of %s" CRLF,r->request_info.uri);
             i=strlen(z)-2;
             p=z+i+2;
 
@@ -213,7 +186,7 @@ ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate) {
         else
         {
             sprintf(z,"<HTML><HEAD><TITLE>Index of %s</TITLE></HEAD><BODY>"
-                    "<H1>Index of %s</H1><PRE>",r->uri,r->uri);
+                    "<H1>Index of %s</H1><PRE>",r->request_info.uri,r->request_info.uri);
             strcat(z,"Name                      Size      "
                    "Date-Time             Type<HR WIDTH=100%>"CRLF);
         };
@@ -408,7 +381,7 @@ ServerFileHandler(TSession *r,char *z,TDate *filedate) {
 
     ResponseWrite(r);
 
-    if (r->method!=m_head)
+    if (r->request_info.method!=m_head)
     {
         if (r->ranges.size==0)
             ConnWriteFromFile(r->conn,&file,0,filesize-1,z,4096,0);
@@ -445,164 +418,256 @@ ServerFileHandler(TSession *r,char *z,TDate *filedate) {
     return TRUE;
 }
 
+
+
 static abyss_bool
-ServerDefaultHandlerFunc(TSession *r) {
-    char *p,z[4096];
+ServerDefaultHandlerFunc(TSession * const sessionP) {
+
+    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+
+    char *p;
+    char z[4096];
     TFileStat fs;
-    uint16_t i;
+    unsigned int i;
     abyss_bool endingslash=FALSE;
     TDate objdate;
 
-    if (!RequestValidURIPath(r))
-    {
-        ResponseStatus(r,400);
+    if (!RequestValidURIPath(sessionP)) {
+        ResponseStatus(sessionP, 400);
         return TRUE;
-    };
+    }
 
     /* Must check for * (asterisk uri) in the future */
-    if (r->method==m_options)
-    {
-        ResponseAddField(r,"Allow","GET, HEAD");
-        ResponseContentLength(r,0);
-        ResponseStatus(r,200);
+    if (sessionP->request_info.method == m_options) {
+        ResponseAddField(sessionP, "Allow", "GET, HEAD");
+        ResponseContentLength(sessionP, 0);
+        ResponseStatus(sessionP, 200);
         return TRUE;
-    };
+    }
 
-    if ((r->method!=m_get) && (r->method!=m_head))
-    {
-        ResponseAddField(r,"Allow","GET, HEAD");
-        ResponseStatus(r,405);
+    if ((sessionP->request_info.method != m_get) &&
+        (sessionP->request_info.method != m_head)) {
+        ResponseAddField(sessionP, "Allow", "GET, HEAD");
+        ResponseStatus(sessionP, 405);
         return TRUE;
-    };
+    }
 
-    strcpy(z,r->server->filespath);
-    strcat(z,r->uri);
+    strcpy(z, srvP->filespath);
+    strcat(z, sessionP->request_info.uri);
 
-    p=z+strlen(z)-1;
-    if (*p=='/')
-    {
-        endingslash=TRUE;
-        *p='\0';
-    };
+    p = z + strlen(z) - 1;
+    if (*p == '/') {
+        endingslash = TRUE;
+        *p = '\0';
+    }
 
 #ifdef ABYSS_WIN32
-    p=z;
-    while (*p)
-    {
-        if ((*p)=='/')
-            *p='\\';
+    p = z;
+    while (*p) {
+        if ((*p) == '/')
+            *p= '\\';
 
-        p++;
-    };
+        ++p;
+    }
 #endif  /* ABYSS_WIN32 */
 
-    if (!FileStat(z,&fs))
-    {
-        ResponseStatusErrno(r);
+    if (!FileStat(z, &fs)) {
+        ResponseStatusErrno(sessionP);
         return TRUE;
-    };
+    }
 
-    if (fs.st_mode & S_IFDIR)
-    {
+    if (fs.st_mode & S_IFDIR) {
         /* Redirect to the same directory but with the ending slash
         ** to avoid problems with some browsers (IE for examples) when
         ** they generate relative urls */
-        if (!endingslash)
-        {
-            strcpy(z,r->uri);
-            p=z+strlen(z);
-            *p='/';
-            *(p+1)='\0';
-            ResponseAddField(r,"Location",z);
-            ResponseStatus(r,302);
-            ResponseWrite(r);
+        if (!endingslash) {
+            strcpy(z, sessionP->request_info.uri);
+            p = z+strlen(z);
+            *p = '/';
+            *(p+1) = '\0';
+            ResponseAddField(sessionP, "Location", z);
+            ResponseStatus(sessionP, 302);
+            ResponseWrite(sessionP);
             return TRUE;
-        };
+        }
 
 #ifdef ABYSS_WIN32
-        *p='\\';
+        *p = '\\';
 #else
-        *p='/';
+        *p = '/';
 #endif  /* ABYSS_WIN32 */
-        p++;
+        ++p;
 
-        i=r->server->defaultfilenames.size;
-        while (i-->0) {
-            *p='\0';        
-            strcat(z,(char *)(r->server->defaultfilenames.item[i]));
-            if (FileStat(z,&fs)) {
+        i = srvP->defaultfilenames.size;
+        while (i-- > 0) {
+            *p = '\0';        
+            strcat(z, (srvP->defaultfilenames.item[i]));
+            if (FileStat(z, &fs)) {
                 if (!(fs.st_mode & S_IFDIR)) {
-                    if (DateFromLocal(&objdate,fs.st_mtime))
-                        return ServerFileHandler(r,z,&objdate);
+                    if (DateFromLocal(&objdate, fs.st_mtime))
+                        return ServerFileHandler(sessionP, z, &objdate);
                     else
-                        return ServerFileHandler(r,z,NULL);
+                        return ServerFileHandler(sessionP, z, NULL);
                 }
             }
-        };
+        }
 
-        *(p-1)='\0';
+        *(p-1) = '\0';
         
-        if (!FileStat(z,&fs))
-        {
-            ResponseStatusErrno(r);
+        if (!FileStat(z, &fs)) {
+            ResponseStatusErrno(sessionP);
             return TRUE;
-        };
+        }
 
-        if (DateFromLocal(&objdate,fs.st_mtime))
-            return ServerDirectoryHandler(r,z,&objdate);
+        if (DateFromLocal(&objdate, fs.st_mtime))
+            return ServerDirectoryHandler(sessionP, z ,&objdate);
         else
-            return ServerDirectoryHandler(r,z,NULL);
+            return ServerDirectoryHandler(sessionP, z, NULL);
 
+    } else {
+        if (DateFromLocal(&objdate, fs.st_mtime))
+            return ServerFileHandler(sessionP, z, &objdate);
+        else
+            return ServerFileHandler(sessionP, z, NULL);
     }
-    else
-        if (DateFromLocal(&objdate,fs.st_mtime))
-            return ServerFileHandler(r,z,&objdate);
+}
+
+
+
+static void
+initUnixStuff(struct _TServer * const srvP) {
+#ifdef _UNIX
+    srvP->pidfile = srvP->uid = srvP->gid = -1;
+#endif
+}
+
+
+
+static abyss_bool
+logOpen(struct _TServer * const srvP) {
+
+    abyss_bool success;
+
+    success = FileOpenCreate(&srvP->logfile, srvP->logfilename,
+                             O_WRONLY | O_APPEND);
+    if (success) {
+        abyss_bool success;
+        success = MutexCreate(&srvP->logmutex);
+        if (success)
+            srvP->logfileisopen = TRUE;
         else
-            return ServerFileHandler(r,z,NULL);
+            TraceMsg("Can't create mutex for log file");
+
+        if (!success)
+            FileClose(&srvP->logfile);
+    } else
+        TraceMsg("Can't open log file '%s'", srvP->logfilename);
+
+    return success;
+}
+
+
+
+static void
+logClose(struct _TServer * const srvP) {
+
+    if (srvP->logfileisopen) {
+        FileClose(&srvP->logfile);
+        MutexFree(&srvP->logmutex);
+        srvP->logfileisopen = FALSE;
+    }
+}
+
+
+
+static void
+createServer(struct _TServer ** const srvPP,
+             const char *       const name,
+             abyss_bool         const socketBound,
+             TSocket            const socketFd,
+             uint16_t           const port,
+             const char *       const filespath,
+             const char *       const logfilename,
+             abyss_bool *       const successP) {
+
+    struct _TServer * srvP;
+
+    MALLOCVAR(srvP);
+
+    if (srvP == NULL) {
+        TraceMsg("Unable to allocate space for server descriptor\n");
+        *successP = FALSE;
+    } else {
+        if (srvP->name)
+            srvP->name = strdup(name);
+        else
+            srvP->name = "unnamed";
+
+        srvP->socketBound = socketBound;
+        srvP->port = port;
+        srvP->listensock = socketFd;
+
+        srvP->defaulthandler = ServerDefaultHandlerFunc;
+
+        if (filespath)
+            srvP->filespath = strdup(filespath);
+        else
+            srvP->filespath = strdup(DEFAULT_DOCS);
+
+        srvP->keepalivetimeout = 15;
+        srvP->keepalivemaxconn = 30;
+        srvP->timeout = 15;
+        srvP->advertise = TRUE;
+
+        initUnixStuff(srvP);
+
+        ListInit(&srvP->handlers);
+        ListInitAutoFree(&srvP->defaultfilenames);
+
+        srvP->logfileisopen = FALSE;
+        if (logfilename)
+            srvP->logfilename = strdup(logfilename); 
+        else
+            srvP->logfilename = NULL;
+
+        *successP = TRUE;
+   }
+    *srvPP = srvP;
 }
 
 
 
 abyss_bool
-ServerCreate(TServer *    const srvP,
+ServerCreate(TServer *    const serverP,
              const char * const name,
              uint16_t     const port,
              const char * const filespath,
              const char * const logfilename) {
 
+    abyss_bool const socketBoundFalse = FALSE;
     abyss_bool success;
 
-    if (srvP->name)
-        srvP->name = strdup(name);
-    else
-        srvP->name = "unnamed";
+    createServer(&serverP->srvP, name, socketBoundFalse, port, 0,
+                 filespath, logfilename, &success);
 
-    srvP->port = port;
+    return success;
+}
 
-    srvP->defaulthandler = ServerDefaultHandlerFunc;
 
-    if (filespath)
-        srvP->filespath = strdup(filespath);
-    else
-        srvP->filespath = strdup(DEFAULT_DOCS);
 
-    srvP->keepalivetimeout = 15;
-    srvP->keepalivemaxconn = 30;
-    srvP->timeout = 15;
-    srvP->advertise = TRUE;
-#ifdef _UNIX
-    srvP->pidfile = srvP->uid = srvP->gid = -1;
-#endif  /* _UNIX */
+abyss_bool
+ServerCreateSocket(TServer *    const serverP,
+                   const char * const name,
+                   TSocket      const socketFd,
+                   const char * const filespath,
+                   const char * const logfilename) {
 
-    ListInit(&srvP->handlers);
-    ListInitAutoFree(&srvP->defaultfilenames);
+    abyss_bool const socketBoundTrue = TRUE;
+    abyss_bool success;
 
-    if (logfilename)
-        success = LogOpen(srvP, logfilename);
-    else {
-        srvP->logfile = -1;
-        success = TRUE;
-    }
+    createServer(&serverP->srvP, name, socketBoundTrue, 0, socketFd,
+                 filespath, logfilename, &success);
+
     return success;
 }
 
@@ -628,7 +693,9 @@ terminateHandlers(TList * const handlersP) {
 
 
 void
-ServerFree(TServer * const srvP) {
+ServerFree(TServer * const serverP) {
+
+    struct _TServer * const srvP = serverP->srvP;
 
     free(srvP->name);
 
@@ -640,93 +707,213 @@ ServerFree(TServer * const srvP) {
 
     ListInitAutoFree(&srvP->defaultfilenames);
 
-    LogClose(srvP);
+    logClose(srvP);
+
+    if (srvP->logfilename)
+        xmlrpc_strfree(srvP->logfilename);
+
+    free(srvP);
+}
+
+
+
+void
+ServerSetKeepaliveTimeout(TServer * const serverP,
+                          uint32_t  const keepaliveTimeout) {
+
+    serverP->srvP->keepalivetimeout = keepaliveTimeout;
+}
+
+
+
+void
+ServerSetKeepaliveMaxConn(TServer * const serverP,
+                          uint32_t  const keepaliveMaxConn) {
+
+    serverP->srvP->keepalivemaxconn = keepaliveMaxConn;
+}
+
+
+
+void
+ServerSetTimeout(TServer * const serverP,
+                 uint32_t  const timeout) {
+
+    serverP->srvP->timeout = timeout;
+}
+
+
+
+void
+ServerSetAdvertise(TServer *  const serverP,
+                   abyss_bool const advertise) {
+
+    serverP->srvP->advertise = advertise;
+}
+
+
+static void
+runUserHandler(TSession *        const sessionP,
+               struct _TServer * const srvP) {
+
+    abyss_bool handled;
+    int i;
+    
+    for (i = srvP->handlers.size-1, handled = FALSE;
+         i >= 0 && !handled;
+         --i) {
+        URIHandler2 * const handlerP = srvP->handlers.item[i];
+        
+        if (handlerP->handleReq2)
+            handlerP->handleReq2(handlerP, sessionP, &handled);
+        else if (handlerP->handleReq1)
+            handled = handlerP->handleReq1(sessionP);
+    }
+    
+    if (!handled)
+        ((URIHandler)(srvP->defaulthandler))(sessionP);
 }
 
 
 
 static void
-ServerFunc(TConn * c) {
+processDataFromClient(TConn *      const connectionP,
+                      abyss_bool   const lastReqOnConn,
+                      abyss_bool * const keepAliveP) {
 
-    TSession r;
-    uint32_t ka;
-    TList handlers = c->server->handlers;
+    TSession session;
 
-    ka=c->server->keepalivemaxconn;
+    RequestInit(&session, connectionP);
 
-    while (ka--) {
-        RequestInit(&r,c);
+    if (RequestRead(&session)) {
+        /* Check if it is the last keepalive */
+        if (lastReqOnConn)
+            session.keepalive = FALSE;
+        
+        session.cankeepalive = session.keepalive;
+        
+        if (session.status == 0) {
+            if (session.versionmajor >= 2)
+                ResponseStatus(&session, 505);
+            else if (!RequestValidURI(&session))
+                ResponseStatus(&session, 400);
+            else
+                runUserHandler(&session, connectionP->server->srvP);
+        }
+    }
+            
+    HTTPWriteEnd(&session);
 
+    if (!session.done)
+        ResponseError(&session);
+    
+    SessionLog(&session);
+
+    *keepAliveP = (session.keepalive && session.cankeepalive);
+    
+    RequestFree(&session);
+}
+
+
+
+static void
+ServerFunc(TConn * const connectionP) {
+
+    struct _TServer * const srvP = connectionP->server->srvP;
+
+    unsigned int requestCount;
+        /* Number of requests we've handled so far on this connection */
+    abyss_bool connectionDone;
+        /* No more need for this HTTP connection */
+
+    requestCount = 0;
+    connectionDone = FALSE;
+
+    while (!connectionDone) {
+        abyss_bool success;
+        
         /* Wait to read until timeout */
-        if (!ConnRead(c,c->server->keepalivetimeout))
-            break;
+        success = ConnRead(connectionP, srvP->keepalivetimeout);
 
-        if (RequestRead(&r)) {
-            /* Check if it is the last keepalive */
-            if (ka==1)
-                r.keepalive=FALSE;
+        if (!success)
+            connectionDone = TRUE;
+        else {
+            abyss_bool const lastReqOnConn =
+                requestCount + 1 >= srvP->keepalivemaxconn;
 
-            r.cankeepalive=r.keepalive;
+            abyss_bool keepalive;
+            
+            processDataFromClient(connectionP, lastReqOnConn, &keepalive);
+            
+            ++requestCount;
 
-            if (r.status==0) {
-                if (r.versionmajor>=2)
-                    ResponseStatus(&r,505);
-                else if (!RequestValidURI(&r))
-                    ResponseStatus(&r,400);
+            if (!keepalive)
+                connectionDone = TRUE;
+            else if (requestCount >= srvP->keepalivemaxconn)
+                connectionDone = TRUE;
+            
+            /**************** Must adjust the read buffer *****************/
+            ConnReadInit(connectionP);
+        }
+    }
+    SocketClose(&connectionP->socket);
+}
+
+
+
+void
+ServerInit(TServer * const serverP) {
+/*----------------------------------------------------------------------------
+   Initialize a server to accept connections.
+
+   Do not confuse this with creating the server -- ServerCreate().
+-----------------------------------------------------------------------------*/
+    struct _TServer * const srvP = serverP->srvP;
+    abyss_bool success;
+
+    if (!srvP->socketBound) {
+        abyss_bool success;
+
+        success = SocketInit();
+        if (!success)
+            TraceMsg("Can't initialize TCP sockets\n");
+        else {
+            abyss_bool success;
+            int socketFd;
+
+            success = SocketCreate(&socketFd);
+
+            if (!success)
+                TraceMsg("Can't create a socket\n");
+            else {
+                abyss_bool success;
+
+                success = SocketBind(&socketFd, NULL, srvP->port);
+
+                if (!success)
+                    TraceMsg("Can't bind\n");
                 else {
-                    abyss_bool handled;
-                    int i;
-
-                    for (i = c->server->handlers.size-1, handled = FALSE;
-                         i >= 0 && !handled;
-                         --i) {
-                        URIHandler2 * const handlerP = handlers.item[i];
-                        
-                        if (handlerP->handleReq2)
-                            handlerP->handleReq2(handlerP, &r, &handled);
-                        else if (handlerP->handleReq1)
-                            handled = handlerP->handleReq1(&r);
-                    }
-
-                    if (!handled)
-                        ((URIHandler)(c->server->defaulthandler))(&r);
+                    srvP->socketBound = TRUE;
+                    srvP->listensock = socketFd;
                 }
             }
         }
-            
-        HTTPWriteEnd(&r);
+    }
 
-        if (!r.done)
-            ResponseError(&r);
+    if (srvP->socketBound) {
+        success = SocketListen(&srvP->listensock, MAX_CONN);
+    
+        if (!success)
+            TraceMsg("Failed to listen on socket with file descriptor %d\n",
+                     srvP->listensock);
+    } else
+        success = FALSE;
 
-        SessionLog(&r);
-
-        if (!(r.keepalive && r.cankeepalive))
-            break;
-
-        /**************** Must adjust the read buffer *****************/
-        ConnReadInit(c);        
-    };
-
-    RequestFree(&r);
-    SocketClose(&(c->socket));
+    if (!success)
+        exit(1);
 }
 
-void ServerInit(TServer *srv)
-{
-    /********* Must check errors from these functions *************/
-    if (!SocketInit())
-        TraceExit("Can't initialize TCP sockets\n");;
 
-    if (!SocketCreate(&srv->listensock))
-        TraceExit("Can't create a socket\n");;
-
-    if (!SocketBind(&srv->listensock,NULL,srv->port))
-        TraceExit("Can't bind\n");
-
-    if (!SocketListen(&srv->listensock,MAX_CONN))
-        TraceExit("Can't listen\n");
-}
 
 /* With pthread configuration, our connections run as threads of a
    single address space, so we manage a pool of connection
@@ -800,9 +987,10 @@ allocateConnection(TConn * const connectionPool,
 
 
 static void 
-ServerRunThreaded(TServer * const srvP) {
+ServerRunThreaded(TServer * const serverP) {
 
-    TSocket const listenSocketP = srvP->listensock;
+    struct _TServer * const srvP = serverP->srvP;
+    TSocket const listenSocket = srvP->listensock;
     TIPAddr peerIpAddr;
     TConn * connectionPool;
 
@@ -819,13 +1007,13 @@ ServerRunThreaded(TServer * const srvP) {
         else {
             abyss_bool success;
 
-            success = SocketAccept(&listenSocketP,
+            success = SocketAccept(&listenSocket,
                                    &connectedSocketP, &peerIpAddr);
 
             if (success) {
                 abyss_bool success;
                 connectionP->inUse = TRUE;
-                success = ConnCreate2(connectionP, srvP,
+                success = ConnCreate2(connectionP, serverP,
                                       connectedSocketP, peerIpAddr,
                                       &ServerFunc, 
                                       ABYSS_BACKGROUND);
@@ -848,37 +1036,40 @@ ServerRunThreaded(TServer * const srvP) {
 
 
 static void 
-ServerRunForked(TServer *srv)
-{
-    TSocket s,ns;
-    TConn c;
-    TIPAddr ip;
+ServerRunForked(TServer * const serverP) {
 
-    s=srv->listensock;
+    struct _TServer * const srvP = serverP->srvP;
 
-    while (1)
-    {
-        if (SocketAccept(&s,&ns,&ip))
-        {
+    TSocket socketFd;
+    TSocket newSocketFd;
+    TConn conn;
+    TIPAddr ipAddr;
+
+    socketFd = srvP->listensock;
+
+    while (TRUE) {
+        abyss_bool success;
+        success = SocketAccept(&socketFd, &newSocketFd, &ipAddr);
+        if (success) {
             abyss_bool success;
-            success = ConnCreate2(&c, 
-                                  srv, ns, ip, ServerFunc, ABYSS_BACKGROUND);
+            success = ConnCreate2(&conn, serverP, newSocketFd, 
+                                  ipAddr, ServerFunc, ABYSS_BACKGROUND);
 
                 /* ConnCreate2() forks.  Child does not return. */
             if (success)
-                ConnProcess(&c);
+                ConnProcess(&conn);
 
-            SocketClose(&ns); /* Close parent's copy of socket */
-        }
-        else
+            SocketClose(&newSocketFd); /* Close parent's copy of socket */
+        } else
             TraceMsg("Socket Error=%d\n", SocketError());
-    };
+    }
 }
 
 
 
 void 
 ServerRun(TServer * const serverP) {
+
     if (usingPthreadsForConnections)
         ServerRunThreaded(serverP);
     else
@@ -913,45 +1104,120 @@ closeParentSocketCopy(TSocket * socketP ATTR_UNUSED) {
 }
 
 
-void ServerRunOnce2(TServer *           const srv,
-                    enum abyss_foreback const foregroundBackground)
-{
-      TConn connection;
-      TSocket listenSocket;
-      TSocket connectedSocket;
-      TIPAddr remoteAddr;
-      abyss_bool succeeded;
+void
+ServerRunOnce2(TServer *           const serverP,
+               enum abyss_foreback const foregroundBackground) {
 
-      srv->keepalivemaxconn = 1;
+    struct _TServer * const srvP = serverP->srvP;
 
-      connection.connected = FALSE;
-      connection.inUse = FALSE;
+    TConn connection;
+    TSocket listenSocket;
+    TSocket connectedSocket;
+    TIPAddr remoteAddr;
+    abyss_bool success;
+    
+    srvP->keepalivemaxconn = 1;
 
-      listenSocket = srv->listensock;
+    connection.connected = FALSE;
+    connection.inUse = FALSE;
+
+    listenSocket = srvP->listensock;
       
-      succeeded = SocketAccept(&listenSocket, &connectedSocket, &remoteAddr);
-      if (succeeded) {
-          abyss_bool success;
-          success = ConnCreate2(&connection, 
-                                srv, connectedSocket, remoteAddr, 
-                                &ServerFunc,
-                                foregroundBackground);
-          if (success)
-              ConnProcess(&connection);
-          closeParentSocketCopy(&connectedSocket);
-      } else
-          TraceMsg("Socket Error=%d\n", SocketError());
-}
-
-void ServerRunOnce(TServer *srv)
-{
-    ServerRunOnce2(srv, ABYSS_BACKGROUND);
+    success = SocketAccept(&listenSocket, &connectedSocket, &remoteAddr);
+    if (success) {
+        abyss_bool success;
+        success = ConnCreate2(&connection, 
+                              serverP, connectedSocket, remoteAddr, 
+                              &ServerFunc,
+                              foregroundBackground);
+        if (success)
+            ConnProcess(&connection);
+        closeParentSocketCopy(&connectedSocket);
+    } else
+        TraceMsg("Socket Error=%d\n", SocketError());
 }
 
 
 
 void
-ServerAddHandler2(TServer *     const srvP,
+ServerRunOnce(TServer * const serverP) {
+
+    ServerRunOnce2(serverP, ABYSS_BACKGROUND);
+}
+
+
+
+static void
+setGroups(void) {
+
+#ifdef HAVE_SETGROUPS   
+    if (setgroups(0, NULL) == (-1))
+        TraceExit("Failed to setup the group.");
+#endif
+}
+
+
+
+void
+ServerDaemonize(TServer * const serverP) {
+/*----------------------------------------------------------------------------
+   Turn Caller into a daemon (i.e. fork a child, then exit; the child
+   returns to Caller).
+
+   NOTE: It's ridiculous, but conventional, for us to do this.  It's
+   ridiculous because the task of daemonizing is not something
+   particular to Abyss.  It ought to be done by a higher level.  In
+   fact, it should be done before the Abyss server program is even
+   execed.  The user should run a "daemonize" program that creates a
+   daemon which execs the Abyss server program.
+-----------------------------------------------------------------------------*/
+    struct _TServer * const srvP = serverP->srvP;
+
+#ifndef _WIN32
+    /* Become a daemon */
+    switch (fork()) {
+    case 0:
+        break;
+    case -1:
+        TraceExit("Unable to become a daemon");
+    default:
+        /* We are the parent */
+        exit(0);
+    }
+    
+    setsid();
+
+    /* Change the current user if we are root */
+    if (getuid()==0) {
+        if (srvP->uid == (uid_t)-1)
+            TraceExit("Can't run under root privileges.  "
+                      "Please add a User option in your "
+                      "Abyss configuration file.");
+
+        setGroups();
+
+        if (srvP->gid != (gid_t)-1)
+            if (setgid(srvP->gid)==(-1))
+                TraceExit("Failed to change the group.");
+        
+        if (setuid(srvP->uid) == -1)
+            TraceExit("Failed to change the user.");
+    }
+    
+    if (srvP->pidfile != -1) {
+        char z[16];
+    
+        sprintf(z, "%d", getpid());
+        FileWrite(&srvP->pidfile, z, strlen(z));
+        FileClose(&srvP->pidfile);
+    }
+#endif  /* _WIN32 */
+}
+
+
+
+void
+ServerAddHandler2(TServer *     const serverP,
                   URIHandler2 * const handlerArgP,
                   abyss_bool *  const successP) {
 
@@ -969,7 +1235,7 @@ ServerAddHandler2(TServer *     const srvP,
             handlerP->init(handlerP, successP);
 
         if (*successP) {
-            *successP = ListAdd(&srvP->handlers, handlerP);
+            *successP = ListAdd(&serverP->srvP->handlers, handlerP);
 
             if (!*successP) {
                 if (handlerP->term)
@@ -1010,7 +1276,7 @@ createHandler(URIHandler const function) {
 
 
 abyss_bool
-ServerAddHandler(TServer *  const srvP,
+ServerAddHandler(TServer *  const serverP,
                  URIHandler const function) {
 
     URIHandler2 * handlerP;
@@ -1021,7 +1287,7 @@ ServerAddHandler(TServer *  const srvP,
     if (handlerP == NULL)
         success = FALSE;
     else {
-        success = ListAdd(&srvP->handlers, handlerP);
+        success = ListAdd(&serverP->srvP->handlers, handlerP);
 
         if (!success)
             free(handlerP);
@@ -1032,67 +1298,64 @@ ServerAddHandler(TServer *  const srvP,
 
 
 void
-ServerDefaultHandler(TServer *  const srvP,
+ServerDefaultHandler(TServer *  const serverP,
                      URIHandler const handler) {
 
-    srvP->defaulthandler = handler;
+    serverP->srvP->defaulthandler = handler;
 }
 
-abyss_bool LogOpen(TServer *srv, const char *filename) {
 
-    if (FileOpenCreate(&(srv->logfile),filename,O_WRONLY | O_APPEND)) {
-        if (MutexCreate(&(srv->logmutex)))
-            return TRUE;
-        else {
-            FileClose(&(srv->logfile));
-            srv->logfile=(-1);
+
+void
+LogWrite(TServer *    const serverP,
+         const char * const msg) {
+
+    struct _TServer * const srvP = serverP->srvP;
+
+    if (!srvP->logfileisopen && srvP->logfilename)
+        logOpen(srvP);
+
+    if (srvP->logfileisopen) {
+        abyss_bool success;
+        success = MutexLock(&srvP->logmutex);
+        if (success) {
+            FileWrite(&srvP->logfile, msg, strlen(msg));
+            FileWrite(&srvP->logfile, LBR, strlen(LBR));
+        
+            MutexUnlock(&srvP->logmutex);
         }
     }
-
-    TraceMsg("Can't open log file '%s'",filename);
-    return FALSE;
 }
-
-void LogWrite(TServer *srv,char *c)
-{
-    if ((srv->logfile)==(-1))
-        return;
-
-    if (!MutexLock(&(srv->logmutex)))
-        return;
-
-    FileWrite(&(srv->logfile),c,strlen(c));
-    FileWrite(&(srv->logfile),LBR,strlen(LBR));
-
-    MutexUnlock(&(srv->logmutex));
-}
-
-void LogClose(TServer *srv)
-{
-    if ((srv->logfile)==(-1))
-        return;
-
-    FileClose(&(srv->logfile));
-    MutexFree(&(srv->logmutex));
-}
-
-abyss_bool SessionLog(TSession *s)
-{
-    char z[1024];
-    uint32_t n;
-
-    if (s->requestline == NULL)
-        return FALSE;
-
-    if (strlen(s->requestline)>1024-26-50)
-        s->requestline[1024-26-50]='\0';
-
-    n=sprintf(z,"%d.%d.%d.%d - %s - [",IPB1(s->conn->peerip),IPB2(s->conn->peerip),IPB3(s->conn->peerip),IPB4(s->conn->peerip),(s->user?s->user:""));
-
-    DateToLogString(&s->date,z+n);
-
-    sprintf(z+n+26,"] \"%s\" %d %d",s->requestline,s->status,s->conn->outbytes);
-
-    LogWrite(s->server,z);
-    return TRUE;
-}
+/*******************************************************************************
+**
+** server.c
+**
+** This file is part of the ABYSS Web server project.
+**
+** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
+** All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission.
+** 
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE.
+**
+******************************************************************************/

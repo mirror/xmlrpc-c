@@ -8,6 +8,8 @@
 
 #include "xmlrpc-c/abyss.h"
 #include "socket.h"
+#include "server.h"
+#include "conn.h"
 
 /*********************************************************************
 ** Conn
@@ -180,9 +182,9 @@ ConnRead(TConn *  const c,
 
             
 abyss_bool
-ConnWrite(TConn *  const connectionP,
-          void *   const buffer,
-          uint32_t const size) {
+ConnWrite(TConn *      const connectionP,
+          const void * const buffer,
+          uint32_t     const size) {
 
     abyss_bool failed;
 
@@ -237,75 +239,83 @@ abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
     return (bytesread>end-start);
 }
 
-abyss_bool ConnReadLine(TConn *c,char **z,uint32_t timeout)
-{
-    char *p,*t;
-    abyss_bool first=TRUE;
-    uint32_t to,start;
 
-    p=*z=c->buffer+c->bufferpos;
-    start=clock();
 
-    for (;;)
-    {
-        to=(clock()-start)/CLOCKS_PER_SEC;
-        if (to>timeout)
+abyss_bool
+ConnReadLine(TConn * const connectionP,
+             char ** const z) {
+
+    uint32_t const timeout = connectionP->server->srvP->timeout;
+
+    char * p;
+    char * t;
+    abyss_bool first;
+    uint32_t to;
+    uint32_t start;
+
+    p = *z = connectionP->buffer + connectionP->bufferpos;
+    start = clock();
+
+    first = TRUE;
+
+    for (;;) {
+        to = (clock() - start) / CLOCKS_PER_SEC;
+        if (to > timeout)
             break;
 
-        if (first)
-        {
-            if (c->bufferpos>=c->buffersize)
-                if (!ConnRead(c,timeout-to))
+        if (first) {
+            if (connectionP->bufferpos >= connectionP->buffersize)
+                if (!ConnRead(connectionP, timeout-to))
                     break;
 
-            first=FALSE;
-        }
-        else
-        {
-            if (!ConnRead(c,timeout-to))
+            first = FALSE;
+        } else {
+            if (!ConnRead(connectionP, timeout-to))
                 break;
-        };
+        }
 
-        t=strchr(p,LF);
-        if (t)
-        {
-            if ((*p!=LF) && (*p!=CR))
-            {
+        t = strchr(p, LF);
+        if (t) {
+            if ((*p != LF) && (*p != CR)) {
                 if (!*(t+1))
                     continue;
 
-                p=t;
+                p = t;
 
-                if ((*(p+1)==' ') || (*(p+1)=='\t'))
-                {
-                    if (p>*z)
-                        if (*(p-1)==CR)
-                            *(p-1)=' ';
+                if ((*(p+1) == ' ') || (*(p+1) == '\t')) {
+                    if (p > *z)
+                        if (*(p-1) == CR)
+                            *(p-1) = ' ';
 
-                    *(p++)=' ';
+                    *(p++) = ' ';
                     continue;
-                };
+                }
             } else {
                 /* emk - 04 Jan 2001 - Bug fix to leave buffer
                 ** pointing at start of body after reading blank
                 ** line following header. */
-                p=t;
+                p = t;
             }
 
-            c->bufferpos+=p+1-*z;
+            connectionP->bufferpos += p + 1 - *z;
 
-            if (p>*z)
-                if (*(p-1)==CR)
-                    p--;
+            if (p > *z)
+                if (*(p-1) == CR)
+                    --p;
 
-            *p='\0';
+            *p = '\0';
             return TRUE;
         }
-    };
-
+    }
     return FALSE;
 }
 
+
+
+TServer *
+ConnServer(TConn * const connectionP) {
+    return connectionP->server;
+}
 
 
 

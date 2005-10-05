@@ -84,8 +84,7 @@ main(int           const argc,
 
     MIMETypeInit();
 
-    ServerCreate(&abyssServer, "XmlRpcServer", atoi(argv[1]), 
-                 NULL, NULL);
+    ServerCreate(&abyssServer, "XmlRpcServer", atoi(argv[1]), NULL, NULL);
     
     xmlrpc_server_abyss_set_handlers(&abyssServer, registryP);
 

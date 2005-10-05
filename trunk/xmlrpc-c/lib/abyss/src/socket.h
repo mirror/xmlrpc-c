@@ -1,9 +1,7 @@
 #ifndef SOCKET_H_INCLUDED
 #define SOCKET_H_INCLUDED
 
-/* We should eliminate inclusion of xmlrpc/abyss.h after we move
-   the declarations of TSocket and TIPAddr from there to here.
-*/
+#include <netinet/in.h>
 #include "xmlrpc-c/abyss.h"
 
 #define TIME_INFINITE   0xffffffff
@@ -12,6 +10,8 @@
 #define IPB2(x) (((unsigned char *)(&x))[1])
 #define IPB3(x) (((unsigned char *)(&x))[2])
 #define IPB4(x) (((unsigned char *)(&x))[3])
+
+typedef struct in_addr TIPAddr;
 
 abyss_bool SocketInit(void);
 
@@ -30,7 +30,10 @@ uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len);
 abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16_t port);
 abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16_t port);
 
-abyss_bool SocketListen(TSocket *s, uint32_t backlog);
+abyss_bool
+SocketListen(const TSocket * const socketFdP,
+             uint32_t        const backlog);
+
 abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip);
 
 uint32_t SocketError(void);
