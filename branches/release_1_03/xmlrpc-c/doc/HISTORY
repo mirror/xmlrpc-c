@@ -67,6 +67,19 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.06 - October 6, 2005
+
+  * BJH: Fix use of pthread_mutex_t in girmem.hpp so it can be used in
+         a Windows program.
+
+  * BJH: Don't include xml-rpc-api2cpp in the build with --disable-cpp.
+
+  * BJH: Fix bug in tools build, where it tries to link libxml2 instead
+         of expat.
+
+  * BJH: Add missing xmlrpc_config.h so lib/abyss/src/socket.h will
+         compile on Solaris.
+
 1.03.05 - September 24, 2005
 
   * BJH: Change int to long in XMLRPC_STRUCTSIZE to correct 64 bit

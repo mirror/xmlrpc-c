@@ -6,7 +6,11 @@ endif
 
 include $(SRCDIR)/Makefile.config
 
-SUBDIRS = binmode-rpc-kit turbocharger xml-rpc-api2cpp xmlrpc xmlrpc_transport
+SUBDIRS = binmode-rpc-kit turbocharger xmlrpc xmlrpc_transport
+
+ifeq ($(ENABLE_CPLUSPLUS),yes)
+  SUBDIRS += xml-rpc-api2cpp
+endif
 
 .PHONY: all clean distclean install dep
 
