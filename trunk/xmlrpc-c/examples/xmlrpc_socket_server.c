@@ -79,11 +79,11 @@ main(int           const argc,
     serverparm.timeout            = 0;
     serverparm.dont_advertise     = FALSE;
     serverparm.socket_bound       = TRUE;
-    serverparm.socket_fd          = STDIN_FILENO;
+    serverparm.socket_handle      = STDIN_FILENO;
 
     printf("Running XML-RPC server...\n");
 
-    xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(socket_fd));
+    xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(socket_handle));
 
     /* xmlrpc_server_abyss() never returns */
 
