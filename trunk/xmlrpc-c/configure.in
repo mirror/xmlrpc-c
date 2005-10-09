@@ -254,7 +254,7 @@ AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
 # ac_cv_lib_socket_socket, which we use to pass more specific information
 # to the configuration files.
 
-if test $ac_cv_lib_socket_socket = yes; then
+if test x"$ac_cv_lib_socket_socket" = xyes; then
   LSOCKET=-lsocket
 else
   LSOCKET=
