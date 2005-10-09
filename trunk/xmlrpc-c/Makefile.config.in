@@ -57,16 +57,16 @@ CXXLD = $(CXX)
 AR = ar
 RANLIB = @RANLIB@
 LN_S = @LN_S@
-INSTALL = @INSTALL@
+INSTALL = $(SRCDIR)/install-sh
 
 C_COMPILER_GNU = @C_COMPILER_GNU@
 CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
 
 # Here are the commands 'make install' uses to install various kinds of files:
 
-INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
-INSTALL_DATA = @INSTALL_DATA@
-INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_PROGRAM = $(INSTALL) -c -m 755
+INSTALL_DATA = $(INSTALL) -c -m 644
+INSTALL_SCRIPT = $(INSTALL) -c -m 755
 
 # Here are the locations at which 'make install' puts files:
 
