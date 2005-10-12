@@ -22,22 +22,6 @@ using girmem::autoObject;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
-/* transport_config.h defines XMLRPC_DEFAULT_TRANSPORT,
-    MUST_BUILD_WININET_CLIENT, MUST_BUILD_CURL_CLIENT,
-    MUST_BUILD_LIBWWW_CLIENT 
-*/
-#include "transport_config.h"
-
-#if MUST_BUILD_WININET_CLIENT
-#include "xmlrpc_wininet_transport.h"
-#endif
-#if MUST_BUILD_CURL_CLIENT
-#include "xmlrpc_curl_transport.h"
-#endif
-#if MUST_BUILD_LIBWWW_CLIENT
-#include "xmlrpc_libwww_transport.h"
-#endif
-
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/xml.hpp"
 #include "xmlrpc-c/client.hpp"
@@ -145,24 +129,6 @@ carriageParm_http0::setBasicAuth(string const username,
 
 
 
-carriageParm_libwww0::carriageParm_libwww0(
-    string const serverUrl
-    ) {
-
-    this->instantiate(serverUrl);
-}
-
-
-
-carriageParm_wininet0::carriageParm_wininet0(
-    string const serverUrl
-    ) {
-
-    this->instantiate(serverUrl);
-}
-
-
-
 xmlTransaction::xmlTransaction() {}
 
 
@@ -252,6 +218,35 @@ clientXmlTransport::asyncComplete(
        ->finish() could conceivably create a new reference to
        **xmlTranPP, and then it would keep living.
     */
+}
+
+
+
+clientXmlTransportPtr::clientXmlTransportPtr() {
+    // Base class constructor will construct pointer that points to nothing
+}
+
+
+
+clientXmlTransportPtr::clientXmlTransportPtr(
+    clientXmlTransport * const transportP) {
+    this->point(transportP);
+}
+
+
+
+clientXmlTransport *
+clientXmlTransportPtr::getp() const {
+    return dynamic_cast<clientXmlTransport *>(objectP);
+}
+
+
+
+clientXmlTransport *
+clientXmlTransportPtr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<clientXmlTransport *>(p);
 }
 
 
@@ -354,84 +349,6 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
 
 
 
-#if MUST_BUILD_LIBWWW_CLIENT
-
-clientXmlTransport_libwww::clientXmlTransport_libwww(
-    string const appname,
-    string const appversion) {
-
-    this->c_transportOpsP = &xmlrpc_libwww_transport_ops;
-
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
-    xmlrpc_libwww_transport_ops.create(
-        &env, 0, appname.c_str(), appversion.c_str(), NULL, 0,
-        &this->c_transportP);
-
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
-}
-
-#else  // MUST_BUILD_LIBWWW_CLIENT
- clientXmlTransport_libwww::clientXmlTransport_libwww(string, string) {
-
-    throw(error("There is no Libwww client XML transport "
-                "in this XML-RPC client library"));
-}
-
-#endif
-
-
-clientXmlTransport_libwww::~clientXmlTransport_libwww() {
-
-    this->c_transportOpsP->destroy(this->c_transportP);
-}
-
-
-
-#if MUST_BUILD_WININET_CLIENT
-
-clientXmlTransport_wininet::clientXmlTransport_wininet(
-    bool const allowInvalidSslCerts
-    ) {
-
-    struct xmlrpc_wininet_xportparms transportParms; 
-
-    transportParms.allowInvalidSSLCerts = allowInvalidSslCerts;
-
-    this->c_transportOpsP = &xmlrpc_wininet_transport_ops;
-
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
-    xmlrpc_wininet_transport_ops.create(
-        &env, 0, "", "", &transportParms, XMLRPC_WXPSIZE(allowInvalidSSLCerts),
-        &this->c_transportP);
-
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
-}
-
-#else  // MUST_BUILD_WININET_CLIENT
-
-clientXmlTransport_wininet::clientXmlTransport_wininet(bool const) {
-
-    throw(error("There is no Wininet client XML transport "
-                "in this XML-RPC client library"));
-}
-
-#endif
- 
-
-
-clientXmlTransport_wininet::~clientXmlTransport_wininet() {
-
-    this->c_transportOpsP->destroy(this->c_transportP);
-}
-
-
-
 clientTransaction::clientTransaction() {}
 
 
@@ -478,6 +395,20 @@ client::start(carriageParm *       const  carriageParmP,
 
 client_xml::client_xml(clientXmlTransport * const transportP) :
     transportP(transportP) {}
+
+
+
+client_xml::client_xml(clientXmlTransportPtr const transportPtr) {
+
+    this->transportPtr = transportPtr;
+    try {
+        this->transportP = transportPtr.getp();
+    } catch (...) {
+        /* Constructor is failing; destroy what we've built so far. */
+        this->transportPtr.unpoint();
+        throw;
+    }
+}
      
 
 
@@ -719,7 +650,7 @@ rpcPtr::rpcPtr() {}
 
 
 rpcPtr::rpcPtr(rpc * const rpcP) {
-    this->instantiate(rpcP);
+    this->point(rpcP);
 }
 
 
@@ -727,7 +658,7 @@ rpcPtr::rpcPtr(rpc * const rpcP) {
 rpcPtr::rpcPtr(string              const  methodName,
                xmlrpc_c::paramList const& paramList) {
 
-    this->instantiate(new rpc(methodName, paramList));
+    this->point(new rpc(methodName, paramList));
 }
 
 
@@ -780,7 +711,7 @@ xmlTransaction_clientPtr::xmlTransaction_clientPtr() {}
 xmlTransaction_clientPtr::xmlTransaction_clientPtr(
     clientTransactionPtr const& tranP) {
 
-    this->instantiate(new xmlTransaction_client(tranP));
+    this->point(new xmlTransaction_client(tranP));
 }
 
 

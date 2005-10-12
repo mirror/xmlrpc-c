@@ -58,7 +58,7 @@ LIBXMLRPCPP_OBJS = \
 
 LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
-LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o curl.o
+LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o curl.o libwww.o wininet.o
 
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \

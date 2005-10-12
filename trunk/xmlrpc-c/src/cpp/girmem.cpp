@@ -81,6 +81,26 @@ autoObjectPtr::autoObjectPtr(autoObjectPtr const& autoObjectPtr) {
  
 
 autoObjectPtr::~autoObjectPtr() {
+
+    this->unpoint();
+}
+
+
+ 
+void
+autoObjectPtr::point(autoObject * const objectP) {
+
+    if (this->objectP != NULL)
+        throw(error("Already pointing"));
+    this->objectP = objectP;
+    objectP->incref();
+}
+
+
+
+void
+autoObjectPtr::unpoint() {
+
     if (this->objectP) {
         bool dead;
         this->objectP->decref(&dead);
@@ -90,21 +110,12 @@ autoObjectPtr::~autoObjectPtr() {
 }
 
 
- 
-void
-autoObjectPtr::instantiate(autoObject * const objectP) {
-
-    this->objectP = objectP;
-    objectP->incref();
-}
-
-
 
 autoObjectPtr
 autoObjectPtr::operator=(autoObjectPtr const& autoObjectPtr) {
 
     if (this->objectP != NULL)
-        throw(error("Already instantiated"));
+        throw(error("Already pointing"));
     this->objectP = autoObjectPtr.objectP;
     this->objectP->incref();
 

@@ -37,7 +37,7 @@ method::~method() {}
 
 
 methodPtr::methodPtr(method * const methodP) {
-    this->instantiate(methodP);
+    this->point(methodP);
 }
 
 
@@ -59,7 +59,7 @@ defaultMethodPtr::defaultMethodPtr() {}
 
 
 defaultMethodPtr::defaultMethodPtr(defaultMethod * const methodP) {
-    this->instantiate(methodP);
+    this->point(methodP);
 }
 
 

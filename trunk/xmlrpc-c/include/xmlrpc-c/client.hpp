@@ -170,7 +170,7 @@ public:
     operator->() const;
 };
 
-class clientXmlTransport {
+class clientXmlTransport : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An object which transports XML to and from an XML-RPC server for an
    XML-RPC client.
@@ -199,6 +199,20 @@ public:
         struct xmlrpc_call_info * const callInfoP,
         xmlrpc_mem_block *        const responseXmlMP,
         xmlrpc_env                const transportEnv);
+};
+
+class clientXmlTransportPtr : public girmem::autoObjectPtr {
+    
+public:
+    clientXmlTransportPtr();
+
+    clientXmlTransportPtr(xmlrpc_c::clientXmlTransport * const transportP);
+
+    xmlrpc_c::clientXmlTransport *
+    operator->() const;
+
+    xmlrpc_c::clientXmlTransport *
+    getp() const;
 };
 
 class clientXmlTransport_http : public xmlrpc_c::clientXmlTransport {
@@ -270,6 +284,8 @@ class client_xml : public xmlrpc_c::client {
 public:
     client_xml(xmlrpc_c::clientXmlTransport * const transportP);
 
+    client_xml(xmlrpc_c::clientXmlTransportPtr const transportP);
+
     void
     call(carriageParm *         const  carriageParmP,
          std::string            const  methodName,
@@ -286,7 +302,12 @@ public:
     finishAsync(xmlrpc_c::timeout const timeout);
 
 private:
+    /* We have both kinds of pointers to give the user flexibility -- we
+       have constructors that take both.  But the simple pointer
+       'transportP' is valid in both cases.
+    */
     xmlrpc_c::clientXmlTransport * transportP;
+    xmlrpc_c::clientXmlTransportPtr transportPtr;
 };
 
 class xmlTransaction_client : public xmlrpc_c::xmlTransaction {

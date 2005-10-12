@@ -879,11 +879,16 @@ public:
         return "clientXmlTransportTestSuite";
     }
     virtual void runtests(unsigned int const) {
+        clientXmlTransportPtr transport1P;
+        clientXmlTransportPtr transport2P;
+
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         clientXmlTransport_curl transportc1("eth0");
         clientXmlTransport_curl transportc2("eth0", true);
         clientXmlTransport_curl transportc3("eth0", true, true);
+        clientXmlTransportPtr transportcP(new clientXmlTransport_curl);
+        transport1P = transportcP;
 #else
         EXPECT_ERROR(clientXmlTransport_curl transportc0;);
         EXPECT_ERROR(clientXmlTransport_curl transportc1("eth0"););
@@ -895,6 +900,7 @@ public:
         clientXmlTransport_libwww transportl0;
         clientXmlTransport_libwww transportl1("getbent");
         clientXmlTransport_libwww transportl2("getbent", "1.0");
+        clientXmlTransportPtr transportlP(new clientXmlTransport_libwww);
 #else
         EXPECT_ERROR(clientXmlTransport_libwww transportl0;);
         EXPECT_ERROR(clientXmlTransport_libwww transportl1("getbent"););
@@ -903,6 +909,7 @@ public:
 #if MUST_BUILD_WININET_CLIENT
         clientXmlTransport_wininet transportw0;
         clientXmlTransport_wininet transportw1(true);
+        clientXmlTransportPtr transportwP(new clientXmlTransport_wininet);
 #else
         EXPECT_ERROR(clientXmlTransport_wininet transportw0;);
         EXPECT_ERROR(clientXmlTransport_wininet transportw1(true););
@@ -1071,6 +1078,18 @@ public:
             TEST(fault0.getCode() == fault::CODE_TYPE);
         }
 
+        {
+            /* Test with an auto object transport */
+            client_xml clientDirect(
+                clientXmlTransportPtr(new clientXmlTransport_direct));
+            rpcPtr rpcSampleAddP("sample.add", paramListSampleAdd);
+            rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcSampleAddP->isFinished());
+            TEST(rpcSampleAddP->isSuccessful());
+            EXPECT_ERROR(fault fault0(rpcSampleAddP->getFault()););
+            value_int const resultDirect(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(resultDirect) == 12);
+        }
         clientDirectAsyncTestSuite().run(indentation+1);
     }
 };

@@ -51,8 +51,11 @@ public:
     ~autoObjectPtr();
     
     void
-    instantiate(girmem::autoObject * const objectP);
-    
+    point(girmem::autoObject * const objectP);
+
+    void
+    unpoint();
+
     autoObjectPtr
     operator=(girmem::autoObjectPtr const& objectPtr);
     
