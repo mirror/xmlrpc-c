@@ -647,7 +647,7 @@ ServerCreate(TServer *    const serverP,
     abyss_bool const socketBoundFalse = FALSE;
     abyss_bool success;
 
-    createServer(&serverP->srvP, name, socketBoundFalse, port, 0,
+    createServer(&serverP->srvP, name, socketBoundFalse, 0, port,
                  filespath, logfilename, &success);
 
     return success;
@@ -902,7 +902,7 @@ ServerInit(TServer * const serverP) {
 
     if (srvP->socketBound) {
         success = SocketListen(&srvP->listensock, MAX_CONN);
-    
+
         if (!success)
             TraceMsg("Failed to listen on socket with file descriptor %d\n",
                      srvP->listensock);
