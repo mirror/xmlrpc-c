@@ -19,6 +19,7 @@
 #include "mallocvar.h"
 #include "linklist.h"
 #include "girstring.h"
+#include "pthreadx.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
@@ -103,6 +104,51 @@ struct curlSetup {
 };
 
 
+/*============================================================================
+      locks
+==============================================================================
+   This is the beginnings of a lock abstraction that will allow this
+   transport to be used with locks other than pthread locks
+============================================================================*/
+
+struct lock {
+    pthread_mutex_t theLock;
+    void (*lock)(struct lock *);
+    void (*unlock)(struct lock *);
+    void (*destroy)(struct lock *);
+};
+
+typedef struct lock lock;
+
+static void
+lock_pthread(struct lock * const lockP) {
+    pthread_mutex_lock(&lockP->theLock);
+}
+
+static void
+unlock_pthread(struct lock * const lockP) {
+    pthread_mutex_unlock(&lockP->theLock);
+}
+
+static void
+destroyLock_pthread(struct lock * const lockP) {
+    pthread_mutex_destroy(&lockP->theLock);
+    free(lockP);
+}
+
+
+static struct lock *
+createLock_pthread(void) {
+    struct lock * lockP;
+    MALLOCVAR(lockP);
+    if (lockP) {
+        pthread_mutex_init(&lockP->theLock, NULL);
+        lockP->lock    = &lock_pthread;
+        lockP->unlock  = &unlock_pthread;
+        lockP->destroy = &destroyLock_pthread;
+    }
+    return lockP;
+}
 
 struct xmlrpc_client_transport {
     CURLM * curlMultiP;
@@ -115,7 +161,13 @@ struct xmlrpc_client_transport {
            and consequently does not share things such as persistent
            connections and cookies with any other RPC.
         */
-    
+    lock * syncCurlSessionLockP;
+        /* Hold this lock while accessing or using *syncCurlSessionP.
+           You're using the session from the time you set any
+           attributes in it or start a transaction with it until any
+           transaction has finished and you've lost interest in any
+           attributes of the session.
+        */
     const char * userAgent;
         /* Prefix for the User-Agent HTTP header, reflecting facilities
            outside of Xmlrpc-c.  The actual User-Agent header consists
@@ -168,6 +220,7 @@ typedef struct rpc {
            of XML-RPC or Xmlrpc-c.
         */
     xmlrpc_mem_block * responseXmlP;
+        /* Where the response XML for this RPC should go or has gone. */
     xmlrpc_transport_asynch_complete complete;
         /* Routine to call to complete the RPC after it is complete HTTP-wise.
            NULL if none.
@@ -217,6 +270,20 @@ addMilliseconds(struct timeval   const addend,
 
     sumP->tv_sec  = addend.tv_sec + newRawUsec / 1000000;
     sumP->tv_usec = newRawUsec % 1000000;
+}
+
+
+
+static void
+lockSyncCurlSession(struct xmlrpc_client_transport * const transportP) {
+    transportP->syncCurlSessionLockP->lock(transportP->syncCurlSessionLockP);
+}
+
+
+
+static void
+unlockSyncCurlSession(struct xmlrpc_client_transport * const transportP) {
+    transportP->syncCurlSessionLockP->unlock(transportP->syncCurlSessionLockP);
 }
 
 
@@ -564,8 +631,15 @@ create(xmlrpc_env *                      const envP,
             getXportParms(envP, curlXportParmsP, parm_size, transportP);
 
             if (!envP->fault_occurred) {
-                createSyncCurlSession(envP, &transportP->syncCurlSessionP);
-            
+                transportP->syncCurlSessionLockP = createLock_pthread();
+                if (transportP->syncCurlSessionLockP == NULL)
+                    xmlrpc_faultf(envP, "Can't create a lock.");
+                else {
+                    createSyncCurlSession(envP, &transportP->syncCurlSessionP);
+                    if (envP->fault_occurred)
+                        transportP->syncCurlSessionLockP->destroy(
+                            transportP->syncCurlSessionLockP); 
+                }            
                 if (envP->fault_occurred)
                     freeXportParms(transportP);
             }
@@ -598,6 +672,8 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
     XMLRPC_ASSERT(clientTransportP != NULL);
     
     destroySyncCurlSession(clientTransportP->syncCurlSessionP);
+    clientTransportP->syncCurlSessionLockP->destroy(
+        clientTransportP->syncCurlSessionLockP);
 
     freeXportParms(clientTransportP);
 
@@ -1382,7 +1458,7 @@ call(xmlrpc_env *                     const envP,
      struct xmlrpc_client_transport * const clientTransportP,
      const xmlrpc_server_info *       const serverP,
      xmlrpc_mem_block *               const callXmlP,
-     xmlrpc_mem_block **              const responsePP) {
+     xmlrpc_mem_block **              const responseXmlPP) {
 
     xmlrpc_mem_block * responseXmlP;
     rpc * rpcP;
@@ -1390,10 +1466,14 @@ call(xmlrpc_env *                     const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(serverP);
     XMLRPC_ASSERT_PTR_OK(callXmlP);
-    XMLRPC_ASSERT_PTR_OK(responsePP);
+    XMLRPC_ASSERT_PTR_OK(responseXmlPP);
 
     responseXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
     if (!envP->fault_occurred) {
+        /* Only one RPC at a time can use a Curl session, so we have to
+           hold the lock as long as our RPC exists.
+        */
+        lockSyncCurlSession(clientTransportP);
         createRpc(envP, clientTransportP, clientTransportP->syncCurlSessionP,
                   serverP,
                   callXmlP, responseXmlP,
@@ -1403,10 +1483,11 @@ call(xmlrpc_env *                     const envP,
         if (!envP->fault_occurred) {
             performRpc(envP, rpcP);
 
-            *responsePP = responseXmlP;
-            
+            *responseXmlPP = responseXmlP;
+
             destroyRpc(rpcP);
         }
+        unlockSyncCurlSession(clientTransportP);
         if (envP->fault_occurred)
             XMLRPC_MEMBLOCK_FREE(char, responseXmlP);
     }
