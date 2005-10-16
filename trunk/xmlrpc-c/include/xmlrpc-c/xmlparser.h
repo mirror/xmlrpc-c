@@ -31,7 +31,8 @@ void xml_element_free (xml_element *elem);
 
 /* Return a pointer to the element's name. Do not free this pointer!
 ** This pointer should point to standard ASCII or UTF-8 data. */
-char *xml_element_name (xml_element *elem);
+const char *
+xml_element_name(const xml_element * const elemP);
 
 /* Return the xml_element's CDATA. Do not free this pointer!
 ** This pointer should point to standard ASCII or UTF-8 data.
@@ -46,8 +47,11 @@ size_t xml_element_cdata_size (xml_element *elem);
 char *xml_element_cdata (xml_element *elem);
 
 /* Return the xml_element's child elements. Do not free this pointer! */
-size_t xml_element_children_size (xml_element *elem);
-xml_element **xml_element_children (xml_element *elem);
+size_t
+xml_element_children_size(const xml_element * const elemP);
+
+xml_element **
+xml_element_children(const xml_element * const elemP);
 
 
 /*=========================================================================

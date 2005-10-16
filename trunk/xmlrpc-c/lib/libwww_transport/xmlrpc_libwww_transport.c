@@ -25,9 +25,9 @@
 
 #include "xmlrpc_config.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 
-#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"

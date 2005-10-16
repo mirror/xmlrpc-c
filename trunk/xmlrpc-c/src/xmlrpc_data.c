@@ -2,12 +2,12 @@
 
 #include "xmlrpc_config.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "bool.h"
 #include "mallocvar.h"
 
 #include "xmlrpc-c/base.h"
@@ -58,10 +58,10 @@ destroyValue(xmlrpc_value * const valueP) {
         break;
 
     case XMLRPC_TYPE_DEAD:
-        XMLRPC_ASSERT(FALSE); /* Can't happen, per entry conditions */
+        XMLRPC_ASSERT(false); /* Can't happen, per entry conditions */
 
     default:
-        XMLRPC_ASSERT(FALSE); /* There are no other possible values */
+        XMLRPC_ASSERT(false); /* There are no other possible values */
     }
 
     /* Next, we mark this value as invalid, to help catch refcount

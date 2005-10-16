@@ -486,13 +486,21 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
                   const char **   const out_method_name,
                   xmlrpc_value ** const out_param_array);
 
-/* Parse an XML-RPC response. If a fault occurs (or was received over the
-** wire), return NULL and set up 'env'. The calling is responsible for
-** calling xmlrpc_DECREF on the return value (if it isn't NULL). */
+void
+xmlrpc_parse_response2(xmlrpc_env *    const envP,
+                       const char *    const xmlData,
+                       size_t          const xmlDataLen,
+                       xmlrpc_value ** const resultPP,
+                       int *           const faultCodeP,
+                       const char **   const faultStringP);
+
+
+/* xmlrpc_parse_response() is for backward compatibility */
+
 xmlrpc_value *
-xmlrpc_parse_response(xmlrpc_env * env, 
-                      const char * xml_data, 
-                      size_t       xml_len);
+xmlrpc_parse_response(xmlrpc_env * const envP, 
+                      const char * const xmlData, 
+                      size_t       const xmlDataLen);
 
 
 /*=========================================================================

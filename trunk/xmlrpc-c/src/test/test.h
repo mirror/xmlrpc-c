@@ -5,13 +5,6 @@ extern int total_tests;
 extern int total_failures;
 
 
-static __inline void
-strfree(const char * const string) {
-    free((char*)string);
-}
-
-
-
 /* This is a good place to set a breakpoint. */
 static __inline void
 test_failure(const char * const file,

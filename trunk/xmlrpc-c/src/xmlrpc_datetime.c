@@ -1,12 +1,12 @@
 #include "xmlrpc_config.h"
 
+#include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
 
-#include "bool.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 
@@ -185,9 +185,9 @@ parseDateNumbers(const char * const t,
 
 
 #ifdef HAVE_SETENV
-xmlrpc_bool const haveSetenv = TRUE;
+xmlrpc_bool const haveSetenv = true;
 #else
-xmlrpc_bool const haveSetenv = FALSE;
+xmlrpc_bool const haveSetenv = false;
 static void
 setenv(const char * const name ATTR_UNUSED,
        const char * const value ATTR_UNUSED,

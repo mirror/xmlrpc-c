@@ -1,12 +1,12 @@
 #include "xmlrpc_config.h"  /* prereq for mallocvar.h -- defines __inline__ */
 
+#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
 
 #include "mallocvar.h"
-#include "bool.h"
 #include "casprintf.h"
 #include "getoptx.h"
 
@@ -135,7 +135,7 @@ processOption(struct optionDesc * const optionP,
     if (error)
         casprintf(errorP, "Error in '%s' option: %s", optionP->name, error);
     else
-        optionP->present = TRUE;
+        optionP->present = true;
 }
 
 
@@ -188,9 +188,9 @@ cmd_processOptions(cmdlineParser   const cpP,
         /* Set up initial assumption:  No options present */
 
         for (i = 0; i < cpP->numOptions; ++i)
-            cpP->optionDescArray[i].present = FALSE;
+            cpP->optionDescArray[i].present = false;
 
-        endOfOptions = FALSE;  /* initial value */
+        endOfOptions = false;  /* initial value */
             
         while (!endOfOptions && !*errorP) {
             int const opterr0 = 0;

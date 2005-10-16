@@ -28,6 +28,7 @@
 #undef PACKAGE
 #undef VERSION
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,8 +36,9 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "bool.h"
 #include "mallocvar.h"
+#include "casprintf.h"
+
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
@@ -84,7 +86,7 @@ typedef struct xmlrpc_call_info
     xmlrpc_mem_block *serialized_xml;
 } xmlrpc_call_info;
 
-static bool clientInitialized = FALSE;
+static bool clientInitialized = false;
 
 /*=========================================================================
 **  Initialization and Shutdown
@@ -132,7 +134,7 @@ static void
 setupTransport(xmlrpc_env * const envP,
                const char * const transportName) {
 
-    if (FALSE) {
+    if (false) {
     }
 #if MUST_BUILD_WININET_CLIENT
     else if (strcmp(transportName, "wininet") == 0)
@@ -241,7 +243,7 @@ xmlrpc_client_init2(xmlrpc_env *                      const envP,
                     transportparmsP, transportparm_size,
                     &client.transportP);
                 if (!envP->fault_occurred)
-                    clientInitialized = TRUE;
+                    clientInitialized = true;
             }
         }
     }
@@ -256,7 +258,7 @@ xmlrpc_client_cleanup() {
 
     client.clientTransportOps.destroy(client.transportP);
     
-    clientInitialized = FALSE;
+    clientInitialized = false;
 }
 
 
@@ -345,14 +347,27 @@ clientCallServerParams(xmlrpc_env *               const envP,
         clientP->clientTransportOps.call(
             envP, clientP->transportP, serverP, callXmlP, &respXmlP);
         if (!envP->fault_occurred) {
+            int faultCode;
+            const char * faultString;
+
             xmlrpc_traceXml("XML-RPC RESPONSE", 
                             XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
                             XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
             
-            *resultPP = xmlrpc_parse_response(
+            xmlrpc_parse_response2(
                 envP,
                 XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
-                XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
+                XMLRPC_MEMBLOCK_SIZE(char, respXmlP),
+                resultPP, &faultCode, &faultString);
+
+            if (!envP->fault_occurred) {
+                if (faultString) {
+                    xmlrpc_env_set_fault_formatted(
+                        envP, faultCode,
+                        "RPC failed at server.  %s", faultString);
+                    xmlrpc_strfree(faultString);
+                }
+            }
             XMLRPC_MEMBLOCK_FREE(char, respXmlP);
         }
         XMLRPC_MEMBLOCK_FREE(char, callXmlP);
@@ -958,9 +973,11 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
    failed the request.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
-    xmlrpc_value * responseP;
+    xmlrpc_value * resultP;
 
     xmlrpc_env_init(&env);
+
+    resultP = NULL;  /* Just to quiet compiler warning */
 
     if (transportEnv.fault_occurred)
         xmlrpc_env_set_fault_formatted(
@@ -968,25 +985,32 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
             "Client transport failed to execute the RPC.  %s",
             transportEnv.fault_string);
 
-    if (!env.fault_occurred)
-        responseP = xmlrpc_parse_response(
-            &env,
-            XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlP),
-            XMLRPC_MEMBLOCK_SIZE(char, responseXmlP));
-    else
-        responseP = NULL;
-        /* just to quiet compiler warning; value undefined when env
-           indicates an error.
-        */
+    if (!env.fault_occurred) {
+        int faultCode;
+        const char * faultString;
 
+        xmlrpc_parse_response2(&env,
+                               XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlP),
+                               XMLRPC_MEMBLOCK_SIZE(char, responseXmlP),
+                               &resultP, &faultCode, &faultString);
+
+        if (!env.fault_occurred) {
+            if (faultString) {
+                xmlrpc_env_set_fault_formatted(
+                    &env, faultCode,
+                    "RPC failed at server.  %s", faultString);
+                xmlrpc_strfree(faultString);
+            }
+        }
+    }
     /* Call the user's callback function with the result */
     (*callInfoP->callback)(callInfoP->server_url, 
                            callInfoP->method_name, 
                            callInfoP->param_array,
-                           callInfoP->user_data, &env, responseP);
+                           callInfoP->user_data, &env, resultP);
 
     if (!env.fault_occurred)
-        xmlrpc_DECREF(responseP);
+        xmlrpc_DECREF(resultP);
 
     call_info_free(callInfoP);
 

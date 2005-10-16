@@ -1,7 +1,10 @@
 #include <string>
 
+#include "casprintf.h"
+
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+using girerr::throwf;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/base.hpp"
@@ -102,21 +105,24 @@ parseResponse(string       const& responseXml,
     xmlrpc_env_init(&env);
 
     xmlrpc_value * c_resultP;
+    int faultCode;
+    const char * faultString;
 
-    c_resultP = 
-        xmlrpc_parse_response(&env, responseXml.c_str(), responseXml.size());
+    xmlrpc_parse_response2(&env, responseXml.c_str(), responseXml.size(),
+                           &c_resultP, &faultCode, &faultString);
 
-    /* Unfortunately, xmlrpc_parse_response() does not distinguish between
-       unparseable XML and XML that cleanly indicates an RPC failure or
-       other failure on the server end.  We'll fix that some day, but for
-       now, we just assume any failure is an XML-RPC RPC failure.
-    */
     if (env.fault_occurred)
-        *outcomeP =
-            rpcOutcome(fault(env.fault_string,
-                             static_cast<fault::code_t>(env.fault_code)));
-    else
-        *outcomeP = rpcOutcome(value(c_resultP));
+        throwf("Unable to find XML-RPC response in what server sent back.  %s",
+               env.fault_string);
+    else {
+        if (faultString) {
+            *outcomeP =
+                rpcOutcome(fault(faultString,
+                                 static_cast<fault::code_t>(faultCode)));
+            xmlrpc_strfree(faultString);
+        } else
+            *outcomeP = rpcOutcome(value(c_resultP));
+    }
 }
 
 
@@ -133,7 +139,8 @@ parseSuccessfulResponse(string  const& responseXml,
     parseResponse(responseXml, &outcome);
 
     if (!outcome.succeeded())
-        throw(error("RPC failed.  " + outcome.getFault().getDescription()));
+        throwf("RPC response indicates it failed.  %s",
+               outcome.getFault().getDescription().c_str());
 
     *resultP = outcome.getResult();
 }

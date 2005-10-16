@@ -425,11 +425,20 @@ client_xml::call(carriageParm * const  carriageParmP,
     
     xml::trace("XML-RPC CALL", callXml);
 
-    this->transportP->call(carriageParmP, callXml, &responseXml);
-
+    try {
+        this->transportP->call(carriageParmP, callXml, &responseXml);
+    } catch (error error) {
+        throwf("Unable to transport XML to server and "
+               "get XML response back.  %s", error.what());
+    }
     xml::trace("XML-RPC RESPONSE", responseXml);
-
-    xml::parseResponse(responseXml, outcomeP);
+        
+    try {
+        xml::parseResponse(responseXml, outcomeP);
+    } catch (error error) {
+        throwf("Response XML from server is not valid XML-RPC response.  %s",
+               error.what());
+    }
 }
  
 
@@ -594,7 +603,7 @@ rpc::getResult() const {
         throw(*this->errorP);
         break;
     case STATE_FAILED:
-        throw(error("RPC failed.  " +
+        throw(error("RPC response indicates failure.  " +
                     this->outcome.getFault().getDescription()));
         break;
     case STATE_SUCCEEDED: {

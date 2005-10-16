@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <limits.h>
 
+#include "casprintf.h"
+
 #include "xmlrpc_config.h"
 
 #include "xmlrpc-c/base.h"
@@ -540,16 +542,21 @@ static void test_nesting_limit (void)
 
     xmlrpc_env_init(&env);
     
-    /* Test with an adequate limit for (...(...()...)...). */
-    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 2);
-    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
+    /* Test with an adequate limit for a result value which is an
+       array which contains an element which is a struct, whose values
+       are simple: 3.
+    */
+    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 3);
+    val = xmlrpc_parse_response(&env,
+                                good_response_xml, strlen(good_response_xml));
     TEST_NO_FAULT(&env);
     TEST(val != NULL);
     xmlrpc_DECREF(val);
 
     /* Test with an inadequate limit. */
-    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 1);
-    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
+    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 2);
+    val = xmlrpc_parse_response(&env,
+                                good_response_xml, strlen(good_response_xml));
     TEST_FAULT(&env, XMLRPC_PARSE_ERROR); /* BREAKME - Will change. */
     TEST(val == NULL);
 
@@ -561,16 +568,19 @@ static void test_nesting_limit (void)
     xmlrpc_env_clean(&env);
 }
 
-static void test_xml_size_limit (void)
-{
-    xmlrpc_env env;
-    const char *method_name;
-    xmlrpc_value *params, *val;
-    
 
+
+static void
+test_xml_size_limit(void) {
+
+    xmlrpc_env env;
+    const char * methodName;
+    xmlrpc_value * paramsP;
+    
     /* NOTE - This test suite only verifies the last-ditch size-checking
-    ** code.  There should also be matching code in all server (and
-    ** preferably all client) modules as well. */
+       code.  There should also be matching code in all server (and
+       preferably all client) modules as well.
+    */
 
     /* Set our XML size limit to something ridiculous. */
     xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, 6);
@@ -578,22 +588,28 @@ static void test_xml_size_limit (void)
     /* Attempt to parse a call. */
     xmlrpc_env_init(&env);
     xmlrpc_parse_call(&env, serialized_call, strlen(serialized_call),
-                      &method_name, &params);
+                      &methodName, &paramsP);
     TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
-    TEST(method_name == NULL);
-    TEST(params == NULL);
     xmlrpc_env_clean(&env);
 
-    /* Attempt to parse a response. */
-    xmlrpc_env_init(&env);
-    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
-    TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
-    TEST(val == NULL);
-    xmlrpc_env_clean(&env);
+    {
+        xmlrpc_value * resultP;
+        int faultCode;
+        const char * faultString;
 
+        /* Attempt to parse a response. */
+        xmlrpc_env_init(&env);
+        xmlrpc_parse_response2(&env,
+                               good_response_xml, strlen(good_response_xml),
+                               &resultP, &faultCode, &faultString);
+        TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
+        xmlrpc_env_clean(&env);
+    }
     /* Reset the default limit. */
     xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, XMLRPC_XML_SIZE_LIMIT_DEFAULT);
 }
+
+
 
 /*=========================================================================
 **  test_sample_files

@@ -8,17 +8,18 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 
 #include "xmlrpc_config.h"
 
-#include "bool.h"
 #include "girmath.h"
 #include "mallocvar.h"
 #include "linklist.h"
-#include "sstring.h"
+#include "girstring.h"
+
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
@@ -191,15 +192,15 @@ timeIsAfter(struct timeval const comparator,
             struct timeval const comparand) {
 
     if (comparator.tv_sec > comparand.tv_sec)
-        return TRUE;
+        return true;
     else if (comparator.tv_sec < comparand.tv_sec)
-        return FALSE;
+        return false;
     else {
         /* Seconds are equal */
         if (comparator.tv_usec > comparand.tv_usec)
-            return TRUE;
+            return true;
         else
-            return FALSE;
+            return false;
     }
 }
 
@@ -325,13 +326,13 @@ getXportParms(xmlrpc_env *  const envP ATTR_UNUSED,
             strdup(curlXportParmsP->network_interface);
 
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(no_ssl_verifypeer))
-        curlSetupP->sslVerifyPeer = TRUE;
+        curlSetupP->sslVerifyPeer = true;
     else
         curlSetupP->sslVerifyPeer = !curlXportParmsP->no_ssl_verifypeer;
         
     if (!curlXportParmsP || 
         parmSize < XMLRPC_CXPSIZE(no_ssl_verifyhost))
-        curlSetupP->sslVerifyHost = TRUE;
+        curlSetupP->sslVerifyHost = true;
     else
         curlSetupP->sslVerifyHost = !curlXportParmsP->no_ssl_verifyhost;
 
@@ -385,7 +386,7 @@ getXportParms(xmlrpc_env *  const envP ATTR_UNUSED,
         curlSetupP->sslEngine = strdup(curlXportParmsP->sslengine);
     
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslengine_default))
-        curlSetupP->sslEngineDefault = FALSE;
+        curlSetupP->sslEngineDefault = false;
     else
         curlSetupP->sslEngineDefault = !!curlXportParmsP->sslengine_default;
     
@@ -1158,7 +1159,7 @@ processCurlMessages(xmlrpc_env * const envP,
         
     bool endOfMessages;
 
-    endOfMessages = FALSE;   /* initial assumption */
+    endOfMessages = false;   /* initial assumption */
 
     while (!endOfMessages && !envP->fault_occurred) {
         int remainingMsgCount;
@@ -1170,7 +1171,7 @@ processCurlMessages(xmlrpc_env * const envP,
         curlMsgP = curl_multi_info_read(curlMultiP, &remainingMsgCount);
         
         if (curlMsgP == NULL)
-            endOfMessages = TRUE;
+            endOfMessages = true;
         else {
             if (curlMsgP->msg == CURLMSG_DONE)
                 finishCurlTransaction(envP, curlMsgP->easy_handle);
@@ -1250,7 +1251,7 @@ doCurlWork(xmlrpc_env * const envP,
     int runningHandles;
     bool immediateWorkToDo;
 
-    immediateWorkToDo = TRUE;  /* initial assumption */
+    immediateWorkToDo = true;  /* initial assumption */
 
     while (immediateWorkToDo && !envP->fault_occurred) {
         CURLMcode rc;
@@ -1260,7 +1261,7 @@ doCurlWork(xmlrpc_env * const envP,
         if (rc == CURLM_CALL_MULTI_PERFORM) {
             /* There's still more work to do */
         } else {
-            immediateWorkToDo = FALSE;
+            immediateWorkToDo = false;
 
             if (rc != CURLM_OK)
                 xmlrpc_faultf(envP,
@@ -1294,8 +1295,8 @@ finishCurlSessions(xmlrpc_env *       const envP,
     bool rpcStillRunning;
     bool timedOut;
     
-    rpcStillRunning = TRUE;  /* initial assumption */
-    timedOut = FALSE;
+    rpcStillRunning = true;  /* initial assumption */
+    timedOut = false;
     
     while (rpcStillRunning && !timedOut && !envP->fault_occurred) {
         waitForWork(envP, curlMultiP, timeoutType, deadline);

@@ -162,6 +162,14 @@ test_serialize_methodResponse(void) {
 
     /* Serialize a methodResponse. */
 
+    char const serialized_response[] =
+        XML_PROLOGUE
+        "<methodResponse>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>30</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodResponse>\r\n";
+
     xmlrpc_env env;
     xmlrpc_value * v;
     xmlrpc_mem_block *output;

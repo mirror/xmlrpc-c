@@ -2,12 +2,12 @@
 
 #include "xmlrpc_config.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "bool.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 
@@ -881,7 +881,7 @@ xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
 
     format_copy = format;
     VA_LIST_COPY(args_copy, args);
-    decomposeValue(envP, value, &format_copy, &args_copy, FALSE);
+    decomposeValue(envP, value, &format_copy, &args_copy, false);
     if (!envP->fault_occurred) {
         XMLRPC_ASSERT(*format_copy == '\0');
     }
@@ -919,7 +919,7 @@ xmlrpc_parse_value_va(xmlrpc_env *   const envP,
 
     format_copy = format;
     VA_LIST_COPY(args_copy, args);
-    decomposeValue(envP, value, &format_copy, &args_copy, TRUE);
+    decomposeValue(envP, value, &format_copy, &args_copy, true);
     if (!envP->fault_occurred) {
         XMLRPC_ASSERT(*format_copy == '\0');
     }

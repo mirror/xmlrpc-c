@@ -18,7 +18,6 @@
 
 #include "xmlrpc_config.h"
 
-#include "bool.h"
 #include "mallocvar.h"
 #include "linklist.h"
 #include "casprintf.h"
@@ -28,6 +27,7 @@
 #include "xmlrpc-c/client_int.h"
 #include "pthreadx.h"
 
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>

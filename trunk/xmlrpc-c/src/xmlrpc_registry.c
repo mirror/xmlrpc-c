@@ -386,13 +386,20 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
         const char * methodName;
         xmlrpc_value * paramArray;
         xmlrpc_env fault;
+        xmlrpc_env parseEnv;
 
         xmlrpc_env_init(&fault);
+        xmlrpc_env_init(&parseEnv);
 
-        xmlrpc_parse_call(&fault, xml_data, xml_len, 
+        xmlrpc_parse_call(&parseEnv, xml_data, xml_len, 
                           &methodName, &paramArray);
 
-        if (!fault.fault_occurred) {
+        if (parseEnv.fault_occurred)
+            xmlrpc_env_set_fault_formatted(
+                &fault, XMLRPC_PARSE_ERROR,
+                "Call XML not a proper XML-RPC call.  %s",
+                parseEnv.fault_string);
+        else {
             xmlrpc_value * result;
             
             dispatch_call(&fault, registryP, methodName, paramArray, &result);
@@ -415,6 +422,7 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
         if (!envP->fault_occurred && fault.fault_occurred)
             xmlrpc_serialize_fault(envP, output, &fault);
 
+        xmlrpc_env_clean(&parseEnv);
         xmlrpc_env_clean(&fault);
 
         if (envP->fault_occurred)
