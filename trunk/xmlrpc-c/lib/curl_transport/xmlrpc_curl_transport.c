@@ -8,6 +8,41 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+/*----------------------------------------------------------------------------
+   Curl global variables:
+
+   Curl maintains some minor information in process-global variables.
+   One must call curl_global_init() to initialize them before calling
+   any other Curl library function.
+
+   But note that one of those global variables tells that
+   curl_global_init() has been called, and if you call it again,
+   it's just a no-op.  So we can call it for each of many transport
+   object constructors.
+
+   The actual global variables appear to be constant so that it's OK
+   for them to be shared among multiple objects and threads.  And we never
+   want other than the defaults.  They're things like the identity of
+   the malloc routine.
+
+   Note that not only could many Xmlrpc-c Curl XML transport
+   objects be using Curl in the same process, but the Xmlrpc-c user may
+   have uses of his own.  So this whole fragile thing works only as long
+   as the user doesn't need to set these global variables to something
+   different from the defaults (because those are what we use).
+
+   curl_global_cleanup() reverts the process back to a state in which
+   nobody can use the Curl library.  So we can't ever call it.  This
+   means there will be some memory leakage, but since curl_global_init
+   only ever has effect once, the amount of leakage is trivial.  The
+   user can do his own curl_global_cleanup() if he really cares.
+
+   Some of the Curl global variables are actually the SSL library global
+   variables.  The SSL library has the same disease.
+-----------------------------------------------------------------------------*/
+
+
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -150,8 +185,259 @@ createLock_pthread(void) {
     return lockP;
 }
 
-struct xmlrpc_client_transport {
+
+
+
+/*=============================================================================
+    curlMulti
+=============================================================================*/
+
+struct curlMulti {
+/*----------------------------------------------------------------------------
+   This is an extension to Curl's CURLM object.  The extensions are:
+
+   1) It has a lock so multiple threads can use it simultaneously.
+
+   2) Its "select" file descriptor vectors are self-contained.  CURLM
+      requires the user to maintain them separately.
+-----------------------------------------------------------------------------*/
     CURLM * curlMultiP;
+    lock * lockP;
+        /* Hold this lock while accessing or using *curlMultiP.  You're
+           using the multi manager whenever you're calling a Curl
+           library multi manager function.
+        */
+    /* The following file descriptor sets are an integral part of the
+       CURLM object; Our curlMulti_fdset() routine binds them to the
+       CURLM object, and said object expects us to use them in a very
+       specific way, including doing a select() on them.  It is very,
+       very messy.
+    */
+    fd_set readFdSet;
+    fd_set writeFdSet;
+    fd_set exceptFdSet;
+};
+
+
+
+static struct curlMulti *
+createCurlMulti(void) {
+
+    struct curlMulti * retval;
+    struct curlMulti * curlMultiP;
+
+    MALLOCVAR(curlMultiP);
+
+    if (curlMultiP == NULL)
+        retval = NULL;
+    else {
+        curlMultiP->lockP = createLock_pthread();
+
+        if (curlMultiP->lockP == NULL)
+            retval = NULL;
+        else {
+            curlMultiP->curlMultiP = curl_multi_init();
+            if (curlMultiP->curlMultiP == NULL)
+                retval = NULL;
+            else
+                retval = curlMultiP;
+
+            if (retval == NULL)
+                curlMultiP->lockP->destroy(curlMultiP->lockP);
+        }
+        if (retval == NULL)
+            free(curlMultiP);
+    }
+    return retval;
+}
+
+
+
+static void
+destroyCurlMulti(struct curlMulti * const curlMultiP) {
+
+    curl_multi_cleanup(curlMultiP->curlMultiP);
+    
+    curlMultiP->lockP->destroy(curlMultiP->lockP);
+
+    free(curlMultiP);
+}
+
+
+static void
+curlMulti_perform(xmlrpc_env *       const envP,
+                  struct curlMulti * const curlMultiP,
+                  bool *             const immediateWorkToDoP,
+                  int *              const runningHandlesP) {
+
+    CURLMcode rc;
+
+    curlMultiP->lockP->lock(curlMultiP->lockP);
+
+    rc = curl_multi_perform(curlMultiP->curlMultiP, runningHandlesP);
+
+    curlMultiP->lockP->unlock(curlMultiP->lockP);
+
+    if (rc == CURLM_CALL_MULTI_PERFORM) {
+        *immediateWorkToDoP = true;
+    } else {
+        *immediateWorkToDoP = false;
+
+        if (rc != CURLM_OK) {
+            xmlrpc_faultf(envP,
+                          "Impossible failure of curl_multi_perform() "
+                          "with rc %d (%s)", rc, curl_multi_strerror(rc));
+        }
+    }
+}        
+
+
+
+static void
+curlMulti_addHandle(xmlrpc_env *       const envP,
+                    struct curlMulti * const curlMultiP,
+                    CURL *             const curlSessionP) {
+
+    CURLMcode rc;
+
+    curlMultiP->lockP->lock(curlMultiP->lockP);
+
+    rc = curl_multi_add_handle(curlMultiP->curlMultiP, curlSessionP);
+    
+    curlMultiP->lockP->unlock(curlMultiP->lockP);
+
+    if (rc != CURLM_OK)
+        xmlrpc_faultf(envP, "Could not add Curl session to the "
+                      "curl multi manager.  curl_multi_add_handle() "
+                      "returns error code %d (%s)",
+                      rc, curl_multi_strerror(rc));
+}
+
+
+static void
+curlMulti_removeHandle(struct curlMulti * const curlMultiP,
+                       CURL *             const curlSessionP) {
+
+    curlMultiP->lockP->lock(curlMultiP->lockP);
+
+    curl_multi_remove_handle(curlMultiP->curlMultiP, curlSessionP);
+    
+    curlMultiP->lockP->unlock(curlMultiP->lockP);
+}
+
+
+
+static void
+curlMulti_getMessage(struct curlMulti * const curlMultiP,
+                     bool *             const endOfMessagesP,
+                     CURLMsg *          const curlMsgP) {
+/*----------------------------------------------------------------------------
+   Get the next message from the queue of things the Curl multi manager
+   wants to say to us.
+
+   Return the message as *curlMsgP.
+
+   Iff there are no messages in the queue, return *endOfMessagesP == true.
+-----------------------------------------------------------------------------*/
+    int remainingMsgCount;
+    CURLMsg * privateCurlMsgP;
+        /* Note that this is a pointer into the multi manager's memory,
+           so we have to use it under lock.
+        */
+
+    curlMultiP->lockP->lock(curlMultiP->lockP);
+    
+    privateCurlMsgP = curl_multi_info_read(curlMultiP->curlMultiP,
+                                           &remainingMsgCount);
+        
+    if (privateCurlMsgP == NULL)
+        *endOfMessagesP = true;
+    else {
+        *endOfMessagesP = false;
+        *curlMsgP = *privateCurlMsgP;
+    }    
+    curlMultiP->lockP->unlock(curlMultiP->lockP);
+}
+
+
+
+static void
+curlMulti_fdset(xmlrpc_env *       const envP,
+                struct curlMulti * const curlMultiP,
+                fd_set *           const readFdSetP,
+                fd_set *           const writeFdSetP,
+                fd_set *           const exceptFdSetP,
+                int *              const maxFdP) {
+/*----------------------------------------------------------------------------
+   Set the CURLM object's file descriptor sets to those in the
+   curlMulti object, update those file descriptor sets with the
+   current needs of the multi manager, and return the resulting values
+   of the file descriptor sets.
+
+   This is a bizarre operation, but is necessary because of the nonmodular
+   way in which the Curl multi interface works with respect to waiting
+   for work with select().
+-----------------------------------------------------------------------------*/
+    CURLMcode rc;
+    
+    curlMultiP->lockP->lock(curlMultiP->lockP);
+
+    /* curl_multi_fdset() doesn't _set_ the fdsets.  It adds to existing
+       ones (so you can easily do a select() on other fds and Curl
+       fds at the same time).  So we have to clear first:
+    */
+    FD_ZERO(&curlMultiP->readFdSet);
+    FD_ZERO(&curlMultiP->writeFdSet);
+    FD_ZERO(&curlMultiP->exceptFdSet);
+
+    /* WARNING: curl_multi_fdset() doesn't just update the fdsets pointed
+       to by its arguments.  It makes the CURLM object remember those
+       pointers and refer back to them later!  In fact, curl_multi_perform
+       expects its caller to have done a select() on those masks.  No,
+       really.  The man page even admits it.
+    */
+
+    rc = curl_multi_fdset(curlMultiP->curlMultiP,
+                          &curlMultiP->readFdSet,
+                          &curlMultiP->writeFdSet,
+                          &curlMultiP->exceptFdSet,
+                          maxFdP);
+
+    *readFdSetP   = curlMultiP->readFdSet;
+    *writeFdSetP  = curlMultiP->writeFdSet;
+    *exceptFdSetP = curlMultiP->exceptFdSet;
+
+    curlMultiP->lockP->unlock(curlMultiP->lockP);
+
+    if (rc != CURLM_OK)
+        xmlrpc_faultf(envP, "Impossible failure of curl_multi_fdset() "
+                      "with rc %d (%s)", rc, curl_multi_strerror(rc));
+}
+
+
+
+static void
+curlMulti_updateFdSet(struct curlMulti * const curlMultiP,
+                      fd_set             const readFdSet,
+                      fd_set             const writeFdSet,
+                      fd_set             const exceptFdSet) {
+/*----------------------------------------------------------------------------
+   curl_multi_perform() expects the file descriptor sets, which were bound
+   to the CURLM object via a prior curlMulti_fdset(), to contain the results
+   of a recent select().  This subroutine provides you a way to supply those.
+-----------------------------------------------------------------------------*/
+    curlMultiP->readFdSet   = readFdSet;
+    curlMultiP->writeFdSet  = writeFdSet;
+    curlMultiP->exceptFdSet = exceptFdSet;
+}
+
+                      
+
+/*===========================================================================*/
+
+
+struct xmlrpc_client_transport {
+    struct curlMulti * curlMultiP;
         /* The Curl multi manager that this transport uses to handle
            multiple Curl sessions at the same time.
         */
@@ -173,8 +459,11 @@ struct xmlrpc_client_transport {
            outside of Xmlrpc-c.  The actual User-Agent header consists
            of this prefix plus information about Xmlrpc-c.  NULL means
            none.
+
+           This is constant.
         */
     struct curlSetup curlSetupStuff;
+        /* This is constant */
 };
 
 typedef struct {
@@ -192,7 +481,7 @@ typedef struct {
            Curl session, so this had better not be a session that some other
            transaction is using simultaneously.
         */
-    CURLM * curlMultiP;
+    struct curlMulti * curlMultiP;
         /* The Curl multi manager which manages the above curl session,
            if any.  An asynchronous process uses a Curl multi manager
            to manage the in-progress Curl sessions and thereby in-progress
@@ -590,6 +879,35 @@ destroySyncCurlSession(CURL * const curlSessionP) {
 
 
 
+static void
+makeSyncCurlSession(xmlrpc_env *                     const envP,
+                    struct xmlrpc_client_transport * const transportP) {
+
+    transportP->syncCurlSessionLockP = createLock_pthread();
+    if (transportP->syncCurlSessionLockP == NULL)
+        xmlrpc_faultf(envP, "Unable to create lock for "
+                      "synchronous Curl session.");
+    else {
+        createSyncCurlSession(envP, &transportP->syncCurlSessionP);
+        if (envP->fault_occurred)
+            transportP->syncCurlSessionLockP->destroy(
+                transportP->syncCurlSessionLockP); 
+    }
+}
+
+
+
+static void
+unmakeSyncCurlSession(struct xmlrpc_client_transport * const transportP) {
+
+    destroySyncCurlSession(transportP->syncCurlSessionP);
+
+    transportP->syncCurlSessionLockP->destroy(
+        transportP->syncCurlSessionLockP); 
+}
+
+
+
 static void 
 create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
@@ -608,43 +926,31 @@ create(xmlrpc_env *                      const envP,
 
     initWindowsStuff(envP);
 
-    /* This is the main global constructor for the app.  Call this before
-       _any_ libcurl usage. If this fails, no libcurl functions may be
-       used, or havoc may be the result.
+    /* Here is the global variable sadness that makes it impossible for
+       a transport object to be truly modular.  See the explanation of
+       Curl global variables at the top of this file.
     */
     curl_global_init(CURL_GLOBAL_ALL);
-
-    /* The above makes it look like Curl is not re-entrant, and thus
-       one cannot have more than one instance of a Xmlrpc-c Curl transport
-       per program.  We should check into that.
-    */
 
     MALLOCVAR(transportP);
     if (transportP == NULL)
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
-        transportP->curlMultiP = curl_multi_init();
+        transportP->curlMultiP = createCurlMulti();
         
         if (transportP->curlMultiP == NULL)
-            xmlrpc_faultf(envP, "Unable to create Curl multi handle.");
+            xmlrpc_faultf(envP, "Unable to create Curl multi manager");
         else {
             getXportParms(envP, curlXportParmsP, parm_size, transportP);
 
             if (!envP->fault_occurred) {
-                transportP->syncCurlSessionLockP = createLock_pthread();
-                if (transportP->syncCurlSessionLockP == NULL)
-                    xmlrpc_faultf(envP, "Can't create a lock.");
-                else {
-                    createSyncCurlSession(envP, &transportP->syncCurlSessionP);
-                    if (envP->fault_occurred)
-                        transportP->syncCurlSessionLockP->destroy(
-                            transportP->syncCurlSessionLockP); 
-                }            
+                makeSyncCurlSession(envP, transportP);
+
                 if (envP->fault_occurred)
                     freeXportParms(transportP);
             }
             if (envP->fault_occurred)
-                curl_multi_cleanup(transportP->curlMultiP);
+                destroyCurlMulti(transportP->curlMultiP);
         }                 
         if (envP->fault_occurred)
             free(transportP);
@@ -664,33 +970,48 @@ termWindowStuff(void) {
 
 
 
+static void
+assertNoOutstandingCurlWork(struct curlMulti * const curlMultiP) {
+
+    xmlrpc_env env;
+    bool immediateWorkToDo;
+    int runningHandles;
+    
+    xmlrpc_env_init(&env);
+    
+    curlMulti_perform(&env, curlMultiP, &immediateWorkToDo, &runningHandles);
+    
+    /* We know the above was a no-op, since we're asserting that there
+       is no outstanding work.
+    */
+    XMLRPC_ASSERT(!env.fault_occurred);
+    XMLRPC_ASSERT(!immediateWorkToDo);
+    XMLRPC_ASSERT(runningHandles == 0);
+    xmlrpc_env_clean(&env);
+}
+
+
+
 static void 
 destroy(struct xmlrpc_client_transport * const clientTransportP) {
 /*----------------------------------------------------------------------------
    This does the 'destroy' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(clientTransportP != NULL);
-    
-    destroySyncCurlSession(clientTransportP->syncCurlSessionP);
-    clientTransportP->syncCurlSessionLockP->destroy(
-        clientTransportP->syncCurlSessionLockP);
+
+    assertNoOutstandingCurlWork(clientTransportP->curlMultiP);
+        /* We know this is true because a condition of destroying the
+           transport is that there be no outstanding RPCs.
+        */
+    unmakeSyncCurlSession(clientTransportP);
+
+    destroyCurlMulti(clientTransportP->curlMultiP);
 
     freeXportParms(clientTransportP);
 
-    {
-        /* We know the following is a no-op, because it is a condition of
-           destroying the transport that the transport not have any
-           outstanding RPCs.
-        */
-        int runningHandles;
-
-        curl_multi_perform(clientTransportP->curlMultiP, &runningHandles);
-        
-        XMLRPC_ASSERT(runningHandles == 0);
-    }
-    curl_multi_cleanup(clientTransportP->curlMultiP);
-
-    curl_global_cleanup();
+    /* We want to call curl_global_cleanup() now, but can't.  See
+       explanation of Curl global variables at the top of this file.
+    */
 
     termWindowStuff();
 
@@ -895,7 +1216,7 @@ setupCurlSession(xmlrpc_env *             const envP,
 static void
 createCurlTransaction(xmlrpc_env *               const envP,
                       CURL *                     const curlSessionP,
-                      CURLM *                    const curlMultiP,
+                      struct curlMulti *         const curlMultiP,
                       const xmlrpc_server_info * const serverP,
                       xmlrpc_mem_block *         const callXmlP,
                       xmlrpc_mem_block *         const responseXmlP,
@@ -1063,8 +1384,6 @@ static void
 startCurlTransaction(xmlrpc_env *      const envP,
                      curlTransaction * const curlTransactionP) {
 
-    CURLMcode rc;
-
     /* A Curl session is serial -- it processes zero or one transaction
        at a time.  We use the "private" attribute of the Curl session to
        indicate which transaction it is presently processing.  This is
@@ -1075,14 +1394,9 @@ startCurlTransaction(xmlrpc_env *      const envP,
     curl_easy_setopt(curlTransactionP->curlSessionP, CURLOPT_PRIVATE,
                      curlTransactionP);
 
-    rc = curl_multi_add_handle(curlTransactionP->curlMultiP,
-                               curlTransactionP->curlSessionP);
-    
-    if (rc != CURLM_OK)
-        xmlrpc_faultf(envP, "Could not add Curl session to the "
-                      "curl multi manager.  curl_multi_add_handle() "
-                      "returns error code %d (%s)",
-                      rc, curl_multi_strerror(rc));
+    curlMulti_addHandle(envP,
+                        curlTransactionP->curlMultiP,
+                        curlTransactionP->curlSessionP);
 }
 
 
@@ -1168,8 +1482,8 @@ finishCurlTransaction(xmlrpc_env * const envP ATTR_UNUSED,
 
     rpcP = curlTransactionP->rpcP;
 
-    curl_multi_remove_handle(curlTransactionP->curlMultiP,
-                             curlTransactionP->curlSessionP);
+    curlMulti_removeHandle(curlTransactionP->curlMultiP,
+                           curlTransactionP->curlSessionP);
     {
         xmlrpc_env env;
 
@@ -1230,27 +1544,21 @@ selectTimeout(xmlrpc_timeoutType const timeoutType,
 
 
 static void
-processCurlMessages(xmlrpc_env * const envP,
-                    CURLM *      const curlMultiP) {
+processCurlMessages(xmlrpc_env *       const envP,
+                    struct curlMulti * const curlMultiP) {
         
     bool endOfMessages;
 
     endOfMessages = false;   /* initial assumption */
 
     while (!endOfMessages && !envP->fault_occurred) {
-        int remainingMsgCount;
-        CURLMsg * curlMsgP;
-        /* Here's another reason the Curl library is apparently not
-           re-entrant, so neither is this Xmlrpc-c transport.
-        */
-        
-        curlMsgP = curl_multi_info_read(curlMultiP, &remainingMsgCount);
-        
-        if (curlMsgP == NULL)
-            endOfMessages = true;
-        else {
-            if (curlMsgP->msg == CURLMSG_DONE)
-                finishCurlTransaction(envP, curlMsgP->easy_handle);
+        CURLMsg curlMsg;
+
+        curlMulti_getMessage(curlMultiP, &endOfMessages, &curlMsg);
+
+        if (!endOfMessages) {
+            if (curlMsg.msg == CURLMSG_DONE)
+                finishCurlTransaction(envP, curlMsg.easy_handle);
         }
     }
 }
@@ -1259,31 +1567,18 @@ processCurlMessages(xmlrpc_env * const envP,
 
 static void
 waitForWork(xmlrpc_env *       const envP,
-            CURLM *            const curlMultiP,
+            struct curlMulti * const curlMultiP,
             xmlrpc_timeoutType const timeoutType,
             struct timeval     const deadline) {
     
-    int maxFd;
     fd_set readFdSet;
     fd_set writeFdSet;
     fd_set exceptFdSet;
-    CURLMcode rc;
-        
-    /* curl_multi_fdset() doesn't return fdsets.  It adds to existing
-       ones (so you can easily do a select() on other fds and Curl
-       fds at the same time).  So we have to clear first:
-    */
-    FD_ZERO(&readFdSet);
-    FD_ZERO(&writeFdSet);
-    FD_ZERO(&exceptFdSet);
-    
-    rc = curl_multi_fdset(curlMultiP,
-                          &readFdSet, &writeFdSet, &exceptFdSet, &maxFd);
-    
-    if (rc != CURLM_OK)
-        xmlrpc_faultf(envP, "Impossible failure of curl_multi_fdset() "
-                      "with rc %d (%s)", rc, curl_multi_strerror(rc));
-    else {
+    int maxFd;
+
+    curlMulti_fdset(envP, curlMultiP,
+                    &readFdSet, &writeFdSet, &exceptFdSet, &maxFd);
+    if (!envP->fault_occurred) {
         if (maxFd == -1) {
             /* There are no Curl file descriptors on which to wait.
                So either there's work to do right now or all transactions
@@ -1302,6 +1597,13 @@ waitForWork(xmlrpc_env *       const envP,
                 xmlrpc_faultf(envP, "Impossible failure of select() "
                               "with errno %d (%s)",
                               errno, strerror(errno));
+            else {
+                /* Believe it or not, the Curl multi manager needs the
+                   results of our select().  So hand them over:
+                */
+                curlMulti_updateFdSet(curlMultiP,
+                                      readFdSet, writeFdSet, exceptFdSet);
+            }
         }
     }
 }
@@ -1309,9 +1611,9 @@ waitForWork(xmlrpc_env *       const envP,
 
 
 static void
-doCurlWork(xmlrpc_env * const envP,
-           CURLM *      const curlMultiP,
-           bool *       const rpcStillRunningP) {
+doCurlWork(xmlrpc_env *       const envP,
+           struct curlMulti * const curlMultiP,
+           bool *             const rpcStillRunningP) {
 /*----------------------------------------------------------------------------
    Do whatever work is ready to be done by the Curl multi manager
    identified by 'curlMultiP'.  This typically is transferring data on
@@ -1324,26 +1626,14 @@ doCurlWork(xmlrpc_env * const envP,
    Where the multi manager completes an HTTP transaction, also complete
    the associated RPC.
 -----------------------------------------------------------------------------*/
-    int runningHandles;
     bool immediateWorkToDo;
+    int runningHandles;
 
     immediateWorkToDo = true;  /* initial assumption */
 
     while (immediateWorkToDo && !envP->fault_occurred) {
-        CURLMcode rc;
-
-        rc = curl_multi_perform(curlMultiP, &runningHandles);
-
-        if (rc == CURLM_CALL_MULTI_PERFORM) {
-            /* There's still more work to do */
-        } else {
-            immediateWorkToDo = false;
-
-            if (rc != CURLM_OK)
-                xmlrpc_faultf(envP,
-                              "Impossible failure of curl_multi_perform() "
-                              "with rc %d (%s)", rc, curl_multi_strerror(rc));
-        }
+        curlMulti_perform(envP, curlMultiP,
+                          &immediateWorkToDo, &runningHandles);
     }
 
     /* We either did all the work that's ready to do or hit an error. */
@@ -1364,7 +1654,7 @@ doCurlWork(xmlrpc_env * const envP,
 
 static void
 finishCurlSessions(xmlrpc_env *       const envP,
-                   CURLM *            const curlMultiP,
+                   struct curlMulti * const curlMultiP,
                    xmlrpc_timeoutType const timeoutType,
                    struct timeval     const deadline) {
 
