@@ -51,11 +51,9 @@ static void test_expat (void)
     /* Test cleanup code (w/memprof). */
     xml_element_free(elem);
 
-    /* Try to parse broken XML. We want to know that a proper error occurs,
-    ** AND that we don't leak any memory (w/memprof). */
+    /* Test broken XML */
     elem = xml_parse(&env, expat_error_data, strlen(expat_error_data));
     TEST(env.fault_occurred);
-    TEST(elem == NULL);
 
     xmlrpc_env_clean(&env);
 }
