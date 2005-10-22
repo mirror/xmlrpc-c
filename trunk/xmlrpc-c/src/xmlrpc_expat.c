@@ -1,30 +1,8 @@
-/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE. */
+/* Copyright information is at end of file */
 
 #include "xmlrpc_config.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -355,54 +333,82 @@ static void character_data (void *user_data, XML_Char *s, int len)
 **  XXX - We should allow the user to specify the encoding of our xml_data.
 */
 
-xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len)
-{
-    parse_context context;
+xml_element *
+xml_parse(xmlrpc_env * const envP,
+          const char * const xmlData,
+          int          const xmlDataLen) {
+
+    xml_element * retval;
+
     XML_Parser parser;
-    int ok;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT(xml_data != NULL && xml_len >= 0);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(xmlData != NULL);
+    XMLRPC_ASSERT(xmlDataLen >= 0);
 
-    /* Set up our error-handling preconditions. */
-    parser = NULL;
-    context.root = NULL;
-    
-    /* Set up the rest of our parse context. */
-    context.env     = env;
-    context.current = NULL;
-
-    /* Set up our XML parser. */
     parser = XML_ParserCreate(NULL);
-    XMLRPC_FAIL_IF_NULL(parser, env, XMLRPC_INTERNAL_ERROR,
-                        "Could not create expat parser");
-    XML_SetUserData(parser, &context);
-    XML_SetElementHandler(parser,
-                          (XML_StartElementHandler) start_element,
-                          (XML_EndElementHandler) end_element);
-    XML_SetCharacterDataHandler(parser,
-                                (XML_CharacterDataHandler) character_data);
+    if (parser == NULL)
+        xmlrpc_faultf(envP, "Could not create expat parser");
+    else {
+        parse_context context;
+        bool ok;
 
-    /* Parse our data. */
-    ok = XML_Parse(parser, xml_data, xml_len, 1);
-    if (!ok)
-        XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR,
-                    (char*) XML_ErrorString(XML_GetErrorCode(parser)));
-    XMLRPC_FAIL_IF_FAULT(env);
+        /* Set up our parse context. */
+        context.root = NULL;
+        context.env     = envP;
+        context.current = NULL;
 
-    /* Perform some sanity checks. */
-    XMLRPC_ASSERT(context.root != NULL);
-    XMLRPC_ASSERT(context.current == NULL);
+        XML_SetUserData(parser, &context);
+        XML_SetElementHandler(parser,
+                              (XML_StartElementHandler) start_element,
+                              (XML_EndElementHandler) end_element);
+        XML_SetCharacterDataHandler(parser,
+                                    (XML_CharacterDataHandler) character_data);
 
- cleanup:
-    if (parser)
+        ok = XML_Parse(parser, xmlData, xmlDataLen, 1);
+            /* sets 'context', *envP */
+        if (!ok)
+            xmlrpc_env_set_fault(
+                envP, XMLRPC_PARSE_ERROR,
+                XML_ErrorString(XML_GetErrorCode(parser)));
+        else {
+            if (!envP->fault_occurred) {
+                XMLRPC_ASSERT(context.root != NULL);
+                XMLRPC_ASSERT(context.current == NULL);
+                
+                retval = context.root;
+
+                if (envP->fault_occurred)
+                    xml_element_free(context.root);
+            }
+        }
         XML_ParserFree(parser);
-
-    if (env->fault_occurred) {
-        if (context.root)
-            xml_element_free(context.root);
-        return NULL;
-    } else {
-        return context.root;
     }
+    return retval;
 }
+
+
+/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission. 
+**  
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE. */
