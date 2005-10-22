@@ -8,6 +8,40 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+/*----------------------------------------------------------------------------
+   Curl global variables:
+
+   Curl maintains some minor information in process-global variables.
+   One must call curl_global_init() to initialize them before calling
+   any other Curl library function.
+
+   But note that one of those global variables tells that
+   curl_global_init() has been called, and if you call it again,
+   it's just a no-op.  So we can call it for each of many transport
+   object constructors.
+
+   The actual global variables appear to be constant so that it's OK
+   for them to be shared among multiple objects and threads.  And we never
+   want other than the defaults.  They're things like the identity of
+   the malloc routine.
+
+   Note that not only could many Xmlrpc-c Curl XML transport
+   objects be using Curl in the same process, but the Xmlrpc-c user may
+   have uses of his own.  So this whole fragile thing works only as long
+   as the user doesn't need to set these global variables to something
+   different from the defaults (because those are what we use).
+
+   curl_global_cleanup() reverts the process back to a state in which
+   nobody can use the Curl library.  So we can't ever call it.  This
+   means there will be some memory leakage, but since curl_global_init
+   only ever has effect once, the amount of leakage is trivial.  The
+   user can do his own curl_global_cleanup() if he really cares.
+
+   Some of the Curl global variables are actually the SSL library global
+   variables.  The SSL library has the same disease.
+-----------------------------------------------------------------------------*/
+
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -52,6 +86,13 @@ struct xmlrpc_client_transport {
            all synchronous RPCs.  An async RPC has one of its own,
            and consequently does not share things such as persistent
            connections and cookies with any other RPC.
+        */
+    pthread_mutex_t syncCurlSessionLock;
+        /* Hold this lock while accessing or using *syncCurlSessionP.
+           You're using the session from the time you set any
+           attributes in it or start a transaction with it until any
+           transaction has finished and you've lost interest in any
+           attributes of the session.
         */
     const char * networkInterface;
         /* This identifies the network interface on the local side to
@@ -331,6 +372,7 @@ create(xmlrpc_env *                      const envP,
                       &transportP->userAgent);
 
         if (!envP->fault_occurred) {
+            pthread_mutex_init(&transportP->syncCurlSessionLock, NULL);
             createSyncCurlSession(envP, &transportP->syncCurlSessionP);
 
             if (envP->fault_occurred)
@@ -364,13 +406,16 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
     XMLRPC_ASSERT(list_is_empty(&clientTransportP->rpcList));
 
     destroySyncCurlSession(clientTransportP->syncCurlSessionP);
+    pthread_mutex_destroy(&clientTransportP->syncCurlSessionLock);
 
     if (clientTransportP->networkInterface)
         strfree(clientTransportP->networkInterface);
     if (clientTransportP->userAgent)
         strfree(clientTransportP->userAgent);
 
-    curl_global_cleanup();
+    /* We want to call curl_global_cleanup() now, but can't.  See
+       explanation of Curl global variables at the top of this file.
+    */
 
     pthread_mutex_destroy(&clientTransportP->listLock);
 
@@ -895,6 +940,7 @@ call(xmlrpc_env *                     const envP,
 
     responseXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
     if (!envP->fault_occurred) {
+        pthread_mutex_lock(&clientTransportP->syncCurlSessionLock);
         createRpc(envP, clientTransportP, clientTransportP->syncCurlSessionP,
                   serverP,
                   callXmlP, responseXmlP,
@@ -908,6 +954,7 @@ call(xmlrpc_env *                     const envP,
             
             destroyRpc(rpcP);
         }
+        pthread_mutex_unlock(&clientTransportP->syncCurlSessionLock);
         if (envP->fault_occurred)
             XMLRPC_MEMBLOCK_FREE(char, responseXmlP);
     }

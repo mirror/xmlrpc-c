@@ -67,6 +67,18 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.07 - October 22, 2005
+
+  * BJH: Remove curl_global_cleanup() so that multiple simultaneous
+         Curl client XML transports per process are essentially
+         possible and they don't interfere with other process use of
+         Curl.
+
+  * BJH: Serialize access to synchronous Curl session in Curl client
+         XML transport (to avoid crashes with multiple threads).
+
+  * BJH: when installing legacy header symlinks, remove old names first.
+
 1.03.06 - October 6, 2005
 
   * BJH: Fix use of pthread_mutex_t in girmem.hpp so it can be used in

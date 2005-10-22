@@ -1,4 +1,4 @@
 /* Change this for each release. */
 
-#define XMLRPC_C_VERSION "1.03.06"
+#define XMLRPC_C_VERSION "1.03.07"
 
