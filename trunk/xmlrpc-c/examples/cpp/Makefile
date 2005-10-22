@@ -58,13 +58,10 @@ LDADD_BASE = \
 LDADD_LEGACY_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
 
-all: $(PROGS) testrpc
+all: $(PROGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
-
-testrpc:%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS) $(LDADD_CLIENT)
 
 $(LEGACY_CLIENTPROGS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_LEGACY_CLIENT)
