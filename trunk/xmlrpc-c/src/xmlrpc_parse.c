@@ -2,6 +2,7 @@
 
 #include "xmlrpc_config.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -553,17 +554,109 @@ static void
 parseCallXml(xmlrpc_env *   const envP,
              const char *   const xmlData,
              size_t         const xmlLen,
-             xml_element ** const callElemP) {
+             xml_element ** const callElemPP) {
 
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
-    *callElemP = xml_parse(&env, xmlData, xmlLen);
+    *callElemPP = xml_parse(&env, xmlData, xmlLen);
     if (env.fault_occurred)
         xmlrpc_env_set_fault_formatted(
             envP, env.fault_code, "Call is not valid XML.  %s",
             env.fault_string);
+    else {
+        if (!streq(xml_element_name(*callElemPP), "methodCall"))
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_PARSE_ERROR,
+                "XML-RPC call should be a <methodCall> element.  "
+                "Instead, we have a <%s> element.",
+                xml_element_name(*callElemPP));
+    }
     xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+parseMethodNameElement(xmlrpc_env *  const envP,
+                       xml_element * const nameElemP,
+                       const char ** const methodNameP) {
+    
+    XMLRPC_ASSERT(streq(xml_element_name(nameElemP), "methodName"));
+
+    if (xml_element_children_size(nameElemP) > 0)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR,
+            "A <methodName> element should not have children.  "
+            "This one has %u of them.", xml_element_children_size(nameElemP));
+    else {
+        const char * const cdata = xml_element_cdata(nameElemP);
+
+        xmlrpc_validate_utf8(envP, cdata, strlen(cdata));
+
+        if (!envP->fault_occurred) {
+            *methodNameP = strdup(cdata);
+            if (*methodNameP == NULL)
+                xmlrpc_faultf(envP,
+                              "Could not allocate memory for method name");
+        }
+    }
+}            
+
+
+
+static void
+parseCallChildren(xmlrpc_env *    const envP,
+                  xml_element *   const callElemP,
+                  const char **   const methodNameP,
+                  xmlrpc_value ** const paramArrayPP ) {
+/*----------------------------------------------------------------------------
+  Parse the children of a <methodCall> XML element *callElemP.  They should
+  be <methodName> and <params>.
+-----------------------------------------------------------------------------*/
+    size_t const callChildCount = xml_element_children_size(callElemP);
+
+    xml_element * nameElemP;
+        
+    XMLRPC_ASSERT(streq(xml_element_name(callElemP), "methodCall"));
+    
+    nameElemP = get_child_by_name(envP, callElemP, "methodName");
+    
+    if (!envP->fault_occurred) {
+        parseMethodNameElement(envP, nameElemP, methodNameP);
+            
+        if (!envP->fault_occurred) {
+            /* Convert our parameters. */
+            if (callChildCount > 1) {
+                xml_element * paramsElemP;
+
+                paramsElemP = get_child_by_name(envP, callElemP, "params");
+                    
+                if (!envP->fault_occurred)
+                    *paramArrayPP = convert_params(envP, paramsElemP);
+            } else {
+                /* Workaround for Ruby XML-RPC and old versions of
+                   xmlrpc-epi.  Future improvement: Instead of looking
+                   at child count, we should just check for existence
+                   of <params>.
+                */
+                *paramArrayPP = xmlrpc_array_new(envP);
+            }
+            if (!envP->fault_occurred) {
+                if (callChildCount > 2)
+                    xmlrpc_env_set_fault_formatted(
+                        envP, XMLRPC_PARSE_ERROR,
+                        "<methodCall> has extraneous children, other than "
+                        "<methodName> and <params>.  Total child count = %u",
+                        callChildCount);
+                    
+                if (envP->fault_occurred)
+                    xmlrpc_DECREF(*paramArrayPP);
+            }
+            if (envP->fault_occurred)
+                xmlrpc_strfree(*methodNameP);
+        }
+    }
 }
 
 
@@ -580,85 +673,38 @@ parseCallXml(xmlrpc_env *   const envP,
 
 void 
 xmlrpc_parse_call(xmlrpc_env *    const envP,
-                  const char *    const xml_data,
-                  size_t          const xml_len,
-                  const char **   const out_method_nameP,
-                  xmlrpc_value ** const out_param_arrayPP) {
-
-    xml_element *call_elem, *name_elem, *params_elem;
-    char *cdata;
-    size_t call_child_count;
-    char * outMethodName;
-    xmlrpc_value * outParamArrayP;
+                  const char *    const xmlData,
+                  size_t          const xmlLen,
+                  const char **   const methodNameP,
+                  xmlrpc_value ** const paramArrayPP) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT(xml_data != NULL);
-    XMLRPC_ASSERT(out_method_nameP != NULL && out_param_arrayPP != NULL);
+    XMLRPC_ASSERT(xmlData != NULL);
+    XMLRPC_ASSERT(methodNameP != NULL && paramArrayPP != NULL);
 
-    /* Set up our error-handling preconditions. */
-    outMethodName = NULL;
-    outParamArrayP = NULL;
-    call_elem = NULL;
+    /* SECURITY: Last-ditch attempt to make sure our content length is
+       legal.  XXX - This check occurs too late to prevent an attacker
+       from creating an enormous memory block, so you should try to
+       enforce it *before* reading any data off the network.
+     */
+    if (xmlLen > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_LIMIT_EXCEEDED_ERROR,
+            "XML-RPC request too large.  Max allowed is %u bytes",
+            xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID));
+    else {
+        xml_element * callElemP;
+        parseCallXml(envP, xmlData, xmlLen, &callElemP);
+        if (!envP->fault_occurred) {
+            parseCallChildren(envP, callElemP, methodNameP, paramArrayPP);
 
-    /* SECURITY: Last-ditch attempt to make sure our content length is legal.
-    ** XXX - This check occurs too late to prevent an attacker from creating
-    ** an enormous memory block in RAM, so you should try to enforce it
-    ** *before* reading any data off the network. */
-    if (xml_len > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
-        XMLRPC_FAIL(envP, XMLRPC_LIMIT_EXCEEDED_ERROR,
-                    "XML-RPC request too large");
-
-    parseCallXml(envP, xml_data, xml_len, &call_elem);
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-    /* Pick apart and verify our structure. */
-    CHECK_NAME(envP, call_elem, "methodCall");
-    call_child_count = xml_element_children_size(call_elem);
-    if (call_child_count != 2 && call_child_count != 1)
-        XMLRPC_FAIL1(envP, XMLRPC_PARSE_ERROR,
-                     "Expected <methodCall> to have 1 or 2 children, found %d",
-                     call_child_count);
-
-    /* Extract the method name.
-    ** SECURITY: We make sure the method name is valid UTF-8. */
-    name_elem = get_child_by_name(envP, call_elem, "methodName");
-    XMLRPC_FAIL_IF_FAULT(envP);
-    CHECK_CHILD_COUNT(envP, name_elem, 0);
-    cdata = xml_element_cdata(name_elem);
-#if HAVE_UNICODE_WCHAR
-    xmlrpc_validate_utf8(envP, cdata, strlen(cdata));
-#endif
-    XMLRPC_FAIL_IF_FAULT(envP);
-    outMethodName = malloc(strlen(cdata) + 1);
-    XMLRPC_FAIL_IF_NULL(outMethodName, envP, XMLRPC_INTERNAL_ERROR,
-                        "Could not allocate memory for method name");
-    strcpy(outMethodName, cdata);
-    
-    /* Convert our parameters. */
-    if (call_child_count == 1) {
-        /* Workaround for Ruby XML-RPC and old versions of xmlrpc-epi. */
-        outParamArrayP = xmlrpc_build_value(envP, "()");
-        XMLRPC_FAIL_IF_FAULT(envP);
-    } else {
-        params_elem = get_child_by_name(envP, call_elem, "params");
-        XMLRPC_FAIL_IF_FAULT(envP);
-        outParamArrayP = convert_params(envP, params_elem);
-        XMLRPC_FAIL_IF_FAULT(envP);
+            xml_element_free(callElemP);
+        }
     }
-
-cleanup:
-    if (call_elem)
-        xml_element_free(call_elem);
     if (envP->fault_occurred) {
-        if (outMethodName)
-            free(outMethodName);
-        if (outParamArrayP)
-            xmlrpc_DECREF(outParamArrayP);
-        outMethodName  = NULL;
-        outParamArrayP = NULL;
+        *methodNameP  = NULL;
+        *paramArrayPP = NULL;
     }
-    *out_method_nameP  = outMethodName;
-    *out_param_arrayPP = outParamArrayP;
 }
 
 
