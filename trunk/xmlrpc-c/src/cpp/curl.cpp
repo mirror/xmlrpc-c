@@ -90,29 +90,15 @@ public:
 
 
 
-optionSetting
-parseOptionText(string const& optionText) {
-/*----------------------------------------------------------------------------
-   Take a string like "capath=/etc/ssl/ca" and return the information
-   from it as an 'optionSetting' object.
------------------------------------------------------------------------------*/
-    unsigned int const equalPos(optionText.find("="));
-
-    if (equalPos < optionText.length())
-        return optionSetting(optionText.substr(0, equalPos),
-                             optionText.substr(equalPos+1));
-    else
-        return optionSetting(optionText);
-}
-
-
-
 class optionIterator {
 /* An object of this class iterates through an option string that looks like
-   "capath=/etc/ssl/ca no_ssl_verifyhost" and returns in each iteration
+   "capath=/etc/ssl/ca no_ssl_verifyhost user_agent='my program'"
+   and returns in each iteration
    information about one of those options -- option name and value if any
    A single space separates options -- 2 spaces in a row means a null
-   option!
+   option!  Single quotes anywhere hide blanks; they don't delimit tokens.
+   E.g. "user_'agent'='my ''program'" works.  A doubled single quote within
+   quotes stands for a single single quote.
 */
 public:
     optionIterator(string const optionString)
@@ -124,28 +110,207 @@ public:
     }
 
     optionSetting
-    next() {
-        if (cursor >= optionString.length())
-            throw(error("End of string"));
-
-        size_t const nextBlank(optionString.find(" ", cursor));
-
-        string const optionText(
-            optionString.substr(cursor, nextBlank-cursor));
-
-        if (nextBlank < optionString.length())
-            cursor = nextBlank + 1;
-        else 
-            /* No more blanks.  Set cursor to end of string */
-            cursor = optionString.length();
-
-        return parseOptionText(optionText);
-    }
+    next();
             
 private:
     string const optionString;
     size_t cursor;
+
+    enum tokenType {BLANK, EQUAL, STRING};
+
+    struct token {
+        enum tokenType type;
+        string value;
+    };
+
+    token
+    nextToken();
+
+    void
+    doRestOfNameEqualValue(string const&, optionSetting ** const);
+
+    token
+    nextQuotedString();
+
+    token
+    nextUnquotedString();
 };
+
+
+
+optionIterator::token
+optionIterator::nextQuotedString() {
+/*----------------------------------------------------------------------------
+   Move past a quoted string and return its contents.  A quoted string
+   begins with and ends with a single quote.
+
+   A doubled single quote within a quoted string represents a single
+   single quote.
+-----------------------------------------------------------------------------*/
+    assert(optionString[cursor] == '\'');
+
+    token retval;
+
+    retval.type = STRING;
+    
+    ++this->cursor;  // move past open quote
+
+    bool closeQuoteFound;
+    
+    closeQuoteFound = false;
+    while (!closeQuoteFound) {
+        if (this->cursor >= optionString.length())
+            throw(error("unterminated quoted string"));
+        if (optionString[this->cursor] == '\'') {
+            // Here's a quote.  It could be either the close quote we're
+            // looking for or a doubled quote.
+            if (this->cursor + 1 < optionString.length() &&
+                optionString[this->cursor+1] == '\'') {
+                this->cursor += 2;  // move past doubled quote
+                retval.value += "'";  // output a single quote
+            } else {
+                closeQuoteFound = true;
+                ++this->cursor;  // move past close quote
+            }
+        } else {
+            // Just an ordinary char in the quoted string
+            retval.value += optionString[this->cursor];
+            ++this->cursor;
+        }
+    }
+    return retval;
+}
+
+
+
+
+optionIterator::token
+optionIterator::nextUnquotedString() {
+/*----------------------------------------------------------------------------
+   Move past and return an unquoted string.  An unquoted string starts
+   with a character other than a delimiter character (blank, quote, or equal)
+   and ends with a delimiter character or end of string.
+
+   We return the largest unquoted string we can.
+-----------------------------------------------------------------------------*/
+    token retval;
+
+    retval.type = STRING;
+    
+    while (this->cursor < optionString.length() &&
+           optionString[cursor] != ' ' &&
+           optionString[cursor] != '=' &&
+           optionString[cursor] != '\'') {
+        retval.value += optionString[this->cursor];
+        ++this->cursor;
+    }
+    // Cursor now points to the delimiter character or end of string
+
+    return retval;
+}
+
+
+
+optionIterator::token
+optionIterator::nextToken() {
+/*----------------------------------------------------------------------------
+   Return the token at the current cursor position in the option string.
+   A token is one of these:
+
+   - a blank delimiter
+
+   - an equal sign delimiter
+
+   - a quoted string (value doesn't include the quotes)
+ 
+   - an unquoted string: maximum consecutive characters not including blank,
+     equal, or quote.
+-----------------------------------------------------------------------------*/
+    token retval;
+
+    if (optionString[this->cursor] == ' ') {
+        ++this->cursor;  // move past blank
+        retval.type = BLANK;
+        retval.value = " ";
+    } else if (optionString[this->cursor] == '=') {
+        ++this->cursor;  // move past equal sign
+        retval.type = EQUAL;
+        retval.value = "=";
+    } else if (optionString[this->cursor] == '\'')
+        retval = nextQuotedString();
+    else
+        retval = nextUnquotedString();
+
+    return retval;
+}
+
+
+
+void
+optionIterator::doRestOfNameEqualValue(string           const& optionName,
+                                       optionSetting ** const  settingPP) {
+/*----------------------------------------------------------------------------
+   Parse the remainder of a name=value thing.  The iterator (*this) is
+   presently positioned to the token after the = .
+-----------------------------------------------------------------------------*/
+    if (this->cursor >= optionString.length())
+        throwf("No value after equal sign for option '%s'",
+               optionName.c_str());
+    else {
+        token const optionValue(this->nextToken());
+        if (optionValue.type != STRING)
+            throwf("Invalid token '%s' after equal sign "
+                   "for option '%s'",
+                   optionValue.value.c_str(),
+                   optionName.c_str());
+        
+        // Move past the delimiter after name=value
+        if (cursor < optionString.length()) {
+            token const delimiter(this->nextToken());
+
+            if (delimiter.type != BLANK)
+                throwf("Token following the '%s' option setting is "
+                       "not a blank.  It is '%s'",
+                       optionName.c_str(),
+                       delimiter.value.c_str());
+        }
+        *settingPP = new optionSetting(optionName, optionValue.value);
+    }
+}
+
+
+
+optionSetting
+optionIterator::next() {
+
+    optionSetting * settingP;
+
+    if (cursor >= optionString.length())
+        throw(error("End of string"));
+    
+    token const optionName(this->nextToken());
+    
+    if (optionName.type != STRING)
+        throwf("Invalid token '%s' where option name expected.",
+               optionName.value.c_str());
+    
+    if (cursor >= optionString.length())
+        settingP = new optionSetting(optionName.value);
+    else {
+        token const delimiter(this->nextToken());
+        if (delimiter.type == BLANK)
+            settingP = new optionSetting(optionName.value);
+        else if (delimiter.type == EQUAL)
+            doRestOfNameEqualValue(optionName.value, &settingP);
+        else
+            throwf("Unexpected token '%s' where equal sign or blank "
+                   "expected.", delimiter.value.c_str());
+    }
+    optionSetting const retval(*settingP);
+    delete(settingP);
+
+    return retval;
+}
 
 
 
@@ -175,7 +340,7 @@ processSetting(optionSetting                   const setting,
     } else if (setting.optionName == "ssl_cert") {
         setting.verifyHasValue();
         transportParmsP->ssl_cert = setting.optionValueCstr();
-    } else if (setting.optionName == "sslcerttpye") {
+    } else if (setting.optionName == "sslcerttype") {
         setting.verifyHasValue();
         transportParmsP->sslcerttype = setting.optionValueCstr();
     } else if (setting.optionName == "sslcertpasswd") {

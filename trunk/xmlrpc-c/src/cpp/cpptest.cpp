@@ -873,48 +873,135 @@ public:
 
 
 
+class curlTransportTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "curlTransportTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+#if MUST_BUILD_CURL_CLIENT
+        clientXmlTransport_curl transport0;
+        clientXmlTransport_curl transport1("eth0");
+        clientXmlTransport_curl transport2("eth0", true);
+        clientXmlTransport_curl transport3("eth0", true, true);
+        clientXmlTransport_curl transport4(
+            clientXmlTransport_curl::OPTFORMAT_1,
+            "network_interface=eth0 "
+            "no_ssl_verifypeer "
+            "no_ssl_verifyhost "
+            "user_agent='my user agent' "
+            "ssl_cert=/etc/sslcert "
+            "sslcerttype=PEM "
+            "sslcertpasswd=mypass "
+            "sslkey=/etc/sslkey "
+            "sslkeytype=DER "
+            "sslkeypasswd=mykeypass "
+            "sslengine=mysslengine "
+            "sslengine_default "
+            "sslversion=2 "
+            "cainfo=/etc/cainfo "
+            "capath=/etc/cadir "
+            "randomfile=/dev/random "
+            "egdsocket=/tmp/egdsocket "
+            "ssl_cipher_list=RC4-SHA:DEFAULT "
+            );            
+
+        clientXmlTransport_curl transport5(
+            clientXmlTransport_curl::OPTFORMAT_1, "user_agent=''");
+
+        clientXmlTransport_curl transport6(
+            clientXmlTransport_curl::OPTFORMAT_1, "");
+        
+        EXPECT_ERROR(clientXmlTransport_curl transport10(
+                         clientXmlTransport_curl::OPTFORMAT_1,
+                         "bogusopt"););
+        EXPECT_ERROR(clientXmlTransport_curl transport11(
+                         clientXmlTransport_curl::OPTFORMAT_1,
+                         "bogusopt=bogusvalue"););
+        EXPECT_ERROR(clientXmlTransport_curl transport12(
+                         clientXmlTransport_curl::OPTFORMAT_1,
+                         "user_agent='unterminated quote"););
+        EXPECT_ERROR(clientXmlTransport_curl transport13(
+                         clientXmlTransport_curl::OPTFORMAT_1,
+                         "user_agent"););
+        EXPECT_ERROR(clientXmlTransport_curl transport14(
+                         clientXmlTransport_curl::OPTFORMAT_1,
+                         "no_ssl_verify_peer=yes"););
+        EXPECT_ERROR(clientXmlTransport_curl transport15(
+                         clientXmlTransport_curl::OPTFORMAT_1,
+                         "=nameless_value"););
+
+        clientXmlTransportPtr transport1P(new clientXmlTransport_curl);
+        clientXmlTransportPtr transport2P;
+        transport2P = transport1P;
+#else
+        EXPECT_ERROR(clientXmlTransport_curl transport0;);
+        EXPECT_ERROR(clientXmlTransport_curl transport1("eth0"););
+        EXPECT_ERROR(clientXmlTransport_curl transport0("eth0", true););
+        EXPECT_ERROR(clientXmlTransport_curl transport0("eth0", true, true););
+#endif
+    }
+};
+
+
+
+class libwwwTransportTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "libwwwTransportTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+#if MUST_BUILD_LIBWWW_CLIENT
+        clientXmlTransport_libwww transport0;
+        clientXmlTransport_libwww transport1("getbent");
+        clientXmlTransport_libwww transport2("getbent", "1.0");
+        clientXmlTransportPtr transport1P(new clientXmlTransport_libwww);
+        clientXmlTransportPtr transport2P;
+        transport2P = transport1P;
+#else
+        EXPECT_ERROR(clientXmlTransport_libwww transport0;);
+        EXPECT_ERROR(clientXmlTransport_libwww transport1("getbent"););
+        EXPECT_ERROR(clientXmlTransport_libwww transport2("getbent", "1.0"););
+#endif
+    }
+};
+
+
+
+class wininetTransportTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "wininetTransportTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+#if MUST_BUILD_WININET_CLIENT
+        clientXmlTransport_wininet transport0;
+        clientXmlTransport_wininet transport1(true);
+        clientXmlTransportPtr transport1P(new clientXmlTransport_wininet);
+        clientXmlTransportPtr transport2P;
+        transport2P = transport1P;
+#else
+        EXPECT_ERROR(clientXmlTransport_wininet transport0;);
+        EXPECT_ERROR(clientXmlTransport_wininet transport1(true););
+#endif
+    }
+};
+
+
+
 class clientXmlTransportTestSuite : public testSuite {
 
 public:
     virtual string suiteName() {
         return "clientXmlTransportTestSuite";
     }
-    virtual void runtests(unsigned int const) {
-        clientXmlTransportPtr transport1P;
-        clientXmlTransportPtr transport2P;
-
-#if MUST_BUILD_CURL_CLIENT
-        clientXmlTransport_curl transportc0;
-        clientXmlTransport_curl transportc1("eth0");
-        clientXmlTransport_curl transportc2("eth0", true);
-        clientXmlTransport_curl transportc3("eth0", true, true);
-        clientXmlTransportPtr transportcP(new clientXmlTransport_curl);
-        transport1P = transportcP;
-#else
-        EXPECT_ERROR(clientXmlTransport_curl transportc0;);
-        EXPECT_ERROR(clientXmlTransport_curl transportc1("eth0"););
-        EXPECT_ERROR(clientXmlTransport_curl transportc0("eth0", true););
-        EXPECT_ERROR(clientXmlTransport_curl transportc0("eth0", true, true););
-#endif
-
-#if MUST_BUILD_LIBWWW_CLIENT
-        clientXmlTransport_libwww transportl0;
-        clientXmlTransport_libwww transportl1("getbent");
-        clientXmlTransport_libwww transportl2("getbent", "1.0");
-        clientXmlTransportPtr transportlP(new clientXmlTransport_libwww);
-#else
-        EXPECT_ERROR(clientXmlTransport_libwww transportl0;);
-        EXPECT_ERROR(clientXmlTransport_libwww transportl1("getbent"););
-        EXPECT_ERROR(clientXmlTransport_libwww transportl2("getbent", "1.0"););
-#endif
-#if MUST_BUILD_WININET_CLIENT
-        clientXmlTransport_wininet transportw0;
-        clientXmlTransport_wininet transportw1(true);
-        clientXmlTransportPtr transportwP(new clientXmlTransport_wininet);
-#else
-        EXPECT_ERROR(clientXmlTransport_wininet transportw0;);
-        EXPECT_ERROR(clientXmlTransport_wininet transportw1(true););
-#endif
+    virtual void runtests(unsigned int const indentation) {
+        curlTransportTestSuite().run(indentation + 1);
+        libwwwTransportTestSuite().run(indentation + 1);
+        wininetTransportTestSuite().run(indentation + 1);
     }
 };
 
