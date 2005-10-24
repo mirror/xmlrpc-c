@@ -1,4 +1,4 @@
-#include <unistd.h>
+#include "unistdx.h"
 #include <stdio.h>
 
 #include "xmlrpc_config.h"
