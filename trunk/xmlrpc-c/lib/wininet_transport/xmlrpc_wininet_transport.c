@@ -16,22 +16,23 @@
    
 =============================================================================*/
 
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stddef.h>
+
 #include "xmlrpc_config.h"
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "linklist.h"
 #include "casprintf.h"
+
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
 #include "pthreadx.h"
-
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <stddef.h>
 
 #if defined (WIN32)
 #	include <wininet.h>

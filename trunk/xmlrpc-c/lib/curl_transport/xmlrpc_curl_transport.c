@@ -43,13 +43,13 @@
 
 
 
-#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 
 #include "xmlrpc_config.h"
 
+#include "bool.h"
 #include "girmath.h"
 #include "mallocvar.h"
 #include "linklist.h"
@@ -262,6 +262,7 @@ destroyCurlMulti(struct curlMulti * const curlMultiP) {
 
     free(curlMultiP);
 }
+
 
 
 static void

@@ -1,11 +1,11 @@
 #include "xmlrpc_config.h"  /* prereq for mallocvar.h -- defines __inline__ */
 
-#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "casprintf.h"
 #include "getoptx.h"

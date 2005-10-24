@@ -1,11 +1,12 @@
 #include "xmlrpc_config.h"
 
-#include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+
+#include "bool.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"

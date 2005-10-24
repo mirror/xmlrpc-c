@@ -2,12 +2,12 @@
 
 #include "xmlrpc_config.h"
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 
 #include "xmlrpc-c/base.h"

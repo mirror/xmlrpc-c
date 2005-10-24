@@ -2,12 +2,13 @@
 
 #include "xmlrpc_config.h"
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <xmlparse.h> /* Expat */
+
+#include "bool.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"

@@ -1,8 +1,8 @@
-#ifndef GIRTRING_H_INCLUDED
-#define GIRTRING_H_INCLUDED
+#ifndef GIRSTRING_H_INCLUDED
+#define GIRSTRING_H_INCLUDED
 
 #include <string.h>
-#include <stdbool.h>
+#include "bool.h"
 
 char
 stripeq(const char * const comparand, const char * const comparator);
