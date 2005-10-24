@@ -28,11 +28,8 @@ LIBWWW_TRANSPORT_DIR  = srcdir/lib/libwww_transport
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
-  LIBXML = $(LIBXML2_LIBS)
 else
   LIBXML_INCLUDES = -Isrcdir/lib/expat/xmlparse
-  LIBXML = blddir/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-           blddir/lib/expat/xmltok/libxmlrpc_xmltok.la
 endif
 
 ifeq ($(ENABLE_LIBXML2),yes)
@@ -84,26 +81,7 @@ TARGET_LIBRARIES = \
   libxmlrpc_server_abyss++.a \
   libxmlrpc_client++.a \
 
-TARGET_PROGS = cpptest
-
-all: $(TARGET_LIBRARIES) $(TARGET_PROGS)
-
-ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  LDFLAGS += $(shell curl-config --libs)
-endif
-ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  LDFLAGS += $(shell libwww-config --libs)
-endif
-
-LDFLAGS += $(LADD)
-
-cpptest:%:%.o libxmlrpc_server_abyss++.a libxmlrpc_server++.a \
-  libxmlrpc_client++.a libxmlrpc++.a libxmlrpc_cpp.a \
-  $(LIBXMLRPC_SERVER) $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) \
-  $(LIBXML)
-	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
-
-LIBLDFLAGS = $(LADD)
+all: $(TARGET_LIBRARIES)
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
 	-rm -f $@
@@ -132,9 +110,6 @@ libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS)
 
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-cpptest.o:%.o:%.cpp
-	$(CXX) -c $(BASIC_INCLUDES) $(CXXFLAGS) $<
-
 XmlRpcCpp.o:%.o:%.cpp
 	$(CXX) -c $(BASIC_INCLUDES) $(CXXFLAGS) $<
 
@@ -157,11 +132,8 @@ $(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
 	$(CXX) -c $(CLIENT_INCLUDES) $(CXXFLAGS) $<
 
 
-
-check: cpptest
-	for tst in $^; do \
-	  ./$$tst; \
-	done;
+check:
+	$(MAKE) -C test check
 
 .PHONY: install
 install: install-common
@@ -169,7 +141,7 @@ install: install-common
 .PHONY: clean clean-local distclean distclean-local
 clean: clean-common clean-local
 clean-local:
-	rm -f $(TARGET_PROGS)
+	$(MAKE) -C test clean
 
 distclean: clean distclean-local distclean-common
 
