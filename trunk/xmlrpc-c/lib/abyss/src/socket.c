@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #include <winsock.h>
 #else
 #include <sys/types.h>
@@ -29,12 +29,12 @@
 #include <sys/ioctl.h>
 #endif
 
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 #include "xmlrpc-c/util_int.h"
 #include "socket.h"
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #define  EINTR      WSAEINTR
 #endif
 
@@ -47,7 +47,7 @@ static abyss_bool ABYSS_TRACE_SOCKET;
 abyss_bool SocketInit()
 {
     abyss_bool retval;
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
@@ -59,7 +59,7 @@ abyss_bool SocketInit()
 #else
     retval = TRUE;
     ABYSS_TRACE_SOCKET = (getenv("ABYSS_TRACE_SOCKET") != NULL);
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
     if (ABYSS_TRACE_SOCKET)
         fprintf(stderr, "Abyss socket layer will trace socket traffic "
                 "due to ABYSS_TRACE_SOCKET environment variable\n");
@@ -84,11 +84,11 @@ abyss_bool SocketCreate(TSocket *s)
 
 abyss_bool SocketClose(TSocket *s)
 {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     RET(closesocket(*s));
 #else
     RET(close(*s));
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 
@@ -147,7 +147,7 @@ uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len)
     int32_t r=recv(*s,buffer,len,MSG_PEEK);
 
     if (r==(-1))
-#ifdef ABYSS_WIN32
+#ifdef WIN32
         if (SocketError()==WSAEMSGSIZE)
 #else
         if (SocketError()==EMSGSIZE)
@@ -223,11 +223,11 @@ abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip)
 uint32_t SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32_t timems)
 {
     fd_set rfds,wfds;
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     TIMEVAL tv;
 #else
     struct timeval tv;
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
@@ -283,11 +283,11 @@ uint32_t SocketAvailableReadBytes(TSocket *s)
 
 uint32_t SocketError()
 {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     return WSAGetLastError();
 #else
     return errno;
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #include <io.h>
 #else
 #include <unistd.h>
@@ -11,7 +11,7 @@
 /* Check this
 #include <sys/io.h>
 */
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 #include <fcntl.h>
 
 #include "mallocvar.h"
@@ -461,7 +461,7 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
         *p = '\0';
     }
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     p = z;
     while (*p) {
         if ((*p) == '/')
@@ -469,7 +469,7 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
 
         ++p;
     }
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
     if (!FileStat(z, &fs)) {
         ResponseStatusErrno(sessionP);
@@ -491,11 +491,11 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
             return TRUE;
         }
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
         *p = '\\';
 #else
         *p = '/';
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
         ++p;
 
         i = srvP->defaultfilenames.size;

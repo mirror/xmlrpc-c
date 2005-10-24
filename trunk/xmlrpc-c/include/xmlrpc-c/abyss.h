@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #include "xmlrpc_config.h"
 #else
 #include <inttypes.h>
@@ -28,7 +28,7 @@ extern "C" {
 ** Paths and so on...
 *********************************************************************/
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #define DEFAULT_ROOT        "c:\\abyss"
 #define DEFAULT_DOCS        DEFAULT_ROOT"\\htdocs"
 #define DEFAULT_CONF_FILE   DEFAULT_ROOT"\\conf\\abyss.conf"
@@ -69,11 +69,11 @@ extern "C" {
 ** General purpose definitions
 *********************************************************************/
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #define strcasecmp(a,b) stricmp((a),(b))
 #else
 #define ioctlsocket(a,b,c)  ioctl((a),(b),(c))
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -87,11 +87,11 @@ extern "C" {
 #define FALSE    0
 #endif  /* FALSE */
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #define LBR "\n"
 #else
 #define LBR "\n"
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 typedef int abyss_bool;
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
@@ -197,21 +197,21 @@ char *TableFind(TTable *t,char *name);
 ** Thread
 *********************************************************************/
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #include <windows.h>
 #define  THREAD_ENTRYTYPE  WINAPI
 #else
 #define  THREAD_ENTRYTYPE
 #include <pthread.h>
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 typedef uint32_t (THREAD_ENTRYTYPE *TThreadProc)(void *);
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 typedef HANDLE TThread;
 #else
 typedef pthread_t TThread;
 typedef void* (*PTHREAD_START_ROUTINE)(void *);
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 abyss_bool ThreadCreate(TThread *t,TThreadProc func,void *arg);
 abyss_bool ThreadRun(TThread *t);
@@ -225,11 +225,11 @@ void ThreadClose( TThread *t );
 ** Mutex
 *********************************************************************/
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 typedef HANDLE TMutex;
 #else
 typedef pthread_mutex_t TMutex;
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 abyss_bool MutexCreate(TMutex *m);
 abyss_bool MutexLock(TMutex *m);
@@ -268,11 +268,11 @@ char *PoolStrdup(TPool *p,char *s);
 ** Socket
 *********************************************************************/
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 typedef SOCKET TSocket;
 #else
 typedef int TSocket;
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 /*********************************************************************
 ** Connection

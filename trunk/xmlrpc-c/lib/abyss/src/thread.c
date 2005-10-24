@@ -53,7 +53,7 @@ abyss_bool ThreadCreate(TThread *   const t ATTR_UNUSED,
                         TThreadProc const func,
                         void *      const arg )
 {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     DWORD z;
     *t =(TThread)_beginthreadex( NULL, THREAD_STACK_SIZE, func, 
                                  arg, CREATE_SUSPENDED, &z );
@@ -89,50 +89,50 @@ abyss_bool ThreadCreate(TThread *   const t ATTR_UNUSED,
     (*func)(arg);
     return TRUE;
 #   endif   /*_UNIX */
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 abyss_bool
 ThreadRun(TThread * const t ATTR_UNUSED) {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     return (ResumeThread(*t)!=0xFFFFFFFF);
 #else
     return TRUE;    
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 
 
 abyss_bool
 ThreadStop(TThread * const t ATTR_UNUSED) {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     return (SuspendThread(*t)!=0xFFFFFFFF);
 #else
     return TRUE;
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 
 
 abyss_bool
 ThreadKill(TThread * const t ATTR_UNUSED) {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     return (TerminateThread(*t,0)!=0);
 #else
     /*return (pthread_kill(*t)==0);*/
     return TRUE;
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 
 
 void ThreadWait(uint32_t ms)
 {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     Sleep(ms);
 #else
     usleep(ms*1000);
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 
@@ -140,22 +140,22 @@ void ThreadWait(uint32_t ms)
 void
 ThreadExit(TThread * const t ATTR_UNUSED,
            int       const ret_value ATTR_UNUSED) {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     _endthreadex(ret_value);
 #elif defined(_THREAD)
     pthread_exit((void*)&ret_value);
 #else
     ;
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 
 
 void
 ThreadClose(TThread * const t ATTR_UNUSED) {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     CloseHandle(*t);
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 }
 
 
@@ -168,7 +168,7 @@ ThreadClose(TThread * const t ATTR_UNUSED) {
 
 abyss_bool
 MutexCreate(TMutex * const m ATTR_UNUSED) {
-#if defined(ABYSS_WIN32)
+#if defined(WIN32)
     return ((*m=CreateMutex(NULL,FALSE,NULL))!=NULL);
 #elif defined(_THREAD)
     return (pthread_mutex_init(m, NULL)==0);
@@ -181,7 +181,7 @@ MutexCreate(TMutex * const m ATTR_UNUSED) {
 
 abyss_bool
 MutexLock(TMutex * const m ATTR_UNUSED) {
-#if defined(ABYSS_WIN32)
+#if defined(WIN32)
     return (WaitForSingleObject(*m,INFINITE)!=WAIT_TIMEOUT);
 #elif defined(_THREAD)
     return (pthread_mutex_lock(m)==0);
@@ -194,7 +194,7 @@ MutexLock(TMutex * const m ATTR_UNUSED) {
 
 abyss_bool
 MutexUnlock(TMutex * const m ATTR_UNUSED) {
-#if defined(ABYSS_WIN32)
+#if defined(WIN32)
     return ReleaseMutex(*m);
 #elif defined(_THREAD)
     return (pthread_mutex_unlock(m)==0);
@@ -207,7 +207,7 @@ MutexUnlock(TMutex * const m ATTR_UNUSED) {
 
 abyss_bool
 MutexTryLock(TMutex * const m ATTR_UNUSED) {
-#if defined(ABYSS_WIN32)
+#if defined(WIN32)
     return (WaitForSingleObject(*m,0)!=WAIT_TIMEOUT);
 #elif defined(_THREAD)
     return (pthread_mutex_trylock(m)==0);
@@ -220,7 +220,7 @@ MutexTryLock(TMutex * const m ATTR_UNUSED) {
 
 void
 MutexFree(TMutex * const m ATTR_UNUSED) {
-#if defined(ABYSS_WIN32)
+#if defined(WIN32)
     CloseHandle(*m);
 #elif defined(_THREAD)
     pthread_mutex_destroy(m);

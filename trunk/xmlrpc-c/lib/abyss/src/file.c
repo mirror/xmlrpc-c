@@ -34,17 +34,13 @@
 
 #include <string.h>
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #include <io.h>
-#else
-/* Must check this
-#include <sys/io.h>
-*/
-#endif  /* ABYSS_WIN32 */
+#endif
 
-#ifndef ABYSS_WIN32
+#ifndef WIN32
 #include <dirent.h>
-#endif  /* ABYSS_WIN32 */
+#endif
 
 #include "xmlrpc-c/abyss.h"
 #include "file.h"
@@ -55,7 +51,7 @@
 
 abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib)
 {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return ((*f=_open(name,attrib))!=(-1));
 #else
     return ((*f=open(name,attrib))!=(-1));
@@ -64,7 +60,7 @@ abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib)
 
 abyss_bool FileOpenCreate(TFile *f, const char *name, uint32_t attrib)
 {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
 #else
     return ((*f=open(name,attrib | O_CREAT,S_IWRITE | S_IREAD))!=(-1));
@@ -75,7 +71,7 @@ abyss_bool
 FileWrite(TFile *      const f,
           const void * const buffer,
           uint32_t     const len) {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_write(*f,buffer,len)==(int32_t)len);
 #else
     return (write(*f,buffer,len)==(int32_t)len);
@@ -84,7 +80,7 @@ FileWrite(TFile *      const f,
 
 int32_t FileRead(TFile *f, void *buffer, uint32_t len)
 {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_read(*f,buffer,len));
 #else
     return (read(*f,buffer,len));
@@ -93,7 +89,7 @@ int32_t FileRead(TFile *f, void *buffer, uint32_t len)
 
 abyss_bool FileSeek(TFile *f, uint64_t pos, uint32_t attrib)
 {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_lseek(*f,pos,attrib)!=(-1));
 #else
     return (lseek(*f,pos,attrib)!=(-1));
@@ -102,7 +98,7 @@ abyss_bool FileSeek(TFile *f, uint64_t pos, uint32_t attrib)
 
 uint64_t FileSize(TFile *f)
 {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_filelength(*f));
 #else
     struct stat fs;
@@ -114,7 +110,7 @@ uint64_t FileSize(TFile *f)
 
 abyss_bool FileClose(TFile *f)
 {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_close(*f)!=(-1));
 #else
     return (close(*f)!=(-1));
@@ -126,7 +122,7 @@ abyss_bool FileClose(TFile *f)
 abyss_bool
 FileStat(const char * const filename,
          TFileStat *  const filestat) {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
+#if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_stati64(filename,filestat)!=(-1));
 #else
     return (stat(filename,filestat)!=(-1));
@@ -139,7 +135,7 @@ abyss_bool
 FileFindFirst(TFileFind *  const filefind,
               const char * const path,
               TFileInfo *  const fileinfo) {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     abyss_bool ret;
     char *p=path+strlen(path);
 
@@ -164,7 +160,7 @@ FileFindFirst(TFileFind *  const filefind,
 #endif
     *p='\0';
     return ret;
-#else
+#else  /* WIN32 */
     strncpy(filefind->path,path,NAME_MAX);
     filefind->path[NAME_MAX]='\0';
     filefind->handle=opendir(path);
@@ -172,14 +168,14 @@ FileFindFirst(TFileFind *  const filefind,
         return FileFindNext(filefind,fileinfo);
 
     return FALSE;
-#endif
+#endif /* WIN32 */
 }
 
 
 
 abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
 {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 
 #ifndef __BORLANDC__
     return (_findnext(*filefind,fileinfo)!=(-1));
@@ -198,7 +194,7 @@ abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
     return ret;
 #endif
 
-#else
+#else  /* WIN32 */
     struct dirent *de;
     /****** Must be changed ***/
     char z[NAME_MAX+1];
@@ -228,12 +224,12 @@ abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
     };
 
     return FALSE;
-#endif
+#endif /* WIN32 */
 }
 
 void FileFindClose(TFileFind *filefind)
 {
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 
 #ifndef __BORLANDC__
     _findclose(*filefind);
@@ -241,7 +237,7 @@ void FileFindClose(TFileFind *filefind)
    FindClose( *filefind );
 #endif
 
-#else
+#else  /* WIN32 */
     closedir(filefind->handle);
-#endif
+#endif /* WIN32 */
 }

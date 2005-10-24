@@ -37,13 +37,9 @@
 #include <time.h>
 #include <fcntl.h>
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #include <io.h>
-#else
-/* Must check this
-#include <sys/io.h>
-*/
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 #ifdef _UNIX
 #include <sys/signal.h>
@@ -217,7 +213,7 @@ int main(int argc,char **argv)
         exit(1);
     };
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
     copyright();
     printf("\nPress Ctrl+C to stop the server\n");
 #endif

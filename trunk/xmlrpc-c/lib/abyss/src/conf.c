@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(ABYSS_WIN32) && !defined(__BORLANDC__)
+#if defined(WIN32) && !defined(__BORLANDC__)
 #include <direct.h>
 #endif
 
@@ -214,7 +214,7 @@ static void
 chdirx(const char * const newdir,
        abyss_bool * const successP) {
     
-#if defined(ABYSS_WIN32) && !defined(__BORLANDC__)
+#if defined(WIN32) && !defined(__BORLANDC__)
     *successP = _chdir(newdir) == 0;
 #else
     *successP = chdir(newdir) == 0;

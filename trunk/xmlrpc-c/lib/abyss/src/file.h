@@ -12,7 +12,7 @@
 #define NAME_MAX    1024
 #endif
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #ifndef __BORLANDC__
 #define O_APPEND    _O_APPEND
 #define O_CREAT     _O_CREAT 
@@ -33,16 +33,16 @@
 #define A_SUBDIR    1
 #define O_BINARY    0
 #define O_TEXT      0
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 
 #ifndef __BORLANDC__
 typedef struct _stati64 TFileStat;
 typedef struct _finddata_t TFileInfo;
 typedef long TFileFind;
 
-#else
+#else  /* WIN32 */
 
 typedef struct stat TFileStat;
 typedef struct finddata_t {
@@ -55,7 +55,7 @@ typedef struct finddata_t {
 
 typedef HANDLE TFileFind;
 
-#endif
+#endif /* WIN32 */
 
 #else
 
