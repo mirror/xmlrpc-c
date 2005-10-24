@@ -2,7 +2,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
