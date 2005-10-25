@@ -17,8 +17,6 @@ default: all
 
 all: $(PROGS)
 
-MUST_BUILD_CLIENT=no
-
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   LDFLAGS += $(shell curl-config --libs)
 endif
@@ -48,13 +46,16 @@ TEST_OBJS = test.o tools.o
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
+  CLIENT_LIBS = $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_CLIENT)
 else
   TEST_OBJS += testclient_dummy.o
+  CLIENT_LIBS =
 endif
 
+
 test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
-  $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
-  $(LIBXMLRPC_SERVER) $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) \
+  $(CLIENT_LIBS) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
+  $(LIBXMLRPC_SERVER) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) \
   $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
