@@ -3,6 +3,9 @@
 
 #include <string>
 
+#include "xmlrpc-c/girerr.hpp"
+using girerr::error;
+
 class testSuite {
 /*----------------------------------------------------------------------------
    This is a base class for a test suite.  Give the suite a name

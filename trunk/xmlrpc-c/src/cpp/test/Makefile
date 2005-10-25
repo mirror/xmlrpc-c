@@ -17,6 +17,8 @@ default: all
 
 all: $(PROGS)
 
+MUST_BUILD_CLIENT=no
+
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   LDFLAGS += $(shell curl-config --libs)
 endif
@@ -42,7 +44,13 @@ else
            blddir/lib/expat/xmltok/libxmlrpc_xmltok.la
 endif
 
-TEST_OBJS = test.o testclient.o tools.o
+TEST_OBJS = test.o tools.o
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  TEST_OBJS += testclient.o
+else
+  TEST_OBJS += testclient_dummy.o
+endif
 
 test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
   $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
