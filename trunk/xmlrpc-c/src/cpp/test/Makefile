@@ -42,7 +42,9 @@ else
            blddir/lib/expat/xmltok/libxmlrpc_xmltok.la
 endif
 
-test:%:%.o $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
+TEST_OBJS = test.o testclient.o tools.o
+
+test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
   $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
   $(LIBXMLRPC_SERVER) $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) \
   $(LIBXML)
