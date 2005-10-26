@@ -11,7 +11,7 @@ public:
     serverAbyss(
         xmlrpc_c::registry const& registry,
         unsigned int       const  portNumber = 8080,
-        std::string        const& logFileName = NULL,
+        std::string        const& logFileName = "",
         unsigned int       const  keepaliveTimeout = 0,
         unsigned int       const  keepaliveMaxConn = 0,
         unsigned int       const  timeout = 0,

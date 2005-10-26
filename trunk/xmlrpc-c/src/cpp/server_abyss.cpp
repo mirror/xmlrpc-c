@@ -163,12 +163,15 @@ serverAbyss::run() {
     
     TServer srv;
 
+    const char * const logfileArg(this->logFileName.length() == 0 ?
+                                  NULL : this->logFileName.c_str());
+
     if (this->socketBound)
         ServerCreateSocket(&srv, "XmlRpcServer", this->socketFd,
-                           DEFAULT_DOCS, this->logFileName.c_str());
+                           DEFAULT_DOCS, logfileArg);
     else
         ServerCreate(&srv, "XmlRpcServer", this->portNumber,
-                     DEFAULT_DOCS, this->logFileName.c_str());
+                     DEFAULT_DOCS, logfileArg);
 
     setAdditionalServerParms(
         this->keepaliveTimeout, this->keepaliveMaxConn, this->timeout,
