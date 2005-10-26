@@ -133,7 +133,7 @@ $(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
 
 
 check:
-	$(MAKE) -C test check
+	$(MAKE) -C test runtests
 
 .PHONY: install
 install: install-common

@@ -26,27 +26,24 @@ endif
 
 default: all
 
-.PHONY: all
+.PHONY: all clean distclean tags distdir intall check dep
+
 all: $(SUBDIRS:%=%/all)
 
-.PHONY: clean
 clean: $(SUBDIRS:%=%/clean) clean-common
 
-.PHONY: distclean
 distclean: $(SUBDIRS:%=%/distclean) distclean-common
 
-.PHONY: tags
 tags: $(SUBDIRS:%=%/tags) TAGS
 
 DISTFILES = 
 
-.PHONY: distdir
 distdir: distdir-common
 
-.PHONY: install
 install: $(SUBDIRS:%=%/install)
 
-.PHONY: dep
+check:
+
 dep: $(SUBDIRS:%=%/dep)
 
 include $(SRCDIR)/Makefile.common

@@ -131,7 +131,8 @@ xmlrpc_server_cgi.lo:%.lo:%.c
 LTLIBRARIES_TO_INSTALL = $(TARGET_LTLIBRARIES)
 
 check:
-	$(MAKE) -C test check
+	$(MAKE) -C test runtests
+	$(MAKE) -C cpp  check
 
 .PHONY: install
 install: install-common $(SUBDIRS:%=%/install)

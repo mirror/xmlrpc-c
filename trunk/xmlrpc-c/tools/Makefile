@@ -16,7 +16,7 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
   SUBDIRS += xml-rpc-api2cpp
 endif
 
-.PHONY: all clean distclean install dep
+.PHONY: all clean distclean install check dep
 
 all: $(SUBDIRS:%=%/all)
 
@@ -25,6 +25,8 @@ clean: $(SUBDIRS:%=%/clean)
 distclean: $(SUBDIRS:%=%/distclean)
 
 install: $(SUBDIRS:%=%/install)
+
+check:
 
 dep: $(SUBDIRS:%=%/dep)
 

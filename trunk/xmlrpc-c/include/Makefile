@@ -64,6 +64,11 @@ install: install-common
 clean:
 distclean:
 	rm -f xmlrpc-c/config.h
+
+.PHONY: check
+check:
+
+.PHONY: dep
 dep:
 
 include $(SRCDIR)/Makefile.common

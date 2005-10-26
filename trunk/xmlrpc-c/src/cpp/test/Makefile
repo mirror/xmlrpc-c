@@ -62,7 +62,15 @@ test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
 %.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
 
-check: test
+# Note the difference between 'check' and 'runtests'.  'check' means to check
+# our own correctness.  'runtests' means to run the tests that check our
+# parent's correctness
+
+.PHONY: check
+check:
+
+.PHONY: runtests
+runtests: test
 	./test
 
 .PHONY: install

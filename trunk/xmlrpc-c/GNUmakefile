@@ -77,6 +77,8 @@ distclean-local:
 	rm -f version.h
 	rm -f transport_config.h
 
+check: $(SUBDIRS:%=%/check)
+
 .PHONY: tags
 tags: $(SUBDIRS:%=%/tags) TAGS
 
