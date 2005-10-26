@@ -16,7 +16,8 @@ Provide an interface for Abyss servers where the user accepts the TCP
 connection and passes to Xmlrpc-c the open socket.  This would be
 useful for inetd servers, among others.
 
-Document the xmlrpc-c/server_abyss.hpp interface.
+Put details in the manual for the xmlrpc-c/server_abyss.hpp interface:
+libxmlrpc_server_abyss++.html.
 
 Implement pluggable XML transports on the server side like on the
 client side.
