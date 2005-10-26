@@ -2,7 +2,7 @@
    the Xmlrpc-c libraries.
 
    This example expects an already bound socket on Standard Input, ready to
-   be listed on for client connections.  Also see xmlrpc_sample_add_server,
+   be listened on for client connections.  Also see xmlrpc_sample_add_server,
    which is the same thing, except you tell it a TCP port number and it
    creates the socket itself.
  */
