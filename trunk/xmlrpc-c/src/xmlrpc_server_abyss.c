@@ -824,7 +824,8 @@ extractServerCreateParms(
                           *portNumberP);
     }
     if (!envP->fault_occurred) {
-        if (parmSize >= XMLRPC_APSIZE(log_file_name))
+        if (parmSize >= XMLRPC_APSIZE(log_file_name) &&
+            parmsP->log_file_name)
             *logFileNameP = strdup(parmsP->log_file_name);
         else
             *logFileNameP = NULL;
