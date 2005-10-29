@@ -22,6 +22,11 @@ DEP_SOURCES = *.cpp
 
 include $(SRCDIR)/Makefile.common
 
+# This 'Makefile.common' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/Makefile.common: srcdir blddir
+
 WININET_TRANSPORT_DIR = srcdir/lib/wininet_transport
 CURL_TRANSPORT_DIR    = srcdir/lib/curl_transport
 LIBWWW_TRANSPORT_DIR  = srcdir/lib/libwww_transport
@@ -37,11 +42,6 @@ ifeq ($(ENABLE_LIBXML2),yes)
 else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo
 endif
-
-# This 'Makefile' dependency makes sure the symlinks get built before
-# this make file is used for anything.
-
-Makefile: blddir srcdir
 
 LIBXMLRPCPP_OBJS = \
 	base64.o \
