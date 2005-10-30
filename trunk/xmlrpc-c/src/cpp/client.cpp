@@ -427,7 +427,7 @@ client_xml::call(carriageParm * const  carriageParmP,
 
     try {
         this->transportP->call(carriageParmP, callXml, &responseXml);
-    } catch (error error) {
+    } catch (error const& error) {
         throwf("Unable to transport XML to server and "
                "get XML response back.  %s", error.what());
     }
@@ -435,7 +435,7 @@ client_xml::call(carriageParm * const  carriageParmP,
         
     try {
         xml::parseResponse(responseXml, outcomeP);
-    } catch (error error) {
+    } catch (error const& error) {
         throwf("Response XML from server is not valid XML-RPC response.  %s",
                error.what());
     }
@@ -698,8 +698,8 @@ xmlTransaction_client::finish(string const& responseXml) const {
         xml::parseResponse(responseXml, &outcome);
 
         this->tranP->finish(outcome);
-    } catch (error const caughtError) {
-        this->tranP->finishErr(caughtError);
+    } catch (error const& error) {
+        this->tranP->finishErr(error);
     }
 }
 

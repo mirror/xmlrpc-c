@@ -366,10 +366,10 @@ processSetting(optionSetting                   const setting,
 
         try {
             transportParmsP->sslversion = uintFromString(setting.optionValue);
-        } catch (error errorDesc) {
+        } catch (error const& error) {
             throwf("Invalid value '%s' for %s option.  %s",
                    setting.optionValue.c_str(), setting.optionName.c_str(),
-                   errorDesc.what());
+                   error.what());
         }
     } else if (setting.optionName == "cainfo") {
         setting.verifyHasValue();
