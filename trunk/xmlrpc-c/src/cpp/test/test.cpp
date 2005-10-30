@@ -119,7 +119,7 @@ test_fault (void) {
     try {
         XmlRpcFault fault4 = XmlRpcFault(&env4);
         TEST_FAILED("Constructed invalid XmlRpcFault");
-    } catch (XmlRpcFault& fault) {
+    } catch (XmlRpcFault const& fault) {
         TEST_PASSED();
         TEST(fault.getFaultCode() == XMLRPC_INTERNAL_ERROR);
     }
@@ -147,14 +147,14 @@ void test_env (void) {
     try {
         env2.throwIfFaultOccurred();
         TEST_PASSED();
-    } catch (XmlRpcFault& fault) {
+    } catch (XmlRpcFault const& fault) {
         TEST_FAILED("We threw a fault when one hadn't occurred");
     } 
     xmlrpc_env_set_fault(env2, 9, "Fault 9");
     try {
         env2.throwIfFaultOccurred();
         TEST_FAILED("A fault occurred, and we didn't throw it");
-    } catch (XmlRpcFault& fault) {
+    } catch (XmlRpcFault const& fault) {
         TEST_PASSED();
         TEST(fault.getFaultCode() == 9);
         TEST(fault.getFaultString() == "Fault 9");
@@ -165,7 +165,7 @@ void test_env (void) {
     try {
         XmlRpcFault fault3 = env3.getFault();
         TEST_FAILED("We retrieved a non-existant fault");
-    } catch (XmlRpcFault& fault) {
+    } catch (XmlRpcFault const& fault) {
         TEST_PASSED();
         TEST(fault.getFaultCode() == XMLRPC_INTERNAL_ERROR);
     }
@@ -799,10 +799,10 @@ main(int argc, char**) {
         testXmlRpcCpp();
 
         testsPassed = true;
-    } catch (error thisError) {
-        cout << "Unexpected error thrown:  " << thisError.what() << endl;
+    } catch (error const& error) {
+        cout << "Unexpected error thrown:  " << error.what() << endl;
         testsPassed = false;
-    } catch (XmlRpcFault& fault) {
+    } catch (XmlRpcFault const& fault) {
         cout << "Unexpected XML-RPC fault when running test suites." << endl
              << "Fault #" << fault.getFaultCode()
              << ": " << fault.getFaultString() << endl;

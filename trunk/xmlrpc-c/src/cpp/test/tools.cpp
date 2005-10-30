@@ -3,6 +3,7 @@
 #include <iostream>
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+using girerr::throwf;
 
 #include "tools.hpp"
 
@@ -14,8 +15,8 @@ testSuite::run(unsigned int const indentation) {
         cout << string(indentation*2, ' ') 
              << "Running " << suiteName() << endl;
         this->runtests(indentation);
-    } catch (error thisError) {
-        throw(error(suiteName() + string(" failed.  ") + thisError.what()));
+    } catch (error const& error) {
+        throwf("%s failed.  %s", suiteName().c_str(), error.what());
     } catch (...) {
         throw(error(suiteName() + string(" failed.  ") +
                     string("It threw an unexpected type of object")));
