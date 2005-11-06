@@ -818,7 +818,10 @@ processDataFromClient(TConn *      const connectionP,
 
 static void
 ServerFunc(TConn * const connectionP) {
-
+/*----------------------------------------------------------------------------
+   Do server stuff on one connection.  At its simplest, this means do
+   one HTTP request.  But with keepalive, it can be many requests.
+-----------------------------------------------------------------------------*/
     struct _TServer * const srvP = connectionP->server->srvP;
 
     unsigned int requestCount;
