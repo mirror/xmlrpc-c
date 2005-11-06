@@ -41,52 +41,34 @@ public:
         clientXmlTransport_curl transport2("eth0", true);
         clientXmlTransport_curl transport3("eth0", true, true);
         clientXmlTransport_curl transport4(
-            clientXmlTransport_curl::OPTFORMAT_1,
-            "network_interface=eth0 "
-            "no_ssl_verifypeer "
-            "no_ssl_verifyhost "
-            "user_agent='my user agent' "
-            "ssl_cert=/etc/sslcert "
-            "sslcerttype=PEM "
-            "sslcertpasswd=mypass "
-            "sslkey=/etc/sslkey "
-            "sslkeytype=DER "
-            "sslkeypasswd=mykeypass "
-            "sslengine=mysslengine "
-            "sslengine_default "
-            "sslversion=2 "
-            "cainfo=/etc/cainfo "
-            "capath=/etc/cadir "
-            "randomfile=/dev/random "
-            "egdsocket=/tmp/egdsocket "
-            "ssl_cipher_list=RC4-SHA:DEFAULT "
+            clientXmlTransport_curl::constrOpt()
+            .network_interface("eth0")
+            .no_ssl_verifypeer(true)
+            .no_ssl_verifyhost(true)
+            .user_agent("my user agent")
+            .ssl_cert("/etc/sslcert")
+            .sslcerttype("PEM")
+            .sslcertpasswd("mypass")
+            .sslkey("/etc/sslkey")
+            .sslkeytype("DER")
+            .sslkeypasswd("mykeypass")
+            .sslengine("mysslengine")
+            .sslengine_default(true)
+            .sslversion(XMLRPC_SSLVERSION_SSLv2)
+            .cainfo("/etc/cainfo")
+            .capath("/etc/cadir")
+            .randomfile("/dev/random")
+            .egdsocket("/tmp/egdsocket")
+            .ssl_cipher_list("RC4-SHA:DEFAULT")
             );            
 
         clientXmlTransport_curl transport5(
-            clientXmlTransport_curl::OPTFORMAT_1, "user_agent=''");
+            clientXmlTransport_curl::constrOpt()
+            .no_ssl_verifypeer(false));
 
         clientXmlTransport_curl transport6(
-            clientXmlTransport_curl::OPTFORMAT_1, "");
+            clientXmlTransport_curl::constrOpt());
         
-        EXPECT_ERROR(clientXmlTransport_curl transport10(
-                         clientXmlTransport_curl::OPTFORMAT_1,
-                         "bogusopt"););
-        EXPECT_ERROR(clientXmlTransport_curl transport11(
-                         clientXmlTransport_curl::OPTFORMAT_1,
-                         "bogusopt=bogusvalue"););
-        EXPECT_ERROR(clientXmlTransport_curl transport12(
-                         clientXmlTransport_curl::OPTFORMAT_1,
-                         "user_agent='unterminated quote"););
-        EXPECT_ERROR(clientXmlTransport_curl transport13(
-                         clientXmlTransport_curl::OPTFORMAT_1,
-                         "user_agent"););
-        EXPECT_ERROR(clientXmlTransport_curl transport14(
-                         clientXmlTransport_curl::OPTFORMAT_1,
-                         "no_ssl_verify_peer=yes"););
-        EXPECT_ERROR(clientXmlTransport_curl transport15(
-                         clientXmlTransport_curl::OPTFORMAT_1,
-                         "=nameless_value"););
-
         clientXmlTransportPtr transport1P(new clientXmlTransport_curl);
         clientXmlTransportPtr transport2P;
         transport2P = transport1P;

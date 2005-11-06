@@ -246,10 +246,72 @@ protected:
 class clientXmlTransport_curl : public xmlrpc_c::clientXmlTransport_http {
 
 public:
-    enum optFormat {OPTFORMAT_1};
+    class constrOpt {
+    public:
+        constrOpt();
 
-    clientXmlTransport_curl(optFormat   const optFormat,
-                            std::string const optionString);
+        constrOpt & network_interface (string const& arg);
+        constrOpt & no_ssl_verifypeer (bool   const& arg);
+        constrOpt & no_ssl_verifyhost (bool   const& arg);
+        constrOpt & user_agent        (string const& arg);
+        constrOpt & ssl_cert          (string const& arg);
+        constrOpt & sslcerttype       (string const& arg);
+        constrOpt & sslcertpasswd     (string const& arg);
+        constrOpt & sslkey            (string const& arg);
+        constrOpt & sslkeytype        (string const& arg);
+        constrOpt & sslkeypasswd      (string const& arg);
+        constrOpt & sslengine         (string const& arg);
+        constrOpt & sslengine_default (bool   const& arg);
+        constrOpt & sslversion        (xmlrpc_sslversion const& arg);
+        constrOpt & cainfo            (string const& arg);
+        constrOpt & capath            (string const& arg);
+        constrOpt & randomfile        (string const& arg);
+        constrOpt & egdsocket         (string const& arg);
+        constrOpt & ssl_cipher_list   (string const& arg);
+
+        struct {
+            string network_interface;
+            bool   no_ssl_verifypeer;
+            bool   no_ssl_verifyhost;
+            string user_agent;
+            string ssl_cert;
+            string sslcerttype;
+            string sslcertpasswd;
+            string sslkey;
+            string sslkeytype;
+            string sslkeypasswd;
+            string sslengine;
+            bool   sslengine_default;
+            xmlrpc_sslversion sslversion;
+            string cainfo;
+            string capath;
+            string randomfile;
+            string egdsocket;
+            string ssl_cipher_list;
+        } value;
+        struct {
+            bool network_interface;
+            bool no_ssl_verifypeer;
+            bool no_ssl_verifyhost;
+            bool user_agent;
+            bool ssl_cert;
+            bool sslcerttype;
+            bool sslcertpasswd;
+            bool sslkey;
+            bool sslkeytype;
+            bool sslkeypasswd;
+            bool sslengine;
+            bool sslengine_default;
+            bool sslversion;
+            bool cainfo;
+            bool capath;
+            bool randomfile;
+            bool egdsocket;
+            bool ssl_cipher_list;
+        } present;
+    };
+
+    clientXmlTransport_curl(constrOpt const& opt);
 
     clientXmlTransport_curl(std::string const networkInterface = "",
                             bool        const noSslVerifyPeer = false,
@@ -257,6 +319,10 @@ public:
                             std::string const userAgent = "");
 
     ~clientXmlTransport_curl();
+
+private:
+    void
+    initialize(constrOpt const& opt);
 };
 
 class clientXmlTransport_libwww : public xmlrpc_c::clientXmlTransport_http {
