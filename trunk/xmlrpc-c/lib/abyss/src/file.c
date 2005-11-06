@@ -40,6 +40,7 @@
 
 #ifndef WIN32
 #include <dirent.h>
+#include <sys/stat.h>
 #endif
 
 #include "xmlrpc-c/abyss.h"
