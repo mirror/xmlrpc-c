@@ -37,9 +37,9 @@ install:
 dep: dep-common
 
 gennmtab.o:%.o:%.c
-	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDES)
+	$(BUILDTOOL_CC) -c $< -o $@ $(CFLAGS) $(INCLUDES)
 
 gennmtab:%:%.o
-	$(LINK) -o $@ $(LDFLAGS) $^
+	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS) $^
 
 include Makefile.depend

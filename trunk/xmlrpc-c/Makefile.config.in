@@ -62,6 +62,19 @@ INSTALL = $(SRCDIR)/install-sh
 C_COMPILER_GNU = @C_COMPILER_GNU@
 CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
 
+
+# BUILDTOOL_CC is the compiler to use to generate build tools, which we
+# will then run to build product.  The typical reason this would be
+# different from CC is that you're cross-compiling: the product will run
+# in Environment A, but you're building in Environment B, so you must
+# build the build toos for Environment B.
+
+# The cross compiling user can update Makefile.config or override
+# BUILDTOOL_CC on a make command.
+
+BUILDTOOL_CC = $(CC)
+BUILDTOOL_CCLD = $(CCLD)
+
 # Here are the commands 'make install' uses to install various kinds of files:
 
 INSTALL_PROGRAM = $(INSTALL) -c -m 755
