@@ -22,12 +22,21 @@ GCC_C_WARNINGS = $(GCC_WARNINGS) \
 
 GCC_CXX_WARNINGS = $(GCC_WARNINGS) -Woverloaded-virtual -Wsynth
 
+# The NDEBUG macro says not to build code that assumes there are no bugs.
+# This makes the code go faster.  The main thing it does is tell the C library
+# to make assert() a no-op as opposed to generating code to check the
+# assertion and crash the program if it isn't really true.  You can add
+# -UNDEBUG (in any of various ways) to override this.
+#
+CFLAGS_COMMON = -DNDEBUG
+CXXFLAGS_COMMON = -DNDEBUG
+
 ifeq ($(C_COMPILER_GNU),yes)
-  CFLAGS_COMMON = $(GCC_C_WARNINGS) -fno-common -g
+  CFLAGS_COMMON += $(GCC_C_WARNINGS) -fno-common -g -O3
 endif
 
 ifeq ($(CXX_COMPILER_GNU),yes)
-  CXXFLAGS_COMMON = $(GCC_CXX_WARNINGS)
+  CXXFLAGS_COMMON += $(GCC_CXX_WARNINGS)
 endif
 
 DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
