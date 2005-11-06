@@ -16,12 +16,14 @@ xmlrpc-c/config.h:
 
 
 HEADERS_TO_INSTALL = \
-  xmlrpc-c/oldxmlrpc.h \
+  xmlrpc-c/config.h \
+  xmlrpc-c/util.h \
   xmlrpc-c/base.h \
   xmlrpc-c/abyss.h \
   xmlrpc-c/server.h \
   xmlrpc-c/server_abyss.h \
   xmlrpc-c/server_w32httpsys.h \
+  xmlrpc-c/oldxmlrpc.h \
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   HEADERS_TO_INSTALL += \
