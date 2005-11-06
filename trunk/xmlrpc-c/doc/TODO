@@ -14,7 +14,9 @@ Don't know what kind of security.
 
 Provide an interface for Abyss servers where the user accepts the TCP
 connection and passes to Xmlrpc-c the open socket.  This would be
-useful for inetd servers, among others.
+useful for inetd servers, among others.  For the C++ interface, this
+should be a new constructor option to create a server with no socket
+and a doRpc() method that has a connected socket as parameter.
 
 Put details in the manual for the xmlrpc-c/server_abyss.hpp interface:
 libxmlrpc_server_abyss++.html.
