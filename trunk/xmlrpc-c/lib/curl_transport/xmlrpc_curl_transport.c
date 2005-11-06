@@ -46,6 +46,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "xmlrpc_config.h"
 
@@ -748,9 +749,7 @@ getXportParms(xmlrpc_env *  const envP ATTR_UNUSED,
         curlSetupP->sslEngineDefault = !!curlXportParmsP->sslengine_default;
     
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslversion))
-        curlSetupP->sslVersion = 0;
-    else if (curlXportParmsP->sslversion == 0)
-        curlSetupP->sslVersion = 0;
+        curlSetupP->sslVersion = XMLRPC_SSLVERSION_DEFAULT;
     else
         curlSetupP->sslVersion = curlXportParmsP->sslversion;
     
@@ -909,6 +908,22 @@ unmakeSyncCurlSession(struct xmlrpc_client_transport * const transportP) {
 
 
 
+static void
+assertConstantsMatch(void) {
+/*----------------------------------------------------------------------------
+   There are some constants that we define as part of the Xmlrpc-c
+   interface that are identical to constants in the Curl interface to
+   make curl option setting work.  This function asserts such
+   formally.
+-----------------------------------------------------------------------------*/
+    assert(XMLRPC_SSLVERSION_DEFAULT == CURL_SSLVERSION_DEFAULT);
+    assert(XMLRPC_SSLVERSION_TLSv1   == CURL_SSLVERSION_TLSv1);
+    assert(XMLRPC_SSLVERSION_SSLv2   == CURL_SSLVERSION_SSLv2);
+    assert(XMLRPC_SSLVERSION_SSLv3   == CURL_SSLVERSION_SSLv3);
+}
+
+
+
 static void 
 create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
@@ -924,6 +939,8 @@ create(xmlrpc_env *                      const envP,
         (struct xmlrpc_curl_xportparms *) transportparmsP;
 
     struct xmlrpc_client_transport * transportP;
+
+    assertConstantsMatch();
 
     initWindowsStuff(envP);
 
@@ -1143,6 +1160,8 @@ setupCurlSession(xmlrpc_env *             const envP,
 -----------------------------------------------------------------------------*/
     CURL * const curlSessionP = curlTransactionP->curlSessionP;
 
+    assertConstantsMatch();
+
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
     curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
@@ -1176,7 +1195,7 @@ setupCurlSession(xmlrpc_env *             const envP,
                          curlSetupP->sslEngine);
     if (curlSetupP->sslEngineDefault)
         curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT);
-    if (curlSetupP->sslVersion)
+    if (curlSetupP->sslVersion != XMLRPC_SSLVERSION_DEFAULT)
         curl_easy_setopt(curlSessionP, CURLOPT_SSLVERSION,
                          curlSetupP->sslVersion);
     if (curlSetupP->caInfo)
@@ -1516,6 +1535,8 @@ selectTimeout(xmlrpc_timeoutType const timeoutType,
 -----------------------------------------------------------------------------*/
     unsigned int selectTimeoutMillisec;
     struct timeval retval;
+
+    selectTimeoutMillisec = 0; // quiet compiler warning
 
     /* We assume there is work to do at least every 3 seconds, because
        the Curl multi manager often has retries and other scheduled work

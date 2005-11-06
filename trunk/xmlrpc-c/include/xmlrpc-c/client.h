@@ -38,6 +38,13 @@ struct xmlrpc_xportparms;
        "struct xmlrpc_..._xportparms *" in order to use it.  
     */
 
+enum xmlrpc_sslversion {
+    XMLRPC_SSLVERSION_DEFAULT,
+    XMLRPC_SSLVERSION_TLSv1,
+    XMLRPC_SSLVERSION_SSLv2,
+    XMLRPC_SSLVERSION_SSLv3
+};
+
 struct xmlrpc_curl_xportparms {
     /* This is designed so that zero values are always the defaults. */
     const char * network_interface;
@@ -52,7 +59,7 @@ struct xmlrpc_curl_xportparms {
     const char * sslkeypasswd;
     const char * sslengine;
     xmlrpc_bool  sslengine_default;
-    unsigned int sslversion;
+    enum xmlrpc_sslversion sslversion;
     const char * cainfo;
     const char * capath;
     const char * randomfile;
