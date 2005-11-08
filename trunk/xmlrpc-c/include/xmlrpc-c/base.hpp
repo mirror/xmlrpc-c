@@ -8,7 +8,7 @@
 #include <map>
 #include <string>
 
-#include "xmlrpc-c/base.h"
+#include <xmlrpc-c/base.h>
 
 namespace xmlrpc_c {
 
