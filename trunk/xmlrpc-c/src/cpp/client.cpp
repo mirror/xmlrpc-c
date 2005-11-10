@@ -73,6 +73,28 @@ carriageParm::~carriageParm() {}
 
 
 
+carriageParmPtr::carriageParmPtr() {
+    // Base class constructor will construct pointer that points to nothing
+}
+
+
+
+carriageParmPtr::carriageParmPtr(
+    carriageParm * const carriageParmP) {
+    this->point(carriageParmP);
+}
+
+
+
+carriageParm *
+carriageParmPtr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<carriageParm *>(p);
+}
+
+
+
 carriageParm_http0::carriageParm_http0() :
     c_serverInfoP(NULL) {}
 
@@ -83,6 +105,7 @@ carriageParm_http0::carriageParm_http0(string const serverUrl) {
 
     this->instantiate(serverUrl);
 }
+
 
 
 carriageParm_http0::~carriageParm_http0() {
@@ -125,6 +148,28 @@ carriageParm_http0::setBasicAuth(string const username,
 
     if (env.fault_occurred)
         throw(error(env.fault_string));
+}
+
+
+
+carriageParm_http0Ptr::carriageParm_http0Ptr() {
+    // Base class constructor will construct pointer that points to nothing
+}
+
+
+
+carriageParm_http0Ptr::carriageParm_http0Ptr(
+    carriageParm_http0 * const carriageParmP) {
+    this->point(carriageParmP);
+}
+
+
+
+carriageParm_http0 *
+carriageParm_http0Ptr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<carriageParm_http0 *>(p);
 }
 
 

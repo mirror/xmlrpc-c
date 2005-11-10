@@ -361,6 +361,42 @@ public:
 
 
 
+class carriageParmTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "carriageParmTestSuite";
+    }
+    virtual void runtests(unsigned int const indentation) {
+        carriageParm_http0 carriageParm1("http://suckthis.com");
+        carriageParm_curl0 carriageParm2("http://suckthis.com");
+        carriageParm_libwww0 carriageParm3("http://suckthis.com");
+        carriageParm_wininet0 carriageParm4("http://suckthis.com");
+
+        carriageParm_http0Ptr carriageParm_http1P(
+            new carriageParm_http0("http://suckthis.com"));
+
+        carriageParm_http1P->setBasicAuth("bryanh", "12345");
+
+        carriageParm_curl0Ptr carriageParm_curl1P(
+            new carriageParm_curl0("http://suckthis.com"));
+
+        carriageParm_curl1P->setBasicAuth("bryanh", "12345");
+
+        carriageParm_libwww0Ptr carriageParm_libwww1P(
+            new carriageParm_libwww0("http://suckthis.com"));
+
+        carriageParm_libwww1P->setBasicAuth("bryanh", "12345");
+
+        carriageParm_wininet0Ptr carriageParm_wininet1P(
+            new carriageParm_wininet0("http://suckthis.com"));
+
+        carriageParm_wininet1P->setBasicAuth("bryanh", "12345");
+    }
+};
+
+
+
 class clientRpcTestSuite : public testSuite {
 
 public:
@@ -368,16 +404,12 @@ public:
         return "clientRpcTestSuite";
     }
     virtual void runtests(unsigned int const indentation) {
-
-        carriageParm_http0 carriageParm1("http://suckthis.comm");
-        carriageParm_curl0 carriageParm2("http://suckthis.comm");
-        carriageParm_libwww0 carriageParm3("http://suckthis.comm");
-        carriageParm_wininet0 carriageParm4("http://suckthis.comm");
-
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         client_xml client0(&transportc0);
-        connection connection0(&client0, &carriageParm1);
+        carriageParm_http0 carriageParmHttp("http://suckthis.com");
+        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
+        connection connection0(&client0, &carriageParmHttp);
         
         paramList paramList0;
 
@@ -387,7 +419,7 @@ public:
         EXPECT_ERROR(value result(rpc0P->getResult()););
 
         // This fails because server doesn't exist
-        EXPECT_ERROR(rpc0P->call(&client0, &carriageParm2););
+        EXPECT_ERROR(rpc0P->call(&client0, &carriageParmCurl););
 
         rpcPtr rpc1P("blowme", paramList0);
         // This fails because server doesn't exist
@@ -395,7 +427,7 @@ public:
 
         rpcPtr rpc2P("blowme", paramList0);
 
-        rpc2P->start(&client0, &carriageParm2);
+        rpc2P->start(&client0, &carriageParmCurl);
 
         client0.finishAsync(timeout());
 
@@ -463,9 +495,11 @@ clientTestSuite::runtests(unsigned int const indentation) {
 
     clientXmlTransportTestSuite().run(indentation+1);
     
+    carriageParmTestSuite().run(indentation+1);
+    
     clientRpcTestSuite().run(indentation+1);
     
     clientPtrTestSuite().run(indentation+1);
-    
+
     clientSimpleTestSuite().run(indentation+1);
 }

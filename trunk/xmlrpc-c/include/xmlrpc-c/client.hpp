@@ -12,7 +12,9 @@
 namespace xmlrpc_c {
 
 
-class carriageParm {
+class carriageParmPtr;
+
+class carriageParm : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    The parameter to a client for an individual RPC.  It tells specifics
    of how to carry the call to the server and the response back.  For
@@ -27,6 +29,17 @@ class carriageParm {
 protected:
     virtual ~carriageParm();
     carriageParm();
+};
+
+class carriageParmPtr : public girmem::autoObjectPtr {
+
+public:
+    carriageParmPtr();
+
+    carriageParmPtr(xmlrpc_c::carriageParm * const carriageParmP);
+
+    xmlrpc_c::carriageParm *
+    operator->() const;
 };
 
 class clientTransactionPtr;
@@ -114,7 +127,7 @@ public:
     xmlrpc_c::carriageParm * carriageParmP;
 };
 
-class carriageParm_http0 : public carriageParm {
+class carriageParm_http0 : public xmlrpc_c::carriageParm {
 
 public:
     carriageParm_http0(std::string const serverUrl);
@@ -129,13 +142,23 @@ public:
 
 protected:
     // Only a derived class is allowed to create an object with no
-    // server URL, and the derived class expected to follow it up
+    // server URL, and the derived class is expected to follow it up
     // with an instantiate() to establish the server URL.
 
     carriageParm_http0();
 
     void
     instantiate(std::string const serverUrl);
+};
+
+class carriageParm_http0Ptr : public xmlrpc_c::carriageParmPtr {
+
+public:
+    carriageParm_http0Ptr();
+    carriageParm_http0Ptr(xmlrpc_c::carriageParm_http0 * const carriageParmP);
+
+    xmlrpc_c::carriageParm_http0 *
+    operator->() const;
 };
 
 class carriageParm_curl0 : public xmlrpc_c::carriageParm_http0 {
@@ -145,6 +168,16 @@ public:
 
 };
 
+class carriageParm_curl0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+
+public:
+    carriageParm_curl0Ptr();
+    carriageParm_curl0Ptr(xmlrpc_c::carriageParm_curl0 * const carriageParmP);
+
+    xmlrpc_c::carriageParm_curl0 *
+    operator->() const;
+};
+
 class carriageParm_libwww0 : public xmlrpc_c::carriageParm_http0 {
 
 public:
@@ -152,11 +185,31 @@ public:
 
 };
 
+class carriageParm_libwww0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+
+public:
+    carriageParm_libwww0Ptr();
+    carriageParm_libwww0Ptr(xmlrpc_c::carriageParm_libwww0 * const);
+
+    xmlrpc_c::carriageParm_libwww0 *
+    operator->() const;
+};
+
 class carriageParm_wininet0 : public xmlrpc_c::carriageParm_http0 {
 
 public:
     carriageParm_wininet0(std::string const serverUrl);
 
+};
+
+class carriageParm_wininet0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+
+public:
+    carriageParm_wininet0Ptr();
+    carriageParm_wininet0Ptr(xmlrpc_c::carriageParm_wininet0 * const);
+
+    xmlrpc_c::carriageParm_wininet0 *
+    operator->() const;
 };
 
 class xmlTransactionPtr;

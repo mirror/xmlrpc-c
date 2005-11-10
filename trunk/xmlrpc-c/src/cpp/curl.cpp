@@ -17,6 +17,9 @@
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
+#include "xmlrpc-c/girmem.hpp"
+using girmem::autoObjectPtr;
+using girmem::autoObject;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
@@ -42,6 +45,28 @@ carriageParm_curl0::carriageParm_curl0(
     ) {
 
     this->instantiate(serverUrl);
+}
+
+
+
+carriageParm_curl0Ptr::carriageParm_curl0Ptr() {
+    // Base class constructor will construct pointer that points to nothing
+}
+
+
+
+carriageParm_curl0Ptr::carriageParm_curl0Ptr(
+    carriageParm_curl0 * const carriageParmP) {
+    this->point(carriageParmP);
+}
+
+
+
+carriageParm_curl0 *
+carriageParm_curl0Ptr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<carriageParm_curl0 *>(p);
 }
 
 
