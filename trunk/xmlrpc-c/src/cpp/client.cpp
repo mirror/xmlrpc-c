@@ -393,6 +393,28 @@ client::start(carriageParm *       const  carriageParmP,
 
 
 
+clientPtr::clientPtr() {
+    // Base class constructor will construct pointer that points to nothing
+}
+
+
+
+clientPtr::clientPtr(
+    client * const clientP) {
+    this->point(clientP);
+}
+
+
+
+client *
+clientPtr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<client *>(p);
+}
+
+
+
 client_xml::client_xml(clientXmlTransport * const transportP) :
     transportP(transportP) {}
 

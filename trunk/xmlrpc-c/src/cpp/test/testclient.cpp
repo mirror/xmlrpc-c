@@ -336,24 +336,38 @@ public:
             value_int const resultDirect(rpcSampleAddP->getResult());
             TEST(static_cast<int>(resultDirect) == 12);
         }
+        {
+            /* Test with implicit RPC -- success */
+            rpcOutcome outcome;
+            clientDirect.call(&carriageParmDirect, "sample.add",
+                              paramListSampleAdd, &outcome);
+            TEST(outcome.succeeded());
+            value_int const result(outcome.getResult());
+            TEST(static_cast<int>(result) == 12);
+        }
+        {
+            /* Test with implicit RPC - failure */
+            rpcOutcome outcome;
+            clientDirect.call(&carriageParmDirect, "nosuchmethod",
+                              paramList(), &outcome);
+            TEST(!outcome.succeeded());
+            TEST(outcome.getFault().getCode() == fault::CODE_NO_SUCH_METHOD);
+            TEST(outcome.getFault().getDescription().size() > 0);
+        }
+
         clientDirectAsyncTestSuite().run(indentation+1);
     }
 };
 
 
 
-string
-clientTestSuite::suiteName() {
-    return "clientTestSuite";
-}
+class clientRpcTestSuite : public testSuite {
 
-
-void
-clientTestSuite::runtests(unsigned int const indentation) {
-
-        clientDirectTestSuite().run(indentation+1);
-
-        clientXmlTransportTestSuite().run(indentation+1);
+public:
+    virtual string suiteName() {
+        return "clientRpcTestSuite";
+    }
+    virtual void runtests(unsigned int const indentation) {
 
         carriageParm_http0 carriageParm1("http://suckthis.comm");
         carriageParm_curl0 carriageParm2("http://suckthis.comm");
@@ -399,5 +413,59 @@ clientTestSuite::runtests(unsigned int const indentation) {
         // This fails because the RPC failed because server doesn't exist
         EXPECT_ERROR(value result(rpc3P->getResult()););
 #endif
-        clientSimpleTestSuite().run(indentation+1);
+    }
+};
+
+
+
+class clientPtrTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "clientPtrTestSuite";
+    }
+    virtual void runtests(unsigned int const indentation) {
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        carriageParm_direct carriageParmDirect(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        
+        clientPtr clientP(new client_xml(&transportDirect));
+
+        clientPtr client2P(clientP);
+
+        {
+            clientPtr client3P;
+            client3P = client2P;
+        }
+        rpcOutcome outcome;
+
+        clientP->call(&carriageParmDirect, "nosuchmethod",
+                      paramList(), &outcome);
+        TEST(!outcome.succeeded());
+        TEST(outcome.getFault().getCode() == fault::CODE_NO_SUCH_METHOD);
+    }
+};
+
+
+
+string
+clientTestSuite::suiteName() {
+    return "clientTestSuite";
+}
+
+
+void
+clientTestSuite::runtests(unsigned int const indentation) {
+
+    clientDirectTestSuite().run(indentation+1);
+
+    clientXmlTransportTestSuite().run(indentation+1);
+    
+    clientRpcTestSuite().run(indentation+1);
+    
+    clientPtrTestSuite().run(indentation+1);
+    
+    clientSimpleTestSuite().run(indentation+1);
 }

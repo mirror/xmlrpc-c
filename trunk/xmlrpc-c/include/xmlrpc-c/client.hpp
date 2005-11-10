@@ -56,7 +56,9 @@ public:
     operator->() const;
 };
 
-class client {
+class clientPtr;
+
+class client : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    A generic client -- a means of performing an RPC.  This is so generic
    that it can be used for clients that are not XML-RPC.
@@ -64,6 +66,8 @@ class client {
    This is a base class.  Derived classes define things such as that
    XML and HTTP get used to perform the RPC.
 -----------------------------------------------------------------------------*/
+    friend class clientTransactionPtr;
+
 public:
     virtual ~client();
 
@@ -78,6 +82,16 @@ public:
           std::string                    const  methodName,
           xmlrpc_c::paramList            const& paramList,
           xmlrpc_c::clientTransactionPtr const& tranP);
+};
+
+class clientPtr : public girmem::autoObjectPtr {
+public:
+    clientPtr();
+
+    clientPtr(xmlrpc_c::client * const clientP);
+
+    xmlrpc_c::client *
+    operator->() const;
 };
 
 class connection {
