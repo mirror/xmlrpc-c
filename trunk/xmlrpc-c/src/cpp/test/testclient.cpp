@@ -482,6 +482,31 @@ public:
 
 
 
+class serverAccessorTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "serverAccessorTestSuite";
+    }
+    virtual void runtests(unsigned int const indentation) {
+        clientXmlTransportPtr const transportP(new clientXmlTransport_direct);
+        clientPtr const clientP(new client_xml(transportP));
+        registry myRegistry;
+        carriageParmPtr const carriageParmP(
+            new carriageParm_direct(&myRegistry));
+
+        serverAccessor server1(clientP, carriageParmP);
+
+        rpcOutcome outcome;
+        server1.call("nosuchmethod", paramList(), &outcome);
+        TEST(!outcome.succeeded());
+        TEST(outcome.getFault().getCode() == fault::CODE_NO_SUCH_METHOD);
+        TEST(outcome.getFault().getDescription().size() > 0);
+    }
+};
+
+
+
 string
 clientTestSuite::suiteName() {
     return "clientTestSuite";
@@ -502,4 +527,6 @@ clientTestSuite::runtests(unsigned int const indentation) {
     clientPtrTestSuite().run(indentation+1);
 
     clientSimpleTestSuite().run(indentation+1);
+
+    serverAccessorTestSuite().run(indentation+1);
 }

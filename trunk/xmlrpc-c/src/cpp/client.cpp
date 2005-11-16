@@ -95,6 +95,13 @@ carriageParmPtr::operator->() const {
 
 
 
+carriageParm *
+carriageParmPtr::getp() const {
+    return dynamic_cast<carriageParm *>(objectP);
+}
+
+
+
 carriageParm_http0::carriageParm_http0() :
     c_serverInfoP(NULL) {}
 
@@ -535,6 +542,25 @@ client_xml::finishAsync(xmlrpc_c::timeout const timeout) {
     transportP->finishAsync(timeout);
 }
 
+
+
+serverAccessor::serverAccessor(clientPtr       const clientP,
+                               carriageParmPtr const carriageParmP) :
+
+    clientP(clientP), carriageParmP(carriageParmP) {};
+
+
+
+void
+serverAccessor::call(std::string            const& methodName,
+                     xmlrpc_c::paramList    const& paramList,
+                     xmlrpc_c::rpcOutcome * const  outcomeP) {
+
+    this->clientP->call(this->carriageParmP.getp(),
+                        methodName,
+                        paramList,
+                        outcomeP);
+}
 
 
 

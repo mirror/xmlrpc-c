@@ -40,6 +40,9 @@ public:
 
     xmlrpc_c::carriageParm *
     operator->() const;
+
+    xmlrpc_c::carriageParm *
+    getp() const;
 };
 
 class clientTransactionPtr;
@@ -85,10 +88,10 @@ public:
     virtual ~client();
 
     virtual void
-    call(carriageParm *         const  carriageParmP,
-         std::string            const  methodName,
-         xmlrpc_c::paramList    const& paramList,
-         xmlrpc_c::rpcOutcome * const  outcomeP) = 0;
+    call(xmlrpc_c::carriageParm * const  carriageParmP,
+         std::string              const  methodName,
+         xmlrpc_c::paramList      const& paramList,
+         xmlrpc_c::rpcOutcome *   const  outcomeP) = 0;
 
     virtual void
     start(xmlrpc_c::carriageParm *       const  carriageParmP,
@@ -105,6 +108,22 @@ public:
 
     xmlrpc_c::client *
     operator->() const;
+};
+
+class serverAccessor {
+    
+public:
+    serverAccessor(xmlrpc_c::clientPtr       const clientP,
+                   xmlrpc_c::carriageParmPtr const carriageParmP);
+
+    void
+    call(std::string            const& methodName,
+         xmlrpc_c::paramList    const& paramList,
+         xmlrpc_c::rpcOutcome * const  outcomeP);
+
+private:
+    xmlrpc_c::clientPtr       const clientP;
+    xmlrpc_c::carriageParmPtr const carriageParmP;
 };
 
 class connection {
