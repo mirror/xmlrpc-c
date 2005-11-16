@@ -35,6 +35,8 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
     xmlrpc-c/xml.hpp \
     xmlrpc-c/registry.hpp \
     xmlrpc-c/server_abyss.hpp \
+    xmlrpc-c/client.hpp \
+    xmlrpc-c/client_simple.hpp \
 
 endif
 
