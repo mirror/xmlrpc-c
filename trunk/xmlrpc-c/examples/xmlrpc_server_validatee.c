@@ -71,7 +71,6 @@ array_of_structs(xmlrpc_env *   const envP,
     xmlrpc_value * array;
     xmlrpc_value * retval;
 
-    /* Parse our argument array. */
     xmlrpc_decompose_value(envP, param_array, "(A)", &array);
     if (envP->fault_occurred)
         retval = NULL;
@@ -97,7 +96,9 @@ array_of_structs(xmlrpc_env *   const envP,
                 }
             }
             xmlrpc_DECREF(array);
-            if (!envP->fault_occurred)
+            if (envP->fault_occurred)
+                retval = NULL;
+            else
                 retval = xmlrpc_build_value(envP, "i", sum);
         }
     }
@@ -240,27 +241,30 @@ moderate_array(xmlrpc_env *   const envP,
                xmlrpc_value * const param_array, 
                void *         const user_data ATTR_UNUSED) {
 
-    xmlrpc_value *array, *item, *result;
-    int size;
-    const char * str1;
-    const char * str2;
-    size_t str1_len, str2_len;
     xmlrpc_value * retval;
+    xmlrpc_value * arrayP;
 
     /* Parse our argument array. */
-    xmlrpc_decompose_value(envP, param_array, "(A)", &array);
+    xmlrpc_decompose_value(envP, param_array, "(A)", &arrayP);
     if (!envP->fault_occurred) {
-        size = xmlrpc_array_size(envP, array);
+        int const size = xmlrpc_array_size(envP, arrayP);
         if (!envP->fault_occurred) {
             /* Get our first string. */
-            item = xmlrpc_array_get_item(envP, array, 0);
+            xmlrpc_value * const firstItemP =
+                xmlrpc_array_get_item(envP, arrayP, 0);
             if (!envP->fault_occurred) {
-                xmlrpc_read_string_lp(envP, item, &str1_len, &str1);
+                const char * str1;
+                size_t str1_len;
+                xmlrpc_read_string_lp(envP, firstItemP, &str1_len, &str1);
                 if (!envP->fault_occurred) {
                     /* Get our last string. */
-                    item = xmlrpc_array_get_item(envP, array, size - 1);
+                    xmlrpc_value * const lastItemP =
+                        xmlrpc_array_get_item(envP, arrayP, size - 1);
                     if (!envP->fault_occurred) {
-                        xmlrpc_read_string_lp(envP, item, &str2_len, &str2);
+                        const char * str2;
+                        size_t str2_len;
+                        xmlrpc_read_string_lp(envP, lastItemP,
+                                              &str2_len, &str2);
                         if (!envP->fault_occurred) {
                             concatenate(envP, str1, str1_len, str2, str2_len,
                                         &retval);
@@ -271,9 +275,9 @@ moderate_array(xmlrpc_env *   const envP,
                 }
             }
         }
-        xmlrpc_DECREF(array);
+        xmlrpc_DECREF(arrayP);
     }
-    return result;
+    return retval;
 }
 
 
@@ -292,7 +296,9 @@ nested_struct(xmlrpc_env *   const envP,
 
     /* Parse our argument array. */
     xmlrpc_decompose_value(envP, param_array, "(S)", &yearsP);
-    if (!envP->fault_occurred) {
+    if (envP->fault_occurred)
+        retval = NULL;
+    else {
         /* Get values of larry, moe and curly for 2000-04-01. */
         xmlrpc_int32 larry, moe, curly;
         xmlrpc_decompose_value(envP, yearsP,
@@ -301,8 +307,11 @@ nested_struct(xmlrpc_env *   const envP,
                                "larry", &larry,
                                "moe", &moe,
                                "curly", &curly);               
-        if (!envP->fault_occurred)
+        if (envP->fault_occurred)
+            retval = NULL;
+        else
             retval = xmlrpc_build_value(envP, "i", larry + moe + curly);
+
         xmlrpc_DECREF(yearsP);
     }
     return retval;

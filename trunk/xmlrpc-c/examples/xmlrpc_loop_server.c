@@ -95,7 +95,7 @@ main(int           const argc,
     while (1) {
         printf("Waiting for next RPC...\n");
 
-        ServerRunOnce2(&abyssServer, ABYSS_FOREGROUND);
+        ServerRunOnce(&abyssServer);
             /* This waits for the next connection, accepts it, reads the
                HTTP POST request, executes the indicated RPC, and closes
                the connection.

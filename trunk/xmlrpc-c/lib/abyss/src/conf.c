@@ -44,6 +44,7 @@
 #include <pwd.h>
 #endif
 
+#include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "server.h"
 
@@ -306,7 +307,7 @@ ConfReadServerFile(const char * const filename,
                 } else if (strcasecmp(option, "path") == 0) {
                     if (FileStat(p, &fs))
                         if (fs.st_mode & S_IFDIR) {
-                            free(srvP->filespath);
+                            xmlrpc_strfree(srvP->filespath);
                             srvP->filespath = strdup(p);
                             continue;
                         }

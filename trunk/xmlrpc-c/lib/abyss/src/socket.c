@@ -292,6 +292,50 @@ uint32_t SocketError()
 
 
 
+void
+SocketGetPeerName(TSocket      const socket,
+                  TIPAddr *    const ipAddrP,
+                  uint16_t *   const portNumberP,
+                  abyss_bool * const successP) {
+
+    socklen_t addrlen;
+    int rc;
+    struct sockaddr sockAddr;
+
+    addrlen = sizeof(sockAddr);
+    
+    rc = getpeername(socket, &sockAddr, &addrlen);
+
+    if (rc < 0) {
+        TraceMsg("getpeername() failed.  errno=%d (%s)",
+                 errno, strerror(errno));
+        *successP = FALSE;
+    } else {
+        if (addrlen != sizeof(sockAddr)) {
+            TraceMsg("getpeername() returned a socket address of the wrong "
+                     "size: %u.  Expected %u", addrlen, sizeof(sockAddr));
+            *successP = FALSE;
+        } else {
+            if (sockAddr.sa_family != AF_INET) {
+                TraceMsg("Socket does not use the Inet (IP) address "
+                         "family.  Instead it uses family %d",
+                         sockAddr.sa_family);
+                *successP = FALSE;
+            } else {
+                struct sockaddr_in * const sockAddrInP = (struct sockaddr_in *)
+                    &sockAddr;
+
+                *ipAddrP     = sockAddrInP->sin_addr;
+                *portNumberP = sockAddrInP->sin_port;
+
+                *successP = TRUE;
+            }
+        }
+    }
+}
+
+
+
 /******************************************************************************
 **
 ** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.

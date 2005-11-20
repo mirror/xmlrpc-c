@@ -34,7 +34,6 @@ ConnCreate(TConn *   const connectionP,
 abyss_bool ConnCreate2(TConn *             const connectionP, 
                        TServer *           const serverP,
                        TSocket             const connectedSocket,
-                       TIPAddr             const peerIpAddr,
                        void            ( *       func)(TConn *),
                        enum abyss_foreback const foregroundBackground);
 

@@ -33,6 +33,7 @@ SERVERPROGS_CGI = \
   xmlrpc_sample_add_server.cgi
 
 SERVERPROGS_ABYSS = \
+  xmlrpc_inetd_server \
   xmlrpc_socket_server \
   xmlrpc_loop_server \
   xmlrpc_sample_add_server \

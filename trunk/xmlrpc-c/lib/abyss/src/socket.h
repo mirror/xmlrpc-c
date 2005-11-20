@@ -43,4 +43,10 @@ uint32_t SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32_t timems);
 abyss_bool SocketBlocking(TSocket *s, abyss_bool b);
 uint32_t SocketAvailableReadBytes(TSocket *s);
 
+void
+SocketGetPeerName(TSocket      const socket,
+                  TIPAddr *    const ipAddrP,
+                  uint16_t *   const portNumberP,
+                  abyss_bool * const successP);
+
 #endif

@@ -308,6 +308,12 @@ ServerCreateSocket(TServer *    const serverP,
                    const char * const filespath,
                    const char * const logfilename);
 
+abyss_bool
+ServerCreateNoAccept(TServer *    const serverP,
+                     const char * const name,
+                     const char * const filespath,
+                     const char * const logfilename);
+
 void
 ServerFree(TServer * const serverP);
 
@@ -343,6 +349,10 @@ ServerRunOnce(TServer * const serverP);
 void
 ServerRunOnce2(TServer *           const serverP,
                enum abyss_foreback const foregroundBackground);
+
+void
+ServerRunConn(TServer * const serverP,
+              TSocket   const connectedSocket);
 
 void
 ServerDaemonize(TServer * const serverP);

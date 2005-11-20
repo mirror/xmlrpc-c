@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "socket.h"
 #include "server.h"
@@ -15,37 +16,48 @@
 ** Conn
 *********************************************************************/
 
-TConn *ConnAlloc()
-{
+TConn *
+ConnAlloc() {
     return (TConn *)malloc(sizeof(TConn));
 }
 
-void ConnFree(TConn *c)
-{
-    free(c);
+
+
+void
+ConnFree(TConn * const connectionP) {
+    free(connectionP);
 }
 
+
+
 static uint32_t
-THREAD_ENTRYTYPE ConnJob(TConn *c) {
-    c->connected=TRUE;
-    (c->job)(c);
-    c->connected=FALSE;
-    ThreadExit( &c->thread, 0 );
+THREAD_ENTRYTYPE ConnJob(TConn * const connectionP) {
+/*----------------------------------------------------------------------------
+   This is the root function for a thread that processes a connection
+   (performs HTTP transactions).
+-----------------------------------------------------------------------------*/
+    connectionP->connected=TRUE;
+    (connectionP->job)(connectionP);
+    connectionP->connected=FALSE;
+    ThreadExit(&connectionP->thread, 0);
     return 0;
 }
 
-abyss_bool ConnCreate2(TConn *             const connectionP, 
-                       TServer *           const serverP,
-                       TSocket             const connectedSocket,
-                       TIPAddr             const peerIpAddr,
-                       void            ( *       func)(TConn *),
-                       enum abyss_foreback const foregroundBackground)
-{
+
+
+abyss_bool
+ConnCreate2(TConn *             const connectionP, 
+            TServer *           const serverP,
+            TSocket             const connectedSocket,
+            void            ( *       func)(TConn *),
+            enum abyss_foreback const foregroundBackground) {
+
     abyss_bool retval;
+    abyss_bool success;
+    uint16_t peerPortNumber;
     
     connectionP->server     = serverP;
     connectionP->socket     = connectedSocket;
-    connectionP->peerip     = peerIpAddr;
     connectionP->buffersize = 0;
     connectionP->bufferpos  = 0;
     connectionP->connected  = TRUE;
@@ -53,70 +65,91 @@ abyss_bool ConnCreate2(TConn *             const connectionP,
     connectionP->inbytes    = 0;
     connectionP->outbytes   = 0;
     connectionP->trace      = getenv("ABYSS_TRACE_CONN");
-    
-    switch (foregroundBackground)
-    {
-    case ABYSS_FOREGROUND:
-        connectionP->hasOwnThread = FALSE;
-        retval = TRUE;
-        break;
-    case ABYSS_BACKGROUND:
-        connectionP->hasOwnThread = TRUE;
-        retval = ThreadCreate(&connectionP->thread,
-                              (TThreadProc)ConnJob, 
-                              connectionP);
-        break;
-    }
+
+    SocketGetPeerName(connectedSocket,
+                      &connectionP->peerip, &peerPortNumber, &success);
+
+    if (success) {
+        retval = FALSE;  /* quiet compiler warning */
+        switch (foregroundBackground) {
+        case ABYSS_FOREGROUND:
+            connectionP->hasOwnThread = FALSE;
+            retval = TRUE;
+            break;
+        case ABYSS_BACKGROUND:
+            connectionP->hasOwnThread = TRUE;
+            retval = ThreadCreate(&connectionP->thread,
+                                  (TThreadProc)ConnJob, 
+                                  connectionP);
+            break;
+        }
+    } else
+        retval = FALSE;
+
     return retval;
 }
 
-abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *))
-{
-    return ConnCreate2(c, c->server, *s, c->peerip, func, ABYSS_BACKGROUND);
+
+
+abyss_bool
+ConnCreate(TConn *   const connectionP,
+           TSocket * const socketP,
+           void (*func)(TConn *)) {
+
+    return ConnCreate2(connectionP, connectionP->server, *socketP,
+                       func, ABYSS_BACKGROUND);
 }
 
-abyss_bool ConnProcess(TConn *c)
-{
+
+
+abyss_bool
+ConnProcess(TConn * const connectionP) {
     abyss_bool retval;
 
-    if (c->hasOwnThread) {
+    if (connectionP->hasOwnThread) {
         /* There's a background thread to handle this connection.  Set
            it running.
         */
-        retval = ThreadRun(&(c->thread));
+        retval = ThreadRun(&(connectionP->thread));
     } else {
         /* No background thread.  We just handle it here while Caller waits. */
-        (c->job)(c);
-        c->connected=FALSE;
+        (connectionP->job)(connectionP);
+        connectionP->connected = FALSE;
         retval = TRUE;
     }
     return retval;
 }
 
-void ConnClose(TConn *c)
-{
-    if (c->hasOwnThread)
-        ThreadClose(&c->thread);
+
+
+void
+ConnClose(TConn * const connectionP) {
+    if (connectionP->hasOwnThread)
+        ThreadClose(&connectionP->thread);
 }
 
-abyss_bool ConnKill(TConn *c)
-{
-    c->connected=FALSE;
-    return ThreadKill(&(c->thread));
+
+
+abyss_bool
+ConnKill(TConn * connectionP) {
+    connectionP->connected = FALSE;
+    return ThreadKill(&(connectionP->thread));
 }
 
-void ConnReadInit(TConn *c)
-{
-    if (c->buffersize>c->bufferpos)
-    {
-        c->buffersize-=c->bufferpos;
-        memmove(c->buffer,c->buffer+c->bufferpos,c->buffersize);
-        c->bufferpos=0;
-    }
-    else
-        c->buffersize=c->bufferpos=0;
 
-    c->inbytes=c->outbytes=0;
+
+void
+ConnReadInit(TConn * const connectionP) {
+    if (connectionP->buffersize>connectionP->bufferpos) {
+        connectionP->buffersize -= connectionP->bufferpos;
+        memmove(connectionP->buffer,
+                connectionP->buffer+connectionP->bufferpos,
+                connectionP->buffersize);
+        connectionP->bufferpos = 0;
+    } else
+        connectionP->buffersize=connectionP->bufferpos = 0;
+
+    connectionP->inbytes=connectionP->outbytes = 0;
 }
 
 
@@ -146,32 +179,35 @@ traceSocketRead(const char * const label,
 
 
 abyss_bool
-ConnRead(TConn *  const c,
+ConnRead(TConn *  const connectionP,
          uint32_t const timeout) {
 
-    while (SocketWait(&(c->socket),TRUE,FALSE,timeout*1000) == 1) {
+    while (SocketWait(&(connectionP->socket),TRUE,FALSE,timeout*1000) == 1) {
         uint32_t x;
         uint32_t y;
         
-        x = SocketAvailableReadBytes(&c->socket);
+        x = SocketAvailableReadBytes(&connectionP->socket);
 
         /* Avoid lost connections */
         if (x <= 0)
             break;
         
         /* Avoid Buffer overflow and lost Connections */
-        if (x + c->buffersize >= BUFFER_SIZE)
-            x = BUFFER_SIZE-c->buffersize - 1;
+        if (x + connectionP->buffersize >= BUFFER_SIZE)
+            x = BUFFER_SIZE-connectionP->buffersize - 1;
         
-        y = SocketRead(&c->socket, c->buffer + c->buffersize, x);
+        y = SocketRead(&connectionP->socket,
+                       connectionP->buffer + connectionP->buffersize,
+                       x);
         if (y > 0) {
-            if (c->trace)
+            if (connectionP->trace)
                 traceSocketRead("READ FROM SOCKET:",
-                                c->buffer + c->buffersize, y);
+                                connectionP->buffer + connectionP->buffersize,
+                                y);
 
-            c->inbytes += y;
-            c->buffersize += y;
-            c->buffer[c->buffersize] = '\0';
+            connectionP->inbytes += y;
+            connectionP->buffersize += y;
+            connectionP->buffer[connectionP->buffersize] = '\0';
             return TRUE;
         }
         break;
@@ -198,45 +234,55 @@ ConnWrite(TConn *      const connectionP,
 
 
 
-abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
-            void *buffer,uint32_t buffersize,uint32_t rate)
-{
-    uint64_t y,bytesread=0;
+abyss_bool
+ConnWriteFromFile(TConn *  const connectionP,
+                  TFile *  const fileP,
+                  uint64_t const start,
+                  uint64_t const end,
+                  void *   const buffer,
+                  uint32_t const buffersizeArg,
+                  uint32_t const rate) {
+
+    abyss_bool retval;
     uint32_t waittime;
+    abyss_bool success;
+    uint32_t buffersize;
 
-    if (rate>0)
-    {
-        if (buffersize>rate)
-            buffersize=rate;
-
-        waittime=(1000*buffersize)/rate;
+    if (rate > 0) {
+        buffersize = MIN(buffersizeArg, rate);
+        waittime = (1000 * buffersize) / rate;
+    } else {
+        buffersize = buffersizeArg;
+        waittime = 0;
     }
-    else
-        waittime=0;
 
-    if (!FileSeek(file,start,SEEK_SET))
-        return FALSE;
+    success = FileSeek(fileP, start, SEEK_SET);
+    if (!success)
+        retval = FALSE;
+    else {
+        uint64_t bytesread;
 
-    while (bytesread<=end-start)
-    {
-        y=(end-start+1)-bytesread;
+        bytesread = 0;  /* initial value */
 
-        if (y>buffersize)
-            y=buffersize;
+        while (bytesread <= end - start) {
+            uint64_t const bytesToRead = MIN(buffersize,
+                                             (end - start + 1) - bytesread);
+            uint64_t bytesReadThisTime;
 
-        y=FileRead(file,buffer,y);
-        bytesread+=y;
-
-        if (y>0)
-            ConnWrite(c,buffer,y);
-        else
-            break;
-
-        if (waittime)
-            ThreadWait(waittime);
-    };
-
-    return (bytesread>end-start);
+            bytesReadThisTime = FileRead(fileP, buffer, bytesToRead);
+            bytesread += bytesReadThisTime;
+            
+            if (bytesReadThisTime > 0)
+                ConnWrite(connectionP, buffer, bytesReadThisTime);
+            else
+                break;
+            
+            if (waittime > 0)
+                ThreadWait(waittime);
+        }
+        retval = (bytesread > end - start);
+    }
+    return retval;
 }
 
 
