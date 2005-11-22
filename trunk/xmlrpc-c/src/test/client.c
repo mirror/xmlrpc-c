@@ -42,7 +42,7 @@ test_init_cleanup(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_cleanup();
 
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)
+    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
         &curlTransportParms1;
     {
         xmlrpc_env env2;

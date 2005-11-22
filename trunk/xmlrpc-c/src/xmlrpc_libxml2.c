@@ -372,37 +372,45 @@ static xmlSAXHandler sax_handler = {
     NULL       /* serror */
 };
 
-xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len)
-{
+
+
+void
+xml_parse(xmlrpc_env *   const envP,
+          const char *   const xmlData,
+          size_t         const xmlDataLen,
+          xml_element ** const resultPP) {
+
     parse_context context;
     xmlParserCtxt *parser;
     int err;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT(xml_data != NULL && xml_len >= 0);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(xmlData != NULL && xmlDataLen >= 0);
 
     /* Set up our error-handling preconditions. */
     parser = NULL;
     context.root = NULL;
     
     /* Set up the rest of our parse context. */
-    context.env     = env;
+    context.env     = envP;
     context.current = NULL;
 
     /* Set up our XML parser. */
     parser = xmlCreatePushParserCtxt(&sax_handler, &context, NULL, 0, NULL);
-    XMLRPC_FAIL_IF_NULL(parser, env, XMLRPC_INTERNAL_ERROR,
-			"Could not create expat parser");
+    XMLRPC_FAIL_IF_NULL(parser, envP, XMLRPC_INTERNAL_ERROR,
+                        "Could not create expat parser");
 
     /* Parse our data. */
-    err = xmlParseChunk(parser, xml_data, xml_len, 1);
+    err = xmlParseChunk(parser, xmlData, xmlDataLen, 1);
     if (err)
-        XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR, "XML parsing failed");
-    XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_FAIL(envP, XMLRPC_PARSE_ERROR, "XML parsing failed");
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Perform some sanity checks. */
     XMLRPC_ASSERT(context.root != NULL);
     XMLRPC_ASSERT(context.current == NULL);
+
+    *resultP = context.root;
 
  cleanup:
     if (parser)
@@ -411,8 +419,5 @@ xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len)
     if (env->fault_occurred) {
         if (context.root)
             xml_element_free(context.root);
-        return NULL;
-    } else {
-        return context.root;
     }
 }

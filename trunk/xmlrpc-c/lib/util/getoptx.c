@@ -243,13 +243,16 @@ getoptx(int          const argc,
         char *s = nextchar;
         int exact = 0;
         int ambig = 0;
-        struct optionx *pfound = 0;
+        struct optionx * pfound;
         int indfound;
 
         while (*s && *s != '=') s++;
 
+        indfound = 0;  /* quite compiler warning */
+
         /* Test all options for either exact match or abbreviated matches.  */
-        for (p = _getopt_long_options, option_index = 0; p->name; 
+        for (p = _getopt_long_options, option_index = 0, pfound = NULL;
+             p->name; 
              p++, option_index++)
             if (!strncmp (p->name, nextchar, s - nextchar))
             {
@@ -261,7 +264,7 @@ getoptx(int          const argc,
                     exact = 1;
                     break;
                 }
-                else if (pfound == 0)
+                else if (!pfound)
                 {
                     /* First nonexact match found.  */
                     pfound = p;
@@ -280,7 +283,7 @@ getoptx(int          const argc,
             return '?';
         }
 
-        if (pfound != 0)
+        if (pfound)
         {
             option_index = indfound;
             optindx++;

@@ -334,18 +334,16 @@ static void character_data (void *user_data, XML_Char *s, int len)
 **  XXX - We should allow the user to specify the encoding of our xml_data.
 */
 
-xml_element *
-xml_parse(xmlrpc_env * const envP,
-          const char * const xmlData,
-          int          const xmlDataLen) {
-
-    xml_element * retval;
+void
+xml_parse(xmlrpc_env *   const envP,
+          const char *   const xmlData,
+          size_t         const xmlDataLen,
+          xml_element ** const resultPP) {
 
     XML_Parser parser;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(xmlData != NULL);
-    XMLRPC_ASSERT(xmlDataLen >= 0);
 
     parser = XML_ParserCreate(NULL);
     if (parser == NULL)
@@ -377,7 +375,7 @@ xml_parse(xmlrpc_env * const envP,
                 XMLRPC_ASSERT(context.root != NULL);
                 XMLRPC_ASSERT(context.current == NULL);
                 
-                retval = context.root;
+                *resultPP = context.root;
 
                 if (envP->fault_occurred)
                     xml_element_free(context.root);
@@ -385,7 +383,6 @@ xml_parse(xmlrpc_env * const envP,
         }
         XML_ParserFree(parser);
     }
-    return retval;
 }
 
 

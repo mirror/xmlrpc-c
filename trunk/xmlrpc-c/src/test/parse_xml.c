@@ -24,7 +24,7 @@ static void test_expat (void)
     xmlrpc_env_init(&env);
 
     /* Parse a moderately complex XML document. */
-    elem = xml_parse(&env, expat_data, strlen(expat_data));
+    xml_parse(&env, expat_data, strlen(expat_data), &elem);
     TEST_NO_FAULT(&env);
     TEST(elem != NULL);
 
@@ -52,7 +52,7 @@ static void test_expat (void)
     xml_element_free(elem);
 
     /* Test broken XML */
-    elem = xml_parse(&env, expat_error_data, strlen(expat_error_data));
+    xml_parse(&env, expat_error_data, strlen(expat_error_data), &elem);
     TEST(env.fault_occurred);
 
     xmlrpc_env_clean(&env);
@@ -225,7 +225,7 @@ testParseBadResponse(void) {
     
         /* First, check to make sure that our test case is well-formed XML.
         ** (It's easy to make mistakes when writing the test cases!) */
-        elem = xml_parse(&env, bad_resp, strlen(bad_resp));
+        xml_parse(&env, bad_resp, strlen(bad_resp), &elem);
         TEST_NO_FAULT(&env);
         xml_element_free(elem);
     
@@ -252,7 +252,7 @@ testParseBadResponse(void) {
 
         /* First, check to make sure that our test case is well-formed XML.
         ** (It's easy to make mistakes when writing the test cases!) */
-        elem = xml_parse(&env, bad_resp, strlen(bad_resp));
+        xml_parse(&env, bad_resp, strlen(bad_resp), &elem);
         TEST_NO_FAULT(&env);
         xml_element_free(elem);
     
@@ -359,7 +359,7 @@ static void test_parse_xml_call (void)
     
         /* First, check to make sure that our test case is well-formed XML.
         ** (It's easy to make mistakes when writing the test cases!) */
-        elem = xml_parse(&env, *bad_call, strlen(*bad_call));
+        xml_parse(&env, *bad_call, strlen(*bad_call), &elem);
         TEST_NO_FAULT(&env);
         xml_element_free(elem);
 

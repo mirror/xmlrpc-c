@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "xmlrpc-c/util_int.h"

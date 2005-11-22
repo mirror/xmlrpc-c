@@ -559,7 +559,7 @@ parseCallXml(xmlrpc_env *   const envP,
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
-    *callElemPP = xml_parse(&env, xmlData, xmlLen);
+    xml_parse(&env, xmlData, xmlLen, callElemPP);
     if (env.fault_occurred)
         xmlrpc_env_set_fault_formatted(
             envP, env.fault_code, "Call is not valid XML.  %s",
@@ -904,7 +904,7 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
             "We got %u characters",
             xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID), xmlDataLen);
     else {
-        response = xml_parse(envP, xmlData, xmlDataLen);
+        xml_parse(envP, xmlData, xmlDataLen, &response);
         if (!envP->fault_occurred) {
             /* Pick apart and verify our structure. */
             if (streq(xml_element_name(response), "methodResponse")) {

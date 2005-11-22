@@ -62,7 +62,11 @@ xml_element_children(const xml_element * const elemP);
 **  You are responsible for calling xml_element_free on the returned pointer.
 */
 
-xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len);
+void
+xml_parse(xmlrpc_env *   const envP,
+          const char *   const xmlData,
+          size_t         const xmlDataLen,
+          xml_element ** const resultPP);
 
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
