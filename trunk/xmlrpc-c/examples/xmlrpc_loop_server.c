@@ -102,5 +102,7 @@ main(int           const argc,
             */
     }
 
+    ServerFree(&abyssServer);
+
     return 0;
 }

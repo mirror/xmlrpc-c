@@ -102,5 +102,7 @@ main(int           const argc,
            executes the indicated RPC.
         */
 
+    ServerFree(&abyssServer);
+
     return 0;
 }
