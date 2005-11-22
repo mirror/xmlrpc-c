@@ -26,7 +26,7 @@ char const table_a2b_base64[] = {
 };
 
 char const base64Pad('=');
-unsigned int const base64MaxChunkSize(57);
+size_t const base64MaxChunkSize(57);
      // Max binary chunk size (76 character line)
 #define BASE64_LINE_SZ 128      /* Buffer size for a single line. */    
 
@@ -117,8 +117,8 @@ namespace xmlrpc_c {
 
 static void
 encodeChunk(vector<unsigned char> const& bytes,
-            unsigned int          const  lineStart,
-            unsigned int          const  chunkSize,
+            size_t                const  lineStart,
+            size_t                const  chunkSize,
             string *              const  outputP) {
     
     bitBuffer buffer;
@@ -128,7 +128,7 @@ encodeChunk(vector<unsigned char> const& bytes,
     // I suppose this would be more efficient with an iterator on
     // 'bytes' and/or *outputP.  I'd have to find out how to use one.
 
-    for (unsigned int linePos = 0; linePos < chunkSize; ++linePos) {
+    for (size_t linePos = 0; linePos < chunkSize; ++linePos) {
         // Shift the data into our buffer
         buffer.shiftIn8Bits(bytes[lineStart + linePos]);
         
@@ -168,13 +168,13 @@ base64FromBytes(vector<unsigned char> const& bytes,
         else
             retval = "";
     } else {
-        // It would be good to preallocate *outputP.  Need to look up
+        // It would be good to preallocate retval.  Need to look up
         // how to do that.
-        for (unsigned int chunkStart = 0;
+        for (size_t chunkStart = 0;
              chunkStart < bytes.size();
              chunkStart += base64MaxChunkSize) {
 
-            unsigned int const chunkSize(
+            size_t const chunkSize(
                 min(base64MaxChunkSize, bytes.size() - chunkStart));
     
             encodeChunk(bytes, chunkStart, chunkSize, &retval);
@@ -209,11 +209,12 @@ bytesFromBase64(string const& base64) {
                 // a multiple of 24 bits (4 base64 characters; 3 bytes).
                 buffer.discardResidue();
             } else {
-                if (table_a2b_base64[thisChar] == -1)
+                unsigned int const tableIndex(thisChar);
+                if (table_a2b_base64[tableIndex] == -1)
                     throwf("Contains non-base64 character "
                            "with ASCII code 0x%02x", thisChar);
                 
-                buffer.shiftIn6Bits(table_a2b_base64[thisChar]);
+                buffer.shiftIn6Bits(table_a2b_base64[tableIndex]);
             
                 if (buffer.bitCount() >= 8) {
                     unsigned char thisByte;
