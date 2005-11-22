@@ -643,10 +643,10 @@ createServer(struct _TServer ** const srvPP,
         TraceMsg("Unable to allocate space for server descriptor");
         *successP = FALSE;
     } else {
-        if (srvP->name)
+        if (name)
             srvP->name = strdup(name);
         else
-            srvP->name = "unnamed";
+            srvP->name = strdup("unnamed");
 
         initSocketStuff(srvP, useBoundSocket, socketFd, makeSocket, port,
                         successP);
