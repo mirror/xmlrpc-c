@@ -74,8 +74,9 @@ clean-local:
 distclean: $(SUBDIRS:%=%/distclean) distclean-common distclean-local
 
 distclean-local:
-	rm -f version.h
-	rm -f transport_config.h
+	rm -f config.log config.status Makefile.config libtool 
+	rm -f xmlrpc_config.h xmlrpc_amconfig.h stamp-h xmlrpc-c.spec 
+	rm -f xmlrpc-c-config xmlrpc-c-config.test
 
 check: $(SUBDIRS:%=%/check)
 
