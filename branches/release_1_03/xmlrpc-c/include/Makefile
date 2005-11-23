@@ -38,7 +38,7 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
     xmlrpc-c/transport.h \
 
   ifeq ($(ENABLE_CPLUSPLUS),yes)
-    HEADERS_TO_INSTALL += xmlrpc-c/client.hpp
+    HEADERS_TO_INSTALL += xmlrpc-c/client.hpp xmlrpc-c/client_simple.hpp
   endif
 endif
 ifeq ($(ENABLE_CGI_SERVER),yes)

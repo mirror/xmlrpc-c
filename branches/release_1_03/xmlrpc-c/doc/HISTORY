@@ -67,6 +67,21 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.08 - November 23, 2005
+
+  * BJH: Fix use of uninitialized 'name' member in Abyss ServerCreate().
+
+  * BJH: Install client_simple.hpp interface header file.
+
+  * BJH: Fix bogus NULL default value for string argument in 
+         serverAbyss constructor.  Use null string instead
+
+  * BJH: Remove 'cpptest' from default make.
+
+  * Mike West:
+         Don't include tools/xmlrpc and tools/xmlrpc_transport
+         in the build if client library configured out.
+
 1.03.07 - October 22, 2005
 
   * BJH: Remove curl_global_cleanup() so that multiple simultaneous
@@ -77,7 +92,7 @@ DETAILED RELEASE HISTORY:
   * BJH: Serialize access to synchronous Curl session in Curl client
          XML transport (to avoid crashes with multiple threads).
 
-  * BJH: when installing legacy header symlinks, remove old names first.
+  * BJH: When installing legacy header symlinks, remove old names first.
 
 1.03.06 - October 6, 2005
 

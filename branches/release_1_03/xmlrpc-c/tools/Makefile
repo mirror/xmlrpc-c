@@ -6,7 +6,11 @@ endif
 
 include $(SRCDIR)/Makefile.config
 
-SUBDIRS = binmode-rpc-kit turbocharger xmlrpc xmlrpc_transport
+SUBDIRS = binmode-rpc-kit turbocharger
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  SUBDIRS += xmlrpc xmlrpc_transport
+endif
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   SUBDIRS += xml-rpc-api2cpp

@@ -1,4 +1,5 @@
 #ifndef CASPRINTF_H_INCLUDED
+#define CASPRINTF_H_INCLUDED
 
 #include <stdarg.h>
 

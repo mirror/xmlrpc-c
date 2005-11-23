@@ -571,7 +571,7 @@ ServerCreate(TServer *    const srvP,
 
     abyss_bool success;
 
-    if (srvP->name)
+    if (name)
         srvP->name = strdup(name);
     else
         srvP->name = "unnamed";
