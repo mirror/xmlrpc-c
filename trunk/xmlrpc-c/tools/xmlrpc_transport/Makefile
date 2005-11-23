@@ -40,7 +40,7 @@ dep: dep-common
 
 .PHONY: clean
 clean: clean-common
-	rm -f xmlrpc config.h
+	rm -f xmlrpc_transport config.h
 
 .PHONY: distclean
 distclean: clean distclean-common
