@@ -222,11 +222,11 @@ xmlrpc_serialize_string_data(xmlrpc_env *env,
     char *contents;
     size_t size;
 
-    /* Since this routine can only be called internally, we only need
-    ** an assertion here, not a runtime type check.
-    ** XXX - Temporarily disabled because we're using this code to
-    ** print <dateTime.iso8601> values as well. */
-    /* XMLRPC_ASSERT(string->_type == XMLRPC_TYPE_STRING); */
+    /* Assertion is temporarily not true because we're using this code to
+       print <dateTime.iso8601> values as well.
+
+    XMLRPC_ASSERT(string->_type == XMLRPC_TYPE_STRING);
+    */
 
     /* Escape any '&' and '<' characters in the string. */
     escaped = escape_block(env, &string->_block);
