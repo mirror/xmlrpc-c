@@ -15,18 +15,22 @@ xmlrpc_traceXml(const char * const label,
         unsigned int nonPrintableCount;
         unsigned int i;
 
+        fprintf(stderr, "%s:\n\n", label);
+
         nonPrintableCount = 0;  /* Initial value */
 
         for (i = 0; i < xmlLength; ++i) {
-            if (!isprint(xml[i]) && xml[i] != '\n' && xml[i] != '\r')
+            char const thisChar = xml[i];
+            if (!isprint(thisChar) && thisChar != '\n' && thisChar != '\r') {
                 ++nonPrintableCount;
+                fputc('~', stderr);
+            } else
+                fputc(thisChar, stderr);
         }
+        fputc('\n', stderr);
         if (nonPrintableCount > 0)
             fprintf(stderr, "%s contains %u nonprintable characters.\n", 
                     label, nonPrintableCount);
-
-        fprintf(stderr, "%s:\n\n", label);
-        fprintf(stderr, "%.*s\n", (int)xmlLength, xml);
     }
 }
 
