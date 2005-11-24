@@ -1,0 +1,56 @@
+These are instructions for building Xmlrpc-c from source and installing
+it on a system.
+
+See the README file for information on prerequisites (things you need to 
+have installed before you can build).
+
+
+Essentially, it's just the conventional
+
+  $ ./configure
+  $ make
+  $ make install
+
+You can also do
+
+  $ make check
+
+to run a battery of tests before you install.  But note that it's as common
+for the tests to fail because the tests are broken as because the product
+is broken, so consider the results carefully.
+
+To see it work, run a simple server like this:
+
+  $ examples/xmlrpc_sample_add_server 8080
+
+Then run a client that does an RPC to this server:
+
+  $ examples/xmlrpc_sample_add_client
+
+(I don't mean to imply that the above are consecutive shell commands;
+They can't be, because the server program runs indefinitely).
+
+Also try other sample servers and clients, described in examples/README.
+
+
+You may want to pass a '--prefix' argument to 'configure'.  See
+'./configure --help' for details.
+
+You may also want to disable client XML transports that you won't be
+using.  In particular, the Libwww transport can be inconvenient, because
+it typically uses about 20 shared libraries.  Any XML-RPC client
+program that uses Xmlrpc-c, whether or not the program uses any of the
+libwww facilities, must attach all those libraries, and that can take
+a significant amount of time.
+
+See './configure --help' for the options that disable certain transports.
+
+
+
+WINDOWS
+-------
+
+All of the above is essentially for Unix-type operating systems.  To
+build and use Xmlrpc-c on Windows, see the file
+Windows/ReadMeWin32.txt.
+
