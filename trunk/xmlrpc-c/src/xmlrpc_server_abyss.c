@@ -157,13 +157,13 @@ getBody(xmlrpc_env *        const envP,
 
     if (trace)
         fprintf(stderr, "XML-RPC handler processing body.  "
-                "Content Size = %u bytes\n", contentSize);
+                "Content Size = %u bytes\n", (unsigned)contentSize);
 
     body = xmlrpc_mem_block_new(envP, 0);
     if (!envP->fault_occurred) {
-        unsigned int bytesRead;
+        size_t bytesRead;
         const char * chunkPtr;
-        int chunkLen;
+        size_t chunkLen;
 
         bytesRead = 0;
 
