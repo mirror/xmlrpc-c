@@ -296,8 +296,8 @@ ConnReadLine(TConn * const connectionP,
     char * p;
     char * t;
     abyss_bool first;
-    uint32_t to;
-    uint32_t start;
+    clock_t to;
+    clock_t start;
 
     p = *z = connectionP->buffer + connectionP->bufferpos;
     start = clock();
@@ -306,7 +306,7 @@ ConnReadLine(TConn * const connectionP,
 
     for (;;) {
         to = (clock() - start) / CLOCKS_PER_SEC;
-        if (to > timeout)
+        if ((uint32_t)to > timeout)
             break;
 
         if (first) {
