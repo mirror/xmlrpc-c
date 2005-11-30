@@ -42,8 +42,12 @@
 
 #include "xmlrpc_config.h"
 
-/* 16K is the minimum size of stack on Win32 */
-#define  THREAD_STACK_SIZE    (16*1024)
+/* We used to have THREAD_STACK_SIZE = 16K, which was said to be the
+   minimum stack size on Win32.  Scott Kolodzeski found in November
+   2005 that this was insufficient for 64 bit Solaris -- we fail
+   when creating the first thread.  So we changed to 128K.
+*/
+#define  THREAD_STACK_SIZE (128*1024L)
 
 /*********************************************************************
 ** Thread
