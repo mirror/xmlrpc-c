@@ -119,6 +119,10 @@ const char *
 xmlrpc_makePrintable(const char * const input);
 
 const char *
+xmlrpc_makePrintable_lp(const char * const input,
+                        size_t       const inputLength);
+
+const char *
 xmlrpc_makePrintableChar(char const input);
 
 /*----------------------------------------------------------------------------

@@ -1,36 +1,62 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "xmlrpc-c/base_int.h"
 
 
 
+static size_t
+nextLineSize(const char * const string,
+             size_t       const startPos,
+             size_t       const stringSize) {
+/*----------------------------------------------------------------------------
+   Return the length of the line that starts at offset 'startPos' in the
+   string 'string', which is 'stringSize' characters long.
+
+   'string' in not NUL-terminated.
+   
+   A line begins at beginning of string or after a newline character and
+   runs through the next newline character or end of string.  The line
+   includes the newline character at the end, if any.
+-----------------------------------------------------------------------------*/
+    size_t i;
+
+    for (i = startPos; i < stringSize && string[i] != '\n'; ++i);
+
+    if (i < stringSize)
+        ++i;  /* Include the newline */
+
+    return i - startPos;
+}
+
+
+
 void
 xmlrpc_traceXml(const char * const label, 
-                const char * const xml,
+                char         const xml[],
                 unsigned int const xmlLength) {
 
     if (getenv("XMLRPC_TRACE_XML")) {
-        unsigned int nonPrintableCount;
-        unsigned int i;
+        size_t cursor;  /* Index into xml[] */
 
         fprintf(stderr, "%s:\n\n", label);
 
-        nonPrintableCount = 0;  /* Initial value */
+        for (cursor = 0; cursor < xmlLength; ) {
+            /* Print one line of XML */
 
-        for (i = 0; i < xmlLength; ++i) {
-            char const thisChar = xml[i];
-            if (!isprint(thisChar) && thisChar != '\n' && thisChar != '\r') {
-                ++nonPrintableCount;
-                fputc('~', stderr);
-            } else
-                fputc(thisChar, stderr);
+            size_t const lineSize = nextLineSize(xml, cursor, xmlLength);
+            const char * const xmlPrintableLine =
+                xmlrpc_makePrintable_lp(&xml[cursor], lineSize);
+
+            fprintf(stderr, "%s\n", xmlPrintableLine);
+
+            cursor += lineSize;
+
+            xmlrpc_strfree(xmlPrintableLine);
         }
-        fputc('\n', stderr);
-        if (nonPrintableCount > 0)
-            fprintf(stderr, "%s contains %u nonprintable characters.\n", 
-                    label, nonPrintableCount);
+        fprintf(stderr, "\n");
     }
 }
 

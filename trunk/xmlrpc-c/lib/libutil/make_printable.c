@@ -7,24 +7,24 @@
 #include <ctype.h>
 
 #include "xmlrpc_config.h"
-#include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 
 
 
-const char * 
-xmlrpc_makePrintable(const char * const input) {
+const char *
+xmlrpc_makePrintable_lp(const char * const input,
+                        size_t       const inputLength) {
 /*----------------------------------------------------------------------------
-   Convert an arbitrary string of bytes (null-terminated, though) to
+   Convert an arbitrary string of characters in length-pointer form to
    printable ASCII.  E.g. convert newlines to "\n".
 
    Return the result in newly malloc'ed storage.  Return NULL if we can't
    get the storage.
 -----------------------------------------------------------------------------*/
     char * output;
-    const unsigned int inputLength = strlen(input);
 
     output = malloc(inputLength*4+1);
+        /* Worst case, we render a character like \x01 -- 4 characters */
 
     if (output != NULL) {
         unsigned int inputCursor, outputCursor;
@@ -47,9 +47,13 @@ xmlrpc_makePrintable(const char * const input) {
             } else if (input[inputCursor] == '\r') {
                 output[outputCursor++] = '\\';
                 output[outputCursor++] = 'r';
+            } else if (input[inputCursor] == '\\') {
+                output[outputCursor++] = '\\';
+                output[outputCursor++] = '\\';
             } else {
-                snprintf(&output[outputCursor], 4, "\\x%02x", 
+                snprintf(&output[outputCursor], 5, "\\x%02x", 
                          input[inputCursor]);
+                outputCursor += 4;
             }
         }
         output[outputCursor++] = '\0';
@@ -59,9 +63,27 @@ xmlrpc_makePrintable(const char * const input) {
 
 
 
+const char * 
+xmlrpc_makePrintable(const char * const input) {
+/*----------------------------------------------------------------------------
+   Convert an arbitrary string of characters (NUL-terminated, though) to
+   printable ASCII.  E.g. convert newlines to "\n".
+
+   Return the result in newly malloc'ed storage.  Return NULL if we can't
+   get the storage.
+-----------------------------------------------------------------------------*/
+    return xmlrpc_makePrintable_lp(input, strlen(input));
+}
+
+
+
 const char *
 xmlrpc_makePrintableChar(char const input) {
-
+/*----------------------------------------------------------------------------
+   Return an ASCIIZ string consisting of the character 'input',
+   properly escaped so as to be printable.  E.g., in C notation, '\n'
+   turns into "\\n"
+-----------------------------------------------------------------------------*/
     const char * retval;
 
     if (input == '\0')

@@ -64,7 +64,6 @@ LIBXMLRPC_OBJS = \
 	xmlrpc_base64.lo \
 	xmlrpc_utf8.lo \
 	xmlrpc_authcookie.lo \
-	xmlrpc_strutil.lo
 
 LIB_OBJS = $(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS)
 

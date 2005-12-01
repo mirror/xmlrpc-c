@@ -25,7 +25,12 @@ default: all
 
 all: libxmlrpc_util.la
 
-LIBXMLRPC_UTIL_OBJS = casprintf.lo resource.lo memblock.lo error.lo
+LIBXMLRPC_UTIL_OBJS = \
+  casprintf.lo \
+  make_printable.lo \
+  resource.lo \
+  memblock.lo \
+  error.lo
 
 INCLUDES = -Iblddir -I$(SRCDIR) \
            -Isrcdir/include -Isrcdir/lib/util/include
