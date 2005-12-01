@@ -1164,70 +1164,71 @@ setupCurlSession(xmlrpc_env *             const envP,
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
-    curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
-                     curlSetupP->sslVerifyPeer);
-    curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYHOST,
-                     curlSetupP->sslVerifyHost ? 2 : 0);
-
-    if (curlSetupP->networkInterface)
-        curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE,
-                         curlSetupP->networkInterface);
-    if (curlSetupP->sslCert)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLCERT,
-                         curlSetupP->sslCert);
-    if (curlSetupP->sslCertType)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLCERTTYPE,
-                         curlSetupP->sslCertType);
-    if (curlSetupP->sslCertPasswd)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLCERTPASSWD,
-                         curlSetupP->sslCertPasswd);
-    if (curlSetupP->sslKey)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLKEY,
-                         curlSetupP->sslKey);
-    if (curlSetupP->sslKeyType)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLKEYTYPE,
-                         curlSetupP->sslKeyType);
-    if (curlSetupP->sslKeyPasswd)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLKEYPASSWD,
-                         curlSetupP->sslKeyPasswd);
-    if (curlSetupP->sslEngine)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE,
-                         curlSetupP->sslEngine);
-    if (curlSetupP->sslEngineDefault)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT);
-    if (curlSetupP->sslVersion != XMLRPC_SSLVERSION_DEFAULT)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSLVERSION,
-                         curlSetupP->sslVersion);
-    if (curlSetupP->caInfo)
-        curl_easy_setopt(curlSessionP, CURLOPT_CAINFO,
-                         curlSetupP->caInfo);
-    if (curlSetupP->caPath)
-        curl_easy_setopt(curlSessionP, CURLOPT_CAPATH,
-                         curlSetupP->caPath);
-    if (curlSetupP->randomFile)
-        curl_easy_setopt(curlSessionP, CURLOPT_RANDOM_FILE,
-                         curlSetupP->randomFile);
-    if (curlSetupP->egdSocket)
-        curl_easy_setopt(curlSessionP, CURLOPT_EGDSOCKET,
-                         curlSetupP->egdSocket);
-    if (curlSetupP->sslCipherList)
-        curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
-                         curlSetupP->sslCipherList);
 
     XMLRPC_MEMBLOCK_APPEND(char, envP, callXmlP, "\0", 1);
     if (!envP->fault_occurred) {
         curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS, 
                          XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP));
         
-        curl_easy_setopt(curlSessionP, CURLOPT_FILE, responseXmlP);
-        curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0 );
         curl_easy_setopt(curlSessionP, CURLOPT_WRITEFUNCTION, collect);
+        curl_easy_setopt(curlSessionP, CURLOPT_FILE, responseXmlP);
+        curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, 
                          curlTransactionP->curlError);
         curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
         
         curl_easy_setopt(curlSessionP, CURLOPT_HTTPHEADER, 
                          curlTransactionP->headerList);
+
+        curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
+                         curlSetupP->sslVerifyPeer);
+        curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYHOST,
+                         curlSetupP->sslVerifyHost ? 2 : 0);
+
+        if (curlSetupP->networkInterface)
+            curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE,
+                             curlSetupP->networkInterface);
+        if (curlSetupP->sslCert)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLCERT,
+                             curlSetupP->sslCert);
+        if (curlSetupP->sslCertType)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLCERTTYPE,
+                             curlSetupP->sslCertType);
+        if (curlSetupP->sslCertPasswd)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLCERTPASSWD,
+                             curlSetupP->sslCertPasswd);
+        if (curlSetupP->sslKey)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLKEY,
+                             curlSetupP->sslKey);
+        if (curlSetupP->sslKeyType)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLKEYTYPE,
+                             curlSetupP->sslKeyType);
+        if (curlSetupP->sslKeyPasswd)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLKEYPASSWD,
+                             curlSetupP->sslKeyPasswd);
+        if (curlSetupP->sslEngine)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE,
+                             curlSetupP->sslEngine);
+        if (curlSetupP->sslEngineDefault)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT);
+        if (curlSetupP->sslVersion != XMLRPC_SSLVERSION_DEFAULT)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLVERSION,
+                             curlSetupP->sslVersion);
+        if (curlSetupP->caInfo)
+            curl_easy_setopt(curlSessionP, CURLOPT_CAINFO,
+                             curlSetupP->caInfo);
+        if (curlSetupP->caPath)
+            curl_easy_setopt(curlSessionP, CURLOPT_CAPATH,
+                             curlSetupP->caPath);
+        if (curlSetupP->randomFile)
+            curl_easy_setopt(curlSessionP, CURLOPT_RANDOM_FILE,
+                             curlSetupP->randomFile);
+        if (curlSetupP->egdSocket)
+            curl_easy_setopt(curlSessionP, CURLOPT_EGDSOCKET,
+                             curlSetupP->egdSocket);
+        if (curlSetupP->sslCipherList)
+            curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
+                             curlSetupP->sslCipherList);
     }
 }
 
