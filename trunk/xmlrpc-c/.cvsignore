@@ -1,5 +1,4 @@
 Makefile.config
-autogen.sh
 autom4te.cache
 configure
 config.log
@@ -12,7 +11,6 @@ xmlrpc_config.h
 xmlrpc_amconfig.h
 xmlrpc-c-config
 xmlrpc-c-config.test
-xmlrpc-c-*.tar.gz
 xmlrpc-c.spec
 transport_config.h
 version.h
