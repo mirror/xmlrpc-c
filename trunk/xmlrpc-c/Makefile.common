@@ -245,10 +245,12 @@ distclean-common:
 # to failure, especially with built .h files.  Better not to burden the user,
 # who gains nothing from it, with that.
 #
-	rm -f version.h
 	cat /dev/null >Makefile.depend
 	rm -f TAGS
 	rm -f blddir srcdir
+ifneq ($(OMIT_VERSION_H),Y)
+	rm -f version.h
+endif
 
 .PHONY: distdir-common
 distdir-common:
