@@ -19,7 +19,7 @@ static void list_apps (int hours) {
 
     // Build our time_period parameter.
     ostringstream time_period_stream;
-    time_period_stream << hours << "HOUR" << ends;
+    time_period_stream << hours << "HOUR";
     string time_period = time_period_stream.str();
 
     // Assemble our meerkat query recipe.

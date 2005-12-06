@@ -198,9 +198,9 @@ getBody(xmlrpc_env *        const envP,
 
     body = xmlrpc_mem_block_new(envP, 0);
     if (!envP->fault_occurred) {
-        unsigned int bytesRead;
+        size_t bytesRead;
         char * chunkPtr;
-        int chunkLen;
+        size_t chunkLen;
 
         bytesRead = 0;
 

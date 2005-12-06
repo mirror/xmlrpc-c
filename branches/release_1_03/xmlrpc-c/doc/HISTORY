@@ -67,6 +67,13 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.09 - December 7, 2005
+
+  * BJH: fix size_t/int type mismatch in xmlrpc_server_abyss.c.
+
+  * BJH: meerkat-app-list example program: remove NUL character from
+         time period parameter.
+
 1.03.08 - November 23, 2005
 
   * BJH: Fix use of uninitialized 'name' member in Abyss ServerCreate().
