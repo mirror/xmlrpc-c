@@ -346,6 +346,7 @@ ServerRun(TServer * const serverP);
 void
 ServerRunOnce(TServer * const serverP);
 
+/* ServerRunOnce2() is obsolete.  See user's guide. */
 void
 ServerRunOnce2(TServer *           const serverP,
                enum abyss_foreback const foregroundBackground);
