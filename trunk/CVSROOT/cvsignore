@@ -1,7 +1,13 @@
+*.o
+*.a
+*.so
+*.so.*
+*.so.*.*
 *.lo 
 *.la 
 .deps 
 .libs
 *.s
 *.i
+*.ii
 Makefile.depend
