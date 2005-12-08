@@ -24,4 +24,11 @@
 #DEFAULT (echo ""; id; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
-DEFAULT /usr/lib/cvs/contrib/log -f /dev/null -m xmlrpc-c-cvs@lists.sourceforge.net %s
+
+# The following worked up until about October 2005.  Now it generates a
+# "/usr/lib/cvs/contrib/log does not exist."  I suppose there must be a new
+# way of doing this, but I haven't had time to find it.
+#DEFAULT /usr/lib/cvs/contrib/log -f /dev/null -m xmlrpc-c-cvs@lists.sourceforge.net %s
+
+
+
