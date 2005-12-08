@@ -1,31 +1,37 @@
 ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+SRCDIR := $(CURDIR)/../..
 endif
-SUBDIR = src/cpp
+SUBDIR := src/cpp
 # BLDDIR is for use in places where a symbolic link won't work.
 # BUILDDIR is for places in Makefile.common that can use the 'blddir'
 # symbolic link (but in other directories, doesn't).
 BLDDIR = ../..
-BUILDDIR = blddir
+BUILDDIR := blddir
 VPATH = .:$(SRCDIR)
 
 include $(BLDDIR)/Makefile.config
 
 default: all
 
-LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
+# libxmlrpc_cpp is the legacy C++ wrapper library.  The others are the
+# more elaborate replacements.
+
+TARGET_LIBRARY_NAMES := \
+  libxmlrpc_cpp \
+  libxmlrpc++ \
+  libxmlrpc_server++ \
+  libxmlrpc_server_abyss++ \
+  libxmlrpc_client++ \
+
+STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
+
+SHARED_LIBS_TO_BUILD := $(TARGET_LIBRARY_NAMES)
+SHARED_LIBS_TO_INSTALL := $(TARGET_LIBRARY_NAMES)
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
 INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
   $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) $(TRANSPORT_INCLUDES)
 DEP_SOURCES = *.cpp
-
-include $(SRCDIR)/Makefile.common
-
-# This 'Makefile.common' dependency makes sure the symlinks get built before
-# this make file is used for anything.
-
-$(SRCDIR)/Makefile.common: srcdir blddir
 
 WININET_TRANSPORT_DIR = srcdir/lib/wininet_transport
 CURL_TRANSPORT_DIR    = srcdir/lib/curl_transport
@@ -35,12 +41,6 @@ ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
 else
   LIBXML_INCLUDES = -Isrcdir/lib/expat/xmlparse
-endif
-
-ifeq ($(ENABLE_LIBXML2),yes)
-  XMLRPC_XML_PARSER = xmlrpc_libxml2.lo
-else
-  XMLRPC_XML_PARSER = xmlrpc_expat.lo
 endif
 
 LIBXMLRPCPP_OBJS = \
@@ -57,6 +57,20 @@ LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
 LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o curl.o libwww.o wininet.o
 
+ALL_OBJS = \
+  XmlRpcCpp.o \
+  $(LIBXMLRPCCPP_OBJS) \
+  $(LIBXMLRPC_SERVERPP_OBJS) \
+  $(LIBXMLRPC_SERVER_ABYSSPP_OBJS) \
+  $(LIBXMLRPC_CLIENTPP_OBJS)
+
+include $(SRCDIR)/Makefile.common
+
+# This 'Makefile.common' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/Makefile.common: srcdir blddir
+
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \
   -I$(CURL_TRANSPORT_DIR) \
@@ -65,21 +79,29 @@ TRANSPORT_INCLUDES = \
 BASIC_INCLUDES = -Isrcdir/include -Iblddir -Isrcdir \
   -Isrcdir/lib/util/include
 
-# We always statically-link our C++ code because it's tiny, and C++ is
-# no good at shared libraries, anyway.  It's actually getting bigger,
-# but since I'm determined not to expand the use of libtool (because
-# it obfuscates the build process), I haven't figured out yet how to
-# get the shared libraries to build for all the platforms.
+ifeq ($(SHARED_LIB_TYPE),unix)
+  include unix.make
+  endif
 
-# libxmlrpc_cpp.a is the legacy C++ wrapper library.  The others are the
-# more elaborate replacements.
+ifeq ($(SHARED_LIB_TYPE),irix)
+  include irix.make
+  endif
 
-TARGET_LIBRARIES = \
-  libxmlrpc_cpp.a \
-  libxmlrpc++.a \
-  libxmlrpc_server++.a \
-  libxmlrpc_server_abyss++.a \
-  libxmlrpc_client++.a \
+ifeq ($(SHARED_LIB_TYPE),dll)
+  include dll.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),dylib)
+  include dylib.make
+  endif
+
+ifneq ($(SHARED_LIB_TYPE),NONE)
+  TARGET_SHARED_LIBRARIES = $(TARGET_LIBRARY_NAMES:%=%.$(SHLIB_SUFFIX))
+  endif
+
+TARGET_STATIC_LIBRARIES = $(TARGET_LIBRARY_NAMES:%=%.a)
+
+TARGET_LIBRARIES = $(TARGET_STATIC_LIBRARIES) $(ALL_SHARED_LIBRARIES)
 
 all: $(TARGET_LIBRARIES)
 
@@ -108,6 +130,10 @@ libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS)
 	$(AR) cru $@ $^
 	$(RANLIB) $@
 
+#-----------------------------------------------------------------------------
+#  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
+#-----------------------------------------------------------------------------
+
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 XmlRpcCpp.o:%.o:%.cpp
@@ -131,6 +157,9 @@ CLIENT_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
 $(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
 	$(CXX) -c $(CLIENT_INCLUDES) $(CXXFLAGS) $<
 
+#-----------------------------------------------------------------------------
+#  MISCELLANEOUS RULES
+#-----------------------------------------------------------------------------
 
 check:
 	$(MAKE) -C test runtests

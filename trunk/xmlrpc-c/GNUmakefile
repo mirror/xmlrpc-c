@@ -106,11 +106,8 @@ install-compat-hdr:
 	  $(LN_S) xmlrpc-c/server_w32httpsys.h xmlrpc_server_w32httpsys.h; \
 	  $(LN_S) xmlrpc-c/oldcppwrapper.hpp   XmlRpcCpp.h ;\
 
-include/xmlrpc-c/config.h:
-	$(MAKE) -C include xmlrpc-c/config.h
-
 .PHONY: dep
-dep: version.h include/xmlrpc-c/config.h $(SUBDIRS:%=%/dep)
+dep: version.h $(BUILDDIR)/include/xmlrpc-c/config.h $(SUBDIRS:%=%/dep)
 
 xmlrpc-c-config xmlrpc-c-config.test xmlrpc_config.h xmlrpc_amconfig.h \
 	:%:%.in $(SRCDIR)/configure

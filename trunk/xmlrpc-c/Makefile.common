@@ -43,6 +43,10 @@ DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
 LDFLAGS_VERSINFO = -version-info 7:0:4
 
+# MAJ and MIN are major and minor version numbers for shared libraries
+MAJ = 1
+MIN = 05
+
 # CURDIR was introduced in GNU Make 3.77.
 ifeq ($(CURDIR)x,x)
   CURDIR := $(shell /bin/pwd)
@@ -59,7 +63,7 @@ LIBXMLRPC_SERVER++       = $(BUILDDIR)/src/cpp/libxmlrpc_server++.a
 LIBXMLRPC_SERVER_ABYSS++ = $(BUILDDIR)/src/cpp/libxmlrpc_server_abyss++.a
 
 ##############################################################################
-#                             RULES                                          #
+#                           BUILD RULES                                      #
 ##############################################################################
 
 # We use the srcdir and blddir symbolic links simply to make the make
@@ -153,25 +157,64 @@ version.h: $(BUILDDIR)/version.h
 	$(LN_S) $< $@
 
 endif
+
+$(BUILDDIR)/include/xmlrpc-c/config.h:
+	$(MAKE) -C $(BUILDDIR)/include -f $(SRCDIR)/include/Makefile \
+          xmlrpc-c/config.h
+
+$(ALL_OBJS): $(BUILDDIR)/include/xmlrpc-c/config.h
+
+
+##############################################################################
+#                          SHARED LIBRARY RULES                              #
+##############################################################################
+
+ifeq ($(SHARED_LIB_TYPE),unix)
+  include $(SRCDIR)/unix-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),irix)
+  include $(SRCDIR)/irix-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),dll)
+  include $(SRCDIR)/dll-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),dylib)
+  include $(SRCDIR)/dylib-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),NONE)
+  install-shared-libraries:
+  endif
+
+
+##############################################################################
+#                           INSTALL RULES                                    #
+#                      (except shared libraries)                             #
+##############################################################################
+
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
 .PHONY: install-common install-libraries install-headers install-bin
 install-common: \
-  install-ltlibraries install-libraries install-headers install-bin
+  install-ltlibraries install-static-libraries install-shared-libraries \
+  install-headers install-bin
 
 INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
 
-install-libraries: $(LIBRARIES_TO_INSTALL)
+install-static-libraries: $(STATIC_LIBRARIES_TO_INSTALL)
 	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
-	@list='$(LIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    echo " $(INSTALL_LIB_CMD)"; \
 	    $(INSTALL_LIB_CMD); \
 	  else :; fi; \
 	done
 	@$(POST_INSTALL)
-	@list='$(LIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    echo " $(RANLIB_CMD)"; \
 	    $(RANLIB_CMD); \
@@ -217,9 +260,14 @@ $(DESTDIR)$(PROGRAMINST_DIR):
 	$(MKINSTALLDIRS) $@
 
 
+##############################################################################
+#                           MISCELLANEOUS RULES                              #
+##############################################################################
+
 .PHONY: clean-common
 clean-common:
 	rm -f *.o *.a *.s *.i *.la *.lo
+	rm -f *.$(SHLIB_SUFFIX) *.$(SHLIB_SUFFIX).*
 	rm -rf .libs
 
 .PHONY: distclean-common
