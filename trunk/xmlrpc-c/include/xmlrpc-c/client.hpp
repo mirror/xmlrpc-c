@@ -2,6 +2,7 @@
 #define CLIENT_HPP_INCLUDED
 
 #include <string>
+#include <vector>
 
 #include <xmlrpc-c/girerr.hpp>
 #include <xmlrpc-c/girmem.hpp>
@@ -89,13 +90,13 @@ public:
 
     virtual void
     call(xmlrpc_c::carriageParm * const  carriageParmP,
-         std::string              const  methodName,
+         std::string              const& methodName,
          xmlrpc_c::paramList      const& paramList,
          xmlrpc_c::rpcOutcome *   const  outcomeP) = 0;
 
     virtual void
     start(xmlrpc_c::carriageParm *       const  carriageParmP,
-          std::string                    const  methodName,
+          std::string                    const& methodName,
           xmlrpc_c::paramList            const& paramList,
           xmlrpc_c::clientTransactionPtr const& tranP);
 };
@@ -322,6 +323,12 @@ public:
     virtual void
     finishAsync(xmlrpc_c::timeout const timeout);
 
+    static std::vector<std::string>
+    availableTypes();
+
+    static clientXmlTransportPtr
+    create();
+
 protected:
     clientXmlTransport_http() {} // ensure no one can create
     struct xmlrpc_client_transport *           c_transportP;
@@ -440,7 +447,7 @@ public:
 
     void
     call(carriageParm *         const  carriageParmP,
-         std::string            const  methodName,
+         std::string            const& methodName,
          xmlrpc_c::paramList    const& paramList,
          xmlrpc_c::rpcOutcome * const  outcomeP);
 

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <cassert>
 #include <string>
+#include <vector>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -25,6 +26,7 @@ using girmem::autoObject;
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/xml.hpp"
 #include "xmlrpc-c/client.hpp"
+#include "transport_config.h"
 
 using namespace std;
 using namespace xmlrpc_c;
@@ -400,6 +402,71 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
 }
 
 
+bool const haveCurl(
+#if MUST_BUILD_CURL_CLIENT
+true
+#else
+false
+#endif
+);
+
+bool const haveLibwww(
+#if MUST_BUILD_LIBWWW_CLIENT
+true
+#else
+false
+#endif
+);
+
+bool const haveWininet(
+#if MUST_BUILD_WININET_CLIENT
+true
+#else
+false
+#endif
+);
+
+
+
+vector<string>
+clientXmlTransport_http::availableTypes() {
+
+    vector<string> retval;
+
+    if (haveCurl)
+        retval.push_back("curl");
+
+    if (haveLibwww)
+        retval.push_back("libwww");
+
+    if (haveWininet)
+        retval.push_back("wininet");
+
+    return retval;
+}
+
+
+
+clientXmlTransportPtr
+clientXmlTransport_http::create() {
+/*----------------------------------------------------------------------------
+  Make an HTTP Client XML transport of any kind (Caller doesn't care).
+
+  Caller can find out what kind he got by trying dynamic casts.
+
+  Caller can use a carriageParm_http0 with the transport.
+-----------------------------------------------------------------------------*/
+    if (haveCurl)
+        return clientXmlTransportPtr(new clientXmlTransport_curl());
+    else if (haveLibwww)
+        return clientXmlTransportPtr(new clientXmlTransport_libwww());
+    else if (haveWininet)
+        return clientXmlTransportPtr(new clientXmlTransport_wininet());
+    else
+        throwf("This XML-RPC client library contains no HTTP XML transports");
+}
+
+
 
 clientTransaction::clientTransaction() {}
 
@@ -424,9 +491,10 @@ clientTransactionPtr::operator->() const {
 client::~client() {}
 
 
+
 void
 client::start(carriageParm *       const  carriageParmP,
-              string               const  methodName,
+              string               const& methodName,
               paramList            const& paramList,
               clientTransactionPtr const& tranP) {
 /*----------------------------------------------------------------------------
@@ -488,7 +556,7 @@ client_xml::client_xml(clientXmlTransportPtr const transportPtr) {
 
 void
 client_xml::call(carriageParm * const  carriageParmP,
-                 string         const  methodName,
+                 string         const& methodName,
                  paramList      const& paramList,
                  rpcOutcome *   const  outcomeP) {
 

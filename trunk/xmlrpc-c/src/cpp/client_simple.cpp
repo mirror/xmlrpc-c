@@ -6,11 +6,6 @@ using girerr::error;
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/client.hpp"
 #include <xmlrpc-c/client.hpp>
-/* transport_config.h defines XMLRPC_DEFAULT_TRANSPORT,
-    MUST_BUILD_WININET_CLIENT, MUST_BUILD_CURL_CLIENT,
-    MUST_BUILD_LIBWWW_CLIENT 
-*/
-#include "transport_config.h"
 
 #include "xmlrpc-c/client_simple.hpp"
 
@@ -39,15 +34,7 @@ public:
 
 clientSimple::clientSimple() {
     
-    if (string(XMLRPC_DEFAULT_TRANSPORT) == string("curl"))
-        this->transportP = new clientXmlTransport_curl;
-    else if (string(XMLRPC_DEFAULT_TRANSPORT) == string("libwww"))
-        this->transportP = new clientXmlTransport_libwww;
-    else if (string(XMLRPC_DEFAULT_TRANSPORT) == string("wininet"))
-        this->transportP = new clientXmlTransport_wininet;
-    else
-        throw(error("INTERNAL ERROR: "
-                    "Default client XML transport is not one we recognize"));
+    clientXmlTransportPtr const transportP(clientXmlTransport_http::create());
 
     this->clientP = new client_xml(transportP);
 }

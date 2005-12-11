@@ -129,6 +129,35 @@ public:
 
 
 
+class ambivalentTransportTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "ambivalentTransportTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        vector<string> const typeList(
+            clientXmlTransport_http::availableTypes());
+
+        TEST(typeList.size() > 0);
+
+        clientXmlTransportPtr const transportP(
+            clientXmlTransport_http::create());
+        carriageParm_http0 carriageParm0("http://whatsamatta.edux");
+        client_xml client0(transportP);
+        
+        rpcOutcome outcome;
+
+        // Fails because there's no such server
+        EXPECT_ERROR(
+            client0.call(&carriageParm0, "nosuchmethod", paramList(),
+                         &outcome);
+            );
+    }
+};
+
+
+
 class clientXmlTransportTestSuite : public testSuite {
 
 public:
@@ -139,6 +168,7 @@ public:
         curlTransportTestSuite().run(indentation + 1);
         libwwwTransportTestSuite().run(indentation + 1);
         wininetTransportTestSuite().run(indentation + 1);
+        ambivalentTransportTestSuite().run(indentation + 1);
     }
 };
 
@@ -309,7 +339,6 @@ public:
             rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
             TEST(rpcSampleAddP->isFinished());
             TEST(rpcSampleAddP->isSuccessful());
-            EXPECT_ERROR(fault fault0(rpcSampleAddP->getFault()););
             value_int const resultDirect(rpcSampleAddP->getResult());
             TEST(static_cast<int>(resultDirect) == 12);
         }
@@ -319,7 +348,6 @@ public:
             rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
             TEST(rpcSampleAddP->isFinished());
             TEST(!rpcSampleAddP->isSuccessful());
-            EXPECT_ERROR(value result(rpcSampleAddP->getResult()););
             fault const fault0(rpcSampleAddP->getFault());
             TEST(fault0.getCode() == fault::CODE_TYPE);
         }
@@ -356,6 +384,68 @@ public:
         }
 
         clientDirectAsyncTestSuite().run(indentation+1);
+    }
+};
+
+
+
+class clientCurlTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+  The object of this class tests the combination of a client with
+  Curl transport.  We assume Curl transports themselves have already
+  been tested and clients with direct transports have already been tested.
+
+  We don't have an HTTP server, so we test only superficially.
+
+  In the future, we could either start a server or use some server that's
+  normally avaailble on the Internet.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "clientCurlTestSuite";
+    }
+    virtual void runtests(unsigned int const indentation) {
+#if MUST_BUILD_CURL_CLIENT
+        clientXmlTransport_curl transportc0;
+        client_xml client0(&transportc0);
+        carriageParm_http0 carriageParmHttp("http://suckthis.com");
+        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
+        connection connection0(&client0, &carriageParmHttp);
+        paramList paramList0;
+        
+        rpcOutcome outcome0;
+
+        // This fails because server doesn't exist
+        EXPECT_ERROR(
+            client0.call(&carriageParmHttp, "blowme", paramList0, &outcome0);
+                );
+
+        // This fails because server doesn't exist
+        EXPECT_ERROR(
+            client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
+            );
+
+        rpcPtr rpc0P("blowme", paramList0);
+
+        // This fails because server doesn't exist
+        EXPECT_ERROR(rpc0P->call(&client0, &carriageParmCurl););
+
+        rpcPtr rpc1P("blowme", paramList0);
+        // This fails because server doesn't exist
+        EXPECT_ERROR(rpc1P->call(connection0););
+
+        rpcPtr rpc2P("blowme", paramList0);
+
+        // This fails because the server doesn't exist
+        EXPECT_ERROR(rpc2P->start(&client0, &carriageParmCurl););
+
+        rpcPtr rpc3P("blowme", paramList0);
+        // This fails because the server doesn't exist
+        EXPECT_ERROR(rpc3P->start(connection0););
+#else
+        // This fails because there is no Curl transport in the library.
+        EXPECT_ERROR(clientXmlTransport_curl transportc0;);
+#endif
     }
 };
 
@@ -404,47 +494,71 @@ public:
         return "clientRpcTestSuite";
     }
     virtual void runtests(unsigned int const indentation) {
-#if MUST_BUILD_CURL_CLIENT
-        clientXmlTransport_curl transportc0;
-        client_xml client0(&transportc0);
-        carriageParm_http0 carriageParmHttp("http://suckthis.com");
-        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
-        connection connection0(&client0, &carriageParmHttp);
+
+        registry myRegistry;
         
-        paramList paramList0;
-
-        rpcPtr rpc0P("blowme", paramList0);
-
-        // This fails because RPC has not been executed
-        EXPECT_ERROR(value result(rpc0P->getResult()););
-
-        // This fails because server doesn't exist
-        EXPECT_ERROR(rpc0P->call(&client0, &carriageParmCurl););
-
-        rpcPtr rpc1P("blowme", paramList0);
-        // This fails because server doesn't exist
-        EXPECT_ERROR(rpc1P->call(connection0););
-
-        rpcPtr rpc2P("blowme", paramList0);
-
-        rpc2P->start(&client0, &carriageParmCurl);
-
-        client0.finishAsync(timeout());
-
-        // This fails because the RPC failed because server doesn't exist
-        EXPECT_ERROR(value result(rpc2P->getResult()););
-
-        // This fails because the RPC has already been executed
-        EXPECT_ERROR(rpc2P->start(connection0););
-
-        rpcPtr rpc3P("blowme", paramList0);
-        rpc3P->start(connection0);
-
-        client0.finishAsync(timeout());
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
         
-        // This fails because the RPC failed because server doesn't exist
-        EXPECT_ERROR(value result(rpc3P->getResult()););
-#endif
+        carriageParm_direct carriageParm0(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        client_xml client0(&transportDirect);
+        paramList paramListSampleAdd;
+        paramListSampleAdd.add(value_int(5));
+        paramListSampleAdd.add(value_int(7));
+        paramList paramListEmpty;
+
+        {
+            /* Test a successful RPC */
+            rpcPtr rpcSampleAddP("sample.add", paramListSampleAdd);
+            TEST(!rpcSampleAddP->isFinished());
+            // This fails because RPC has not been executed
+            EXPECT_ERROR(value result(rpcSampleAddP->getResult()););
+            
+            rpcSampleAddP->call(&client0, &carriageParm0);
+
+            TEST(rpcSampleAddP->isFinished());
+            TEST(rpcSampleAddP->isSuccessful());
+            value_int const resultDirect(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(resultDirect) == 12);
+            // This fails because the RPC succeeded
+            EXPECT_ERROR(fault fault0(rpcSampleAddP->getFault()););
+            // This fails because the RPC has already been executed
+            EXPECT_ERROR(
+                rpcSampleAddP->call(&client0, &carriageParm0););
+            // This fails because the RPC has already been executed
+            EXPECT_ERROR(
+                rpcSampleAddP->start(&client0, &carriageParm0););
+        }
+        {
+            /* Test a failed RPC */
+            rpcPtr const rpcSampleAddP("sample.add", paramListEmpty);
+            rpcSampleAddP->call(&client0, &carriageParm0);
+            TEST(rpcSampleAddP->isFinished());
+            TEST(!rpcSampleAddP->isSuccessful());
+            fault const fault0(rpcSampleAddP->getFault());
+            TEST(fault0.getCode() == fault::CODE_TYPE);
+            // This fails because the RPC failed
+            EXPECT_ERROR(value result(rpcSampleAddP->getResult()););
+            // This fails because the RPC has already been executed
+            EXPECT_ERROR(
+                rpcSampleAddP->call(&client0, &carriageParm0););
+            // This fails because the RPC has already been executed
+            EXPECT_ERROR(
+                rpcSampleAddP->start(&client0, &carriageParm0););
+        }
+        {
+            /* Test with a connection */
+
+            connection connection0(&client0, &carriageParm0);
+
+            rpcPtr const rpcSampleAddP("sample.add", paramListSampleAdd);
+
+            rpcSampleAddP->call(connection0);
+
+            TEST(rpcSampleAddP->isFinished());
+            value_int const resultDirect(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(resultDirect) == 12);
+        }
     }
 };
 
@@ -522,6 +636,8 @@ clientTestSuite::runtests(unsigned int const indentation) {
     
     carriageParmTestSuite().run(indentation+1);
     
+    clientCurlTestSuite().run(indentation+1);
+
     clientRpcTestSuite().run(indentation+1);
     
     clientPtrTestSuite().run(indentation+1);
