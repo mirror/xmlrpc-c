@@ -9,7 +9,14 @@
 
 struct _TConn {
     TServer * server;
-    uint32_t buffersize,bufferpos;
+    uint32_t buffersize;
+        /* Index into the connection buffer (buffer[], below) where
+           the next byte read on the connection will go.
+        */
+    uint32_t bufferpos;
+        /* Index into the connection buffer (buffer[], below) where
+           the next byte to be delivered to the user is.
+        */
     uint32_t inbytes,outbytes;  
     TSocket socket;
     TIPAddr peerip;
@@ -59,8 +66,8 @@ void
 ConnReadInit(TConn * const connectionP);
 
 abyss_bool
-ConnReadLine(TConn *  const connectionP,
-             char **  const z);
+ConnReadHeader(TConn * const connectionP,
+               char ** const headerP);
 
 abyss_bool
 ConnWriteFromFile(TConn *  const connectionP,

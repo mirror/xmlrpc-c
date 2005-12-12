@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -155,64 +156,104 @@ ConnReadInit(TConn * const connectionP) {
 
 
 static void
-traceSocketRead(const char * const label,
-                const char * const buffer,
+traceSocketRead(TConn *      const connectionP,
                 unsigned int const size) {
 
-    unsigned int nonPrintableCount;
-    unsigned int i;
+    if (connectionP->trace) {
+        const char * const label = "READ FROM SOCKET:";
+        const char * const buffer =
+            connectionP->buffer + connectionP->buffersize;
+                        
+        unsigned int nonPrintableCount;
+        unsigned int i;
     
-    nonPrintableCount = 0;  /* Initial value */
+        nonPrintableCount = 0;  /* Initial value */
     
-    for (i = 0; i < size; ++i) {
-        if (!isprint(buffer[i]) && buffer[i] != '\n' && buffer[i] != '\r')
-            ++nonPrintableCount;
+        for (i = 0; i < size; ++i) {
+            if (!isprint(buffer[i]) && buffer[i] != '\n' && buffer[i] != '\r')
+                ++nonPrintableCount;
+        }
+        if (nonPrintableCount > 0)
+            fprintf(stderr, "%s contains %u nonprintable characters.\n", 
+                    label, nonPrintableCount);
+        
+        fprintf(stderr, "%s:\n", label);
+        fprintf(stderr, "%.*s\n", (int)size, buffer);
     }
-    if (nonPrintableCount > 0)
-        fprintf(stderr, "%s contains %u nonprintable characters.\n", 
-                label, nonPrintableCount);
-    
-    fprintf(stderr, "%s:\n", label);
-    fprintf(stderr, "%.*s\n", (int)size, buffer);
 }
 
+
+
+static uint32_t
+bufferSpace(TConn * const connectionP) {
+    
+    return BUFFER_SIZE - connectionP->buffersize;
+}
+                    
 
 
 abyss_bool
 ConnRead(TConn *  const connectionP,
          uint32_t const timeout) {
+/*----------------------------------------------------------------------------
+   Read some stuff on connection *connectionP from the socket.
 
-    while (SocketWait(&(connectionP->socket),TRUE,FALSE,timeout*1000) == 1) {
-        uint32_t x;
-        uint32_t y;
-        
-        x = SocketAvailableReadBytes(&connectionP->socket);
+   Don't wait more than 'timeout' seconds for data to arrive.  Fail if
+   nothing arrives within that time.
+-----------------------------------------------------------------------------*/
+    time_t const deadline = time(NULL) + timeout;
 
-        /* Avoid lost connections */
-        if (x <= 0)
-            break;
-        
-        /* Avoid Buffer overflow and lost Connections */
-        if (x + connectionP->buffersize >= BUFFER_SIZE)
-            x = BUFFER_SIZE-connectionP->buffersize - 1;
-        
-        y = SocketRead(&connectionP->socket,
-                       connectionP->buffer + connectionP->buffersize,
-                       x);
-        if (y > 0) {
-            if (connectionP->trace)
-                traceSocketRead("READ FROM SOCKET:",
-                                connectionP->buffer + connectionP->buffersize,
-                                y);
+    abyss_bool cantGetData;
+    abyss_bool gotData;
 
-            connectionP->inbytes += y;
-            connectionP->buffersize += y;
-            connectionP->buffer[connectionP->buffersize] = '\0';
-            return TRUE;
+    cantGetData = FALSE;
+    gotData = FALSE;
+    
+    while (!gotData && !cantGetData) {
+        int const timeLeft = deadline - time(NULL);
+
+        if (timeLeft <= 0)
+            cantGetData = TRUE;
+        else {
+            int rc;
+            
+            rc = SocketWait(&connectionP->socket, TRUE, FALSE,
+                            timeLeft * 1000);
+            
+            if (rc != 1)
+                cantGetData = TRUE;
+            else {
+                uint32_t bytesAvail;
+            
+                bytesAvail = SocketAvailableReadBytes(&connectionP->socket);
+                
+                if (bytesAvail <= 0)
+                    cantGetData = TRUE;
+                else {
+                    uint32_t const bytesToRead =
+                        MIN(bytesAvail, bufferSpace(connectionP)-1);
+
+                    uint32_t bytesRead;
+
+                    bytesRead = SocketRead(
+                        &connectionP->socket,
+                        connectionP->buffer + connectionP->buffersize,
+                        bytesToRead);
+                    if (bytesRead > 0) {
+                        traceSocketRead(connectionP, bytesRead);
+                        connectionP->inbytes += bytesRead;
+                        connectionP->buffersize += bytesRead;
+                        connectionP->buffer[connectionP->buffersize] = '\0';
+                        gotData = TRUE;
+                    }
+                }
+            }
         }
-        break;
     }
-    return FALSE;
+    if (gotData)
+        return TRUE;
+    else
+        return FALSE;
 }
 
 
@@ -287,73 +328,163 @@ ConnWriteFromFile(TConn *  const connectionP,
 
 
 
-abyss_bool
-ConnReadLine(TConn * const connectionP,
-             char ** const z) {
+static void
+processHeaderLine(char *       const start,
+                  const char * const headerStart,
+                  abyss_bool * const gotHeaderP,
+                  char **      const nextP) {
+/*----------------------------------------------------------------------------
+  If there's enough data in the buffer at *pP, process a line of HTTP
+  header.
 
-    uint32_t const timeout = connectionP->server->srvP->timeout;
+  It is part of a header that starts at 'headerStart' and has been
+  previously processed up to *pP.  The data in the buffer is
+  terminated by a NUL.
 
+  WE MODIFY THE DATA.
+
+  Process means:
+
+     - Determine whether more data from the socket is needed to get a full
+       header (or to determine that we've already one -- note that we may
+       have to see the next line to know if it's a continuation line).
+
+       Return the determination as *gotHeaderP.
+
+     - blank out the first line delimiter (LF or CRLF) if we know there
+       is a continuation line after it (blanking out the delimiter fuses
+       the two lines).  In that case, move the cursor *pP to point to
+       continuation line.
+
+     - If there's a full header at 'lineStart' now, replace the final line
+       delimiter (LF or CRLF) with a NUL and make the cursor *pP
+       point to the buffer content following the header and its line
+       delimiter.
+-----------------------------------------------------------------------------*/
+    abyss_bool gotHeader;
+    char * lfPos;
     char * p;
-    char * t;
-    abyss_bool first;
-    clock_t to;
-    clock_t start;
 
-    p = *z = connectionP->buffer + connectionP->bufferpos;
-    start = clock();
+    p = start;
 
-    first = TRUE;
+    gotHeader = FALSE;  /* initial assumption */
 
-    for (;;) {
-        to = (clock() - start) / CLOCKS_PER_SEC;
-        if ((uint32_t)to > timeout)
-            break;
-
-        if (first) {
-            if (connectionP->bufferpos >= connectionP->buffersize)
-                if (!ConnRead(connectionP, timeout-to))
-                    break;
-
-            first = FALSE;
-        } else {
-            if (!ConnRead(connectionP, timeout-to))
-                break;
-        }
-
-        t = strchr(p, LF);
-        if (t) {
-            if ((*p != LF) && (*p != CR)) {
-                if (!*(t+1))
-                    continue;
-
-                p = t;
-
-                if ((*(p+1) == ' ') || (*(p+1) == '\t')) {
-                    if (p > *z)
-                        if (*(p-1) == CR)
-                            *(p-1) = ' ';
-
-                    *(p++) = ' ';
-                    continue;
-                }
+    lfPos = strchr(p, LF);
+    if (lfPos) {
+        if ((*p != LF) && (*p != CR)) {
+            /* We're looking at a non-empty line */
+            if (*(lfPos+1) == '\0') {
+                /* There's nothing in the buffer after the line, so we
+                   don't know if there's a continuation line coming.
+                   Must read more.
+                */
             } else {
-                /* emk - 04 Jan 2001 - Bug fix to leave buffer
-                ** pointing at start of body after reading blank
-                ** line following header. */
-                p = t;
+                p = lfPos; /* Point to LF */
+                
+                /* If the next line starts with whitespace, it's a
+                   continuation line, so blank out the line
+                   delimiter (LF or CRLF) so as to join the next
+                   line with this one.
+                */
+                if ((*(p+1) == ' ') || (*(p+1) == '\t')) {
+                    if (p > headerStart && *(p-1) == CR)
+                        *(p-1) = ' ';
+                    *p++ = ' ';
+                } else
+                    gotHeader = TRUE;
             }
-
-            connectionP->bufferpos += p + 1 - *z;
-
-            if (p > *z)
-                if (*(p-1) == CR)
-                    --p;
-
-            *p = '\0';
-            return TRUE;
+        } else {
+            /* We're looking at an empty line (i.e. what marks the
+               end of the header)
+            */
+            p = lfPos;  /* Point to LF */
+            gotHeader = TRUE;
         }
     }
-    return FALSE;
+
+    if (gotHeader) {
+        /* 'p' points to the final LF */
+
+        /* Replace the LF or the CR in CRLF with NUL, so as to terminate
+           the string at 'headerStart' that is the full header.
+        */
+        if (p > headerStart && *(p-1) == CR)
+            *(p-1) = '\0';  /* NUL out CR in CRLF */
+        else
+            *p = '\0';  /* NUL out LF */
+
+        ++p;  /* Point to next line in buffer */
+    }
+    *gotHeaderP = gotHeader;
+    *nextP = p;
+}
+
+
+
+abyss_bool
+ConnReadHeader(TConn * const connectionP,
+               char ** const headerP) {
+/*----------------------------------------------------------------------------
+   Read an HTTP header on connection *connectionP.
+
+   An HTTP header is basically a line, except that if a line starts
+   with white space, it's a continuation of the previous line.  A line
+   is delimited by either LF or CRLF.
+
+   In the course of reading, we read at least one character past the
+   line delimiter at the end of the header; we may read much more.  We
+   leave everything after the header (and its line delimiter) in the
+   internal buffer, with the buffer pointer pointing to it.
+
+   We use stuff already in the internal buffer (perhaps left by a
+   previous call to this subroutine) before reading any more from from
+   the socket.
+
+   Return as *headerP the header value.  This is in the connection's
+   internal buffer.  This contains no line delimiters.
+-----------------------------------------------------------------------------*/
+    uint32_t const deadline = time(NULL) + connectionP->server->srvP->timeout;
+
+    abyss_bool retval;
+    char * p;
+    char * headerStart;
+    abyss_bool error;
+    abyss_bool gotHeader;
+
+    p = connectionP->buffer + connectionP->bufferpos;
+    headerStart = p;
+
+    gotHeader = FALSE;
+    error = FALSE;
+
+    while (!gotHeader && !error) {
+        int const timeLeft = deadline - time(NULL);
+
+        if (timeLeft <= 0)
+            error = TRUE;
+        else {
+            if (p >= connectionP->buffer + connectionP->buffersize)
+                /* Need more data from the socket to chew on */
+                error = !ConnRead(connectionP, timeLeft);
+
+            if (!error) {
+                assert(connectionP->buffer + connectionP->buffersize > p);
+                processHeaderLine(p, headerStart, &gotHeader, &p);
+            }
+        }
+    }
+    if (gotHeader) {
+        /* We've consumed this part of the buffer (but be careful --
+           you can't reuse that part of the buffer because the string
+           we're returning is in it!
+        */
+        connectionP->bufferpos += p - headerStart;
+        *headerP = headerStart;
+        retval = TRUE;
+    } else
+        retval = FALSE;
+
+    return retval;
 }
 
 

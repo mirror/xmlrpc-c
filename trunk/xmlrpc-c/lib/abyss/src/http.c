@@ -131,39 +131,39 @@ RequestFree(TSession * const sessionP) {
 
 
 static void
-readFirstLineOfRequest(TSession *   const sessionP,
-                       char **      const lineP,
-                       abyss_bool * const errorP) {
+readFirstHeaderOfRequest(TSession *   const sessionP,
+                         char **      const headerP,
+                         abyss_bool * const errorP) {
 
     *errorP = FALSE;
 
     /* Ignore CRLFs in the beginning of the request (RFC2068-P30) */
     do {
         abyss_bool success;
-        success = ConnReadLine(sessionP->conn, lineP);
+        success = ConnReadHeader(sessionP->conn, headerP);
         if (!success) {
             /* Request Timeout */
             ResponseStatus(sessionP, 408);
             *errorP = TRUE;
         }
-    } while ((*lineP)[0] == '\0' && !*errorP);
+    } while ((*headerP)[0] == '\0' && !*errorP);
 }
 
 
 
 static void
-processFirstLineOfRequest(TSession *   const r,
-                          char *       const line1,
-                          abyss_bool * const moreLinesP,
-                          abyss_bool * const errorP) {
+processFirstHeaderOfRequest(TSession *   const r,
+                            char *       const header1,
+                            abyss_bool * const moreLinesP,
+                            abyss_bool * const errorP) {
     
     char * p;
     char * t;
 
-    p = line1;
+    p = header1;
 
     /* Jump over spaces */
-    NextToken(&p);
+    NextToken((const char **)&p);
 
     r->request_info.requestline = strdup(p);
     
@@ -191,7 +191,7 @@ processFirstLineOfRequest(TSession *   const r,
             r->request_info.method = m_unknown;
         
         /* URI and Query Decoding */
-        NextToken(&p);
+        NextToken((const char **)&p);
         
         t=GetToken(&p);
         if (!t)
@@ -207,7 +207,7 @@ processFirstLineOfRequest(TSession *   const r,
                 r->request_info.query = t+1;
             }
         
-            NextToken(&p);
+            NextToken((const char **)&p);
         
             /* HTTP Version Decoding */
         
@@ -242,24 +242,24 @@ RequestRead(TSession * const sessionP) {
     char *n,*t,*p;
     abyss_bool ret;
     abyss_bool error;
-    char * line1;
-    abyss_bool moreLines;
+    char * header1;
+    abyss_bool moreHeaders;
 
-    readFirstLineOfRequest(sessionP, &line1, &error);
+    readFirstHeaderOfRequest(sessionP, &header1, &error);
     if (error)
         return FALSE;
     
-    processFirstLineOfRequest(sessionP, line1, &moreLines, &error);
+    processFirstHeaderOfRequest(sessionP, header1, &moreHeaders, &error);
     if (error)
         return FALSE;
-    if (!moreLines)
+    if (!moreHeaders)
         return TRUE;
 
     /* Headers decoding */
     ret = TRUE;
 
     for (;;) {
-        if (!ConnReadLine(sessionP->conn, &p)) {
+        if (!ConnReadHeader(sessionP->conn, &p)) {
             /* Request Timeout */
             ResponseStatus(sessionP, 408);
             return FALSE;
@@ -269,7 +269,7 @@ RequestRead(TSession * const sessionP) {
         if (!*p)
             return TRUE;
 
-        NextToken(&p);
+        NextToken((const char **)&p);
         
         if (!(n=GetToken(&p))) {
             /* Bad Request */
@@ -286,7 +286,7 @@ RequestRead(TSession * const sessionP) {
 
         n[strlen(n)-1] = '\0';
 
-        NextToken(&p);
+        NextToken((const char **)&p);
 
         t = n;
         while (*t) {
@@ -487,11 +487,11 @@ RequestAuth(TSession *r,char *credential,char *user,char *pass) {
 
     p=RequestHeaderValue(r,"authorization");
     if (p) {
-        NextToken(&p);
+        NextToken((const char **)&p);
         x=GetToken(&p);
         if (x) {
             if (strcasecmp(x,"basic")==0) {
-                NextToken(&p);
+                NextToken((const char **)&p);
                 sprintf(z,"%s:%s",user,pass);
                 Base64Encode(z,t);
 

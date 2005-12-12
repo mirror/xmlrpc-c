@@ -33,6 +33,9 @@ struct _TServer {
     uint32_t keepalivetimeout;
     uint32_t keepalivemaxconn;
     uint32_t timeout;
+        /* Maximum time in seconds the server will wait to read a header
+           or a data chunk from the socket.
+        */
     TList handlers;
     TList defaultfilenames;
     void * defaulthandler;

@@ -148,7 +148,7 @@ ListAddFromString(TList * const list,
     if (c)
         while (1)
         {
-            NextToken(&c);
+            NextToken((const char **)&c);
 
             while (*c==',')
                 c++;
