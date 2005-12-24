@@ -92,16 +92,13 @@ sendXmlData(xmlrpc_env * const envP,
 
 
 
-/*=========================================================================
-**  send_error
-**=========================================================================
-**  Send an error back to the client.
-*/
-
 static void
-send_error(TSession *   const abyssSessionP, 
-           unsigned int const status) {
-
+sendError(TSession *   const abyssSessionP, 
+          unsigned int const status) {
+/*----------------------------------------------------------------------------
+  Send an error response back to the client.
+   
+-----------------------------------------------------------------------------*/
     ResponseStatus(abyssSessionP, (uint16_t) status);
     ResponseError(abyssSessionP);
 }
@@ -351,9 +348,9 @@ processCall(TSession *        const abyssSessionP,
     }
     if (env.fault_occurred) {
         if (env.fault_code == XMLRPC_TIMEOUT_ERROR)
-            send_error(abyssSessionP, 408); /* 408 Request Timeout */
+            sendError(abyssSessionP, 408); /* 408 Request Timeout */
         else
-            send_error(abyssSessionP, 500); /* 500 Internal Server Error */
+            sendError(abyssSessionP, 500); /* 500 Internal Server Error */
     }
 
     xmlrpc_env_clean(&env);
@@ -433,17 +430,17 @@ handleXmlrpcReq(URIHandler2 * const this,
            "405 Method Not Allowed". 
         */
         if (requestInfoP->method != m_post)
-            send_error(abyssSessionP, 405);
+            sendError(abyssSessionP, 405);
         else {
             unsigned int httpError;
             storeCookies(abyssSessionP, &httpError);
             if (httpError)
-                send_error(abyssSessionP, httpError);
+                sendError(abyssSessionP, httpError);
             else {
                 unsigned int httpError;
                 validateContentType(abyssSessionP, &httpError);
                 if (httpError)
-                    send_error(abyssSessionP, httpError);
+                    sendError(abyssSessionP, httpError);
                 else {
                     unsigned int httpError;
                     size_t contentSize;
@@ -451,7 +448,7 @@ handleXmlrpcReq(URIHandler2 * const this,
                     processContentLength(abyssSessionP, 
                                          &contentSize, &httpError);
                     if (httpError)
-                        send_error(abyssSessionP, httpError);
+                        sendError(abyssSessionP, httpError);
                     else 
                         processCall(abyssSessionP, contentSize,
                                     uriHandlerXmlrpcP->registryP, trace_abyss);
@@ -478,7 +475,7 @@ xmlrpc_server_abyss_default_handler (TSession * const r) {
     if (trace_abyss)
         fprintf(stderr, "xmlrpc_server_abyss default handler called.\n");
 
-    send_error(r, 404);
+    sendError(r, 404);
 
     return TRUE;
 }
