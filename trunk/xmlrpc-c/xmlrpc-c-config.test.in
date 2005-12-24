@@ -60,6 +60,9 @@ while test $# -gt 0; do
       needCpp=yes
       the_libs="${BUILDDIR}/src/cpp/libxmlrpc++.a $the_libs"
       ;;
+    server-util)
+      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      ;;
     cgi-server)
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_cgi.a $the_libs"

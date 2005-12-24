@@ -36,6 +36,7 @@ The features are:
   client         client functions
   cgi-server     CGI-based server functions
   abyss-server   ABYSS-based server functions
+  server-util    basic server functions (implied by *-server)
 
 Options are:
   --version      The version number of the package
@@ -84,6 +85,9 @@ while test $# -gt 0; do
     c++2)
       needCpp=yes
       the_libs="-lxmlrpc++ $the_libs"
+      ;;
+    server-util)
+      the_libs="-lxmlrpc_server $the_libs"
       ;;
     cgi-server)
       the_libs="-lxmlrpc_server $the_libs"
