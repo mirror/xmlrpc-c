@@ -50,6 +50,7 @@ Options are:
   --*dir         The various directories under which the package was installed"
 
 if test $# -eq 0; then
+      echo "You must specify at least one option."
       echo "${usage}" 1>&2
       exit 1
 fi
@@ -130,39 +131,30 @@ while test $# -gt 0; do
       ;;
     --version)
       echo "@VERSION@"
-      exit 0
       ;;
     --modules)
       echo "@FEATURE_LIST@"
-      exit 0
       ;;
     --features)
       echo "@FEATURE_LIST@"
-      exit 0
       ;;
     --cflags)
       echo "-I@includedir@"
-      exit 0
       ;;
     --libs)
       echo "$the_libdirs $the_libs $the_wl_rpath"
-      exit 0
       ;;
     --ldadd)
       echo "$the_libdirs $the_libs"
-      exit 0
       ;;
     --ldflags)
       echo "$the_rpath"
-      exit 0
       ;;
     --prefix)
       echo "@prefix@"
-      exit 0
       ;;
     --exec-prefix)
       echo "@exec_prefix@"
-      exit 0
       ;;
     --*dir)
       # Swiped from gnome-config.
@@ -170,13 +162,12 @@ while test $# -gt 0; do
       dirname=`eval echo $dirname`
       test -z "$dirname" && exit 1
       echo $dirname
-      exit 0
       ;;
     --help)
       echo "${usage}" 1>&2
-      exit 0
       ;;
     *)
+      echo "Unrecognized token '$1'"
       echo "${usage}" 1>&2
       exit 1
       ;;
@@ -184,5 +175,4 @@ while test $# -gt 0; do
   shift
 done
 
-echo "${usage}" 1>&2
-exit 1
+exit 0

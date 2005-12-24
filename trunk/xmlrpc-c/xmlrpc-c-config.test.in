@@ -105,43 +105,33 @@ while test $# -gt 0; do
       ;;
     --version)
       echo "@VERSION@"
-      exit 0
       ;;
     --modules)
       echo "@FEATURE_LIST@"
-      exit 0
       ;;
     --features)
       echo "@FEATURE_LIST@"
-      exit 0
       ;;
     --cflags)
       echo "$the_includes"
-      exit 0
       ;;
     --libs)
       echo "$the_libdirs $the_libs $the_wl_rpath"
-      exit 0
       ;;
     --ldadd)
       echo "$the_libdirs $the_libs"
-      exit 0
       ;;
     --ldflags)
       echo "$the_rpath"
-      exit 0
       ;;
     --sopath)
       echo "$sopath"
-      exit 0
       ;;
     --prefix)
       echo "@prefix@"
-      exit 0
       ;;
     --exec-prefix)
       echo "@exec_prefix@"
-      exit 0
       ;;
     --*dir)
       # Swiped from gnome-config.
@@ -149,16 +139,17 @@ while test $# -gt 0; do
       dirname=`eval echo $dirname`
       test -z "$dirname" && exit 1
       echo $dirname
-      exit 0
       ;;
     --help)
       echo "See the real xmlrpc-c-config program" 1>&2
-      exit 0
       ;;
     *)
-      echo "Unrecognized option." 1>&2
+      echo "Unrecognized token '$1'"
+      echo "${usage}" 1>&2
       exit 1
       ;;
   esac
   shift
 done
+
+exit 0
