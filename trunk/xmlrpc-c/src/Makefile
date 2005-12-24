@@ -78,6 +78,13 @@ INCLUDES = -I$(BUILDDIR) -I$(SRCDIR) \
 	   $(TRANSPORT_INCLUDES) \
 	   $(LIBXML_INCLUDES) \
 
+# People sometimes think that when the Xmlrpc-c build has been
+# configured for no Abyss server (configure --disable-abyss), that
+# libmxlrpc_server_abyss should not get built.  But
+# libxmlrpc_server_abyss is not part of the Abyss server; it is merely
+# some code that exploits an Abyss server, and you don't need to have a
+# built Abyss server to build it.
+
 TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_server.la \
      libxmlrpc_server_abyss.la
 
