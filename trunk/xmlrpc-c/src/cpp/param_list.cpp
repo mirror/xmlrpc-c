@@ -91,8 +91,8 @@ paramList::getBoolean(unsigned int const paramNumber) const {
 
 double
 paramList::getDouble(unsigned int const paramNumber,
-                      double       const minimum,
-                      double       const maximum) const {
+                     double       const minimum,
+                     double       const maximum) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
