@@ -273,7 +273,7 @@ public:
 
     double
     getDouble(unsigned int const paramNumber,
-              double       const minimum = DBL_MIN,
+              double       const minimum = -DBL_MAX,
               double       const maximum = DBL_MAX) const;
 
     enum timeConstraint {TC_ANY, TC_NO_PAST, TC_NO_FUTURE};
