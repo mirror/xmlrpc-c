@@ -37,7 +37,7 @@ class carriageParmPtr : public girmem::autoObjectPtr {
 public:
     carriageParmPtr();
 
-    carriageParmPtr(xmlrpc_c::carriageParm * const carriageParmP);
+    explicit carriageParmPtr(xmlrpc_c::carriageParm * const carriageParmP);
 
     xmlrpc_c::carriageParm *
     operator->() const;
@@ -105,10 +105,13 @@ class clientPtr : public girmem::autoObjectPtr {
 public:
     clientPtr();
 
-    clientPtr(xmlrpc_c::client * const clientP);
+    explicit clientPtr(xmlrpc_c::client * const clientP);
 
     xmlrpc_c::client *
     operator->() const;
+
+    xmlrpc_c::client *
+    getp() const;
 };
 
 class serverAccessor {
@@ -574,7 +577,7 @@ class rpcPtr : public clientTransactionPtr {
 public:
     rpcPtr();
 
-    rpcPtr(xmlrpc_c::rpc * const rpcP);
+    explicit rpcPtr(xmlrpc_c::rpc * const rpcP);
 
     rpcPtr(std::string         const  methodName,
            xmlrpc_c::paramList const& paramList);

@@ -36,15 +36,7 @@ clientSimple::clientSimple() {
     
     clientXmlTransportPtr const transportP(clientXmlTransport_http::create());
 
-    this->clientP = new client_xml(transportP);
-}
-
-
-
-clientSimple::~clientSimple() {
-
-    delete this->clientP;
-    delete this->transportP;
+    this->clientP = clientPtr(new client_xml(transportP));
 }
 
 
@@ -58,7 +50,7 @@ clientSimple::call(string  const serverUrl,
 
     rpcPtr rpcPtr(methodName, paramList());
 
-    rpcPtr->call(this->clientP, &carriageParm);
+    rpcPtr->call(this->clientP.getp(), &carriageParm);
     
     *resultP = rpcPtr->getResult();
 }
@@ -142,7 +134,7 @@ clientSimple::call(string  const serverUrl,
             }
         }
         rpcPtr rpcPtr(methodName, paramList);
-        rpcPtr->call(this->clientP, &carriageParm);
+        rpcPtr->call(this->clientP.getp(), &carriageParm);
         *resultP = rpcPtr->getResult();
     }
 }
@@ -159,7 +151,7 @@ clientSimple::call(string    const  serverUrl,
     
     rpcPtr rpcPtr(methodName, paramList);
 
-    rpcPtr->call(this->clientP, &carriageParm);
+    rpcPtr->call(this->clientP.getp(), &carriageParm);
     
     *resultP = rpcPtr->getResult();
 }

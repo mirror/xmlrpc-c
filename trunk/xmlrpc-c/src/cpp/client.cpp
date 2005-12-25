@@ -535,6 +535,13 @@ clientPtr::operator->() const {
 
 
 
+client *
+clientPtr::getp() const {
+    return dynamic_cast<client *>(objectP);
+}
+
+
+
 client_xml::client_xml(clientXmlTransport * const transportP) :
     transportP(transportP) {}
 
