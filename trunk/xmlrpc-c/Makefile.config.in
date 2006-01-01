@@ -23,7 +23,6 @@ ENABLE_ABYSS_THREADS   = @ENABLE_ABYSS_THREADS@
 ENABLE_CPLUSPLUS       = @ENABLE_CPLUSPLUS@
 ENABLE_CGI_SERVER      = @ENABLE_CGI_SERVER@
 ENABLE_LIBXML2_BACKEND = @ENABLE_LIBXML2_BACKEND@
-ENABLE_EFENCE          = @ENABLE_EFENCE@
 
 MUST_BUILD_WININET_CLIENT = @MUST_BUILD_WININET_CLIENT@
 MUST_BUILD_CURL_CLIENT    = @MUST_BUILD_CURL_CLIENT@
@@ -127,6 +126,10 @@ endif
 #  -lc; relocations referenced  ;  from file(s) /usr/ccs/lib/libc.so(random.o);
 #   fatal error: relocations remain against allocatable but non-writable 
 #   section: ; .text
+#
+# On Bryan's system, with gcc 2.95.3 and glibc 2.2.2, -lc causes
+# throws (from anywhere in a program that links the shared library)
+# not to work.  I have no idea how.
 
 # LDFLAGS_SHLIB is the linker (Ld) flags needed to generate a shared
 # library from object files.  It may use $(SONAME) as the soname for
@@ -140,7 +143,7 @@ ifeq ($(HOST_OS),linux-gnu)
   # Assume linker is GNU Compiler (gcc)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
-  SHLIB_CLIB = -lc
+#  SHLIB_CLIB = -lc
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
