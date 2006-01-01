@@ -60,7 +60,7 @@ main(int           const argc,
     /* Get our sum and print it out. */
     xmlrpc_read_int(&env, result, &sum);
     die_if_fault_occurred(&env);
-    printf("The sum  is %d\n", sum);
+    printf("The sum is %d\n", sum);
     
     /* Dispose of our result value. */
     xmlrpc_DECREF(result);
