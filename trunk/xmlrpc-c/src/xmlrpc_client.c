@@ -89,44 +89,14 @@ typedef struct xmlrpc_call_info
 static bool clientInitialized = false;
 
 /*=========================================================================
-**  Initialization and Shutdown
-**=========================================================================
-*/
+   Initialization and Shutdown
+=========================================================================*/
 
 static struct xmlrpc_client client;
     /* Some day, we need to make this dynamically allocated, so there can
        be more than one client per program and just generally to provide
        a cleaner interface.
     */
-
-extern void
-xmlrpc_client_init(int          const flags,
-                   const char * const appname,
-                   const char * const appversion) {
-
-    struct xmlrpc_clientparms clientparms;
-
-    /* As our interface does not allow for failure, we just fail silently ! */
-    
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
-    clientparms.transport = XMLRPC_DEFAULT_TRANSPORT;
-
-    xmlrpc_client_init2(&env, flags,
-                        appname, appversion,
-                        &clientparms, XMLRPC_CPSIZE(transport));
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-const char * 
-xmlrpc_client_get_default_transport(xmlrpc_env * const env ATTR_UNUSED) {
-
-    return XMLRPC_DEFAULT_TRANSPORT;
-}
 
 
 
@@ -271,6 +241,29 @@ xmlrpc_client_init2(xmlrpc_env *                      const envP,
 
 
 
+extern void
+xmlrpc_client_init(int          const flags,
+                   const char * const appname,
+                   const char * const appversion) {
+
+    struct xmlrpc_clientparms clientparms;
+
+    /* As our interface does not allow for failure, we just fail silently ! */
+    
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+
+    clientparms.transport = XMLRPC_DEFAULT_TRANSPORT;
+
+    xmlrpc_client_init2(&env, flags,
+                        appname, appversion,
+                        &clientparms, XMLRPC_CPSIZE(transport));
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 void 
 xmlrpc_client_cleanup() {
 
@@ -284,6 +277,10 @@ xmlrpc_client_cleanup() {
 }
 
 
+
+/*=========================================================================
+   Call/Response Utilities
+=========================================================================*/
 
 static void
 makeCallXml(xmlrpc_env *               const envP,
@@ -314,6 +311,100 @@ makeCallXml(xmlrpc_env *               const envP,
 }
 
 
+
+/*=========================================================================
+    xmlrpc_server_info
+=========================================================================*/
+
+xmlrpc_server_info *
+xmlrpc_server_info_new(xmlrpc_env * const envP,
+                       const char * const serverUrl) {
+    
+    xmlrpc_server_info * serverInfoP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(serverUrl);
+
+    /* Allocate our memory blocks. */
+    MALLOCVAR(serverInfoP);
+    if (serverInfoP == NULL)
+        xmlrpc_faultf(envP, "Couldn't allocate memory for xmlrpc_server_info");
+    else {
+        memset(serverInfoP, 0, sizeof(xmlrpc_server_info));
+
+        serverInfoP->_server_url = strdup(serverUrl);
+        if (serverInfoP->_server_url == NULL)
+            xmlrpc_faultf(envP, "Couldn't allocate memory for server URL");
+        else {
+            serverInfoP->_http_basic_auth = NULL;
+            if (envP->fault_occurred)
+                xmlrpc_strfree(serverInfoP->_server_url);
+        }
+        if (envP->fault_occurred)
+            free(serverInfoP);
+    }
+    return serverInfoP;
+}
+
+
+
+xmlrpc_server_info *
+xmlrpc_server_info_copy(xmlrpc_env *         const envP,
+                        xmlrpc_server_info * const aserverInfoP) {
+
+    xmlrpc_server_info * serverInfoP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(aserverInfoP);
+
+    MALLOCVAR(serverInfoP);
+    if (serverInfoP == NULL)
+        xmlrpc_faultf(envP,
+                      "Couldn't allocate memory for xmlrpc_server_info");
+    else {
+        serverInfoP->_server_url = strdup(aserverInfoP->_server_url);
+        if (serverInfoP->_server_url == NULL)
+            xmlrpc_faultf(envP, "Couldn't allocate memory for server URL");
+        else {
+            if (aserverInfoP->_http_basic_auth == NULL)
+                serverInfoP->_http_basic_auth = NULL;
+            else {
+                serverInfoP->_http_basic_auth =
+                    strdup(aserverInfoP->_http_basic_auth);
+                if (serverInfoP->_http_basic_auth == NULL)
+                    xmlrpc_faultf(envP, "Couldn't allocate memory "
+                                  "for authentication info");
+            }
+            if (envP->fault_occurred)
+                strfree(serverInfoP->_server_url);
+        }
+        if (envP->fault_occurred)
+            free(serverInfoP);
+    }
+    return serverInfoP;
+}
+
+
+
+void
+xmlrpc_server_info_free(xmlrpc_server_info * const serverInfoP) {
+
+    XMLRPC_ASSERT_PTR_OK(serverInfoP);
+    XMLRPC_ASSERT(serverInfoP->_server_url != XMLRPC_BAD_POINTER);
+
+    if (serverInfoP->_http_basic_auth)
+        free(serverInfoP->_http_basic_auth);
+    serverInfoP->_http_basic_auth = XMLRPC_BAD_POINTER;
+    free(serverInfoP->_server_url);
+    serverInfoP->_server_url = XMLRPC_BAD_POINTER;
+    free(serverInfoP);
+}
+
+
+
+/*=========================================================================
+   Synchronous Call
+=========================================================================*/
 
 void
 xmlrpc_client_transport_call(
@@ -594,6 +685,11 @@ xmlrpc_client_call_server(xmlrpc_env *               const envP,
 }
 
 
+
+/*=========================================================================
+   Asynchronous Call
+=========================================================================*/
+
 void 
 xmlrpc_client_event_loop_finish_asynch(void) {
     XMLRPC_ASSERT(clientInitialized);
@@ -664,112 +760,6 @@ call_info_set_asynch_data(xmlrpc_env *       const env,
             xmlrpc_DECREF(holder);
     }
 }
-
-/*=========================================================================
-**  xmlrpc_server_info
-**=========================================================================
-*/
-
-xmlrpc_server_info *
-xmlrpc_server_info_new (xmlrpc_env * const env,
-                        const char * const server_url) {
-
-    xmlrpc_server_info *server;
-    char *url_copy;
-
-    /* Error-handling preconditions. */
-    server = NULL;
-    url_copy = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(server_url);
-
-    /* Allocate our memory blocks. */
-    server = (xmlrpc_server_info*) malloc(sizeof(xmlrpc_server_info));
-    XMLRPC_FAIL_IF_NULL(server, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for xmlrpc_server_info");
-    memset(server, 0, sizeof(xmlrpc_server_info));
-    url_copy = (char*) malloc(strlen(server_url) + 1);
-    XMLRPC_FAIL_IF_NULL(url_copy, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for server URL");
-
-    /* Build our object. */
-    strcpy(url_copy, server_url);
-    server->_server_url = url_copy;
-    server->_http_basic_auth = NULL;
-
- cleanup:
-    if (env->fault_occurred) {
-        if (url_copy)
-            free(url_copy);
-        if (server)
-            free(server);
-        return NULL;
-    }
-    return server;
-}
-
-xmlrpc_server_info * xmlrpc_server_info_copy(xmlrpc_env *env,
-                                             xmlrpc_server_info *aserver)
-{
-    xmlrpc_server_info *server;
-    char *url_copy, *auth_copy;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(aserver);
-
-    /* Error-handling preconditions. */
-    server = NULL;
-    url_copy = NULL;
-    auth_copy = NULL;
-
-    /* Allocate our memory blocks. */
-    server = (xmlrpc_server_info*) malloc(sizeof(xmlrpc_server_info));
-    XMLRPC_FAIL_IF_NULL(server, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for xmlrpc_server_info");
-    url_copy = (char*) malloc(strlen(aserver->_server_url) + 1);
-    XMLRPC_FAIL_IF_NULL(url_copy, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for server URL");
-    auth_copy = (char*) malloc(strlen(aserver->_http_basic_auth) + 1);
-    XMLRPC_FAIL_IF_NULL(auth_copy, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for authentication info");
-
-    /* Build our object. */
-    strcpy(url_copy, aserver->_server_url);
-    server->_server_url = url_copy;
-    strcpy(auth_copy, aserver->_http_basic_auth);
-    server->_http_basic_auth = auth_copy;
-
-    cleanup:
-    if (env->fault_occurred) {
-        if (url_copy)
-            free(url_copy);
-        if (auth_copy)
-            free(auth_copy);
-        if (server)
-            free(server);
-        return NULL;
-    }
-    return server;
-
-}
-
-void xmlrpc_server_info_free (xmlrpc_server_info *server)
-{
-    XMLRPC_ASSERT_PTR_OK(server);
-    XMLRPC_ASSERT(server->_server_url != XMLRPC_BAD_POINTER);
-
-    if (server->_http_basic_auth)
-        free(server->_http_basic_auth);
-    free(server->_server_url);
-    server->_server_url = XMLRPC_BAD_POINTER;
-    free(server);
-}
-
-/*=========================================================================
-**  xmlrpc_client_call_asynch
-**=========================================================================
-*/
 
 static void 
 call_info_free(xmlrpc_call_info * const callInfoP) {
@@ -1120,6 +1110,10 @@ xmlrpc_client_call_server_asynch_params(
 
 
 
+/*=========================================================================
+   Miscellaneous
+=========================================================================*/
+
 void 
 xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   xmlrpc_server_info * const serverP,
@@ -1191,3 +1185,10 @@ xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
     }
 }
 
+
+
+const char * 
+xmlrpc_client_get_default_transport(xmlrpc_env * const env ATTR_UNUSED) {
+
+    return XMLRPC_DEFAULT_TRANSPORT;
+}
