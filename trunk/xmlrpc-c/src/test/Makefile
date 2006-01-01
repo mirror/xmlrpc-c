@@ -39,10 +39,6 @@ INCLUDES = -I$(BUILDDIR) -I$(SRCDIR) \
 
 PROGS = test cgitest1
 
-ifeq ($(ENABLE_EFENCE),yes)
-  PROGS += eftest eftest_wrapper
-endif
-
 all: $(PROGS)
 
 LDFLAGS = $(LADD)
@@ -69,19 +65,12 @@ cgitest1:%:%.o $(LIBXMLRPC_SERVER) $(LIBXMLRPC_SERVER_CGI) $(LIBXMLRPC) \
   $(LIBXMLRPC_UTIL) $(LIBXML)
 	$(CCLD) -o $@ $(LDFLAGS) $^
 
-eftest:test.o $(LIBXMLRPC) $(LIBXMLRPC_UTIL) $(LIBXML) $(LIBXMLRPC_SERVER)
-	$(CCLD) -o $@ $(LDFLAGS) $^ -lefence
-
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 OBJS = $(TEST_OBJS) cgitest1.o
 
 $(OBJS):%.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<
-
-eftest_wrapper: eftest_wrapper.sh
-	cp $< $@
-	chmod +x $@
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our
