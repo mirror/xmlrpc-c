@@ -913,6 +913,8 @@ sendRequest(xmlrpc_env *                     const envP,
 
 
 struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops = {
+    NULL,
+    NULL,
     &create,
     &destroy,
     &sendRequest,

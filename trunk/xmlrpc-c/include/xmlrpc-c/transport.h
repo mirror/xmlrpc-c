@@ -16,6 +16,10 @@ struct xmlrpc_client_transport;
 **  Transport function type declarations.
 **=========================================================================
 */
+typedef void (*xmlrpc_transport_setup)(xmlrpc_env * const envP);
+
+typedef void (*xmlrpc_transport_teardown)(void);
+
 typedef void (*xmlrpc_transport_create)(
     xmlrpc_env *                      const envP,
     int                               const flags,
@@ -61,6 +65,8 @@ typedef void (*xmlrpc_transport_finish_asynch)(
 
 struct xmlrpc_client_transport_ops {
 
+    xmlrpc_transport_setup         setup_global_const;
+    xmlrpc_transport_teardown      teardown_global_const;
     xmlrpc_transport_create        create;
     xmlrpc_transport_destroy       destroy;
     xmlrpc_transport_send_request  send_request;

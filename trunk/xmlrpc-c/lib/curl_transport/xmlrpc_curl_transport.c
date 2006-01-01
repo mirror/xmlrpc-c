@@ -13,35 +13,44 @@
 
    Curl maintains some minor information in process-global variables.
    One must call curl_global_init() to initialize them before calling
-   any other Curl library function.
+   any other Curl library function.  This is not state information --
+   it is constants.  They just aren't the kind of constants that the
+   library loader knows how to set, so there has to be this explicit
+   call to set them up.  The matching function curl_global_cleanup()
+   returns resources these use (to wit, the constants live in
+   malloc'ed storage and curl_global_cleanup() frees the storage).
 
-   But note that one of those global variables tells that
-   curl_global_init() has been called, and if you call it again,
-   it's just a no-op.  So we can call it for each of many transport
-   object constructors.
+   So our setup_global_const transport operation calls
+   curl_global_init() and our teardown_global_const calls
+   curl_global_cleanup().
 
-   The actual global variables appear to be constant so that it's OK
-   for them to be shared among multiple objects and threads.  And we never
-   want other than the defaults.  They're things like the identity of
-   the malloc routine.
+   The Curl library is supposed to maintain a reference count for the
+   global constants so that multiple modules using the library and
+   independently calling curl_global_init() and curl_global_cleanup()
+   are not a problem.  But today, it just keeps a flag "I have been
+   initialized" and the first call to curl_global_cleanup() destroys
+   the constants for everybody.  Therefore, the user of the Xmlrpc-c
+   Curl client XML transport must make sure not to call
+   teardownGlobalConstants until everything else in his program is
+   done using the Curl library.
 
-   Note that not only could many Xmlrpc-c Curl XML transport
-   objects be using Curl in the same process, but the Xmlrpc-c user may
-   have uses of his own.  So this whole fragile thing works only as long
-   as the user doesn't need to set these global variables to something
-   different from the defaults (because those are what we use).
+   Note that curl_global_init() is not threadsafe (with or without the
+   reference count), therefore our setup_global_const is not, and must
+   be called when no other thread in the process is running.
+   Typically, one calls it right at the beginning of the program.
 
-   curl_global_cleanup() reverts the process back to a state in which
-   nobody can use the Curl library.  So we can't ever call it.  This
-   means there will be some memory leakage, but since curl_global_init
-   only ever has effect once, the amount of leakage is trivial.  The
-   user can do his own curl_global_cleanup() if he really cares.
+   There are actually two other classes of global variables in the
+   Curl library, which we are ignoring: debug options and custom
+   memory allocator function identities.  Our code never changes these
+   global variables from default.  If something else in the user's
+   program does, User is responsible for making sure it doesn't
+   interfere with our use of the library.
 
-   Some of the Curl global variables are actually the SSL library global
-   variables.  The SSL library has the same disease.
+   Note that we we say what the Curl library does, we're also talking
+   about various other libraries Curl uses internally, and in fact
+   much of what we're saying about global variables springs from
+   such subordinate libraries as OpenSSL and Winsock.
 -----------------------------------------------------------------------------*/
-
-
 
 #include <string.h>
 #include <stdlib.h>
@@ -61,6 +70,7 @@
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
+#include "xmlrpc-c/transport.h"
 #include "version.h"
 
 #include <curl/curl.h>
@@ -613,6 +623,11 @@ initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
 
 #if defined (WIN32)
     /* This is CRITICAL so that cURL-Win32 works properly! */
+    
+    /* So this commenter says, but I wonder why.  libcurl should do the
+       required WSAStartup() itself, and it looks to me like it does.
+       -Bryan 06.01.01
+    */
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
@@ -634,6 +649,16 @@ initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
         if (envP->fault_occurred)
             WSACleanup();
     }
+#endif
+}
+
+
+
+static void
+termWindowsStuff(void) {
+
+#if defined (WIN32)
+    WSACleanup();
 #endif
 }
 
@@ -942,14 +967,6 @@ create(xmlrpc_env *                      const envP,
 
     assertConstantsMatch();
 
-    initWindowsStuff(envP);
-
-    /* Here is the global variable sadness that makes it impossible for
-       a transport object to be truly modular.  See the explanation of
-       Curl global variables at the top of this file.
-    */
-    curl_global_init(CURL_GLOBAL_ALL);
-
     MALLOCVAR(transportP);
     if (transportP == NULL)
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
@@ -974,16 +991,6 @@ create(xmlrpc_env *                      const envP,
             free(transportP);
     }
     *handlePP = transportP;
-}
-
-
-
-static void
-termWindowStuff(void) {
-
-#if defined (WIN32)
-    WSACleanup();
-#endif
 }
 
 
@@ -1026,12 +1033,6 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
     destroyCurlMulti(clientTransportP->curlMultiP);
 
     freeXportParms(clientTransportP);
-
-    /* We want to call curl_global_cleanup() now, but can't.  See
-       explanation of Curl global variables at the top of this file.
-    */
-
-    termWindowStuff();
 
     free(clientTransportP);
 }
@@ -1808,7 +1809,42 @@ call(xmlrpc_env *                     const envP,
 
 
 
+static void
+setupGlobalConstants(xmlrpc_env * const envP) {
+/*----------------------------------------------------------------------------
+   See longwinded discussionof the global constant issue at the top of
+   this file.
+-----------------------------------------------------------------------------*/
+    initWindowsStuff(envP);
+
+    if (!envP->fault_occurred) {
+        CURLcode rc;
+
+        rc = curl_global_init(CURL_GLOBAL_ALL);
+        
+        if (rc != CURLE_OK)
+            xmlrpc_faultf(envP, "curl_global_init() failed with code %d", rc);
+    }
+}
+
+
+
+static void
+teardownGlobalConstants(void) {
+/*----------------------------------------------------------------------------
+   See longwinded discussionof the global constant issue at the top of
+   this file.
+-----------------------------------------------------------------------------*/
+    curl_global_cleanup();
+
+    termWindowsStuff();
+}
+
+
+
 struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops = {
+    &setupGlobalConstants,
+    &teardownGlobalConstants,
     &create,
     &destroy,
     &sendRequest,

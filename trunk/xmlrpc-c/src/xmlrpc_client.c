@@ -152,6 +152,26 @@ setupTransport(xmlrpc_env * const envP,
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INTERNAL_ERROR, 
             "Unrecognized XML transport name '%s'", transportName);
+
+    if (!envP->fault_occurred) {
+        xmlrpc_transport_setup const setupFn = 
+            client.clientTransportOps.setup_global_const;
+
+        if (setupFn)
+            setupFn(envP);
+    }
+}
+
+
+
+static void
+teardownTransport(void) {
+
+    xmlrpc_transport_teardown const teardownFn = 
+        client.clientTransportOps.teardown_global_const;
+
+    if (teardownFn)
+        teardownFn();
 }
 
 
@@ -257,7 +277,9 @@ xmlrpc_client_cleanup() {
     XMLRPC_ASSERT(clientInitialized);
 
     client.clientTransportOps.destroy(client.transportP);
-    
+
+    teardownTransport();
+
     clientInitialized = false;
 }
 
