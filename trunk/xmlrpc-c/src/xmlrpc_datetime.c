@@ -27,6 +27,7 @@
 
 #ifdef WIN32
 
+static const bool win32 = TRUE;
 static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
 static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
 
@@ -76,6 +77,8 @@ static void UnixTimeFromSystemTime(xmlrpc_env *  const envP, LPSYSTEMTIME pst, t
     UnixTimeFromFileTime(envP, &filetime, timeValueP); 
 }
 
+#else
+static const bool win32 = false;
 #endif
 
 
@@ -248,10 +251,9 @@ restoreTimezone(const char * const oldTz) {
 
 
 static void
-mkAbsTime(xmlrpc_env * const envP,
-          struct tm    const brokenTime,
-          time_t     * const timeValueP) {
-
+mkAbsTimeWin32(xmlrpc_env * const envP ATTR_UNUSED,
+               struct tm    const brokenTime ATTR_UNUSED,
+               time_t     * const timeValueP ATTR_UNUSED) {
 #ifdef WIN32
     /* Windows Implementation */
     SYSTEMTIME stbrokenTime;
@@ -274,9 +276,16 @@ mkAbsTime(xmlrpc_env * const envP,
     stbrokenTime.wMonth+=1;
 
     UnixTimeFromSystemTime(envP, &stbrokenTime,timeValueP);
+#endif
+}
 
-#else
 
+static void
+mkAbsTimeUnix(xmlrpc_env * const envP ATTR_UNUSED,
+              struct tm    const brokenTime ATTR_UNUSED,
+              time_t     * const timeValueP ATTR_UNUSED) {
+
+#ifndef WIN32
     time_t mktimeResult;
     const char * oldTz;
     struct tm mktimeWork;
@@ -300,9 +309,21 @@ mkAbsTime(xmlrpc_env * const envP,
             *timeValueP = mktimeResult;
     }
 #endif
-
 }
  
+
+
+static void
+mkAbsTime(xmlrpc_env * const envP,
+          struct tm    const brokenTime,
+          time_t     * const timeValueP) {
+
+    if (win32)
+        mkAbsTimeWin32(envP, brokenTime, timeValueP);
+    else
+        mkAbsTimeUnix(envP, brokenTime, timeValueP);
+}
+
 
 
 static void
@@ -325,13 +346,13 @@ validateFormat(xmlrpc_env * const envP,
         if (!isdigit(t[10]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[10]);
         if (t[11] != ':')
-            xmlrpc_faultf(envP, "Not a colon: '%s'", t[11]);
+            xmlrpc_faultf(envP, "Not a colon: '%c'", t[11]);
         if (!isdigit(t[12]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[12]);
         if (!isdigit(t[13]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[13]);
         if (t[14] != ':')
-            xmlrpc_faultf(envP, "Not a colon: '%s'", t[14]);
+            xmlrpc_faultf(envP, "Not a colon: '%c'", t[14]);
         if (!isdigit(t[15]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[15]);
         if (!isdigit(t[16]))
