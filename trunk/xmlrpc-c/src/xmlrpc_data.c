@@ -726,17 +726,17 @@ xmlrpc_string_w_new_lp(xmlrpc_env *    const envP,
             wchar_t * const wcs_contents =
                 XMLRPC_MEMBLOCK_CONTENTS(wchar_t, valP->_wcs_block);
 
-            xmlrpc_mem_block * utf8_block;
+            xmlrpc_mem_block * utf8P;
 
             memcpy(wcs_contents, value, length * sizeof(wchar_t));
             wcs_contents[length] = '\0';
     
             /* Convert the wcs block to UTF-8. */
-            utf8_block = xmlrpc_wcs_to_utf8(envP, wcs_contents, length + 1);
+            utf8P = xmlrpc_wcs_to_utf8(envP, wcs_contents, length + 1);
             if (!envP->fault_occurred) {
                 char * const utf8_contents =
-                    XMLRPC_MEMBLOCK_CONTENTS(char, utf8_block);
-                size_t const utf8_len = XMLRPC_MEMBLOCK_SIZE(char, utf8_block);
+                    XMLRPC_MEMBLOCK_CONTENTS(char, utf8P);
+                size_t const utf8_len = XMLRPC_MEMBLOCK_SIZE(char, utf8P);
 
                 /* XXX - We need an extra memcopy to initialize _block. */
                 XMLRPC_MEMBLOCK_INIT(char, envP, &valP->_block, utf8_len);
@@ -745,8 +745,7 @@ xmlrpc_string_w_new_lp(xmlrpc_env *    const envP,
                     contents = XMLRPC_MEMBLOCK_CONTENTS(char, &valP->_block);
                     memcpy(contents, utf8_contents, utf8_len);
                 }
-                if (envP->fault_occurred)
-                    XMLRPC_MEMBLOCK_FREE(char, utf8_block);
+                XMLRPC_MEMBLOCK_FREE(char, utf8P);
             }
             if (envP->fault_occurred)
                 XMLRPC_MEMBLOCK_FREE(wchar_t, valP->_wcs_block);
