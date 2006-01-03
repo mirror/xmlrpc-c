@@ -556,21 +556,28 @@ parseCallXml(xmlrpc_env *   const envP,
              size_t         const xmlLen,
              xml_element ** const callElemPP) {
 
+    xml_element * callElemP;
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
-    xml_parse(&env, xmlData, xmlLen, callElemPP);
+    xml_parse(&env, xmlData, xmlLen, &callElemP);
     if (env.fault_occurred)
         xmlrpc_env_set_fault_formatted(
             envP, env.fault_code, "Call is not valid XML.  %s",
             env.fault_string);
     else {
-        if (!streq(xml_element_name(*callElemPP), "methodCall"))
+        if (!streq(xml_element_name(callElemP), "methodCall"))
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_PARSE_ERROR,
                 "XML-RPC call should be a <methodCall> element.  "
                 "Instead, we have a <%s> element.",
-                xml_element_name(*callElemPP));
+                xml_element_name(callElemP));
+
+        if (!envP->fault_occurred)
+            *callElemPP = callElemP;
+
+        if (envP->fault_occurred)
+            xml_element_free(callElemP);
     }
     xmlrpc_env_clean(&env);
 }

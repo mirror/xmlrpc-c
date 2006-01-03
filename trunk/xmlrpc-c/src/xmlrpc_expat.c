@@ -371,16 +371,14 @@ xml_parse(xmlrpc_env *   const envP,
                 envP, XMLRPC_PARSE_ERROR,
                 XML_ErrorString(XML_GetErrorCode(parser)));
         else {
-            if (!envP->fault_occurred) {
-                XMLRPC_ASSERT(context.root != NULL);
-                XMLRPC_ASSERT(context.current == NULL);
+            XMLRPC_ASSERT(context.root != NULL);
+            XMLRPC_ASSERT(context.current == NULL);
                 
-                *resultPP = context.root;
-
-                if (envP->fault_occurred)
-                    xml_element_free(context.root);
-            }
+            *resultPP = context.root;
         }
+        if (envP->fault_occurred)
+            xml_element_free(context.root);
+
         XML_ParserFree(parser);
     }
 }
