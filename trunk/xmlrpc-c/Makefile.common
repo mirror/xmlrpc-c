@@ -56,6 +56,16 @@ LIBXMLRPC_UTIL           = $(BUILDDIR)/lib/libutil/libxmlrpc_util.la
 LIBXMLRPC                = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_CLIENT         = $(BUILDDIR)/src/libxmlrpc_client.la
 LIBXMLRPC_SERVER         = $(BUILDDIR)/src/libxmlrpc_server.la
+LIBXMLRPC_SERVER_ABYSS   = $(BUILDDIR)/src/libxmlrpc_server_abyss.la
+LIBXMLRPC_SERVER_CGI     = $(BUILDDIR)/src/libxmlrpc_server_cgi.la
+LIBXMLRPC_ABYSS          = $(BUILDDIR)/lib/abyss/src/libxmlrpc_abyss.la
+LIBXMLRPC_UTIL_A         = $(BUILDDIR)/lib/libutil/.libs/libxmlrpc_util.a
+LIBXMLRPC_A              = $(BUILDDIR)/src/.libs/libxmlrpc.a
+LIBXMLRPC_CLIENT_A       = $(BUILDDIR)/src/.libs/libxmlrpc_client.a
+LIBXMLRPC_SERVER_A       = $(BUILDDIR)/src/.libs/libxmlrpc_server.a
+LIBXMLRPC_SERVER_ABYSS_A = $(BUILDDIR)/src/.libs/libxmlrpc_server_abyss.a
+LIBXMLRPC_SERVER_CGI_A   = $(BUILDDIR)/src/.libs/libxmlrpc_server_cgi.a
+LIBXMLRPC_ABYSS_A        = $(BUILDDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
 LIBXMLRPC_CPP            = $(BUILDDIR)/src/cpp/libxmlrpc_cpp.a
 LIBXMLRPC++              = $(BUILDDIR)/src/cpp/libxmlrpc++.a
 LIBXMLRPC_CLIENT++       = $(BUILDDIR)/src/cpp/libxmlrpc_client++.a
@@ -137,6 +147,13 @@ $(LIBXMLRPC++) $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_SERVER++) \
   $(LIBXMLRPC+SERVER_ABYSS++): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
+
+$(LIBXMLRPC_UTIL_A): $(LIBXMLRPC_UTIL)
+$(LIBXMLRPC_A): $(LIBXMLRPC)
+$(LIBXMLRPC_CLIENT_A): $(LIBXMLRPC_CLIENT)
+$(LIBXMLRPC_SERVER_ABYSS_A): $(LIBXMLRPC_SERVER_ABYSS)
+$(LIBXMLRPC_CGI_A): $(LIBXMLRPC_CGI)
+$(LIBXMLRPC_ABYSS_A): $(LIBXMLRPC_ABYSS)
 
 # About version.h:  This is a built header file, which means it is a supreme
 # pain in the ass.  The biggest problem is that when we automatically make

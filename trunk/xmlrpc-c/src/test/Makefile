@@ -9,12 +9,6 @@ include $(BUILDDIR)/Makefile.config
 
 XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
 
-LIBXMLRPC              = ../.libs/libxmlrpc.a
-LIBXMLRPC_SERVER       = ../.libs/libxmlrpc_server.a
-LIBXMLRPC_SERVER_ABYSS = ../.libs/libxmlrpc_server_abyss.a
-LIBXMLRPC_SERVER_CGI   = ../.libs/libxmlrpc_server_cgi.a
-LIBXMLRPC_CLIENT       = ../.libs/libxmlrpc_client.a
-
 LDADD_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 LDADD_SERVER = \
@@ -26,9 +20,6 @@ else
   LIBXML = $(BUILDDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a \
            $(BUILDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
 endif
-
-LIBXMLRPC_ABYSS = $(BUILDDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
-LIBXMLRPC_UTIL  = $(BUILDDIR)/lib/libutil/.libs/libxmlrpc_util.a
 
 default: all
 
@@ -55,14 +46,16 @@ else
   LIBXMLRPC_CLIENT_DEP =
 endif
 
-test: $(TEST_OBJS) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) \
-  $(LIBXMLRPC_SERVER) $(LIBXMLRPC_SERVER_ABYSS) $(LIBXML) \
-   $(LIBXMLRPC_CLIENT_DEP) $(LIBXMLRPC_ABYSS) $(CASPRINTF_OBJ)
+include $(SRCDIR)/Makefile.common
+
+test: $(TEST_OBJS) $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) \
+  $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_ABYSS_A) $(LIBXML) \
+   $(LIBXMLRPC_CLIENT_DEP) $(LIBXMLRPC_ABYSS_A) $(CASPRINTF_OBJ)
 	$(CCLD) -o $@ $(LDFLAGS) \
 	    $(TEST_OBJS) $(LDADD_CLIENT) $(LDADD_SERVER) $(CASPRINTF_OBJ)
 
-cgitest1:%:%.o $(LIBXMLRPC_SERVER) $(LIBXMLRPC_SERVER_CGI) $(LIBXMLRPC) \
-  $(LIBXMLRPC_UTIL) $(LIBXML)
+cgitest1:%:%.o $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_CGI_A) $(LIBXMLRPC_A) \
+  $(LIBXMLRPC_UTIL_A) $(LIBXML)
 	$(CCLD) -o $@ $(LDFLAGS) $^
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
@@ -96,6 +89,6 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
-include $(SRCDIR)/Makefile.common
-
 include Makefile.depend
+
+
