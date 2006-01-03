@@ -46,9 +46,9 @@ xmlrpc_env_clean(xmlrpc_env * const envP) {
     **   2) a pointer to the default_fault_string
     **   3) a pointer to a malloc'd fault string
     ** If we have case (3), we'll need to free it. */
-    if (env->fault_string && env->fault_string != default_fault_string)
-        free(env->fault_string);
-    env->fault_string = XMLRPC_BAD_POINTER;
+    if (envP->fault_string && envP->fault_string != default_fault_string)
+        free(envP->fault_string);
+    envP->fault_string = XMLRPC_BAD_POINTER;
 }
 
 
