@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "xmlrpc-c/util.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 
@@ -164,7 +165,7 @@ xmlrpc_array_get_item(xmlrpc_env *         const envP,
 
     if (index < 0)
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.");
+            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.", index);
     else {
         xmlrpc_array_read_item(envP, arrayP, index, &valueP);
 
