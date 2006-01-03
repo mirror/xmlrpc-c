@@ -35,9 +35,11 @@ void xmlrpc_env_init (xmlrpc_env* env)
     env->fault_string   = NULL;
 }
 
-void xmlrpc_env_clean (xmlrpc_env* env)
-{
-    XMLRPC_ASSERT(env != NULL);
+void
+xmlrpc_env_clean(xmlrpc_env * const envP) {
+
+    XMLRPC_ASSERT(envP != NULL);
+    XMLRPC_ASSERT_PTR_OK(envP->fault_string);
 
     /* env->fault_string may be one of three things:
     **   1) a NULL pointer
@@ -66,10 +68,8 @@ xmlrpc_env_set_fault(xmlrpc_env * const envP,
     envP->fault_code     = faultCode;
 
     /* Try to copy the fault string. If this fails, use a default. */
-    envP->fault_string = (char*) malloc(strlen(faultDescription) + 1);
-    if (envP->fault_string)
-        strcpy(envP->fault_string, faultDescription);
-    else
+    envP->fault_string = strdup(faultDescription);
+    if (envP->fault_string == NULL)
         envP->fault_string = (char *)default_fault_string;
 }
 
