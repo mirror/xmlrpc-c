@@ -21,6 +21,17 @@ extern "C" {
 #endif
 
 
+/* GNU_PRINTF_ATTR lets the GNU compiler check printf-type
+   calls to be sure the arguments match the format string, thus preventing
+   runtime segmentation faults and incorrect messages.
+*/
+#ifdef __GNUC__
+#define GNU_PRINTF_ATTR(a,b) __attribute__ ((format (printf, a, b)))
+#else
+#define GNU_PRINTF_ATTR(a,b)
+#endif
+
+
 /*=========================================================================
 **  C struct size computations
 **=======================================================================*/
@@ -134,10 +145,10 @@ xmlrpc_env_set_fault(xmlrpc_env * const env,
 
 /* The same as the above, but using a printf-style format string. */
 void 
-xmlrpc_env_set_fault_formatted (xmlrpc_env * const envP, 
-                                int          const code,
-                                const char * const format, 
-                                ...);
+xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP, 
+                               int          const code,
+                               const char * const format, 
+                               ...) GNU_PRINTF_ATTR(3,4);
 
 /* This one infers XMLRPC_INTERNAL_ERROR and has a shorter name.
    So a call takes up less source code space.
@@ -145,11 +156,13 @@ xmlrpc_env_set_fault_formatted (xmlrpc_env * const envP,
 void
 xmlrpc_faultf(xmlrpc_env * const envP,
               const char * const format,
-              ...);
+              ...) GNU_PRINTF_ATTR(2,3);
 
 /* A simple debugging assertion. */
-#define XMLRPC_ASSERT_ENV_OK(env) \
-    XMLRPC_ASSERT((env) != NULL && !(env)->fault_occurred)
+#define XMLRPC_ASSERT_ENV_OK(envP) \
+    XMLRPC_ASSERT((envP) != NULL && \
+    (envP->fault_string == NULL) && \
+    !(envP)->fault_occurred)
 
 /* This version must *not* interpret 'str' as a format string, to avoid
 ** several evil attacks. */
