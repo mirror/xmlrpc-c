@@ -336,7 +336,7 @@ xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
         if (*valuePP == NULL) {
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
-                XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
+                (int)XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
                 XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block));
         }
     }
@@ -390,7 +390,7 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INDEX_ERROR, 
                     "No member of struct has key '%.*s'",
-                    keyLen, key);
+                    (int)keyLen, key);
                 /* We should fix the error message to format the key
                    for display */
             } else
@@ -436,29 +436,28 @@ void
 xmlrpc_struct_set_value_n(xmlrpc_env *    const envP,
                           xmlrpc_value *  const strctP,
                           const char *    const key, 
-                          size_t          const key_len,
+                          size_t          const keyLen,
                           xmlrpc_value *  const valueP) {
-
-    xmlrpc_value *keyval;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(key != NULL);
 
-    /* Set up error handling preconditions. */
-    keyval = NULL;
+    if (xmlrpc_value_type(strctP) != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR,
+            "Trying to set value in something not a struct.  "
+            "Type is %d; struct is %d",
+            xmlrpc_value_type(strctP), XMLRPC_TYPE_STRUCT);
+    else {
+        xmlrpc_value * keyvalP;
 
-    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
+        /* Get the key as an xmlrpc_value */
+        keyvalP = xmlrpc_build_value(envP, "s#", key, keyLen);
+        if (!envP->fault_occurred)
+            xmlrpc_struct_set_value_v(envP, strctP, keyvalP, valueP);
 
-    /* Build an xmlrpc_value from our string. */
-    keyval = xmlrpc_build_value(envP, "s#", key, key_len);
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-    /* Do the actual work. */
-    xmlrpc_struct_set_value_v(envP, strctP, keyval, valueP);
-
- cleanup:
-    if (keyval)
-        xmlrpc_DECREF(keyval);
+        xmlrpc_DECREF(keyvalP);
+    }
 }
 
 
@@ -578,7 +577,7 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    const envP,
 
     if (index < 0)
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.");
+            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.", index);
     else {
         xmlrpc_struct_read_member(envP, structP, index, keyvalP, valueP);
         if (!envP->fault_occurred) {
