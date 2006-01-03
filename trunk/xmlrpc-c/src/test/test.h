@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "xmlrpc-c/util.h"
+
 extern int total_tests;
 extern int total_failures;
 
@@ -40,21 +42,34 @@ do { \
         } \
        } while (0)
 
-#define TEST_FAULT(env, code) \
-do { \
-    ++total_tests; \
-    if ((env)->fault_occurred && (env)->fault_code == (code)) { \
-        printf("."); \
-    } else { \
-            test_failure(__FILE__, __LINE__, "wrong/no fault occurred", \
-            (env)->fault_string); \
-    } \
-   } while (0)
+static inline void
+test_fault(xmlrpc_env * const envP,
+           int          const expectedCode,
+           const char * const fileName,
+           unsigned int const lineNumber) {
+
+    ++total_tests;
+    if (!envP->fault_occurred)
+        test_failure(fileName, lineNumber, "no fault occurred", "");
+    else if (envP->fault_code != expectedCode)
+        test_failure(fileName, lineNumber, "wrong fault occurred",
+                     envP->fault_string);
+    else
+        printf(".");
+
+    xmlrpc_env_clean(envP);
+    xmlrpc_env_init(envP);
+}
 
 
+#define TEST_FAULT(envP, code) \
+    do { test_fault(envP, code, __FILE__, __LINE__); } while(0)
+
+;
 
 #define TEST_ERROR(reason) \
 do { \
     printf("Unable to test at %s/%u.  %s", __FILE__, __LINE__, reason); \
     abort(); \
    } while (0)
+

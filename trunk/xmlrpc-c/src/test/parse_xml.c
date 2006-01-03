@@ -386,5 +386,6 @@ test_parse_xml(void) {
     testParseFaultResponse();
     testParseBadResponse();
     test_parse_xml_call();
+    printf("\n");
     printf("XML parsing tests done.\n");
 }

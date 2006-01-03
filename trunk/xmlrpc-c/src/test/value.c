@@ -898,19 +898,25 @@ test_value_invalid_struct(void) {
 
     xmlrpc_value * v;
     xmlrpc_env env;
+
+    /* Note that even though the format strings are invalid, we have
+       to supply the variable arguments that xmlrpc_build_value() will
+       be looking for as it tries to parse it.  Otherwise, we get wild
+       memory references and consequent Valgrind flags.
+    */
     
     xmlrpc_env_init(&env);
-    v = xmlrpc_build_value(&env, "{s:ii");
+    v = xmlrpc_build_value(&env, "{s:ii", "key1", 9, 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 
     xmlrpc_env_init(&env);
-    v = xmlrpc_build_value(&env, "{si:");
+    v = xmlrpc_build_value(&env, "{si:", "key1", 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 
     xmlrpc_env_init(&env);
-    v = xmlrpc_build_value(&env, "{s");
+    v = xmlrpc_build_value(&env, "{s", "key1");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
     xmlrpc_env_clean(&env);
 }

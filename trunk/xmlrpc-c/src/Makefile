@@ -41,7 +41,7 @@ endif
 
 ABYSS_INCLUDES = -I$(SRCDIR)/lib/abyss/src
 
-LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo
+LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo xmlrpc_client_global.lo
 LIBXMLRPC_SERVER_OBJS = xmlrpc_registry.lo
 LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
 
@@ -105,13 +105,13 @@ LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
 libxmlrpc.la: $(LIBXMLRPC_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
-libxmlrpc_client.la: xmlrpc_client.lo $(TRANSPORT_OBJS)
+libxmlrpc_client.la: $(LIBXMLRPC_CLIENT_OBJS) $(TRANSPORT_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
-libxmlrpc_server.la: xmlrpc_registry.lo
+libxmlrpc_server.la: $(LIBXMLRPC_SERVER_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
-libxmlrpc_server_abyss.la: xmlrpc_server_abyss.lo
+libxmlrpc_server_abyss.la: $(LIBXMLRPC_SERVER_ABYSS_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
 libxmlrpc_server_cgi.la: xmlrpc_server_cgi.lo
