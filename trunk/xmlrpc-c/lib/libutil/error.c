@@ -39,7 +39,7 @@ void
 xmlrpc_env_clean(xmlrpc_env * const envP) {
 
     XMLRPC_ASSERT(envP != NULL);
-    XMLRPC_ASSERT_PTR_OK(envP->fault_string);
+    XMLRPC_ASSERT(envP->fault_string != XMLRPC_BAD_POINTER);
 
     /* env->fault_string may be one of three things:
     **   1) a NULL pointer
