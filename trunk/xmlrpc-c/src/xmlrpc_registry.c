@@ -322,23 +322,27 @@ callNamedMethod(xmlrpc_env *    const envP,
 
 
 static void
-dispatch_call(xmlrpc_env *      const envP, 
-              xmlrpc_registry * const registryP,
-              const char *      const methodName, 
-              xmlrpc_value *    const paramArrayP,
-              xmlrpc_value **   const resultPP) {
+dispatchCall(xmlrpc_env *      const envP, 
+             xmlrpc_registry * const registryP,
+             const char *      const methodName, 
+             xmlrpc_value *    const paramArrayP,
+             xmlrpc_value **   const resultPP) {
 
     callPreinvokeMethodIfAny(envP, registryP, methodName, paramArrayP);
     if (!envP->fault_occurred) {
         xmlrpc_value * method_info;
 
-        /* Look up the method info for the named method. */
+        /* Look up the method info for the named method.  Method info
+           is an array (ppss): method function ptr, user data,
+           signature, help text.
+        */
         xmlrpc_struct_find_value(envP, registryP->_methods,
                                  methodName, &method_info);
         if (!envP->fault_occurred) {
-            if (method_info)
+            if (method_info) {
                 callNamedMethod(envP, method_info, paramArrayP, resultPP);
-            else {
+                xmlrpc_DECREF(method_info);
+            } else {
                 if (registryP->_default_method)
                     callDefaultMethod(envP, registryP->_default_method, 
                                       methodName, paramArrayP,
@@ -402,7 +406,7 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
         else {
             xmlrpc_value * result;
             
-            dispatch_call(&fault, registryP, methodName, paramArray, &result);
+            dispatchCall(&fault, registryP, methodName, paramArray, &result);
 
             if (!fault.fault_occurred) {
                 xmlrpc_serialize_response(envP, output, result);
@@ -474,7 +478,7 @@ call_one_method(xmlrpc_env *env, xmlrpc_registry *registry,
                     "Recursive system.multicall strictly forbidden");
     
     /* Perform the call. */
-    dispatch_call(env, registry, method_name, param_array, &result_val);
+    dispatchCall(env, registry, method_name, param_array, &result_val);
     XMLRPC_FAIL_IF_FAULT(env);
     
     /* Build our one-item result array. */
