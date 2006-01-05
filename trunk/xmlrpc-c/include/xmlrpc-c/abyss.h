@@ -482,7 +482,7 @@ struct URIHandler2;
 typedef void (*initHandlerFn)(struct URIHandler2 *,
                               abyss_bool *);
 
-typedef void (*termHandlerFn)(struct URIHandler2 *);
+typedef void (*termHandlerFn)(void *);
 
 typedef void (*handleReq2Fn)(struct URIHandler2 *,
                              TSession *,

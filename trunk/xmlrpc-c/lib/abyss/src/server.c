@@ -665,7 +665,7 @@ createServer(struct _TServer ** const srvPP,
 
             initUnixStuff(srvP);
 
-            ListInit(&srvP->handlers);
+            ListInitAutoFree(&srvP->handlers);
             ListInitAutoFree(&srvP->defaultfilenames);
 
             initLogFile(srvP, logfilename);
@@ -755,7 +755,7 @@ terminateHandlers(TList * const handlersP) {
         for (i = handlersP->size; i > 0; --i) {
             URIHandler2 * const handlerP = handlersP->item[i-1];
             if (handlerP->term)
-                handlerP->term(handlerP);
+                handlerP->term(handlerP->userdata);
         }
     }
 }
@@ -771,11 +771,11 @@ ServerFree(TServer * const serverP) {
 
     xmlrpc_strfree(srvP->filespath);
     
+    ListFree(&srvP->defaultfilenames);
+
     terminateHandlers(&srvP->handlers);
 
     ListFree(&srvP->handlers);
-
-    ListInitAutoFree(&srvP->defaultfilenames);
 
     logClose(srvP);
 
@@ -1381,25 +1381,12 @@ ServerAddHandler2(TServer *     const serverP,
         else
             handlerP->init(handlerP, successP);
 
-        if (*successP) {
+        if (*successP)
             *successP = ListAdd(&serverP->srvP->handlers, handlerP);
 
-            if (!*successP) {
-                if (handlerP->term)
-                    handlerP->term(handlerP);
-            }
-        }
         if (!*successP)
             free(handlerP);
     }
-}
-
-
-
-static void
-destroyHandler(URIHandler2 * const handlerP) {
-
-    free(handlerP);
 }
 
 
@@ -1412,7 +1399,7 @@ createHandler(URIHandler const function) {
     MALLOCVAR(handlerP);
     if (handlerP != NULL) {
         handlerP->init       = NULL;
-        handlerP->term       = destroyHandler;
+        handlerP->term       = NULL;
         handlerP->userdata   = NULL;
         handlerP->handleReq2 = NULL;
         handlerP->handleReq1 = function;
