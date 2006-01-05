@@ -133,13 +133,13 @@ testSynchCall(void) {
 
     xmlrpc_env_init(&env);
 
+    emptyArrayP = xmlrpc_array_new(&env);
+    TEST_NO_FAULT(&env);
+
     xmlrpc_client_setup_global_const(&env);
     TEST_NO_FAULT(&env);
 
     xmlrpc_client_create(&env, 0, "testprog", "1.0", NULL, 0, &clientP);
-    TEST_NO_FAULT(&env);
-
-    emptyArrayP = xmlrpc_array_new(&env);
     TEST_NO_FAULT(&env);
 
     noSuchServerInfoP = xmlrpc_server_info_new(&env, "nosuchserver");
@@ -157,6 +157,8 @@ testSynchCall(void) {
 
     xmlrpc_client_destroy(clientP);
 
+    xmlrpc_DECREF(emptyArrayP);
+    
     xmlrpc_client_teardown_global_const();
 
     xmlrpc_env_clean(&env);
@@ -196,6 +198,7 @@ testInitCleanup(void) {
     clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
         &curlTransportParms1;
 
+    /* Fails because we didn't include transportparm_size: */
     xmlrpc_client_init2(&env, 0, "testprog", "1.0",
                         &clientParms1, XMLRPC_CPSIZE(transportparmsP));
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);

@@ -48,6 +48,8 @@ char const expat_data[] = XML_PROLOGUE RAW_STRING_DATA "\r\n";
 char const expat_error_data[] =
     XML_PROLOGUE \
     "<foo><bar>abc</bar><baz></baz>\r\n";
+    /* Invalid because there's no closing </foo> */
+
 
 char const good_response_xml[] = 
     XML_PROLOGUE 

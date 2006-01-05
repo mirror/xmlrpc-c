@@ -322,9 +322,10 @@ testParseFaultResponse(void) {
 
 
 
-static void test_parse_xml_call (void)
-{
-    xmlrpc_env env, env2;
+static void
+test_parse_xml_call(void) {
+
+    xmlrpc_env env;
     const char *method_name;
     xmlrpc_value *params;
     int i1, i2;
@@ -346,16 +347,15 @@ static void test_parse_xml_call (void)
     strfree(method_name);
 
     /* Test some poorly-formed XML data. */
-    xmlrpc_env_init(&env2);
-    xmlrpc_parse_call(&env2, unparseable_value, strlen(unparseable_value),
+    xmlrpc_parse_call(&env, unparseable_value, strlen(unparseable_value),
                       &method_name, &params);
-    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
     TEST(method_name == NULL && params == NULL);
-    xmlrpc_env_clean(&env2);
 
     /* Next, check for bogus values. These are all well-formed XML, but
-    ** they aren't legal XML-RPC. */
-    for (bad_call = bad_calls; *bad_call != NULL; bad_call++) {
+       they aren't legal XML-RPC.
+    */
+    for (bad_call = bad_calls; *bad_call != NULL; ++bad_call) {
     
         /* First, check to make sure that our test case is well-formed XML.
         ** (It's easy to make mistakes when writing the test cases!) */
@@ -364,14 +364,11 @@ static void test_parse_xml_call (void)
         xml_element_free(elem);
 
         /* Now, make sure the higher-level routine barfs appropriately. */
-        xmlrpc_env_init(&env2);
-        xmlrpc_parse_call(&env2, *bad_call, strlen(*bad_call),
+        xmlrpc_parse_call(&env, *bad_call, strlen(*bad_call),
                           &method_name, &params);
-        TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
+        TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
         TEST(method_name == NULL && params == NULL);
-        xmlrpc_env_clean(&env2);
     }
-
     xmlrpc_env_clean(&env);    
 }
 

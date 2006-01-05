@@ -51,6 +51,7 @@ test_server_cgi(void) {
 
         TEST(memcmp(cgiResponse, cgiResponse1, bytesRead) == 0);
     }
+    fclose(cgiOutputP);
     printf("\n");
     printf("CGI tests done.\n");
 }

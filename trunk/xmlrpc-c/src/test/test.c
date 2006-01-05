@@ -878,66 +878,79 @@ test_utf8_coding(void) {
 
 
 
-/*=========================================================================
-**  Test Driver
-**=========================================================================
-*/
+static void
+test_server_cgi_maybe(void) {
+
+#ifndef WIN32
+
+    test_server_cgi();
+
+#endif 
+}
+
+
+
+static void
+test_client_maybe(void) {
+
+#ifndef WIN32 /* Must get Windows Curl transport working for this to work */
+
+    test_client();
+
+#endif 
+}
+
+
 
 int 
 main(int     argc, 
      char ** argv ATTR_UNUSED) {
 
+    int retval;
+
     if (argc-1 > 0) {
         fprintf(stderr, "There are no arguments.");
-        exit(1);
+        retval = 1;
+    } else {
+        /* Add your test suites here. */
+        test_env();
+        test_mem_block();
+        test_base64_conversion();
+        printf("\n");
+        test_value();
+        test_bounds_checks();
+        printf("\n");
+        test_serialize();
+        test_parse_xml();
+        test_method_registry();
+        test_nesting_limit();
+        test_xml_size_limit();
+        test_sample_files();
+        printf("\n");
+        test_server_cgi_maybe();
+        test_server_abyss();
+
+        test_utf8_coding();
+
+        printf("\n");
+
+        test_client_maybe();
+
+        /* Summarize our test run. */
+        printf("\nRan %d tests, %d failed, %.1f%% passed\n",
+               total_tests, total_failures,
+               100.0 - (100.0 * total_failures) / total_tests);
+
+        /* Print the final result. */
+        if (total_failures == 0) {
+            printf("OK\n");
+            retval = 0;
+        } else {
+            retval = 1;
+            printf("FAILED\n");
+        }
     }
-
-    /* Add your test suites here. */
-if (0) {
-    test_env();
-    test_mem_block();
-    test_base64_conversion();
-    printf("\n");
-}
-    test_value();
-    test_bounds_checks();
-    printf("\n");
-    test_serialize();
-    test_parse_xml();
-exit(0);
-
-    test_method_registry();
-    test_nesting_limit();
-    test_xml_size_limit();
-    test_sample_files();
-    printf("\n");
-
-#ifndef WIN32 /* CGI unsupported in Windows */
-    test_server_cgi();
-#endif 
-    test_server_abyss();
-
-    test_utf8_coding();
-
-    printf("\n");
-
-#ifndef WIN32 /* TODO: Client test uses curl... */
-    test_client();
-#endif 
-
-    /* Summarize our test run. */
-    printf("\nRan %d tests, %d failed, %.1f%% passed\n",
-           total_tests, total_failures,
-           100.0 - (100.0 * total_failures) / total_tests);
-
-    /* Print the final result. */
-    if (total_failures == 0) {
-        printf("OK\n");
-        return 0;
-    }
-
-    printf("FAILED\n");
-    return 1;
+    return retval;
 }
 
 

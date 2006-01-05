@@ -16,7 +16,6 @@
 void
 test_server_abyss(void) {
 
-
     xmlrpc_env env;
     xmlrpc_registry * registryP;
     TServer abyssServer;
@@ -55,6 +54,8 @@ test_server_abyss(void) {
     TEST_NO_FAULT(&env);
 
     ServerFree(&abyssServer);
+
+    xmlrpc_registry_free(registryP);
 
     printf("\n");
     printf("Abyss server tests done.\n");

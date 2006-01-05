@@ -224,14 +224,18 @@ test_value_string_no_null(void) {
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
+
     xmlrpc_decompose_value(&env, v, "s", &str);
     TEST_NO_FAULT(&env);
     TEST(strcmp(str, test_string_1) == 0);
+    strfree(str);
+
     xmlrpc_decompose_value(&env, v, "s#", &str, &len);
     TEST_NO_FAULT(&env);
     TEST(memcmp(str, test_string_1, strlen(test_string_1)) == 0);
     TEST(strlen(str) == strlen(test_string_1));
     strfree(str);
+
     xmlrpc_DECREF(v);
 
     xmlrpc_env_clean(&env);
@@ -429,6 +433,7 @@ test_value_string_wide(void) {
     TEST(wcs[len] == 0x0000);
     TEST(0 == wcsncmp(wcs, wcs_data, len));
     free((void*)wcs);
+    xmlrpc_DECREF(valueP);
 
     /* Test with embedded NUL.  We use a length of 4 so that the terminating
        NUL actually becomes part of the string.
@@ -448,6 +453,8 @@ test_value_string_wide(void) {
 
     xmlrpc_read_string_w(&env, valueP, &wcs);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+
+    xmlrpc_DECREF(valueP);
 #endif /* HAVE_UNICODE_WCHAR */
 }
 
@@ -1010,6 +1017,7 @@ test_struct_get_element(xmlrpc_value * const structP,
     xmlrpc_struct_find_value(&env, structP, "aas", &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP == i1);
+    xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_find_value(&env, structP, "doesn't_exist", &valueP);
     TEST_NO_FAULT(&env);
@@ -1026,8 +1034,6 @@ test_struct_get_element(xmlrpc_value * const structP,
 
     xmlrpc_struct_find_value(&env, i1, "aas", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
             
     /* "read" interface */
             
@@ -1038,8 +1044,6 @@ test_struct_get_element(xmlrpc_value * const structP,
             
     xmlrpc_struct_read_value(&env, structP, "doesn't_exist", &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
             
     xmlrpc_struct_read_value_v(&env, structP, aasStringP, &valueP);
     TEST_NO_FAULT(&env);
@@ -1048,15 +1052,13 @@ test_struct_get_element(xmlrpc_value * const structP,
             
     xmlrpc_struct_read_value_v(&env, structP, bogusKeyStringP, &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     xmlrpc_struct_read_value(&env, i1, "aas", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
             
-    /* obsolete "get" interface */
+    /* obsolete "get" interface.  Note that it does not update the
+       reference count of the xmlrpc_value it returns.
+    */
             
     valueP = xmlrpc_struct_get_value(&env, structP, "aas");
     TEST_NO_FAULT(&env);
@@ -1064,13 +1066,9 @@ test_struct_get_element(xmlrpc_value * const structP,
 
     valueP = xmlrpc_struct_get_value(&env, structP, "doesn't_exist");
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     valueP = xmlrpc_struct_get_value(&env, i1, "foo");
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     valueP = xmlrpc_struct_get_value_n(&env, structP, weirdKey, weirdKeyLen);
     TEST_NO_FAULT(&env);
@@ -1122,7 +1120,7 @@ testStructReadout(xmlrpc_value * const structP,
 static void
 test_struct (void) {
 
-    xmlrpc_env env, env2;
+    xmlrpc_env env;
     xmlrpc_value *s, *i, *i1, *i2, *i3, *key, *value;
     size_t size;
     int present;
@@ -1202,25 +1200,17 @@ test_struct (void) {
     TEST(!present);
 
     /* Make sure our typechecks work correctly. */
-    xmlrpc_env_init(&env2);
-    xmlrpc_struct_size(&env2, i1);
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
+    xmlrpc_struct_size(&env, i1);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
-    xmlrpc_env_init(&env2);
-    xmlrpc_struct_has_key(&env2, i1, "foo");
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
+    xmlrpc_struct_has_key(&env, i1, "foo");
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
-    xmlrpc_env_init(&env2);
-    xmlrpc_struct_set_value(&env2, i1, "foo", i2);
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
+    xmlrpc_struct_set_value(&env, i1, "foo", i2);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
-    xmlrpc_env_init(&env2);
-    xmlrpc_struct_set_value_v(&env2, s, s, i2);
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
+    xmlrpc_struct_set_value_v(&env, s, s, i2);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
     /* Test cleanup code (w/memprof). */
     xmlrpc_DECREF(s);
@@ -1265,40 +1255,30 @@ test_struct (void) {
     free(sval);
 
     /* Test automagic struct parser with value of wrong type. */
-    xmlrpc_env_init(&env2);
-    xmlrpc_decompose_value(&env2, s, "{s:b,s:i,*}",
+    xmlrpc_decompose_value(&env, s, "{s:b,s:i,*}",
                            "baz", &bval,
                            "foo", &sval);
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
     /* Test automagic struct parser with bad key. */
-    xmlrpc_env_init(&env2);
-    xmlrpc_decompose_value(&env2, s, "{s:b,s:i,*}",
+    xmlrpc_decompose_value(&env, s, "{s:b,s:i,*}",
                            "baz", &bval,
                            "nosuch", &sval);
-    TEST_FAULT(&env2, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env2);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
 
     /* Test type check. */
-    xmlrpc_env_init(&env2);
-    xmlrpc_struct_get_key_and_value(&env2, i1, 0, &key, &value);
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
+    xmlrpc_struct_get_key_and_value(&env, i1, 0, &key, &value);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
     TEST(key == NULL && value == NULL);
-    xmlrpc_env_clean(&env2);
     
     /* Test bounds checks. */
-    xmlrpc_env_init(&env2);
-    xmlrpc_struct_get_key_and_value(&env2, s, -1, &key, &value);
-    TEST_FAULT(&env2, XMLRPC_INDEX_ERROR);
+    xmlrpc_struct_get_key_and_value(&env, s, -1, &key, &value);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
     TEST(key == NULL && value == NULL);
-    xmlrpc_env_clean(&env2);
 
-    xmlrpc_env_init(&env2);
-    xmlrpc_struct_get_key_and_value(&env2, s, 3, &key, &value);
-    TEST_FAULT(&env2, XMLRPC_INDEX_ERROR);
+    xmlrpc_struct_get_key_and_value(&env, s, 3, &key, &value);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
     TEST(key == NULL && value == NULL);
-    xmlrpc_env_clean(&env2);
     
     /* Test cleanup code (w/memprof). */
     xmlrpc_DECREF(s);
@@ -1308,7 +1288,6 @@ test_struct (void) {
     xmlrpc_DECREF(i3);
     xmlrpc_env_clean(&env);
 }
-
 
 
 
