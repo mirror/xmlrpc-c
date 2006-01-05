@@ -378,13 +378,12 @@ struct uriHandlerXmlrpc {
 
 
 static void
-termUriHandler(URIHandler2 * const this) {
+termUriHandler(void * const arg) {
 
-    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = this->userdata;
+    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = arg;
 
-    free((void*)uriHandlerXmlrpcP->filename);
+    xmlrpc_strfree(uriHandlerXmlrpcP->filename);
     free(uriHandlerXmlrpcP);
-    free(this);
 }
 
 
@@ -670,30 +669,30 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                 xmlrpc_registry * const registryP) {
     
     struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
-    URIHandler2 * uriHandlerP;
+    URIHandler2 uriHandler;
     abyss_bool success;
 
     trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
                                  
-    MALLOCVAR_NOFAIL(uriHandlerP);
-
-    uriHandlerP->handleReq2 = handleXmlrpcReq;
-    uriHandlerP->handleReq1 = NULL;
-    uriHandlerP->init       = NULL;
-    uriHandlerP->term       = &termUriHandler;
-
     MALLOCVAR_NOFAIL(uriHandlerXmlrpcP);
 
     uriHandlerXmlrpcP->registryP = registryP;
     uriHandlerXmlrpcP->filename  = strdup(filename);
 
-    uriHandlerP->userdata = uriHandlerXmlrpcP;
+    uriHandler.handleReq2 = handleXmlrpcReq;
+    uriHandler.handleReq1 = NULL;
+    uriHandler.userdata   = uriHandlerXmlrpcP;
+    uriHandler.init       = NULL;
+    uriHandler.term       = &termUriHandler;
 
-    ServerAddHandler2(srvP, uriHandlerP, &success);
+    ServerAddHandler2(srvP, &uriHandler, &success);
 
     if (!success)
         xmlrpc_faultf(envP, "Abyss failed to register the Xmlrpc-c request "
                       "handler.  ServerAddHandler2() failed.");
+
+    if (envP->fault_occurred)
+        free(uriHandlerXmlrpcP);
 }
 
 

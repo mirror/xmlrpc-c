@@ -40,6 +40,9 @@ xmlrpc_client_init2(xmlrpc_env *                      const envP,
                                  clientparmsP, parmSize, &globalClientP);
             if (!envP->fault_occurred)
                 globalClientExists = true;
+
+            if (envP->fault_occurred)
+                xmlrpc_client_teardown_global_const();
         }
     }
 }
