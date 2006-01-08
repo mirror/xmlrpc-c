@@ -18,40 +18,6 @@ using namespace xmlrpc_c;
 
 namespace xmlrpc_c {
 
-serverAbyss::serverAbyss(
-    xmlrpc_c::registry const& registry,
-    unsigned int       const  portNumber,
-    string             const& logFileName,
-    unsigned int       const  keepaliveTimeout,
-    unsigned int       const  keepaliveMaxConn,
-    unsigned int       const  timeout,
-    bool               const  dontAdvertise,
-    bool               const  socketBound,
-    xmlrpc_socket      const  socketFd) {
-   
-    this->registryP = &registry;
-    this->logFileName = logFileName;
-    this->keepaliveTimeout = keepaliveTimeout;
-    this->keepaliveMaxConn = keepaliveMaxConn;
-    this->timeout = timeout;
-    this->dontAdvertise = dontAdvertise;
-    this->socketBound = socketBound;
-    this->socketFd = socketFd;
-    
-    if (portNumber > 0xffff)
-        throw(error("Port number exceeds the maximum possible port number "
-                    "(65535)"));
-    else {
-        this->portNumber = portNumber;
-    }
-}
-
-
-serverAbyss::~serverAbyss() {
-}
-
-
-
 namespace {
 
 
@@ -59,6 +25,7 @@ static void
 sigterm(int const sig) {
     TraceExit("Signal %d received. Exiting...\n",sig);
 }
+
 
 
 static void 
@@ -98,6 +65,8 @@ sigchld(int const sig) {
     }
 #endif /* _WIN32 */
 }
+
+
 
 void
 setupSignalHandlers(void) {
@@ -152,49 +121,90 @@ setAdditionalServerParms(
 
 
 
+serverAbyss::serverAbyss(
+    xmlrpc_c::registry const& registry,
+    unsigned int       const  portNumber,
+    string             const& logFileName,
+    unsigned int       const  keepaliveTimeout,
+    unsigned int       const  keepaliveMaxConn,
+    unsigned int       const  timeout,
+    bool               const  dontAdvertise,
+    bool               const  socketBound,
+    xmlrpc_socket      const  socketFd) {
+   
+    if (portNumber > 0xffff)
+        throw(error("Port number exceeds the maximum possible port number "
+                    "(65535)"));
+    else {
+        xmlrpc_env env;
+        xmlrpc_env_init(&env);
+    
+        DateInit();
+        MIMETypeInit();
+        
+        const char * const logfileArg(logFileName.length() == 0 ?
+                                      NULL : logFileName.c_str());
+        
+        if (socketBound)
+            ServerCreateSocket(&this->cServer, "XmlRpcServer", socketFd,
+                               DEFAULT_DOCS, logfileArg);
+        else
+            ServerCreate(&this->cServer, "XmlRpcServer", portNumber,
+                         DEFAULT_DOCS, logfileArg);
+        
+        try {
+            setAdditionalServerParms(
+                keepaliveTimeout, keepaliveMaxConn, timeout, dontAdvertise,
+                &this->cServer);
+            
+            xmlrpc_c::server_abyss_set_handlers(&this->cServer, registry);
+        
+            ServerInit(&this->cServer);
+    
+            setupSignalHandlers();
+        } catch (...) {
+            ServerFree(&this->cServer);
+            throw;
+        }
+    }
+}
+
+
+
+serverAbyss::~serverAbyss() {
+
+    ServerFree(&this->cServer);
+}
+
+
+
 void
 serverAbyss::run() {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-    
-    DateInit();
-    MIMETypeInit();
-    
-    TServer srv;
-
-    const char * const logfileArg(this->logFileName.length() == 0 ?
-                                  NULL : this->logFileName.c_str());
-
-    if (this->socketBound)
-        ServerCreateSocket(&srv, "XmlRpcServer", this->socketFd,
-                           DEFAULT_DOCS, logfileArg);
-    else
-        ServerCreate(&srv, "XmlRpcServer", this->portNumber,
-                     DEFAULT_DOCS, logfileArg);
-
-    setAdditionalServerParms(
-        this->keepaliveTimeout, this->keepaliveMaxConn, this->timeout,
-        this->dontAdvertise, &srv);
-                             
-    xmlrpc_c::server_abyss_set_handlers(&srv, *this->registryP);
-    
-    ServerInit(&srv);
-    
-    setupSignalHandlers();
-       
-    ServerRun(&srv);
-
-    /* We can't exist here because ServerRun doesn't return */
-    assert(false);
+    ServerRun(&this->cServer);
 }
  
 
 
 void
+serverAbyss::runOnce() {
+
+    ServerRunOnce(&this->cServer);
+}
+
+
+
+void
+serverAbyss::runConn(int const socketFd) {
+
+    ServerRunConn(&this->cServer, socketFd);
+}
+
+
+
+void
 server_abyss_set_handlers(TServer *          const  srvP,
                           xmlrpc_c::registry const& registry) {
-    
 
     xmlrpc_server_abyss_set_handlers(srvP, registry.c_registry());
 }

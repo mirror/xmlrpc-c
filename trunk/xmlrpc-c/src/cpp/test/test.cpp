@@ -12,6 +12,7 @@ using girerr::error;
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/oldcppwrapper.hpp"
 #include "xmlrpc-c/registry.hpp"
+#include "xmlrpc-c/server_abyss.hpp"
 
 #include "testclient.hpp"
 #include "tools.hpp"
@@ -773,6 +774,33 @@ public:
 
 
 
+class serverAbyssTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "serverAbyssTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+
+        xmlrpc_c::registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        // Due to the vagaries of Abyss, construction of the following
+        // object may exit the program if it detects an error, such as
+        // port number already in use.  We need to fix Abyss some day.
+
+        xmlrpc_c::serverAbyss myAbyssServer(
+            myRegistry,
+            12345,              // TCP port on which to listen
+            "/tmp/xmlrpc_log"  // Log file
+            );
+    }
+
+};
+
+
+
 //=========================================================================
 //  Test Driver
 //=========================================================================
@@ -794,6 +822,7 @@ main(int argc, char**) {
         valueTestSuite().run(0);
         paramListTestSuite().run(0);
         registryTestSuite().run(0);
+        serverAbyssTestSuite().run(0);
         clientTestSuite().run(0);
 
         testXmlRpcCpp();

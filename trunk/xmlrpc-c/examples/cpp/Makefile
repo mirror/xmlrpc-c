@@ -24,6 +24,8 @@ XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
 
 
 SERVERPROGS_ABYSS = \
+  xmlrpc_inetd_server \
+  xmlrpc_loop_server \
   xmlrpc_sample_add_server \
 
 LEGACY_CLIENTPROGS = \

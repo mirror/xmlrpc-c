@@ -1,5 +1,6 @@
 #ifndef SERVER_ABYSS_HPP_INCLUDED
 #define SERVER_ABYSS_HPP_INCLUDED
+
 #include "xmlrpc-c/base.hpp"
 #include "abyss.h"
 
@@ -21,24 +22,17 @@ public:
         );
     ~serverAbyss();
     
-    void run();
+    void
+    run();
+
+    void
+    runOnce();
+
+    void
+    runConn(int const socketFd);
     
 private:
-    // We rely on the creator to keep the registry object around as
-    // long as the server object is, so that this pointer is valid.
-    // We need to use some kind of automatic handle instead.
-    
-    const xmlrpc_c::registry * registryP;
-    
-    std::string   configFileName;
-    std::string   logFileName;
-    unsigned int  portNumber;
-    unsigned int  keepaliveTimeout;
-    unsigned int  keepaliveMaxConn;
-    unsigned int  timeout;
-    bool          dontAdvertise;
-    bool          socketBound;
-    xmlrpc_socket socketFd;
+    TServer cServer;
 };
 
 
