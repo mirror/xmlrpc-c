@@ -1812,7 +1812,7 @@ call(xmlrpc_env *                     const envP,
 static void
 setupGlobalConstants(xmlrpc_env * const envP) {
 /*----------------------------------------------------------------------------
-   See longwinded discussionof the global constant issue at the top of
+   See longwinded discussion of the global constant issue at the top of
    this file.
 -----------------------------------------------------------------------------*/
     initWindowsStuff(envP);
