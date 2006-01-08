@@ -30,7 +30,7 @@ using girmem::autoObject;
 /* transport_config.h defines MUST_BUILD_CURL_CLIENT */
 #include "transport_config.h"
 
-#include "xmlrpc-c/client.hpp"
+#include "xmlrpc-c/client_transport.hpp"
 
 
 using namespace std;

@@ -25,7 +25,7 @@ using girmem::autoObject;
 /* transport_config.h defines MUST_BUILD_LIBWWW_CLIENT */
 #include "transport_config.h"
 
-#include "xmlrpc-c/client.hpp"
+#include "xmlrpc-c/client_transport.hpp"
 
 
 using namespace std;
