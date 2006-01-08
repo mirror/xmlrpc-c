@@ -34,6 +34,67 @@ using namespace xmlrpc_c;
 
 namespace {
 
+class globalConstant {
+public:
+    globalConstant();
+    ~globalConstant();
+};
+
+
+
+globalConstant::globalConstant() {
+
+    // Not thread safe
+
+    xmlrpc_transport_setup setupFn;
+
+#if MUST_BUILD_WININET_CLIENT
+    setupFn = xmlrpc_wininet_transport_ops.setup_global_const;
+#else
+    setupFn = NULL;
+#endif
+    if (setupFn) {
+        xmlrpc_env env;
+
+        xmlrpc_env_init(&env);
+
+        setupFn(&env); // Not thread safe
+
+        if (env.fault_occurred)
+            throwf("Failed to do global initialization "
+                   "of Wininet transport code.  %s", env.fault_string);
+    }
+}
+
+
+
+globalConstant::~globalConstant() {
+
+    // Not thread safe
+
+    xmlrpc_transport_teardown teardownFn;
+
+#if MUST_BUILD_WININET_CLIENT
+    teardownFn = xmlrpc_wininet_transport_ops.teardown_global_const;
+#else
+    teardownFn = NULL;
+#endif
+    if (teardownFn)
+        teardownFn();  // not thread safe
+}
+
+
+
+globalConstant globalConst;
+    // This object is never accessed.  Its whole purpose to to be born and
+    // to die, which it does automatically as part of C++ program
+    // program initialization and termination.
+
+} // namespace
+
+
+namespace xmlrpc_c {
+
 carriageParm_wininet0::carriageParm_wininet0(
     string const serverUrl
     ) {
