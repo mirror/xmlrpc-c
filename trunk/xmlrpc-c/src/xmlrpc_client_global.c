@@ -1,7 +1,8 @@
-#include <stdbool.h>
 #include <stdarg.h>
 
 #include "xmlrpc_config.h"
+
+#include "bool.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>

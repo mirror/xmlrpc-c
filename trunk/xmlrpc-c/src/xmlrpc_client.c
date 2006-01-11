@@ -5,7 +5,6 @@
 #undef PACKAGE
 #undef VERSION
 
-#include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
