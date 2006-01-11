@@ -7,6 +7,7 @@
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+using girerr::throwf;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/server_abyss.h"
@@ -94,30 +95,120 @@ setupSignalHandlers(void) {
 }    
 
 
-static void
-setAdditionalServerParms(
-    unsigned int       const keepaliveTimeout,
-    unsigned int       const keepaliveMaxConn,
-    unsigned int       const timeout,
-    bool               const dontAdvertise,
-    TServer *          const serverP) {
+} // namespace
+
+
+
+serverAbyss::constrOpt::constrOpt() {
+    present.registryP        = false;
+    present.socketFd         = false;
+    present.portNumber       = false;
+    present.logFileName      = false;
+    present.keepaliveTimeout = false;
+    present.keepaliveMaxConn = false;
+    present.timeout          = false;
+    present.dontAdvertise    = false;
+
+    // Set default values
+    value.dontAdvertise = false;
+}
+
+
+
+#define DEFINE_OPTION_SETTER(OPTION_NAME, TYPE) \
+serverAbyss::constrOpt & \
+serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
+    this->value.OPTION_NAME = arg; \
+    this->present.OPTION_NAME = true; \
+    return *this; \
+}
+
+DEFINE_OPTION_SETTER(registryP,        const registry *);
+DEFINE_OPTION_SETTER(socketFd,         xmlrpc_socket);
+DEFINE_OPTION_SETTER(portNumber,       uint);
+DEFINE_OPTION_SETTER(logFileName,      string);
+DEFINE_OPTION_SETTER(keepaliveTimeout, uint);
+DEFINE_OPTION_SETTER(keepaliveMaxConn, uint);
+DEFINE_OPTION_SETTER(timeout,          uint);
+DEFINE_OPTION_SETTER(dontAdvertise,    bool);
+
+
+
+void
+serverAbyss::setAdditionalServerParms(constrOpt const& opt) {
 
     /* The following ought to be parameters on ServerCreate(), but it
        looks like plugging them straight into the TServer structure is
        the only way to set them.  
     */
 
-    if (keepaliveTimeout > 0)
-        ServerSetKeepaliveTimeout(serverP, keepaliveTimeout);
-    if (keepaliveMaxConn > 0)
-        ServerSetKeepaliveMaxConn(serverP, keepaliveMaxConn);
-    if (timeout > 0)
-        ServerSetTimeout(serverP, timeout);
-    ServerSetAdvertise(serverP, !dontAdvertise);
+    if (opt.present.keepaliveTimeout)
+        ServerSetKeepaliveTimeout(&this->cServer, opt.value.keepaliveTimeout);
+    if (opt.present.keepaliveMaxConn)
+        ServerSetKeepaliveMaxConn(&this->cServer, opt.value.keepaliveMaxConn);
+    if (opt.present.timeout)
+        ServerSetTimeout(&this->cServer, opt.value.timeout);
+    ServerSetAdvertise(&this->cServer, !opt.value.dontAdvertise);
 }
 
 
-} // namespace
+
+void
+serverAbyss::initialize(constrOpt const& opt) {
+
+    if (!opt.present.registryP)
+        throwf("You must specify the 'registryP' option");
+    
+    if (opt.present.portNumber && opt.present.socketFd)
+        throwf("You can't specify both portNumber and socketFd options");
+
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+    
+    DateInit();
+    MIMETypeInit();
+    
+    const char * const logfileArg(opt.present.logFileName ?
+                                  opt.value.logFileName.c_str() : NULL);
+
+    const char * const serverName("XmlRpcServer");
+        
+    if (opt.present.socketFd)
+        ServerCreateSocket(&this->cServer, serverName, opt.value.socketFd,
+                           DEFAULT_DOCS, logfileArg);
+    else if (opt.present.portNumber) {
+        if (opt.value.portNumber > 0xffff)
+            throw(error("Port number exceeds the maximum possible port number "
+                        "(65535)"));
+
+        ServerCreate(&this->cServer, serverName, opt.value.portNumber,
+                     DEFAULT_DOCS, logfileArg);
+    } else
+        ServerCreateNoAccept(&this->cServer, serverName,
+                             DEFAULT_DOCS, logfileArg);
+
+    try {
+        setAdditionalServerParms(opt);
+        
+        xmlrpc_c::server_abyss_set_handlers(&this->cServer,
+                                            opt.value.registryP);
+        
+        if (opt.present.portNumber || opt.present.socketFd)
+            ServerInit(&this->cServer);
+        
+        setupSignalHandlers();
+    } catch (...) {
+        ServerFree(&this->cServer);
+        throw;
+    }
+}
+
+
+
+serverAbyss::serverAbyss(constrOpt const& opt) {
+
+    initialize(opt);
+}
 
 
 
@@ -131,42 +222,28 @@ serverAbyss::serverAbyss(
     bool               const  dontAdvertise,
     bool               const  socketBound,
     xmlrpc_socket      const  socketFd) {
-   
-    if (portNumber > 0xffff)
-        throw(error("Port number exceeds the maximum possible port number "
-                    "(65535)"));
-    else {
-        xmlrpc_env env;
-        xmlrpc_env_init(&env);
-    
-        DateInit();
-        MIMETypeInit();
-        
-        const char * const logfileArg(logFileName.length() == 0 ?
-                                      NULL : logFileName.c_str());
-        
-        if (socketBound)
-            ServerCreateSocket(&this->cServer, "XmlRpcServer", socketFd,
-                               DEFAULT_DOCS, logfileArg);
-        else
-            ServerCreate(&this->cServer, "XmlRpcServer", portNumber,
-                         DEFAULT_DOCS, logfileArg);
-        
-        try {
-            setAdditionalServerParms(
-                keepaliveTimeout, keepaliveMaxConn, timeout, dontAdvertise,
-                &this->cServer);
-            
-            xmlrpc_c::server_abyss_set_handlers(&this->cServer, registry);
-        
-            ServerInit(&this->cServer);
-    
-            setupSignalHandlers();
-        } catch (...) {
-            ServerFree(&this->cServer);
-            throw;
-        }
-    }
+/*----------------------------------------------------------------------------
+  This is a backward compatibility interface.  This used to be the only
+  constructor.
+-----------------------------------------------------------------------------*/
+    serverAbyss::constrOpt opt;
+
+    opt.registryP(&registry);
+    if (logFileName.length() > 0)
+        opt.logFileName(logFileName);
+    if (keepaliveTimeout > 0)
+        opt.keepaliveTimeout(keepaliveTimeout);
+    if (keepaliveMaxConn > 0)
+        opt.keepaliveMaxConn(keepaliveMaxConn);
+    if (timeout > 0)
+        opt.timeout(timeout);
+    opt.dontAdvertise(dontAdvertise);
+    if (socketBound)
+        opt.socketFd(socketFd);
+    else
+        opt.portNumber(portNumber);
+
+    initialize(opt);
 }
 
 
@@ -207,6 +284,15 @@ server_abyss_set_handlers(TServer *          const  srvP,
                           xmlrpc_c::registry const& registry) {
 
     xmlrpc_server_abyss_set_handlers(srvP, registry.c_registry());
+}
+
+
+
+void
+server_abyss_set_handlers(TServer *                  const srvP,
+                          const xmlrpc_c::registry * const registryP) {
+
+    xmlrpc_server_abyss_set_handlers(srvP, registryP->c_registry());
 }
 
 

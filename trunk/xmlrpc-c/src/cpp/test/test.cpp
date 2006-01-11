@@ -782,7 +782,7 @@ public:
     }
     virtual void runtests(unsigned int) {
 
-        xmlrpc_c::registry myRegistry;
+        registry myRegistry;
         
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
 
@@ -790,7 +790,23 @@ public:
         // object may exit the program if it detects an error, such as
         // port number already in use.  We need to fix Abyss some day.
 
-        xmlrpc_c::serverAbyss myAbyssServer(
+        serverAbyss abyssServer0(constrOpt()
+                                 .registryP(&myRegistry)
+                                 .portNumber(12345)
+                                 .logFileName("/tmp/xmlrpc_log")
+            );
+
+        serverAbyss abyssServer1(constrOpt()
+                                 .registryP(&myRegistry)
+                                 .socketFd(0)
+            );
+
+        serverAbyss abyssServer2(constrOpt()
+                                 .registryP(&myRegistry)
+            );
+
+
+        serverAbyss abyssServer9(
             myRegistry,
             12345,              // TCP port on which to listen
             "/tmp/xmlrpc_log"  // Log file
