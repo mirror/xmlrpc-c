@@ -8,7 +8,7 @@ extern int total_failures;
 
 
 /* This is a good place to set a breakpoint. */
-static __inline void
+static __inline__ void
 test_failure(const char * const file,
              unsigned int const line,
              const char * const label,
