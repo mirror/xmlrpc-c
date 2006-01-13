@@ -33,8 +33,8 @@ dumpInt(const char *   const prefix,
     xmlrpc_parse_value(&env, valueP, "i", &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse integer in result.  %s\n",
-               env.fault_string);
+        printf("Unable to parse integer xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
     else
         printf("%sInteger: %d\n", prefix, value);
 
@@ -55,8 +55,8 @@ dumpBool(const char *   const prefix,
     xmlrpc_parse_value(&env, valueP, "b", &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse boolean in result.  %s\n",
-               env.fault_string);
+        printf("Unable to parse boolean xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
     else
         printf("%sBoolean: %s\n", prefix, value ? "TRUE" : "FALSE");
 
@@ -78,8 +78,8 @@ dumpDouble(const char *   const prefix,
     xmlrpc_parse_value(&env, valueP, "d", &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse floating point number in result.  %s\n",
-               env.fault_string);
+        printf("Unable to parse floating point number xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
     else
         printf("%sFloating Point: %f\n", prefix, value);
 
@@ -92,8 +92,8 @@ static void
 dumpDatetime(const char *   const prefix,
              xmlrpc_value * const valueP) {
 
-    printf("%sDon't know how to print datetime value result %p.\n", 
-           prefix, valueP);
+    printf("%sDon't know how to print datetime value %lx.\n", 
+           prefix, (unsigned long) valueP);
 }
 
 
@@ -110,8 +110,8 @@ dumpString(const char *   const prefix,
     xmlrpc_parse_value(&env, valueP, "s", &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse string in result.  %s\n",
-               env.fault_string);
+        printf("Unable to parse string xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
     else
         printf("%sString: '%s'\n", prefix, value);
 
@@ -133,8 +133,8 @@ dumpBase64(const char *   const prefix,
     xmlrpc_parse_value(&env, valueP, "6", &value, &length);
     
     if (env.fault_occurred)
-        printf("Unable to parse base64 bit strnig in result.  %s\n",
-               env.fault_string);
+        printf("Unable to parse base64 bit string xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
     else {
         unsigned int i;
 
@@ -284,8 +284,8 @@ dumpCPtr(const char *   const prefix,
     xmlrpc_parse_value(&env, valueP, "p", &value);
         
     if (env.fault_occurred)
-        printf("Unable to parse C pointer in result.  %s\n",
-               env.fault_string);
+        printf("Unable to parse C pointer xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
     else
         printf("%sC pointer: '%p'\n", prefix, value);
 
@@ -305,8 +305,8 @@ dumpNil(const char *   const prefix,
     xmlrpc_parse_value(&env, valueP, "n");
         
     if (env.fault_occurred)
-        printf("Unable to parse nil value in result.  %s\n",
-               env.fault_string);
+        printf("Unable to parse nil value xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
     else
         printf("%sNil\n", prefix);
 
@@ -319,8 +319,8 @@ static void
 dumpUnknown(const char *   const prefix,
             xmlrpc_value * const valueP) {
 
-    printf("%sDon't recognize the type of the result: %u.\n", 
-           prefix, xmlrpc_value_type(valueP));
+    printf("%sDon't recognize value type %u of xmlrpc_value %lx.\n", 
+           prefix, xmlrpc_value_type(valueP), (unsigned long)valueP);
     printf("%sCan't print it.\n", prefix);
 }
 
