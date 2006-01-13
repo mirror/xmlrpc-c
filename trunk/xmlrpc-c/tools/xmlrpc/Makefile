@@ -22,7 +22,9 @@ UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) $(LIBXML) $(UTILS)
 
-xmlrpc:%:%.o $(LIBS)
+XMLRPC_OBJS = xmlrpc.o dumpvalue.o
+
+xmlrpc: $(XMLRPC_OBJS) $(LIBS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
 
 %.o:%.c
