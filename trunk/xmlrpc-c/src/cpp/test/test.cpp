@@ -790,18 +790,18 @@ public:
         // object may exit the program if it detects an error, such as
         // port number already in use.  We need to fix Abyss some day.
 
-        serverAbyss abyssServer0(constrOpt()
+        serverAbyss abyssServer0(serverAbyss::constrOpt()
                                  .registryP(&myRegistry)
                                  .portNumber(12345)
                                  .logFileName("/tmp/xmlrpc_log")
             );
 
-        serverAbyss abyssServer1(constrOpt()
+        serverAbyss abyssServer1(serverAbyss::constrOpt()
                                  .registryP(&myRegistry)
                                  .socketFd(0)
             );
 
-        serverAbyss abyssServer2(constrOpt()
+        serverAbyss abyssServer2(serverAbyss::constrOpt()
                                  .registryP(&myRegistry)
             );
 

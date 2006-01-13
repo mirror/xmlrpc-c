@@ -24,6 +24,8 @@ ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   LDFLAGS += $(shell libwww-config --libs)
 endif
 
+LDFLAGS += "-lpthread"
+
 LDFLAGS += $(LADD)
 
 INCLUDES = -Isrcdir/include -Iblddir -Isrcdir -Isrcdir/lib/util/include
@@ -55,7 +57,8 @@ endif
 
 test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
   $(CLIENT_LIBS) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
-  $(LIBXMLRPC_SERVER) $(LIBXMLRPC) $(LIBXMLRPC_UTIL) \
+  $(LIBXMLRPC_SERVER_ABYSS) $(LIBXMLRPC_SERVER) \
+  $(LIBXMLRPC) $(LIBXMLRPC_UTIL) $(LIBXMLRPC_ABYSS) \
   $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
