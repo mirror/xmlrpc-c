@@ -35,8 +35,14 @@ all: $(PROGS)
 LDFLAGS = $(LADD)
 
 TEST_OBJS = \
-  test.o value.o serialize.o parse_xml.o cgi.o server_abyss.o \
-  xml_data.o
+  test.o \
+  cgi.o \
+  method_registry.o \
+  parse_xml.o \
+  serialize.o \
+  server_abyss.o \
+  value.o \
+  xml_data.o \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += client.o

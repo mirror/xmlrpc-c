@@ -27,20 +27,92 @@
 
 #include "xmlrpc_config.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
-#include "xmlrpc-c/base_int.h"
 
 /*=========================================================================
-**  XML-RPC Server Method Registry
-**=========================================================================
-**  A method registry maintains a list of functions, and handles
-**  dispatching. To build an XML-RPC server, just add a communications
-**  protocol. :-)
-*/
+  XML-RPC Server Method Registry
+===========================================================================
+  A method registry is a list of XML-RPC methods for a server to
+  implement, along with the details of how to implement each -- most
+  notably a function pointer for a function that executes the method.
+
+  To build an XML-RPC server, just add a communication facility.
+
+  The registry object consists principally of an xmlrpc_value.  That
+  xmlrpc_value is a struct, with method name as key.  Each value in
+  the struct a "method info" array.  A method info array has the
+  following items:
+
+     0: cptr: method function ptr
+     1: cptr: user data
+     2: array: signature list
+     3: string: help text.
+    
+  The signature list array contains one item for each form of call (a
+  single method might have multiple forms, e.g. one takes two integer
+  arguments; another takes a single string).  The array for each form
+  represents a signature.  It has an item for each parameter and one
+  for the result.  Item 0 is for the result, the rest are in order of
+  the parameters.  Each item of that array is the name of the XML-RPC
+  element that represents that type, e.g.  "int" or
+  "dateTime.iso8601".
+
+  Example signature:
+
+    (("int"
+      "double"
+      "double"
+     )
+     ("int"
+     )
+    )
+
+  The signature list array is empty to indicate that there is no signature
+  information in the registry (it doesn't mean there are no valid forms
+  of calling the method -- just that the registry declines to state).
+
+=========================================================================*/
+
+
+
+static void
+getMethodInfo(xmlrpc_env *      const envP,
+              xmlrpc_registry * const registryP,
+              const char *      const methodName,
+              xmlrpc_value **   const methodInfoPP) {
+/*----------------------------------------------------------------------------
+   Look up the method info for the named method.  Method info
+   is an array (ppss):
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * methodInfoP;
+    
+    xmlrpc_env_init(&env);
+    
+    xmlrpc_struct_find_value(&env, registryP->_methods, methodName,
+                             &methodInfoP);
+    
+    if (env.fault_occurred)
+        xmlrpc_faultf(envP, "Unable to look up method named '%s' in the "
+                      "registry.  %s", methodName, env.fault_string);
+    else {
+        if (methodInfoP == NULL)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_NO_SUCH_METHOD_ERROR,
+                "Method '%s' does not exist", methodName);
+    }
+    *methodInfoPP = methodInfoP;
+
+    xmlrpc_env_clean(&env);
+}
+
+
 
 static void
 install_system_methods (xmlrpc_env *env, xmlrpc_registry *registry);
@@ -125,11 +197,232 @@ xmlrpc_registry_disable_introspection(xmlrpc_registry * registry) {
 
 
 
-/*=========================================================================
-**  xmlrpc_registry_add_method
-**=========================================================================
-**  See xmlrpc.h for more documentation.
-*/
+static void
+translateTypeSpecifierToName(xmlrpc_env *  const envP,
+                             char          const typeSpecifier,
+                             const char ** const typeNameP) {
+
+    switch (typeSpecifier) {
+    case 'i': *typeNameP = "int";              break;
+    case 'b': *typeNameP = "boolean";          break;
+    case 'd': *typeNameP = "double";           break;
+    case 's': *typeNameP = "string";           break;
+    case '8': *typeNameP = "dateTime.iso8601"; break;
+    case '6': *typeNameP = "base64";           break;
+    case 'S': *typeNameP = "struct";           break;
+    case 'A': *typeNameP = "array";            break;
+    default:
+        xmlrpc_faultf(envP, 
+                      "Method registry contains invalid signature "
+                      "data.  It contains the type specifier '%c'",
+                      typeSpecifier);
+    }
+}
+                
+
+
+static void
+parseOneTypeSpecifier(xmlrpc_env *   const envP,
+                      const char *   const startP,
+                      xmlrpc_value * const signatureP,
+                      const char **  const nextP) {
+/*----------------------------------------------------------------------------
+   Parse one type specifier at 'startP' within a signature string.
+
+   Add the appropriate item for it to the array 'signatureP'.
+
+   Return as *nextP the location the signature string just past the
+   type specifier, and also past the colon that comes after the 
+   type specifier for a return value.
+-----------------------------------------------------------------------------*/
+    const char * typeName;
+    const char * cursorP;
+
+    cursorP = startP;
+                
+    translateTypeSpecifierToName(envP, *cursorP, &typeName);
+    
+    if (!envP->fault_occurred) {
+        xmlrpc_value * typeP;
+        int sigArraySize;
+        
+        /* Append the appropriate string to the signature. */
+        typeP = xmlrpc_string_new(envP, typeName);
+        xmlrpc_array_append_item(envP, signatureP, typeP);
+        xmlrpc_DECREF(typeP);
+        
+        ++cursorP; /* move past the type specifier */
+        
+        sigArraySize = xmlrpc_array_size(envP, signatureP);
+        if (!envP->fault_occurred) {
+            if (sigArraySize == 1) {
+                /* We parsed off the result type, so we should now
+                   see the colon that separates the result type from
+                   the parameter types
+                */
+                if (*cursorP != ':')
+                    xmlrpc_faultf(envP, "No colon (':') after "
+                                  "the result type specifier");
+                else
+                    ++cursorP;
+            }
+        }
+    }
+    *nextP = cursorP;
+}
+
+
+
+static void
+parseOneSignature(xmlrpc_env *    const envP,
+                  const char *    const startP,
+                  xmlrpc_value ** const signaturePP,
+                  const char **   const nextP) {
+/*----------------------------------------------------------------------------
+   Parse one signature from the signature string that starts at 'startP'.
+
+   Return that signature as an array xmlrpc_value pointer
+   *signaturePP.  The array has one element for the return value,
+   followed by one element for each parameter described in the
+   signature.  That element is a string naming the return value or
+   parameter type, e.g. "int".
+
+   Return as *nextP the location in the signature string of the next
+   signature (i.e. right after the next comma).  If there is no next
+   signature (the string ends before any comma), make it point to the
+   terminating NUL.
+-----------------------------------------------------------------------------*/
+    xmlrpc_value * signatureP;
+
+    signatureP = xmlrpc_array_new(envP);  /* Start with empty array */
+    if (!envP->fault_occurred) {
+        const char * cursorP;
+
+        cursorP = startP;  /* start at the beginning */
+
+        while (!envP->fault_occurred && *cursorP != ',' && *cursorP != '\0')
+            parseOneTypeSpecifier(envP, cursorP, signatureP, &cursorP);
+
+        if (!envP->fault_occurred) {
+            if (xmlrpc_array_size(envP, signatureP) < 1)
+                xmlrpc_faultf(envP, "empty signature (a signature "
+                              "must have at least  return value type)");
+            if (*cursorP != '\0') {
+                assert(*cursorP == ',');
+                ++cursorP;
+            }
+            *nextP = cursorP;
+        }
+        if (envP->fault_occurred)
+            xmlrpc_DECREF(signatureP);
+        else
+            *signaturePP = signatureP;
+    }
+}    
+
+
+
+static void
+buildSignatureArray(xmlrpc_env *    const envP,
+                    const char *    const sigListString,
+                    xmlrpc_value ** const resultPP) {
+/*----------------------------------------------------------------------------
+  Turn the signature string 'sig' (e.g. "ii,s") into an array
+  as *resultP.  The array contains one element for each signature in
+  the string.  (Signatures are separated by commas.  The "ii,s" example
+  is two signatures: "ii" and "s").  Each element is itself an array
+  as described under parseOneSignature().
+-----------------------------------------------------------------------------*/
+    xmlrpc_value * signatureListP;
+
+    signatureListP = xmlrpc_array_new(envP);
+    if (!envP->fault_occurred) {
+        if (sigListString == NULL || xmlrpc_streq(sigListString, "?")) {
+            /* No signatures -- leave the array empty */
+        } else {
+            const char * cursorP;
+            
+            cursorP = &sigListString[0];
+            
+            while (!envP->fault_occurred && *cursorP != '\0') {
+                xmlrpc_value * signatureP;
+                
+                parseOneSignature(envP, cursorP, &signatureP, &cursorP);
+                
+                /* cursorP now points at next signature in the list or the
+                   terminating NUL.
+                */
+                
+                if (!envP->fault_occurred) {
+                    xmlrpc_array_append_item(envP, signatureListP, signatureP);
+                    xmlrpc_DECREF(signatureP);
+                }
+            }
+            if (!envP->fault_occurred) {
+                unsigned int const arraySize = 
+                    xmlrpc_array_size(envP, signatureListP);
+                XMLRPC_ASSERT_ENV_OK(envP);
+                if (arraySize < 1)
+                    xmlrpc_faultf(envP, "Signature string is empty.");
+            }
+        }
+        if (envP->fault_occurred)
+            xmlrpc_DECREF(signatureListP);
+    }
+    *resultPP = signatureListP;
+}
+
+
+
+void 
+xmlrpc_registry_add_method_w_doc(
+    xmlrpc_env *      const envP,
+    xmlrpc_registry * const registryP,
+    const char *      const host,
+    const char *      const methodName,
+    xmlrpc_method     const method,
+    void *            const userData,
+    const char *      const signatureString,
+    const char *      const help) {
+
+    const char * const helpString =
+        help ? help : "No help is available for this method.";
+
+    xmlrpc_env env;
+    xmlrpc_value * signatureListP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(registryP);
+    XMLRPC_ASSERT(host == NULL);
+    XMLRPC_ASSERT_PTR_OK(methodName);
+    XMLRPC_ASSERT_PTR_OK(method);
+
+    xmlrpc_env_init(&env);
+
+    buildSignatureArray(&env, signatureString, &signatureListP);
+    if (env.fault_occurred)
+        xmlrpc_faultf(envP, "Can't interpret signature string '%s'.  %s",
+                      signatureString, env.fault_string);
+    else {
+        xmlrpc_value * methodInfoP;
+
+        XMLRPC_ASSERT_VALUE_OK(signatureListP);
+
+        methodInfoP = xmlrpc_build_value(envP, "(ppVs)", (void*) method,
+                                         userData, signatureListP, helpString);
+        if (!envP->fault_occurred) {
+            xmlrpc_struct_set_value(envP, registryP->_methods,
+                                    methodName, methodInfoP);
+
+            if (envP->fault_occurred)
+                xmlrpc_DECREF(methodInfoP);
+        }
+        xmlrpc_DECREF(signatureListP);
+    }
+    xmlrpc_env_clean(&env);
+}
+
+
 
 void 
 xmlrpc_registry_add_method(xmlrpc_env *env,
@@ -142,41 +435,6 @@ xmlrpc_registry_add_method(xmlrpc_env *env,
     xmlrpc_registry_add_method_w_doc (env, registry, host, method_name,
                       method, user_data, "?",
                       "No help is available for this method.");
-}
-
-
-
-void 
-xmlrpc_registry_add_method_w_doc(xmlrpc_env *env,
-                                 xmlrpc_registry *registry,
-                                 const char *host,
-                                 const char *method_name,
-                                 xmlrpc_method method,
-                                 void *user_data,
-                                 const char *signature,
-                                 const char *help) {
-    xmlrpc_value *method_info;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(registry);
-    XMLRPC_ASSERT(host == NULL);
-    XMLRPC_ASSERT_PTR_OK(method_name);
-    XMLRPC_ASSERT_PTR_OK(method);
-
-    /* Error-handling preconditions. */
-    method_info = NULL;
-
-    /* Store our method and user data into our hash table. */
-    method_info = xmlrpc_build_value(env, "(ppss)", (void*) method, user_data,
-                                     signature, help);
-    XMLRPC_FAIL_IF_FAULT(env);
-    xmlrpc_struct_set_value(env, registry->_methods, method_name, method_info);
-    XMLRPC_FAIL_IF_FAULT(env);
-
- cleanup:
-    if (method_info)
-    xmlrpc_DECREF(method_info);
-
 }
 
 
@@ -330,18 +588,14 @@ dispatchCall(xmlrpc_env *      const envP,
 
     callPreinvokeMethodIfAny(envP, registryP, methodName, paramArrayP);
     if (!envP->fault_occurred) {
-        xmlrpc_value * method_info;
+        xmlrpc_value * methodInfoP;
 
-        /* Look up the method info for the named method.  Method info
-           is an array (ppss): method function ptr, user data,
-           signature, help text.
-        */
         xmlrpc_struct_find_value(envP, registryP->_methods,
-                                 methodName, &method_info);
+                                 methodName, &methodInfoP);
         if (!envP->fault_occurred) {
-            if (method_info) {
-                callNamedMethod(envP, method_info, paramArrayP, resultPP);
-                xmlrpc_DECREF(method_info);
+            if (methodInfoP) {
+                callNamedMethod(envP, methodInfoP, paramArrayP, resultPP);
+                xmlrpc_DECREF(methodInfoP);
             } else {
                 if (registryP->_default_method)
                     callDefaultMethod(envP, registryP->_default_method, 
@@ -675,131 +929,130 @@ system_methodHelp(xmlrpc_env *env,
 
 
 /*=========================================================================
-**  system.methodSignature
-**=========================================================================
-**  Return an array of arrays describing possible signatures for this
-**  method.
-**
-**  XXX - This is the ugliest function in the entire library.
-*/
+  system.methodSignature
+==========================================================================*/
 
-static char *methodSignature_help =
+static const char * const methodSignature_help =
 "Given the name of a method, return an array of legal signatures. "
 "Each signature is an array of strings. The first item of each signature "
 "is the return type, and any others items are parameter types.";
 
-static char *bad_sig_str =
-"Application has incorrect method signature information";
 
-#define BAD_SIG(env) \
-    XMLRPC_FAIL((env), XMLRPC_INTERNAL_ERROR, bad_sig_str);
+static void
+buildNoSigSuppliedResult(xmlrpc_env *    const envP,
+                         xmlrpc_value ** const resultPP) {
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    *resultPP = xmlrpc_string_new(&env, "undef");
+    if (env.fault_occurred)
+        xmlrpc_faultf(envP, "Unable to construct 'undef'.  %s",
+                      env.fault_string);
+
+    xmlrpc_env_clean(&env);
+}
+    
+
+
+static void
+getSignatureList(xmlrpc_env *      const envP,
+                 xmlrpc_registry * const registryP,
+                 const char *      const methodName,
+                 xmlrpc_value **   const signatureListPP) {
+/*----------------------------------------------------------------------------
+  Get the signature list array for method named 'methodName' from registry
+  'registryP'.
+
+  If there is no signature information for the method in the registry,
+  return *signatureListPP == NULL.
+
+  Nonexistent method is considered a failure.
+-----------------------------------------------------------------------------*/
+    xmlrpc_value * methodInfoP;
+
+    getMethodInfo(envP, registryP, methodName, &methodInfoP);
+    if (!envP->fault_occurred) {
+        xmlrpc_env env;
+        xmlrpc_value * signatureListP;
+        
+        xmlrpc_env_init(&env);
+        
+        xmlrpc_array_read_item(&env, methodInfoP, 2, &signatureListP);
+
+        if (env.fault_occurred)
+            xmlrpc_faultf(envP, "Failed to read signature list "
+                          "from method info array.  %s",
+                          env.fault_string);
+        else {
+            int arraySize;
+
+            arraySize = xmlrpc_array_size(&env, signatureListP);
+            if (env.fault_occurred)
+                xmlrpc_faultf(envP, "xmlrpc_array_size() on signature "
+                              "list array failed!  %s", env.fault_string);
+            else {
+                if (arraySize == 0)
+                    *signatureListPP = NULL;
+                else {
+                    *signatureListPP = signatureListP;
+                    xmlrpc_INCREF(signatureListP);
+                }
+            }
+            xmlrpc_DECREF(signatureListP);
+        }
+        xmlrpc_env_clean(&env);
+        xmlrpc_DECREF(methodInfoP);
+    }
+}
+
+
 
 static xmlrpc_value *
-system_methodSignature(xmlrpc_env *env,
-                       xmlrpc_value *param_array,
-                       void *user_data) {
+system_methodSignature(xmlrpc_env *   const envP,
+                       xmlrpc_value * const paramArrayP,
+                       void *         const userData) {
 
-    xmlrpc_registry *registry;
-    char *method_name;
-    xmlrpc_value *ignored1, *ignored2, *ignored3;
-    xmlrpc_value *item, *current, *result;
-    int at_sig_start;
-    char *sig, *code;
+    xmlrpc_registry * const registryP = (xmlrpc_registry *) userData;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
-    XMLRPC_ASSERT_PTR_OK(user_data);
+    xmlrpc_value * retvalP;
+    const char * methodName;
+    xmlrpc_env env;
 
-    /* Error-handling preconditions. */
-    item = current = result = NULL;
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(userData);
+
+    xmlrpc_env_init(&env);
 
     /* Turn our arguments into something more useful. */
-    registry = (xmlrpc_registry*) user_data;
-    xmlrpc_parse_value(env, param_array, "(s)", &method_name);
-    XMLRPC_FAIL_IF_FAULT(env);
+    xmlrpc_decompose_value(&env, paramArrayP, "(s)", &methodName);
+    if (env.fault_occurred)
+        xmlrpc_env_set_fault_formatted(
+            envP, env.fault_code,
+            "Invalid parameter list.  %s", env.fault_string);
+    else {
+        if (!registryP->_introspection_enabled)
+            xmlrpc_env_set_fault(envP, XMLRPC_INTROSPECTION_DISABLED_ERROR,
+                                 "Introspection disabled on this server");
+        else {
+            xmlrpc_value * signatureListP;
 
-    /* Make sure we're allowed to introspect. */
-    if (!registry->_introspection_enabled)
-        XMLRPC_FAIL(env, XMLRPC_INTROSPECTION_DISABLED_ERROR,
-                    "Introspection disabled for security reasons");
-    
-    /* Get our signature string. */
-    xmlrpc_parse_value(env, registry->_methods, "{s:(VVsV*),*}",
-                       method_name, &ignored1, &ignored2, &sig, &ignored3);
-    XMLRPC_FAIL_IF_FAULT(env);
-    
-    if (sig[0] == '?' && sig[1] == '\0') {
-        /* No signature supplied. */
-        result = xmlrpc_build_value(env, "s", "undef");
-        XMLRPC_FAIL_IF_FAULT(env);
-    } else {
-        /* Build an array of arrays. */
-        current = xmlrpc_build_value(env, "()");
-        XMLRPC_FAIL_IF_FAULT(env);
-        result = xmlrpc_build_value(env, "(V)", current);
-        XMLRPC_FAIL_IF_FAULT(env);
-        at_sig_start = 1;
-        
-        do {
-        next_loop:
-            
-            /* Process the current code. */
-            switch (*(sig++)) {
-            case 'i': code = "int"; break;
-            case 'b': code = "boolean"; break;
-            case 'd': code = "double"; break;
-            case 's': code = "string"; break;
-            case '8': code = "dateTime.iso8601"; break;
-            case '6': code = "base64"; break;
-            case 'S': code = "struct"; break;
-            case 'A': code = "array"; break;
-                
-            case ',':
-                /* Start a new signature array. */
-                if (at_sig_start)
-                    BAD_SIG(env);
-                xmlrpc_DECREF(current);
-                current = xmlrpc_build_value(env, "()");
-                XMLRPC_FAIL_IF_FAULT(env);
-                xmlrpc_array_append_item(env, result, current);
-                XMLRPC_FAIL_IF_FAULT(env);
-                at_sig_start = 1;
-                goto next_loop;
-                
-            default:
-            BAD_SIG(env);
+            getSignatureList(envP, registryP, methodName, &signatureListP);
+
+            if (!envP->fault_occurred) {
+                if (signatureListP)
+                    retvalP = signatureListP;
+                else
+                    buildNoSigSuppliedResult(envP, &retvalP);
             }
-            
-            /* Append the appropriate string to our current signature. */
-            item = xmlrpc_build_value(env, "s", code);
-            XMLRPC_FAIL_IF_FAULT(env);
-            xmlrpc_array_append_item(env, current, item);
-            xmlrpc_DECREF(item);
-            item = NULL;
-            XMLRPC_FAIL_IF_FAULT(env);
-            
-            /* Advance to the next code, and skip over ':' if necessary. */
-            if (at_sig_start) {
-                if (*sig != ':')
-                    BAD_SIG(env);
-                sig++;
-                at_sig_start = 0;
-            }
-            
-        } while (*sig != '\0');
+        }
+        xmlrpc_strfree(methodName);
     }
-    
- cleanup:
-    if (item)
-        xmlrpc_DECREF(item);
-    if (current)
-        xmlrpc_DECREF(current);
-    if (env->fault_occurred) {
-        if (result)
-            xmlrpc_DECREF(result);
-        return NULL;
-    }
-    return result;
+    xmlrpc_env_clean(&env);
+
+    return retvalP;
 }
 
 
