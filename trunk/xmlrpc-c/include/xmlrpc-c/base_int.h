@@ -14,6 +14,8 @@
 #ifndef  XMLRPC_C_BASE_INT_H_INCLUDED
 #define  XMLRPC_C_BASE_INT_H_INCLUDED
 
+#include "bool.h"
+
 #include <stdarg.h>
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/util_int.h>
@@ -114,6 +116,11 @@ xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...);
 void
 xmlrpc_strfree(const char * const string);
 
+static __inline__ bool
+xmlrpc_streq(const char * const a,
+             const char * const b) {
+    return (strcmp(a,b) == 0);
+}
 
 const char * 
 xmlrpc_makePrintable(const char * const input);
