@@ -1,4 +1,6 @@
 #include <cassert>
+#include <stdexcept>
+#include <iostream>
 
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
@@ -12,7 +14,8 @@ public:
         // signature and help strings are documentation -- the client
         // can query this information with a system.methodSignature and
         // system.methodHelp RPC.
-        this->_signature = "ii";  // method's arguments are two integers
+        this->_signature = "i:ii";
+            // method's result and two arguments are integers
         this->_help = "This method adds two integers together";
     }
     void
@@ -34,21 +37,24 @@ int
 main(int           const, 
      const char ** const) {
 
-    xmlrpc_c::registry myRegistry;
+    try {
+        xmlrpc_c::registry myRegistry;
 
-    xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);
+        xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);
 
-    myRegistry.addMethod("sample.add", sampleAddMethodP);
-
-    xmlrpc_c::serverAbyss myAbyssServer(
-        myRegistry,
-        8080,              // TCP port on which to listen
-        "/tmp/xmlrpc_log"  // Log file
-        );
-
-    myAbyssServer.run();
-    // xmlrpc_c::serverAbyss.run() never returns
-    assert(false);
-
+        myRegistry.addMethod("sample.add", sampleAddMethodP);
+        
+        xmlrpc_c::serverAbyss myAbyssServer(
+            myRegistry,
+            8080,              // TCP port on which to listen
+            "/tmp/xmlrpc_log"  // Log file
+            );
+        
+        myAbyssServer.run();
+        // xmlrpc_c::serverAbyss.run() never returns
+        assert(false);
+    } catch (exception const& e) {
+        cerr << "Something failed.  " << e.what() << endl;
+    }
     return 0;
 }
