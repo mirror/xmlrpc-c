@@ -276,21 +276,6 @@ ResponseError(TSession * const sessionP);
 #define MAX_CONN    16
 
 /*********************************************************************
-** Server Info Definitions
-*********************************************************************/
-
-#define SERVER_VERSION      "0.3"
-#define SERVER_HVERSION     "ABYSS/0.3"
-#define SERVER_HTML_INFO \
-  "<p><HR><b><i><a href=\"http:\057\057abyss.linuxave.net\">" \
-  "ABYSS Web Server</a></i></b> version "SERVER_VERSION"<br>" \
-  "&copy; <a href=\"mailto:mmoez@bigfoot.com\">Moez Mahfoudh</a> - 2000</p>"
-#define SERVER_PLAIN_INFO \
-  CRLF "----------------------------------------" \
-       "----------------------------------------" \
-  CRLF "ABYSS Web Server version "SERVER_VERSION CRLF"(C) Moez Mahfoudh - 2000"
-
-/*********************************************************************
 ** General purpose definitions
 *********************************************************************/
 

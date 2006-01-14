@@ -47,6 +47,7 @@
 #include "token.h"
 #include "date.h"
 #include "data.h"
+#include "abyss_info.h"
 
 #include "http.h"
 

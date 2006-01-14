@@ -25,6 +25,7 @@
 #include "socket.h"
 #include "http.h"
 #include "date.h"
+#include "abyss_info.h"
 
 #define BOUNDARY    "##123456789###BOUNDARY"
 
@@ -139,13 +140,13 @@ generateListing(TList *       const listP,
 
 
 static void
-sendDocument(TList *      const listP,
-             abyss_bool   const ascending,
-             uint16_t     const sort,
-             abyss_bool   const text,
-             const char * const uri,
-             TSession *   const sessionP,
-             char *       const z) {
+sendDirectoryDocument(TList *      const listP,
+                      abyss_bool   const ascending,
+                      uint16_t     const sort,
+                      abyss_bool   const text,
+                      const char * const uri,
+                      TSession *   const sessionP,
+                      char *       const z) {
 
     char *p,z1[26],z2[20],z3[9],u,*z4;
     int16_t i;
@@ -345,8 +346,8 @@ ServerDirectoryHandler(TSession * const r,
     ResponseWrite(r);
 
     if (r->request_info.method!=m_head)
-        sendDocument(&list, ascending, sort, text, r->request_info.uri,
-                     r, z);
+        sendDirectoryDocument(&list, ascending, sort, text,
+                              r->request_info.uri, r, z);
 
     HTTPWriteEnd(r);
 
