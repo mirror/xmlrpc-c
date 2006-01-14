@@ -2,6 +2,8 @@
 #define SESSION_H_INCLUDED
 
 #include "xmlrpc-c/abyss.h"
+#include "date.h"
+#include "data.h"
 
 struct _TSession {
     TRequestInfo request_info;
@@ -17,7 +19,7 @@ struct _TSession {
     abyss_bool cankeepalive;
     abyss_bool done;
 
-    TConn * conn;
+    struct _TConn * conn;
 
     uint8_t versionminor;
     uint8_t versionmajor;

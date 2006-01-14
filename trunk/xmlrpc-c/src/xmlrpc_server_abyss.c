@@ -41,8 +41,8 @@ static void die_if_fault_occurred(xmlrpc_env *env) {
 
 static void 
 sendXmlData(xmlrpc_env * const envP,
-            TSession *   const r, 
-            char *       const buffer, 
+            TSession *   const abyssSessionP, 
+            const char * const buffer, 
             size_t       const len) {
 
     const char * http_cookie = NULL;
@@ -55,9 +55,9 @@ sendXmlData(xmlrpc_env * const envP,
     /* fwrite(buffer, sizeof(char), len, stderr); */
 
     /* XXX - Is it safe to chunk our response? */
-    ResponseChunked(r);
+    ResponseChunked(abyssSessionP);
 
-    ResponseStatus(r, 200);
+    ResponseStatus(abyssSessionP, 200);
     
     if (http_cookie) {
         /* There's an auth cookie, so pass it back in the response. */
@@ -68,7 +68,7 @@ sendXmlData(xmlrpc_env * const envP,
         sprintf(cookie_response, "auth=%s", http_cookie);
         
         /* Return abyss response. */
-        ResponseAddField(r, "Set-Cookie", cookie_response);
+        ResponseAddField(abyssSessionP, "Set-Cookie", cookie_response);
 
         free(cookie_response);
     }   
@@ -80,13 +80,14 @@ sendXmlData(xmlrpc_env * const envP,
             "large for Abyss to send");
     else {
         uint32_t const abyssLen = (uint32_t)len;
-        ResponseContentType(r, "text/xml; charset=\"utf-8\"");
-        ResponseContentLength(r, abyssLen);
+
+        ResponseContentType(abyssSessionP, "text/xml; charset=\"utf-8\"");
+        ResponseContentLength(abyssSessionP, abyssLen);
         
-        ResponseWrite(r);
+        ResponseWrite(abyssSessionP);
         
-        HTTPWrite(r, buffer, abyssLen);
-        HTTPWriteEnd(r);
+        ResponseWriteBody(abyssSessionP, buffer, abyssLen);
+        ResponseWriteEnd(abyssSessionP);
     }
 }
 

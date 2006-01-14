@@ -29,6 +29,8 @@ struct _TConn {
     char buffer[BUFFER_SIZE];
 };
 
+typedef struct _TConn TConn;
+
 TConn * ConnAlloc(void);
 
 void ConnFree(TConn * const connectionP);

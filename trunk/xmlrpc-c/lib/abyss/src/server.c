@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/errno.h>
 #ifdef WIN32
 #include <io.h>
 #else
@@ -22,6 +23,8 @@
 #include "session.h"
 #include "conn.h"
 #include "socket.h"
+#include "http.h"
+#include "date.h"
 
 #define BOUNDARY    "##123456789###BOUNDARY"
 
@@ -49,265 +52,312 @@ cmpfiledates(const TFileInfo **f1,const TFileInfo **f2) {
 
 
 
-static abyss_bool
-ServerDirectoryHandler(TSession *r,char *z,TDate *dirdate) {
-    TFileInfo fileinfo,*fi;
+static void
+determineSortType(const char *  const query,
+                  abyss_bool *  const ascendingP,
+                  uint16_t *    const sortP,
+                  abyss_bool *  const textP,
+                  const char ** const errorP) {
+
+    *ascendingP = TRUE;
+    *sortP = 1;
+    *textP = FALSE;
+    *errorP = NULL;
+    
+    if (query) {
+        if (xmlrpc_streq(query, "plain"))
+            *textP = TRUE;
+        else if (xmlrpc_streq(query, "name-up")) {
+            *sortP = 1;
+            *ascendingP = TRUE;
+        } else if (xmlrpc_streq(query, "name-down")) {
+            *sortP = 1;
+            *ascendingP = FALSE;
+        } else if (xmlrpc_streq(query, "date-up")) {
+            *sortP = 2;
+            *ascendingP = TRUE;
+        } else if (xmlrpc_streq(query, "date-down")) {
+            *sortP = 2;
+            *ascendingP = FALSE;
+        } else  {
+            xmlrpc_asprintf(errorP, "invalid query value '%s'", query);
+        }
+    }
+}
+
+
+
+static void
+generateListing(TList *       const listP,
+                char *        const z,
+                const char *  const uri,
+                TPool *       const poolP,
+                const char ** const errorP,
+                uint16_t *    const responseStatusP) {
+    
+    TFileInfo fileinfo;
     TFileFind findhandle;
-    char *p,z1[26],z2[20],z3[9],u,*z4;
-    TList list;
-    int16_t i;
-    uint32_t k;
-    abyss_bool text=FALSE;
-    abyss_bool ascending=TRUE;
-    uint16_t sort=1;    /* 1=by name, 2=by date */
-    struct tm ftm;
-    TPool pool;
-    TDate date;
 
-    if (r->request_info.query) {
-        if (strcmp(r->request_info.query,"plain")==0)
-            text=TRUE;
-        else if (strcmp(r->request_info.query,"name-up")==0)
-        {
-            sort=1;
-            ascending=TRUE;
-        }
-        else if (strcmp(r->request_info.query,"name-down")==0)
-        {
-            sort=1;
-            ascending=FALSE;
-        }
-        else if (strcmp(r->request_info.query,"date-up")==0)
-        {
-            sort=2;
-            ascending=TRUE;
-        }
-        else if (strcmp(r->request_info.query,"date-down")==0)
-        {
-            sort=2;
-            ascending=FALSE;
-        }
-        else 
-        {
-            ResponseStatus(r,400);
-            return TRUE;
-        };
-    }
-    if (DateCompare(&r->date,dirdate)<0)
-        dirdate=&r->date;
+    *errorP = NULL;
 
-    p=RequestHeaderValue(r,"If-Modified-Since");
-    if (p) {
-        if (DateDecode(p,&date)) {
-            if (DateCompare(dirdate,&date)<=0)
-            {
-                ResponseStatus(r,304);
-                ResponseWrite(r);
-                return TRUE;
-            };
-        }
-    }
-    if (!FileFindFirst(&findhandle,z,&fileinfo))
-    {
-        ResponseStatusErrno(r);
-        return TRUE;
-    };
+    if (!FileFindFirst(&findhandle, z, &fileinfo)) {
+        *responseStatusP = ResponseStatusFromErrno(errno);
+        xmlrpc_asprintf(errorP, "Can't read first entry in directory");
+    } else {
+        ListInit(listP);
 
-    ListInit(&list);
-
-    if (!PoolCreate(&pool,1024))
-    {
-        ResponseStatus(r,500);
-        return TRUE;
-    };
-
-    do
-    {
-        /* Files which names start with a dot are ignored */
-        /* This includes implicitly the ./ and ../ */
-        if (*fileinfo.name=='.') {
-            if (strcmp(fileinfo.name,"..")==0)
-            {
-                if (strcmp(r->request_info.uri,"/")==0)
+        do {
+            TFileInfo * fi;
+            /* Files whose names start with a dot are ignored */
+            /* This includes implicitly the ./ and ../ */
+            if (*fileinfo.name == '.') {
+                if (xmlrpc_streq(fileinfo.name, "..")) {
+                    if (xmlrpc_streq(uri, "/"))
+                        continue;
+                } else
                     continue;
             }
-            else
-                continue;
-        }
-        fi=(TFileInfo *)PoolAlloc(&pool,sizeof(fileinfo));
-        if (fi)
-        {
-            memcpy(fi,&fileinfo,sizeof(fileinfo));
-            if (ListAdd(&list,fi))
-                continue;
-        };
+            fi = (TFileInfo *)PoolAlloc(poolP, sizeof(fileinfo));
+            if (fi) {
+                abyss_bool success;
+                memcpy(fi, &fileinfo, sizeof(fileinfo));
+                success =  ListAdd(listP, fi);
+                if (!success)
+                    xmlrpc_asprintf(errorP, "ListAdd() failed");
+            } else
+                xmlrpc_asprintf(errorP, "PoolAlloc() failed.");
+        } while (!*errorP && FileFindNext(&findhandle, &fileinfo));
 
-        ResponseStatus(r,500);
+        if (*errorP) {
+            *responseStatusP = 500;
+            ListFree(listP);
+        }            
         FileFindClose(&findhandle);
-        ListFree(&list);
+    }
+}
+
+
+
+static void
+sendDocument(TList *      const listP,
+             abyss_bool   const ascending,
+             uint16_t     const sort,
+             abyss_bool   const text,
+             const char * const uri,
+             TSession *   const sessionP,
+             char *       const z) {
+
+    char *p,z1[26],z2[20],z3[9],u,*z4;
+    int16_t i;
+    uint32_t k;
+
+    if (text) {
+        sprintf(z, "Index of %s" CRLF, uri);
+        i = strlen(z)-2;
+        p = z + i + 2;
+
+        while (i > 0) {
+            *(p++) = '-';
+            --i;
+        }
+
+        *p = '\0';
+        strcat(z, CRLF CRLF
+               "Name                      Size      "
+               "Date-Time             Type" CRLF
+               "------------------------------------"
+               "--------------------------------------------"CRLF);
+    } else {
+        sprintf(z, "<HTML><HEAD><TITLE>Index of %s</TITLE></HEAD><BODY>"
+                "<H1>Index of %s</H1><PRE>",
+                uri, uri);
+        strcat(z, "Name                      Size      "
+               "Date-Time             Type<HR WIDTH=100%>"CRLF);
+    }
+
+    HTTPWrite(sessionP, z, strlen(z));
+
+    /* Sort the files */
+    qsort(listP->item, listP->size, sizeof(void *),
+          (TQSortProc)(sort == 1 ? cmpfilenames : cmpfiledates));
+    
+    /* Write the listing */
+    if (ascending)
+        i = 0;
+    else
+        i = listP->size - 1;
+
+    while ((i < listP->size) && (i >= 0)) {
+        TFileInfo * fi;
+        struct tm ftm;
+
+        fi = listP->item[i];
+
+        if (ascending)
+            ++i;
+        else
+            --i;
+            
+        strcpy(z, fi->name);
+
+        k = strlen(z);
+
+        if (fi->attrib & A_SUBDIR) {
+            z[k++] = '/';
+            z[k] = '\0';
+        }
+
+        if (k > 24) {
+            z[10] = '\0';
+            strcpy(z1, z);
+            strcat(z1, "...");
+            strcat(z1, z + k - 11);
+            k = 24;
+            p = z1 + 24;
+        } else {
+            strcpy(z1, z);
+            
+            ++k;
+            p = z1 + k;
+            while (k < 25)
+                z1[k++] = ' ';
+            
+            z1[25] = '\0';
+        }
+
+        ftm = *gmtime(&fi->time_write);
+        sprintf(z2, "%02u/%02u/%04u %02u:%02u:%02u",ftm.tm_mday,ftm.tm_mon,
+                ftm.tm_year+1900,ftm.tm_hour,ftm.tm_min,ftm.tm_sec);
+
+        if (fi->attrib & A_SUBDIR) {
+            strcpy(z3, "   --  ");
+            z4 = "Directory";
+        } else {
+            if (fi->size < 9999)
+                u = 'b';
+            else {
+                fi->size /= 1024;
+                if (fi->size < 9999)
+                    u = 'K';
+                else {
+                    fi->size /= 1024;
+                    if (fi->size < 9999)
+                        u = 'M';
+                    else
+                        u = 'G';
+                }
+            }
+                
+            sprintf(z3, "%5llu %c", fi->size, u);
+            
+            if (xmlrpc_streq(fi->name, ".."))
+                z4 = "";
+            else
+                z4 = MIMETypeFromFileName(fi->name);
+
+            if (!z4)
+                z4 = "Unknown";
+        }
+
+        if (text)
+            sprintf(z, "%s%s %s    %s   %s"CRLF, z1, p, z3, z2, z4);
+        else
+            sprintf(z, "<A HREF=\"%s%s\">%s</A>%s %s    %s   %s"CRLF,
+                    fi->name, fi->attrib & A_SUBDIR ? "/" : "",
+                    z1, p, z3, z2, z4);
+
+        HTTPWrite(sessionP, z, strlen(z));
+    }
+        
+    /* Write the tail of the file */
+    if (text)
+        strcpy(z, SERVER_PLAIN_INFO);
+    else
+        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>" CRLF CRLF);
+    
+    HTTPWrite(sessionP, z, strlen(z));
+}
+
+
+
+static abyss_bool
+ServerDirectoryHandler(TSession * const r,
+                       char *     const z,
+                       TDate *    const dirdateArg) {
+
+    TList list;
+    abyss_bool text;
+    abyss_bool ascending;
+    uint16_t sort;    /* 1=by name, 2=by date */
+    TPool pool;
+    TDate date;
+    const char * error;
+    uint16_t responseStatus;
+    TDate * dirdateP;
+    const char * imsHdr;
+    
+    determineSortType(r->request_info.query, &ascending, &sort, &text, &error);
+
+    if (error) {
+        ResponseStatus(r,400);
+        xmlrpc_strfree(error);
+        return TRUE;
+    }
+
+    if (DateCompare(&r->date, dirdateArg) < 0)
+        dirdateP = &r->date;
+    else
+        dirdateP = dirdateArg;
+
+    imsHdr = RequestHeaderValue(r, "If-Modified-Since");
+    if (imsHdr) {
+        if (DateDecode(imsHdr, &date)) {
+            if (DateCompare(dirdateP, &date) <= 0) {
+                ResponseStatus(r, 304);
+                ResponseWrite(r);
+                return TRUE;
+            }
+        }
+    }
+
+    if (!PoolCreate(&pool, 1024)) {
+        ResponseStatus(r, 500);
+        return TRUE;
+    }
+
+    generateListing(&list, z, r->request_info.uri,
+                    &pool, &error, &responseStatus);
+    if (error) {
+        ResponseStatus(r, responseStatus);
+        xmlrpc_strfree(error);
         PoolFree(&pool);
         return TRUE;
-
-    } while (FileFindNext(&findhandle,&fileinfo));
-
-    FileFindClose(&findhandle);
+    }
 
     /* Send something to the user to show that we are still alive */
-    ResponseStatus(r,200);
-    ResponseContentType(r,(text?"text/plain":"text/html"));
+    ResponseStatus(r, 200);
+    ResponseContentType(r, (text ? "text/plain" : "text/html"));
 
-    if (DateToString(dirdate,z))
-        ResponseAddField(r,"Last-Modified",z);
+    if (DateToString(dirdateP, z))
+        ResponseAddField(r, "Last-Modified", z);
     
     ResponseChunked(r);
     ResponseWrite(r);
 
     if (r->request_info.method!=m_head)
-    {
-        if (text)
-        {
-            sprintf(z,"Index of %s" CRLF,r->request_info.uri);
-            i=strlen(z)-2;
-            p=z+i+2;
+        sendDocument(&list, ascending, sort, text, r->request_info.uri,
+                     r, z);
 
-            while (i>0)
-            {
-                *(p++)='-';
-                i--;
-            };
-
-            *p='\0';
-            strcat(z,CRLF CRLF
-                   "Name                      Size      "
-                   "Date-Time             Type" CRLF
-                   "------------------------------------"
-                   "--------------------------------------------"CRLF);
-        }
-        else
-        {
-            sprintf(z,"<HTML><HEAD><TITLE>Index of %s</TITLE></HEAD><BODY>"
-                    "<H1>Index of %s</H1><PRE>",r->request_info.uri,r->request_info.uri);
-            strcat(z,"Name                      Size      "
-                   "Date-Time             Type<HR WIDTH=100%>"CRLF);
-        };
-
-        HTTPWrite(r,z,strlen(z));
-
-        /* Sort the files */
-            qsort(list.item,list.size,sizeof(void *),
-                  (TQSortProc)(sort==1?cmpfilenames:cmpfiledates));
-        
-        /* Write the listing */
-        if (ascending)
-            i=0;
-        else
-            i=list.size-1;
-
-        while ((i<list.size) && (i>=0))
-        {
-            fi=list.item[i];
-
-            if (ascending)
-                i++;
-            else
-                i--;
-            
-            strcpy(z,fi->name);
-
-            k=strlen(z);
-
-            if (fi->attrib & A_SUBDIR)
-            {
-                z[k++]='/';
-                z[k]='\0';
-            };
-
-            if (k>24)
-            {
-                z[10]='\0';
-                strcpy(z1,z);
-                strcat(z1,"...");
-                strcat(z1,z+k-11);
-                k=24;
-                p=z1+24;
-            }
-            else
-            {
-                strcpy(z1,z);
-                
-                k++;
-                p=z1+k;
-                while (k<25)
-                    z1[k++]=' ';
-
-                z1[25]='\0';
-            };
-
-            ftm=*(gmtime(&fi->time_write));
-            sprintf(z2,"%02u/%02u/%04u %02u:%02u:%02u",ftm.tm_mday,ftm.tm_mon,
-                ftm.tm_year+1900,ftm.tm_hour,ftm.tm_min,ftm.tm_sec);
-
-            if (fi->attrib & A_SUBDIR)
-            {
-                strcpy(z3,"   --  ");
-                z4="Directory";
-            }
-            else
-            {
-                if (fi->size<9999)
-                    u='b';
-                else 
-                {
-                    fi->size/=1024;
-                    if (fi->size<9999)
-                        u='K';
-                    else
-                    {
-                        fi->size/=1024;
-                        if (fi->size<9999)
-                            u='M';
-                        else
-                            u='G';
-                    };
-                };
-                
-                sprintf(z3, "%5llu %c", fi->size, u);
-                
-                if (strcmp(fi->name,"..")==0)
-                    z4="";
-                else
-                    z4=MIMETypeFromFileName(fi->name);
-
-                if (!z4)
-                    z4="Unknown";
-            };
-
-            if (text)
-                sprintf(z,"%s%s %s    %s   %s"CRLF,
-                    z1,p,z3,z2,z4);
-            else
-                sprintf(z,"<A HREF=\"%s%s\">%s</A>%s %s    %s   %s"CRLF,
-                    fi->name,(fi->attrib & A_SUBDIR?"/":""),z1,p,z3,z2,z4);
-
-            HTTPWrite(r,z,strlen(z));
-        };
-        
-        /* Write the tail of the file */
-        if (text)
-            strcpy(z,SERVER_PLAIN_INFO);
-        else
-            strcpy(z,"</PRE>" SERVER_HTML_INFO "</BODY></HTML>" CRLF CRLF);
-
-        HTTPWrite(r,z,strlen(z));
-    };
-    
     HTTPWriteEnd(r);
+
     /* Free memory and exit */
     ListFree(&list);
     PoolFree(&pool);
 
     return TRUE;
 }
+
+
 
 static abyss_bool
 ServerFileHandler(TSession *r,char *z,TDate *filedate) {

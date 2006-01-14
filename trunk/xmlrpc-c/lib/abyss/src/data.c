@@ -42,6 +42,8 @@
 
 #include "token.h"
 
+#include "data.h"
+
 /*********************************************************************
 ** List
 *********************************************************************/
@@ -358,8 +360,13 @@ void TableFree(TTable *t)
     TableInit(t);
 }
 
-abyss_bool TableFindIndex(TTable *t,char *name,uint16_t *index)
-{
+
+
+abyss_bool
+TableFindIndex(TTable *     const t,
+               const char * const name,
+               uint16_t *   const index) {
+
     uint16_t i,hash=Hash16(name);
 
     if ((t->item) && (t->size>0) && (*index<t->size))
@@ -376,8 +383,13 @@ abyss_bool TableFindIndex(TTable *t,char *name,uint16_t *index)
     return FALSE;
 }
 
-abyss_bool TableAddReplace(TTable *t,char *name,char *value)
-{
+
+
+abyss_bool
+TableAddReplace(TTable *     const t,
+                const char * const name,
+                const char * const value) {
+
     uint16_t i=0;
 
     if (TableFindIndex(t,name,&i))
@@ -401,7 +413,9 @@ abyss_bool TableAddReplace(TTable *t,char *name,char *value)
 
 
 abyss_bool
-TableAdd(TTable *t,char *name,char *value) {
+TableAdd(TTable *     const t,
+         const char * const name,
+         const char * const value) {
 
     if (t->size>=t->maxsize) {
         TTableItem *newitem;
@@ -426,8 +440,12 @@ TableAdd(TTable *t,char *name,char *value) {
     return TRUE;
 }
 
-char *TableFind(TTable *t,char *name)
-{
+
+
+char *
+TableFind(TTable *     const t,
+          const char * const name) {
+
     uint16_t i=0;
 
     if (TableFindIndex(t,name,&i))

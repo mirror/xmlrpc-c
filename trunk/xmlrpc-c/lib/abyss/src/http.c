@@ -45,6 +45,10 @@
 #include "session.h"
 #include "conn.h"
 #include "token.h"
+#include "date.h"
+#include "data.h"
+
+#include "http.h"
 
 /*********************************************************************
 ** Request Parser
@@ -612,17 +616,20 @@ HTTPReasonByStatus(uint16_t const code) {
 
 
 int32_t
-HTTPRead(TSession * const s ATTR_UNUSED,
-         char *     const buffer ATTR_UNUSED,
-         uint32_t   const len ATTR_UNUSED) {
+HTTPRead(TSession *   const s ATTR_UNUSED,
+         const char * const buffer ATTR_UNUSED,
+         uint32_t     const len ATTR_UNUSED) {
 
     return 0;
 }
 
 
 
-abyss_bool HTTPWrite(TSession *s,char *buffer,uint32_t len)
-{
+abyss_bool
+HTTPWrite(TSession *   const s,
+          const char * const buffer,
+          uint32_t     const len) {
+
     if (s->chunkedwrite && s->chunkedwritemode)
     {
         char t[16];
@@ -694,12 +701,14 @@ void ResponseStatus(TSession *r,uint16_t code)
     r->status=code;
 }
 
-void ResponseStatusErrno(TSession *r)
-{
+
+
+uint16_t
+ResponseStatusFromErrno(int const errnoArg) {
+
     uint16_t code;
 
-    switch (errno)
-    {
+    switch (errnoArg) {
     case EACCES:
         code=403;
         break;
@@ -708,14 +717,26 @@ void ResponseStatusErrno(TSession *r)
         break;
     default:
         code=500;
-    };
-
-    ResponseStatus(r,code);
+    }
+    return code;
 }
 
-abyss_bool ResponseAddField(TSession *r,char *name,char *value)
-{
-    return TableAdd(&r->response_headers,name,value);
+
+
+void
+ResponseStatusErrno(TSession * const sessionP) {
+
+    ResponseStatus(sessionP, ResponseStatusFromErrno(errno));
+}
+
+
+
+abyss_bool
+ResponseAddField(TSession *   const sessionP,
+                 const char * const name,
+                 const char * const value) {
+
+    return TableAdd(&sessionP->response_headers, name, value);
 }
 
 
@@ -786,6 +807,24 @@ ResponseWrite(TSession * const sessionP) {
     }
 
     ConnWrite(sessionP->conn, CRLF, 2);  
+}
+
+
+
+abyss_bool
+ResponseWriteBody(TSession *   const sessionP,
+                  const char * const data,
+                  uint32_t     const len) {
+
+    return HTTPWrite(sessionP, data, len);
+}
+
+
+
+abyss_bool
+ResponseWriteEnd(TSession * const sessionP) {
+
+    return HTTPWriteEnd(sessionP);
 }
 
 
@@ -906,166 +945,6 @@ char *MIMETypeGuessFromFile(char *filename)
     else
         return "application/octet-stream";  
 }
-
-/*********************************************************************
-** Date
-*********************************************************************/
-
-static char *_DateDay[7]=
-{
-    "Sun","Mon","Tue","Wed","Thu","Fri","Sat"
-};
-
-static char *_DateMonth[12]=
-{
-    "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
-};
-
-static int32_t _DateTimeBias=0;
-static char _DateTimeBiasStr[6]="";
-
-abyss_bool DateToString(TDate *tm,char *s)
-{
-    if (mktime(tm)==(time_t)(-1))
-    {
-        *s='\0';
-        return FALSE;
-    };
-
-    sprintf(s,"%s, %02d %s %04d %02d:%02d:%02d GMT",_DateDay[tm->tm_wday],tm->tm_mday,
-                _DateMonth[tm->tm_mon],tm->tm_year+1900,tm->tm_hour,tm->tm_min,tm->tm_sec);
-
-    return TRUE;
-}
-
-abyss_bool DateToLogString(TDate *tm,char *s)
-{
-    time_t t;
-    TDate d;
-
-    if ((t=mktime(tm))!=(time_t)(-1))
-        if (DateFromLocal(&d,t))
-        {
-            sprintf(s,"%02d/%s/%04d:%02d:%02d:%02d %s",d.tm_mday,_DateMonth[d.tm_mon],
-                d.tm_year+1900,d.tm_hour,d.tm_min,d.tm_sec,_DateTimeBiasStr);
-            
-            return TRUE;
-        };
-
-    *s='\0';
-    return FALSE;
-}
-
-abyss_bool DateDecode(char *s,TDate *tm)
-{
-    uint32_t n=0;
-
-    /* Ignore spaces, day name and spaces */
-    while ((*s==' ') || (*s=='\t'))
-        s++;
-
-    while ((*s!=' ') && (*s!='\t'))
-        s++;
-
-    while ((*s==' ') || (*s=='\t'))
-        s++;
-
-    /* try to recognize the date format */
-    if (sscanf(s,"%*s %d %d:%d:%d %d%*s",&tm->tm_mday,&tm->tm_hour,&tm->tm_min,
-            &tm->tm_sec,&tm->tm_year)!=5)
-        if (sscanf(s,"%d %n%*s %d %d:%d:%d GMT%*s",&tm->tm_mday,&n,&tm->tm_year,
-            &tm->tm_hour,&tm->tm_min,&tm->tm_sec)!=5)
-            if (sscanf(s,"%d-%n%*[A-Za-z]-%d %d:%d:%d GMT%*s",&tm->tm_mday,&n,&tm->tm_year,
-                    &tm->tm_hour,&tm->tm_min,&tm->tm_sec)!=5)
-                return FALSE;
-
-    /* s points now to the month string */
-    s+=n;
-    for (n=0;n<12;n++)
-    {
-        char *p=_DateMonth[n];
-
-        if (tolower(*p++)==tolower(*s))
-            if (*p++==tolower(s[1]))
-                if (*p==tolower(s[2]))
-                    break;
-    };
-
-    if (n==12)
-        return FALSE;
-
-    tm->tm_mon=n;
-
-    /* finish the work */
-    if (tm->tm_year>1900)
-        tm->tm_year-=1900;
-    else
-        if (tm->tm_year<70)
-            tm->tm_year+=100;
-
-    tm->tm_isdst=0;
-
-    return (mktime(tm)!=(time_t)(-1));
-}
-
-int32_t DateCompare(TDate *d1,TDate *d2)
-{
-    int32_t x;
-
-    if ((x=d1->tm_year-d2->tm_year)==0)
-        if ((x=d1->tm_mon-d2->tm_mon)==0)
-            if ((x=d1->tm_mday-d2->tm_mday)==0)
-                if ((x=d1->tm_hour-d2->tm_hour)==0)
-                    if ((x=d1->tm_min-d2->tm_min)==0)
-                        x=d1->tm_sec-d2->tm_sec;
-
-    return x;
-}
-
-
-
-abyss_bool
-DateFromGMT(TDate *d,time_t t) {
-    TDate *dx;
-
-    dx=gmtime(&t);
-    if (dx) {
-        *d=*dx;
-        return TRUE;
-    };
-
-    return FALSE;
-}
-
-abyss_bool DateFromLocal(TDate *d,time_t t)
-{
-    return DateFromGMT(d,t+_DateTimeBias*2);
-}
-
-
-
-abyss_bool
-DateInit() {
-    time_t t;
-    TDate gmt,local,*d;
-
-    time(&t);
-    if (DateFromGMT(&gmt,t)) {
-        d=localtime(&t);
-        if (d) {
-            local=*d;
-            _DateTimeBias =
-                (local.tm_sec-gmt.tm_sec)+(local.tm_min-gmt.tm_min)*60
-                +(local.tm_hour-gmt.tm_hour)*3600;
-            sprintf(_DateTimeBiasStr, "%+03d%02d",
-                    _DateTimeBias/3600,(_DateTimeBias % 3600)/60);
-            return TRUE;
-        };
-    }
-    return FALSE;
-}
-
-
 
 /*********************************************************************
 ** Base64

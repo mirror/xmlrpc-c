@@ -26,16 +26,17 @@ all: libxmlrpc_abyss.la
 
 ABYSS_OBJS = \
   conf.lo \
-  data.lo \
-  token.lo \
-  trace.lo \
-  file.lo \
-  thread.lo \
-  http.lo \
-  socket.lo \
-  session.lo \
-  server.lo \
   conn.lo \
+  data.lo \
+  date.lo \
+  file.lo \
+  http.lo \
+  server.lo \
+  session.lo \
+  socket.lo \
+  token.lo \
+  thread.lo \
+  trace.lo \
 
 
 libxmlrpc_abyss.la: $(ABYSS_OBJS)
