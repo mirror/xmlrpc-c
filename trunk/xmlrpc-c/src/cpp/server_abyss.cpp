@@ -162,9 +162,6 @@ serverAbyss::initialize(constrOpt const& opt) {
     if (opt.present.portNumber && opt.present.socketFd)
         throwf("You can't specify both portNumber and socketFd options");
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-    
     DateInit();
     MIMETypeInit();
     

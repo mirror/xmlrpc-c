@@ -15,6 +15,7 @@ using girerr::throwf;
 #include "xmlrpc-c/girmem.hpp"
 using girmem::autoObjectPtr;
 using girmem::autoObject;
+#include "env_wrap.hpp"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
@@ -54,15 +55,13 @@ globalConstant::globalConstant() {
     setupFn = NULL;
 #endif
     if (setupFn) {
-        xmlrpc_env env;
+        env_wrap env;
 
-        xmlrpc_env_init(&env);
+        setupFn(&env.env_c); // Not thread safe
 
-        setupFn(&env); // Not thread safe
-
-        if (env.fault_occurred)
+        if (env.env_c.fault_occurred)
             throwf("Failed to do global initialization "
-                   "of Wininet transport code.  %s", env.fault_string);
+                   "of Wininet transport code.  %s", env.env_c.fault_string);
     }
 }
 
@@ -138,15 +137,15 @@ clientXmlTransport_wininet::clientXmlTransport_wininet(
 
     this->c_transportOpsP = &xmlrpc_wininet_transport_ops;
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     xmlrpc_wininet_transport_ops.create(
-        &env, 0, "", "", &transportParms, XMLRPC_WXPSIZE(allowInvalidSSLCerts),
+        &env.env_c, 0, "", "",
+        &transportParms, XMLRPC_WXPSIZE(allowInvalidSSLCerts),
         &this->c_transportP);
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
 }
 
 #else  // MUST_BUILD_WININET_CLIENT

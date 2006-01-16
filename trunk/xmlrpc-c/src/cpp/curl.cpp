@@ -20,6 +20,7 @@ using girerr::throwf;
 #include "xmlrpc-c/girmem.hpp"
 using girmem::autoObjectPtr;
 using girmem::autoObject;
+#include "env_wrap.hpp"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
@@ -60,15 +61,13 @@ globalConstant::globalConstant() {
     setupFn = NULL;
 #endif
     if (setupFn) {
-        xmlrpc_env env;
+        env_wrap env;
 
-        xmlrpc_env_init(&env);
-
-        setupFn(&env); // Not thread safe
+        setupFn(&env.env_c); // Not thread safe
         
-        if (env.fault_occurred)
+        if (env.env_c.fault_occurred)
             throwf("Failed to do global initialization "
-                   "of Curl transport code.  %s", env.fault_string);
+                   "of Curl transport code.  %s", env.env_c.fault_string);
     }
 }
 
@@ -228,16 +227,15 @@ clientXmlTransport_curl::initialize(constrOpt const& opt) {
 
     this->c_transportOpsP = &xmlrpc_curl_transport_ops;
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     xmlrpc_curl_transport_ops.create(
-        &env, 0, "", "", (xmlrpc_xportparms *)&transportParms,
+        &env.env_c, 0, "", "", (xmlrpc_xportparms *)&transportParms,
         XMLRPC_CXPSIZE(ssl_cipher_list),
         &this->c_transportP);
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
 }
 
 #else  // MUST_BUILD_CURL_CLIENT

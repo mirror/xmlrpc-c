@@ -2,6 +2,7 @@
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+#include "env_wrap.hpp"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/client.hpp"
@@ -16,12 +17,21 @@ namespace xmlrpc_c {
 
 
 namespace {
+
+void
+throwIfError(env_wrap const& env) {
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+class cValueWrapper {
 /*----------------------------------------------------------------------------
    Use an object of this class to set up to remove a reference to an
    xmlrpc_value object (a C object with manual reference management)
    at then end of a scope -- even if the scope ends with a throw.
 -----------------------------------------------------------------------------*/
-class cValueWrapper {
     xmlrpc_value * valueP;
 public:
     cValueWrapper(xmlrpc_value * valueP) : valueP(valueP) {}
@@ -63,8 +73,7 @@ makeParamArray(string          const format,
                xmlrpc_value ** const paramArrayPP,
                va_list               args) {
     
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     /* The format is a sequence of parameter specifications, such as
        "iiii" for 4 integer parameters.  We add parentheses to make it
@@ -73,11 +82,11 @@ makeParamArray(string          const format,
     string const arrayFormat("(" + string(format) + ")");
     const char * tail;
 
-    xmlrpc_build_value_va(&env, arrayFormat.c_str(),
+    xmlrpc_build_value_va(&env.env_c, arrayFormat.c_str(),
                           args, paramArrayPP, &tail);
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
 
     if (strlen(tail) != 0) {
         /* xmlrpc_build_value_va() parses off a single value specification
@@ -104,8 +113,7 @@ clientSimple::call(string  const serverUrl,
 
     carriageParm_http0 carriageParm(serverUrl);
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
     xmlrpc_value * paramArrayP;
 
     va_list args;
@@ -113,21 +121,22 @@ clientSimple::call(string  const serverUrl,
     makeParamArray(format, &paramArrayP, args);
     va_end(args);
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
     else {
         cValueWrapper paramArrayWrapper(paramArrayP); // ensure destruction
-        unsigned int const paramCount = xmlrpc_array_size(&env, paramArrayP);
+        unsigned int const paramCount(
+            xmlrpc_array_size(&env.env_c, paramArrayP));
         
-        if (env.fault_occurred)
-            throw(error(env.fault_string));
+        if (env.env_c.fault_occurred)
+            throw(error(env.env_c.fault_string));
         
         paramList paramList;
         for (unsigned int i = 0; i < paramCount; ++i) {
             xmlrpc_value * paramP;
-            xmlrpc_array_read_item(&env, paramArrayP, i, &paramP);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            xmlrpc_array_read_item(&env.env_c, paramArrayP, i, &paramP);
+            if (env.env_c.fault_occurred)
+                throw(error(env.env_c.fault_string));
             else {
                 cValueWrapper paramWrapper(paramP); // ensure destruction
                 paramList.add(value(paramP));

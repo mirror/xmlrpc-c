@@ -1,3 +1,4 @@
+#include <cassert>
 #include <string>
 #include <memory>
 #include <algorithm>
@@ -9,10 +10,25 @@ using girmem::autoObject;
 using girmem::autoObjectPtr;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
+#include "env_wrap.hpp"
+
 #include "xmlrpc-c/registry.hpp"
 
 using namespace std;
 using namespace xmlrpc_c;
+
+
+namespace {
+
+void
+throwIfError(env_wrap const& env) {
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+} // namespace
 
 namespace xmlrpc_c {
 
@@ -83,14 +99,11 @@ defaultMethod::self() {
 
 registry::registry() {
 
-    xmlrpc_env env;
+    env_wrap env;
 
-    xmlrpc_env_init(&env);
+    this->c_registryP = xmlrpc_registry_new(&env.env_c);
 
-    this->c_registryP = xmlrpc_registry_new(&env);
-
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    throwIfError(env);
 }
 
 
@@ -111,19 +124,21 @@ pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
    This is glue code to allow us to hook up C++ Xmlrpc-c code to 
    C Xmlrpc-c code.
 -----------------------------------------------------------------------------*/
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     XMLRPC_ASSERT_ARRAY_OK(arrayP);
 
-    unsigned int const arraySize = xmlrpc_array_size(&env, arrayP);
+    unsigned int const arraySize = xmlrpc_array_size(&env.env_c, arrayP);
+
+    assert(!env.env_c.fault_occurred);
 
     xmlrpc_c::paramList paramList(arraySize);
     
     for (unsigned int i = 0; i < arraySize; ++i) {
         xmlrpc_value * arrayItemP;
-        xmlrpc_array_read_item(&env, arrayP, i, &arrayItemP);
+
+        xmlrpc_array_read_item(&env.env_c, arrayP, i, &arrayItemP);
+        assert(!env.env_c.fault_occurred);
 
         paramList.add(xmlrpc_c::value(arrayItemP));
         
@@ -249,20 +264,17 @@ registry::addMethod(string              const name,
 
     this->methodList.push_back(methodPtr);
 
-    xmlrpc_env env;
+    env_wrap env;
     
-    xmlrpc_env_init(&env);
-
     xmlrpc_c::method * const methodP(methodPtr->self());
 
 	xmlrpc_registry_add_method_w_doc(
-        &env, this->c_registryP, NULL,
+        &env.env_c, this->c_registryP, NULL,
         name.c_str(), &c_executeMethod, 
         (void*) methodP, 
         methodP->signature().c_str(), methodP->help().c_str());
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    throwIfError(env);
 }
 
 
@@ -270,19 +282,17 @@ registry::addMethod(string              const name,
 void
 registry::setDefaultMethod(defaultMethodPtr const methodPtr) {
 
-    xmlrpc_env env;
+    env_wrap env;
     
-    xmlrpc_env_init(&env);
-
     this->defaultMethodP = methodPtr;
 
     xmlrpc_c::defaultMethod * const methodP(methodPtr->self());
 
     xmlrpc_registry_set_default_method(
-        &env, this->c_registryP, &c_executeDefaultMethod, (void*) methodP);
+        &env.env_c, this->c_registryP,
+        &c_executeDefaultMethod, (void*) methodP);
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    throwIfError(env);
 }
 
 
@@ -307,10 +317,8 @@ registry::processCall(string   const& callXml,
    the call executes and the method merely fails in an XML-RPC sense, we
    don't.  In that case, *responseXmlP indicates the failure.
 -----------------------------------------------------------------------------*/
-    xmlrpc_env env;
+    env_wrap env;
     xmlrpc_mem_block * output;
-
-    xmlrpc_env_init(&env);
 
     // For the pure C++ version, this will have to parse 'callXml'
     // into a method name and parameters, look up the method name in
@@ -321,10 +329,10 @@ registry::processCall(string   const& callXml,
     // xmlrpc_registry_process_call() does.
 
     output = xmlrpc_registry_process_call(
-        &env, this->c_registryP, NULL, callXml.c_str(), callXml.length());
+        &env.env_c, this->c_registryP, NULL,
+        callXml.c_str(), callXml.length());
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    throwIfError(env);
 
     *responseXmlP = string(XMLRPC_MEMBLOCK_CONTENTS(char, output),
                            XMLRPC_MEMBLOCK_SIZE(char, output));

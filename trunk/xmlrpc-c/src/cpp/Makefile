@@ -45,6 +45,7 @@ endif
 
 LIBXMLRPCPP_OBJS = \
 	base64.o \
+	env_wrap.o \
 	fault.o \
 	girerr.o \
 	girmem.o \

@@ -20,6 +20,7 @@ using girerr::throwf;
 #include "xmlrpc-c/girmem.hpp"
 using girmem::autoObjectPtr;
 using girmem::autoObject;
+#include "env_wrap.hpp"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
@@ -34,23 +35,28 @@ using namespace xmlrpc_c;
 
 namespace {
 
+void
+throwIfError(env_wrap const& env) {
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
 class memblockStringWrapper {
 
 public:    
     memblockStringWrapper(string const value) {
 
-        xmlrpc_env env;
-        xmlrpc_env_init(&env);
+        env_wrap env;
 
-        this->memblockP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+        this->memblockP = XMLRPC_MEMBLOCK_NEW(char, &env.env_c, 0);
+        throwIfError(env);
 
-        if (env.fault_occurred)
-            throw(error(env.fault_string));
-
-        XMLRPC_MEMBLOCK_APPEND(char, &env, this->memblockP,
+        XMLRPC_MEMBLOCK_APPEND(char, &env.env_c, this->memblockP,
                                value.c_str(), value.size());
-        if (env.fault_occurred)
-            throw(error(env.fault_string));
+        throwIfError(env);
     }
     
     memblockStringWrapper(xmlrpc_mem_block * const memblockP) :
@@ -131,13 +137,11 @@ carriageParm_http0::instantiate(string const serverUrl) {
     if (c_serverInfoP)
         throw(error("object already instantiated"));
     
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
-    this->c_serverInfoP = xmlrpc_server_info_new(&env, serverUrl.c_str());
-
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    this->c_serverInfoP =
+        xmlrpc_server_info_new(&env.env_c, serverUrl.c_str());
+    throwIfError(env);
 }
 
 
@@ -149,14 +153,11 @@ carriageParm_http0::setBasicAuth(string const username,
     if (!c_serverInfoP)
         throw(error("object not instantiated"));
     
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     xmlrpc_server_info_set_basic_auth(
-        &env, this->c_serverInfoP, username.c_str(), password.c_str());
-
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+        &env.env_c, this->c_serverInfoP, username.c_str(), password.c_str());
+    throwIfError(env);
 }
 
 
@@ -315,9 +316,6 @@ clientXmlTransport_http::call(
     string         const& callXml,
     string *       const  responseXmlP) {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
     carriageParm_http0 * const carriageParmHttpP =
         dynamic_cast<carriageParm_http0 *>(carriageParmP);
 
@@ -329,14 +327,15 @@ clientXmlTransport_http::call(
 
     xmlrpc_mem_block * responseXmlMP;
 
-    this->c_transportOpsP->call(&env,
+    env_wrap env;
+
+    this->c_transportOpsP->call(&env.env_c,
                                 this->c_transportP,
                                 carriageParmHttpP->c_serverInfoP,
                                 callXmlM.memblockP,
                                 &responseXmlMP);
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    throwIfError(env);
 
     memblockStringWrapper responseHolder(responseXmlMP);
         // Makes responseXmlMP get freed at end of scope
@@ -353,8 +352,7 @@ clientXmlTransport_http::start(
     string            const& callXml,
     xmlTransactionPtr const& xmlTranP) {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     carriageParm_http0 * const carriageParmHttpP =
         dynamic_cast<carriageParm_http0 *>(carriageParmP);
@@ -373,15 +371,14 @@ clientXmlTransport_http::start(
 
     try {
         this->c_transportOpsP->send_request(
-            &env,
+            &env.env_c,
             this->c_transportP,
             carriageParmHttpP->c_serverInfoP,
             callXmlM.memblockP,
             &this->asyncComplete,
             reinterpret_cast<xmlrpc_call_info *>(xmlTranP2P));
 
-        if (env.fault_occurred)
-            throw(error(env.fault_string));
+        throwIfError(env);
     } catch (...) {
         delete xmlTranP2P;
         throw;
