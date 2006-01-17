@@ -225,10 +225,10 @@ static void xml_element_append_child (xmlrpc_env *env,
 */
 
 typedef struct {
-    xmlrpc_env *env;
-    xml_element *root;
-    xml_element *current;
-} parse_context;
+    xmlrpc_env env;
+    xml_element * rootP;
+    xml_element * currentP;
+} parseContext;
 
 
 /*=========================================================================
@@ -237,149 +237,216 @@ typedef struct {
 */
 
 static void
-start_element (void *user_data, XML_Char *name, XML_Char **atts ATTR_UNUSED)
-{
-    parse_context *context;
-    xml_element *elem, *new_current;
+startElement(void *      const userData,
+             XML_Char *  const name,
+             XML_Char ** const atts ATTR_UNUSED) {
 
-    XMLRPC_ASSERT(user_data != NULL && name != NULL);
+    parseContext * const contextP = userData;
 
-    /* Get our context and see if an error has already occured. */
-    context = (parse_context*) user_data;
-    if (!context->env->fault_occurred) {
+    XMLRPC_ASSERT(contextP != NULL);
+    XMLRPC_ASSERT(name != NULL);
 
-        /* Set up our error-handling preconditions. */
-        elem = NULL;
+    if (!contextP->env.fault_occurred) {
+        xml_element * elemP;
 
-        /* Build a new element. */
-        elem = xml_element_new(context->env, name);
-        XMLRPC_FAIL_IF_FAULT(context->env);
+        elemP = xml_element_new(&contextP->env, name);
+        if (!contextP->env.fault_occurred) {
+            XMLRPC_ASSERT(elemP != NULL);
 
-        /* Insert it in the appropriate place. */
-        if (!context->root) {
-            context->root = elem;
-            context->current = elem;
-            elem = NULL;
-        } else {
-            XMLRPC_ASSERT(context->current != NULL);
+            /* Insert the new element in the appropriate place. */
+            if (!contextP->rootP) {
+                /* No root yet, so this element must be the root. */
+                contextP->rootP = elemP;
+                contextP->currentP = elemP;
+            } else {
+                XMLRPC_ASSERT(contextP->currentP != NULL);
 
-            /* (We need to watch our error handling invariants very carefully
-            ** here. Read the docs for xml_element_append_child. */
-            new_current = elem;
-            xml_element_append_child(context->env, context->current, elem);
-            elem = NULL;
-            XMLRPC_FAIL_IF_FAULT(context->env);
-            context->current = new_current;
+                /* (We need to watch our error handling invariants
+                   very carefully here. Read the docs for
+                   xml_element_append_child.
+                */
+                xml_element_append_child(&contextP->env, contextP->currentP,
+                                         elemP);
+                if (!contextP->env.fault_occurred)
+                    contextP->currentP = elemP;
+            }
+            if (contextP->env.fault_occurred)
+                xml_element_free(elemP);
         }
-
-    cleanup:
-        if (elem)
-            xml_element_free(elem);
+        if (contextP->env.fault_occurred) {
+            /* Having changed *contextP to reflect failure, we are responsible
+               for undoing everything that has been done so far in this
+               context.
+            */
+            if (contextP->rootP)
+                xml_element_free(contextP->rootP);
+        }
     }
 }
 
-static void end_element (void *user_data, XML_Char *name)
-{
-    parse_context *context;
 
-    XMLRPC_ASSERT(user_data != NULL && name != NULL);
 
-    /* Get our context and see if an error has already occured. */
-    context = (parse_context*) user_data;
-    if (!context->env->fault_occurred) {
+static void
+endElement(void *     const userData,
+           XML_Char * const name) {
 
-        /* XXX - I think expat enforces these facts, but I want to be sure.
-        ** If one of these assertion ever fails, it should be replaced by a
-        ** non-assertion runtime error check. */
-        XMLRPC_ASSERT(strcmp(name, context->current->_name) == 0);
-        XMLRPC_ASSERT(context->current->_parent != NULL ||
-                      context->current == context->root);
+    parseContext * const contextP = userData;
 
-        /* Add a trailing '\0' to our cdata. */
-        xml_element_append_cdata(context->env, context->current, "\0", 1);
-        XMLRPC_FAIL_IF_FAULT(context->env); 
+    XMLRPC_ASSERT(contextP != NULL);
+    XMLRPC_ASSERT(name != NULL);
 
-        /* Pop our "stack" of elements. */
-        context->current = context->current->_parent;
+    if (!contextP->env.fault_occurred) {
+        /* I think Expat enforces these facts: */
+        XMLRPC_ASSERT(xmlrpc_streq(name, contextP->currentP->_name));
+        XMLRPC_ASSERT(contextP->currentP->_parent != NULL ||
+                      contextP->currentP == contextP->rootP);
 
-    cleanup:
-        return;
+        /* Add a trailing NUL to our cdata. */
+        xml_element_append_cdata(&contextP->env, contextP->currentP, "\0", 1);
+        if (!contextP->env.fault_occurred)
+            /* Pop our "stack" of elements. */
+            contextP->currentP = contextP->currentP->_parent;
+
+        if (contextP->env.fault_occurred) {
+            /* Having changed *contextP to reflect failure, we are responsible
+               for undoing everything that has been done so far in this
+               context.
+            */
+            if (contextP->rootP)
+                xml_element_free(contextP->rootP);
+        }
     }
 }
 
-static void character_data (void *user_data, XML_Char *s, int len)
-{
-    parse_context *context;
 
-    XMLRPC_ASSERT(user_data != NULL && s != NULL && len >= 0);
 
-    /* Get our context and see if an error has already occured. */
-    context = (parse_context*) user_data;
-    if (!context->env->fault_occurred) {
+static void
+characterData(void *     const userData,
+              XML_Char * const s,
+              int        const len) {
 
-        XMLRPC_ASSERT(context->current != NULL);
+    parseContext * const contextP = userData;
+
+    XMLRPC_ASSERT(contextP != NULL);
+    XMLRPC_ASSERT(s != NULL);
+    XMLRPC_ASSERT(len >= 0);
+
+    if (!contextP->env.fault_occurred) {
+        XMLRPC_ASSERT(contextP->currentP != NULL);
     
-        xml_element_append_cdata(context->env, context->current, s, len);
-        XMLRPC_FAIL_IF_FAULT(context->env);
-
-    cleanup:
-        return;
+        xml_element_append_cdata(&contextP->env, contextP->currentP, s, len);
     }
 }
 
 
-/*=========================================================================
-**  Expat Driver
-**=========================================================================
-**  XXX - We should allow the user to specify the encoding of our xml_data.
-*/
+
+static void
+createParser(xmlrpc_env *   const envP,
+             parseContext * const contextP,
+             XML_Parser *   const parserP) {
+/*----------------------------------------------------------------------------
+   Create an Expat parser to parse our XML.
+-----------------------------------------------------------------------------*/
+    XML_Parser parser;
+
+    parser = XML_ParserCreate(NULL);
+    if (parser == NULL)
+        xmlrpc_faultf(envP, "Could not create expat parser");
+    else {
+        /* Initialize our parse context. */
+        xmlrpc_env_init(&contextP->env);
+        contextP->rootP    = NULL;
+        contextP->currentP = NULL;
+
+        XML_SetUserData(parser, contextP);
+        XML_SetElementHandler(parser,
+                              (XML_StartElementHandler) startElement,
+                              (XML_EndElementHandler) endElement);
+        XML_SetCharacterDataHandler(parser,
+                                    (XML_CharacterDataHandler) characterData);
+        
+        *parserP = parser;
+    }
+}
+
+
+
+static void
+destroyParser(XML_Parser     const parser,
+              parseContext * const contextP) {
+
+    xmlrpc_env_clean(&contextP->env);
+
+    XML_ParserFree(parser);
+}
+
+
 
 void
 xml_parse(xmlrpc_env *   const envP,
           const char *   const xmlData,
           size_t         const xmlDataLen,
           xml_element ** const resultPP) {
+/*----------------------------------------------------------------------------
+  Parse the XML text 'xmlData', of length 'xmlDataLen'.  Return the
+  description of the element that the XML text contains as *resultPP.
+-----------------------------------------------------------------------------*/
+    /* 
+       This is an Expat driver.
+   
+       We set up event-based parser handlers for Expat and set Expat loose
+       on the XML.  Expat walks through the XML, calling our handlers along
+       the way.  Our handlers build up the element description in our
+       'context' variable, so that when Expat is finished, our results are
+       in 'context' and we just have to pluck them out.
 
+       We should allow the user to specify the encoding in 'xmlData', but
+       we don't.
+    */
     XML_Parser parser;
+    parseContext context;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(xmlData != NULL);
 
-    parser = XML_ParserCreate(NULL);
-    if (parser == NULL)
-        xmlrpc_faultf(envP, "Could not create expat parser");
-    else {
-        parse_context context;
+    createParser(envP, &context, &parser);
+
+    if (!envP->fault_occurred) {
         bool ok;
-
-        /* Set up our parse context. */
-        context.root = NULL;
-        context.env     = envP;
-        context.current = NULL;
-
-        XML_SetUserData(parser, &context);
-        XML_SetElementHandler(parser,
-                              (XML_StartElementHandler) start_element,
-                              (XML_EndElementHandler) end_element);
-        XML_SetCharacterDataHandler(parser,
-                                    (XML_CharacterDataHandler) character_data);
 
         ok = XML_Parse(parser, xmlData, xmlDataLen, 1);
             /* sets 'context', *envP */
-        if (!ok)
+        if (!ok) {
+            /* Expat failed on its own to parse it -- this is not an error
+               that our handlers detected.
+            */
             xmlrpc_env_set_fault(
                 envP, XMLRPC_PARSE_ERROR,
                 XML_ErrorString(XML_GetErrorCode(parser)));
-        else {
-            XMLRPC_ASSERT(context.root != NULL);
-            XMLRPC_ASSERT(context.current == NULL);
+            if (!context.env.fault_occurred) {
+                /* Have to clean up what our handlers built before Expat
+                   barfed.
+                */
+                if (context.rootP)
+                    xml_element_free(context.rootP);
+            }
+        } else {
+            /* Expat got through the XML OK, but when it called our handlers,
+               they might have detected a problem.  They would have noted
+               such a problem in *contextP.
+            */
+            if (context.env.fault_occurred)
+                xmlrpc_env_set_fault_formatted(
+                    envP, context.env.fault_code,
+                    "XML doesn't parse.  %s", context.env.fault_string);
+            else {
+                XMLRPC_ASSERT(context.rootP != NULL);
+                XMLRPC_ASSERT(context.currentP == NULL);
                 
-            *resultPP = context.root;
+                *resultPP = context.rootP;
+            }
         }
-        if (envP->fault_occurred)
-            xml_element_free(context.root);
-
-        XML_ParserFree(parser);
+        destroyParser(parser, &context);
     }
 }
 
