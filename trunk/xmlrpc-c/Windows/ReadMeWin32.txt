@@ -1,7 +1,21 @@
-XMLRPC-C Win32 WinInet
---------------------------
+Build Instructions For XML-RPC For C/C++ On Windows
+---------------------------------------------------
 
-Please read this file in its entirety for configuration instructions.
+The following instructions do not fully work in this release.  There
+is no trivial way to build this release for Windows.  The last release
+that was known to build without special effort on the part of the user
+is 1.02.
+
+Since then, nobody has maintained the code for Windows, and changes that
+were made for other platforms broke some things for Windows.  Most likely,
+anyone with a passing knowledge of building C code on Windows could
+update this code to work on Windows without any in-depth study of it.  If
+you do so, please contribute your work to save other users the trouble.
+
+The majority of the work that needs to be done to make the code build on
+Windows is simply adjusting project files to reflect the fact that files
+have been created, deleted, and moved since they were written.
+
 
 This release includes the option to compile an "http.sys" version of an
 XML-RPC server.  If you do not wish to build in the http.sys server,
