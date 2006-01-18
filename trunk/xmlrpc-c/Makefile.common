@@ -59,6 +59,8 @@ LIBXMLRPC_SERVER         = $(BUILDDIR)/src/libxmlrpc_server.la
 LIBXMLRPC_SERVER_ABYSS   = $(BUILDDIR)/src/libxmlrpc_server_abyss.la
 LIBXMLRPC_SERVER_CGI     = $(BUILDDIR)/src/libxmlrpc_server_cgi.la
 LIBXMLRPC_ABYSS          = $(BUILDDIR)/lib/abyss/src/libxmlrpc_abyss.la
+LIBXMLRPC_XMLPARSE       = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
+LIBXMLRPC_XMLTOK         = $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
 LIBXMLRPC_UTIL_A         = $(BUILDDIR)/lib/libutil/.libs/libxmlrpc_util.a
 LIBXMLRPC_A              = $(BUILDDIR)/src/.libs/libxmlrpc.a
 LIBXMLRPC_CLIENT_A       = $(BUILDDIR)/src/.libs/libxmlrpc_client.a
@@ -66,6 +68,8 @@ LIBXMLRPC_SERVER_A       = $(BUILDDIR)/src/.libs/libxmlrpc_server.a
 LIBXMLRPC_SERVER_ABYSS_A = $(BUILDDIR)/src/.libs/libxmlrpc_server_abyss.a
 LIBXMLRPC_SERVER_CGI_A   = $(BUILDDIR)/src/.libs/libxmlrpc_server_cgi.a
 LIBXMLRPC_ABYSS_A        = $(BUILDDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
+LIBXMLRPC_XMLPARSE_A     = $(BUILDDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a
+LIBXMLRPC_XMLTOK_A       = $(BUILDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
 LIBXMLRPC_CPP            = $(BUILDDIR)/src/cpp/libxmlrpc_cpp.a
 LIBXMLRPC++              = $(BUILDDIR)/src/cpp/libxmlrpc++.a
 LIBXMLRPC_CLIENT++       = $(BUILDDIR)/src/cpp/libxmlrpc_client++.a
@@ -115,14 +119,6 @@ $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
-$(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la: FORCE
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
-	    $(notdir $@)
-
-$(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la: FORCE
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
-	    $(notdir $@)
-
 $(BUILDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \
 	    $(notdir $@)
@@ -133,6 +129,14 @@ $(BUILDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo: FORCE
 
 $(BUILDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libwww_transport/Makefile \
+	    $(notdir $@)
+
+$(LIBXMLRPC_XMLPARSE): FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
+	    $(notdir $@)
+
+$(LIBXMLRPC_XMLTOK): FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
 	    $(notdir $@)
 
 $(LIBXMLRPC_UTIL): FORCE
@@ -154,6 +158,8 @@ $(LIBXMLRPC_CLIENT_A): $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_SERVER_ABYSS_A): $(LIBXMLRPC_SERVER_ABYSS)
 $(LIBXMLRPC_CGI_A): $(LIBXMLRPC_CGI)
 $(LIBXMLRPC_ABYSS_A): $(LIBXMLRPC_ABYSS)
+$(LIBXMLRPC_XMLPARSE_A): $(LIBXMLRPC_XMLPARSE)
+$(LIBXMLRPC_XMLTOK_A): $(LIBXMLRPC_XMLTOK)
 
 # About version.h:  This is a built header file, which means it is a supreme
 # pain in the ass.  The biggest problem is that when we automatically make
