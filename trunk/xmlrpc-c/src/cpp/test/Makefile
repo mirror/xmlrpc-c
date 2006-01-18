@@ -40,15 +40,14 @@ include $(SRCDIR)/Makefile.common
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML = $(LIBXML2_LIBS)
 else
-  LIBXML = blddir/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-           blddir/lib/expat/xmltok/libxmlrpc_xmltok.la
+  LIBXML = $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
 endif
 
 TEST_OBJS = test.o tools.o
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
-  CLIENT_LIBS = $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_CLIENT)
+  CLIENT_LIBS = $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_CLIENT_A)
 else
   TEST_OBJS += testclient_dummy.o
   CLIENT_LIBS =
@@ -57,13 +56,13 @@ endif
 
 test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
   $(CLIENT_LIBS) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
-  $(LIBXMLRPC_SERVER_ABYSS) $(LIBXMLRPC_SERVER) \
-  $(LIBXMLRPC) $(LIBXMLRPC_UTIL) $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC_SERVER_ABYSS_A) $(LIBXMLRPC_SERVER_A) \
+  $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) $(LIBXMLRPC_ABYSS_A) \
   $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 %.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $(CADD) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our
