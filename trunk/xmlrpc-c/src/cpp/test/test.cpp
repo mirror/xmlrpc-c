@@ -12,9 +12,9 @@ using girerr::error;
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/oldcppwrapper.hpp"
 #include "xmlrpc-c/registry.hpp"
-#include "xmlrpc-c/server_abyss.hpp"
 
 #include "testclient.hpp"
+#include "server_abyss.hpp"
 #include "tools.hpp"
 
 using namespace xmlrpc_c;
@@ -770,49 +770,6 @@ public:
         registryRegMethodTestSuite().run(indentation+1);
         registryDefaultMethodTestSuite().run(indentation+1);
     }
-};
-
-
-
-class serverAbyssTestSuite : public testSuite {
-
-public:
-    virtual string suiteName() {
-        return "serverAbyssTestSuite";
-    }
-    virtual void runtests(unsigned int) {
-
-        registry myRegistry;
-        
-        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-
-        // Due to the vagaries of Abyss, construction of the following
-        // object may exit the program if it detects an error, such as
-        // port number already in use.  We need to fix Abyss some day.
-
-        serverAbyss abyssServer0(serverAbyss::constrOpt()
-                                 .registryP(&myRegistry)
-                                 .portNumber(12345)
-                                 .logFileName("/tmp/xmlrpc_log")
-            );
-
-        serverAbyss abyssServer1(serverAbyss::constrOpt()
-                                 .registryP(&myRegistry)
-                                 .socketFd(0)
-            );
-
-        serverAbyss abyssServer2(serverAbyss::constrOpt()
-                                 .registryP(&myRegistry)
-            );
-
-
-        serverAbyss abyssServer9(
-            myRegistry,
-            12345,              // TCP port on which to listen
-            "/tmp/xmlrpc_log"  // Log file
-            );
-    }
-
 };
 
 

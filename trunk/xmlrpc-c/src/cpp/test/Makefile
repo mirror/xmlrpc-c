@@ -43,7 +43,7 @@ else
   LIBXML = $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
 endif
 
-TEST_OBJS = test.o tools.o
+TEST_OBJS = test.o server_abyss.o tools.o
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
