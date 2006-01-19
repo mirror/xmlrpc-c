@@ -840,6 +840,8 @@ freeXportParms(const struct xmlrpc_client_transport * const transportP) {
         xmlrpc_strfree(curlSetupP->sslKeyType);
     if (curlSetupP->sslKey)
         xmlrpc_strfree(curlSetupP->sslKey);
+    if (curlSetupP->sslCertPasswd)
+        xmlrpc_strfree(curlSetupP->sslCertPasswd);
     if (curlSetupP->sslCertType)
         xmlrpc_strfree(curlSetupP->sslCertType);
     if (curlSetupP->sslCert)
