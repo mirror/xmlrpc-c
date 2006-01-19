@@ -671,6 +671,7 @@ initSocketStuff(struct _TServer * const srvP,
         srvP->serverAcceptsConnections = FALSE;
         srvP->socketBound = FALSE;
     }
+    srvP->weCreatedListenSocket = FALSE;
 }
 
 
@@ -817,6 +818,9 @@ void
 ServerFree(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
+
+    if (srvP->weCreatedListenSocket)
+        SocketClose(&srvP->listensock);
 
     xmlrpc_strfree(srvP->name);
 
@@ -1007,11 +1011,14 @@ createAndBindSocket(struct _TServer * const srvP) {
             success = SocketBind(&socketFd, NULL, srvP->port);
 
             if (!success)
-                        TraceMsg("Can't bind");
+                TraceMsg("Can't bind");
             else {
+                srvP->weCreatedListenSocket = TRUE;
                 srvP->socketBound = TRUE;
                 srvP->listensock = socketFd;
             }
+            if (!success)
+                SocketClose(&socketFd);
         }
     }
 }
@@ -1302,21 +1309,19 @@ ServerRunOnce(TServer * const serverP) {
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
-    TSocket listenSocket;
-    TSocket connectedSocket;
-    TIPAddr remoteAddr;
-    abyss_bool success;
-    
     if (!srvP->socketBound)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRunOnce().  "
                  "Try ServerRunConn() or ServerInit()");
     else {
+        TSocket connectedSocket;
+        TIPAddr remoteAddr;
+        abyss_bool success;
+    
         srvP->keepalivemaxconn = 1;
 
-        listenSocket = srvP->listensock;
-        
-        success = SocketAccept(&listenSocket, &connectedSocket, &remoteAddr);
+        success =
+            SocketAccept(&srvP->listensock, &connectedSocket, &remoteAddr);
         if (success) {
             serverRunConn(serverP, connectedSocket);
             SocketClose(&connectedSocket);

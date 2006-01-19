@@ -15,6 +15,10 @@ struct _TServer {
            the listening socket ("listening socket" means socket for listening,
            not a socket that is listening right now).
         */
+    abyss_bool weCreatedListenSocket;
+        /* We created the listen socket (whose fd is 'listensock'), as
+           opposed to 1) User supplied it; or 2) there isn't one.
+        */
     const char * logfilename;
     abyss_bool logfileisopen;
     TFile logfile;
