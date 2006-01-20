@@ -406,7 +406,7 @@ public:
     virtual string suiteName() {
         return "clientCurlTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
+    virtual void runtests(unsigned int) {
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         client_xml client0(&transportc0);
@@ -459,7 +459,7 @@ public:
     virtual string suiteName() {
         return "carriageParmTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
+    virtual void runtests(unsigned int) {
         carriageParm_http0 carriageParm1("http://suckthis.com");
         carriageParm_curl0 carriageParm2("http://suckthis.com");
         carriageParm_libwww0 carriageParm3("http://suckthis.com");
@@ -495,7 +495,7 @@ public:
     virtual string suiteName() {
         return "clientRpcTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
+    virtual void runtests(unsigned int) {
 
         registry myRegistry;
         
@@ -572,7 +572,7 @@ public:
     virtual string suiteName() {
         return "clientPtrTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
+    virtual void runtests(unsigned int) {
         registry myRegistry;
         
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
@@ -604,7 +604,7 @@ public:
     virtual string suiteName() {
         return "serverAccessorTestSuite";
     }
-    virtual void runtests(unsigned int const indentation) {
+    virtual void runtests(unsigned int) {
         clientXmlTransportPtr const transportP(new clientXmlTransport_direct);
         clientPtr const clientP(new client_xml(transportP));
         registry myRegistry;

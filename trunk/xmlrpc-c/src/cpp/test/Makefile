@@ -17,6 +17,8 @@ default: all
 
 all: $(PROGS)
 
+CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   LDFLAGS += $(shell curl-config --libs)
 endif
@@ -62,7 +64,7 @@ test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 %.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $(CADD) $<
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our

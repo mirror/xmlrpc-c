@@ -93,7 +93,7 @@ serverAbyssTestSuite::suiteName() {
 
 
 void
-serverAbyssTestSuite::runtests(unsigned int const indentation) {
+serverAbyssTestSuite::runtests(unsigned int) {
 
     registry myRegistry;
         
