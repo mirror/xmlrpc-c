@@ -414,8 +414,7 @@ xmlrpc_registry_add_method_w_doc(
             xmlrpc_struct_set_value(envP, registryP->_methods,
                                     methodName, methodInfoP);
 
-            if (envP->fault_occurred)
-                xmlrpc_DECREF(methodInfoP);
+            xmlrpc_DECREF(methodInfoP);
         }
         xmlrpc_DECREF(signatureListP);
     }
