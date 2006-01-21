@@ -50,8 +50,8 @@ paramList::operator[](unsigned int const subscript) const {
 
 int
 paramList::getInt(unsigned int const paramNumber,
-                   int          const minimum,
-                   int          const maximum) const {
+                  int          const minimum,
+                  int          const maximum) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
