@@ -1,9 +1,9 @@
 /*****************************************************************************
-                                xmlrpc_value.cpp
+                                value.cpp
 ******************************************************************************
-  This module provides services for dealwith XML-RPC values.  Each type
-  of XML-RPC value is a C++ class.  An object represents a particular
-  XML-RPC value.
+  This module provides services for dealing with XML-RPC values.  Each
+  type of XML-RPC value is a C++ class.  An object represents a
+  particular XML-RPC value.
 
   Everything is based on the C services in libxmlrpc.
 
