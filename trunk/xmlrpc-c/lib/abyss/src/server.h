@@ -4,6 +4,7 @@
 #include "xmlrpc-c/abyss.h"
 
 #include "file.h"
+#include "data.h"
 
 struct _TServer {
     abyss_bool socketBound;

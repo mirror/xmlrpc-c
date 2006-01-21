@@ -34,14 +34,13 @@ HTTPWrite(TSession *   const sessionP,
 abyss_bool
 HTTPWriteEnd(TSession * const sessionP);
 
-/*********************************************************************
-** MIMEType
-*********************************************************************/
+const char *
+MIMETypeFromExt(const char * const ext);
 
-abyss_bool MIMETypeAdd(char *type,char *ext);
-char *MIMETypeFromExt(char *ext);
-char *MIMETypeFromFileName(char *filename);
-char *MIMETypeGuessFromFile(char *filename);
+const char *
+MIMETypeFromFileName(const char * const fileName);
 
+const char *
+MIMETypeGuessFromFile(const char * const filename);
 
 #endif

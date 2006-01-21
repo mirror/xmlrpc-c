@@ -848,104 +848,206 @@ abyss_bool ResponseContentLength(TSession *r,uint64_t len)
 ** MIMEType
 *********************************************************************/
 
-TList _MIMETypes,_MIMEExt;
+TList _MIMETypes;
+TList _MIMEExt;
 TPool _MIMEPool;
 
-void MIMETypeInit()
-{
+
+
+void
+MIMETypeInit(void) {
     ListInit(&_MIMETypes);
     ListInit(&_MIMEExt);
-    PoolCreate(&_MIMEPool,1024);
+    PoolCreate(&_MIMEPool, 1024);
 }
 
-abyss_bool MIMETypeAdd(char *type,char *ext)
-{
+
+
+void
+MIMETypeTerm(void) {
+    PoolFree(&_MIMEPool);
+}
+
+
+
+abyss_bool
+MIMETypeAdd(const char * const type,
+            const char * const ext) {
+
+    abyss_bool success;
     uint16_t index;
+    void * mimeTypesItem;
+    abyss_bool typeIsInList;
 
-    if (ListFindString(&_MIMETypes,type,&index))
-        type=_MIMETypes.item[index];
+    typeIsInList = ListFindString(&_MIMETypes, type, &index);
+    if (typeIsInList)
+        mimeTypesItem = _MIMETypes.item[index];
     else
-        if (!(type=PoolStrdup(&_MIMEPool,type)))
-            return FALSE;
-    
-    if (ListFindString(&_MIMEExt,ext,&index))
-        _MIMETypes.item[index]=type;
-    else {
-        ext=PoolStrdup(&_MIMEPool,ext);
-        if (ext)
-            return (ListAdd(&_MIMETypes,type) && ListAdd(&_MIMEExt,ext));
-        else
-            return FALSE;
-    }            
-    return TRUE;
+        mimeTypesItem = (void*)PoolStrdup(&_MIMEPool, type);
+
+    if (mimeTypesItem) {
+        abyss_bool extIsInList;
+        extIsInList = ListFindString(&_MIMEExt, ext, &index);
+        if (extIsInList) {
+            _MIMETypes.item[index] = mimeTypesItem;
+            success = TRUE;
+        } else {
+            void * extItem = (void*)PoolStrdup(&_MIMEPool, ext);
+            if (extItem) {
+                abyss_bool addedToMimeTypes;
+
+                addedToMimeTypes = ListAdd(&_MIMETypes, mimeTypesItem);
+                if (addedToMimeTypes) {
+                    abyss_bool addedToExt;
+                    
+                    addedToExt = ListAdd(&_MIMEExt, extItem);
+                    success = addedToExt;
+                    if (!success)
+                        ListRemove(&_MIMETypes);
+                } else
+                    success = FALSE;
+                if (!success)
+                    PoolReturn(&_MIMEPool, extItem);
+            }
+        }
+    } else
+        success = FALSE;
+
+    return success;
 }
 
-char *MIMETypeFromExt(char *ext)
-{
+
+
+const char *
+MIMETypeFromExt(const char * const ext) {
+
+    const char * retval;
     uint16_t extindex;
+    abyss_bool extIsInList;
 
-    if (!ListFindString(&_MIMEExt,ext,&extindex))
-        return NULL;
+    extIsInList = ListFindString(&_MIMEExt, ext, &extindex);
+    if (!extIsInList)
+        retval = NULL;
     else
-        return _MIMETypes.item[extindex];
+        retval = _MIMETypes.item[extindex];
+    
+    return retval;
 }
 
-char *MIMETypeFromFileName(char *filename)
-{
-    char *p=filename+strlen(filename),*z=NULL;
 
-    while ((*p!='.') && (p>=filename) && ((*p)!='/'))
-        p--;
 
-    if (*p=='.')
-        z=MIMETypeFromExt(p+1);
+static void
+findExtension(const char *  const fileName,
+              const char ** const extP) {
 
-    if (z)
-        return z;
+    unsigned int extPos;
+        /* Running estimation of where in fileName[] the extension starts */
+    abyss_bool extFound;
+    unsigned int i;
+
+    /* We're looking for the last dot after the last slash */
+    for (i = 0, extFound = FALSE; fileName[i]; ++i) {
+        char const c = fileName[i];
+        
+        if (c == '.') {
+            extFound = TRUE;
+            extPos = i + 1;
+        }
+        if (c == '/')
+            extFound = FALSE;
+    }
+
+    if (extFound)
+        *extP = &fileName[extPos];
     else
-        return "application/octet-stream";
+        *extP = NULL;
 }
 
-char *MIMETypeGuessFromFile(char *filename)
-{
-    char *p=filename+strlen(filename),*z=NULL;
+
+
+const char *
+MIMETypeFromFileName(const char * const fileName) {
+
+    const char * retval;
+    const char * ext;
+
+    findExtension(fileName, &ext);
+
+    if (ext)
+        retval = MIMETypeFromExt(ext);
+    else
+        retval = "application/octet-stream";
+
+    return retval;
+}
+
+
+
+static abyss_bool
+fileContainsText(const char * const fileName) {
+/*----------------------------------------------------------------------------
+   Return true iff we can read the contents of the file named 'fileName'
+   and see that it appears to be composed of plain text characters.
+-----------------------------------------------------------------------------*/
+    abyss_bool retval;
+    abyss_bool fileOpened;
     TFile file;
 
-    while ((*p!='.') && (p>=filename) && ((*p)!='/'))
-        p--;
+    fileOpened = FileOpen(&file, fileName, O_BINARY | O_RDONLY);
+    if (fileOpened) {
+        char const ctlZ = 26;
+        unsigned char buffer[80];
+        int32_t readRc;
+        unsigned int i;
 
-    if (*p=='.')
-        z=MIMETypeFromExt(p+1);
+        readRc = FileRead(&file, buffer, sizeof(buffer));
+       
+        if (readRc >= 0) {
+            unsigned int bytesRead = readRc;
+            abyss_bool nonTextFound;
 
-    if (z)
-        return z;
+            nonTextFound = FALSE;  /* initial value */
     
-    if (FileOpen(&file,filename,O_BINARY | O_RDONLY))
-    {
-        uint8_t buffer[80],c;
-        int32_t len,i,n=0;
-
-        i=len=FileRead(&file,buffer,80);
-
-        while (i>0)
-        {
-            i--;
-            c=buffer[i];
-            if ((c>=' ') || (isspace(c)) || (c==26))
-                n++;
-        };
-
-        if (n==len)
-            z="text/plain";
-
+            for (i = 0; i < bytesRead; ++i) {
+                char const c = buffer[i];
+                if (c < ' ' && !isspace(c) && c != ctlZ)
+                    nonTextFound = TRUE;
+            }
+            retval = !nonTextFound;
+        } else
+            retval = FALSE;
         FileClose(&file);
-    };
+    } else
+        retval = FALSE;
 
-    if (z)
-        return z;
-    else
-        return "application/octet-stream";  
+    return retval;
 }
+
+
+ 
+const char *
+MIMETypeGuessFromFile(const char * const fileName) {
+
+    const char * retval;
+    const char * ext;
+
+    findExtension(fileName, &ext);
+
+    retval = NULL;
+
+    if (ext)
+        retval = MIMETypeFromExt(ext);
+    
+    if (!retval) {
+        if (fileContainsText(fileName))
+            retval = "text/plain";
+        else
+            retval = "application/octet-stream";  
+    }
+    return retval;
+}
+
+
 
 /*********************************************************************
 ** Base64

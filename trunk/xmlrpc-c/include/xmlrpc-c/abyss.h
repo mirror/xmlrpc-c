@@ -155,7 +155,19 @@ void
 LogWrite(TServer *    const srvP,
          const char * const c);
 
-void MIMETypeInit(void);
+/*********************************************************************
+** MIMEType
+*********************************************************************/
+
+void
+MIMETypeInit(void);
+
+void
+MIMETypeTerm(void);
+
+abyss_bool
+MIMETypeAdd(const char * const type,
+            const char * const ext);
 
 
 /****************************************************************************
@@ -337,46 +349,6 @@ char *StringData(TString *s);
 
 
 /*********************************************************************
-** List
-*********************************************************************/
-
-typedef struct {
-    void **item;
-    uint16_t size;
-    uint16_t maxsize;
-    abyss_bool autofree;
-} TList;
-
-void
-ListInit(TList * const listP);
-
-void
-ListInitAutoFree(TList * const listP);
-
-void
-ListFree(TList * const listP);
-
-void
-ListFreeItems(TList * const listP);
-
-abyss_bool
-ListAdd(TList * const listP,
-        void *  const str);
-
-void
-ListRemove(TList * const listP);
-
-abyss_bool
-ListAddFromString(TList * const listP,
-                  char *  const c);
-
-abyss_bool
-ListFindString(TList *    const listP,
-               char *     const str,
-               uint16_t * const indexP);
-
-
-/*********************************************************************
 ** Thread
 *********************************************************************/
 
@@ -419,32 +391,6 @@ abyss_bool MutexLock(TMutex *m);
 abyss_bool MutexUnlock(TMutex *m);
 abyss_bool MutexTryLock(TMutex *m);
 void MutexFree(TMutex *m);
-
-
-/*********************************************************************
-** Pool
-*********************************************************************/
-
-typedef struct _TPoolZone
-{
-    char *pos,*maxpos;
-    struct _TPoolZone *next,*prev;
-/*  char data[0]; */
-    char data[1];
-} TPoolZone;
-
-typedef struct
-{
-    TPoolZone *firstzone,*currentzone;
-    uint32_t zonesize;
-    TMutex mutex;
-} TPool;
-
-abyss_bool PoolCreate(TPool *p,uint32_t zonesize);
-void PoolFree(TPool *p);
-
-void *PoolAlloc(TPool *p,uint32_t size);
-char *PoolStrdup(TPool *p,char *s);
 
 
 /*********************************************************************

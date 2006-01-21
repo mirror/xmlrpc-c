@@ -37,6 +37,8 @@
 #include <string.h>
 
 #include "mallocvar.h"
+#include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/base_int.h"
 
 #include "xmlrpc-c/abyss.h"
 
@@ -139,42 +141,64 @@ ListRemove(TList * const sl) {
 
 
 abyss_bool
-ListAddFromString(TList * const list,
-                  char *  const stringArg) {
+ListAddFromString(TList *      const list,
+                  const char * const stringArg) {
 
-    char *t,*p;
-    char * c;
+    abyss_bool retval;
+    
+    if (!stringArg)
+        retval = TRUE;
+    else {
+        char * buffer;
+        
+        buffer = strdup(stringArg);
+        if (!buffer)
+            retval = FALSE;
+        else {
+            abyss_bool endOfString;
+            abyss_bool error;
+            char * c;
 
-    c = stringArg;
+            for (c = &buffer[0], endOfString = FALSE, error = FALSE;
+                 !endOfString && !error;
+                ) {
+                const char * t;
+                NextToken((const char **)&c);
+                
+                while (*c == ',')
+                    ++c;
+                
+                t = GetToken(&c);
+                if (!t)
+                    endOfString = TRUE;
+                else {
+                    char * p;
 
-    if (c)
-        while (1)
-        {
-            NextToken((const char **)&c);
-
-            while (*c==',')
-                c++;
-
-            if (!(t=GetToken(&c)))
-                break;
-
-            p=c-2;
-
-            while (*p==',')
-                *(p--)='\0';
-
-            if (*t)
-                if (!ListAdd(list,t))
-                    return FALSE;
-        };
-
-    return TRUE;
+                    for (p = c - 2; *p == ','; --p)
+                        *p = '\0';
+                    
+                    if (t[0] != '\0') {
+                        abyss_bool added;
+                        added = ListAdd(list, (void*)t);
+                        
+                        if (!added)
+                            error = TRUE;
+                    }
+                }
+            }
+            retval = !error;
+            xmlrpc_strfree(buffer);
+        }
+    }
+    return retval;
 }
 
+
+
 abyss_bool
-ListFindString(TList *    const sl,
-               char *     const str,
-               uint16_t * const indexP)
+ListFindString(TList *      const sl,
+               const char * const str,
+               uint16_t *   const indexP)
 {
     uint16_t i;
 
@@ -459,103 +483,158 @@ TableFind(TTable *     const t,
 *********************************************************************/
 
 static TPoolZone *
-PoolZoneAlloc(uint32_t zonesize) {
-    TPoolZone *pz;
+PoolZoneAlloc(uint32_t const zonesize) {
 
-    pz=(TPoolZone *)malloc(zonesize+sizeof(TPoolZone));
-    if (pz)
-    {
-        pz->pos=pz->data;
-        pz->maxpos=pz->pos+zonesize;
-        pz->next=pz->prev=NULL;
-    };
-
-    return pz;
-}
-
-abyss_bool PoolCreate(TPool *p,uint32_t zonesize)
-{
-    p->zonesize=zonesize;
-    if (MutexCreate(&p->mutex))
-        if (!(p->firstzone=p->currentzone=PoolZoneAlloc(zonesize)))
-        {
-            MutexFree(&p->mutex);
-            return FALSE;
-        };
+    TPoolZone * poolZoneP;
     
-    return TRUE;
-}
-
-void *PoolAlloc(TPool *p,uint32_t size)
-{
-    TPoolZone *pz,*npz;
-    void *x;
-    uint32_t zonesize;
-
-    if (size==0)
-        return NULL;
-
-    if (!MutexLock(&p->mutex))
-        return NULL;
-
-    pz=p->currentzone;
-
-    if (pz->pos+size<pz->maxpos)
-    {
-        x=pz->pos;
-        pz->pos+=size;
-        MutexUnlock(&p->mutex);
-        return x;
-    };
-
-    if (size>p->zonesize)
-        zonesize=size;
-    else
-        zonesize=p->zonesize;
-
-    npz=PoolZoneAlloc(zonesize);
-    if (npz)
-    {
-        npz->prev=pz;
-        npz->next=pz->next;
-        pz->next=npz;
-        p->currentzone=npz; 
-        x=npz->data;
-        npz->pos=npz->data+size;
+    MALLOCARRAY(poolZoneP, zonesize);
+    if (poolZoneP) {
+        poolZoneP->pos    = &poolZoneP->data[0];
+        poolZoneP->maxpos = poolZoneP->pos + zonesize;
+        poolZoneP->next   = NULL;
+        poolZoneP->prev   = NULL;
     }
-    else
-        x=NULL;
-
-    MutexUnlock(&p->mutex);
-    return x;
-}
-
-void PoolFree(TPool *p)
-{
-    TPoolZone *pz,*npz;
-
-    pz=p->firstzone;
-
-    while (pz)
-    {
-        npz=pz->next;
-        free(pz);
-        pz=npz;
-    };
+    return poolZoneP;
 }
 
 
 
-char *PoolStrdup(TPool *p,char *s) {
+static void
+PoolZoneFree(TPoolZone * const poolZoneP) {
 
-    char *ns;
+    free(poolZoneP);
+}
 
-    if (s) {
-        ns = PoolAlloc(p, strlen(s) + 1);
-        if (ns)
-            strcpy(ns, s);
+
+
+abyss_bool
+PoolCreate(TPool *  const poolP,
+           uint32_t const zonesize) {
+
+    abyss_bool success;
+    abyss_bool mutexCreated;
+
+    poolP->zonesize = zonesize;
+
+    mutexCreated = MutexCreate(&poolP->mutex);
+    if (mutexCreated) {
+        TPoolZone * const firstZoneP = PoolZoneAlloc(zonesize);
+
+        if (firstZoneP != NULL) {
+            poolP->firstzone   = firstZoneP;
+            poolP->currentzone = firstZoneP;
+            success = TRUE;
+        } else
+            success = FALSE;
+        if (!success)
+            MutexFree(&poolP->mutex);
     } else
-        ns = NULL;
+        success = FALSE;
 
-    return ns;
+    return success;
+}
+
+
+
+void *
+PoolAlloc(TPool *  const poolP,
+          uint32_t const size) {
+/*----------------------------------------------------------------------------
+   Allocate a block of size 'size' from pool 'poolP'.
+-----------------------------------------------------------------------------*/
+    void * retval;
+
+    if (size == 0)
+        retval = NULL;
+    else {
+        abyss_bool gotMutexLock;
+
+        gotMutexLock = MutexLock(&poolP->mutex);
+        if (!gotMutexLock)
+            retval = NULL;
+        else {
+            TPoolZone * const curPoolZoneP = poolP->currentzone;
+
+            if (curPoolZoneP->pos + size < curPoolZoneP->maxpos) {
+                retval = curPoolZoneP->pos;
+                curPoolZoneP->pos += size;
+            } else {
+                uint32_t const zonesize = MAX(size, poolP->zonesize);
+
+                TPoolZone * const newPoolZoneP = PoolZoneAlloc(zonesize);
+                if (newPoolZoneP) {
+                    newPoolZoneP->prev = curPoolZoneP;
+                    newPoolZoneP->next = curPoolZoneP->next;
+                    curPoolZoneP->next = newPoolZoneP;
+                    poolP->currentzone = newPoolZoneP;
+                    retval= newPoolZoneP->data;
+                    newPoolZoneP->pos = newPoolZoneP->data + size;
+                } else
+                    retval = NULL;
+            }
+            MutexUnlock(&poolP->mutex);
+        }
+    }
+    return retval;
+}
+
+
+
+void
+PoolReturn(TPool *  const poolP,
+           void *   const blockP) {
+/*----------------------------------------------------------------------------
+   Return the block at 'blockP' to the pool 'poolP'.  WE ASSUME THAT IS
+   THE MOST RECENTLY ALLOCATED AND NOT RETURNED BLOCK IN THE POOL.
+-----------------------------------------------------------------------------*/
+    TPoolZone * const curPoolZoneP = poolP->currentzone;
+
+    assert((char*)curPoolZoneP->data < (char*)blockP &&
+           (char*)blockP < (char*)curPoolZoneP->pos);
+
+    curPoolZoneP->pos = blockP;
+
+    if (curPoolZoneP->pos == curPoolZoneP->data) {
+        /* That emptied out the current zone.  Free it and make the previous
+           zone current.
+        */
+
+        assert(curPoolZoneP->prev);  /* entry condition */
+
+        curPoolZoneP->prev->next = NULL;
+
+        PoolZoneFree(curPoolZoneP);
+    }
+}
+
+
+
+void
+PoolFree(TPool * const poolP) {
+
+    TPoolZone * poolZoneP;
+    TPoolZone * nextPoolZoneP;
+    
+    for (poolZoneP = poolP->firstzone; poolZoneP; poolZoneP = nextPoolZoneP) {
+        nextPoolZoneP = poolZoneP->next;
+        free(poolZoneP);
+    }
+}
+
+
+
+const char *
+PoolStrdup(TPool *      const poolP,
+           const char * const origString) {
+
+    char * newString;
+
+    if (origString == NULL)
+        newString = NULL;
+    else {
+        newString = PoolAlloc(poolP, strlen(origString) + 1);
+        if (newString != NULL)
+            strcpy(newString, origString);
+    }
+    return newString;
 }
