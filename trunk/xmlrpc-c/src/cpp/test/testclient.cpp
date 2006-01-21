@@ -117,7 +117,7 @@ public:
         rpcSampleAdd1P->start(&clientDirect, &carriageParmDirect);
         rpcPtr const rpcSampleAdd2P("sample.add", paramListSampleAdd2);
         rpcSampleAdd2P->start(&clientDirect, &carriageParmDirect);
-        
+
         TEST(rpcSampleAdd1P->isFinished());
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result1(rpcSampleAdd1P->getResult());
@@ -627,6 +627,7 @@ string
 clientTestSuite::suiteName() {
     return "clientTestSuite";
 }
+
 
 
 void
