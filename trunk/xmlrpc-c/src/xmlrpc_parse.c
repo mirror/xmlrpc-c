@@ -874,6 +874,7 @@ parseMethodResponseElt(xmlrpc_env *        const envP,
 }
 
 
+
 void
 xmlrpc_parse_response2(xmlrpc_env *    const envP,
                        const char *    const xmlData,
@@ -902,7 +903,7 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
 
     /* SECURITY: Last-ditch attempt to make sure our content length is legal.
     ** XXX - This check occurs too late to prevent an attacker from creating
-    ** an enormous memory block in RAM, so you should try to enforce it
+    ** an enormous memory block, so you should try to enforce it
     ** *before* reading any data off the network. */
     if (xmlDataLen > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
         xmlrpc_env_set_fault_formatted(
