@@ -255,11 +255,6 @@ void test_value (void) {
     }
 }
 
-void test_errors (void) {
-    // XXX - Test typechecks on get* methods.
-    // XXX - Test typechceks on array and struct methods.
-    // XXX - Test bounds checks on arrayGetItem, structGetKeyAndValue.
-}
 
 
 static void
@@ -272,7 +267,6 @@ testXmlRpcCpp() {
     test_fault();
     test_env();
     test_value();
-    test_errors();
 }
 
 
