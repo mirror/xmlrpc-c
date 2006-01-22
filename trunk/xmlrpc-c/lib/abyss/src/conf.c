@@ -177,35 +177,51 @@ ConfReadBool(char *p, abyss_bool *b) {
 ** MIME Types File
 *********************************************************************/
 
-abyss_bool ConfReadMIMETypes(char *filename)
-{
-    TFile f;
-    char z[512],*p;
-    char *mimetype,*ext;
+static void
+readMIMETypesFile(const char * const filename,
+                  MIMEType **  const MIMETypePP) {
 
-    if (!FileOpen(&f,filename,O_RDONLY))
-        return FALSE;
+    abyss_bool success;
+    MIMEType * MIMETypeP;
 
-    while (ConfReadLine(&f,z,512))
-    {
-        p=z;
+    MIMETypeP = MIMETypeCreate();
+    if (MIMETypeP) {
+        TFile file;
+        abyss_bool fileOpened;
 
-        if (ConfNextToken(&p)) {
-            mimetype=ConfGetToken(&p);
-            if (mimetype) {
-                while (ConfNextToken(&p)) {
-                    ext=ConfGetToken(&p);
-                    if (ext)
-                        MIMETypeAdd(mimetype,ext);
-                    else
-                        break;
+        fileOpened = FileOpen(&file, filename, O_RDONLY);
+        if (fileOpened) {
+            char z[512];
+            while (ConfReadLine(&file, z, 512)) {
+                char * p;
+                p = &z[0];
+            
+                if (ConfNextToken(&p)) {
+                    const char * mimetype = ConfGetToken(&p);
+                    if (mimetype) {
+                        while (ConfNextToken(&p)) {
+                            const char * const ext = ConfGetToken(&p);
+                            if (ext)
+                                MIMETypeAdd2(MIMETypeP, mimetype, ext);
+                            else
+                                break;
+                        }
+                    }
                 }
             }
-        }
-    };
+            FileClose(&file);
+            success = TRUE;
+        } else
+            success = FALSE;
+        if (!success)
+            MIMETypeDestroy(MIMETypeP);
+    } else
+        success = FALSE;
 
-    FileClose(&f);
-    return TRUE;
+    if (success)
+        *MIMETypePP = MIMETypeP;
+    else
+        *MIMETypePP = NULL;
 }
 
 /*********************************************************************
@@ -336,7 +352,8 @@ ConfReadServerFile(const char * const filename,
                     } else
                         TraceExit("Invalid TimeOut value '%s'", p);
                 } else if (strcasecmp(option, "mimetypes") == 0) {
-                    if (!ConfReadMIMETypes(p))
+                    readMIMETypesFile(p, &srvP->MIMETypeP);
+                    if (!srvP->MIMETypeP)
                         TraceExit("Can't read MIME Types file '%s'", p);
                 } else if (strcasecmp(option,"logfile") == 0) {
                     srvP->logfilename = strdup(p);

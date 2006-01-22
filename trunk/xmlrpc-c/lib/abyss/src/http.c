@@ -1,38 +1,7 @@
-/*******************************************************************************
-**
-** http.c
-**
-** This file is part of the ABYSS Web server project.
-**
-** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission.
-** 
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
-**
-*******************************************************************************/
+/* Copyright information is at the end of the file */
 
 #include <ctype.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +9,7 @@
 #include <time.h>
 
 #include "xmlrpc_config.h"
+#include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"
 #include "server.h"
 #include "session.h"
@@ -830,10 +800,14 @@ ResponseWriteEnd(TSession * const sessionP) {
 
 
 
-abyss_bool ResponseContentType(TSession *r,char *type)
-{
-    return ResponseAddField(r,"Content-type",type);
+abyss_bool
+ResponseContentType(TSession *   const serverP,
+                    const char * const type) {
+
+    return ResponseAddField(serverP, "Content-type", type);
 }
+
+
 
 abyss_bool ResponseContentLength(TSession *r,uint64_t len)
 {
@@ -848,24 +822,133 @@ abyss_bool ResponseContentLength(TSession *r,uint64_t len)
 ** MIMEType
 *********************************************************************/
 
-TList _MIMETypes;
-TList _MIMEExt;
-TPool _MIMEPool;
+struct MIMEType {
+    TList typeList;
+    TList extList;
+    TPool pool;
+};
+
+
+static MIMEType * globalMimeTypeP = NULL;
+
+
+
+MIMEType *
+MIMETypeCreate(void) {
+ 
+    MIMEType * MIMETypeP;
+
+    MALLOCVAR(MIMETypeP);
+
+    if (MIMETypeP) {
+        ListInit(&MIMETypeP->typeList);
+        ListInit(&MIMETypeP->extList);
+        PoolCreate(&MIMETypeP->pool, 1024);
+    }
+    return MIMETypeP;
+}
+
+
+
+void
+MIMETypeDestroy(MIMEType * const MIMETypeP) {
+
+    PoolFree(&MIMETypeP->pool);
+}
 
 
 
 void
 MIMETypeInit(void) {
-    ListInit(&_MIMETypes);
-    ListInit(&_MIMEExt);
-    PoolCreate(&_MIMEPool, 1024);
+
+    if (globalMimeTypeP != NULL)
+        abort();
+
+    globalMimeTypeP = MIMETypeCreate();
 }
 
 
 
 void
 MIMETypeTerm(void) {
-    PoolFree(&_MIMEPool);
+
+    if (globalMimeTypeP == NULL)
+        abort();
+
+    MIMETypeDestroy(globalMimeTypeP);
+
+    globalMimeTypeP = NULL;
+}
+
+
+
+static void
+mimeTypeAdd(MIMEType *   const MIMETypeP,
+            const char * const type,
+            const char * const ext,
+            abyss_bool * const successP) {
+    
+    uint16_t index;
+    void * mimeTypesItem;
+    abyss_bool typeIsInList;
+
+    assert(MIMETypeP != NULL);
+
+    typeIsInList = ListFindString(&MIMETypeP->typeList, type, &index);
+    if (typeIsInList)
+        mimeTypesItem = MIMETypeP->typeList.item[index];
+    else
+        mimeTypesItem = (void*)PoolStrdup(&MIMETypeP->pool, type);
+
+    if (mimeTypesItem) {
+        abyss_bool extIsInList;
+        extIsInList = ListFindString(&MIMETypeP->extList, ext, &index);
+        if (extIsInList) {
+            MIMETypeP->typeList.item[index] = mimeTypesItem;
+            *successP = TRUE;
+        } else {
+            void * extItem = (void*)PoolStrdup(&MIMETypeP->pool, ext);
+            if (extItem) {
+                abyss_bool addedToMimeTypes;
+
+                addedToMimeTypes =
+                    ListAdd(&MIMETypeP->typeList, mimeTypesItem);
+                if (addedToMimeTypes) {
+                    abyss_bool addedToExt;
+                    
+                    addedToExt = ListAdd(&MIMETypeP->extList, extItem);
+                    *successP = addedToExt;
+                    if (!*successP)
+                        ListRemove(&MIMETypeP->typeList);
+                } else
+                    *successP = FALSE;
+                if (!*successP)
+                    PoolReturn(&MIMETypeP->pool, extItem);
+            } else
+                *successP = FALSE;
+        }
+    } else
+        *successP = FALSE;
+}
+
+
+
+
+abyss_bool
+MIMETypeAdd2(MIMEType *   const MIMETypeArg,
+             const char * const type,
+             const char * const ext) {
+
+    MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
+
+    abyss_bool success;
+
+    if (MIMETypeP == NULL)
+        success = FALSE;
+    else 
+        mimeTypeAdd(MIMETypeP, type, ext, &success);
+
+    return success;
 }
 
 
@@ -874,46 +957,46 @@ abyss_bool
 MIMETypeAdd(const char * const type,
             const char * const ext) {
 
-    abyss_bool success;
-    uint16_t index;
-    void * mimeTypesItem;
-    abyss_bool typeIsInList;
+    return MIMETypeAdd2(globalMimeTypeP, type, ext);
+}
 
-    typeIsInList = ListFindString(&_MIMETypes, type, &index);
-    if (typeIsInList)
-        mimeTypesItem = _MIMETypes.item[index];
+
+
+static const char *
+mimeTypeFromExt(MIMEType *   const MIMETypeP,
+                const char * const ext) {
+
+    const char * retval;
+    uint16_t extindex;
+    abyss_bool extIsInList;
+
+    assert(MIMETypeP != NULL);
+
+    extIsInList = ListFindString(&MIMETypeP->extList, ext, &extindex);
+    if (!extIsInList)
+        retval = NULL;
     else
-        mimeTypesItem = (void*)PoolStrdup(&_MIMEPool, type);
+        retval = MIMETypeP->typeList.item[extindex];
+    
+    return retval;
+}
 
-    if (mimeTypesItem) {
-        abyss_bool extIsInList;
-        extIsInList = ListFindString(&_MIMEExt, ext, &index);
-        if (extIsInList) {
-            _MIMETypes.item[index] = mimeTypesItem;
-            success = TRUE;
-        } else {
-            void * extItem = (void*)PoolStrdup(&_MIMEPool, ext);
-            if (extItem) {
-                abyss_bool addedToMimeTypes;
 
-                addedToMimeTypes = ListAdd(&_MIMETypes, mimeTypesItem);
-                if (addedToMimeTypes) {
-                    abyss_bool addedToExt;
-                    
-                    addedToExt = ListAdd(&_MIMEExt, extItem);
-                    success = addedToExt;
-                    if (!success)
-                        ListRemove(&_MIMETypes);
-                } else
-                    success = FALSE;
-                if (!success)
-                    PoolReturn(&_MIMEPool, extItem);
-            }
-        }
-    } else
-        success = FALSE;
 
-    return success;
+const char *
+MIMETypeFromExt2(MIMEType *   const MIMETypeArg,
+                 const char * const ext) {
+
+    const char * retval;
+
+    MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
+
+    if (MIMETypeP == NULL)
+        retval = NULL;
+    else
+        retval = mimeTypeFromExt(MIMETypeP, ext);
+
+    return retval;
 }
 
 
@@ -921,17 +1004,7 @@ MIMETypeAdd(const char * const type,
 const char *
 MIMETypeFromExt(const char * const ext) {
 
-    const char * retval;
-    uint16_t extindex;
-    abyss_bool extIsInList;
-
-    extIsInList = ListFindString(&_MIMEExt, ext, &extindex);
-    if (!extIsInList)
-        retval = NULL;
-    else
-        retval = _MIMETypes.item[extindex];
-    
-    return retval;
+    return MIMETypeFromExt2(globalMimeTypeP, ext);
 }
 
 
@@ -940,7 +1013,7 @@ static void
 findExtension(const char *  const fileName,
               const char ** const extP) {
 
-    unsigned int extPos;
+    unsigned int extPos = 0;  /* stifle unset variable warning */
         /* Running estimation of where in fileName[] the extension starts */
     abyss_bool extFound;
     unsigned int i;
@@ -965,20 +1038,49 @@ findExtension(const char *  const fileName,
 
 
 
-const char *
-MIMETypeFromFileName(const char * const fileName) {
+static const char *
+mimeTypeFromFileName(MIMEType *   const MIMETypeP,
+                     const char * const fileName) {
 
     const char * retval;
     const char * ext;
 
+    assert(MIMETypeP != NULL);
+    
     findExtension(fileName, &ext);
 
     if (ext)
-        retval = MIMETypeFromExt(ext);
+        retval = MIMETypeFromExt2(MIMETypeP, ext);
     else
         retval = "application/octet-stream";
 
     return retval;
+}
+
+
+
+const char *
+MIMETypeFromFileName2(MIMEType *   const MIMETypeArg,
+                      const char * const fileName) {
+
+    const char * retval;
+    
+    MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
+
+    if (MIMETypeP == NULL)
+        retval = NULL;
+    else
+        retval = mimeTypeFromFileName(MIMETypeP, fileName);
+
+    return retval;
+}
+
+
+
+const char *
+MIMETypeFromFileName(const char * const fileName) {
+
+    return MIMETypeFromFileName2(globalMimeTypeP, fileName);
 }
 
 
@@ -1025,8 +1127,9 @@ fileContainsText(const char * const fileName) {
 
 
  
-const char *
-MIMETypeGuessFromFile(const char * const fileName) {
+static const char *
+mimeTypeGuessFromFile(MIMEType *   const MIMETypeP,
+                      const char * const fileName) {
 
     const char * retval;
     const char * ext;
@@ -1035,8 +1138,8 @@ MIMETypeGuessFromFile(const char * const fileName) {
 
     retval = NULL;
 
-    if (ext)
-        retval = MIMETypeFromExt(ext);
+    if (ext && MIMETypeP)
+        retval = MIMETypeFromExt2(MIMETypeP, ext);
     
     if (!retval) {
         if (fileContainsText(fileName))
@@ -1048,6 +1151,24 @@ MIMETypeGuessFromFile(const char * const fileName) {
 }
 
 
+
+const char *
+MIMETypeGuessFromFile2(MIMEType *   const MIMETypeArg,
+                       const char * const fileName) {
+
+    return mimeTypeGuessFromFile(MIMETypeArg ? MIMETypeArg : globalMimeTypeP,
+                                 fileName);
+}
+
+
+
+const char *
+MIMETypeGuessFromFile(const char * const fileName) {
+
+    return mimeTypeGuessFromFile(globalMimeTypeP, fileName);
+}
+
+                                  
 
 /*********************************************************************
 ** Base64
@@ -1090,3 +1211,34 @@ void Base64Encode(char *s,char *d)
     *p = '\0';
 }
 
+/******************************************************************************
+**
+** http.c
+**
+** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
+** All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission.
+** 
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE.
+**
+******************************************************************************/

@@ -45,6 +45,8 @@ struct _TServer {
     TList defaultfilenames;
     void * defaulthandler;
     abyss_bool advertise;
+    MIMEType * mimeTypeP;
+        /* NULL means to use the global MIMEType object */
 #ifdef _UNIX
     uid_t uid;
     gid_t gid;

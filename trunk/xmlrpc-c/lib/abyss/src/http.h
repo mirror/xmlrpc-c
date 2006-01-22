@@ -34,13 +34,4 @@ HTTPWrite(TSession *   const sessionP,
 abyss_bool
 HTTPWriteEnd(TSession * const sessionP);
 
-const char *
-MIMETypeFromExt(const char * const ext);
-
-const char *
-MIMETypeFromFileName(const char * const fileName);
-
-const char *
-MIMETypeGuessFromFile(const char * const filename);
-
 #endif

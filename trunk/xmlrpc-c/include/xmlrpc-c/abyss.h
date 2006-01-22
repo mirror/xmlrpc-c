@@ -32,6 +32,35 @@ extern "C" {
 ****************************************************************************/
 
 typedef int abyss_bool;
+
+/*********************************************************************
+** MIMEType
+*********************************************************************/
+
+typedef struct MIMEType MIMEType;
+
+MIMEType *
+MIMETypeCreate(void);
+
+void
+MIMETypeDestroy(MIMEType * const MIMETypeP);
+
+void
+MIMETypeInit(void);
+
+void
+MIMETypeTerm(void);
+
+abyss_bool
+MIMETypeAdd2(MIMEType *   const MIMETypeP,
+             const char * const type,
+             const char * const ext);
+
+abyss_bool
+MIMETypeAdd(const char * const type,
+            const char * const ext);
+
+
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
 typedef struct {
@@ -95,6 +124,11 @@ void
 ServerSetAdvertise(TServer *  const serverP,
                    abyss_bool const advertise);
 
+#define HAVE_SERVER_SET_MIME_TYPE 1
+void
+ServerSetMimeType(TServer *  const serverP,
+                  MIMEType * const MIMETypeP);
+
 void
 ServerInit(TServer * const serverP);
 
@@ -151,24 +185,17 @@ void
 ServerDefaultHandler(TServer *  const srvP,
                      URIHandler const handler);
 
+/* This is inappropriately named; it was a mistake.  But then, so is
+   having this function at all.  The config file is inappropriate for
+   an API.
+*/
+abyss_bool
+ConfReadServerFile(const char * const filename,
+                   TServer *    const srvP);
+
 void
 LogWrite(TServer *    const srvP,
          const char * const c);
-
-/*********************************************************************
-** MIMEType
-*********************************************************************/
-
-void
-MIMETypeInit(void);
-
-void
-MIMETypeTerm(void);
-
-abyss_bool
-MIMETypeAdd(const char * const type,
-            const char * const ext);
-
 
 /****************************************************************************
   STUFF FOR URI HANDLERS TO USE
@@ -240,14 +267,36 @@ void
 ResponseStatusErrno(TSession * const sessionP);
 
 abyss_bool
-ResponseContentType(TSession * const sessionP,
-                    char *     const type);
+ResponseContentType(TSession *   const serverP,
+                    const char * const type);
+
 abyss_bool
 ResponseContentLength(TSession * const sessionP,
                       uint64_t   const len);
 
 void
 ResponseError(TSession * const sessionP);
+
+const char *
+MIMETypeFromExt(const char * const ext);
+
+const char *
+MIMETypeFromExt2(MIMEType *   const MIMETypeP,
+                 const char * const ext);
+
+const char *
+MIMETypeFromFileName2(MIMEType *   const MIMETypeP,
+                      const char * const fileName);
+
+const char *
+MIMETypeFromFileName(const char * const fileName);
+
+const char *
+MIMETypeGuessFromFile2(MIMEType *   const MIMETypeP,
+                       const char * const fileName);
+
+const char *
+MIMETypeGuessFromFile(const char * const filename);
 
 
 /****************************************************************************
@@ -410,14 +459,6 @@ abyss_bool DateInit(void);
 *********************************************************************/
 
 void Base64Encode(char *s,char *d);
-
-/*********************************************************************
-** Conf
-*********************************************************************/
-
-abyss_bool ConfReadMIMETypes(char *filename);
-abyss_bool ConfReadServerFile(const char *filename,TServer *srv);
-
 
 /*********************************************************************
 ** Trace

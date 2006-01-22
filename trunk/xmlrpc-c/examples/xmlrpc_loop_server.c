@@ -82,8 +82,6 @@ main(int           const argc,
     xmlrpc_registry_add_method(
         &env, registryP, NULL, "sample.add", &sample_add, NULL);
 
-    MIMETypeInit();
-
     ServerCreate(&abyssServer, "XmlRpcServer", atoi(argv[1]), NULL, NULL);
     
     xmlrpc_server_abyss_set_handlers(&abyssServer, registryP);
@@ -103,6 +101,6 @@ main(int           const argc,
     }
 
     ServerFree(&abyssServer);
-
+    
     return 0;
 }

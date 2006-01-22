@@ -738,7 +738,6 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
     void * runfirstArg;
     
     DateInit();
-    MIMETypeInit();
     
     ServerCreate(&srv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
     
@@ -842,7 +841,6 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
     const char * logFileName;
     
     DateInit();
-    MIMETypeInit();
 
     extractServerCreateParms(envP, parmsP, parmSize,
                              &socketBound, &portNumber, &socketFd,

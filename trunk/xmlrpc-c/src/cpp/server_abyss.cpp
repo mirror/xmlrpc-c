@@ -163,7 +163,6 @@ serverAbyss::initialize(constrOpt const& opt) {
         throwf("You can't specify both portNumber and socketFd options");
 
     DateInit();
-    MIMETypeInit();
     
     const char * const logfileArg(opt.present.logFileName ?
                                   opt.value.logFileName.c_str() : NULL);
