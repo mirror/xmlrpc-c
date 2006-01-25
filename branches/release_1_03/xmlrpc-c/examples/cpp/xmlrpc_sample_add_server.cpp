@@ -12,7 +12,8 @@ public:
         // signature and help strings are documentation -- the client
         // can query this information with a system.methodSignature and
         // system.methodHelp RPC.
-        this->_signature = "ii";  // method's arguments are two integers
+        this->_signature = "i:ii";
+            // method's result and two arguments are integers
         this->_help = "This method adds two integers together";
     }
     void

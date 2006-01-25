@@ -336,9 +336,10 @@ dispatch_call(xmlrpc_env *      const envP,
         xmlrpc_struct_find_value(envP, registryP->_methods,
                                  methodName, &method_info);
         if (!envP->fault_occurred) {
-            if (method_info)
+            if (method_info) {
                 callNamedMethod(envP, method_info, paramArrayP, resultPP);
-            else {
+                xmlrpc_DECREF(method_info);
+            } else {
                 if (registryP->_default_method)
                     callDefaultMethod(envP, registryP->_default_method, 
                                       methodName, paramArrayP,

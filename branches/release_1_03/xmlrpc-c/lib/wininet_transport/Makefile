@@ -12,7 +12,7 @@ INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
 default: all
 
 .PHONY: all
-all: xmlrpc_wininet_transport.la
+all: xmlrpc_wininet_transport.lo
 
 .PHONY: clean
 clean: clean-common

@@ -97,7 +97,8 @@ while test $# -gt 0; do
         the_libs="-lxmlrpc_server_abyss++ $the_libs"
         fi
       ;;
-    client)
+    client|libwww-client)
+      # libwww-client is for backward compatibility
       the_libs="-lxmlrpc_client $the_libs"
 
       if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then

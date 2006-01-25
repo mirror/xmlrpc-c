@@ -13,6 +13,18 @@ using namespace xmlrpc_c;
 
 namespace {
 
+class cValueWrapper {
+/*----------------------------------------------------------------------------
+   Use an object of this class to set up to remove a reference to an
+   xmlrpc_value object (a C object with manual reference management)
+   at then end of a scope -- even if the scope ends with a throw.
+-----------------------------------------------------------------------------*/
+public:
+    xmlrpc_value * valueP;
+    cValueWrapper(xmlrpc_value * valueP) : valueP(valueP) {}
+    ~cValueWrapper() { xmlrpc_DECREF(valueP); }
+};
+
 xmlrpc_value *
 cArrayFromParamList(paramList const& paramList) {
 
@@ -27,9 +39,9 @@ cArrayFromParamList(paramList const& paramList) {
         for (unsigned int i = 0;
              i < paramList.size() && !env.fault_occurred;
              ++i) {
-            
-            xmlrpc_array_append_item(&env, paramArrayP,
-                                     paramList[i].cValue());
+            cValueWrapper const param(paramList[i].cValue());
+
+            xmlrpc_array_append_item(&env, paramArrayP, param.valueP);
         }
     }
     if (env.fault_occurred) {
@@ -115,8 +127,10 @@ parseResponse(string       const& responseXml,
         *outcomeP =
             rpcOutcome(fault(env.fault_string,
                              static_cast<fault::code_t>(env.fault_code)));
-    else
+    else {
         *outcomeP = rpcOutcome(value(c_resultP));
+        xmlrpc_DECREF(c_resultP);
+    }
 }
 
 

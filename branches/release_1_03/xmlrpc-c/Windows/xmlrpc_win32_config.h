@@ -53,12 +53,6 @@
   
 #define DIRECTORY_SEPARATOR "\\"
 
-/* This gives the path to the testdata dir.  It is relative to the  */
-/* output directory of cpptest and rpctest.  Thus, you must run     */
-/* the test apps from the .\Bin directory for them to work unless   */
-/* you modify this defined value to a hardcoded path                */
-#define TESTDATADIR "..\\src\\testdata"
-
   
 /* Windows-specific includes. */
  

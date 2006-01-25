@@ -448,7 +448,7 @@ Again:
 				}
 				break;
 
-			case INTERNET_FLAG_IGNORE_CERT_DATE_INVALID:
+			case ERROR_INTERNET_SEC_CERT_DATE_INVALID:
 				if (clientTransportP->allowInvalidSSLCerts){
 					OutputDebugString ("Sync HttpSendRequest failed: "
 						"The SSL certificate date that was received from the server is "

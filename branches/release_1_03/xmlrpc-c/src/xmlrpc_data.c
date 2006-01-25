@@ -754,8 +754,7 @@ xmlrpc_string_w_new_lp(xmlrpc_env *    const envP,
                     contents = XMLRPC_MEMBLOCK_CONTENTS(char, &valP->_block);
                     memcpy(contents, utf8_contents, utf8_len);
                 }
-                if (envP->fault_occurred)
-                    XMLRPC_MEMBLOCK_FREE(char, utf8_block);
+                XMLRPC_MEMBLOCK_FREE(char, utf8_block);
             }
             if (envP->fault_occurred)
                 XMLRPC_MEMBLOCK_FREE(wchar_t, valP->_wcs_block);

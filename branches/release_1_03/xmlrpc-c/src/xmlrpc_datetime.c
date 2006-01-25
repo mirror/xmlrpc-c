@@ -324,13 +324,13 @@ validateFormat(xmlrpc_env * const envP,
         if (!isdigit(t[10]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[10]);
         if (t[11] != ':')
-            xmlrpc_faultf(envP, "Not a colon: '%s'", t[11]);
+            xmlrpc_faultf(envP, "Not a colon: '%c'", t[11]);
         if (!isdigit(t[12]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[12]);
         if (!isdigit(t[13]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[13]);
         if (t[14] != ':')
-            xmlrpc_faultf(envP, "Not a colon: '%s'", t[14]);
+            xmlrpc_faultf(envP, "Not a colon: '%c'", t[14]);
         if (!isdigit(t[15]))
             xmlrpc_faultf(envP, "Not a digit: '%c'", t[15]);
         if (!isdigit(t[16]))

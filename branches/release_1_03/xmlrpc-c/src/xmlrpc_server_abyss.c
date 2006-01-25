@@ -792,6 +792,8 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
 
     ServerAddHandler2(srvP, uriHandlerP, &success);
 
+    free(uriHandlerP);
+
     if (!success)
         xmlrpc_faultf(envP, "Abyss failed to register the Xmlrpc-c request "
                       "handler.  ServerAddHandler2() failed.");
