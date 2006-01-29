@@ -99,6 +99,20 @@ serverAbyssTestSuite::runtests(unsigned int) {
         
     myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
 
+    registryPtr myRegistryP(new registry);
+
+    myRegistryP->addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+    EXPECT_ERROR(  // No registry
+        serverAbyss::constrOpt opt;
+        serverAbyss abyssServer(opt);
+        );
+    EXPECT_ERROR(  // Both portNumber and socketFd
+        serverAbyss abyssServer(serverAbyss::constrOpt()
+                                .portNumber(8080)
+                                .socketFd(3));
+        );
+
     // Due to the vagaries of Abyss, construction of the following
     // objects may exit the program if it detects an error, such as
     // port number already in use.  We need to fix Abyss some day.
@@ -108,6 +122,21 @@ serverAbyssTestSuite::runtests(unsigned int) {
                                 .registryP(&myRegistry)
                                 .portNumber(12345)
                                 .logFileName("/tmp/xmlrpc_log")
+            );
+    }
+    {
+        serverAbyss abyssServer(serverAbyss::constrOpt()
+                                .registryPtr(myRegistryP)
+                                .portNumber(12345)
+                                .logFileName("/tmp/xmlrpc_log")
+            );
+
+        EXPECT_ERROR(  // Both registryP and registryPtr
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryPtr(myRegistryP)
+                                    .registryP(&myRegistry)
+                                    .portNumber(12345)
+                );
             );
     }
     {

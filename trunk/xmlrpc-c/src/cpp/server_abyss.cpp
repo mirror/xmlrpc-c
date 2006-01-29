@@ -100,6 +100,7 @@ setupSignalHandlers(void) {
 
 
 serverAbyss::constrOpt::constrOpt() {
+    present.registryPtr      = false;
     present.registryP        = false;
     present.socketFd         = false;
     present.portNumber       = false;
@@ -123,6 +124,7 @@ serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
     return *this; \
 }
 
+DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
 DEFINE_OPTION_SETTER(registryP,        const registry *);
 DEFINE_OPTION_SETTER(socketFd,         xmlrpc_socket);
 DEFINE_OPTION_SETTER(portNumber,       uint);
@@ -156,9 +158,21 @@ serverAbyss::setAdditionalServerParms(constrOpt const& opt) {
 void
 serverAbyss::initialize(constrOpt const& opt) {
 
-    if (!opt.present.registryP)
-        throwf("You must specify the 'registryP' option");
-    
+    const registry * registryP;
+
+    if (!opt.present.registryP && !opt.present.registryPtr)
+        throwf("You must specify the 'registryP' or 'registryPtr' option");
+    else if (opt.present.registryP && opt.present.registryPtr)
+        throwf("You may not specify both the 'registryP' and "
+               "the 'registryPtr' options");
+    else {
+        if (opt.present.registryP)
+            registryP = opt.value.registryP;
+        else {
+            this->registryPtr = opt.value.registryPtr;
+            registryP = this->registryPtr->self();
+        }
+    }
     if (opt.present.portNumber && opt.present.socketFd)
         throwf("You can't specify both portNumber and socketFd options");
 
@@ -186,8 +200,7 @@ serverAbyss::initialize(constrOpt const& opt) {
     try {
         setAdditionalServerParms(opt);
         
-        xmlrpc_c::server_abyss_set_handlers(&this->cServer,
-                                            opt.value.registryP);
+        xmlrpc_c::server_abyss_set_handlers(&this->cServer, registryP);
         
         if (opt.present.portNumber || opt.present.socketFd)
             ServerInit(&this->cServer);
@@ -276,8 +289,8 @@ serverAbyss::runConn(int const socketFd) {
 
 
 void
-server_abyss_set_handlers(TServer *          const  srvP,
-                          xmlrpc_c::registry const& registry) {
+server_abyss_set_handlers(TServer * const  srvP,
+                          registry  const& registry) {
 
     xmlrpc_server_abyss_set_handlers(srvP, registry.c_registry());
 }
@@ -285,10 +298,19 @@ server_abyss_set_handlers(TServer *          const  srvP,
 
 
 void
-server_abyss_set_handlers(TServer *                  const srvP,
-                          const xmlrpc_c::registry * const registryP) {
+server_abyss_set_handlers(TServer *        const srvP,
+                          const registry * const registryP) {
 
     xmlrpc_server_abyss_set_handlers(srvP, registryP->c_registry());
+}
+
+
+
+void
+server_abyss_set_handlers(TServer *   const srvP,
+                          registryPtr const registryPtr) {
+
+    xmlrpc_server_abyss_set_handlers(srvP, registryPtr->c_registry());
 }
 
 

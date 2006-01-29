@@ -110,7 +110,7 @@ public:
     operator->() const;
 };
 
-class registry {
+class registry : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An Xmlrpc-c server method registry.  An Xmlrpc-c server transport
    (e.g.  an HTTP server) uses this object to process an incoming
@@ -135,6 +135,9 @@ public:
     void
     processCall(std::string   const& body,
                 std::string * const  responseP) const;
+
+    xmlrpc_c::registry *
+    registry::self();
 
     xmlrpc_registry *
     c_registry() const;
@@ -162,6 +165,19 @@ private:
            to exist.
         */
 };
+
+
+class registryPtr : public girmem::autoObjectPtr {
+
+public:
+    registryPtr();
+
+    registryPtr(xmlrpc_c::registry * const registryP);
+
+    xmlrpc_c::registry *
+    operator->() const;
+};
+
 } // namespace
 
 #endif

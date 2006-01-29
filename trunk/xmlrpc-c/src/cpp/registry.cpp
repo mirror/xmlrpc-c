@@ -115,6 +115,33 @@ registry::~registry(void) {
 
 
 
+registry *
+registry::self() {
+
+    return this;
+}
+
+
+
+registryPtr::registryPtr() {}
+
+
+
+registryPtr::registryPtr(registry * const registryP) {
+    this->point(registryP);
+}
+
+
+
+registry *
+registryPtr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<registry *>(p);
+}
+
+
+
 static xmlrpc_c::paramList
 pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
 /*----------------------------------------------------------------------------

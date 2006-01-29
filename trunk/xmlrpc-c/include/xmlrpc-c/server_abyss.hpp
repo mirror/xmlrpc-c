@@ -13,6 +13,7 @@ public:
     public:
         constrOpt();
 
+        constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
         constrOpt & socketFd          (xmlrpc_socket  const& arg);
         constrOpt & portNumber        (uint           const& arg);
@@ -23,6 +24,7 @@ public:
         constrOpt & dontAdvertise     (bool           const& arg);
 
         struct value {
+            xmlrpc_c::registryPtr      registryPtr;
             const xmlrpc_c::registry * registryP;
             xmlrpc_socket  socketFd;
             uint           portNumber;
@@ -33,6 +35,7 @@ public:
             bool           dontAdvertise;
         } value;
         struct {
+            bool registryPtr;
             bool registryP;
             bool socketFd;
             bool portNumber;
@@ -69,6 +72,15 @@ public:
     runConn(int const socketFd);
     
 private:
+    // The user has the choice of supplying the registry by plain pointer
+    // (and managing the object's existence himself) or by autoObjectPtr
+    // (with automatic management).  'registryPtr' exists here only to
+    // maintain a reference count in the case that the user supplied an
+    // autoObjectPtr.  The object doesn't reference the C++ registry
+    // object except during construction, because the C registry is the
+    // real registry.
+    xmlrpc_c::registryPtr registryPtr;
+
     TServer cServer;
 
     void
@@ -86,6 +98,10 @@ server_abyss_set_handlers(TServer *          const  srvP,
 void
 server_abyss_set_handlers(TServer *                  const srvP,
                           const xmlrpc_c::registry * const registryP);
+
+void
+server_abyss_set_handlers(TServer *             const srvP,
+                          xmlrpc_c::registryPtr const registryPtr);
 
 } // namespace
 
