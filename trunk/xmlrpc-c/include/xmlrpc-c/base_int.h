@@ -1,5 +1,5 @@
 /*============================================================================
-                         xmlrpc_client_int.h
+                         base_int.h
 ==============================================================================
   This header file defines the interface between modules inside
   xmlrpc-c.
@@ -84,15 +84,6 @@ xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
 
 const char *
 xmlrpc_typeName(xmlrpc_type const type);
-
-
-struct _xmlrpc_registry {
-    int _introspection_enabled;
-    xmlrpc_value *_methods;
-    xmlrpc_value *_default_method;
-    xmlrpc_value *_preinvoke_method;
-};
-
 
 void
 xmlrpc_traceXml(const char * const label, 

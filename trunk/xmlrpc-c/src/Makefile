@@ -42,7 +42,7 @@ endif
 ABYSS_INCLUDES = -I$(SRCDIR)/lib/abyss/src
 
 LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo xmlrpc_client_global.lo
-LIBXMLRPC_SERVER_OBJS = xmlrpc_registry.lo
+LIBXMLRPC_SERVER_OBJS = registry.lo system_method.lo
 LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
