@@ -90,11 +90,25 @@ public:
     void
     call(std::string            const& methodName,
          xmlrpc_c::paramList    const& paramList,
-         xmlrpc_c::rpcOutcome * const  outcomeP);
+         xmlrpc_c::rpcOutcome * const  outcomeP) const;
 
 private:
     xmlrpc_c::clientPtr       const clientP;
     xmlrpc_c::carriageParmPtr const carriageParmP;
+};
+
+class serverAccessorPtr : public girmem::autoObjectPtr {
+public:
+    serverAccessorPtr();
+
+    explicit
+    serverAccessorPtr(xmlrpc_c::serverAccessor * const serverAccessorP);
+
+    xmlrpc_c::serverAccessor *
+    operator->() const;
+
+    xmlrpc_c::serverAccessor *
+    getp() const;
 };
 
 class connection {

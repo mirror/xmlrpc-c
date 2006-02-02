@@ -626,12 +626,41 @@ serverAccessor::serverAccessor(clientPtr       const clientP,
 void
 serverAccessor::call(std::string            const& methodName,
                      xmlrpc_c::paramList    const& paramList,
-                     xmlrpc_c::rpcOutcome * const  outcomeP) {
+                     xmlrpc_c::rpcOutcome * const  outcomeP) const {
 
     this->clientP->call(this->carriageParmP.getp(),
                         methodName,
                         paramList,
                         outcomeP);
+}
+
+
+
+serverAccessorPtr::serverAccessortPtr() {
+    // Base class constructor will construct pointer that points to nothing
+}
+
+
+
+serverAccessorPtr::serverAccessorPtr(
+    serverAccessor * const serverAccessorParmP) {
+    this->point(serverAccessorParmP);
+}
+
+
+
+serverAccessor *
+serverAccessorPtr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<serverAccessor *>(p);
+}
+
+
+
+serverAccessor *
+serverAccessorPtr::getp() const {
+    return dynamic_cast<serverAccessor *>(objectP);
 }
 
 
