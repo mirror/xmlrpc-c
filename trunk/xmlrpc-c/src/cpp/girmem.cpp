@@ -64,6 +64,22 @@ autoObjectPtr::autoObjectPtr() : objectP(NULL) {}
 
 
 autoObjectPtr::autoObjectPtr(autoObject * const objectP) {
+
+    // Note: When someone attempts to use this constructor with a null
+    // argument, it's normally because a 'new' of the autoObject
+    // failed, before calling the autoObject's constructor, thus
+    // generating a null pointer.
+
+    // E.g. the following code, where the system is out of memory:
+    //
+    //    class client    : public autoObject    { ... }
+    //    class clientPtr : public autoObjectPtr { ... }
+    //    clientPtr clientP(new client);
+
+    if (objectP == NULL)
+        throw(error("Object creation failed; trying to create autoObjectPtr "
+                    "ith a null autoObject pointer"));
+        
     this->objectP = objectP;
     objectP->incref();
 }
