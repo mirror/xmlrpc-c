@@ -39,6 +39,8 @@
    "false" and some problem with the code.
 */
 
+#define _CRT_SECURE_NO_DEPRECATE
+
 /* Define if va_list is actually an array. */
 #define VA_LIST_IS_ARRAY 0
   
@@ -128,3 +130,4 @@ __inline BOOL setenv(const char* name, const char* value, int i)
 	return (SetEnvironmentVariable(name, value) != 0) ? TRUE : FALSE;
 }
 
+#define strcasecmp(a,b) stricmp((a),(b))
