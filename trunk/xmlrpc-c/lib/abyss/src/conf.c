@@ -44,6 +44,7 @@
 #include <pwd.h>
 #endif
 
+#include "xmlrpc_config.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "server.h"

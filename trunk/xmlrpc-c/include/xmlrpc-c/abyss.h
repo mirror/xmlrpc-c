@@ -340,9 +340,7 @@ MIMETypeGuessFromFile(const char * const filename);
 ** General purpose definitions
 *********************************************************************/
 
-#ifdef WIN32
-#define strcasecmp(a,b) stricmp((a),(b))
-#else
+#ifndef WIN32
 #define ioctlsocket(a,b,c)  ioctl((a),(b),(c))
 #endif  /* WIN32 */
 
