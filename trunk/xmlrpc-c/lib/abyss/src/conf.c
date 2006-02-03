@@ -352,8 +352,8 @@ ConfReadServerFile(const char * const filename,
                     } else
                         TraceExit("Invalid TimeOut value '%s'", p);
                 } else if (strcasecmp(option, "mimetypes") == 0) {
-                    readMIMETypesFile(p, &srvP->MIMETypeP);
-                    if (!srvP->MIMETypeP)
+                    readMIMETypesFile(p, &srvP->mimeTypeP);
+                    if (!srvP->mimeTypeP)
                         TraceExit("Can't read MIME Types file '%s'", p);
                 } else if (strcasecmp(option,"logfile") == 0) {
                     srvP->logfilename = strdup(p);
