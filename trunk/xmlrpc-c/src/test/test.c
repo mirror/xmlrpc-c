@@ -390,10 +390,12 @@ test_xml_size_limit(void) {
 **  supported encodings, etc.
 */
 
+#define TESTDATA_DIR "data"
+
 static char *good_requests[] = {
-    "req_out_of_order.xml",
-    "req_no_params.xml",
-    "req_value_name.xml",
+    TESTDATA_DIR DIRECTORY_SEPARATOR "req_out_of_order.xml",
+    TESTDATA_DIR DIRECTORY_SEPARATOR "req_no_params.xml",
+    TESTDATA_DIR DIRECTORY_SEPARATOR "req_value_name.xml",
     NULL
 };
 
