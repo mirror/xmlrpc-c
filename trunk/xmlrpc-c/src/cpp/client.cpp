@@ -104,7 +104,7 @@ carriageParmPtr::operator->() const {
 
 
 carriageParm *
-carriageParmPtr::getp() const {
+carriageParmPtr::get() const {
     return dynamic_cast<carriageParm *>(objectP);
 }
 
@@ -291,7 +291,7 @@ clientXmlTransportPtr::clientXmlTransportPtr(
 
 
 clientXmlTransport *
-clientXmlTransportPtr::getp() const {
+clientXmlTransportPtr::get() const {
     return dynamic_cast<clientXmlTransport *>(objectP);
 }
 
@@ -533,7 +533,7 @@ clientPtr::operator->() const {
 
 
 client *
-clientPtr::getp() const {
+clientPtr::get() const {
     return dynamic_cast<client *>(objectP);
 }
 
@@ -547,13 +547,7 @@ client_xml::client_xml(clientXmlTransport * const transportP) :
 client_xml::client_xml(clientXmlTransportPtr const transportPtr) {
 
     this->transportPtr = transportPtr;
-    try {
-        this->transportP = transportPtr.getp();
-    } catch (...) {
-        /* Constructor is failing; destroy what we've built so far. */
-        this->transportPtr.unpoint();
-        throw;
-    }
+    this->transportP   = transportPtr.get();
 }
      
 
@@ -628,7 +622,7 @@ serverAccessor::call(std::string            const& methodName,
                      xmlrpc_c::paramList    const& paramList,
                      xmlrpc_c::rpcOutcome * const  outcomeP) const {
 
-    this->clientP->call(this->carriageParmP.getp(),
+    this->clientP->call(this->carriageParmP.get(),
                         methodName,
                         paramList,
                         outcomeP);
@@ -659,7 +653,7 @@ serverAccessorPtr::operator->() const {
 
 
 serverAccessor *
-serverAccessorPtr::getp() const {
+serverAccessorPtr::get() const {
     return dynamic_cast<serverAccessor *>(objectP);
 }
 

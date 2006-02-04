@@ -170,7 +170,7 @@ serverAbyss::initialize(constrOpt const& opt) {
             registryP = opt.value.registryP;
         else {
             this->registryPtr = opt.value.registryPtr;
-            registryP = this->registryPtr->self();
+            registryP = this->registryPtr.get();
         }
     }
     if (opt.present.portNumber && opt.present.socketFd)

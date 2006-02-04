@@ -32,15 +32,6 @@ public:
     std::string signature() const { return _signature; };
     std::string help() const { return _help; };
 
-    // self() is a strange concession to the fact that we interface with
-    // C code.  C code needs a regular pointer to this method, but our
-    // C++ interface carefully prevents one from making such a pointer,
-    // since it would be an uncounted reference.  So users of self() must
-    // make sure that the reference it returns is always subordinate to a
-    // methodPtr reference.
-
-    xmlrpc_c::method * self();
-
 protected:
     std::string _signature;
     std::string _help;
@@ -84,6 +75,9 @@ public:
 
     xmlrpc_c::method *
     operator->() const;
+    
+    xmlrpc_c::method *
+    get() const;
 };
 
 class defaultMethod : public girmem::autoObject {
@@ -95,8 +89,6 @@ public:
     execute(std::string         const& methodName,
             xmlrpc_c::paramList const& paramList,
             xmlrpc_c::value *   const  resultP) = 0;
-
-    xmlrpc_c::defaultMethod * self();  // analogous to 'method' class
 };
 
 class defaultMethodPtr : public girmem::autoObjectPtr {
@@ -108,6 +100,9 @@ public:
 
     xmlrpc_c::defaultMethod *
     operator->() const;
+
+    xmlrpc_c::defaultMethod *
+    get() const;
 };
 
 class registry : public girmem::autoObject {
@@ -135,9 +130,6 @@ public:
     void
     processCall(std::string   const& body,
                 std::string * const  responseP) const;
-
-    xmlrpc_c::registry *
-    registry::self();
 
     xmlrpc_registry *
     c_registry() const;
@@ -176,6 +168,9 @@ public:
 
     xmlrpc_c::registry *
     operator->() const;
+
+    xmlrpc_c::registry *
+    get() const;
 };
 
 } // namespace

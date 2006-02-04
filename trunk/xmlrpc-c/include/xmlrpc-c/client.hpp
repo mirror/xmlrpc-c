@@ -34,6 +34,7 @@ class clientTransactionPtr : public girmem::autoObjectPtr {
     
 public:
     clientTransactionPtr();
+
     virtual ~clientTransactionPtr();
 
     virtual xmlrpc_c::clientTransaction *
@@ -78,7 +79,7 @@ public:
     operator->() const;
 
     xmlrpc_c::client *
-    getp() const;
+    get() const;
 };
 
 class serverAccessor {
@@ -108,7 +109,7 @@ public:
     operator->() const;
 
     xmlrpc_c::serverAccessor *
-    getp() const;
+    get() const;
 };
 
 class connection {
@@ -245,7 +246,6 @@ public:
     xmlrpc_c::fault
     getFault() const;
 
-protected:
     rpc(std::string         const  methodName,
         xmlrpc_c::paramList const& paramList);
 

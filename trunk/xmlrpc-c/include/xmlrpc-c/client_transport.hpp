@@ -41,7 +41,7 @@ public:
     operator->() const;
 
     xmlrpc_c::carriageParm *
-    getp() const;
+    get() const;
 };
 
 class carriageParm_http0 : public xmlrpc_c::carriageParm {
@@ -200,7 +200,7 @@ public:
     operator->() const;
 
     xmlrpc_c::clientXmlTransport *
-    getp() const;
+    get() const;
 };
 
 class clientXmlTransport_http : public xmlrpc_c::clientXmlTransport {

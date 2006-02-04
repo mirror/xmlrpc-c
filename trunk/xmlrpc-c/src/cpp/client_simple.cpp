@@ -60,7 +60,7 @@ clientSimple::call(string  const serverUrl,
 
     rpcPtr rpcPtr(methodName, paramList());
 
-    rpcPtr->call(this->clientP.getp(), &carriageParm);
+    rpcPtr->call(this->clientP.get(), &carriageParm);
     
     *resultP = rpcPtr->getResult();
 }
@@ -143,7 +143,7 @@ clientSimple::call(string  const serverUrl,
             }
         }
         rpcPtr rpcPtr(methodName, paramList);
-        rpcPtr->call(this->clientP.getp(), &carriageParm);
+        rpcPtr->call(this->clientP.get(), &carriageParm);
         *resultP = rpcPtr->getResult();
     }
 }
@@ -160,7 +160,7 @@ clientSimple::call(string    const  serverUrl,
     
     rpcPtr rpcPtr(methodName, paramList);
 
-    rpcPtr->call(this->clientP.getp(), &carriageParm);
+    rpcPtr->call(this->clientP.get(), &carriageParm);
     
     *resultP = rpcPtr->getResult();
 }

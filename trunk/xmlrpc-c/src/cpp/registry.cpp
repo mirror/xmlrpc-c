@@ -40,14 +40,6 @@ method::method() :
 
 
 
-method *
-method::self() {
-
-    return this;
-}
-
-
-
 method::~method() {}
 
 
@@ -89,14 +81,6 @@ defaultMethodPtr::operator->() const {
 
 
 
-defaultMethod *
-defaultMethod::self() {
-
-    return this;
-}
-
-
-
 registry::registry() {
 
     env_wrap env;
@@ -111,14 +95,6 @@ registry::registry() {
 registry::~registry(void) {
 
     xmlrpc_registry_free(this->c_registryP);
-}
-
-
-
-registry *
-registry::self() {
-
-    return this;
 }
 
 
@@ -286,19 +262,16 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
 
 void
 registry::addMethod(string              const name,
-                    xmlrpc_c::methodPtr const methodPtr) {
+                    xmlrpc_c::methodPtr const methodP) {
 
-
-    this->methodList.push_back(methodPtr);
+    this->methodList.push_back(methodP);
 
     env_wrap env;
     
-    xmlrpc_c::method * const methodP(methodPtr->self());
-
 	xmlrpc_registry_add_method_w_doc(
         &env.env_c, this->c_registryP, NULL,
         name.c_str(), &c_executeMethod, 
-        (void*) methodP, 
+        (void*) methodP.get(), 
         methodP->signature().c_str(), methodP->help().c_str());
 
     throwIfError(env);
@@ -307,17 +280,13 @@ registry::addMethod(string              const name,
 
 
 void
-registry::setDefaultMethod(defaultMethodPtr const methodPtr) {
+registry::setDefaultMethod(defaultMethodPtr const methodP) {
 
     env_wrap env;
     
-    this->defaultMethodP = methodPtr;
-
-    xmlrpc_c::defaultMethod * const methodP(methodPtr->self());
-
     xmlrpc_registry_set_default_method(
         &env.env_c, this->c_registryP,
-        &c_executeDefaultMethod, (void*) methodP);
+        &c_executeDefaultMethod, (void*) methodP->get());
 
     throwIfError(env);
 }

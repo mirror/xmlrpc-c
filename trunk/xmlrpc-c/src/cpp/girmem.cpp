@@ -147,4 +147,10 @@ autoObjectPtr::operator->() const {
 
 
 
+autoObject *
+autoObjectPtr::get() const {
+
+    return this->objectP;
+}
+
 } // namespace
