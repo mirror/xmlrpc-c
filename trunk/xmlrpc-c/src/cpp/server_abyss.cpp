@@ -23,14 +23,14 @@ namespace {
 
 
 static void 
-sigterm(int const sig) {
-    TraceExit("Signal %d received. Exiting...\n",sig);
+sigterm(int const signalClass) {
+    TraceExit("Signal of Class %d received. Exiting...\n", signalClass);
 }
 
 
 
 static void 
-sigchld(int const sig) {
+sigchld(int const signalClass) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
    one of our child processes has terminated).
@@ -46,7 +46,7 @@ sigchld(int const sig) {
     bool zombiesExist;
     bool error;
 
-    assert(sig == SIGCHLD);
+    assert(signalClass == SIGCHLD);
     
     zombiesExist = true;  // initial assumption
     error = false;  // no error yet
@@ -124,7 +124,7 @@ serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
     return *this; \
 }
 
-DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
+DEFINE_OPTION_SETTER(registryPtr,      registryPtr);
 DEFINE_OPTION_SETTER(registryP,        const registry *);
 DEFINE_OPTION_SETTER(socketFd,         xmlrpc_socket);
 DEFINE_OPTION_SETTER(portNumber,       uint);

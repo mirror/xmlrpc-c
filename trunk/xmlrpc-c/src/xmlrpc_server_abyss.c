@@ -530,13 +530,13 @@ xmlrpc_server_abyss_default_handler (TSession * const r) {
 
 
 static void 
-sigterm(int const sig) {
-    TraceExit("Signal %d received. Exiting...\n",sig);
+sigterm(int const signalClass) {
+    TraceExit("Signal of Class %d received.  Exiting...\n", signalClass);
 }
 
 
 static void 
-sigchld(int const sig ATTR_UNUSED) {
+sigchld(int const signalClass ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
    one of our child processes has terminated).
@@ -714,6 +714,8 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
         abort();
 
     ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
+
+    xmlrpc_env_clean(&env);
 }
 
 
