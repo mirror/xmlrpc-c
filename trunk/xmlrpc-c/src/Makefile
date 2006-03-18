@@ -157,7 +157,4 @@ include $(SRCDIR)/Makefile.common
 
 xmlrpc_client.lo: $(BUILDDIR)/transport_config.h
 
-$(BUILDDIR)/transport_config.h:
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
 include Makefile.depend

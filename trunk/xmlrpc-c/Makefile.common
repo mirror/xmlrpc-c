@@ -185,6 +185,11 @@ $(BUILDDIR)/include/xmlrpc-c/config.h:
 	$(MAKE) -C $(BUILDDIR)/include -f $(SRCDIR)/include/Makefile \
           xmlrpc-c/config.h
 
+ifneq ($(OMIT_TRANSPORT_CONFIG_H),Y)
+$(BUILDDIR)/transport_config.h:
+	$(MAKE) -C $(dir $@) $(notdir $@)
+endif
+
 $(ALL_OBJS): $(BUILDDIR)/include/xmlrpc-c/config.h
 
 
