@@ -648,7 +648,6 @@ AC_OUTPUT(xmlrpc-c-config \
           xmlrpc-c-config.test \
           Makefile.config \
           xmlrpc_config.h \
-          xmlrpc-c.spec \
           lib/expat/Makefile \
           lib/expat/xmlparse/Makefile \
           lib/expat/xmlwf/Makefile \
