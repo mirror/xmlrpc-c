@@ -67,6 +67,18 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.12 - not yet
+
+  *BJH: Fix build of transport_config.h
+
+  *BJH: Remove tantalizing but broken RPM spec file.
+
+  *BJH: Remove casprintf.o from link of 'xmlrpc', 'xmlrpc_transport', because
+        it conflicts with the version in libxmlrpc_client.
+
+  *BJH: Change order of libraries in linking 'xml-rpc-api2cpp' to fix
+        undefined reference error.
+
 1.03.11 - 06.01.25
 
   *Mike Goddard: in Xmlrpc-c-config, allow libwww-client as synonym 

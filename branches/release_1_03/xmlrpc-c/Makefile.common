@@ -102,6 +102,11 @@ $(BUILDDIR)/src/libxmlrpc_server.la: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
 	    $(notdir $@)
 
+ifneq ($(OMIT_TRANSPORT_CONFIG_H),Y)
+$(BUILDDIR)/transport_config.h:
+	$(MAKE) -C $(dir $@) $(notdir $@)
+endif
+
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
 .PHONY: install-common install-libraries install-headers install-bin

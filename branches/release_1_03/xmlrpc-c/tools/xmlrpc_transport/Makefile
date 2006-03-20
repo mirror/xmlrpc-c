@@ -17,7 +17,7 @@ CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
 LDFLAGS = $(CLIENT_LDFLAGS) $(LADD)
 
-UTIL_OBJS = casprintf.o cmdline_parser.o getoptx.o
+UTIL_OBJS = cmdline_parser.o getoptx.o
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 xmlrpc_transport:%:%.o $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXML) $(UTILS)

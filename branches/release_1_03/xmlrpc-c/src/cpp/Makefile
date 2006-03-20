@@ -37,6 +37,8 @@ LIBXMLRPC_SERVERPP_OBJS = registry.o
 LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
 LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o
 
+$(LIBXMLRPC_CLIENTPP_OBJS): $(BUILDDIR)/transport_config.h
+
 TRANSPORT_OBJS =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
@@ -168,7 +170,7 @@ INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
 DEP_SOURCES = *.cpp
 
 .PHONY: dep
-dep: dep-common
+dep: $(BUILDDIR)/transport_config.h dep-common
 
 include $(SRCDIR)/Makefile.common
 

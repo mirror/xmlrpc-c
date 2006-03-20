@@ -26,10 +26,10 @@ OBJECTS = \
 
 xml-rpc-api2cpp: \
   $(OBJECTS) \
+  $(LIBXMLRPC_CPP) \
   $(LIBXMLRPC_CLIENT) \
   $(LIBXMLRPC_SERVER) \
   $(LIBXMLRPC) \
-  $(LIBXMLRPC_CPP) \
   $(LIBXML)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
