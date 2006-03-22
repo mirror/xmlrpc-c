@@ -77,9 +77,9 @@ clean-local:
 .PHONY: distclean distclean-local
 distclean: $(SUBDIRS:%=%/distclean) distclean-common distclean-local
 
-distclean-local:
+distclean-local: clean-local
 	rm -f config.log config.status Makefile.config libtool 
-	rm -f xmlrpc_config.h xmlrpc_amconfig.h stamp-h xmlrpc-c.spec 
+	rm -f xmlrpc_config.h xmlrpc_amconfig.h stamp-h 
 	rm -f xmlrpc-c-config xmlrpc-c-config.test
 
 check: $(SUBDIRS:%=%/check)
