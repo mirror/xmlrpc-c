@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #include "xmlrpc-c/base_int.h"
-
+#include "xmlrpc-c/string_int.h"
 
 
 static size_t

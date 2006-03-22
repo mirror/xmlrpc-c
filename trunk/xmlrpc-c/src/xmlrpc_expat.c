@@ -12,6 +12,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/xmlparser.h"
 
 /* Define the contents of our internal structure. */

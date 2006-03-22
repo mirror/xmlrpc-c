@@ -13,6 +13,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/server_abyss.h"
 
 
@@ -219,10 +220,26 @@ validateContentType(TSession *     const httpRequestP,
 -----------------------------------------------------------------------------*/
     const char * const content_type =
         RequestHeaderValue(httpRequestP, "content-type");
-    if (content_type == NULL || strcmp(content_type, "text/xml") != 0)
+
+    if (content_type == NULL)
         *httpErrorP = 400;
-    else
-        *httpErrorP = 0;
+    else {
+        const char * const sempos = strchr(content_type, ';');
+        unsigned int baselen;
+            /* Length of the base portion of the content type, e.g.
+               "text/xml" int "text/xml;charset=utf-8"
+            */
+
+        if (sempos)
+            baselen = sempos - content_type;
+        else
+            baselen = strlen(content_type);
+
+        if (!xmlrpc_strneq(content_type, "text/xml", baselen))
+            *httpErrorP = 400;
+        else
+            *httpErrorP = 0;
+    }
 }
 
 

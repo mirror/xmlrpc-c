@@ -11,6 +11,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 
 /* Borrowed from Python 1.5.2.
 ** MPW pushes 'extended' for float and double types with varargs */

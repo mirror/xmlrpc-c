@@ -15,10 +15,10 @@
 
 #include "bool.h"
 #include "mallocvar.h"
-#include "casprintf.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
 /* transport_config.h defines XMLRPC_DEFAULT_TRANSPORT,

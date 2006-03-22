@@ -9,11 +9,10 @@
 #include <ctype.h>
 
 #include "bool.h"
-#include "girstring.h"
-#include "casprintf.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/xmlparser.h"
 
 
@@ -48,7 +47,7 @@
 
 #define CHECK_NAME(env,elem,name) \
     do \
-        if (!streq((name), xml_element_name(elem))) \
+        if (!xmlrpc_streq((name), xml_element_name(elem))) \
             XMLRPC_FAIL2(env, XMLRPC_PARSE_ERROR, \
              "Expected element of type <%s>, found <%s>", \
                          (name), xml_element_name(elem)); \
@@ -72,7 +71,7 @@ get_child_by_name (xmlrpc_env *env, xml_element *parent, char *name)
     children = xml_element_children(parent);
     child_count = xml_element_children_size(parent);
     for (i = 0; i < child_count; i++) {
-        if (streq(xml_element_name(children[i]), name))
+        if (xmlrpc_streq(xml_element_name(children[i]), name))
             return children[i];
     }
     
@@ -425,9 +424,9 @@ convert_value(xmlrpc_env *  const envP,
         
         /* Parse our value-containing element. */
         child_name = xml_element_name(child);
-        if (streq(child_name, "struct")) {
+        if (xmlrpc_streq(child_name, "struct")) {
             retval = convert_struct(envP, maxRecursion, child);
-        } else if (streq(child_name, "array")) {
+        } else if (xmlrpc_streq(child_name, "array")) {
             CHECK_CHILD_COUNT(envP, child, 1);
             retval = convert_array(envP, maxRecursion, child);
         } else {
@@ -437,28 +436,29 @@ convert_value(xmlrpc_env *  const envP,
             CHECK_CHILD_COUNT(envP, child, 0);
             cdata = xml_element_cdata(child);
             cdata_size = xml_element_cdata_size(child);
-            if (streq(child_name, "i4") || streq(child_name, "int")) {
+            if (xmlrpc_streq(child_name, "i4") ||
+                xmlrpc_streq(child_name, "int")) {
                 xmlrpc_int32 const i =
                     xmlrpc_atoi(envP, cdata, strlen(cdata),
                                 XMLRPC_INT32_MIN, XMLRPC_INT32_MAX);
                 XMLRPC_FAIL_IF_FAULT(envP);
                 retval = xmlrpc_build_value(envP, "i", i);
-            } else if (streq(child_name, "string")) {
+            } else if (xmlrpc_streq(child_name, "string")) {
                 retval = make_string(envP, cdata, cdata_size);
-            } else if (streq(child_name, "boolean")) {
+            } else if (xmlrpc_streq(child_name, "boolean")) {
                 xmlrpc_int32 const i =
                     xmlrpc_atoi(envP, cdata, strlen(cdata), 0, 1);
                 XMLRPC_FAIL_IF_FAULT(envP);
                 retval = xmlrpc_build_value(envP, "b", (xmlrpc_bool) i);
-            } else if (streq(child_name, "double")) {
+            } else if (xmlrpc_streq(child_name, "double")) {
                 double const d = xmlrpc_atod(envP, cdata, strlen(cdata));
                 XMLRPC_FAIL_IF_FAULT(envP);
                 retval = xmlrpc_build_value(envP, "d", d);
-            } else if (streq(child_name, "dateTime.iso8601")) {
+            } else if (xmlrpc_streq(child_name, "dateTime.iso8601")) {
                 retval = xmlrpc_build_value(envP, "8", cdata);
-            } else if (streq(child_name, "nil")) {
+            } else if (xmlrpc_streq(child_name, "nil")) {
                 retval = xmlrpc_build_value(envP, "n");
-            } else if (streq(child_name, "base64")) {
+            } else if (xmlrpc_streq(child_name, "base64")) {
                 /* No more tail calls once we do this! */
 
                 convertBase64(envP, cdata, cdata_size, &retval);
@@ -566,7 +566,7 @@ parseCallXml(xmlrpc_env *   const envP,
             envP, env.fault_code, "Call is not valid XML.  %s",
             env.fault_string);
     else {
-        if (!streq(xml_element_name(callElemP), "methodCall"))
+        if (!xmlrpc_streq(xml_element_name(callElemP), "methodCall"))
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_PARSE_ERROR,
                 "XML-RPC call should be a <methodCall> element.  "
@@ -589,7 +589,7 @@ parseMethodNameElement(xmlrpc_env *  const envP,
                        xml_element * const nameElemP,
                        const char ** const methodNameP) {
     
-    XMLRPC_ASSERT(streq(xml_element_name(nameElemP), "methodName"));
+    XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(nameElemP), "methodName"));
 
     if (xml_element_children_size(nameElemP) > 0)
         xmlrpc_env_set_fault_formatted(
@@ -625,7 +625,7 @@ parseCallChildren(xmlrpc_env *    const envP,
 
     xml_element * nameElemP;
         
-    XMLRPC_ASSERT(streq(xml_element_name(callElemP), "methodCall"));
+    XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(callElemP), "methodCall"));
     
     nameElemP = get_child_by_name(envP, callElemP, "methodName");
     
@@ -768,7 +768,7 @@ parseFaultElement(xmlrpc_env *        const envP,
     unsigned int const maxRecursion =
         xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
 
-    XMLRPC_ASSERT(streq(xml_element_name(faultElement), "fault"));
+    XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(faultElement), "fault"));
 
     if (xml_element_children_size(faultElement) != 1)
         xmlrpc_env_set_fault_formatted(
@@ -803,7 +803,7 @@ parseParamsElement(xmlrpc_env *        const envP,
 
     xmlrpc_env_init(&env);
 
-    XMLRPC_ASSERT(streq(xml_element_name(paramsElementP), "params"));
+    XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(paramsElementP), "params"));
 
     paramsVP = convert_params(envP, paramsElementP);
 
@@ -847,18 +847,18 @@ parseMethodResponseElt(xmlrpc_env *        const envP,
                        int *               const faultCodeP,
                        const char **       const faultStringP) {
     
-    XMLRPC_ASSERT(streq(xml_element_name(methodResponseEltP),
-                        "methodResponse"));
+    XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(methodResponseEltP),
+                               "methodResponse"));
 
     if (xml_element_children_size(methodResponseEltP) == 1) {
         xml_element * const child =
             xml_element_children(methodResponseEltP)[0];
         
-        if (streq(xml_element_name(child), "params")) {
+        if (xmlrpc_streq(xml_element_name(child), "params")) {
             /* It's a successful response */
             parseParamsElement(envP, child, resultPP);
             *faultStringP = NULL;
-        } else if (streq(xml_element_name(child), "fault")) {
+        } else if (xmlrpc_streq(xml_element_name(child), "fault")) {
             /* It's a failure response */
             parseFaultElement(envP, child, faultCodeP, faultStringP);
         } else
@@ -915,7 +915,7 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
         xml_parse(envP, xmlData, xmlDataLen, &response);
         if (!envP->fault_occurred) {
             /* Pick apart and verify our structure. */
-            if (streq(xml_element_name(response), "methodResponse")) {
+            if (xmlrpc_streq(xml_element_name(response), "methodResponse")) {
                 parseMethodResponseElt(envP, response,
                                        resultPP, faultCodeP, faultStringP);
             } else

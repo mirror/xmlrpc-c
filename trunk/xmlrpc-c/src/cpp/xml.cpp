@@ -1,12 +1,10 @@
 #include <string>
 
-#include "casprintf.h"
-
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
 #include "xmlrpc-c/base.h"
-#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/base.hpp"
 #include "env_wrap.hpp"
 

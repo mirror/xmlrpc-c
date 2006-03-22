@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "registry.h"
