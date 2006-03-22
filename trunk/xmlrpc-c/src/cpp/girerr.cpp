@@ -1,6 +1,6 @@
 #include <string>
 
-#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/girerr.hpp"
 
 using namespace std;

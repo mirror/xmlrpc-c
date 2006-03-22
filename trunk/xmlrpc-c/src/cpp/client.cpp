@@ -630,7 +630,7 @@ serverAccessor::call(std::string            const& methodName,
 
 
 
-serverAccessorPtr::serverAccessortPtr() {
+serverAccessorPtr::serverAccessorPtr() {
     // Base class constructor will construct pointer that points to nothing
 }
 

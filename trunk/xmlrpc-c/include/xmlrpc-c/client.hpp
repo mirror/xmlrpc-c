@@ -82,7 +82,7 @@ public:
     get() const;
 };
 
-class serverAccessor {
+class serverAccessor : public girmem::autoObject {
     
 public:
     serverAccessor(xmlrpc_c::clientPtr       const clientP,

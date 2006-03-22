@@ -286,7 +286,7 @@ registry::setDefaultMethod(defaultMethodPtr const methodP) {
     
     xmlrpc_registry_set_default_method(
         &env.env_c, this->c_registryP,
-        &c_executeDefaultMethod, (void*) methodP->get());
+        &c_executeDefaultMethod, (void*) methodP.get());
 
     throwIfError(env);
 }

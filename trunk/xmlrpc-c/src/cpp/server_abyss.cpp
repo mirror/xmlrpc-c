@@ -124,7 +124,7 @@ serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
     return *this; \
 }
 
-DEFINE_OPTION_SETTER(registryPtr,      registryPtr);
+DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
 DEFINE_OPTION_SETTER(registryP,        const registry *);
 DEFINE_OPTION_SETTER(socketFd,         xmlrpc_socket);
 DEFINE_OPTION_SETTER(portNumber,       uint);

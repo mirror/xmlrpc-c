@@ -100,9 +100,6 @@ public:
 
     xmlrpc_c::defaultMethod *
     operator->() const;
-
-    xmlrpc_c::defaultMethod *
-    get() const;
 };
 
 class registry : public girmem::autoObject {

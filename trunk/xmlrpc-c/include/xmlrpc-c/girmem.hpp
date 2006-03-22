@@ -62,6 +62,9 @@ public:
     girmem::autoObject *
     operator->() const;
     
+    girmem::autoObject *
+    get() const;
+
 protected:
     girmem::autoObject * objectP;
 };
