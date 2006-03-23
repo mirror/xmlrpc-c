@@ -1,9 +1,13 @@
-#ifndef XMLRPC_STRING_INT_H_INCLUDED
-#define XMLRPC_STRING_INT_H_INCLUDED
+#ifndef XMLRPC_C_STRING_INT_H_INCLUDED
+#define XMLRPC_C_STRING_INT_H_INCLUDED
 
 #include <stdarg.h>
 #include <string.h>
 #include "xmlrpc-c/base_int.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void
 xmlrpc_vasprintf(const char ** const retvalP,
@@ -38,5 +42,9 @@ xmlrpc_makePrintable_lp(const char * const input,
 
 const char *
 xmlrpc_makePrintableChar(char const input);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
