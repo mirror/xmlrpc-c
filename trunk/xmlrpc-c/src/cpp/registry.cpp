@@ -81,6 +81,15 @@ defaultMethodPtr::operator->() const {
 
 
 
+defaultMethod *
+defaultMethodPtr::get() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<defaultMethod *>(p);
+}
+
+
+
 registry::registry() {
 
     env_wrap env;
@@ -111,6 +120,15 @@ registryPtr::registryPtr(registry * const registryP) {
 
 registry *
 registryPtr::operator->() const {
+
+    autoObject * const p(this->objectP);
+    return dynamic_cast<registry *>(p);
+}
+
+
+
+registry *
+registryPtr::get() const {
 
     autoObject * const p(this->objectP);
     return dynamic_cast<registry *>(p);
@@ -226,15 +244,15 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
    XML-RPC method failure.  This will cause a leak if the execute()
    method actually created a result, since it will not get destroyed.
 -----------------------------------------------------------------------------*/
-    xmlrpc_c::defaultMethod * const methodP = 
-        static_cast<xmlrpc_c::defaultMethod *>(methodPtr);
-    xmlrpc_c::paramList const paramList(pListFromXmlrpcArray(paramArrayP));
+    defaultMethod * const methodP = 
+        static_cast<defaultMethod *>(methodPtr);
+    paramList const paramList(pListFromXmlrpcArray(paramArrayP));
 
     xmlrpc_value * retval;
 
     try {
-        xmlrpc_c::value result;
-
+        value result;
+        
         try {
             methodP->execute(methodName, paramList, &result);
         } catch (xmlrpc_c::fault const& fault) {
@@ -261,8 +279,8 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
 
 
 void
-registry::addMethod(string              const name,
-                    xmlrpc_c::methodPtr const methodP) {
+registry::addMethod(string    const name,
+                    methodPtr const methodP) {
 
     this->methodList.push_back(methodP);
 
@@ -281,6 +299,8 @@ registry::addMethod(string              const name,
 
 void
 registry::setDefaultMethod(defaultMethodPtr const methodP) {
+
+    this->defaultMethodP = methodP;
 
     env_wrap env;
     
