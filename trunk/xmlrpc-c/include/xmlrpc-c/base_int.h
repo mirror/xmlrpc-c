@@ -21,7 +21,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
 
 struct _xmlrpc_value {
@@ -170,6 +170,6 @@ xmlrpc_read_base64_old(xmlrpc_env *           const envP,
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif
 
 #endif
