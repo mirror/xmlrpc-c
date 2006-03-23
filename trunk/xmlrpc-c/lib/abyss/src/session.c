@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "server.h"
 #include "conn.h"
@@ -91,30 +92,27 @@ SessionLog(TSession * const sessionP) {
     else {
         const char * const user = sessionP->request_info.user;
 
-        char z[1024];
-        uint32_t n;
+        const char * logline;
+        char date[30];
 
-        if (strlen(sessionP->request_info.requestline) > 1024-26-50)
-            sessionP->request_info.requestline[1024-26-50] = '\0';
+        DateToLogString(&sessionP->date, date);
 
-        
-
-        n = sprintf(z, "%d.%d.%d.%d - %s - [",
-                    IPB1(sessionP->conn->peerip),
-                    IPB2(sessionP->conn->peerip),
-                    IPB3(sessionP->conn->peerip),
-                    IPB4(sessionP->conn->peerip),
-                    user ? user : ""
+        xmlrpc_asprintf(&logline, "%d.%d.%d.%d - %s - [%s] \"%s\" %d %d",
+                        IPB1(sessionP->conn->peerip),
+                        IPB2(sessionP->conn->peerip),
+                        IPB3(sessionP->conn->peerip),
+                        IPB4(sessionP->conn->peerip),
+                        user ? user : "",
+                        date, 
+                        sessionP->request_info.requestline,
+                        sessionP->status,
+                        sessionP->conn->outbytes
             );
+        if (logline) {
+            LogWrite(sessionP->conn->server, logline);
 
-        DateToLogString(&sessionP->date, &z[n]);
-
-        sprintf(&z[n+26], "] \"%s\" %d %d",
-                sessionP->request_info.requestline,
-                sessionP->status,
-                sessionP->conn->outbytes);
-
-        LogWrite(sessionP->conn->server, z);
+            xmlrpc_strfree(logline);
+        }
         retval = TRUE;
     }
     return retval;

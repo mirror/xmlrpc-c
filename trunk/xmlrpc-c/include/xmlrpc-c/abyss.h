@@ -207,14 +207,18 @@ typedef enum {
 
 typedef struct {
     TMethod method;
-    char *uri;
-    char *query;
-    char *host;
-    char *from;
-    char *useragent;
-    char *referer;
-    char *requestline;
-    char *user;
+    const char * uri;
+        /* This is NOT the URI.  It is the pathname part of the URI.
+           We really should fix that and put the pathname in another
+           member.  Also put the port number in here.
+        */
+    const char * query;
+    const char * host;
+    const char * from;
+    const char * useragent;
+    const char * referer;
+    const char * requestline;
+    const char * user;
 } TRequestInfo;
 
 abyss_bool

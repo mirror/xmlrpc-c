@@ -38,7 +38,7 @@
 
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
-#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 
 #include "xmlrpc-c/abyss.h"
 

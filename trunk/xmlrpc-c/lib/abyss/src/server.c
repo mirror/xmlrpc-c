@@ -14,7 +14,7 @@
 
 #include "xmlrpc_config.h"
 #include "mallocvar.h"
-#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 
 #include "xmlrpc-c/abyss.h"
 #include "server.h"
@@ -944,15 +944,17 @@ processDataFromClient(TConn *      const connectionP,
                       abyss_bool * const keepAliveP) {
 
     TSession session;
+    abyss_bool succeeded;
 
     RequestInit(&session, connectionP);
 
-    if (RequestRead(&session)) {
+    succeeded = RequestRead(&session);
+    if (succeeded) {
         /* Check if it is the last keepalive */
         if (lastReqOnConn)
             session.keepalive = FALSE;
         
-        session.cankeepalive = session.keepalive;
+        *keepAliveP = session.keepalive;
         
         if (session.status == 0) {
             if (session.versionmajor >= 2)
@@ -962,7 +964,8 @@ processDataFromClient(TConn *      const connectionP,
             else
                 runUserHandler(&session, connectionP->server->srvP);
         }
-    }
+    } else
+        *keepAliveP = FALSE;
             
     HTTPWriteEnd(&session);
 
@@ -971,8 +974,6 @@ processDataFromClient(TConn *      const connectionP,
     
     SessionLog(&session);
 
-    *keepAliveP = (session.keepalive && session.cankeepalive);
-    
     RequestFree(&session);
 }
 

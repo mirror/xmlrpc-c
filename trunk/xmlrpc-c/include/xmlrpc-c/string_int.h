@@ -27,6 +27,12 @@ xmlrpc_streq(const char * const a,
 }
 
 static __inline__ bool
+xmlrpc_strcaseeq(const char * const a,
+                 const char * const b) {
+    return (strcasecmp(a, b) == 0);
+}
+
+static __inline__ bool
 xmlrpc_strneq(const char * const a,
               const char * const b,
               size_t       const len) {

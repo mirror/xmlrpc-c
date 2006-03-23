@@ -16,7 +16,6 @@ struct _TSession {
     TString header;
 
     abyss_bool keepalive;
-    abyss_bool cankeepalive;
     abyss_bool done;
 
     struct _TConn * conn;
