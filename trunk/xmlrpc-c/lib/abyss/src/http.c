@@ -32,16 +32,35 @@
 *********************************************************************/
 
 static void
-initRequestInfo(TRequestInfo * const requestInfoP) {
+initRequestInfo(TRequestInfo * const requestInfoP,
+                httpVersion    const httpVersion,
+                const char *   const requestLine,
+                TMethod        const httpMethod,
+                const char *   const host,
+                unsigned int   const port,
+                const char *   const path,
+                const char *   const query) {
+/*----------------------------------------------------------------------------
+  Set up the request info structure.  For information that is
+  controlled by headers, use the defaults -- I.e. the value that
+  applies if the request contains no applicable header.
+-----------------------------------------------------------------------------*/
+    requestInfoP->requestline = requestLine;
+    requestInfoP->method      = httpMethod;
+    requestInfoP->host        = host;
+    requestInfoP->port        = port;
+    requestInfoP->uri         = path;
+    requestInfoP->query       = query;
+    requestInfoP->from        = NULL;
+    requestInfoP->useragent   = NULL;
+    requestInfoP->referer     = NULL;
+    requestInfoP->user        = NULL;
 
-    requestInfoP->query     = NULL;
-    requestInfoP->host      = NULL;
-    requestInfoP->from      = NULL;
-    requestInfoP->useragent = NULL;
-    requestInfoP->referer   = NULL;
-    requestInfoP->user      = NULL;
-    requestInfoP->requestline=NULL;
-
+    if (httpVersion.major > 1 ||
+        (httpVersion.major == 1 && httpVersion.minor >= 1))
+        requestInfoP->keepalive = TRUE;
+    else
+        requestInfoP->keepalive = FALSE;
 }
 
 
@@ -67,14 +86,9 @@ RequestInit(TSession * const sessionP,
     time(&nowtime);
     sessionP->date = *gmtime(&nowtime);
 
-    sessionP->keepalive = FALSE;
-    initRequestInfo(&sessionP->request_info);
-
-    sessionP->versionmajor=0;
-    sessionP->versionminor=9;
     sessionP->conn = connectionP;
 
-    sessionP->done = FALSE;
+    sessionP->responseStarted = FALSE;
 
     sessionP->chunkedwrite = FALSE;
     sessionP->chunkedwritemode = FALSE;
@@ -84,7 +98,7 @@ RequestInit(TSession * const sessionP,
     TableInit(&sessionP->request_headers);
     TableInit(&sessionP->response_headers);
 
-    sessionP->status=0;
+    sessionP->status = 0;  /* No status from handler yet */
 
     StringAlloc(&(sessionP->header));
 }
@@ -173,9 +187,10 @@ unescapeUri(char *       const uri,
 
 
 static void
-parseHostPort(char *     const hostport,
-              TSession*  const sessionP,
-              uint16_t * const httpErrorCodeP) {
+parseHostPort(char *           const hostport,
+              const char **    const hostP,
+              unsigned short * const portP,
+              uint16_t *       const httpErrorCodeP) {
     
     char * colonPos;
 
@@ -186,21 +201,21 @@ parseHostPort(char *     const hostport,
 
         *colonPos = '\0';  /* Split hostport at the colon */
 
-        sessionP->request_info.host = hostport;
+        *hostP = hostport;
 
         for (p = colonPos + 1, port = 0;
              isdigit(*p) && port < 65535;
              (port = port * 10 + (*p - '0')), ++p);
             
-        sessionP->port = port;
+        *portP = port;
 
         if (*p || port == 0)
             *httpErrorCodeP = 400;  /* Bad Request */
         else
             *httpErrorCodeP = 0;
     } else {
-        sessionP->request_info.host = hostport;
-        sessionP->port = 80;
+        *hostP          = hostport;
+        *portP          = 80;
         *httpErrorCodeP = 0;
     }
 }
@@ -208,21 +223,21 @@ parseHostPort(char *     const hostport,
 
 
 static void
-parseRequestUri(char *     const requestUri,
-                TSession * const sessionP,
-                uint16_t * const httpErrorCodeP) {
+parseRequestUri(char *           const requestUri,
+                const char **    const hostP,
+                const char **    const pathP,
+                const char **    const queryP,
+                unsigned short * const portP,
+                uint16_t *       const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
   Parse the request URI (in the request line
   "GET http://www.myserver.com/myfile?parm HTTP/1.1",
   "http://www.myserver.com/myfile?parm" is the request URI).
 
-  Place the information it contains in *sessionP.
-
-  This destroys *requestUri and puts pointers into *requestUri into
-  *sessionP!
+  This destroys *requestUri and returns pointers into *requestUri!
 
   This is extremely ugly.  We need to redo it with dynamically allocated
-  storage.  *sessionP should point to individual malloc'ed strings.
+  storage.  We should return individual malloc'ed strings.
 -----------------------------------------------------------------------------*/
     abyss_bool error;
 
@@ -241,28 +256,28 @@ parseRequestUri(char *     const requestUri,
             
             if (qmark) {
                 *qmark = '\0';
-                sessionP->request_info.query = qmark + 1;
+                *queryP = qmark + 1;
             } else
-                sessionP->request_info.query = NULL;
+                *queryP = NULL;
         }
         
         requestUriNoQuery = requestUri;
 
         if (requestUriNoQuery[0] == '/') {
-            sessionP->request_info.host = NULL;
-            sessionP->request_info.uri = requestUriNoQuery;
+            *hostP = NULL;
+            *pathP = requestUriNoQuery;
+            *portP = 80;
         } else {
             if (!xmlrpc_strneq(requestUriNoQuery, "http://", 7))
                 *httpErrorCodeP = 400;  /* Bad Request */
             else {
                 char * const hostportpath = &requestUriNoQuery[7];
-                char * const slashPos =
-                    strchr(sessionP->request_info.uri, '/');
+                char * const slashPos = strchr(hostportpath, '/');
                 char * hostport;
                 
                 if (slashPos) {
                     char * p;
-                    sessionP->request_info.uri = slashPos;
+                    *pathP = slashPos;
                     
                     /* Nul-terminate the host name.  To make space for
                        it, slide the whole name back one character.
@@ -276,12 +291,12 @@ parseRequestUri(char *     const requestUri,
                     hostport = hostportpath - 1;
                     *httpErrorCodeP = 0;
                 } else {
-                    sessionP->request_info.uri = "*";
+                    *pathP = "*";
                     hostport = hostportpath;
                     *httpErrorCodeP = 0;
                 }
                 if (!*httpErrorCodeP)
-                    parseHostPort(hostport, sessionP, httpErrorCodeP);
+                    parseHostPort(hostport, hostP, portP, httpErrorCodeP);
             }
         }
     }
@@ -290,21 +305,26 @@ parseRequestUri(char *     const requestUri,
 
 
 static void
-processRequestLine(TSession *   const sessionP,
-                   char *       const header1,
-                   abyss_bool * const moreLinesP,
-                   uint16_t *   const httpErrorCodeP) {
-    
+parseRequestLine(char *           const requestLine,
+                 TMethod *        const httpMethodP,
+                 httpVersion *    const httpVersionP,
+                 const char **    const hostP,
+                 unsigned short * const portP,
+                 const char **    const pathP,
+                 const char **    const queryP,
+                 abyss_bool *     const moreLinesP,
+                 uint16_t *       const httpErrorCodeP) {
+/*----------------------------------------------------------------------------
+   Modifies *header1 and returns pointers to its storage!
+-----------------------------------------------------------------------------*/
     const char * httpMethodName;
     char * p;
 
-    p = header1;
+    p = requestLine;
 
     /* Jump over spaces */
     NextToken((const char **)&p);
 
-    sessionP->request_info.requestline = strdup(p);
-    
     httpMethodName = GetToken(&p);
     if (!httpMethodName)
         *httpErrorCodeP = 400;  /* Bad Request */
@@ -312,21 +332,21 @@ processRequestLine(TSession *   const sessionP,
         char * requestUri;
 
         if (xmlrpc_streq(httpMethodName, "GET"))
-            sessionP->request_info.method = m_get;
+            *httpMethodP = m_get;
         else if (xmlrpc_streq(httpMethodName, "PUT"))
-            sessionP->request_info.method = m_put;
+            *httpMethodP = m_put;
         else if (xmlrpc_streq(httpMethodName, "OPTIONS"))
-            sessionP->request_info.method = m_options;
+            *httpMethodP = m_options;
         else if (xmlrpc_streq(httpMethodName, "DELETE"))
-            sessionP->request_info.method = m_delete;
+            *httpMethodP = m_delete;
         else if (xmlrpc_streq(httpMethodName, "POST"))
-            sessionP->request_info.method = m_post;
+            *httpMethodP = m_post;
         else if (xmlrpc_streq(httpMethodName, "TRACE"))
-            sessionP->request_info.method = m_trace;
+            *httpMethodP = m_trace;
         else if (xmlrpc_streq(httpMethodName, "HEAD"))
-            sessionP->request_info.method = m_head;
+            *httpMethodP = m_head;
         else
-            sessionP->request_info.method = m_unknown;
+            *httpMethodP = m_unknown;
         
         /* URI and Query Decoding */
         NextToken((const char **)&p);
@@ -336,7 +356,8 @@ processRequestLine(TSession *   const sessionP,
         if (!requestUri)
             *httpErrorCodeP = 400;  /* Bad Request */
         else {
-            parseRequestUri(requestUri, sessionP, httpErrorCodeP);
+            parseRequestUri(requestUri, hostP, pathP, queryP, portP,
+                            httpErrorCodeP);
 
             if (!*httpErrorCodeP) {
                 const char * httpVersion;
@@ -351,8 +372,8 @@ processRequestLine(TSession *   const sessionP,
                     if (sscanf(httpVersion, "HTTP/%d.%d", &vmaj, &vmin) != 2)
                         *httpErrorCodeP = 400;  /* Bad Request */
                     else {
-                        sessionP->versionmajor = vmaj;
-                        sessionP->versionminor = vmin;
+                        httpVersionP->major = vmaj;
+                        httpVersionP->minor = vmin;
                         *httpErrorCodeP = 0;  /* no error */
                     }
                     *moreLinesP = TRUE;
@@ -428,13 +449,13 @@ processHeader(const char * const fieldName,
     *httpErrorCodeP = 0;  /* initial assumption */
 
     if (xmlrpc_streq(fieldName, "connection")) {
-        /* must handle the jigsaw TE,keepalive */
         if (xmlrpc_strcaseeq(fieldValue, "keep-alive"))
-            sessionP->keepalive = TRUE;
+            sessionP->request_info.keepalive = TRUE;
         else
-            sessionP->keepalive = FALSE;
+            sessionP->request_info.keepalive = FALSE;
     } else if (xmlrpc_streq(fieldName, "host"))
-        parseHostPort(fieldValue, sessionP, httpErrorCodeP);
+        parseHostPort(fieldValue, &sessionP->request_info.host,
+                      &sessionP->request_info.port, httpErrorCodeP);
     else if (xmlrpc_streq(fieldName, "from"))
         sessionP->request_info.from = fieldValue;
     else if (xmlrpc_streq(fieldName, "user-agent"))
@@ -463,9 +484,21 @@ RequestRead(TSession * const sessionP) {
 
     readRequestLine(sessionP, &requestLine, &httpErrorCode);
     if (!httpErrorCode) {
+        TMethod httpMethod;
+        const char * host;
+        const char * path;
+        const char * query;
+        unsigned short port;
         abyss_bool moreHeaders;
-        processRequestLine(sessionP, requestLine,
-                           &moreHeaders, &httpErrorCode);
+
+        parseRequestLine(requestLine, &httpMethod, &sessionP->version,
+                         &host, &port, &path, &query,
+                         &moreHeaders, &httpErrorCode);
+
+        if (!httpErrorCode)
+            initRequestInfo(&sessionP->request_info, sessionP->version,
+                            strdup(requestLine),
+                            httpMethod, host, port, path, query);
 
         while (moreHeaders && !httpErrorCode) {
             char * p;
@@ -640,14 +673,15 @@ abyss_bool RangeDecode(char *str,uint64_t filesize,uint64_t *start,uint64_t *end
 ** HTTP
 *********************************************************************/
 
-static const char *
+const char *
 HTTPReasonByStatus(uint16_t const code) {
 
-    static struct _HTTPReasons {
+    struct _HTTPReasons {
         uint16_t status;
         const char * reason;
-    } *r, reasons[] = 
-    {
+    };
+
+    static struct _HTTPReasons const reasons[] =  {
         { 100,"Continue" }, 
         { 101,"Switching Protocols" }, 
         { 200,"OK" }, 
@@ -687,14 +721,15 @@ HTTPReasonByStatus(uint16_t const code) {
         { 505,"HTTP Version Not Supported" },
         { 000, NULL }
     };
+    const struct _HTTPReasons * reasonP;
 
-    r = &reasons[0];
+    reasonP = &reasons[0];
 
-    while (r->status <= code)
-        if (r->status == code)
-            return r->reason;
+    while (reasonP->status <= code)
+        if (reasonP->status == code)
+            return reasonP->reason;
         else
-            ++r;
+            ++reasonP;
 
     return "No Reason";
 }
@@ -712,618 +747,61 @@ HTTPRead(TSession *   const s ATTR_UNUSED,
 
 
 abyss_bool
-HTTPWrite(TSession *   const s,
-          const char * const buffer,
-          uint32_t     const len) {
-
-    if (s->chunkedwrite && s->chunkedwritemode)
-    {
-        char t[16];
-
-        if (ConnWrite(s->conn,t,sprintf(t,"%x"CRLF,len)))
-            if (ConnWrite(s->conn,buffer,len))
-                return ConnWrite(s->conn,CRLF,2);
-
-        return FALSE;
-    }
-    
-    return ConnWrite(s->conn,buffer,len);
-}
-
-abyss_bool HTTPWriteEnd(TSession *s)
-{
-    if (!s->chunkedwritemode)
-        return TRUE;
-
-    if (s->chunkedwrite)
-    {
-        /* May be one day trailer dumping will be added */
-        s->chunkedwritemode=FALSE;
-        return ConnWrite(s->conn,"0"CRLF CRLF,5);
-    }
-
-    s->keepalive=FALSE;
-    return TRUE;
-}
-
-/*********************************************************************
-** Response
-*********************************************************************/
-
-void
-ResponseError(TSession * const sessionP) {
-
-    const char * const reason = HTTPReasonByStatus(sessionP->status);
-    char z[500];
-
-    ResponseAddField(sessionP, "Content-type", "text/html");
-
-    ResponseWrite(sessionP);
-    
-    sprintf(z,
-            "<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
-            "<BODY><H1>Error %d</H1><P>%s</P>" SERVER_HTML_INFO 
-            "</BODY></HTML>",
-            sessionP->status, sessionP->status, reason);
-
-    ConnWrite(sessionP->conn, z, strlen(z)); 
-}
-
-
-
-abyss_bool ResponseChunked(TSession *r)
-{
-    /* This is only a hope, things will be real only after a call of
-       ResponseWrite
-    */
-    r->chunkedwrite=(r->versionmajor>=1) && (r->versionminor>=1);
-    r->chunkedwritemode=TRUE;
-
-    return TRUE;
-}
-
-void ResponseStatus(TSession *r,uint16_t code)
-{
-    r->status=code;
-}
-
-
-
-uint16_t
-ResponseStatusFromErrno(int const errnoArg) {
-
-    uint16_t code;
-
-    switch (errnoArg) {
-    case EACCES:
-        code=403;
-        break;
-    case ENOENT:
-        code=404;
-        break;
-    default:
-        code=500;
-    }
-    return code;
-}
-
-
-
-void
-ResponseStatusErrno(TSession * const sessionP) {
-
-    ResponseStatus(sessionP, ResponseStatusFromErrno(errno));
-}
-
-
-
-abyss_bool
-ResponseAddField(TSession *   const sessionP,
-                 const char * const name,
-                 const char * const value) {
-
-    return TableAdd(&sessionP->response_headers, name, value);
-}
-
-
-
-void
-ResponseWrite(TSession * const sessionP) {
-
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
-
-    abyss_bool connclose=TRUE;
-    char z[64];
-    unsigned int i;
-
-    /* if status == 0 then this is an error */
-    if (sessionP->status == 0)
-        sessionP->status = 500;
-
-    /* the request was treated */
-    sessionP->done = TRUE;
-
-    {
-        const char * const reason = HTTPReasonByStatus(sessionP->status);
-        sprintf(z,"HTTP/1.1 %d ", sessionP->status);
-        ConnWrite(sessionP->conn, z, strlen(z));
-        ConnWrite(sessionP->conn, reason, strlen(reason));
-        ConnWrite(sessionP->conn, CRLF, 2);
-    }
-    /* generation of the connection field */
-    if (sessionP->status < 400 && sessionP->keepalive)
-        connclose = FALSE;
-
-    ResponseAddField(sessionP, "Connection",
-                     (connclose ? "close" : "Keep-Alive"));
-
-    if (!connclose) {
-        sprintf(z, "timeout=%u, max=%u",
-                srvP->keepalivetimeout, srvP->keepalivemaxconn);
-
-        ResponseAddField(sessionP, "Keep-Alive", z);
-
-        if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
-            if (!ResponseAddField(sessionP, "Transfer-Encoding", "chunked")) {
-                sessionP->chunkedwrite = FALSE;
-                sessionP->keepalive    = FALSE;
-            }
-        }
-    } else {
-        sessionP->chunkedwrite =FALSE;
-        sessionP->keepalive    =FALSE;
-    }
-    
-    /* generation of the date field */
-    if ((sessionP->status >= 200) && DateToString(&sessionP->date, z))
-        ResponseAddField(sessionP, "Date", z);
-
-    /* Generation of the server field */
-    if (srvP->advertise)
-        ResponseAddField(sessionP, "Server", SERVER_HVERSION);
-
-    /* send all the fields */
-    for (i = 0; i < sessionP->response_headers.size; ++i) {
-        TTableItem * const ti = &sessionP->response_headers.item[i];
-        ConnWrite(sessionP->conn, ti->name, strlen(ti->name));
-        ConnWrite(sessionP->conn, ": ", 2);
-        ConnWrite(sessionP->conn, ti->value, strlen(ti->value));
-        ConnWrite(sessionP->conn, CRLF, 2);
-    }
-
-    ConnWrite(sessionP->conn, CRLF, 2);  
-}
-
-
-
-abyss_bool
-ResponseWriteBody(TSession *   const sessionP,
-                  const char * const data,
-                  uint32_t     const len) {
-
-    return HTTPWrite(sessionP, data, len);
-}
-
-
-
-abyss_bool
-ResponseWriteEnd(TSession * const sessionP) {
-
-    return HTTPWriteEnd(sessionP);
-}
-
-
-
-abyss_bool
-ResponseContentType(TSession *   const serverP,
-                    const char * const type) {
-
-    return ResponseAddField(serverP, "Content-type", type);
-}
-
-
-
-abyss_bool ResponseContentLength(TSession *r,uint64_t len)
-{
-    char z[32];
-
-    sprintf(z,"%llu",len);
-    return ResponseAddField(r,"Content-length",z);
-}
-
-
-/*********************************************************************
-** MIMEType
-*********************************************************************/
-
-struct MIMEType {
-    TList typeList;
-    TList extList;
-    TPool pool;
-};
-
-
-static MIMEType * globalMimeTypeP = NULL;
-
-
-
-MIMEType *
-MIMETypeCreate(void) {
- 
-    MIMEType * MIMETypeP;
-
-    MALLOCVAR(MIMETypeP);
-
-    if (MIMETypeP) {
-        ListInit(&MIMETypeP->typeList);
-        ListInit(&MIMETypeP->extList);
-        PoolCreate(&MIMETypeP->pool, 1024);
-    }
-    return MIMETypeP;
-}
-
-
-
-void
-MIMETypeDestroy(MIMEType * const MIMETypeP) {
-
-    PoolFree(&MIMETypeP->pool);
-}
-
-
-
-void
-MIMETypeInit(void) {
-
-    if (globalMimeTypeP != NULL)
-        abort();
-
-    globalMimeTypeP = MIMETypeCreate();
-}
-
-
-
-void
-MIMETypeTerm(void) {
-
-    if (globalMimeTypeP == NULL)
-        abort();
-
-    MIMETypeDestroy(globalMimeTypeP);
-
-    globalMimeTypeP = NULL;
-}
-
-
-
-static void
-mimeTypeAdd(MIMEType *   const MIMETypeP,
-            const char * const type,
-            const char * const ext,
-            abyss_bool * const successP) {
-    
-    uint16_t index;
-    void * mimeTypesItem;
-    abyss_bool typeIsInList;
-
-    assert(MIMETypeP != NULL);
-
-    typeIsInList = ListFindString(&MIMETypeP->typeList, type, &index);
-    if (typeIsInList)
-        mimeTypesItem = MIMETypeP->typeList.item[index];
-    else
-        mimeTypesItem = (void*)PoolStrdup(&MIMETypeP->pool, type);
-
-    if (mimeTypesItem) {
-        abyss_bool extIsInList;
-        extIsInList = ListFindString(&MIMETypeP->extList, ext, &index);
-        if (extIsInList) {
-            MIMETypeP->typeList.item[index] = mimeTypesItem;
-            *successP = TRUE;
-        } else {
-            void * extItem = (void*)PoolStrdup(&MIMETypeP->pool, ext);
-            if (extItem) {
-                abyss_bool addedToMimeTypes;
-
-                addedToMimeTypes =
-                    ListAdd(&MIMETypeP->typeList, mimeTypesItem);
-                if (addedToMimeTypes) {
-                    abyss_bool addedToExt;
-                    
-                    addedToExt = ListAdd(&MIMETypeP->extList, extItem);
-                    *successP = addedToExt;
-                    if (!*successP)
-                        ListRemove(&MIMETypeP->typeList);
-                } else
-                    *successP = FALSE;
-                if (!*successP)
-                    PoolReturn(&MIMETypeP->pool, extItem);
-            } else
-                *successP = FALSE;
+HTTPWriteBodyChunk(TSession *   const sessionP,
+                   const char * const buffer,
+                   uint32_t     const len) {
+
+    abyss_bool succeeded;
+
+    if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
+        char chunkHeader[16];
+
+        sprintf(chunkHeader, "%x\r\n", len);
+
+        succeeded =
+            ConnWrite(sessionP->conn, chunkHeader, strlen(chunkHeader));
+        if (succeeded) {
+            succeeded = ConnWrite(sessionP->conn, buffer, len);
+            if (succeeded)
+                succeeded = ConnWrite(sessionP->conn, "\r\n", 2);
         }
     } else
-        *successP = FALSE;
-}
+        succeeded = ConnWrite(sessionP->conn, buffer, len);
 
-
-
-
-abyss_bool
-MIMETypeAdd2(MIMEType *   const MIMETypeArg,
-             const char * const type,
-             const char * const ext) {
-
-    MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
-
-    abyss_bool success;
-
-    if (MIMETypeP == NULL)
-        success = FALSE;
-    else 
-        mimeTypeAdd(MIMETypeP, type, ext, &success);
-
-    return success;
+    return succeeded;
 }
 
 
 
 abyss_bool
-MIMETypeAdd(const char * const type,
-            const char * const ext) {
+HTTPWriteEndChunk(TSession * const sessionP) {
 
-    return MIMETypeAdd2(globalMimeTypeP, type, ext);
-}
-
-
-
-static const char *
-mimeTypeFromExt(MIMEType *   const MIMETypeP,
-                const char * const ext) {
-
-    const char * retval;
-    uint16_t extindex;
-    abyss_bool extIsInList;
-
-    assert(MIMETypeP != NULL);
-
-    extIsInList = ListFindString(&MIMETypeP->extList, ext, &extindex);
-    if (!extIsInList)
-        retval = NULL;
-    else
-        retval = MIMETypeP->typeList.item[extindex];
-    
-    return retval;
-}
-
-
-
-const char *
-MIMETypeFromExt2(MIMEType *   const MIMETypeArg,
-                 const char * const ext) {
-
-    const char * retval;
-
-    MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
-
-    if (MIMETypeP == NULL)
-        retval = NULL;
-    else
-        retval = mimeTypeFromExt(MIMETypeP, ext);
-
-    return retval;
-}
-
-
-
-const char *
-MIMETypeFromExt(const char * const ext) {
-
-    return MIMETypeFromExt2(globalMimeTypeP, ext);
-}
-
-
-
-static void
-findExtension(const char *  const fileName,
-              const char ** const extP) {
-
-    unsigned int extPos = 0;  /* stifle unset variable warning */
-        /* Running estimation of where in fileName[] the extension starts */
-    abyss_bool extFound;
-    unsigned int i;
-
-    /* We're looking for the last dot after the last slash */
-    for (i = 0, extFound = FALSE; fileName[i]; ++i) {
-        char const c = fileName[i];
-        
-        if (c == '.') {
-            extFound = TRUE;
-            extPos = i + 1;
-        }
-        if (c == '/')
-            extFound = FALSE;
-    }
-
-    if (extFound)
-        *extP = &fileName[extPos];
-    else
-        *extP = NULL;
-}
-
-
-
-static const char *
-mimeTypeFromFileName(MIMEType *   const MIMETypeP,
-                     const char * const fileName) {
-
-    const char * retval;
-    const char * ext;
-
-    assert(MIMETypeP != NULL);
-    
-    findExtension(fileName, &ext);
-
-    if (ext)
-        retval = MIMETypeFromExt2(MIMETypeP, ext);
-    else
-        retval = "application/octet-stream";
-
-    return retval;
-}
-
-
-
-const char *
-MIMETypeFromFileName2(MIMEType *   const MIMETypeArg,
-                      const char * const fileName) {
-
-    const char * retval;
-    
-    MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
-
-    if (MIMETypeP == NULL)
-        retval = NULL;
-    else
-        retval = mimeTypeFromFileName(MIMETypeP, fileName);
-
-    return retval;
-}
-
-
-
-const char *
-MIMETypeFromFileName(const char * const fileName) {
-
-    return MIMETypeFromFileName2(globalMimeTypeP, fileName);
-}
-
-
-
-static abyss_bool
-fileContainsText(const char * const fileName) {
-/*----------------------------------------------------------------------------
-   Return true iff we can read the contents of the file named 'fileName'
-   and see that it appears to be composed of plain text characters.
------------------------------------------------------------------------------*/
     abyss_bool retval;
-    abyss_bool fileOpened;
-    TFile file;
 
-    fileOpened = FileOpen(&file, fileName, O_BINARY | O_RDONLY);
-    if (fileOpened) {
-        char const ctlZ = 26;
-        unsigned char buffer[80];
-        int32_t readRc;
-        unsigned int i;
-
-        readRc = FileRead(&file, buffer, sizeof(buffer));
-       
-        if (readRc >= 0) {
-            unsigned int bytesRead = readRc;
-            abyss_bool nonTextFound;
-
-            nonTextFound = FALSE;  /* initial value */
-    
-            for (i = 0; i < bytesRead; ++i) {
-                char const c = buffer[i];
-                if (c < ' ' && !isspace(c) && c != ctlZ)
-                    nonTextFound = TRUE;
-            }
-            retval = !nonTextFound;
-        } else
-            retval = FALSE;
-        FileClose(&file);
+    if (sessionP->chunkedwritemode && sessionP->chunkedwrite) {
+        /* May be one day trailer dumping will be added */
+        sessionP->chunkedwritemode = FALSE;
+        retval = ConnWrite(sessionP->conn, "0\r\n\r\n", 5);
     } else
-        retval = FALSE;
+        retval = TRUE;
 
     return retval;
 }
 
 
- 
-static const char *
-mimeTypeGuessFromFile(MIMEType *   const MIMETypeP,
-                      const char * const fileName) {
 
-    const char * retval;
-    const char * ext;
-
-    findExtension(fileName, &ext);
-
-    retval = NULL;
-
-    if (ext && MIMETypeP)
-        retval = MIMETypeFromExt2(MIMETypeP, ext);
-    
-    if (!retval) {
-        if (fileContainsText(fileName))
-            retval = "text/plain";
-        else
-            retval = "application/octet-stream";  
-    }
-    return retval;
+abyss_bool
+HTTPKeepalive(TSession * const sessionP) {
+/*----------------------------------------------------------------------------
+   Return value: the connection should be kept alive after the session
+   *sessionP is over.
+-----------------------------------------------------------------------------*/
+    return (sessionP->request_info.keepalive &&
+            !sessionP->serverDeniesKeepalive &&
+            sessionP->status < 400);
 }
 
 
-
-const char *
-MIMETypeGuessFromFile2(MIMEType *   const MIMETypeArg,
-                       const char * const fileName) {
-
-    return mimeTypeGuessFromFile(MIMETypeArg ? MIMETypeArg : globalMimeTypeP,
-                                 fileName);
-}
-
-
-
-const char *
-MIMETypeGuessFromFile(const char * const fileName) {
-
-    return mimeTypeGuessFromFile(globalMimeTypeP, fileName);
-}
-
-                                  
-
-/*********************************************************************
-** Base64
-*********************************************************************/
-
-void Base64Encode(char *s,char *d)
-{
-    /* Conversion table. */
-    static char tbl[64] = {
-        'A','B','C','D','E','F','G','H',
-        'I','J','K','L','M','N','O','P',
-        'Q','R','S','T','U','V','W','X',
-        'Y','Z','a','b','c','d','e','f',
-        'g','h','i','j','k','l','m','n',
-        'o','p','q','r','s','t','u','v',
-        'w','x','y','z','0','1','2','3',
-        '4','5','6','7','8','9','+','/'
-    };
-
-    uint32_t i,length=strlen(s);
-    char *p=d;
-    
-    /* Transform the 3x8 bits to 4x6 bits, as required by base64. */
-    for (i = 0; i < length; i += 3)
-    {
-        *p++ = tbl[s[0] >> 2];
-        *p++ = tbl[((s[0] & 3) << 4) + (s[1] >> 4)];
-        *p++ = tbl[((s[1] & 0xf) << 2) + (s[2] >> 6)];
-        *p++ = tbl[s[2] & 0x3f];
-        s += 3;
-    }
-    
-    /* Pad the result if necessary... */
-    if (i == length + 1)
-        *(p - 1) = '=';
-    else if (i == length + 2)
-        *(p - 1) = *(p - 2) = '=';
-    
-    /* ...and zero-terminate it. */
-    *p = '\0';
-}
 
 /******************************************************************************
 **

@@ -1,4 +1,5 @@
 /* Copyright information is at end of file */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -176,7 +177,7 @@ sendDirectoryDocument(TList *      const listP,
                "Date-Time             Type<HR WIDTH=100%>"CRLF);
     }
 
-    HTTPWrite(sessionP, z, strlen(z));
+    HTTPWriteBodyChunk(sessionP, z, strlen(z));
 
     /* Sort the files */
     qsort(listP->item, listP->size, sizeof(void *),
@@ -267,7 +268,7 @@ sendDirectoryDocument(TList *      const listP,
                     fi->name, fi->attrib & A_SUBDIR ? "/" : "",
                     z1, p, z3, z2, z4);
 
-        HTTPWrite(sessionP, z, strlen(z));
+        HTTPWriteBodyChunk(sessionP, z, strlen(z));
     }
         
     /* Write the tail of the file */
@@ -276,7 +277,7 @@ sendDirectoryDocument(TList *      const listP,
     else
         strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>" CRLF CRLF);
     
-    HTTPWrite(sessionP, z, strlen(z));
+    HTTPWriteBodyChunk(sessionP, z, strlen(z));
 }
 
 
@@ -368,7 +369,7 @@ ServerDirectoryHandler(TSession * const r,
         sendDirectoryDocument(&list, ascending, sort, text,
                               r->request_info.uri, mimeTypeP, r, z);
 
-    HTTPWriteEnd(r);
+    HTTPWriteEndChunk(r);
 
     /* Free memory and exit */
     ListFree(&list);
@@ -944,33 +945,28 @@ processDataFromClient(TConn *      const connectionP,
                       abyss_bool * const keepAliveP) {
 
     TSession session;
-    abyss_bool succeeded;
 
     RequestInit(&session, connectionP);
 
-    succeeded = RequestRead(&session);
-    if (succeeded) {
-        /* Check if it is the last keepalive */
-        if (lastReqOnConn)
-            session.keepalive = FALSE;
+    session.serverDeniesKeepalive = lastReqOnConn;
         
-        *keepAliveP = session.keepalive;
-        
-        if (session.status == 0) {
-            if (session.versionmajor >= 2)
-                ResponseStatus(&session, 505);
-            else if (!RequestValidURI(&session))
-                ResponseStatus(&session, 400);
-            else
-                runUserHandler(&session, connectionP->server->srvP);
-        }
-    } else
-        *keepAliveP = FALSE;
-            
-    HTTPWriteEnd(&session);
-
-    if (!session.done)
+    RequestRead(&session);
+    if (session.status == 0) {
+        if (session.version.major >= 2)
+            ResponseStatus(&session, 505);
+        else if (!RequestValidURI(&session))
+            ResponseStatus(&session, 400);
+        else
+            runUserHandler(&session, connectionP->server->srvP);
+    }
+    assert(session.status != 0);
+    
+    if (session.responseStarted)
+        HTTPWriteEndChunk(&session);
+    else
         ResponseError(&session);
+
+    *keepAliveP = HTTPKeepalive(&session);
     
     SessionLog(&session);
 
@@ -1014,8 +1010,6 @@ ServerFunc(TConn * const connectionP) {
             ++requestCount;
 
             if (!keepalive)
-                connectionDone = TRUE;
-            else if (requestCount >= srvP->keepalivemaxconn)
                 connectionDone = TRUE;
             
             /**************** Must adjust the read buffer *****************/

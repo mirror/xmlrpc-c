@@ -156,29 +156,50 @@ ConnReadInit(TConn * const connectionP) {
 
 
 static void
+traceBuffer(const char * const label,
+            const char * const buffer,
+            unsigned int const size) {
+
+    unsigned int nonPrintableCount;
+    unsigned int i;
+    
+    nonPrintableCount = 0;  /* Initial value */
+    
+    for (i = 0; i < size; ++i) {
+        if (!isprint(buffer[i]) && buffer[i] != '\n' && buffer[i] != '\r')
+            ++nonPrintableCount;
+    }
+    if (nonPrintableCount > 0)
+        fprintf(stderr, "%s contains %u nonprintable characters.\n", 
+                label, nonPrintableCount);
+    
+    fprintf(stderr, "%s:\n", label);
+    fprintf(stderr, "%.*s\n", (int)size, buffer);
+}
+
+
+
+static void
 traceSocketRead(TConn *      const connectionP,
                 unsigned int const size) {
 
+    if (connectionP->trace)
+        traceBuffer("READ FROM SOCKET:",
+                    connectionP->buffer + connectionP->buffersize, size);
+}
+
+
+
+static void
+traceSocketWrite(TConn *      const connectionP,
+                 const char * const buffer,
+                 unsigned int const size,
+                 abyss_bool   const failed) {
+
     if (connectionP->trace) {
-        const char * const label = "READ FROM SOCKET:";
-        const char * const buffer =
-            connectionP->buffer + connectionP->buffersize;
-                        
-        unsigned int nonPrintableCount;
-        unsigned int i;
-    
-        nonPrintableCount = 0;  /* Initial value */
-    
-        for (i = 0; i < size; ++i) {
-            if (!isprint(buffer[i]) && buffer[i] != '\n' && buffer[i] != '\r')
-                ++nonPrintableCount;
-        }
-        if (nonPrintableCount > 0)
-            fprintf(stderr, "%s contains %u nonprintable characters.\n", 
-                    label, nonPrintableCount);
-        
-        fprintf(stderr, "%s:\n", label);
-        fprintf(stderr, "%.*s\n", (int)size, buffer);
+        const char * const label =
+            failed ? "FAILED TO WRITE TO SOCKET:" : "WROTE TO SOCKET";
+        traceBuffer(label, buffer, size);
     }
 }
 
@@ -266,6 +287,8 @@ ConnWrite(TConn *      const connectionP,
     abyss_bool failed;
 
     SocketWrite(&connectionP->socket, buffer, size, &failed);
+
+    traceSocketWrite(connectionP, buffer, size, failed);
 
     if (!failed)
         connectionP->outbytes += size;

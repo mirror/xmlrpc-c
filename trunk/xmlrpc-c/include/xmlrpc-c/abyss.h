@@ -210,15 +210,21 @@ typedef struct {
     const char * uri;
         /* This is NOT the URI.  It is the pathname part of the URI.
            We really should fix that and put the pathname in another
-           member.  Also put the port number in here.
+           member.
         */
     const char * query;
+        /* The query part of the URI (stuff after '?') */
     const char * host;
+        /* NOT the value of the host: header.  Rather, the name of the
+           target host (could be part of the host: value).  No port number.
+        */
     const char * from;
     const char * useragent;
     const char * referer;
     const char * requestline;
     const char * user;
+    unsigned short port;
+    abyss_bool keepalive;
 } TRequestInfo;
 
 abyss_bool
@@ -247,7 +253,10 @@ ResponseAddField(TSession *   const sessionP,
                  const char * const value);
 
 void
-ResponseWrite(TSession * const sessionP);
+ResponseWriteStart(TSession * const sessionP);
+
+/* For backward compatibility: */
+#define ResponseWrite ResponseWriteStart
 
 abyss_bool
 ResponseWriteBody(TSession *   const sessionP,

@@ -63,15 +63,14 @@ sendXmlData(xmlrpc_env * const envP,
     if (http_cookie) {
         /* There's an auth cookie, so pass it back in the response. */
 
-        char *cookie_response;
+        const char * cookieResponse;
  
-        cookie_response = malloc(10+strlen(http_cookie));
-        sprintf(cookie_response, "auth=%s", http_cookie);
+        xmlrpc_asprintf(&cookieResponse, "auth=%s", http_cookie);
         
         /* Return abyss response. */
-        ResponseAddField(abyssSessionP, "Set-Cookie", cookie_response);
+        ResponseAddField(abyssSessionP, "Set-Cookie", cookieResponse);
 
-        free(cookie_response);
+        xmlrpc_strfree(cookieResponse);
     }   
     
     if ((size_t)(uint32_t)len != len)
@@ -85,8 +84,7 @@ sendXmlData(xmlrpc_env * const envP,
         ResponseContentType(abyssSessionP, "text/xml; charset=\"utf-8\"");
         ResponseContentLength(abyssSessionP, abyssLen);
         
-        ResponseWrite(abyssSessionP);
-        
+        ResponseWriteStart(abyssSessionP);
         ResponseWriteBody(abyssSessionP, buffer, abyssLen);
         ResponseWriteEnd(abyssSessionP);
     }

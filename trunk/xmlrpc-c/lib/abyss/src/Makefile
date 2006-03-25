@@ -31,6 +31,7 @@ ABYSS_OBJS = \
   date.lo \
   file.lo \
   http.lo \
+  response.lo \
   server.lo \
   session.lo \
   socket.lo \

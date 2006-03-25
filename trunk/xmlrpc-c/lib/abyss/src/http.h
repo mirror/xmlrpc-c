@@ -21,17 +21,23 @@ abyss_bool RequestAuth(TSession *r,char *credential,char *user,char *pass);
 ** HTTP
 *********************************************************************/
 
+const char *
+HTTPReasonByStatus(uint16_t const code);
+
 int32_t
 HTTPRead(TSession *   const sessionP,
          const char * const buffer,
          uint32_t     const len);
 
 abyss_bool
-HTTPWrite(TSession *   const sessionP,
-          const char * const buffer,
-          uint32_t     const len);
+HTTPWriteBodyChunk(TSession *   const sessionP,
+                   const char * const buffer,
+                   uint32_t     const len);
 
 abyss_bool
-HTTPWriteEnd(TSession * const sessionP);
+HTTPWriteEndChunk(TSession * const sessionP);
+
+abyss_bool
+HTTPKeepalive(TSession * const sessionP);
 
 #endif

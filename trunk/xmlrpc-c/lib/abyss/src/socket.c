@@ -44,6 +44,23 @@ static abyss_bool ABYSS_TRACE_SOCKET;
 ** Socket
 *********************************************************************/
 
+#ifdef WIN32
+#define EMSGSIZE WSAEMSGSIZE
+#endif
+
+
+
+uint32_t
+SocketError() {
+#ifdef WIN32
+    return WSAGetLastError();
+#else
+    return errno;
+#endif  /* WIN32 */
+}
+
+
+
 abyss_bool SocketInit()
 {
     abyss_bool retval;
@@ -113,6 +130,18 @@ SocketWrite(TSocket *             const socketP,
         
         rc = send(*socketP, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
+
+        if (ABYSS_TRACE_SOCKET) {
+            if (rc < 0)
+                fprintf(stderr, "Abyss socket: send() failed.  errno=%d (%s)",
+                        errno, strerror(errno));
+            else if (rc == 0)
+                fprintf(stderr, "Abyss socket: send() failed.  "
+                        "Socket closed.\n");
+            else
+                fprintf(stderr, "Abyss socket: sent %u bytes: '%.*s'\n",
+                        -rc, -rc, &buffer[len-bytesLeft]);
+        }
         if (rc <= 0)
             /* 0 means connection closed; < 0 means severe error */
             error = TRUE;
@@ -141,17 +170,12 @@ uint32_t SocketRead(TSocket * const socketP,
 }
 
 
-
 uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len)
 {
     int32_t r=recv(*s,buffer,len,MSG_PEEK);
 
     if (r==(-1))
-#ifdef WIN32
-        if (SocketError()==WSAEMSGSIZE)
-#else
         if (SocketError()==EMSGSIZE)
-#endif
             return len;
 
     return r;
@@ -279,15 +303,6 @@ uint32_t SocketAvailableReadBytes(TSocket *s)
         x=0;
 
     return x;
-}
-
-uint32_t SocketError()
-{
-#ifdef WIN32
-    return WSAGetLastError();
-#else
-    return errno;
-#endif  /* WIN32 */
 }
 
 
