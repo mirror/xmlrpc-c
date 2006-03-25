@@ -55,8 +55,17 @@ sendXmlData(xmlrpc_env * const envP,
 
     /* fwrite(buffer, sizeof(char), len, stderr); */
 
-    /* XXX - Is it safe to chunk our response? */
-    ResponseChunked(abyssSessionP);
+    /* Various bugs before Xmlrpc-c 1.05 caused the response to be not
+       chunked in the most basic case, but chunked if the client explicitly
+       requested keepalive.  I think it's better not to chunk, because
+       it's simpler, so I removed this in 1.05.  I don't know what the
+       purpose of chunking would be, and an original comments suggests
+       the author wasn't sure chunking was a good idea.
+
+       But we should make a user option to select chunked response.
+    */
+       
+    /* ResponseChunked(abyssSessionP); */
 
     ResponseStatus(abyssSessionP, 200);
     
