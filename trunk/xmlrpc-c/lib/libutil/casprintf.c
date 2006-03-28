@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "xmlrpc_config.h"  /* For HAVE_ASPRINTF, __inline__ */
-#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 
 
 

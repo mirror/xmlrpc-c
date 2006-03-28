@@ -135,7 +135,7 @@ clientXmlTransport_libwww::clientXmlTransport_libwww(
     env_wrap env;
 
     xmlrpc_libwww_transport_ops.create(
-        &env, 0, appname.c_str(), appversion.c_str(), NULL, 0,
+        &env.env_c, 0, appname.c_str(), appversion.c_str(), NULL, 0,
         &this->c_transportP);
 
     if (env.env_c.fault_occurred)

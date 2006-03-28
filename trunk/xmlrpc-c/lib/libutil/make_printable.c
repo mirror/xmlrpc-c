@@ -7,7 +7,7 @@
 #include <ctype.h>
 
 #include "xmlrpc_config.h"
-#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 
 
 
