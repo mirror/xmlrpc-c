@@ -643,7 +643,7 @@ call(xmlrpc_env *                     const envP,
                           rpcP->request);
         if (!ok)
             xmlrpc_env_set_fault(
-                envP, XMLRPC_INTERNAL_ERROR,
+                envP, XMLRPC_NETWORK_ERROR,
                 "Libwww HTPostAnchor() failed to start POST request");
         else {
             /* Run our event-processing loop.  HTEventList_newLoop()
@@ -902,7 +902,7 @@ sendRequest(xmlrpc_env *                     const envP,
                           rpcP->request);
         if (!ok) {
             unregister_asynch_call();
-            xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
+            xmlrpc_env_set_fault(envP, XMLRPC_NETWORK_ERROR,
                                  "Libwww (HTPostAnchor()) failed to start the "
                                  "POST request.");
         }
