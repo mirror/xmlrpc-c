@@ -250,7 +250,7 @@ install-static-libraries: $(STATIC_LIBRARIES_TO_INSTALL)
 	done
 
 LIBTOOL_INSTALL_CMD = $(LIBTOOL) --mode=install \
-  $(INSTALL) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
+  $(INSTALL_SHLIB) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 
 install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
 	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
