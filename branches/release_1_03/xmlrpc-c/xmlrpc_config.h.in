@@ -24,6 +24,10 @@
 #define ATTR_UNUSED @ATTR_UNUSED@
 
 #define HAVE_UNICODE_WCHAR @HAVE_UNICODE_WCHAR_DEFINE@
+/* This is a hack in the name of stability -- saves modifying a lot of code */
+#if !HAVE_UNICODE_WCHAR
+#undef HAVE_UNICODE_WCHAR
+#endif
 
 #define DIRECTORY_SEPARATOR "@DIRECTORY_SEPARATOR@"
 

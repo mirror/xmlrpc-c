@@ -67,7 +67,12 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
-1.03.12 - not yet
+1.03.13 - 06.04.05
+
+  *BJH: Abyss XML-RPC server accepts (ignores) parameters after
+        "text/xml" in Content-type header from client.
+
+1.03.12 - 06.03.20
 
   *BJH: Fix build of transport_config.h
 

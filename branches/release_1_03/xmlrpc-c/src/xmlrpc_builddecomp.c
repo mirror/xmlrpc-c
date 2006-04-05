@@ -648,6 +648,7 @@ readStringLp(xmlrpc_env *         const envP,
 
 
 
+#ifdef HAVE_UNICODE_WCHAR
 static void
 readStringW(xmlrpc_env *     const envP,
             xmlrpc_value *   const valueP,
@@ -674,7 +675,7 @@ readStringWLp(xmlrpc_env *     const envP,
     } else
         xmlrpc_read_string_w_lp(envP, valueP, lengthP, stringValueP);
 }
-
+#endif
 
 
 static void

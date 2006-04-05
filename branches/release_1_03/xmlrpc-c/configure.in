@@ -8,7 +8,7 @@ dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
 dnl =======================================================================
 
 dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 1.03.12)
+AM_INIT_AUTOMAKE(xmlrpc-c, 1.03.13)
 
 dnl This version number needs to be changed in several *different* tricky
 dnl ways for each release. Please read the libtool documentation very
@@ -221,6 +221,11 @@ if test x"$enable_unicode" != xno; then
 
     dnl Unicode function needed by test suites.
     AC_CHECK_FUNCS(wcsncmp)
+
+    AC_CHECK_HEADERS(wchar.h, , [
+    AC_MSG_ERROR(wchar.h is required to build this library)
+    ])
+
 else
     HAVE_UNICODE_WCHAR_DEFINE=0
 fi
@@ -265,10 +270,6 @@ AC_STDC_HEADERS
 
 AC_CHECK_HEADERS(stdarg.h, , [
 AC_MSG_ERROR(stdarg.h is required to build this library)
-])
-
-AC_CHECK_HEADERS(wchar.h, , [
-AC_MSG_ERROR(wchar.h is required to build this library)
 ])
 
 # I/O headers, needed by Abyss on Solaris.

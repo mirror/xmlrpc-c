@@ -258,10 +258,26 @@ validateContentType(TSession *     const httpRequestP,
 -----------------------------------------------------------------------------*/
     const char * const content_type =
         RequestHeaderValue(httpRequestP, "content-type");
-    if (content_type == NULL || strcmp(content_type, "text/xml") != 0)
+
+    if (content_type == NULL)
         *httpErrorP = 400;
-    else
-        *httpErrorP = 0;
+    else {
+        const char * const sempos = strchr(content_type, ';');
+        unsigned int baselen;
+            /* Length of the base portion of the content type, e.g.
+               "text/xml" int "text/xml;charset=utf-8"
+            */
+
+        if (sempos)
+            baselen = sempos - content_type;
+        else
+            baselen = strlen(content_type);
+
+        if (strncmp(content_type, "text/xml", baselen) != 0)
+            *httpErrorP = 400;
+        else
+            *httpErrorP = 0;
+    }
 }
 
 
