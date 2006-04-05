@@ -1,6 +1,7 @@
 #ifndef XMLRPC_C_STRING_INT_H_INCLUDED
 #define XMLRPC_C_STRING_INT_H_INCLUDED
 
+
 #include <stdarg.h>
 #include <string.h>
 #include "xmlrpc-c/base_int.h"

@@ -16,11 +16,9 @@
 /* Define if you have the <stdarg.h> header file.  */
 #define HAVE_STDARG_H 1
 
-/* Define if you have the <sys/filio.h> header file.  */
-/* #undef HAVE_SYS_FILIO_H */
+#define HAVE_SYS_FILIO_H 0
 
-/* Define if you have the <sys/ioctl.h> header file.  */
-/* #undef HAVE_SYS_IOCTL_H 1 */
+#define HAVE_SYS_IOCTL_H 0
 
 /* Define if you have the <wchar.h> header file.  */
 #define HAVE_WCHAR_H 1
@@ -50,8 +48,7 @@
 /* Used to mark unused variables under GCC... */
 #define ATTR_UNUSED
 
-/* Define this if your C library provides reasonably complete and correct Unicode wchar_t support. */
-#define HAVE_UNICODE_WCHAR 1
+#define HAVE_UNICODE_WCHAR
   
 #define DIRECTORY_SEPARATOR "\\"
 

@@ -3,9 +3,12 @@ Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
+#include <stddef.h>
+
+#include "xmlrpc_config.h"
+#include "c_util.h"
 #include "xmldef.h"
 #include "xmlparse.h"
-#include <stddef.h>
 
 #ifdef XML_UNICODE
 #define XML_ENCODE_MAX XML_UTF16_ENCODE_MAX
@@ -203,8 +206,6 @@ initializeEncoding(XML_Parser parser);
 static enum XML_Error
 doProlog(XML_Parser parser, const ENCODING *enc, const char *s,
 	 const char *end, int tok, const char *next, const char **nextPtr);
-static enum XML_Error
-processInternalParamEntity(XML_Parser parser, ENTITY *entity);
 static enum XML_Error
 doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
 	  const char *start, const char *end, const char **endPtr);
@@ -861,16 +862,26 @@ void XML_SetUnknownEncodingHandler(XML_Parser parser,
   unknownEncodingHandlerData = data;
 }
 
-int XML_SetParamEntityParsing(XML_Parser parser,
-			      enum XML_ParamEntityParsing parsing)
-{
+
+
+int
+XML_SetParamEntityParsing(
+    XML_Parser                  const parser  ATTR_UNUSED,
+    enum XML_ParamEntityParsing const parsing) {
+    
+    int retval;
+
 #ifdef XML_DTD
-  paramEntityParsing = parsing;
-  return 1;
+    paramEntityParsing = parsing;
+    retval = 1;
 #else
-  return parsing == XML_PARAM_ENTITY_PARSING_NEVER;
+    retval = parsing == XML_PARAM_ENTITY_PARSING_NEVER;
 #endif
+
+    return retval;
 }
+
+
 
 int XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
 {
@@ -1036,36 +1047,43 @@ void XML_DefaultCurrent(XML_Parser parser)
   }
 }
 
-const XML_LChar *XML_ErrorString(int code)
-{
-  static const XML_LChar *message[] = {
-    0,
-    XML_T("out of memory"),
-    XML_T("syntax error"),
-    XML_T("no element found"),
-    XML_T("not well-formed"),
-    XML_T("unclosed token"),
-    XML_T("unclosed token"),
-    XML_T("mismatched tag"),
-    XML_T("duplicate attribute"),
-    XML_T("junk after document element"),
-    XML_T("illegal parameter entity reference"),
-    XML_T("undefined entity"),
-    XML_T("recursive entity reference"),
-    XML_T("asynchronous entity"),
-    XML_T("reference to invalid character number"),
-    XML_T("reference to binary entity"),
-    XML_T("reference to external entity in attribute"),
-    XML_T("xml processing instruction not at start of external entity"),
-    XML_T("unknown encoding"),
-    XML_T("encoding specified in XML declaration is incorrect"),
-    XML_T("unclosed CDATA section"),
-    XML_T("error in processing external entity reference"),
-    XML_T("document is not standalone")
-  };
-  if (code > 0 && code < sizeof(message)/sizeof(message[0]))
-    return message[code];
-  return 0;
+const XML_LChar *
+XML_ErrorString(int const code) {
+
+    static const XML_LChar * const message[] = {
+        NULL,
+        XML_T("out of memory"),
+        XML_T("syntax error"),
+        XML_T("no element found"),
+        XML_T("not well-formed"),
+        XML_T("unclosed token"),
+        XML_T("unclosed token"),
+        XML_T("mismatched tag"),
+        XML_T("duplicate attribute"),
+        XML_T("junk after document element"),
+        XML_T("illegal parameter entity reference"),
+        XML_T("undefined entity"),
+        XML_T("recursive entity reference"),
+        XML_T("asynchronous entity"),
+        XML_T("reference to invalid character number"),
+        XML_T("reference to binary entity"),
+        XML_T("reference to external entity in attribute"),
+        XML_T("xml processing instruction not at start of external entity"),
+        XML_T("unknown encoding"),
+        XML_T("encoding specified in XML declaration is incorrect"),
+        XML_T("unclosed CDATA section"),
+        XML_T("error in processing external entity reference"),
+        XML_T("document is not standalone")
+    };
+
+    const XML_LChar * retval;
+
+    if (code > 0 && (unsigned)code < ARRAY_SIZE(message))
+        retval = message[code];
+    else
+        retval = NULL;
+    
+    return retval;
 }
 
 static
@@ -2809,14 +2827,18 @@ processInternalParamEntity(XML_Parser parser, ENTITY *entity)
 
 #endif /* XML_DTD */
 
-static
-enum XML_Error errorProcessor(XML_Parser parser,
-			      const char *s,
-			      const char *end,
-			      const char **nextPtr)
-{
-  return errorCode;
+
+
+static enum XML_Error
+errorProcessor(XML_Parser    const parser  ATTR_UNUSED,
+               const char *  const s       ATTR_UNUSED,
+               const char *  const end     ATTR_UNUSED,
+               const char ** const nextPtr ATTR_UNUSED) {
+
+    return errorCode;
 }
+
+
 
 static enum XML_Error
 storeAttributeValue(XML_Parser parser, const ENCODING *enc, int isCdata,

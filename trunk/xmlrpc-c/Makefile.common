@@ -83,13 +83,16 @@ LIBXMLRPC_SERVER_ABYSS++ = $(BUILDDIR)/src/cpp/libxmlrpc_server_abyss++.a
 # We use the srcdir and blddir symbolic links simply to make the make
 # rules easier to read in the make output.  We could use $(SRCDIR) and
 # $(BLDDIR) variables, but that makes the compile and link commands
-# a mile long.
+# a mile long.  Note that Make sometime figures that a directory which
+# is a dependency is newer than the symbolic link pointing to it and wants
+# to rebuild the symbolic link.  So we don't make $(BLDDIR) a
+# dependency of 'blddir'.
 
-blddir: $(BLDDIR)
-	ln -s $< $@
+blddir:
+	$(LN_S) $(BLDDIR) $@
 
-srcdir: $(SRCDIR)
-	ln -s $< $@
+srcdir:
+	$(LN_S) $(SRCDIR) $@
 
 $(SUBDIRS:%=%/all): %/all: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \

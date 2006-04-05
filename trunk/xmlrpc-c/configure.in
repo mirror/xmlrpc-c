@@ -8,7 +8,7 @@ dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
 dnl =======================================================================
 
 dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 1.05)
+AM_INIT_AUTOMAKE(xmlrpc-c, 1.06)
 
 dnl This version number needs to be changed in several *different* tricky
 dnl ways for each release. Please read the libtool documentation very
@@ -204,26 +204,6 @@ AC_SUBST(CPPTEST)
 AC_SUBST(XMLRPCCPP_H)
 AC_SUBST(XML_RPC_API2CPP_SUBDIR)
 
-dnl =======================================================================
-dnl Decide what to do about Unicode.
-dnl =======================================================================
-
-dnl Check to see if we should build our Unicode stuff.
-AC_MSG_CHECKING(whether to build Unicode capability)
-AC_ARG_ENABLE(unicode,
-  [  --disable-unicode         Don't build Unicode and wchar_t capability], ,
-enable_unicode=yes)
-AC_MSG_RESULT($enable_unicode)
-
-dnl Do all the work...
-if test x"$enable_unicode" != xno; then
-    FEATURE_LIST="unicode $FEATURE_LIST"
-    HAVE_UNICODE_WCHAR=1
-else
-    HAVE_UNICODE_WCHAR=0
-fi
-
-AC_SUBST(HAVE_UNICODE_WCHAR)
 
 AC_SUBST(FEATURE_LIST)
 
@@ -272,16 +252,47 @@ dnl =======================================================================
 
 AC_STDC_HEADERS
 
+dnl We don't use AM_CONFIG_HEADER to define HAVE_WCHAR_H, etc. because
+dnl the following is more straightforward and easier to understand,
+dnl especially for a newcomer.  Furthermore, AM_CONFIG_HEADER represents
+dnl false as undefined, whereas our scheme represents it as 0.  undefined
+dnl is a poor choice because it often means just that you neglected to
+dnl choose a value for some reason.
+
+dnl defines ac_cv_header_wchar_h, etc:
+AC_CHECK_HEADERS(wchar.h)
+
+if test x"$ac_cv_header_wchar_h" = xyes; then
+  HAVE_WCHAR_H_DEFINE=1
+else
+  HAVE_WCHAR_H_DEFINE=0
+fi
+AC_SUBST(HAVE_WCHAR_H_DEFINE)
+
+# Needed by Abyss on Solaris:
+
+AC_CHECK_HEADERS(sys/filio.h)
+if test x"$ac_cv_header_sys_filio_h" = xyes; then
+  HAVE_SYS_FILIO_H_DEFINE=1
+else
+  HAVE_SYS_FILIO_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_FILIO_H_DEFINE)
+
+# Needed by Abyss on Solaris:
+
+AC_CHECK_HEADERS(sys/ioctl.h)
+if test x"$ac_cv_header_sys_ioctl_h" = xyes; then
+  HAVE_SYS_IOCTL_H_DEFINE=1
+else
+  HAVE_SYS_IOCTL_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_IOCTL_H_DEFINE)
+
+
 AC_CHECK_HEADERS(stdarg.h, , [
 AC_MSG_ERROR(stdarg.h is required to build this library)
 ])
-
-AC_CHECK_HEADERS(wchar.h, , [
-AC_MSG_ERROR(wchar.h is required to build this library)
-])
-
-# I/O headers, needed by Abyss on Solaris.
-AC_CHECK_HEADERS(sys/filio.h sys/ioctl.h)
 
 
 dnl =======================================================================
@@ -326,7 +337,6 @@ dnl =======================================================================
 AC_CHECK_FUNC(vsnprintf, , [
 AC_MSG_ERROR(your C library does not provide vsnprintf)
 ])
-
 
 dnl Unicode function needed by test suites.
 AC_CHECK_FUNCS(wcsncmp)
@@ -644,14 +654,13 @@ dnl =======================================================================
 dnl Output our results.
 dnl =======================================================================
 
+dnl Note that AM_CONFIG_HEADER at the top of this file outputs another
+dnl result: xmlrpc_amconfig.h .
+
 AC_OUTPUT(xmlrpc-c-config \
           xmlrpc-c-config.test \
           Makefile.config \
           xmlrpc_config.h \
-          lib/expat/Makefile \
-          lib/expat/xmlparse/Makefile \
-          lib/expat/xmlwf/Makefile \
-          lib/expat/sample/Makefile \
           )
 chmod +x xmlrpc-c-config
 chmod +x xmlrpc-c-config.test

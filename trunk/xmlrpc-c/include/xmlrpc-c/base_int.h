@@ -14,6 +14,7 @@
 #ifndef  XMLRPC_C_BASE_INT_H_INCLUDED
 #define  XMLRPC_C_BASE_INT_H_INCLUDED
 
+#include "xmlrpc_config.h"
 #include "bool.h"
 
 #include <xmlrpc-c/base.h>
@@ -123,7 +124,7 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           size_t *             const lengthP,
                           const char **        const stringValueP);
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 void
 xmlrpc_read_string_w_old(xmlrpc_env *     const envP,
                          xmlrpc_value *   const valueP,
