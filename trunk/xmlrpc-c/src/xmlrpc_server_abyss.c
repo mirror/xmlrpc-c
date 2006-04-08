@@ -299,7 +299,7 @@ traceHandlerCalled(TSession * const abyssSessionP) {
     const char * methodDesc;
     const TRequestInfo * requestInfoP;
 
-    fprintf(stderr, "xmlrpc_server_abyss RPC2 handler called.\n");
+    fprintf(stderr, "xmlrpc_server_abyss URI path handler called.\n");
 
     SessionGetRequestInfo(abyssSessionP, &requestInfoP);
 
@@ -341,7 +341,8 @@ processCall(TSession *        const abyssSessionP,
     xmlrpc_env env;
 
     if (trace)
-        fprintf(stderr, "xmlrpc_server_abyss RPC2 handler processing RPC.\n");
+        fprintf(stderr,
+                "xmlrpc_server_abyss URI path handler processing RPC.\n");
 
     xmlrpc_env_init(&env);
 
@@ -397,7 +398,7 @@ struct uriHandlerXmlrpc {
    that is specific to the Xmlrpc-c handler.
 -----------------------------------------------------------------------------*/
     xmlrpc_registry * registryP;
-    const char *      filename;  /* malloc'ed */
+    const char *      uriPath;  /* malloc'ed */
 };
 
 
@@ -407,7 +408,7 @@ termUriHandler(void * const arg) {
 
     struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = arg;
 
-    xmlrpc_strfree(uriHandlerXmlrpcP->filename);
+    xmlrpc_strfree(uriHandlerXmlrpcP->uriPath);
     free(uriHandlerXmlrpcP);
 }
 
@@ -442,8 +443,8 @@ handleXmlrpcReq(URIHandler2 * const this,
     /* Note that requestInfoP->uri is not the whole URI.  It is just
        the "file name" part of it.
     */
-    if (strcmp(requestInfoP->uri, uriHandlerXmlrpcP->filename) != 0)
-        /* It's for the filename (e.g. "/RPC2") that we're supposed to
+    if (strcmp(requestInfoP->uri, uriHandlerXmlrpcP->uriPath) != 0)
+        /* It's for the path (e.g. "/RPC2") that we're supposed to
            handle.
         */
         *handledP = FALSE;
@@ -481,7 +482,7 @@ handleXmlrpcReq(URIHandler2 * const this,
         }
     }
     if (trace_abyss)
-        fprintf(stderr, "xmlrpc_server_abyss RPC2 handler returning.\n");
+        fprintf(stderr, "xmlrpc_server_abyss URI path handler returning.\n");
 }
 
 
@@ -690,7 +691,7 @@ xmlrpc_server_abyss_run(void) {
 void
 xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                 TServer *         const srvP,
-                                const char *      const filename,
+                                const char *      const uriPath,
                                 xmlrpc_registry * const registryP) {
     
     struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
@@ -702,7 +703,7 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
     MALLOCVAR_NOFAIL(uriHandlerXmlrpcP);
 
     uriHandlerXmlrpcP->registryP = registryP;
-    uriHandlerXmlrpcP->filename  = strdup(filename);
+    uriHandlerXmlrpcP->uriPath   = strdup(uriPath);
 
     uriHandler.handleReq2 = handleXmlrpcReq;
     uriHandler.handleReq1 = NULL;
@@ -723,8 +724,9 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
 
 
 void
-xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
-                                 xmlrpc_registry * const registryP) {
+xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
+                                  const char *      const uriPath,
+                                  xmlrpc_registry * const registryP) {
 
     xmlrpc_env env;
 
@@ -732,7 +734,7 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
 
     trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
                                  
-    xmlrpc_server_abyss_set_handler(&env, srvP, "/RPC2", registryP);
+    xmlrpc_server_abyss_set_handler(&env, srvP, uriPath, registryP);
     
     if (env.fault_occurred)
         abort();
@@ -740,6 +742,15 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
     ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
 
     xmlrpc_env_clean(&env);
+}
+
+
+
+void
+xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
+                                 xmlrpc_registry * const registryP) {
+
+    xmlrpc_server_abyss_set_handlers2(srvP, "/RPC2", registryP);
 }
 
 
@@ -769,7 +780,7 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
     
     ConfReadServerFile(parmsP->config_file_name, &srv);
         
-    xmlrpc_server_abyss_set_handlers(&srv, parmsP->registryP);
+    xmlrpc_server_abyss_set_handlers2(&srv, "/RPC2", parmsP->registryP);
         
     ServerInit(&srv);
     
@@ -874,6 +885,7 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
 
     if (!envP->fault_occurred) {
         TServer server;
+        const char * uriPath;
 
         if (socketBound)
             ServerCreateSocket(&server, "XmlRpcServer", socketFd,
@@ -884,7 +896,14 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
 
         setAdditionalServerParms(parmsP, parmSize, &server);
 
-        xmlrpc_server_abyss_set_handlers(&server, parmsP->registryP);
+        if (parmSize >= XMLRPC_APSIZE(uri_path) &&
+            parmsP->uri_path)
+            uriPath = parmsP->uri_path;
+        else
+            uriPath = "/RPC2";
+
+        xmlrpc_server_abyss_set_handlers2(&server, uriPath,
+                                          parmsP->registryP);
         
         ServerInit(&server);
         
@@ -953,7 +972,7 @@ xmlrpc_server_abyss_init_registry(void) {
     die_if_fault_occurred(&env);
     xmlrpc_env_clean(&env);
 
-    xmlrpc_server_abyss_set_handlers(&globalSrv, builtin_registryP);
+    xmlrpc_server_abyss_set_handlers2(&globalSrv, "/RPC2", builtin_registryP);
 }
 
 
@@ -972,9 +991,9 @@ xmlrpc_server_abyss_registry(void) {
 
 /* A quick & easy shorthand for adding a method. */
 void 
-xmlrpc_server_abyss_add_method (char *        const method_name,
-                                xmlrpc_method const method,
-                                void *        const user_data) {
+xmlrpc_server_abyss_add_method(char *        const method_name,
+                               xmlrpc_method const method,
+                               void *        const user_data) {
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
@@ -987,11 +1006,11 @@ xmlrpc_server_abyss_add_method (char *        const method_name,
 
 
 void
-xmlrpc_server_abyss_add_method_w_doc (char *        const method_name,
-                                      xmlrpc_method const method,
-                                      void *        const user_data,
-                                      char *        const signature,
-                                      char *        const help) {
+xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
+                                     xmlrpc_method const method,
+                                     void *        const user_data,
+                                     char *        const signature,
+                                     char *        const help) {
 
     xmlrpc_env env;
     xmlrpc_env_init(&env);

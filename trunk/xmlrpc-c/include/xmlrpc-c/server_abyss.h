@@ -54,6 +54,7 @@ typedef struct {
     xmlrpc_bool       dont_advertise;
     xmlrpc_bool       socket_bound;
     xmlrpc_socket     socket_handle;
+    const char *      uri_path;
 } xmlrpc_server_abyss_parms;
 
 
@@ -71,6 +72,11 @@ void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parms,
                     unsigned int                      const parm_size);
+
+void
+xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
+                                  const char *      const filename,
+                                  xmlrpc_registry * const registryP);
 
 void
 xmlrpc_server_abyss_set_handlers(TServer *         const serverP,

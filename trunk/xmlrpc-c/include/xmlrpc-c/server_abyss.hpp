@@ -22,6 +22,7 @@ public:
         constrOpt & keepaliveMaxConn  (uint           const& arg);
         constrOpt & timeout           (uint           const& arg);
         constrOpt & dontAdvertise     (bool           const& arg);
+        constrOpt & uriPath           (std::string    const& arg);
 
         struct value {
             xmlrpc_c::registryPtr      registryPtr;
@@ -33,6 +34,7 @@ public:
             uint           keepaliveMaxConn;
             uint           timeout;
             bool           dontAdvertise;
+            std::string    uriPath;
         } value;
         struct {
             bool registryPtr;
@@ -44,6 +46,7 @@ public:
             bool keepaliveMaxConn;
             bool timeout;
             bool dontAdvertise;
+            bool uriPath;
         } present;
     };
 
@@ -93,15 +96,18 @@ private:
 
 void
 server_abyss_set_handlers(TServer *          const  srvP,
-                          xmlrpc_c::registry const& registry);
+                          xmlrpc_c::registry const& registry,
+                          std::string        const& uriPath = "/RPC2");
 
 void
-server_abyss_set_handlers(TServer *                  const srvP,
-                          const xmlrpc_c::registry * const registryP);
+server_abyss_set_handlers(TServer *                  const  srvP,
+                          const xmlrpc_c::registry * const  registryP,
+                          std::string                const& uriPath = "/RPC2");
 
 void
 server_abyss_set_handlers(TServer *             const srvP,
-                          xmlrpc_c::registryPtr const registryPtr);
+                          xmlrpc_c::registryPtr const registryPtr,
+                          std::string           const& uriPath = "/RPC2");
 
 } // namespace
 

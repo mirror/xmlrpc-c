@@ -86,6 +86,43 @@ public:
 
 
 
+class addHandlerTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "addHandlerTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+        TServer abyssServer;
+
+        ServerCreate(&abyssServer, "testserver", 8080, NULL, NULL);
+
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        
+        registryPtr myRegistryP(new registry);
+        
+        myRegistryP->addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        server_abyss_set_handlers(&abyssServer, myRegistry);
+
+        server_abyss_set_handlers(&abyssServer, &myRegistry);
+        
+        server_abyss_set_handlers(&abyssServer, myRegistryP);
+
+        server_abyss_set_handlers(&abyssServer, myRegistry, "/RPC3");
+
+        server_abyss_set_handlers(&abyssServer, &myRegistry, "/RPC3");
+        
+        server_abyss_set_handlers(&abyssServer, myRegistryP, "/RPC3");
+
+        ServerFree(&abyssServer);
+    }
+};
+
+
+
 string
 serverAbyssTestSuite::suiteName() {
     return "serverAbyssTestSuite";
@@ -93,7 +130,9 @@ serverAbyssTestSuite::suiteName() {
 
 
 void
-serverAbyssTestSuite::runtests(unsigned int) {
+serverAbyssTestSuite::runtests(unsigned int const indentation) {
+
+    addHandlerTestSuite().run(indentation+1);
 
     registry myRegistry;
         
@@ -121,14 +160,12 @@ serverAbyssTestSuite::runtests(unsigned int) {
         serverAbyss abyssServer(serverAbyss::constrOpt()
                                 .registryP(&myRegistry)
                                 .portNumber(12345)
-                                .logFileName("/tmp/xmlrpc_log")
             );
     }
     {
         serverAbyss abyssServer(serverAbyss::constrOpt()
                                 .registryPtr(myRegistryP)
                                 .portNumber(12345)
-                                .logFileName("/tmp/xmlrpc_log")
             );
 
         EXPECT_ERROR(  // Both registryP and registryPtr
@@ -153,6 +190,20 @@ serverAbyssTestSuite::runtests(unsigned int) {
             );
     }
 
+    {
+        // Test all the options
+        serverAbyss abyssServer(serverAbyss::constrOpt()
+                                .registryPtr(myRegistryP)
+                                .portNumber(12345)
+                                .logFileName("/tmp/logfile")
+                                .keepaliveTimeout(5)
+                                .keepaliveMaxConn(4)
+                                .timeout(20)
+                                .dontAdvertise(true)
+                                .uriPath("/xmlrpc")
+            );
+
+    }
     {
         serverAbyss abyssServer(
             myRegistry,

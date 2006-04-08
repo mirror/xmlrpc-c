@@ -109,9 +109,11 @@ serverAbyss::constrOpt::constrOpt() {
     present.keepaliveMaxConn = false;
     present.timeout          = false;
     present.dontAdvertise    = false;
+    present.uriPath          = false;
 
     // Set default values
     value.dontAdvertise = false;
+    value.uriPath       = string("/RPC2");
 }
 
 
@@ -133,6 +135,7 @@ DEFINE_OPTION_SETTER(keepaliveTimeout, uint);
 DEFINE_OPTION_SETTER(keepaliveMaxConn, uint);
 DEFINE_OPTION_SETTER(timeout,          uint);
 DEFINE_OPTION_SETTER(dontAdvertise,    bool);
+DEFINE_OPTION_SETTER(uriPath,          string);
 
 
 
@@ -200,7 +203,9 @@ serverAbyss::initialize(constrOpt const& opt) {
     try {
         setAdditionalServerParms(opt);
         
-        xmlrpc_c::server_abyss_set_handlers(&this->cServer, registryP);
+        xmlrpc_c::server_abyss_set_handlers(&this->cServer,
+                                            registryP,
+                                            opt.value.uriPath);
         
         if (opt.present.portNumber || opt.present.socketFd)
             ServerInit(&this->cServer);
@@ -290,27 +295,36 @@ serverAbyss::runConn(int const socketFd) {
 
 void
 server_abyss_set_handlers(TServer * const  srvP,
-                          registry  const& registry) {
+                          registry  const& registry,
+                          string    const& uriPath) {
 
-    xmlrpc_server_abyss_set_handlers(srvP, registry.c_registry());
+    xmlrpc_server_abyss_set_handlers2(srvP,
+                                      uriPath.c_str(),
+                                      registry.c_registry());
 }
 
 
 
 void
-server_abyss_set_handlers(TServer *        const srvP,
-                          const registry * const registryP) {
+server_abyss_set_handlers(TServer *        const  srvP,
+                          const registry * const  registryP,
+                          string           const& uriPath) {
 
-    xmlrpc_server_abyss_set_handlers(srvP, registryP->c_registry());
+    xmlrpc_server_abyss_set_handlers2(srvP,
+                                      uriPath.c_str(),
+                                      registryP->c_registry());
 }
 
 
 
 void
-server_abyss_set_handlers(TServer *   const srvP,
-                          registryPtr const registryPtr) {
+server_abyss_set_handlers(TServer *   const  srvP,
+                          registryPtr const  registryPtr,
+                          string      const& uriPath) {
 
-    xmlrpc_server_abyss_set_handlers(srvP, registryPtr->c_registry());
+    xmlrpc_server_abyss_set_handlers2(srvP,
+                                      uriPath.c_str(),
+                                      registryPtr->c_registry());
 }
 
 
