@@ -14,7 +14,7 @@
 LIBTOOL = $(SRCDIR)/libtool
 LINK = $(LIBTOOL) --mode=link $(CCLD)
 
-GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline
+GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline -Wundef
   # We need -Wwrite-strings after we fix all the missing consts
 
 GCC_C_WARNINGS = $(GCC_WARNINGS) \
@@ -76,6 +76,10 @@ LIBXMLRPC_CLIENT++       = $(BUILDDIR)/src/cpp/libxmlrpc_client++.a
 LIBXMLRPC_SERVER++       = $(BUILDDIR)/src/cpp/libxmlrpc_server++.a
 LIBXMLRPC_SERVER_ABYSS++ = $(BUILDDIR)/src/cpp/libxmlrpc_server_abyss++.a
 
+CASPRINTF                = $(BUILDDIR)/lib/util/casprintf.o
+
+UTILS = $(CASPRINTF)
+
 ##############################################################################
 #                           BUILD RULES                                      #
 ##############################################################################
@@ -134,6 +138,10 @@ $(BUILDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libwww_transport/Makefile \
 	    $(notdir $@)
 
+$(LIBXMLRPC_ABYSS): FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
+	    $(notdir $@)
+
 $(LIBXMLRPC_XMLPARSE): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
 	    $(notdir $@)
@@ -163,6 +171,10 @@ $(LIBXMLRPC_CGI_A): $(LIBXMLRPC_CGI)
 $(LIBXMLRPC_ABYSS_A): $(LIBXMLRPC_ABYSS)
 $(LIBXMLRPC_XMLPARSE_A): $(LIBXMLRPC_XMLPARSE)
 $(LIBXMLRPC_XMLTOK_A): $(LIBXMLRPC_XMLTOK)
+
+$(UTILS): FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/util/Makefile \
+	    $(notdir $@)
 
 # About version.h:  This is a built header file, which means it is a supreme
 # pain in the ass.  The biggest problem is that when we automatically make
