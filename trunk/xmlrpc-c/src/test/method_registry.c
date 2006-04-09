@@ -246,6 +246,8 @@ test_signature(void) {
 
     xmlrpc_env_init(&env);
 
+    printf("  Running signature tests.");
+
     registryP = xmlrpc_registry_new(&env);
     TEST_NO_FAULT(&env);
 
@@ -284,13 +286,14 @@ test_signature(void) {
     xmlrpc_registry_free(registryP);
 
     xmlrpc_env_clean(&env);
+
+    printf("\n");
 }
 
 
 
 static void
-test_system_multicall(xmlrpc_registry * const registryP,
-                      xmlrpc_value *    const argArrayP) {
+test_system_multicall(xmlrpc_registry * const registryP) {
 /*----------------------------------------------------------------------------
    Test system.multicall
 -----------------------------------------------------------------------------*/
@@ -301,8 +304,16 @@ test_system_multicall(xmlrpc_registry * const registryP,
     char *bar_string, *nosuch_string, *multi_string;
     char *bogus1_string, *bogus2_string;
     xmlrpc_value * valueP;
+    xmlrpc_value * argArrayP;
 
     xmlrpc_env_init(&env);
+
+    printf("  Running multicall tests.");
+
+    /* Build an argument array for our calls. */
+    argArrayP = xmlrpc_build_value(&env, "(ii)",
+                                   (xmlrpc_int32) 25, (xmlrpc_int32) 17); 
+    TEST_NO_FAULT(&env);
 
     multiP = xmlrpc_build_value(&env,
                                "(({s:s,s:V}{s:s,s:V}{s:s,s:V}"
@@ -351,37 +362,27 @@ test_system_multicall(xmlrpc_registry * const registryP,
     free(bogus1_string);
     free(bogus2_string);
     
+    xmlrpc_DECREF(argArrayP);
+
     xmlrpc_env_clean(&env);
+
+    printf("\n");
 }
 
 
 
-void
-test_method_registry(void) {
+static void
+testCall(xmlrpc_registry * const registryP) {
 
-    xmlrpc_env env, env2;
+    xmlrpc_env env;
+    xmlrpc_env env2;
     xmlrpc_value * argArrayP;
     xmlrpc_value * valueP;
-    xmlrpc_registry *registryP;
-    xmlrpc_mem_block *response;
     xmlrpc_int32 i;
 
+    printf("  Running call tests.");
+
     xmlrpc_env_init(&env);
-
-    printf("Running method registry tests");
-
-    /* Create a new registry. */
-    registryP = xmlrpc_registry_new(&env);
-    TEST_NO_FAULT(&env);
-    TEST(registryP != NULL);
-
-    /* Add some test methods. */
-    xmlrpc_registry_add_method(&env, registryP, NULL, "test.foo",
-                               test_foo, FOO_USER_DATA);
-    TEST_NO_FAULT(&env);
-    xmlrpc_registry_add_method(&env, registryP, NULL, "test.bar",
-                               test_bar, BAR_USER_DATA);
-    TEST_NO_FAULT(&env);
 
     /* Build an argument array for our calls. */
     argArrayP = xmlrpc_build_value(&env, "(ii)",
@@ -412,24 +413,30 @@ test_method_registry(void) {
     TEST_FAULT(&env2, XMLRPC_NO_SUCH_METHOD_ERROR);
     xmlrpc_env_clean(&env2);
 
-    test_system_multicall(registryP, argArrayP);
+    xmlrpc_DECREF(argArrayP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
 
 
-    /* PASS bogus XML data and make sure our parser pukes gracefully.
-    ** (Because of the way the code is laid out, and the presence of other
-    ** test suites, this lets us skip tests for invalid XML-RPC data.) */
-    xmlrpc_env_init(&env2);
-    response = xmlrpc_registry_process_call(&env, registryP, NULL,
-                                            expat_error_data,
-                                            strlen(expat_error_data));
-    TEST_NO_FAULT(&env);
-    TEST(response != NULL);
-    valueP = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(response),
-                                  xmlrpc_mem_block_size(response));
-    TEST(valueP == NULL);
-    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
-    xmlrpc_mem_block_free(response);
-    xmlrpc_env_clean(&env2);
+
+static void
+testDefaultMethod(xmlrpc_registry * const registryP) {
+    
+    xmlrpc_env env;
+    xmlrpc_value * argArrayP;
+    xmlrpc_value * valueP;
+    xmlrpc_int32 i;
+ 
+    xmlrpc_env_init(&env);
+
+    printf("  Running default method tests.");
+
+    /* Build an argument array for our calls. */
+    argArrayP = xmlrpc_build_value(&env, "(ii)",
+                                   (xmlrpc_int32) 25, (xmlrpc_int32) 17); 
 
     xmlrpc_registry_set_default_method(&env, registryP, &test_default,
                                        FOO_USER_DATA);
@@ -447,13 +454,71 @@ test_method_registry(void) {
                                        BAR_USER_DATA);
     TEST_NO_FAULT(&env);
 
+    xmlrpc_DECREF(argArrayP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
+
+
+
+void
+test_method_registry(void) {
+
+    xmlrpc_env env, env2;
+    xmlrpc_value * valueP;
+    xmlrpc_registry *registryP;
+    xmlrpc_mem_block *response;
+
+    xmlrpc_env_init(&env);
+
+    printf("Running method registry tests.");
+
+    /* Create a new registry. */
+    registryP = xmlrpc_registry_new(&env);
+    TEST_NO_FAULT(&env);
+    TEST(registryP != NULL);
+
+    /* Add some test methods. */
+    xmlrpc_registry_add_method(&env, registryP, NULL, "test.foo",
+                               test_foo, FOO_USER_DATA);
+    TEST_NO_FAULT(&env);
+    xmlrpc_registry_add_method(&env, registryP, NULL, "test.bar",
+                               test_bar, BAR_USER_DATA);
+    TEST_NO_FAULT(&env);
+
+    printf("\n");
+    testCall(registryP);
+
+    test_system_multicall(registryP);
+
+    /* PASS bogus XML data and make sure our parser pukes gracefully.
+    ** (Because of the way the code is laid out, and the presence of other
+    ** test suites, this lets us skip tests for invalid XML-RPC data.) */
+    xmlrpc_env_init(&env2);
+    response = xmlrpc_registry_process_call(&env, registryP, NULL,
+                                            expat_error_data,
+                                            strlen(expat_error_data));
+    TEST_NO_FAULT(&env);
+    TEST(response != NULL);
+    valueP = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(response),
+                                  xmlrpc_mem_block_size(response));
+    TEST(valueP == NULL);
+    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
+    xmlrpc_mem_block_free(response);
+    xmlrpc_env_clean(&env2);
+
+    printf("\n");
+    testDefaultMethod(registryP);
+
     test_signature();
     
     /* Test cleanup code (w/memprof). */
     xmlrpc_registry_free(registryP);
-    xmlrpc_DECREF(argArrayP);
 
     printf("\n");
 
     xmlrpc_env_clean(&env);
 }
+
