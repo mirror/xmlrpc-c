@@ -54,6 +54,7 @@ testServerParms(void) {
     parms.timeout = 50;
     parms.dont_advertise = TRUE;
     parms.uri_path = "/RPC9";
+    parms.chunk_response = TRUE;
 };
 
 
@@ -89,5 +90,3 @@ test_server_abyss(void) {
     printf("\n");
     printf("Abyss server tests done.\n");
 }
-
-

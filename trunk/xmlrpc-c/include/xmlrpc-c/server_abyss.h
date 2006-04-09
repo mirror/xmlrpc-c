@@ -55,6 +55,7 @@ typedef struct {
     xmlrpc_bool       socket_bound;
     xmlrpc_socket     socket_handle;
     const char *      uri_path;
+    xmlrpc_bool       chunk_response;
 } xmlrpc_server_abyss_parms;
 
 

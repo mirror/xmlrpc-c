@@ -23,6 +23,7 @@ public:
         constrOpt & timeout           (uint           const& arg);
         constrOpt & dontAdvertise     (bool           const& arg);
         constrOpt & uriPath           (std::string    const& arg);
+        constrOpt & chunkResponse     (bool           const& arg);
 
         struct value {
             xmlrpc_c::registryPtr      registryPtr;
@@ -35,6 +36,7 @@ public:
             uint           timeout;
             bool           dontAdvertise;
             std::string    uriPath;
+            bool           chunkResponse;
         } value;
         struct {
             bool registryPtr;
@@ -47,6 +49,7 @@ public:
             bool timeout;
             bool dontAdvertise;
             bool uriPath;
+            bool chunkResponse;
         } present;
     };
 

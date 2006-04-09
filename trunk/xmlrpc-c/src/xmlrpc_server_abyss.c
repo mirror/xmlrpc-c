@@ -44,7 +44,8 @@ static void
 sendXmlData(xmlrpc_env * const envP,
             TSession *   const abyssSessionP, 
             const char * const buffer, 
-            size_t       const len) {
+            size_t       const len,
+            bool         const chunked) {
 
     const char * http_cookie = NULL;
         /* This used to set http_cookie to getenv("HTTP_COOKIE"), but
@@ -59,13 +60,13 @@ sendXmlData(xmlrpc_env * const envP,
        chunked in the most basic case, but chunked if the client explicitly
        requested keepalive.  I think it's better not to chunk, because
        it's simpler, so I removed this in 1.05.  I don't know what the
-       purpose of chunking would be, and an original comments suggests
+       purpose of chunking would be, and an original comment suggests
        the author wasn't sure chunking was a good idea.
 
-       But we should make a user option to select chunked response.
+       In 1.06 we added the user option to chunk.
     */
-       
-    /* ResponseChunked(abyssSessionP); */
+    if (chunked)
+        ResponseChunked(abyssSessionP);
 
     ResponseStatus(abyssSessionP, 200);
     
@@ -331,6 +332,7 @@ static void
 processCall(TSession *        const abyssSessionP,
             size_t            const contentSize,
             xmlrpc_registry * const registryP,
+            bool              const wantChunk,
             const char *      const trace) {
 /*----------------------------------------------------------------------------
    Handle an RPC request.  This is an HTTP request that has the proper form
@@ -365,7 +367,8 @@ processCall(TSession *        const abyssSessionP,
                 /* Send out the result. */
                 sendXmlData(&env, abyssSessionP, 
                             XMLRPC_MEMBLOCK_CONTENTS(char, output),
-                            XMLRPC_MEMBLOCK_SIZE(char, output));
+                            XMLRPC_MEMBLOCK_SIZE(char, output),
+                            wantChunk);
                 
                 XMLRPC_MEMBLOCK_FREE(char, output);
             }
@@ -399,6 +402,8 @@ struct uriHandlerXmlrpc {
 -----------------------------------------------------------------------------*/
     xmlrpc_registry * registryP;
     const char *      uriPath;  /* malloc'ed */
+    bool              chunkResponse;
+        /* The handler should chunk its response whenever possible */
 };
 
 
@@ -476,7 +481,9 @@ handleXmlrpcReq(URIHandler2 * const this,
                         sendError(abyssSessionP, httpError);
                     else 
                         processCall(abyssSessionP, contentSize,
-                                    uriHandlerXmlrpcP->registryP, trace_abyss);
+                                    uriHandlerXmlrpcP->registryP,
+                                    uriHandlerXmlrpcP->chunkResponse,
+                                    trace_abyss);
                 }
             }
         }
@@ -688,11 +695,12 @@ xmlrpc_server_abyss_run(void) {
 
 
 
-void
-xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
-                                TServer *         const srvP,
-                                const char *      const uriPath,
-                                xmlrpc_registry * const registryP) {
+static void
+setHandler(xmlrpc_env *      const envP,
+           TServer *         const srvP,
+           const char *      const uriPath,
+           xmlrpc_registry * const registryP,
+           bool              const chunkResponse) {
     
     struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
     URIHandler2 uriHandler;
@@ -702,8 +710,9 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                  
     MALLOCVAR_NOFAIL(uriHandlerXmlrpcP);
 
-    uriHandlerXmlrpcP->registryP = registryP;
-    uriHandlerXmlrpcP->uriPath   = strdup(uriPath);
+    uriHandlerXmlrpcP->registryP     = registryP;
+    uriHandlerXmlrpcP->uriPath       = strdup(uriPath);
+    uriHandlerXmlrpcP->chunkResponse = chunkResponse;
 
     uriHandler.handleReq2 = handleXmlrpcReq;
     uriHandler.handleReq1 = NULL;
@@ -724,9 +733,21 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
 
 
 void
-xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
-                                  const char *      const uriPath,
-                                  xmlrpc_registry * const registryP) {
+xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
+                                TServer *         const srvP,
+                                const char *      const uriPath,
+                                xmlrpc_registry * const registryP) {
+
+    setHandler(envP, srvP, uriPath, registryP, false);
+}
+
+    
+
+static void
+setHandlers(TServer *         const srvP,
+            const char *      const uriPath,
+            xmlrpc_registry * const registryP,
+            bool              const chunkResponse) {
 
     xmlrpc_env env;
 
@@ -734,7 +755,7 @@ xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
 
     trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
                                  
-    xmlrpc_server_abyss_set_handler(&env, srvP, uriPath, registryP);
+    setHandler(&env, srvP, uriPath, registryP, chunkResponse);
     
     if (env.fault_occurred)
         abort();
@@ -747,10 +768,20 @@ xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
 
 
 void
+xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
+                                  const char *      const uriPath,
+                                  xmlrpc_registry * const registryP) {
+
+    setHandlers(srvP, uriPath, registryP, false);
+}
+
+
+
+void
 xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
                                  xmlrpc_registry * const registryP) {
 
-    xmlrpc_server_abyss_set_handlers2(srvP, "/RPC2", registryP);
+    setHandlers(srvP, "/RPC2", registryP, false);
 }
 
 
@@ -780,7 +811,7 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
     
     ConfReadServerFile(parmsP->config_file_name, &srv);
         
-    xmlrpc_server_abyss_set_handlers2(&srv, "/RPC2", parmsP->registryP);
+    setHandlers(&srv, "/RPC2", parmsP->registryP, false);
         
     ServerInit(&srv);
     
@@ -884,6 +915,10 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
                              &logFileName);
 
     if (!envP->fault_occurred) {
+        bool const chunkResponse =
+            parmSize >= XMLRPC_APSIZE(chunk_response) &&
+            parmsP->chunk_response;
+            
         TServer server;
         const char * uriPath;
 
@@ -902,8 +937,7 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
         else
             uriPath = "/RPC2";
 
-        xmlrpc_server_abyss_set_handlers2(&server, uriPath,
-                                          parmsP->registryP);
+        setHandlers(&server, uriPath, parmsP->registryP, chunkResponse);
         
         ServerInit(&server);
         
@@ -972,7 +1006,7 @@ xmlrpc_server_abyss_init_registry(void) {
     die_if_fault_occurred(&env);
     xmlrpc_env_clean(&env);
 
-    xmlrpc_server_abyss_set_handlers2(&globalSrv, "/RPC2", builtin_registryP);
+    setHandlers(&globalSrv, "/RPC2", builtin_registryP, false);
 }
 
 

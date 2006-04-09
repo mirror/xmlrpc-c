@@ -110,10 +110,12 @@ serverAbyss::constrOpt::constrOpt() {
     present.timeout          = false;
     present.dontAdvertise    = false;
     present.uriPath          = false;
-
+    present.chunkResponse    = false;
+    
     // Set default values
     value.dontAdvertise = false;
     value.uriPath       = string("/RPC2");
+    value.chunkResponse = false;
 }
 
 
@@ -136,6 +138,7 @@ DEFINE_OPTION_SETTER(keepaliveMaxConn, uint);
 DEFINE_OPTION_SETTER(timeout,          uint);
 DEFINE_OPTION_SETTER(dontAdvertise,    bool);
 DEFINE_OPTION_SETTER(uriPath,          string);
+DEFINE_OPTION_SETTER(chunkResponse,    bool);
 
 
 
@@ -202,6 +205,12 @@ serverAbyss::initialize(constrOpt const& opt) {
 
     try {
         setAdditionalServerParms(opt);
+        
+        // chunked response implementation is incomplete.  We must
+        // eventually get away from libxmlrpc_server_abyss and
+        // register our own handler with the Abyss server.  At that
+        // time, we'll have some place to pass
+        // opt.value.chunkResponse.
         
         xmlrpc_c::server_abyss_set_handlers(&this->cServer,
                                             registryP,
@@ -330,4 +339,3 @@ server_abyss_set_handlers(TServer *   const  srvP,
 
 
 } // namespace
-
