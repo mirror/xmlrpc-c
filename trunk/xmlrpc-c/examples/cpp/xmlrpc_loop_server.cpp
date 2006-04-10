@@ -7,6 +7,7 @@
 */
 
 #include <cassert>
+#include <iostream>
 
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
