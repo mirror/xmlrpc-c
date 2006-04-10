@@ -299,7 +299,7 @@ xmlrpc_client_call_asynch(const char * const serverUrl,
 
     validateGlobalClientExists(&env);
 
-    if (env.fault_occurred) {
+    if (!env.fault_occurred) {
         xmlrpc_value * paramArrayP;
         const char * suffix;
         va_list args;
