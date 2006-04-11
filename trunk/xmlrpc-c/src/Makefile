@@ -148,7 +148,7 @@ clean: clean-common clean-local $(SUBDIRS:%=%/clean)
 clean-local:
 	$(MAKE) -C test clean
 
-distclean: clean distclean-common
+distclean: clean-local distclean-common $(SUBDIRS:%=%/distclean)
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BUILDDIR)/transport_config.h dep-common
