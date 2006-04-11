@@ -1089,7 +1089,7 @@ addUserAgentHeader(xmlrpc_env *         const envP,
                         "User-Agent: %s Xmlrpc-c/%s Curl/%s",
                         userAgent, XMLRPC_C_VERSION, curlVersion);
         
-        if (userAgentHeader == NULL)
+        if (userAgentHeader == xmlrpc_strsol)
             xmlrpc_faultf(envP, "Couldn't allocate memory for "
                           "User-Agent header");
         else {
@@ -1113,7 +1113,7 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
         xmlrpc_asprintf(&authorizationHeader, "Authorization: %s",
                         basicAuthInfo);
             
-        if (authorizationHeader == NULL)
+        if (authorizationHeader == xmlrpc_strsol)
             xmlrpc_faultf(envP, "Couldn't allocate memory for "
                           "Authorization header");
         else {

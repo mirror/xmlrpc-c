@@ -4,11 +4,14 @@
 
 #include <stdarg.h>
 #include <string.h>
+
 #include "xmlrpc-c/base_int.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern const char * const xmlrpc_strsol;
 
 void
 xmlrpc_vasprintf(const char ** const retvalP,

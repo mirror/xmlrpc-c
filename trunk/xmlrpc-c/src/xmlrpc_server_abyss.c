@@ -34,27 +34,46 @@ static void die_if_fault_occurred(xmlrpc_env *env) {
 
 
 
-/*=========================================================================
-**  send_xml_data
-**=========================================================================
-**  Blast some XML data back to the client.
-*/
+static void
+addAuthCookie(xmlrpc_env * const envP,
+              TSession *   const abyssSessionP,
+              const char * const authCookie) {
+
+    const char * cookieResponse;
+    
+    xmlrpc_asprintf(&cookieResponse, "auth=%s", authCookie);
+    
+    if (cookieResponse == xmlrpc_strsol)
+        xmlrpc_faultf(envP, "Insufficient memory to generate cookie "
+                      "response header.");
+    else {
+        ResponseAddField(abyssSessionP, "Set-Cookie", cookieResponse);
+    
+        xmlrpc_strfree(cookieResponse);
+    }
+}   
+    
+
 
 static void 
 sendXmlData(xmlrpc_env * const envP,
             TSession *   const abyssSessionP, 
-            const char * const buffer, 
+            const char * const body, 
             size_t       const len,
             bool         const chunked) {
+/*----------------------------------------------------------------------------
+   Generate an HTTP response containing body 'body' of length 'len'
+   characters.
 
+   This is meant to run in the context of an Abyss URI handler for
+   Abyss session 'abyssSessionP'.
+-----------------------------------------------------------------------------*/
     const char * http_cookie = NULL;
         /* This used to set http_cookie to getenv("HTTP_COOKIE"), but
            that doesn't make any sense -- environment variables are not
            appropriate for this.  So for now, cookie code is disabled.
            - Bryan 2004.10.03.
         */
-
-    /* fwrite(buffer, sizeof(char), len, stderr); */
 
     /* Various bugs before Xmlrpc-c 1.05 caused the response to be not
        chunked in the most basic case, but chunked if the client explicitly
@@ -69,25 +88,14 @@ sendXmlData(xmlrpc_env * const envP,
         ResponseChunked(abyssSessionP);
 
     ResponseStatus(abyssSessionP, 200);
-    
-    if (http_cookie) {
+
+    if (http_cookie)
         /* There's an auth cookie, so pass it back in the response. */
+        addAuthCookie(envP, abyssSessionP, http_cookie);
 
-        const char * cookieResponse;
- 
-        xmlrpc_asprintf(&cookieResponse, "auth=%s", http_cookie);
-        
-        /* Return abyss response. */
-        ResponseAddField(abyssSessionP, "Set-Cookie", cookieResponse);
-
-        xmlrpc_strfree(cookieResponse);
-    }   
-    
     if ((size_t)(uint32_t)len != len)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "XML-RPC method generated a response too "
-            "large for Abyss to send");
+        xmlrpc_faultf(envP, "XML-RPC method generated a response too "
+                      "large for Abyss to send");
     else {
         uint32_t const abyssLen = (uint32_t)len;
 
@@ -95,7 +103,7 @@ sendXmlData(xmlrpc_env * const envP,
         ResponseContentLength(abyssSessionP, abyssLen);
         
         ResponseWriteStart(abyssSessionP);
-        ResponseWriteBody(abyssSessionP, buffer, abyssLen);
+        ResponseWriteBody(abyssSessionP, body, abyssLen);
         ResponseWriteEnd(abyssSessionP);
     }
 }

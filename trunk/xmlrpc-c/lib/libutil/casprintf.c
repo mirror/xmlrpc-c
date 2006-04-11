@@ -46,21 +46,29 @@ simpleVasprintf(char **      const retvalP,
 
 
 
+const char * const xmlrpc_strsol = "[insufficient memory to build string]";
+
+
+
 void
 xmlrpc_vasprintf(const char ** const retvalP,
                  const char *  const fmt,
                  va_list             varargs) {
     
-    char * retval;
+    char * string;
 
 #if HAVE_ASPRINTF
-    vasprintf(&retval, fmt, varargs);
+    vasprintf(&string, fmt, varargs);
 #else
-    simpleVasprintf(&retval, fmt, varargs);
+    simpleVasprintf(&string, fmt, varargs);
 #endif
 
-    *retvalP = retval;
+    if (string == NULL)
+        *retvalP = xmlrpc_strsol;
+    else
+        *retvalP = string;
 }
+
 
 
 void GNU_PRINTF_ATTR(2,3)
@@ -79,5 +87,7 @@ xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...) {
 
 void
 xmlrpc_strfree(const char * const string) {
-    free((void *)string);
+
+    if (string != xmlrpc_strsol)
+        free((void *)string);
 }
