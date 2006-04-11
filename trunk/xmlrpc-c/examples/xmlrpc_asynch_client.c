@@ -76,6 +76,7 @@ main(int           const argc,
     char * const methodName = "sample.add";
 
     xmlrpc_env env;
+    xmlrpc_client * clientP;
     xmlrpc_int adder;
 
     if (argc-1 > 0) {
@@ -86,8 +87,12 @@ main(int           const argc,
     /* Initialize our error environment variable */
     xmlrpc_env_init(&env);
 
-    /* Create the Xmlrpc-c client object */
-    xmlrpc_client_init2(&env, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0);
+    /* Required before any use of Xmlrpc-c client library: */
+    xmlrpc_client_setup_global_const(&env);
+    die_if_fault_occurred(&env);
+
+    xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0,
+                         &clientP);
     die_if_fault_occurred(&env);
 
     for (adder = 0; adder < 3; ++adder) {
@@ -96,7 +101,7 @@ main(int           const argc,
                "of 5 and %d...\n", url, methodName, adder);
 
         /* request the remote procedure call */
-        xmlrpc_client_call_asynch(url, methodName,
+        xmlrpc_client_start_rpcf(&env, clientP, url, methodName,
                                   handle_sample_add_response, NULL,
                                   "(ii)", (xmlrpc_int32) 5, adder);
         die_if_fault_occurred(&env);
@@ -107,12 +112,11 @@ main(int           const argc,
     /* Wait for all RPCs to be done.  With some transports, this is also
        what causes them to go.
     */
-    xmlrpc_client_event_loop_finish_asynch();
+    xmlrpc_client_event_loop_finish(clientP);
 
     printf("All RPCs finished.\n");
 
-    /* Destroy the Xmlrpc-c client object */
-    xmlrpc_client_cleanup();
+    xmlrpc_client_destroy(clientP);
 
     return 0;
 }
