@@ -159,7 +159,7 @@ $(LIBXMLRPC) $(LIBXMLRPC_CLIENT) $(LIBXMLRPC_SERVER): FORCE
 	    $(notdir $@)
 
 $(LIBXMLRPC++) $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_SERVER++) \
-  $(LIBXMLRPC+SERVER_ABYSS++): FORCE
+  $(LIBXMLRPC_SERVER_ABYSS++): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
 
