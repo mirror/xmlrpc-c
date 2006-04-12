@@ -22,6 +22,8 @@ class testSuite {
      myTestSuite().run(0)
 -----------------------------------------------------------------------------*/
 public:
+    virtual ~testSuite();
+
     void run(unsigned int const indentation);
 
     virtual void runtests(unsigned int const) {

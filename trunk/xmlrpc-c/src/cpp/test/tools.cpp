@@ -9,6 +9,11 @@ using girerr::throwf;
 
 using namespace std;
 
+testSuite::~testSuite() {
+}
+
+
+
 void
 testSuite::run(unsigned int const indentation) {
     try {
