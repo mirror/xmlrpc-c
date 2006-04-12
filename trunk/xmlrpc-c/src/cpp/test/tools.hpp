@@ -27,7 +27,7 @@ public:
     virtual void runtests(unsigned int const) {
         throw(error("test suite does not have a runtests() method"));
     };
-    virtual string suiteName() {
+    virtual std::string suiteName() {
         return "unnamed test suite";
     }
 };
@@ -40,9 +40,9 @@ logFailedTest(const char * const fileName,
               const char * const statement);
 
 error
-fileLineError(string       const filename,
+fileLineError(std::string  const filename,
               unsigned int const lineNumber,
-              string       const description);
+              std::string  const description);
 
 #define TEST(statement) \
     do { \
