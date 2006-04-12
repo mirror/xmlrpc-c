@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
@@ -65,10 +66,14 @@ SessionGetReadData(TSession *    const sessionP,
 
     *outStartP = &sessionP->conn->buffer[bufferPos];
 
+    assert(bufferPos <= sessionP->conn->buffersize);
+
     *outLenP = MIN(max, sessionP->conn->buffersize - bufferPos);
 
     /* move pointer past the bytes we are returning */
     sessionP->conn->bufferpos += *outLenP;
+
+    assert(sessionP->conn->bufferpos <= sessionP->conn->buffersize);
 }
 
 
