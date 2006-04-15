@@ -67,7 +67,14 @@ DETAILED RELEASE HISTORY:
 (BJH means Bryan Henderson <bryanh@giraffe-data.com>)
 (SAB means Steven A. Bone <sbone@pobox.com>)
 
+1.03.14 - 06.04.15
+
+  *BJH: Fix int/size_t mismatch in xmlrpc_server_abyss.c (manifests on 64
+        bit systems).
+
 1.03.13 - 06.04.05
+
+  *BJH: Fix build on system with no wchar_t.
 
   *BJH: Abyss XML-RPC server accepts (ignores) parameters after
         "text/xml" in Content-type header from client.

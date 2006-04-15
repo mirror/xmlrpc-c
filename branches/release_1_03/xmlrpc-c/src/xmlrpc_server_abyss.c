@@ -126,9 +126,9 @@ traceChunkRead(TSession * const abyssSessionP) {
 
 static void
 get_buffer_data(TSession * const r, 
-                int        const max, 
+                size_t     const max, 
                 char **    const out_start, 
-                int *      const out_len) {
+                size_t *   const out_len) {
 
     /* Point to the start of our data. */
     *out_start = &r->conn->buffer[r->conn->bufferpos];
