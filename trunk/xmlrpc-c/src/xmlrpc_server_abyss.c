@@ -2,6 +2,7 @@
 
 #include "xmlrpc_config.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -186,6 +187,8 @@ getBody(xmlrpc_env *        const envP,
             SessionGetReadData(abyssSessionP, contentSize - bytesRead, 
                                &chunkPtr, &chunkLen);
             bytesRead += chunkLen;
+
+            assert(bytesRead <= contentSize);
 
             XMLRPC_MEMBLOCK_APPEND(char, envP, body, chunkPtr, chunkLen);
             if (bytesRead < contentSize)
