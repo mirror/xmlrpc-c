@@ -69,6 +69,17 @@ xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            const envP,
                                      void *                  const userData);
 
 
+typedef void xmlrpc_server_shutdown_fn(xmlrpc_env *, void *, const char *);
+    /* A function that shuts down a server that uses a registry.
+       Second argument is context specific to that function; third
+       argument is a comment to describe the shutdown.
+    */
+
+void
+xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
+                             xmlrpc_server_shutdown_fn * const shutdownFn,
+                             void *                      const context);
+
 /*----------------------------------------------------------------------------
    Lower interface -- services to be used by an HTTP request handler
 -----------------------------------------------------------------------------*/

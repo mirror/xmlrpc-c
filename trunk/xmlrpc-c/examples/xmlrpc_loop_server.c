@@ -60,6 +60,28 @@ sample_add(xmlrpc_env *   const envP,
 
 
 
+static xmlrpc_server_shutdown_fn requestShutdown;
+
+static void
+requestShutdown(xmlrpc_env * const envP,
+                void *       const context,
+                const char * const comment) {
+
+    /* You make this run by executing the system method
+       'system.shutdown'.  This function is registered in the method
+       registry as the thing to call for that.
+    */
+    int * const terminationRequestedP = context;
+
+    xmlrpc_env_init(envP);
+
+    fprintf(stderr, "Termination requested: %s\n", comment);
+    
+    *terminationRequestedP = 1;
+}
+
+
+
 int 
 main(int           const argc, 
      const char ** const argv) {
@@ -67,6 +89,7 @@ main(int           const argc,
     TServer abyssServer;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
+    int terminationRequested;  /* A boolean value */
 
     if (argc-1 != 1) {
         fprintf(stderr, "You must specify 1 argument:  The TCP port number "
@@ -82,6 +105,9 @@ main(int           const argc,
     xmlrpc_registry_add_method(
         &env, registryP, NULL, "sample.add", &sample_add, NULL);
 
+    xmlrpc_registry_set_shutdown(registryP,
+                                 &requestShutdown, &terminationRequested);
+
     ServerCreate(&abyssServer, "XmlRpcServer", atoi(argv[1]), NULL, NULL);
     
     xmlrpc_server_abyss_set_handlers(&abyssServer, registryP);
@@ -90,7 +116,9 @@ main(int           const argc,
 
     setupSignalHandlers();
 
-    while (1) {
+    terminationRequested = 0;
+
+    while (!terminationRequested) {
         printf("Waiting for next RPC...\n");
 
         ServerRunOnce(&abyssServer);

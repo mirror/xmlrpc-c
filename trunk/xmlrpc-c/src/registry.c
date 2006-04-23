@@ -2,11 +2,11 @@
 
 #include "xmlrpc_config.h"
 
-#include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
@@ -77,6 +77,7 @@ xmlrpc_registry_new(xmlrpc_env * const envP) {
         registryP->_introspection_enabled = true;
         registryP->_default_method        = NULL;
         registryP->_preinvoke_method      = NULL;
+        registryP->_shutdown_server_fn    = NULL;
 
         registryP->_methods = xmlrpc_struct_new(envP);
         if (!envP->fault_occurred) {
@@ -212,11 +213,6 @@ cleanup:
 
 
 
-/*=========================================================================
-**  xmlrpc_registry_set_preinvoke_method
-**=========================================================================
-**  See xmlrpc.h for more documentation.
-*/
 
 void 
 xmlrpc_registry_set_preinvoke_method(xmlrpc_env *env,
@@ -246,6 +242,21 @@ xmlrpc_registry_set_preinvoke_method(xmlrpc_env *env,
         if (method_info)
             xmlrpc_DECREF(method_info);
     }
+}
+
+
+
+void
+xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
+                             xmlrpc_server_shutdown_fn * const shutdownFn,
+                             void *                      const context) {
+
+    XMLRPC_ASSERT_PTR_OK(registryP);
+    XMLRPC_ASSERT_PTR_OK(shutdownFn);
+
+    registryP->_shutdown_server_fn = shutdownFn;
+
+    registryP->_shutdown_context = context;
 }
 
 

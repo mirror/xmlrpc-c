@@ -903,6 +903,35 @@ uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
 
 
 
+static xmlrpc_server_shutdown_fn shutdownAbyss;
+
+static void
+shutdownAbyss(xmlrpc_env * const envP,
+              void *       const context,
+              const char * const comment ATTR_UNUSED) {
+/*----------------------------------------------------------------------------
+   Tell Abyss to wrap up whatever it's doing and shut down.
+
+   This is a server shutdown function to be registered in the method
+   registry, for use by the 'system.shutdown' system method.
+
+   After we return, Abyss will finish up the system.shutdown and any
+   other connections that are in progress, then the call to
+   ServerRun() etc. will return.  But Abyss may be stuck waiting for
+   something, such as the next HTTP connection.  In that case, until it
+   gets what it's waiting for, it won't even know it's supposed t shut
+   down.  In particular, a caller of system.shutdown may have to execute
+   one more RPC in order for the shutdown to happen.
+-----------------------------------------------------------------------------*/
+    TServer * const serverP = context;
+
+    xmlrpc_env_init(envP);
+    
+    ServerTerminate(serverP);
+}
+
+
+
 static void
 normalLevelAbyssRun(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
@@ -921,12 +950,15 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
 
         setHandlers(&server, uriPathParm(parmsP, parmSize), parmsP->registryP,
                     chunkResponseParm(parmsP, parmSize));
-        
+
         ServerInit(&server);
         
         setupSignalHandlers(&oldHandlers);
 
         ServerUseSigchld(&server);
+        
+        xmlrpc_registry_set_shutdown(parmsP->registryP,
+                                     &shutdownAbyss, &server);
         
         ServerRun(&server);
 

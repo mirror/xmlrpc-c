@@ -625,14 +625,82 @@ struct systemMethodReg const methodSignature = {
 
 
 
+
+/*=========================================================================
+  system.shutdown
+==========================================================================*/
+
+static xmlrpc_value *
+system_shutdown(xmlrpc_env *   const envP,
+                xmlrpc_value * const paramArrayP,
+                void *         const userData) {
+    
+    xmlrpc_registry * const registryP = (xmlrpc_registry *) userData;
+
+    xmlrpc_value * retvalP;
+    const char * comment;
+    xmlrpc_env env;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(userData);
+
+    xmlrpc_env_init(&env);
+
+    retvalP = NULL;  /* quiet compiler warning */
+
+    /* Turn our arguments into something more useful. */
+    xmlrpc_decompose_value(&env, paramArrayP, "(s)", &comment);
+    if (env.fault_occurred)
+        xmlrpc_env_set_fault_formatted(
+            envP, env.fault_code,
+            "Invalid parameter list.  %s", env.fault_string);
+    else {
+        if (!registryP->_shutdown_server_fn)
+            xmlrpc_env_set_fault(
+                envP, 0, "This server program is not capable of "
+                "shutting down");
+        else {
+            registryP->_shutdown_server_fn(
+                &env, registryP->_shutdown_context, comment);
+
+            if (env.fault_occurred)
+                xmlrpc_env_set_fault(envP, env.fault_code, env.fault_string);
+            else {
+                retvalP = xmlrpc_int_new(&env, 0);
+                
+                if (env.fault_occurred)
+                    xmlrpc_faultf(envP,
+                                  "Failed to construct return value.  %s",
+                                  env.fault_string);
+            }
+        }
+        xmlrpc_strfree(comment);
+    }
+    xmlrpc_env_clean(&env);
+
+    return retvalP;
+}
+
+
+
+struct systemMethodReg const shutdown = {
+    "system.shutdown",
+    &system_shutdown,
+    "i:s",
+    "Shut down the server.  Return code is always zero.",
+};
+
+
+
 /*============================================================================
   Installer of system methods
 ============================================================================*/
 
 static void
-registerSystemMethod(xmlrpc_env * const envP,
-                     xmlrpc_registry * const registryP,
-                     struct systemMethodReg methodReg) {
+registerSystemMethod(xmlrpc_env *           const envP,
+                     xmlrpc_registry *      const registryP,
+                     struct systemMethodReg const methodReg) {
 
     xmlrpc_env env;
     xmlrpc_env_init(&env);
@@ -668,6 +736,9 @@ xmlrpc_installSystemMethods(xmlrpc_env *      const envP,
 
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, multicall);
+
+    if (!envP->fault_occurred)
+        registerSystemMethod(envP, registryP, shutdown);
 }
 
 
