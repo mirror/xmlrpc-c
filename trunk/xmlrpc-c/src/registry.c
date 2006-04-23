@@ -2,10 +2,12 @@
 
 #include "xmlrpc_config.h"
 
+#include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "mallocvar.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/base.h"
@@ -61,67 +63,49 @@
 
 
 xmlrpc_registry *
-xmlrpc_registry_new(xmlrpc_env *env) {
+xmlrpc_registry_new(xmlrpc_env * const envP) {
 
-    xmlrpc_value *methods;
-    xmlrpc_registry *registry;
-    int registry_valid;
+    xmlrpc_registry * registryP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
     
-    XMLRPC_ASSERT_ENV_OK(env);
-    
-    /* Error-handling preconditions. */
-    methods = NULL;
-    registry = NULL;
-    registry_valid = 0;
+    MALLOCVAR(registryP);
 
-    /* Allocate our memory. */
-    methods = xmlrpc_struct_new(env);
-    XMLRPC_FAIL_IF_FAULT(env);
-    registry = (xmlrpc_registry*) malloc(sizeof(xmlrpc_registry));
-    XMLRPC_FAIL_IF_NULL(registry, env, XMLRPC_INTERNAL_ERROR,
-                        "Could not allocate memory for registry");
-    
-    /* Set everything up. */
-    registry->_introspection_enabled = 1;
-    registry->_methods = methods;
-    registry->_default_method = NULL;
-    registry->_preinvoke_method = NULL;
-    registry_valid = 1;
+    if (registryP == NULL)
+        xmlrpc_faultf(envP, "Could not allocate memory for registry");
+    else {
+        registryP->_introspection_enabled = true;
+        registryP->_default_method        = NULL;
+        registryP->_preinvoke_method      = NULL;
 
-    /* Install our system methods. */
-    xmlrpc_installSystemMethods(env, registry);
-    XMLRPC_FAIL_IF_FAULT(env);
-
- cleanup:
-    if (env->fault_occurred) {
-        if (registry_valid) {
-            xmlrpc_registry_free(registry);
-        } else {
-            if (methods)
-                xmlrpc_DECREF(methods);
-            if (registry)
-                free(registry);
-        }
-        return NULL;
+        registryP->_methods = xmlrpc_struct_new(envP);
+        if (!envP->fault_occurred) {
+            xmlrpc_installSystemMethods(envP, registryP);
+        }    
+        if (envP->fault_occurred)
+            free(registryP);
     }
-    return registry;
+    return registryP;
 }
 
 
 
 void 
-xmlrpc_registry_free(xmlrpc_registry * registry) {
+xmlrpc_registry_free(xmlrpc_registry * const registryP) {
 
-    XMLRPC_ASSERT_PTR_OK(registry);
-    XMLRPC_ASSERT(registry->_methods != XMLRPC_BAD_POINTER);
+    XMLRPC_ASSERT_PTR_OK(registryP);
+    XMLRPC_ASSERT(registryP->_methods != XMLRPC_BAD_POINTER);
 
-    xmlrpc_DECREF(registry->_methods);
-    registry->_methods = XMLRPC_BAD_POINTER;
-    if (registry->_default_method != NULL)
-        xmlrpc_DECREF(registry->_default_method);
-    if (registry->_preinvoke_method != NULL)
-        xmlrpc_DECREF(registry->_preinvoke_method);
-    free(registry);
+    registryP->_methods = XMLRPC_BAD_POINTER;
+    xmlrpc_DECREF(registryP->_methods);
+
+    if (registryP->_default_method != NULL)
+        xmlrpc_DECREF(registryP->_default_method);
+
+    if (registryP->_preinvoke_method != NULL)
+        xmlrpc_DECREF(registryP->_preinvoke_method);
+
+    free(registryP);
 }
 
 
