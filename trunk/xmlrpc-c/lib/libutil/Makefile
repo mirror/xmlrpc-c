@@ -27,10 +27,11 @@ all: libxmlrpc_util.la
 
 LIBXMLRPC_UTIL_OBJS = \
   casprintf.lo \
+  error.lo \
   make_printable.lo \
-  resource.lo \
   memblock.lo \
-  error.lo
+  resource.lo \
+  sleep.lo \
 
 INCLUDES = -Iblddir -I$(SRCDIR) \
            -Isrcdir/include -Isrcdir/lib/util/include
