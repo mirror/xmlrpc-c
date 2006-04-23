@@ -574,10 +574,16 @@ sigchld(int const signalClass) {
 }
 
 
+struct signalHandlers {
+    struct sigaction pipe;
+    struct sigaction chld;
+};
+
+
 
 static void
-setupSignalHandlers(void) {
-#ifndef _WIN32
+setupSignalHandlers(struct signalHandlers * const oldHandlersP) {
+#ifndef WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);
@@ -585,13 +591,25 @@ setupSignalHandlers(void) {
 
     /* This signal indicates connection closed in the middle */
     mysigaction.sa_handler = SIG_IGN;
-    sigaction(SIGPIPE, &mysigaction, NULL);
+    sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
     
     /* This signal indicates a child process (request handler) has died */
     mysigaction.sa_handler = sigchld;
-    sigaction(SIGCHLD, &mysigaction, NULL);
+    sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
 #endif
 }    
+
+
+
+static void
+restoreSignalHandlers(struct signalHandlers const oldHandlers) {
+#ifndef WIN32
+
+    sigaction(SIGPIPE, &oldHandlers.pipe, NULL);
+    sigaction(SIGCHLD, &oldHandlers.chld, NULL);
+
+#endif
+}
 
 
 
@@ -600,7 +618,9 @@ runServerDaemon(TServer *  const serverP,
                 runfirstFn const runfirst,
                 void *     const runfirstArg) {
 
-    setupSignalHandlers();
+    struct signalHandlers oldHandlers;
+
+    setupSignalHandlers(&oldHandlers);
 
     ServerUseSigchld(serverP);
 
@@ -613,6 +633,8 @@ runServerDaemon(TServer *  const serverP,
         runfirst(runfirstArg);
 
     ServerRun(serverP);
+
+    restoreSignalHandlers(oldHandlers);
 }
 
 
@@ -823,57 +845,94 @@ extractServerCreateParms(
 
 
 static void
-normalLevelAbyssRun(xmlrpc_env *                      const envP,
-                    const xmlrpc_server_abyss_parms * const parmsP,
-                    unsigned int                      const parmSize) {
-    
+createServer(xmlrpc_env *                      const envP,
+             const xmlrpc_server_abyss_parms * const parmsP,
+             unsigned int                      const parmSize,
+             TServer *                         const serverP) {
+/*----------------------------------------------------------------------------
+   Create a bare server.  It will need further setup before it is ready
+   to use.
+-----------------------------------------------------------------------------*/
     abyss_bool socketBound;
     unsigned int portNumber;
     TSocket socketFd;
     const char * logFileName;
-    
-    DateInit();
 
     extractServerCreateParms(envP, parmsP, parmSize,
                              &socketBound, &portNumber, &socketFd,
                              &logFileName);
 
     if (!envP->fault_occurred) {
-        bool const chunkResponse =
-            parmSize >= XMLRPC_APSIZE(chunk_response) &&
-            parmsP->chunk_response;
-            
-        TServer server;
-        const char * uriPath;
-
         if (socketBound)
-            ServerCreateSocket(&server, "XmlRpcServer", socketFd,
+            ServerCreateSocket(serverP, "XmlRpcServer", socketFd,
                                DEFAULT_DOCS, logFileName);
         else
-            ServerCreate(&server, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
+            ServerCreate(serverP, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
                          logFileName);
+
+        xmlrpc_strfree(logFileName);
+    }
+}
+
+
+
+static bool
+chunkResponseParm(const xmlrpc_server_abyss_parms * const parmsP,
+                  unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(chunk_response) &&
+        parmsP->chunk_response;
+}    
+
+
+
+static const char *
+uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
+            unsigned int                      const parmSize) {
+    
+    const char * uriPath;
+
+    if (parmSize >= XMLRPC_APSIZE(uri_path) && parmsP->uri_path)
+        uriPath = parmsP->uri_path;
+    else
+        uriPath = "/RPC2";
+
+    return uriPath;
+}
+
+
+
+static void
+normalLevelAbyssRun(xmlrpc_env *                      const envP,
+                    const xmlrpc_server_abyss_parms * const parmsP,
+                    unsigned int                      const parmSize) {
+    
+    TServer server;
+
+    DateInit();
+
+    createServer(envP, parmsP, parmSize, &server);
+
+    if (!envP->fault_occurred) {
+        struct signalHandlers oldHandlers;
 
         setAdditionalServerParms(parmsP, parmSize, &server);
 
-        if (parmSize >= XMLRPC_APSIZE(uri_path) &&
-            parmsP->uri_path)
-            uriPath = parmsP->uri_path;
-        else
-            uriPath = "/RPC2";
-
-        setHandlers(&server, uriPath, parmsP->registryP, chunkResponse);
+        setHandlers(&server, uriPathParm(parmsP, parmSize), parmsP->registryP,
+                    chunkResponseParm(parmsP, parmSize));
         
         ServerInit(&server);
         
-        setupSignalHandlers();
+        setupSignalHandlers(&oldHandlers);
 
         ServerUseSigchld(&server);
         
         ServerRun(&server);
 
-        ServerFree(&server);
+        restoreSignalHandlers(oldHandlers);
 
-        xmlrpc_strfree(logFileName);
+        ServerFree(&server);
     }
 }
 
