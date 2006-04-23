@@ -7,6 +7,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
+#include <fcntl.h>
+#ifdef _WIN32
+#  include <io.h>
+#else
+#  include <signal.h>
+#  include <sys/wait.h>
+#  include <grp.h>
+#endif
 
 #include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"
@@ -513,62 +522,15 @@ handleXmlrpcReq(URIHandler2 * const this,
 */
 
 static xmlrpc_bool 
-xmlrpc_server_abyss_default_handler (TSession * const r) {
+xmlrpc_server_abyss_default_handler(TSession * const sessionP) {
 
     if (trace_abyss)
         fprintf(stderr, "xmlrpc_server_abyss default handler called.\n");
 
-    sendError(r, 404);
+    sendError(sessionP, 404);
 
     return TRUE;
 }
-
-
-
-/**************************************************************************
-**
-** The code below was adapted from the main.c file of the Abyss webserver
-** project. In addition to the other copyrights on this file, the following
-** code is also under this copyright:
-**
-** Copyright (C) 2000 by Moez Mahfoudh <mmoez@bigfoot.com>.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission.
-** 
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
-**
-**************************************************************************/
-
-#include <time.h>
-#include <fcntl.h>
-
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <signal.h>
-#include <sys/wait.h>
-#include <grp.h>
-#endif  /* _WIN32 */
 
 
 
@@ -613,34 +575,6 @@ sigchld(int const signalClass) {
 
 
 
-static TServer globalSrv;
-    /* When you use the old interface (xmlrpc_server_abyss_init(), etc.),
-       this is the Abyss server to which they refer.  Obviously, there can be
-       only one Abyss server per program using this interface.
-    */
-
-
-void 
-xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED, 
-                         const char * const config_file) {
-
-    DateInit();
-    MIMETypeInit();
-
-    ServerCreate(&globalSrv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
-    
-    ConfReadServerFile(config_file, &globalSrv);
-
-    xmlrpc_server_abyss_init_registry();
-        /* Installs /RPC2 handler and default handler that use the
-           built-in registry.
-        */
-
-    ServerInit(&globalSrv);
-}
-
-
-
 static void
 setupSignalHandlers(void) {
 #ifndef _WIN32
@@ -679,22 +613,6 @@ runServerDaemon(TServer *  const serverP,
         runfirst(runfirstArg);
 
     ServerRun(serverP);
-}
-
-
-
-void 
-xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
-                              void *     const runfirstArg) {
-    
-    runServerDaemon(&globalSrv, runfirst, runfirstArg);
-}
-
-
-
-void 
-xmlrpc_server_abyss_run(void) {
-    runServerDaemon(&globalSrv, NULL, NULL);
 }
 
 
@@ -986,14 +904,25 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
 
 
 /*=========================================================================
-**  XML-RPC Server Method Registry
-**=========================================================================
-**  A simple front-end to our method registry.
+  XML-RPC Server Method Registry
+
+  This is an old deprecated form of the server facilities that uses
+  global variables.
+=========================================================================*/
+
+/* These global variables must be treated as read-only after the
+   server has started.
 */
 
-/* XXX - This variable is *not* currently threadsafe. Once the server has
-** been started, it must be treated as read-only. */
-static xmlrpc_registry *builtin_registryP;
+static TServer globalSrv;
+    /* When you use the old interface (xmlrpc_server_abyss_init(), etc.),
+       this is the Abyss server to which they refer.  Obviously, there can be
+       only one Abyss server per program using this interface.
+    */
+
+static xmlrpc_registry * builtin_registryP;
+
+
 
 void 
 xmlrpc_server_abyss_init_registry(void) {
@@ -1061,6 +990,43 @@ xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
         method, user_data, signature, help);
     die_if_fault_occurred(&env);
     xmlrpc_env_clean(&env);    
+}
+
+
+
+void 
+xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED, 
+                         const char * const config_file) {
+
+    DateInit();
+    MIMETypeInit();
+
+    ServerCreate(&globalSrv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+    
+    ConfReadServerFile(config_file, &globalSrv);
+
+    xmlrpc_server_abyss_init_registry();
+        /* Installs /RPC2 handler and default handler that use the
+           built-in registry.
+        */
+
+    ServerInit(&globalSrv);
+}
+
+
+
+void 
+xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
+                              void *     const runfirstArg) {
+    
+    runServerDaemon(&globalSrv, runfirst, runfirstArg);
+}
+
+
+
+void 
+xmlrpc_server_abyss_run(void) {
+    runServerDaemon(&globalSrv, NULL, NULL);
 }
 
 
