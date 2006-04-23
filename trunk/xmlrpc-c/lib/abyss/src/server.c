@@ -16,9 +16,9 @@
 #include "xmlrpc_config.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/sleep_int.h"
 
 #include "xmlrpc-c/abyss.h"
-#include "server.h"
 #include "session.h"
 #include "conn.h"
 #include "socket.h"
@@ -26,7 +26,28 @@
 #include "date.h"
 #include "abyss_info.h"
 
-#define BOUNDARY    "##123456789###BOUNDARY"
+#include "server.h"
+
+
+void
+ServerTerminate(TServer * const serverP) {
+
+    struct _TServer * const srvP = serverP->srvP;
+
+    srvP->terminationRequested = true;
+}
+
+
+
+void
+ServerResetTerminate(TServer * const serverP) {
+
+    struct _TServer * const srvP = serverP->srvP;
+
+    srvP->terminationRequested = false;
+}
+
+
 
 typedef int (*TQSortProc)(const void *, const void *);
 
@@ -380,6 +401,8 @@ ServerDirectoryHandler(TSession * const r,
 
 
 
+#define BOUNDARY    "##123456789###BOUNDARY"
+
 static void
 sendBody(TSession *   const sessionP,
          TFile *      const fileP,
@@ -614,7 +637,7 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
 
 static void
 initUnixStuff(struct _TServer * const srvP) {
-#ifdef _UNIX
+#ifndef WIN32
     srvP->pidfile = srvP->uid = srvP->gid = -1;
 #endif
 }
@@ -722,6 +745,8 @@ createServer(struct _TServer ** const srvPP,
         TraceMsg("Unable to allocate space for server descriptor");
         *successP = FALSE;
     } else {
+        srvP->terminationRequested = false;
+
         if (name)
             srvP->name = strdup(name);
         else
@@ -742,6 +767,7 @@ createServer(struct _TServer ** const srvPP,
             srvP->timeout = 15;
             srvP->advertise = TRUE;
             srvP->mimeTypeP = NULL;
+            srvP->useSigchld = FALSE;
 
             initUnixStuff(srvP);
 
@@ -974,13 +1000,15 @@ processDataFromClient(TConn *      const connectionP,
 }
 
 
+static TThreadProc ServerFunc;
 
 static void
-ServerFunc(TConn * const connectionP) {
+ServerFunc(void * const userHandle) {
 /*----------------------------------------------------------------------------
    Do server stuff on one connection.  At its simplest, this means do
    one HTTP request.  But with keepalive, it can be many requests.
 -----------------------------------------------------------------------------*/
+    TConn *           const connectionP = userHandle;
     struct _TServer * const srvP = connectionP->server->srvP;
 
     unsigned int requestCount;
@@ -1094,152 +1122,207 @@ ServerInit(TServer * const serverP) {
 
 
 
-/* With pthread configuration, our connections run as threads of a
-   single address space, so we manage a pool of connection
-   descriptors.  With fork configuration, our connections run as
-   separate processes with their own memory, so we don't have the
-   pool.
+/* We don't do any locking on the outstanding connections list, so 
+   we must make sure that only the master thread (the one that listens
+   for connections) ever accesses it.
+
+   That's why when a thread completes, it places the connection in
+   "finished" status, but doesn't destroy the connection.
 */
 
-static abyss_bool const usingPthreadsForConnections = 
-#ifdef _THREAD
-TRUE;
-#else
-FALSE;
+typedef struct {
+
+    TConn * firstP;
+    unsigned int count;
+        /* Redundant with 'firstP', for quick access */
+} outstandingConnList;
+
+
+
+static void
+createOutstandingConnList(outstandingConnList ** const listPP) {
+
+    outstandingConnList * listP;
+
+    MALLOCVAR_NOFAIL(listP);
+
+    listP->firstP = NULL;  /* empty list */
+    listP->count = 0;
+
+    *listPP = listP;
+}
+
+
+
+static void
+destroyOutstandingConnList(outstandingConnList * const listP) {
+
+    assert(listP->firstP == NULL);
+    assert(listP->count == 0);
+
+    free(listP);
+}
+
+
+
+static void
+addToOutstandingConnList(outstandingConnList * const listP,
+                         TConn *               const connectionP) {
+
+    connectionP->nextOutstandingP = listP->firstP;
+
+    listP->firstP = connectionP;
+
+    ++listP->count;
+}
+
+
+
+static void
+freeFinishedConns(outstandingConnList * const listP) {
+/*----------------------------------------------------------------------------
+   Garbage-collect the resources associated with connections that are
+   finished with their jobs.  Thread resources, connection pool
+   descriptor, etc.
+-----------------------------------------------------------------------------*/
+    TConn ** pp;
+
+    pp = &listP->firstP;
+
+    while (*pp) {
+        TConn * const connectionP = (*pp);
+
+        ThreadUpdateStatus(connectionP->threadP);
+        
+        if (connectionP->finished) {
+            /* Take it out of the list */
+            *pp = connectionP->nextOutstandingP;
+            --listP->count;
+            
+            ConnWaitAndRelease(connectionP);
+        } else {
+            /* Move to next connection in list */
+            pp = &connectionP->nextOutstandingP;
+        }
+    }
+}
+
+
+
+static void
+waitForConnectionFreed(outstandingConnList * const outstandingConnListP
+                       ATTR_UNUSED) {
+/*----------------------------------------------------------------------------
+  Wait for a connection descriptor in 'connectionPool' to be probably
+  freed.
+-----------------------------------------------------------------------------*/
+
+    /* TODO: We should do something more sophisticated here.  For pthreads,
+       we can have a thread signal us by semaphore when it terminates.
+       For fork, we might be able to use the "done" handler argument
+       to ConnCreate() to get interrupted when the death of a child
+       signal happens.
+    */
+
+    xmlrpc_millisecond_sleep(2000);
+}
+
+
+
+static void
+waitForNoConnections(outstandingConnList * const outstandingConnListP) {
+
+    while (outstandingConnListP->firstP) {
+        freeFinishedConns(outstandingConnListP);
+    
+        if (outstandingConnListP->firstP)
+            waitForConnectionFreed(outstandingConnListP);
+    }
+}
+
+
+
+static void
+waitForConnectionCapacity(outstandingConnList * const outstandingConnListP) {
+/*----------------------------------------------------------------------------
+   Wait until there are fewer than the maximum allowed connections in
+   progress.
+-----------------------------------------------------------------------------*/
+    while (outstandingConnListP->count >= MAX_CONN) {
+        freeFinishedConns(outstandingConnListP);
+        if (outstandingConnListP->firstP)
+            waitForConnectionFreed(outstandingConnListP);
+    }
+}
+
+
+
+#ifndef WIN32
+void
+ServerHandleSigchld(pid_t const pid) {
+
+    ThreadHandleSigchld(pid);
+}
 #endif
 
 
 
-static void
-createConnectionPool(TConn ** const connectionPoolP) {
+void
+ServerUseSigchld(TServer * const serverP) {
 
-    unsigned int i;
-
-    TConn * connectionPool;
-
-    MALLOCARRAY_NOFAIL(connectionPool, MAX_CONN);
+    struct _TServer * const srvP = serverP->srvP;
     
-    for (i = 0; i < MAX_CONN; ++i)
-        connectionPool[i].inUse = FALSE;
-
-    *connectionPoolP = connectionPool;
-}
-
-
-
-static void
-collectDeadConnections(TConn * const connectionPool) {
-/*----------------------------------------------------------------------------
-   Garbage-collect the resources associated with connections that are no
-   longer connected.  Thread resources, connection pool descriptor, etc.
------------------------------------------------------------------------------*/
-    unsigned int i;
-
-    for (i = 0; i < MAX_CONN; ++i) {
-        TConn * const connectionP = &connectionPool[i];
-        if (connectionP->inUse && !connectionP->connected) {
-            ConnClose(connectionP);
-            connectionP->inUse = FALSE;
-        }
-    }
-}
-
-
-
-static void
-allocateConnection(TConn * const connectionPool,
-                   TConn ** const connectionPP) {
-    
-    unsigned int i;
-
-    collectDeadConnections(connectionPool);
-    
-    for (i = 0; i < MAX_CONN && connectionPool[i].inUse; ++i);
-    
-    if (i == MAX_CONN)
-        /* Every connection descriptor was in use. */
-        *connectionPP = NULL;
-    else
-        *connectionPP = &connectionPool[i];
+    srvP->useSigchld = TRUE;
 }
 
 
 
 static void 
-serverRunThreaded(TServer * const serverP) {
+serverRun2(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
-    TSocket const listenSocket = srvP->listensock;
-    TIPAddr peerIpAddr;
-    TConn * connectionPool;
+    outstandingConnList * outstandingConnListP;
 
-    createConnectionPool(&connectionPool);
+    createOutstandingConnList(&outstandingConnListP);
 
-    while (1) {
-        TSocket connectedSocketP;
+    while (!srvP->terminationRequested) {
         TConn * connectionP;
 
-        allocateConnection(connectionPool, &connectionP);
+        abyss_bool connected;
+        abyss_bool failed;
+        TSocket connectedSocket;
+        TIPAddr peerIpAddr;
 
-        if (connectionP == NULL)
-            ThreadWait(2000);
-        else {
-            abyss_bool success;
+        SocketAccept(srvP->listensock,
+                     &connected, &failed,
+                     &connectedSocket, &peerIpAddr);
+        
+        if (connected) {
+            const char * error;
 
-            success = SocketAccept(&listenSocket,
-                                   &connectedSocketP, &peerIpAddr);
+            freeFinishedConns(outstandingConnListP);
 
-            if (success) {
-                abyss_bool success;
-                connectionP->inUse = TRUE;
-                success = ConnCreate2(connectionP, serverP, connectedSocketP,
-                                      &ServerFunc, ABYSS_BACKGROUND);
-                if (success) {
-                    ConnProcess(connectionP);
-                } else {
-                    SocketClose(&connectedSocketP);
-                    connectionP->inUse = FALSE;
-                }
-            } else
-                TraceMsg("Socket Error=%d", SocketError());
-        }
-    }
-    /* We never get here, but it's conceptually possible for someone to 
-       terminate a server normally, so... 
-    */
-    free(connectionPool);
-}
+            waitForConnectionCapacity(outstandingConnListP);
 
-
-
-static void 
-serverRunForked(TServer * const serverP) {
-
-    struct _TServer * const srvP = serverP->srvP;
-
-    TSocket socketFd;
-    TSocket newSocketFd;
-    TConn conn;
-    TIPAddr ipAddr;
-
-    socketFd = srvP->listensock;
-
-    while (TRUE) {
-        abyss_bool success;
-        success = SocketAccept(&socketFd, &newSocketFd, &ipAddr);
-        if (success) {
-            abyss_bool success;
-            success = ConnCreate2(&conn, serverP, newSocketFd, 
-                                  ServerFunc, ABYSS_BACKGROUND);
-
-                /* ConnCreate2() forks.  Child does not return. */
-            if (success)
-                ConnProcess(&conn);
-
-            SocketClose(&newSocketFd); /* Close parent's copy of socket */
-        } else
+            ConnCreate(&connectionP, serverP, connectedSocket,
+                       &ServerFunc, NULL, ABYSS_BACKGROUND, srvP->useSigchld,
+                       &error);
+            if (!error) {
+                addToOutstandingConnList(outstandingConnListP, connectionP);
+                ConnProcess(connectionP);
+                if (ThreadForks())
+                    SocketClose(&connectedSocket);
+                        /* Close parent's copy of socket */
+            } else {
+                xmlrpc_strfree(error);
+                SocketClose(&connectedSocket);
+            }
+        } else if (failed)
             TraceMsg("Socket Error=%d", SocketError());
     }
+    waitForNoConnections(outstandingConnListP);
+
+    destroyOutstandingConnList(outstandingConnListP);
 }
 
 
@@ -1253,34 +1336,10 @@ ServerRun(TServer * const serverP) {
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
                  "Try ServerRunConn() or ServerInit()");
-    else {
-        if (usingPthreadsForConnections)
-            serverRunThreaded(serverP);
-        else
-            serverRunForked(serverP);
-    }
+    else
+        serverRun2(serverP);
 }
 
-
-
-/* ServerRunOnce() supplied by Brian Quinlan of ActiveState. */
-
-/* Bryan Henderson found this to be completely wrong on 2004.11.29
-   and changed it so it does the same thing as ServerRun(), but only
-   once.
-
-   The biggest problem it had was that when it forked the child (via
-   ConnCreate(), both the parent and the child read the socket and
-   processed the request!
-
-   But even fixing that, it works only on systems that do threading
-   with Unix fork, because otherwise the background thread would get a
-   connection object that lives on ServerRunOnce's stack, and that's
-   no good.
-
-   So in Xmlrpc-c 1.04, we just made ServerRunOnce() always do its thing
-   in the foreground while Caller waits.
-*/
 
 
 static void
@@ -1293,22 +1352,25 @@ serverRunConn(TServer * const serverP,
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
-    TConn connection;
-    abyss_bool success;
+    TConn * connectionP;
+    const char * error;
 
     srvP->keepalivemaxconn = 1;
 
-    connection.connected = FALSE;
-    connection.inUse = FALSE;
-        
-    success = ConnCreate2(&connection, 
-                          serverP, connectedSocket,
-                          &ServerFunc, ABYSS_FOREGROUND);
-    if (!success)
+    ConnCreate(&connectionP, 
+               serverP, connectedSocket,
+               &ServerFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
+               &error);
+    if (error) {
         TraceMsg("Couldn't create HTTP connection out of socket "
-                 "with file descriptor %d.", (int)connectedSocket);
-    else
-        ConnProcess(&connection);
+                 "with file descriptor %d.  %s",
+                 (int)connectedSocket, error);
+        xmlrpc_strfree(error);
+    } else {
+        ConnProcess(connectionP);
+
+        ConnWaitAndRelease(connectionP);
+    }
 }
 
 
@@ -1338,6 +1400,10 @@ ServerRunOnce(TServer * const serverP) {
 /*----------------------------------------------------------------------------
    Accept a connection from the listening socket and do the HTTP
    transaction that comes over it.
+
+   If no connection is presently waiting on the listening socket, wait
+   for one.  But return immediately if we receive a signal during the
+   wait.
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
@@ -1346,18 +1412,20 @@ ServerRunOnce(TServer * const serverP) {
                  "on its own, so you can't use ServerRunOnce().  "
                  "Try ServerRunConn() or ServerInit()");
     else {
-        TSocket connectedSocket;
-        TIPAddr remoteAddr;
-        abyss_bool success;
+        abyss_bool connected;
+        abyss_bool failed;
+        TSocket    connectedSocket;
+        TIPAddr    remoteAddr;
     
         srvP->keepalivemaxconn = 1;
 
-        success =
-            SocketAccept(&srvP->listensock, &connectedSocket, &remoteAddr);
-        if (success) {
+        SocketAccept(srvP->listensock,
+                     &connected, &failed,
+                     &connectedSocket, &remoteAddr);
+        if (connected) {
             serverRunConn(serverP, connectedSocket);
             SocketClose(&connectedSocket);
-        } else
+        } else if (failed)
             TraceMsg("Socket Error=%d", SocketError());
     }
 }

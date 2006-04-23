@@ -220,29 +220,48 @@ SocketListen(const TSocket * const socketFdP,
 
 
 
-abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip)
-{
-    struct sockaddr_in sa;
-    socklen_t size=sizeof(sa);
-    abyss_bool connected;
+void
+SocketAccept(TSocket      const listenSocket,
+             abyss_bool * const connectedP,
+             abyss_bool * const failedP,
+             TSocket *    const acceptedSocketP,
+             TIPAddr *    const ipAddr) {
+/*----------------------------------------------------------------------------
+   Accept a connection on the listening socket 'listenSocket'.  Return as
+   *acceptedSocketP the socket for the accepted connection.
 
-    connected = FALSE;
-    for (;;) {
+   If no connection is waiting on 'listenSocket', wait until one is.
+
+   If we receive a signal while waiting, return immediately.
+
+   Return *connectedP true iff we accepted a connection.  Return
+   *failedP true iff we were unable to accept a connection for some
+   reason other than that we were interrupted.  Return both false if
+   our wait for a connection was interrupted by a signal.
+-----------------------------------------------------------------------------*/
+    abyss_bool interrupted;
+
+    *connectedP = FALSE;
+    *failedP = FALSE;
+    interrupted = FALSE;
+
+    while (!*connectedP && !*failedP && !interrupted) {
+        struct sockaddr_in sa;
+        socklen_t size = sizeof(sa);
         int rc;
-        rc = accept(*s,(struct sockaddr *)&sa,&size);
-        if (rc >= 0)
-        {
-            connected = TRUE;
-            *ns = rc;
-            *ip=sa.sin_addr;
-            break;
-        }
+        rc = accept(listenSocket, (struct sockaddr *)&sa, &size);
+        if (rc >= 0) {
+            *connectedP = TRUE;
+            *acceptedSocketP = rc;
+            *ipAddr = sa.sin_addr;
+        } else if (errno == EINTR)
+            interrupted = TRUE;
         else
-            if (SocketError()!=EINTR)
-                break;
+            *failedP = TRUE;
     }   
-    return connected;
 }
+
+
 
 uint32_t SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32_t timems)
 {

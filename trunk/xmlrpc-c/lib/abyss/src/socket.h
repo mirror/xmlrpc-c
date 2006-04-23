@@ -34,7 +34,12 @@ abyss_bool
 SocketListen(const TSocket * const socketFdP,
              uint32_t        const backlog);
 
-abyss_bool SocketAccept(const TSocket *s, TSocket *ns,TIPAddr *ip);
+void
+SocketAccept(TSocket      const listenSocket,
+             abyss_bool * const connectedP,
+             abyss_bool * const failedP,
+             TSocket *    const acceptedSocketP,
+             TIPAddr *    const ipAddr);
 
 uint32_t SocketError(void);
 

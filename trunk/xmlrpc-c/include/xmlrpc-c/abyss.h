@@ -150,6 +150,19 @@ ServerRunConn(TServer * const serverP,
 void
 ServerDaemonize(TServer * const serverP);
 
+void
+ServerTerminate(TServer * const serverP);
+
+void
+ServerResetTerminate(TServer * const serverP);
+
+void
+ServerUseSigchld(TServer * const serverP);
+
+#ifndef WIN32
+void
+ServerHandleSigchld(pid_t const pid);
+#endif
 
 typedef abyss_bool (*URIHandler) (TSession *); /* deprecated */
 
@@ -406,51 +419,6 @@ abyss_bool StringConcat(TString *s,char *s2);
 abyss_bool StringBlockConcat(TString *s,char *s2,char **ref);
 void StringFree(TString *s);
 char *StringData(TString *s);
-
-
-/*********************************************************************
-** Thread
-*********************************************************************/
-
-#ifdef WIN32
-#include <windows.h>
-#define  THREAD_ENTRYTYPE  WINAPI
-#else
-#define  THREAD_ENTRYTYPE
-#include <pthread.h>
-#endif  /* WIN32 */
-
-typedef uint32_t (THREAD_ENTRYTYPE *TThreadProc)(void *);
-#ifdef WIN32
-typedef HANDLE TThread;
-#else
-typedef pthread_t TThread;
-typedef void* (*PTHREAD_START_ROUTINE)(void *);
-#endif  /* WIN32 */
-
-abyss_bool ThreadCreate(TThread *t,TThreadProc func,void *arg);
-abyss_bool ThreadRun(TThread *t);
-abyss_bool ThreadStop(TThread *t);
-abyss_bool ThreadKill(TThread *t);
-void ThreadWait(uint32_t ms);
-void ThreadExit( TThread *t, int ret_value );
-void ThreadClose( TThread *t );
-
-/*********************************************************************
-** Mutex
-*********************************************************************/
-
-#ifdef WIN32
-typedef HANDLE TMutex;
-#else
-typedef pthread_mutex_t TMutex;
-#endif  /* WIN32 */
-
-abyss_bool MutexCreate(TMutex *m);
-abyss_bool MutexLock(TMutex *m);
-abyss_bool MutexUnlock(TMutex *m);
-abyss_bool MutexTryLock(TMutex *m);
-void MutexFree(TMutex *m);
 
 
 /*********************************************************************

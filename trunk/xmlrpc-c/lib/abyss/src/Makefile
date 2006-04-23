@@ -8,7 +8,9 @@ include $(SRCDIR)/Makefile.config
 CFLAGS = $(CFLAGS_COMMON)
 CFLAGS += -D_UNIX
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
-CFLAGS += -D_THREAD
+  THREAD_MODULE = thread_pthread
+else
+  THREAD_MODULE = thread_fork
 endif
 CFLAGS += $(CFLAGS_PERSONAL) $(CADD)
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR)
@@ -36,7 +38,7 @@ ABYSS_OBJS = \
   session.lo \
   socket.lo \
   token.lo \
-  thread.lo \
+  $(THREAD_MODULE).lo \
   trace.lo \
 
 

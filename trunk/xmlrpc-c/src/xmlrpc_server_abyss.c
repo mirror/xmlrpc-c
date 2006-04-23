@@ -573,44 +573,45 @@ xmlrpc_server_abyss_default_handler (TSession * const r) {
 
 
 static void 
-sigterm(int const signalClass) {
-    TraceExit("Signal of Class %d received.  Exiting...\n", signalClass);
-}
-
-
-static void 
-sigchld(int const signalClass ATTR_UNUSED) {
+sigchld(int const signalClass) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
    one of our child processes has terminated).
 
-   We respond by reaping the zombie process.
-
-   Implementation note: In some systems, just setting the signal handler
-   to SIG_IGN (ignore signal) does this.  In others, it doesn't.
+   The only child processes we have are those that belong to the Abyss
+   server (and then only if the Abyss server was configured to use
+   forking as a threading mechanism), so we respond by passing the
+   signal on to the Abyss server.
 -----------------------------------------------------------------------------*/
-#ifndef _WIN32
-    pid_t pid;
-    int status;
+#ifndef WIN32
+    bool childrenLeft;
+    bool error;
+
+    assert(signalClass == SIGCHLD);
+
+    error = false;
+    childrenLeft = true;  /* initial assumption */
     
     /* Reap defunct children until there aren't any more. */
-    for (;;) {
-        pid = waitpid( (pid_t) -1, &status, WNOHANG );
+    while (childrenLeft && !error) {
+        int status;
+        pid_t pid;
+
+        pid = waitpid((pid_t) -1, &status, WNOHANG);
     
-        /* none left */
-        if (pid==0)
-            break;
-    
-        if (pid<0) {
+        if (pid == 0)
+            childrenLeft = false;
+        else if (pid < 0) {
             /* because of ptrace */
-            if (errno==EINTR)   
-                continue;
-        
-            break;
-        }
+            if (errno != EINTR)   
+                error = true;
+        } else
+            ServerHandleSigchld(pid);
     }
-#endif /* _WIN32 */
+#endif /* WIN32 */
 }
+
+
 
 static TServer globalSrv;
     /* When you use the old interface (xmlrpc_server_abyss_init(), etc.),
@@ -648,13 +649,6 @@ setupSignalHandlers(void) {
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
 
-    /* These signals abort the program, with tracing */
-    mysigaction.sa_handler = sigterm;
-    sigaction(SIGTERM, &mysigaction, NULL);
-    sigaction(SIGINT,  &mysigaction, NULL);
-    sigaction(SIGHUP,  &mysigaction, NULL);
-    sigaction(SIGUSR1, &mysigaction, NULL);
-
     /* This signal indicates connection closed in the middle */
     mysigaction.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &mysigaction, NULL);
@@ -668,13 +662,15 @@ setupSignalHandlers(void) {
 
 
 static void
-runServerDaemon(TServer *  const srvP,
+runServerDaemon(TServer *  const serverP,
                 runfirstFn const runfirst,
                 void *     const runfirstArg) {
 
     setupSignalHandlers();
 
-    ServerDaemonize(srvP);
+    ServerUseSigchld(serverP);
+
+    ServerDaemonize(serverP);
     
     /* We run the user supplied runfirst after forking, but before accepting
        connections (helpful when running with threads)
@@ -682,10 +678,7 @@ runServerDaemon(TServer *  const srvP,
     if (runfirst)
         runfirst(runfirstArg);
 
-    ServerRun(srvP);
-
-    /* We can't exist here because ServerRun doesn't return */
-    XMLRPC_ASSERT(FALSE);
+    ServerRun(serverP);
 }
 
 
@@ -834,6 +827,8 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
         runfirstArg = NULL;
     }
     runServerDaemon(&srv, runfirst, runfirstArg);
+
+    ServerFree(&srv);
 }
 
 
@@ -953,11 +948,13 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
         ServerInit(&server);
         
         setupSignalHandlers();
+
+        ServerUseSigchld(&server);
         
         ServerRun(&server);
 
-        /* We can't exist here because ServerRun doesn't return */
-        XMLRPC_ASSERT(FALSE);
+        ServerFree(&server);
+
         xmlrpc_strfree(logFileName);
     }
 }

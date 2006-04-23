@@ -7,98 +7,142 @@
 #include <ctype.h>
 #include <assert.h>
 
+#include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/sleep_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "socket.h"
 #include "server.h"
+#include "thread.h"
+
 #include "conn.h"
 
 /*********************************************************************
 ** Conn
 *********************************************************************/
 
-TConn *
-ConnAlloc() {
-    return (TConn *)malloc(sizeof(TConn));
-}
+static TThreadProc ConnJob;
 
-
-
-void
-ConnFree(TConn * const connectionP) {
-    free(connectionP);
-}
-
-
-
-static uint32_t
-THREAD_ENTRYTYPE ConnJob(TConn * const connectionP) {
+static void
+ConnJob(void * const userHandle) {
 /*----------------------------------------------------------------------------
    This is the root function for a thread that processes a connection
    (performs HTTP transactions).
 -----------------------------------------------------------------------------*/
-    connectionP->connected=TRUE;
+    TConn * const connectionP = userHandle;
+
     (connectionP->job)(connectionP);
-    connectionP->connected=FALSE;
-    ThreadExit(&connectionP->thread, 0);
-    return 0;
+
+    connectionP->finished = TRUE;
+        /* Note that if we are running in a forked process, setting
+           connectionP->finished has no effect, because it's just our own
+           copy of *connectionP.  In this case, Parent must update his own
+           copy based on a SIGCHLD signal that the OS will generate right
+           after we exit.
+        */
+
+    ThreadExit(0);
 }
 
 
 
-abyss_bool
-ConnCreate2(TConn *             const connectionP, 
-            TServer *           const serverP,
-            TSocket             const connectedSocket,
-            void            ( *       func)(TConn *),
-            enum abyss_foreback const foregroundBackground) {
+static void
+connDone(TConn * const connectionP) {
 
-    abyss_bool retval;
-    abyss_bool success;
-    uint16_t peerPortNumber;
+    /* In the forked case, this is designed to run in the parent
+       process after the child has terminated.
+    */
+    connectionP->finished = TRUE;
+
+    if (connectionP->done)
+        connectionP->done(connectionP);
+}
+
+
+
+static TThreadDoneFn ConnDone;
+
+static void
+ConnDone(void * const userHandle) {
+
+    TConn * const connectionP = userHandle;
     
-    connectionP->server     = serverP;
-    connectionP->socket     = connectedSocket;
-    connectionP->buffersize = 0;
-    connectionP->bufferpos  = 0;
-    connectionP->connected  = TRUE;
-    connectionP->job        = func;
-    connectionP->inbytes    = 0;
-    connectionP->outbytes   = 0;
-    connectionP->trace      = getenv("ABYSS_TRACE_CONN");
-
-    SocketGetPeerName(connectedSocket,
-                      &connectionP->peerip, &peerPortNumber, &success);
-
-    if (success) {
-        retval = FALSE;  /* quiet compiler warning */
-        switch (foregroundBackground) {
-        case ABYSS_FOREGROUND:
-            connectionP->hasOwnThread = FALSE;
-            retval = TRUE;
-            break;
-        case ABYSS_BACKGROUND:
-            connectionP->hasOwnThread = TRUE;
-            retval = ThreadCreate(&connectionP->thread,
-                                  (TThreadProc)ConnJob, 
-                                  connectionP);
-            break;
-        }
-    } else
-        retval = FALSE;
-
-    return retval;
+    connDone(connectionP);
 }
 
 
 
-abyss_bool
-ConnCreate(TConn *   const connectionP,
-           TSocket * const socketP,
-           void (*func)(TConn *)) {
+static void
+makeThread(TConn *             const connectionP,
+           enum abyss_foreback const foregroundBackground,
+           abyss_bool          const useSigchld,
+           const char **       const errorP) {
+           
+    switch (foregroundBackground) {
+    case ABYSS_FOREGROUND:
+        connectionP->hasOwnThread = FALSE;
+        *errorP = NULL;
+        break;
+    case ABYSS_BACKGROUND: {
+        const char * error;
+        connectionP->hasOwnThread = TRUE;
+        ThreadCreate(&connectionP->threadP, connectionP,
+                     &ConnJob, &ConnDone, useSigchld,
+                     &error);
+        if (error) {
+            xmlrpc_asprintf(errorP, "Unable to create thread to "
+                            "process connection.  %s", error);
+            xmlrpc_strfree(error);
+        } else
+            *errorP = NULL;
+    } break;
+    } /* switch */
+}
 
-    return ConnCreate2(connectionP, connectionP->server, *socketP,
-                       func, ABYSS_BACKGROUND);
+    
+
+void
+ConnCreate(TConn **            const connectionPP,
+           TServer *           const serverP,
+           TSocket             const connectedSocket,
+           TThreadProc *       const job,
+           TThreadDoneFn *     const done,
+           enum abyss_foreback const foregroundBackground,
+           abyss_bool          const useSigchld,
+           const char **       const errorP) {
+
+    TConn * connectionP;
+
+    MALLOCVAR(connectionP);
+
+    if (connectionP == NULL)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for a connection "
+                        "descriptor.");
+    else {
+        abyss_bool success;
+        uint16_t peerPortNumber;
+
+        connectionP->server     = serverP;
+        connectionP->socket     = connectedSocket;
+        connectionP->buffersize = 0;
+        connectionP->bufferpos  = 0;
+        connectionP->finished   = FALSE;
+        connectionP->job        = job;
+        connectionP->done       = done;
+        connectionP->inbytes    = 0;
+        connectionP->outbytes   = 0;
+        connectionP->trace      = getenv("ABYSS_TRACE_CONN");
+
+        SocketGetPeerName(connectedSocket,
+                          &connectionP->peerip, &peerPortNumber, &success);
+
+        if (success)
+            makeThread(connectionP, foregroundBackground, useSigchld, errorP);
+        else
+            xmlrpc_asprintf(errorP, "Failed to get peer name from socket.");
+    }
+    *connectionPP = connectionP;
 }
 
 
@@ -111,11 +155,11 @@ ConnProcess(TConn * const connectionP) {
         /* There's a background thread to handle this connection.  Set
            it running.
         */
-        retval = ThreadRun(&(connectionP->thread));
+        retval = ThreadRun(connectionP->threadP);
     } else {
         /* No background thread.  We just handle it here while Caller waits. */
         (connectionP->job)(connectionP);
-        connectionP->connected = FALSE;
+        connDone(connectionP);
         retval = TRUE;
     }
     return retval;
@@ -124,17 +168,19 @@ ConnProcess(TConn * const connectionP) {
 
 
 void
-ConnClose(TConn * const connectionP) {
+ConnWaitAndRelease(TConn * const connectionP) {
     if (connectionP->hasOwnThread)
-        ThreadClose(&connectionP->thread);
+        ThreadWaitAndRelease(connectionP->threadP);
+    
+    free(connectionP);
 }
 
 
 
 abyss_bool
 ConnKill(TConn * connectionP) {
-    connectionP->connected = FALSE;
-    return ThreadKill(&(connectionP->thread));
+    connectionP->finished = TRUE;
+    return ThreadKill(connectionP->threadP);
 }
 
 
@@ -302,21 +348,28 @@ abyss_bool
 ConnWriteFromFile(TConn *  const connectionP,
                   TFile *  const fileP,
                   uint64_t const start,
-                  uint64_t const end,
+                  uint64_t const last,
                   void *   const buffer,
-                  uint32_t const buffersizeArg,
+                  uint32_t const buffersize,
                   uint32_t const rate) {
+/*----------------------------------------------------------------------------
+   Write the contents of the file stream *fileP, from offset 'start'
+   up through 'last', to the HTTP connection *connectionP.
 
+   Meter the reading so as not to read more than 'rate' bytes per second.
+
+   Use the 'bufferSize' bytes at 'buffer' as an internal buffer for this.
+-----------------------------------------------------------------------------*/
     abyss_bool retval;
     uint32_t waittime;
     abyss_bool success;
-    uint32_t buffersize;
+    uint32_t readChunkSize;
 
     if (rate > 0) {
-        buffersize = MIN(buffersizeArg, rate);
+        readChunkSize = MIN(buffersize, rate);  /* One second's worth */
         waittime = (1000 * buffersize) / rate;
     } else {
-        buffersize = buffersizeArg;
+        readChunkSize = buffersize;
         waittime = 0;
     }
 
@@ -324,13 +377,15 @@ ConnWriteFromFile(TConn *  const connectionP,
     if (!success)
         retval = FALSE;
     else {
+        uint64_t const totalBytesToRead = last - start + 1;
         uint64_t bytesread;
 
         bytesread = 0;  /* initial value */
 
-        while (bytesread <= end - start) {
-            uint64_t const bytesToRead = MIN(buffersize,
-                                             (end - start + 1) - bytesread);
+        while (bytesread < totalBytesToRead) {
+            uint64_t const bytesLeft = totalBytesToRead - bytesread;
+            uint64_t const bytesToRead = MIN(readChunkSize, bytesLeft);
+
             uint64_t bytesReadThisTime;
 
             bytesReadThisTime = FileRead(fileP, buffer, bytesToRead);
@@ -342,9 +397,9 @@ ConnWriteFromFile(TConn *  const connectionP,
                 break;
             
             if (waittime > 0)
-                ThreadWait(waittime);
+                xmlrpc_millisecond_sleep(waittime);
         }
-        retval = (bytesread > end - start);
+        retval = (bytesread >= totalBytesToRead);
     }
     return retval;
 }

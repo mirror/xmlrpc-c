@@ -138,42 +138,41 @@ static void sigterm(int sig)
     TraceExit("Signal %d received. Exiting...\n",sig);
 }
 
-static void sigchld(int sig)
-{
-    pid_t pid;
-    int status;
+
+
+static void
+sigchld(int const signalClass) {
+
+    abyss_bool childrenLeft;
+    abyss_bool error;
+
+    childrenLeft = true;
+    error = false;
 
     /* Reap defunct children until there aren't any more. */
-    for (;;)
-    {
-        pid = waitpid( (pid_t) -1, &status, WNOHANG );
+    while (childrenLeft && !error) {
+        int status;
+        pid_t rc;
+        rc = waitpid((pid_t) -1, &status, WNOHANG);
 
-        /* none left */
-        if (pid==0)
-            break;
-
-        if (pid<0)
-        {
+        if (rc == 0)
+            childrenLeft = false;
+        else if (rc < 0) {
             /* because of ptrace */
-            if (errno==EINTR)   
-                continue;
-
-            break;
+            if (errno == EINTR) {
+                /* ptrace causes this */
+            } else
+                error = true;
+        } else {
+            /* We reaped a child. */
+            pid_t const pid = rc;
+            ThreadHandleSigchld(pid);
         }
     }
 }
 #endif _UNIX
 
-void copyright()
-{
-    printf("ABYSS Web Server version "SERVER_VERSION"\n(C) Moez Mahfoudh - 2000\n\n");
-}
 
-void help(char *name)
-{
-    copyright();
-    printf("Usage: %s [-h] [-c configuration file]\n\n",name);
-}
 
 int main(int argc,char **argv)
 {
@@ -195,9 +194,6 @@ int main(int argc,char **argv)
                     else
                         err=TRUE;
                     break;
-                case 'h':
-                    help(name);
-                    exit(0);
                 default:
                     err=TRUE;
                 }
@@ -212,11 +208,6 @@ int main(int argc,char **argv)
         help(name);
         exit(1);
     };
-
-#ifdef WIN32
-    copyright();
-    printf("\nPress Ctrl+C to stop the server\n");
-#endif
 
     DateInit();
 

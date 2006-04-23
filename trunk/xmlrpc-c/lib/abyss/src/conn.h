@@ -8,6 +8,10 @@
 #define BUFFER_SIZE 4096 
 
 struct _TConn {
+    struct _TConn * nextOutstandingP;
+        /* Link to the next connection in the list of outstanding
+           connections
+        */
     TServer * server;
     uint32_t buffersize;
         /* Index into the connection buffer (buffer[], below) where
@@ -21,11 +25,20 @@ struct _TConn {
     TSocket socket;
     TIPAddr peerip;
     abyss_bool hasOwnThread;
-    TThread thread;
-    abyss_bool connected;
-    abyss_bool inUse;
+    TThread * threadP;
+    abyss_bool finished;
+        /* We have done all the processing there is to do on this
+           connection, other than possibly notifying someone that we're
+           done.  One thing this signifies is that any thread or process
+           that the connection spawned is dead or will be dead soon, so
+           one could reasonably wait for it to be dead, e.g. with
+           pthread_join().  Note that one can scan a bunch of processes
+           for 'finished' status, but sometimes can't scan a bunch of
+           threads for liveness.
+        */
     const char * trace;
-    void (*job)(struct _TConn *);
+    TThreadProc * job;
+    TThreadDoneFn * done;
     char buffer[BUFFER_SIZE];
 };
 
@@ -35,16 +48,15 @@ TConn * ConnAlloc(void);
 
 void ConnFree(TConn * const connectionP);
 
-abyss_bool
-ConnCreate(TConn *   const connectionP,
-           TSocket * const s,
-           void (*         func)(TConn *));
-
-abyss_bool ConnCreate2(TConn *             const connectionP, 
-                       TServer *           const serverP,
-                       TSocket             const connectedSocket,
-                       void            ( *       func)(TConn *),
-                       enum abyss_foreback const foregroundBackground);
+void
+ConnCreate(TConn **            const connectionPP,
+           TServer *           const serverP,
+           TSocket             const connectedSocket,
+           TThreadProc *       const job,
+           TThreadDoneFn *     const done,
+           enum abyss_foreback const foregroundBackground,
+           abyss_bool          const useSigchld,
+           const char **       const errorP);
 
 abyss_bool
 ConnProcess(TConn * const connectionP);
@@ -53,7 +65,7 @@ abyss_bool
 ConnKill(TConn * const connectionP);
 
 void
-ConnClose(TConn * const connectionP);
+ConnWaitAndRelease(TConn * const connectionP);
 
 abyss_bool
 ConnWrite(TConn *      const connectionP,
