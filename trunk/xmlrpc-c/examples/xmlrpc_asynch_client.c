@@ -72,7 +72,7 @@ int
 main(int           const argc, 
      const char ** const argv ATTR_UNUSED) {
 
-    char * const url = "http://localhost:8080/RPC2";
+    char * const serverUrl = "http://localhost:8080/RPC2";
     char * const methodName = "sample.add";
 
     xmlrpc_env env;
@@ -98,10 +98,10 @@ main(int           const argc,
     for (adder = 0; adder < 3; ++adder) {
         printf("Making XMLRPC call to server url '%s' method '%s' "
                "to request the sum "
-               "of 5 and %d...\n", url, methodName, adder);
+               "of 5 and %d...\n", serverUrl, methodName, adder);
 
         /* request the remote procedure call */
-        xmlrpc_client_start_rpcf(&env, clientP, url, methodName,
+        xmlrpc_client_start_rpcf(&env, clientP, serverUrl, methodName,
                                   handle_sample_add_response, NULL,
                                   "(ii)", (xmlrpc_int32) 5, adder);
         die_if_fault_occurred(&env);
