@@ -151,7 +151,7 @@ void xml_element_free (xml_element *elem)
 **  documentation on each function works.
 */
 
-char *xml_element_name (xml_element *elem)
+const char *xml_element_name (const xml_element * const elem)
 {
     XMLRPC_ASSERT_ELEM_OK(elem);
     return elem->_name;
@@ -171,13 +171,13 @@ char *xml_element_cdata (xml_element *elem)
     return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &elem->_cdata);
 }
 
-size_t xml_element_children_size (xml_element *elem)
+size_t xml_element_children_size (const xml_element *const elem)
 {
     XMLRPC_ASSERT_ELEM_OK(elem);
     return XMLRPC_TYPED_MEM_BLOCK_SIZE(xml_element*, &elem->_children);
 }
 
-xml_element **xml_element_children (xml_element *elem)
+xml_element **xml_element_children (const xml_element *const elem)
 {
     XMLRPC_ASSERT_ELEM_OK(elem);
     return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xml_element*, &elem->_children);
@@ -414,13 +414,13 @@ xml_parse(xmlrpc_env *   const envP,
     XMLRPC_ASSERT(context.root != NULL);
     XMLRPC_ASSERT(context.current == NULL);
 
-    *resultP = context.root;
+    *resultPP = context.root;
 
  cleanup:
     if (parser)
         xmlFreeParserCtxt(parser);
 
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         if (context.root)
             xml_element_free(context.root);
     }
