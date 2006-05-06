@@ -129,6 +129,7 @@ carriageParm_curl0Ptr::operator->() const {
 
 
 
+void
 clientXmlTransport_curl::constrOpt::constrOpt() {
 
     present.network_interface = false;
