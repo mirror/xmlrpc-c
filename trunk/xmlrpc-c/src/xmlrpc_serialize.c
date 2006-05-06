@@ -477,7 +477,7 @@ xmlrpc_serialize_call(xmlrpc_env *       const env,
     XMLRPC_FAIL_IF_FAULT(env);
 
     /* Dump the method name. */
-    encodeForXml(env, method_name, strlen(method_name), &encodedP);
+    escapeForXml(env, method_name, strlen(method_name), &encodedP);
     XMLRPC_FAIL_IF_FAULT(env);
     contents = XMLRPC_MEMBLOCK_CONTENTS(char, encodedP);
     size = XMLRPC_MEMBLOCK_SIZE(char, encodedP);
