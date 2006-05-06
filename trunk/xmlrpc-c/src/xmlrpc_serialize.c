@@ -1,30 +1,8 @@
-/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE. */
+/* Copyright information is at end of file */
 
 #include "xmlrpc_config.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -82,35 +60,24 @@ cleanup:
 }
 
 
-/*=========================================================================
-**  Warnings About Invalid UTF-8
-**=========================================================================
-**  We claim to send UTF-8 data to the network.  But we rely on application
-**  programs to pass us correctly-formed UTF-8 data, which is very naive
-**  and optimistic.
-**
-**  In debudding mode, we call this routine to issue dire-sounding
-**  warnings.  For the sake of safety, this routine never exits the
-**  program or does anything else drastic.
-**
-**  This routine almost certainly slows down our output.
-*/
-
 
 static void 
-sanity_check_utf8(const char * const str ATTR_UNUSED,
-                  size_t       const len ATTR_UNUSED) {
-
+assertValidUtf8(const char * const str,
+                size_t       const len) {
+/*----------------------------------------------------------------------------
+   Assert that the string 'str' of length 'len' is valid UTF-8.
+-----------------------------------------------------------------------------*/
 #if !defined NDEBUG
+    /* Check the assertion; if it's false, issue a message to
+       Standard Error, but otherwise ignore it.
+    */
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
-#if HAVE_UNICODE_WCHAR
     xmlrpc_validate_utf8(&env, str, len);
-#endif
     if (env.fault_occurred)
         fprintf(stderr, "*** xmlrpc-c WARNING ***: %s (%s)\n",
-                "Application sending corrupted UTF-8 data to network",
+                "Xmlrpc-c sending corrupted UTF-8 data to network",
                 env.fault_string);
     xmlrpc_env_clean(&env);
 #endif
@@ -118,129 +85,120 @@ sanity_check_utf8(const char * const str ATTR_UNUSED,
 
 
 
-/*=========================================================================
-**  Escaping Strings
-**=========================================================================
-*/
-
-static xmlrpc_mem_block * 
-escape_string(xmlrpc_env * const env, 
-              const char * const str,
-              size_t       const len) {
-
-    xmlrpc_mem_block *retval;
-    size_t i, needed;
-    char *out;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT(str != NULL);
-
-    /* Set up our error-handling preconditions. */
-    retval = NULL;
-
-    /* Sanity-check this string before we print it. */
-    sanity_check_utf8(str, len);
+static size_t
+escapedSize(const char * const chars,
+            size_t       const len) {
     
-    /* Calculate the amount of space we'll need. */
-    needed = 0;
-    for (i = 0; i < len; i++) {
-        if (str[i] == '<')
-            needed += 4; /* &lt; */
-        else if (str[i] == '>')
-            needed += 4; /* &gt; */
-        else if (str[i] == '&')
-            needed += 5; /* &amp; */
-        else
-            needed++;
-    }
-
-    /* Allocate our memory block. */
-    retval = XMLRPC_TYPED_MEM_BLOCK_NEW(char, env, needed);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Copy over the newly-allocated data. */
-    out = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, retval);
-    for (i = 0; i < len; i++) {
-        if (str[i] == '<') {
-            *out++ = '&';
-            *out++ = 'l';
-            *out++ = 't';
-            *out++ = ';';
-        } else if (str[i] == '>') {
-            *out++ = '&';
-            *out++ = 'g';
-            *out++ = 't';
-            *out++ = ';';
-        } else if (str[i] == '&') {
-            *out++ = '&';
-            *out++ = 'a';
-            *out++ = 'm';
-            *out++ = 'p';
-            *out++ = ';';
-        } else {
-            *out++ = str[i];
-        }
-    }
-
- cleanup:
-    if (env->fault_occurred) {
-        if (retval)
-            XMLRPC_TYPED_MEM_BLOCK_FREE(char, retval);
-        retval = NULL;
-    }
-    return retval;
-}
-
-
-
-static xmlrpc_mem_block* 
-escape_block (xmlrpc_env *env,
-              xmlrpc_mem_block *block) {
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT(block != NULL);
-
-    return escape_string(env,
-                         XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, block),
-                         XMLRPC_TYPED_MEM_BLOCK_SIZE(char, block));
-}
-
-
-
-/*=========================================================================
-**  xmlrpc_serialize_string_data
-**=========================================================================
-**  Escape and print the contents of a string.
-*/                
-
-static void 
-xmlrpc_serialize_string_data(xmlrpc_env *env,
-                             xmlrpc_mem_block *output,
-                             xmlrpc_value *string) {
-
-    xmlrpc_mem_block *escaped;
-    char *contents;
     size_t size;
+    size_t i;
 
-    /* Assertion is temporarily not true because we're using this code to
-       print <dateTime.iso8601> values as well.
+    size = 0;
+    for (i = 0; i < len; ++i) {
+        if (chars[i] == '<')
+            size += 4; /* &lt; */
+        else if (chars[i] == '>')
+            size += 4; /* &gt; */
+        else if (chars[i] == '&')
+            size += 5; /* &amp; */
+        else
+            size += 1;
+    }
+    return size;
+}
 
-    XMLRPC_ASSERT(string->_type == XMLRPC_TYPE_STRING);
+
+
+static void
+escapeForXml(xmlrpc_env *        const envP, 
+             const char *        const chars,
+             size_t              const len,
+             xmlrpc_mem_block ** const outputPP) {
+/*----------------------------------------------------------------------------
+   Escape & and < in a UTF-8 string so as to make it suitable for the
+   content of an XML element.  I.e. turn them into entity references
+   &amp; and &lt;.  Also change > to &gt;, even though not required
+   for XML, for symmetry.
+-----------------------------------------------------------------------------*/
+    xmlrpc_mem_block * outputP;
+    size_t outputSize;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(chars != NULL);
+
+    assertValidUtf8(chars, len);
+
+    /* Note that in UTF-8, any byte that has high bit of zero is a
+       character all by itself (every byte of a multi-byte UTF-8 character
+       has the high bit set).  Also, the Unicode code points < 128 are
+       identical to the ASCII ones.
     */
 
-    /* Escape any '&' and '<' characters in the string. */
-    escaped = escape_block(env, &string->_block);
-    XMLRPC_FAIL_IF_FAULT(env);
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, escaped);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, escaped) - 1;
+    outputSize = escapedSize(chars, len);
+
+    outputP = XMLRPC_MEMBLOCK_NEW(char, envP, outputSize);
+    if (!envP->fault_occurred) {
+        char * p;
+        size_t i;
+        p = XMLRPC_MEMBLOCK_CONTENTS(char, outputP); /* Start at beginning */
+
+        for (i = 0; i < len; i++) {
+            if (chars[i] == '<') {
+                memcpy(p, "&lt;", 4);
+                p += 4;
+            } else if (chars[i] == '>') {
+                memcpy(p, "&gt;", 4);
+                p += 4;
+            } else if (chars[i] == '&') {
+                memcpy(p, "&amp;", 5);
+                p += 5;
+            } else {
+                *p = chars[i];
+                p += 1;
+            }
+        }
+        *outputPP = outputP;
+        assert(p == XMLRPC_MEMBLOCK_CONTENTS(char, outputP) + outputSize);
+
+        if (envP->fault_occurred)
+            XMLRPC_MEMBLOCK_FREE(char, outputP);
+    }
+}
+
+
+
+static void 
+serializeUtf8MemBlock(xmlrpc_env *       const envP,
+                      xmlrpc_mem_block * const outputP,
+                      xmlrpc_mem_block * const inputP) {
+/*----------------------------------------------------------------------------
+   Append the characters in *inputP to the XML stream in *outputP.
+
+   *inputP contains Unicode characters in UTF-8.
+
+   We assume *inputP ends with a NUL character that marks end of
+   string, and we ignore that.  (There might also be NUL characters
+   inside the string, though).
+-----------------------------------------------------------------------------*/
+    xmlrpc_mem_block * escapedP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(outputP != NULL);
+    XMLRPC_ASSERT(inputP != NULL);
+
+    escapeForXml(envP,
+                 XMLRPC_MEMBLOCK_CONTENTS(const char, inputP),
+                 XMLRPC_MEMBLOCK_SIZE(const char, inputP) - 1,
+                    /* -1 is for the terminating NUL */
+                 &escapedP);
+    if (!envP->fault_occurred) {
+        const char * const contents =
+            XMLRPC_MEMBLOCK_CONTENTS(const char, escapedP);
+        size_t const size = XMLRPC_MEMBLOCK_SIZE(char, escapedP);
     
-    /* Print the string. */
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, contents, size);
-    XMLRPC_FAIL_IF_FAULT(env);
-    
- cleanup:
-    if (escaped)
-        XMLRPC_TYPED_MEM_BLOCK_FREE(char, escaped);
+        XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, contents, size);
+
+        XMLRPC_MEMBLOCK_FREE(const char, escapedP);
+    }
 }
 
 
@@ -296,7 +254,7 @@ xmlrpc_serialize_struct(xmlrpc_env *env,
         XMLRPC_FAIL_IF_FAULT(env);
         format_out(env, output, "<member><name>");
         XMLRPC_FAIL_IF_FAULT(env);
-        xmlrpc_serialize_string_data(env, output, key);
+        serializeUtf8MemBlock(env, output, &key->_block);
         XMLRPC_FAIL_IF_FAULT(env);
         format_out(env, output, "</name>"CRLF);
         XMLRPC_FAIL_IF_FAULT(env);
@@ -363,7 +321,7 @@ xmlrpc_serialize_value(xmlrpc_env *env,
     case XMLRPC_TYPE_STRING:
         format_out(env, output, "<string>");
         XMLRPC_FAIL_IF_FAULT(env);
-        xmlrpc_serialize_string_data(env, output, value);
+        serializeUtf8MemBlock(env, output, &value->_block);
         XMLRPC_FAIL_IF_FAULT(env);
         format_out(env, output, "</string>");
         break;
@@ -405,7 +363,7 @@ xmlrpc_serialize_value(xmlrpc_env *env,
     case XMLRPC_TYPE_DATETIME:
         format_out(env, output, "<dateTime.iso8601>");
         XMLRPC_FAIL_IF_FAULT(env);
-        xmlrpc_serialize_string_data(env, output, value);
+        serializeUtf8MemBlock(env, output, &value->_block);
         XMLRPC_FAIL_IF_FAULT(env);
         format_out(env, output, "</dateTime.iso8601>");
         break;
@@ -500,7 +458,7 @@ xmlrpc_serialize_call(xmlrpc_env *       const env,
                       const char *       const method_name,
                       xmlrpc_value *     const param_array) {
 
-    xmlrpc_mem_block *escaped;
+    xmlrpc_mem_block * encodedP;
     char *contents;
     size_t size;
 
@@ -510,7 +468,7 @@ xmlrpc_serialize_call(xmlrpc_env *       const env,
     XMLRPC_ASSERT_VALUE_OK(param_array);
     
     /* Set up our error-handling preconditions. */
-    escaped = NULL;
+    encodedP = NULL;
 
     /* Dump our header. */
     format_out(env, output, XML_PROLOGUE);
@@ -519,11 +477,11 @@ xmlrpc_serialize_call(xmlrpc_env *       const env,
     XMLRPC_FAIL_IF_FAULT(env);
 
     /* Dump the method name. */
-    escaped = escape_string(env, method_name, strlen(method_name));
+    encodeForXml(env, method_name, strlen(method_name), &encodedP);
     XMLRPC_FAIL_IF_FAULT(env);
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, escaped);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, escaped);
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, contents, size);
+    contents = XMLRPC_MEMBLOCK_CONTENTS(char, encodedP);
+    size = XMLRPC_MEMBLOCK_SIZE(char, encodedP);
+    XMLRPC_MEMBLOCK_APPEND(char, env, output, contents, size);
     XMLRPC_FAIL_IF_FAULT(env);    
 
     /* Dump our parameters and footer. */
@@ -535,8 +493,8 @@ xmlrpc_serialize_call(xmlrpc_env *       const env,
     XMLRPC_FAIL_IF_FAULT(env);
 
  cleanup:
-    if (escaped)
-        xmlrpc_mem_block_free(escaped);
+    if (encodedP)
+        XMLRPC_MEMBLOCK_FREE(char, encodedP);
 }
 
 
@@ -623,3 +581,31 @@ xmlrpc_serialize_fault(xmlrpc_env *env,
     if (strct)
         xmlrpc_DECREF(strct);
 }
+
+
+
+
+/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission. 
+**  
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE. */
