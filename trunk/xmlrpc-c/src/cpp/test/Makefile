@@ -17,7 +17,11 @@ default: all
 
 all: $(PROGS)
 
+XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
+
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+
+LDFLAGS += $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   LDFLAGS += $(shell curl-config --libs)
@@ -39,11 +43,6 @@ Makefile: blddir srcdir
 
 include $(SRCDIR)/Makefile.common
 
-ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  LIBXML = $(LIBXML2_LIBS)
-else
-  LIBXML = $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
-endif
 
 TEST_OBJS = test.o server_abyss.o tools.o
 
@@ -59,8 +58,7 @@ endif
 test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
   $(CLIENT_LIBS) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
   $(LIBXMLRPC_SERVER_ABYSS_A) $(LIBXMLRPC_SERVER_A) \
-  $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) $(LIBXMLRPC_ABYSS_A) \
-  $(LIBXML)
+  $(LIBXMLRPC_A) $(LIBXMLRPC_ABYSS_A) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL_A) 
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
 %.o:%.cpp

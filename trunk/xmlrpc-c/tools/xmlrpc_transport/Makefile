@@ -20,7 +20,8 @@ LDFLAGS = $(CLIENT_LDFLAGS) $(LADD)
 UTIL_OBJS = cmdline_parser.o getoptx.o casprintf.o
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-LIBS =  $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXML) $(LIBXMLRPC_UTIL) $(UTILS)
+LIBS =  $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL) \
+  $(UTILS)
 
 xmlrpc_transport:%:%.o $(LIBS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^

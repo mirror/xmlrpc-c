@@ -32,11 +32,8 @@ endif
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
-  LIBXML = $(LIBXML2_LIBS)
 else
   LIBXML_INCLUDES = -I$(SRCDIR)/lib/expat/xmlparse
-  LIBXML = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-           $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
 endif
 
 ABYSS_INCLUDES = -I$(SRCDIR)/lib/abyss/src

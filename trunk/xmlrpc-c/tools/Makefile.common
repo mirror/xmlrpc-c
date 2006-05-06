@@ -11,21 +11,11 @@ ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   CLIENT_LDFLAGS += $(shell wininet-config --libs)
 endif
 
-LIBEXPAT = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-           $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
-
-ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  LIBXML = $(LIBXML2_LIBS)
-else
-  LIBXML = $(LIBEXPAT)
-endif
-
-XMLRPC_LIBS = $(LIBXMLRPC) $(LIBXMLRPC_CPP) $(LIBXMLRPC_CLIENT) \
-	$(LIBXMLRPC_SERVER) $(LIBXML)
+CLIENT_LDFLAGS += $(EXTERNAL_XML_LINK)
 
 UTIL_DIR = $(BUILDDIR)/lib/util
 
-BUILDABLE_UTILS = casprintf.o cmdline_parser.o getoptx.o
+BUILDABLE_UTILS = cmdline_parser.o getoptx.o
 
 $(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)

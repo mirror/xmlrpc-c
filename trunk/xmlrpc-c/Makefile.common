@@ -52,6 +52,11 @@ ifeq ($(CURDIR)x,x)
   CURDIR := $(shell /bin/pwd)
 endif
 
+ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
+  EXTERNAL_XML_LINK = $(LIBXML2_LIBS)
+endif
+
+
 LIBXMLRPC_UTIL           = $(BUILDDIR)/lib/libutil/libxmlrpc_util.la
 LIBXMLRPC                = $(BUILDDIR)/src/libxmlrpc.la
 LIBXMLRPC_CLIENT         = $(BUILDDIR)/src/libxmlrpc_client.la
@@ -79,6 +84,15 @@ LIBXMLRPC_SERVER_ABYSS++ = $(BUILDDIR)/src/cpp/libxmlrpc_server_abyss++.a
 CASPRINTF                = $(BUILDDIR)/lib/util/casprintf.o
 
 UTILS = $(CASPRINTF)
+
+
+# LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
+# XML.  If we're using an external library to parse XML, this is null.
+
+ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
+  # We're using the internal Expat XML parser
+  LIBXMLRPC_XML = $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLTOK)
+endif
 
 ##############################################################################
 #                           BUILD RULES                                      #

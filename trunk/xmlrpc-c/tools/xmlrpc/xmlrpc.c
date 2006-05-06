@@ -237,7 +237,7 @@ computeUrl(const char *  const urlArg,
            const char ** const urlP) {
 
     if (strstr(urlArg, "://") != 0)
-        *urlP = casprintf("%s", urlArg);
+        casprintf(urlP, "%s", urlArg);
     else
         casprintf(urlP, "http://%s/RPC2", urlArg);
 }

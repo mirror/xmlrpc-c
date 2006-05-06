@@ -14,13 +14,6 @@ LDADD_CLIENT = \
 LDADD_SERVER = \
   $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
 
-ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  LIBXML = $(LIBXML2_LIBS)
-else
-  LIBXML = $(BUILDDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a \
-           $(BUILDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
-endif
-
 default: all
 
 INCLUDES = -I$(BUILDDIR) -I$(SRCDIR) \
@@ -53,14 +46,14 @@ endif
 include $(SRCDIR)/Makefile.common
 
 test: $(TEST_OBJS) $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) \
-  $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_ABYSS_A) $(LIBXML) \
+  $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_ABYSS_A) $(LIBXMLRPC_XML) \
    $(LIBXMLRPC_CLIENT_DEP) $(LIBXMLRPC_ABYSS_A) $(CASPRINTF)
 	$(CCLD) -o $@ $(LDFLAGS) \
 	    $(TEST_OBJS) $(LDADD_CLIENT) $(LDADD_SERVER) $(CASPRINTF)
 
 cgitest1:%:%.o $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_CGI_A) $(LIBXMLRPC_A) \
-  $(LIBXMLRPC_UTIL_A) $(LIBXML)
-	$(CCLD) -o $@ $(LDFLAGS) $^
+  $(LIBXMLRPC_UTIL_A) $(LIBXMLRPC_XML)
+	$(CCLD) -o $@ $(LDFLAGS) $(LDADD_SERVER) $<
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 

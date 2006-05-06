@@ -34,7 +34,7 @@ xml-rpc-api2cpp: \
   $(LIBXMLRPC_CLIENT) \
   $(LIBXMLRPC_SERVER) \
   $(LIBXMLRPC) \
-  $(LIBXML) \
+  $(LIBXMLRPC_XML) \
   $(LIBXMLRPC_UTIL)
 	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
 
