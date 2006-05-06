@@ -15,6 +15,7 @@
 #include "xmlrpc-c/base_int.h"
 
 
+
 void
 xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP) {
 
