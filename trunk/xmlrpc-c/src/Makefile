@@ -31,7 +31,7 @@ ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
 endif
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
+  LIBXML_INCLUDES = $(shell xml2-config --cflags)
 else
   LIBXML_INCLUDES = -I$(SRCDIR)/lib/expat/xmlparse
 endif
@@ -145,7 +145,7 @@ clean: clean-common clean-local $(SUBDIRS:%=%/clean)
 clean-local:
 	$(MAKE) -C test clean
 
-distclean: clean-local distclean-common $(SUBDIRS:%=%/distclean)
+distclean: clean-common clean-local distclean-common $(SUBDIRS:%=%/distclean)
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BUILDDIR)/transport_config.h dep-common

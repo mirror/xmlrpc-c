@@ -7,9 +7,9 @@
 #include <stdarg.h>
 #include <time.h>
 #include <xmlrpc-c/util.h>
-#include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_UNICODE_WCHAR */
+#include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
 
-#if XMLRPC_HAVE_UNICODE_WCHAR
+#if XMLRPC_HAVE_WCHAR
 #include <wchar.h>
 #endif
 
@@ -156,7 +156,7 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
                       size_t *             const lengthP,
                       const char **        const stringValueP);
 
-#if XMLRPC_HAVE_UNICODE_WCHAR
+#if XMLRPC_HAVE_WCHAR
 xmlrpc_value *
 xmlrpc_string_w_new(xmlrpc_env *    const envP,
                     const wchar_t * const stringValue);
@@ -177,7 +177,7 @@ xmlrpc_read_string_w_lp(xmlrpc_env *     const envP,
                         size_t *         const lengthP,
                         const wchar_t ** const stringValueP);
 
-#endif /* XMLRPC_HAVE_UNICODE_WCHAR */
+#endif /* XMLRPC_HAVE_WCHAR */
 
 xmlrpc_value *
 xmlrpc_base64_new(xmlrpc_env *          const envP, 
@@ -560,7 +560,7 @@ xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
 
 /* Encode a UTF-8 string. */
 
-#if XMLRPC_HAVE_UNICODE_WCHAR
+#if XMLRPC_HAVE_WCHAR
 xmlrpc_mem_block *
 xmlrpc_wcs_to_utf8(xmlrpc_env * env,
                    wchar_t *    wcs_data,

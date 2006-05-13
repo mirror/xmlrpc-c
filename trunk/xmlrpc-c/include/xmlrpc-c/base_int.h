@@ -124,7 +124,7 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           size_t *             const lengthP,
                           const char **        const stringValueP);
 
-#if HAVE_UNICODE_WCHAR
+#if XMLRPC_HAVE_WCHAR
 void
 xmlrpc_read_string_w_old(xmlrpc_env *     const envP,
                          xmlrpc_value *   const valueP,

@@ -53,7 +53,7 @@ ifeq ($(CURDIR)x,x)
 endif
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  EXTERNAL_XML_LINK = $(LIBXML2_LIBS)
+  EXTERNAL_XML_LINK = $(shell xml2-config --libs)
 endif
 
 

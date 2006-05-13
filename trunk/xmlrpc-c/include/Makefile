@@ -12,7 +12,7 @@ default: all
 all: xmlrpc-c/config.h
 
 xmlrpc-c/config.h:
-	echo "#define XMLRPC_HAVE_UNICODE_WCHAR $(HAVE_UNICODE_WCHAR)" >$@
+	echo "#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)" >$@
 
 
 HEADERS_TO_INSTALL = \
@@ -37,8 +37,6 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
     xmlrpc-c/server_abyss.hpp \
 
 endif
-
-
 
 HEADERINST_PREFIX = /xmlrpc-c
 

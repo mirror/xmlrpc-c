@@ -129,7 +129,6 @@ carriageParm_curl0Ptr::operator->() const {
 
 
 
-void
 clientXmlTransport_curl::constrOpt::constrOpt() {
 
     present.network_interface = false;
@@ -241,6 +240,7 @@ clientXmlTransport_curl::initialize(constrOpt const& opt) {
 
 #else  // MUST_BUILD_CURL_CLIENT
 
+void
 clientXmlTransport_curl::initialize(constrOpt const& opt) {
 
     throw(error("There is no Curl client XML transport in this XML-RPC client "
