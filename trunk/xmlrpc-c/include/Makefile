@@ -44,6 +44,7 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
   HEADERS_TO_INSTALL += \
     xmlrpc-c/client.h \
     xmlrpc-c/transport.h \
+    xmlrpc-c/client_global.h \
 
   ifeq ($(ENABLE_CPLUSPLUS),yes)
     HEADERS_TO_INSTALL += xmlrpc-c/client.hpp xmlrpc-c/client_simple.hpp
