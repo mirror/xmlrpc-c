@@ -604,14 +604,10 @@ AC_MSG_RESULT($enable_libxml2_backend)
 if test $enable_libxml2_backend = yes; then
   AC_CHECK_PROG(have_xml2_config, xml2-config, yes, no)
   if test $have_xml2_config = no; then
-    AC_MSG_NOTICE([You don't appear to have libxml2 installed (no working xml2-config inyour command search path), so we will not build the libxml2 backend])
-    ENABLE_LIBXML2_BACKEND=no
-  else
-    ENABLE_LIBXML2_BACKEND=yes
+    AC_MSG_ERROR([You specified --enable-libxml2_backend, but don't appear to have libxml2 installed (no working xml2-config inyour command search path), so we cannot not build for libxml2])
   fi
-  LIBXML2_LDADD=`xml2-config --libs`
-  AC_SUBST(LIBXML2_LDADD)
 fi
+ENABLE_LIBXML2_BACKEND=$enable_libxml2_backend
 AC_SUBST(ENABLE_LIBXML2_BACKEND)
 
 dnl =======================================================================

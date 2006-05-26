@@ -20,7 +20,7 @@ endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   SUBDIRS += libwww_transport
 endif
-ifneq ($(ENABLE_LIBXML2),yes)
+ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   SUBDIRS += expat
 endif
 

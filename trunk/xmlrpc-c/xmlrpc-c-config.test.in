@@ -26,7 +26,7 @@ fi
 sopath=
 
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
-  LIBXML="@LIBXML2_LIBS@"
+  LIBXML=$(xml2-config --libs)
 else
   LIBXML="${BUILDDIR}/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a"
   sopath="${BUILDDIR}/lib/expat/xmlparse/.libs:$sopath"
