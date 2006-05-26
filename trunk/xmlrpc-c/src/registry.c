@@ -97,7 +97,6 @@ xmlrpc_registry_free(xmlrpc_registry * const registryP) {
     XMLRPC_ASSERT_PTR_OK(registryP);
     XMLRPC_ASSERT(registryP->_methods != XMLRPC_BAD_POINTER);
 
-    registryP->_methods = XMLRPC_BAD_POINTER;
     xmlrpc_DECREF(registryP->_methods);
 
     if (registryP->_default_method != NULL)
