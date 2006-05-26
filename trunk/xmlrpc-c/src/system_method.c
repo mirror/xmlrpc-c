@@ -332,7 +332,7 @@ system_multicall(xmlrpc_env *env,
 
 
 
-struct systemMethodReg const multicall = {
+static struct systemMethodReg const multicall = {
     "system.multicall",
     &system_multicall,
     "A:A",
@@ -400,7 +400,7 @@ system_listMethods(xmlrpc_env *env,
     return method_names;
 }
 
-struct systemMethodReg const listMethods = {
+static struct systemMethodReg const listMethods = {
     "system.listMethods",
     &system_listMethods,
     "A:",
@@ -449,7 +449,7 @@ system_methodHelp(xmlrpc_env *env,
 }
 
 
-struct systemMethodReg const methodHelp = {
+static struct systemMethodReg const methodHelp = {
     "system.methodHelp",
     &system_methodHelp,
     "s:s",
@@ -614,7 +614,7 @@ system_methodSignature(xmlrpc_env *   const envP,
 
 
 
-struct systemMethodReg const methodSignature = {
+static struct systemMethodReg const methodSignature = {
     "system.methodSignature",
     &system_methodSignature,
     "s:s",
@@ -684,7 +684,7 @@ system_shutdown(xmlrpc_env *   const envP,
 
 
 
-struct systemMethodReg const shutdown = {
+static struct systemMethodReg const shutdown = {
     "system.shutdown",
     &system_shutdown,
     "i:s",
