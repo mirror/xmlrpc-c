@@ -350,7 +350,7 @@ createParser(xmlrpc_env *   const envP,
 -----------------------------------------------------------------------------*/
     XML_Parser parser;
 
-    parser = XML_ParserCreate(NULL);
+    parser = xmlrpc_XML_ParserCreate(NULL);
     if (parser == NULL)
         xmlrpc_faultf(envP, "Could not create expat parser");
     else {
@@ -359,12 +359,14 @@ createParser(xmlrpc_env *   const envP,
         contextP->rootP    = NULL;
         contextP->currentP = NULL;
 
-        XML_SetUserData(parser, contextP);
-        XML_SetElementHandler(parser,
-                              (XML_StartElementHandler) startElement,
-                              (XML_EndElementHandler) endElement);
-        XML_SetCharacterDataHandler(parser,
-                                    (XML_CharacterDataHandler) characterData);
+        xmlrpc_XML_SetUserData(parser, contextP);
+        xmlrpc_XML_SetElementHandler(
+            parser,
+            (XML_StartElementHandler) startElement,
+            (XML_EndElementHandler) endElement);
+        xmlrpc_XML_SetCharacterDataHandler(
+            parser,
+            (XML_CharacterDataHandler) characterData);
         
         *parserP = parser;
     }
@@ -378,7 +380,7 @@ destroyParser(XML_Parser     const parser,
 
     xmlrpc_env_clean(&contextP->env);
 
-    XML_ParserFree(parser);
+    xmlrpc_XML_ParserFree(parser);
 }
 
 
@@ -415,7 +417,7 @@ xml_parse(xmlrpc_env *   const envP,
     if (!envP->fault_occurred) {
         bool ok;
 
-        ok = XML_Parse(parser, xmlData, xmlDataLen, 1);
+        ok = xmlrpc_XML_Parse(parser, xmlData, xmlDataLen, 1);
             /* sets 'context', *envP */
         if (!ok) {
             /* Expat failed on its own to parse it -- this is not an error
@@ -423,7 +425,7 @@ xml_parse(xmlrpc_env *   const envP,
             */
             xmlrpc_env_set_fault(
                 envP, XMLRPC_PARSE_ERROR,
-                XML_ErrorString(XML_GetErrorCode(parser)));
+                xmlrpc_XML_ErrorString(xmlrpc_XML_GetErrorCode(parser)));
             if (!context.env.fault_occurred) {
                 /* Have to clean up what our handlers built before Expat
                    barfed.
