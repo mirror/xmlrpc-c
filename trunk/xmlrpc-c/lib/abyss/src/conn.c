@@ -105,7 +105,7 @@ makeThread(TConn *             const connectionP,
 void
 ConnCreate(TConn **            const connectionPP,
            TServer *           const serverP,
-           TSocket             const connectedSocket,
+           TSocket *           const connectedSocketP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
@@ -124,7 +124,7 @@ ConnCreate(TConn **            const connectionPP,
         uint16_t peerPortNumber;
 
         connectionP->server     = serverP;
-        connectionP->socket     = connectedSocket;
+        connectionP->socketP    = connectedSocketP;
         connectionP->buffersize = 0;
         connectionP->bufferpos  = 0;
         connectionP->finished   = FALSE;
@@ -134,7 +134,7 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->outbytes   = 0;
         connectionP->trace      = getenv("ABYSS_TRACE_CONN");
 
-        SocketGetPeerName(connectedSocket,
+        SocketGetPeerName(connectedSocketP,
                           &connectionP->peerip, &peerPortNumber, &success);
 
         if (success)
@@ -284,7 +284,7 @@ ConnRead(TConn *  const connectionP,
         else {
             int rc;
             
-            rc = SocketWait(&connectionP->socket, TRUE, FALSE,
+            rc = SocketWait(connectionP->socketP, TRUE, FALSE,
                             timeLeft * 1000);
             
             if (rc != 1)
@@ -292,7 +292,7 @@ ConnRead(TConn *  const connectionP,
             else {
                 uint32_t bytesAvail;
             
-                bytesAvail = SocketAvailableReadBytes(&connectionP->socket);
+                bytesAvail = SocketAvailableReadBytes(connectionP->socketP);
                 
                 if (bytesAvail <= 0)
                     cantGetData = TRUE;
@@ -303,7 +303,7 @@ ConnRead(TConn *  const connectionP,
                     uint32_t bytesRead;
 
                     bytesRead = SocketRead(
-                        &connectionP->socket,
+                        connectionP->socketP,
                         connectionP->buffer + connectionP->buffersize,
                         bytesToRead);
                     if (bytesRead > 0) {
@@ -332,7 +332,7 @@ ConnWrite(TConn *      const connectionP,
 
     abyss_bool failed;
 
-    SocketWrite(&connectionP->socket, buffer, size, &failed);
+    SocketWrite(connectionP->socketP, buffer, size, &failed);
 
     traceSocketWrite(connectionP, buffer, size, failed);
 

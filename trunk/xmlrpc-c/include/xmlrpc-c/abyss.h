@@ -73,10 +73,14 @@ typedef struct {
     struct _TServer * srvP;
 } TServer;
 
+/* TOsSocket is the type of a conventional socket offered by our OS.
+   This is for backward compatibility; everyone should use TSocket
+   sockets today.
+*/
 #ifdef WIN32
-typedef SOCKET TSocket;
+typedef SOCKET TOsSocket;
 #else
-typedef int TSocket;
+typedef int TOsSocket;
 #endif  /* WIN32 */
 
 typedef struct _TSession TSession;
@@ -91,7 +95,7 @@ ServerCreate(TServer *    const serverP,
 abyss_bool
 ServerCreateSocket(TServer *    const serverP,
                    const char * const name,
-                   TSocket      const socketFd,
+                   TOsSocket    const socketFd,
                    const char * const filespath,
                    const char * const logfilename);
 
@@ -145,7 +149,7 @@ ServerRunOnce2(TServer *           const serverP,
 
 void
 ServerRunConn(TServer * const serverP,
-              TSocket   const connectedSocket);
+              TOsSocket const connectedSocket);
 
 void
 ServerDaemonize(TServer * const serverP);

@@ -32,6 +32,8 @@
 #endif  /* WIN32 */
 
 #include "xmlrpc-c/util_int.h"
+#include "mallocvar.h"
+
 #include "socket.h"
 
 #ifdef WIN32
@@ -51,7 +53,7 @@ static abyss_bool ABYSS_TRACE_SOCKET;
 
 
 uint32_t
-SocketError() {
+SocketError(void) {
 #ifdef WIN32
     return WSAGetLastError();
 #else
@@ -61,18 +63,18 @@ SocketError() {
 
 
 
-abyss_bool SocketInit()
-{
+abyss_bool
+SocketInit(void) {
     abyss_bool retval;
 #ifdef WIN32
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
  
-    wVersionRequested = MAKEWORD( 2, 0 );
+    wVersionRequested = MAKEWORD(2, 0);
  
-    err = WSAStartup( wVersionRequested, &wsaData );
-    retval = ( err == 0 );
+    err = WSAStartup(wVersionRequested, &wsaData);
+    retval = (err == 0);
 #else
     retval = TRUE;
     ABYSS_TRACE_SOCKET = (getenv("ABYSS_TRACE_SOCKET") != NULL);
@@ -83,29 +85,53 @@ abyss_bool SocketInit()
     return retval;
 }
 
+
+
 #define RET(x)  return ((x)!=(-1))
 
-abyss_bool SocketCreate(TSocket *s)
-{
-    int rc;
+void
+SocketCreate(TSocket ** const socketPP) {
 
-    rc =socket(AF_INET,SOCK_STREAM,0);
-    if (rc < 0)
-        return FALSE;
-    else {
-        int32_t n=1;
-        *s = rc;
-        RET(setsockopt(*s,SOL_SOCKET,SO_REUSEADDR,(char*)&n,sizeof(n)));
+    TSocket * socketP;
+
+    MALLOCVAR(socketP);
+    if (socketP) {
+        int rc;
+        abyss_bool failed;
+        rc = socket(AF_INET, SOCK_STREAM, 0);
+        if (rc < 0)
+            failed = TRUE;
+        else {
+            *socketP = rc;
+            {
+                int32_t n = 1;
+                int rc;
+                rc = setsockopt(*socketP, SOL_SOCKET, SO_REUSEADDR,
+                                (char*)&n, sizeof(n));
+                if (rc < 0)
+                    failed = TRUE;
+                else
+                    failed = FALSE;
+            }
+            if (failed)
+                close(*socketP);
+        }
+        if (failed)
+            free(socketP);
+        else
+            *socketPP = socketP;
     }
 }
 
-abyss_bool SocketClose(TSocket *s)
-{
+
+
+void
+SocketDestroy(TSocket * const socketP) {
 #ifdef WIN32
-    RET(closesocket(*s));
+    closesocket(*socketP);
 #else
-    RET(close(*s));
-#endif  /* WIN32 */
+    close(*socketP);
+#endif
 }
 
 
@@ -221,16 +247,16 @@ SocketListen(const TSocket * const socketFdP,
 
 
 void
-SocketAccept(TSocket      const listenSocket,
+SocketAccept(TSocket *    const listenSocketP,
              abyss_bool * const connectedP,
              abyss_bool * const failedP,
-             TSocket *    const acceptedSocketP,
+             TSocket **   const acceptedSocketPP,
              TIPAddr *    const ipAddr) {
 /*----------------------------------------------------------------------------
-   Accept a connection on the listening socket 'listenSocket'.  Return as
-   *acceptedSocketP the socket for the accepted connection.
+   Accept a connection on the listening socket 'listenSocketP'.  Return as
+   *acceptedSocketPP the socket for the accepted connection.
 
-   If no connection is waiting on 'listenSocket', wait until one is.
+   If no connection is waiting on 'listenSocketP', wait until one is.
 
    If we receive a signal while waiting, return immediately.
 
@@ -249,10 +275,13 @@ SocketAccept(TSocket      const listenSocket,
         struct sockaddr_in sa;
         socklen_t size = sizeof(sa);
         int rc;
-        rc = accept(listenSocket, (struct sockaddr *)&sa, &size);
+        rc = accept(*listenSocketP, (struct sockaddr *)&sa, &size);
         if (rc >= 0) {
+            TSocket * acceptedSocketP;
             *connectedP = TRUE;
+            MALLOCVAR(acceptedSocketP);
             *acceptedSocketP = rc;
+            *acceptedSocketPP = acceptedSocketP;
             *ipAddr = sa.sin_addr;
         } else if (errno == EINTR)
             interrupted = TRUE;
@@ -327,7 +356,7 @@ uint32_t SocketAvailableReadBytes(TSocket *s)
 
 
 void
-SocketGetPeerName(TSocket      const socket,
+SocketGetPeerName(TSocket *    const socketP,
                   TIPAddr *    const ipAddrP,
                   uint16_t *   const portNumberP,
                   abyss_bool * const successP) {
@@ -338,7 +367,7 @@ SocketGetPeerName(TSocket      const socket,
 
     addrlen = sizeof(sockAddr);
     
-    rc = getpeername(socket, &sockAddr, &addrlen);
+    rc = getpeername(*socketP, &sockAddr, &addrlen);
 
     if (rc < 0) {
         TraceMsg("getpeername() failed.  errno=%d (%s)",

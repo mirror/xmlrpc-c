@@ -22,7 +22,7 @@ struct _TConn {
            the next byte to be delivered to the user is.
         */
     uint32_t inbytes,outbytes;  
-    TSocket socket;
+    TSocket * socketP;
     TIPAddr peerip;
     abyss_bool hasOwnThread;
     TThread * threadP;
@@ -51,7 +51,7 @@ void ConnFree(TConn * const connectionP);
 void
 ConnCreate(TConn **            const connectionPP,
            TServer *           const serverP,
-           TSocket             const connectedSocket,
+           TSocket *           const connectedSocketP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,

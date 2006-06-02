@@ -697,7 +697,7 @@ initLogFile(struct _TServer * const srvP,
 static void
 initSocketStuff(struct _TServer * const srvP,
                 abyss_bool        const useBoundSocket,
-                TSocket           const socketFd,
+                TSocket *         const socketP,
                 abyss_bool        const makeSocket,
                 uint16_t          const port,
                 abyss_bool *      const successP) {
@@ -710,7 +710,7 @@ initSocketStuff(struct _TServer * const srvP,
         *successP = TRUE;
         srvP->serverAcceptsConnections = TRUE;
         srvP->socketBound = TRUE;
-        srvP->listensock = socketFd;
+        srvP->listenSocketP = socketP;
     } else if (makeSocket) {
         *successP = TRUE;
         srvP->serverAcceptsConnections = TRUE;
@@ -730,7 +730,7 @@ static void
 createServer(struct _TServer ** const srvPP,
              const char *       const name,
              abyss_bool         const useBoundSocket,
-             TSocket            const socketFd,
+             TSocket *          const socketP,
              abyss_bool         const makeSocket,
              uint16_t           const port,
              const char *       const filespath,
@@ -752,7 +752,7 @@ createServer(struct _TServer ** const srvPP,
         else
             srvP->name = strdup("unnamed");
 
-        initSocketStuff(srvP, useBoundSocket, socketFd, makeSocket, port,
+        initSocketStuff(srvP, useBoundSocket, socketP, makeSocket, port,
                         successP);
         if (*successP) {
             srvP->defaulthandler = ServerDefaultHandlerFunc;
@@ -811,16 +811,17 @@ ServerCreate(TServer *    const serverP,
 abyss_bool
 ServerCreateSocket(TServer *    const serverP,
                    const char * const name,
-                   TSocket      const socketFd,
+                   TOsSocket    const socketFd,
                    const char * const filespath,
                    const char * const logfilename) {
 
     abyss_bool const useBoundSocketTrue = TRUE;
     abyss_bool const makeSocketFalse    = FALSE;
     abyss_bool success;
+    TSocket socket = socketFd;
 
     createServer(&serverP->srvP, name,
-                 useBoundSocketTrue, socketFd,
+                 useBoundSocketTrue, &socket,
                  makeSocketFalse, 0,
                  filespath, logfilename, &success);
 
@@ -874,7 +875,7 @@ ServerFree(TServer * const serverP) {
     struct _TServer * const srvP = serverP->srvP;
 
     if (srvP->weCreatedListenSocket)
-        SocketClose(&srvP->listensock);
+        SocketDestroy(srvP->listenSocketP);
 
     xmlrpc_strfree(srvP->name);
 
@@ -1044,7 +1045,7 @@ ServerFunc(void * const userHandle) {
             ConnReadInit(connectionP);
         }
     }
-    SocketClose(&connectionP->socket);
+    SocketDestroy(connectionP->socketP);
 }
 
 
@@ -1058,27 +1059,27 @@ createAndBindSocket(struct _TServer * const srvP) {
     if (!success)
         TraceMsg("Can't initialize TCP sockets");
     else {
-        abyss_bool success;
-        int socketFd;
+        TSocket * socketP;
         
-        success = SocketCreate(&socketFd);
+        SocketCreate(&socketP);
         
-        if (!success)
+        if (!socketP)
             TraceMsg("Can't create a socket");
         else {
             abyss_bool success;
             
-            success = SocketBind(&socketFd, NULL, srvP->port);
-
+            success = SocketBind(socketP, NULL, srvP->port);
+            
             if (!success)
-                TraceMsg("Can't bind");
+                TraceMsg("Failed to bind listening socket to port number %u",
+                         srvP->port);
             else {
                 srvP->weCreatedListenSocket = TRUE;
                 srvP->socketBound = TRUE;
-                srvP->listensock = socketFd;
+                srvP->listenSocketP = socketP;
             }
             if (!success)
-                SocketClose(&socketFd);
+                SocketDestroy(socketP);
         }
     }
 }
@@ -1108,11 +1109,11 @@ ServerInit(TServer * const serverP) {
             createAndBindSocket(srvP);
 
         if (srvP->socketBound) {
-            success = SocketListen(&srvP->listensock, MAX_CONN);
+            success = SocketListen(srvP->listenSocketP, MAX_CONN);
 
             if (!success)
                 TraceMsg("Failed to listen on socket with file descriptor %d",
-                         srvP->listensock);
+                         *srvP->listenSocketP);
         } else
             success = FALSE;
     }
@@ -1290,12 +1291,12 @@ serverRun2(TServer * const serverP) {
 
         abyss_bool connected;
         abyss_bool failed;
-        TSocket connectedSocket;
+        TSocket * connectedSocketP;
         TIPAddr peerIpAddr;
 
-        SocketAccept(srvP->listensock,
+        SocketAccept(srvP->listenSocketP,
                      &connected, &failed,
-                     &connectedSocket, &peerIpAddr);
+                     &connectedSocketP, &peerIpAddr);
         
         if (connected) {
             const char * error;
@@ -1304,18 +1305,18 @@ serverRun2(TServer * const serverP) {
 
             waitForConnectionCapacity(outstandingConnListP);
 
-            ConnCreate(&connectionP, serverP, connectedSocket,
+            ConnCreate(&connectionP, serverP, connectedSocketP,
                        &ServerFunc, NULL, ABYSS_BACKGROUND, srvP->useSigchld,
                        &error);
             if (!error) {
                 addToOutstandingConnList(outstandingConnListP, connectionP);
                 ConnProcess(connectionP);
                 if (ThreadForks())
-                    SocketClose(&connectedSocket);
+                    SocketDestroy(connectedSocketP);
                         /* Close parent's copy of socket */
             } else {
                 xmlrpc_strfree(error);
-                SocketClose(&connectedSocket);
+                SocketDestroy(connectedSocketP);
             }
         } else if (failed)
             TraceMsg("Socket Error=%d", SocketError());
@@ -1344,10 +1345,11 @@ ServerRun(TServer * const serverP) {
 
 static void
 serverRunConn(TServer * const serverP,
-              TSocket   const connectedSocket) {
+              TSocket * const connectedSocketP) {
 /*----------------------------------------------------------------------------
-   Do the HTTP transaction on the TCP connection on the socket 'socketP'
-   (socket must be connected state, with nothing having been read or
+   Do the HTTP transaction on the TCP connection on the socket
+   'connectedOsSocket'.
+   (socket must be in connected state, with nothing having been read or
    written on the connection yet).
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
@@ -1358,13 +1360,13 @@ serverRunConn(TServer * const serverP,
     srvP->keepalivemaxconn = 1;
 
     ConnCreate(&connectionP, 
-               serverP, connectedSocket,
+               serverP, connectedSocketP,
                &ServerFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
                &error);
     if (error) {
         TraceMsg("Couldn't create HTTP connection out of socket "
                  "with file descriptor %d.  %s",
-                 (int)connectedSocket, error);
+                 (int)*connectedSocketP, error);
         xmlrpc_strfree(error);
     } else {
         ConnProcess(connectionP);
@@ -1377,9 +1379,10 @@ serverRunConn(TServer * const serverP,
 
 void
 ServerRunConn(TServer * const serverP,
-              TSocket   const connectedSocket) {
+              TOsSocket const connectedOsSocket) {
 /*----------------------------------------------------------------------------
-   Do the HTTP transaction on the TCP connection on the socket 'socketP'
+   Do the HTTP transaction on the TCP connection on the socket
+   'connectedOsSocket'.
    (socket must be connected state, with nothing having been read or
    written on the connection yet).
 -----------------------------------------------------------------------------*/
@@ -1389,8 +1392,10 @@ ServerRunConn(TServer * const serverP,
         TraceMsg("This server is configured to accept connections on "
                  "its own socket.  "
                  "Try ServerRun() or ServerCreateNoAccept().");
-    else
-        serverRunConn(serverP, connectedSocket);
+    else {
+        TOsSocket osSocket = connectedOsSocket;
+        serverRunConn(serverP, &osSocket);
+    }
 }
 
 
@@ -1414,17 +1419,17 @@ ServerRunOnce(TServer * const serverP) {
     else {
         abyss_bool connected;
         abyss_bool failed;
-        TSocket    connectedSocket;
+        TSocket *  connectedSocketP;
         TIPAddr    remoteAddr;
     
         srvP->keepalivemaxconn = 1;
 
-        SocketAccept(srvP->listensock,
+        SocketAccept(srvP->listenSocketP,
                      &connected, &failed,
-                     &connectedSocket, &remoteAddr);
+                     &connectedSocketP, &remoteAddr);
         if (connected) {
-            serverRunConn(serverP, connectedSocket);
-            SocketClose(&connectedSocket);
+            serverRunConn(serverP, connectedSocketP);
+            SocketDestroy(connectedSocketP);
         } else if (failed)
             TraceMsg("Socket Error=%d", SocketError());
     }

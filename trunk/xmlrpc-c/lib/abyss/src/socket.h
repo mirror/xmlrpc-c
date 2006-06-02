@@ -2,7 +2,13 @@
 #define SOCKET_H_INCLUDED
 
 #include <netinet/in.h>
+
 #include "xmlrpc-c/abyss.h"
+
+/* Eventually, TSocket will be a struct, will be exposed to the user,
+   and will be able to represent a much broader range of sockets. 
+*/
+typedef TOsSocket TSocket;
 
 #define TIME_INFINITE   0xffffffff
 
@@ -15,8 +21,11 @@ typedef struct in_addr TIPAddr;
 
 abyss_bool SocketInit(void);
 
-abyss_bool SocketCreate(TSocket *s);
-abyss_bool SocketClose(TSocket *s);
+void
+SocketCreate(TSocket ** const socketPP);
+
+void
+SocketDestroy(TSocket * const socketP);
 
 void
 SocketWrite(TSocket *             const socketP,
@@ -35,10 +44,10 @@ SocketListen(const TSocket * const socketFdP,
              uint32_t        const backlog);
 
 void
-SocketAccept(TSocket      const listenSocket,
+SocketAccept(TSocket *    const listenSocketP,
              abyss_bool * const connectedP,
              abyss_bool * const failedP,
-             TSocket *    const acceptedSocketP,
+             TSocket **   const acceptedSocketPP,
              TIPAddr *    const ipAddr);
 
 uint32_t SocketError(void);
@@ -49,7 +58,7 @@ abyss_bool SocketBlocking(TSocket *s, abyss_bool b);
 uint32_t SocketAvailableReadBytes(TSocket *s);
 
 void
-SocketGetPeerName(TSocket      const socket,
+SocketGetPeerName(TSocket *    const socketP,
                   TIPAddr *    const ipAddrP,
                   uint16_t *   const portNumberP,
                   abyss_bool * const successP);

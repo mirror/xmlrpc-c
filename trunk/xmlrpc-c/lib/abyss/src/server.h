@@ -7,6 +7,8 @@
 
 #include "file.h"
 #include "data.h"
+/* We can get rid of socket.h when TSocket becomes a struct */
+#include "socket.h"
 
 struct _TServer {
     abyss_bool terminationRequested;
@@ -18,7 +20,7 @@ struct _TServer {
         /* The listening socket exists and is bound to a local address
            (may already be listening as well)
         */
-    TSocket listensock;
+    TSocket * listenSocketP;
         /* Meaningful only when 'socketBound' is true: file descriptor of
            the listening socket ("listening socket" means socket for listening,
            not a socket that is listening right now).
