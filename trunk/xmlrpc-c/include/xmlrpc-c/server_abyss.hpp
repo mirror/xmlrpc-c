@@ -90,7 +90,7 @@ private:
     TServer cServer;
 
     void
-    serverAbyss::setAdditionalServerParms(constrOpt const& opt);
+    setAdditionalServerParms(constrOpt const& opt);
 
     void
     serverAbyss::initialize(constrOpt const& opt);
