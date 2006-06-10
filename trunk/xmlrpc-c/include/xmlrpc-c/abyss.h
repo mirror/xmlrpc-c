@@ -63,6 +63,39 @@ MIMETypeAdd(const char * const type,
 
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
+
+typedef struct _TSocket TSocket;
+
+/* TOsSocket is the type of a conventional socket offered by our OS.
+   This is for backward compatibility; everyone should use TSocket
+   sockets today.
+*/
+#ifdef WIN32
+void
+SocketWinCreate(TSocket ** const socketPP);
+
+void
+SocketWinCreateWinsock(SOCKET     const winsock,
+                       TSocket ** const socketPP);
+
+typedef SOCKET TOsSocket;
+
+#else  /* WIN32 */
+
+void
+SocketUnixCreate(TSocket ** const socketPP);
+
+void
+SocketUnixCreateFd(int        const fd,
+                   TSocket ** const socketPP);
+
+typedef int TOsSocket;
+#endif  /* WIN32 */
+
+void
+SocketDestroy(TSocket * const socketP);
+
+
 typedef struct {
     /* Before Xmlrpc-c 1.04, the internal server representation,
        struct _TServer, was exposed to users and was the only way to
@@ -72,16 +105,6 @@ typedef struct {
     */
     struct _TServer * srvP;
 } TServer;
-
-/* TOsSocket is the type of a conventional socket offered by our OS.
-   This is for backward compatibility; everyone should use TSocket
-   sockets today.
-*/
-#ifdef WIN32
-typedef SOCKET TOsSocket;
-#else
-typedef int TOsSocket;
-#endif  /* WIN32 */
 
 typedef struct _TSession TSession;
 
@@ -99,6 +122,12 @@ ServerCreateSocket(TServer *    const serverP,
                    const char * const filespath,
                    const char * const logfilename);
 
+#define HAVE_SERVER_CREATE_SOCKET_2
+void
+ServerCreateSocket2(TServer *     const serverP,
+                    TSocket *     const socketP,
+                    const char ** const errorP);
+
 abyss_bool
 ServerCreateNoAccept(TServer *    const serverP,
                      const char * const name,
@@ -107,6 +136,18 @@ ServerCreateNoAccept(TServer *    const serverP,
 
 void
 ServerFree(TServer * const serverP);
+
+void
+ServerSetName(TServer *    const serverP,
+              const char * const name);
+
+void
+ServerSetFilesPath(TServer *    const serverP,
+                   const char * const filesPath);
+
+void
+ServerSetLogFileName(TServer *    const serverP,
+                     const char * const logFileName);
 
 #define HAVE_SERVER_SET_KEEPALIVE_TIMEOUT 1
 void
@@ -150,6 +191,11 @@ ServerRunOnce2(TServer *           const serverP,
 void
 ServerRunConn(TServer * const serverP,
               TOsSocket const connectedSocket);
+
+void
+ServerRunConn2(TServer *     const serverP,
+               TSocket *     const connectedSocketP,
+               const char ** const errorP);
 
 void
 ServerDaemonize(TServer * const serverP);
@@ -370,10 +416,6 @@ MIMETypeGuessFromFile(const char * const filename);
 ** General purpose definitions
 *********************************************************************/
 
-#ifndef WIN32
-#define ioctlsocket(a,b,c)  ioctl((a),(b),(c))
-#endif  /* WIN32 */
-
 #ifndef NULL
 #define NULL ((void *)0)
 #endif  /* NULL */
@@ -385,12 +427,6 @@ MIMETypeGuessFromFile(const char * const filename);
 #ifndef FALSE
 #define FALSE    0
 #endif  /* FALSE */
-
-#ifdef WIN32
-#define LBR "\n"
-#else
-#define LBR "\n"
-#endif  /* WIN32 */
 
 /*********************************************************************
 ** Buffer
@@ -442,14 +478,6 @@ abyss_bool DateInit(void);
 *********************************************************************/
 
 void Base64Encode(char *s,char *d);
-
-/*********************************************************************
-** Trace
-*********************************************************************/
-
-void TraceMsg(char *fmt,...);
-void TraceExit(char *fmt,...);
-
 
 /*********************************************************************
 ** Session

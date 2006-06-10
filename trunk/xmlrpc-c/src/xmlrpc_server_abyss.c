@@ -745,19 +745,19 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
    Abyss parameters in memory.  That's a more conventional and
    flexible API.
 -----------------------------------------------------------------------------*/
-    TServer srv;
+    TServer server;
     runfirstFn runfirst;
     void * runfirstArg;
     
     DateInit();
     
-    ServerCreate(&srv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+    ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
     
-    ConfReadServerFile(parmsP->config_file_name, &srv);
+    ConfReadServerFile(parmsP->config_file_name, &server);
         
-    setHandlers(&srv, "/RPC2", parmsP->registryP, false);
+    setHandlers(&server, "/RPC2", parmsP->registryP, false);
         
-    ServerInit(&srv);
+    ServerInit(&server);
     
     if (parmSize >= XMLRPC_APSIZE(runfirst_arg)) {
         runfirst    = parmsP->runfirst;
@@ -766,9 +766,9 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
         runfirst    = NULL;
         runfirstArg = NULL;
     }
-    runServerDaemon(&srv, runfirst, runfirstArg);
+    runServerDaemon(&server, runfirst, runfirstArg);
 
-    ServerFree(&srv);
+    ServerFree(&server);
 }
 
 
@@ -805,7 +805,7 @@ extractServerCreateParms(
     unsigned int                      const parmSize,
     abyss_bool *                      const socketBoundP,
     unsigned int *                    const portNumberP,
-    TOsSocket *                       const socketFd,
+    TOsSocket *                       const socketFdP,
     const char **                     const logFileNameP) {
                    
 
@@ -845,10 +845,47 @@ extractServerCreateParms(
 
 
 static void
+createServerBoundSocket(xmlrpc_env * const envP,
+                        TOsSocket    const socketFd,
+                        const char * const logFileName,
+                        TServer *    const serverP,
+                        TSocket **   const socketPP) {
+
+    TSocket * socketP;
+    const char * error;
+    
+    SocketUnixCreateFd(socketFd, &socketP);
+    
+    if (!socketP)
+        xmlrpc_faultf(envP, "Unable to create Abyss socket out of "
+                      "file descriptor %d.", socketFd);
+    else {
+        ServerCreateSocket2(serverP, socketP, &error);
+        if (error) {
+            xmlrpc_faultf(envP, "Abyss failed to create server.  %s",
+                          error);
+            xmlrpc_strfree(error);
+        } else {
+            *socketPP = socketP;
+                    
+            ServerSetName(serverP, "XmlRpcServer");
+            
+            if (logFileName)
+                ServerSetLogFileName(serverP, logFileName);
+        }
+        if (envP->fault_occurred)
+                    SocketDestroy(socketP);
+    }
+}
+
+
+
+static void
 createServer(xmlrpc_env *                      const envP,
              const xmlrpc_server_abyss_parms * const parmsP,
              unsigned int                      const parmSize,
-             TServer *                         const serverP) {
+             TServer *                         const serverP,
+             TSocket **                        const socketPP) {
 /*----------------------------------------------------------------------------
    Create a bare server.  It will need further setup before it is ready
    to use.
@@ -864,13 +901,16 @@ createServer(xmlrpc_env *                      const envP,
 
     if (!envP->fault_occurred) {
         if (socketBound)
-            ServerCreateSocket(serverP, "XmlRpcServer", socketFd,
-                               DEFAULT_DOCS, logFileName);
-        else
+            createServerBoundSocket(envP, socketFd, logFileName,
+                                    serverP, socketPP);
+        else {
             ServerCreate(serverP, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
                          logFileName);
-
-        xmlrpc_strfree(logFileName);
+            
+            *socketPP = NULL;
+        }
+        if (logFileName)
+            xmlrpc_strfree(logFileName);
     }
 }
 
@@ -938,10 +978,11 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
                     unsigned int                      const parmSize) {
     
     TServer server;
+    TSocket * socketP;
 
     DateInit();
 
-    createServer(envP, parmsP, parmSize, &server);
+    createServer(envP, parmsP, parmSize, &server, &socketP);
 
     if (!envP->fault_occurred) {
         struct signalHandlers oldHandlers;
@@ -965,6 +1006,9 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
         restoreSignalHandlers(oldHandlers);
 
         ServerFree(&server);
+
+        if (socketP)
+            SocketDestroy(socketP);
     }
 }
 

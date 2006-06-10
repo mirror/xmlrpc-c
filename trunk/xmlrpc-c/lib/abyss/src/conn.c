@@ -22,10 +22,10 @@
 ** Conn
 *********************************************************************/
 
-static TThreadProc ConnJob;
+static TThreadProc connJob;
 
 static void
-ConnJob(void * const userHandle) {
+connJob(void * const userHandle) {
 /*----------------------------------------------------------------------------
    This is the root function for a thread that processes a connection
    (performs HTTP transactions).
@@ -61,10 +61,10 @@ connDone(TConn * const connectionP) {
 
 
 
-static TThreadDoneFn ConnDone;
+static TThreadDoneFn threadDone;
 
 static void
-ConnDone(void * const userHandle) {
+threadDone(void * const userHandle) {
 
     TConn * const connectionP = userHandle;
     
@@ -88,7 +88,7 @@ makeThread(TConn *             const connectionP,
         const char * error;
         connectionP->hasOwnThread = TRUE;
         ThreadCreate(&connectionP->threadP, connectionP,
-                     &ConnJob, &ConnDone, useSigchld,
+                     &connJob, &threadDone, useSigchld,
                      &error);
         if (error) {
             xmlrpc_asprintf(errorP, "Unable to create thread to "
@@ -111,7 +111,29 @@ ConnCreate(TConn **            const connectionPP,
            enum abyss_foreback const foregroundBackground,
            abyss_bool          const useSigchld,
            const char **       const errorP) {
+/*----------------------------------------------------------------------------
+   Create an HTTP connection.
 
+   A connection carries one or more HTTP transactions (request/response).
+
+   'connectedSocketP' transports the requests and responses.
+
+   The connection handles those HTTP requests.
+
+   The connection handles the requests primarily by running the
+   function 'job' once.  Some connections can do that autonomously, as
+   soon as the connection is created.  Others don't until Caller
+   subsequently calls ConnProcess.  Some connections complete the
+   processing before ConnProcess return, while others may run the
+   connection asynchronously to the creator, in the background, via a
+   TThread thread.  'foregroundBackground' determines which.
+
+   'job' calls methods of the connection to get requests and send
+   responses.
+
+   Some time after the HTTP transactions are all done, 'done' gets
+   called in some context.
+-----------------------------------------------------------------------------*/
     TConn * connectionP;
 
     MALLOCVAR(connectionP);
@@ -149,6 +171,16 @@ ConnCreate(TConn **            const connectionPP,
 
 abyss_bool
 ConnProcess(TConn * const connectionP) {
+/*----------------------------------------------------------------------------
+   Drive the main processing of a connection -- run the connection's
+   "job" function, which should read HTTP requests from the connection
+   and send HTTP responses.
+
+   If we succeed, we guarantee the connection's "done" function will get
+   called some time after all processing is complete.  It might be before
+   we return or some time after.  If we fail, we guarantee the "done"
+   function will not be called.
+-----------------------------------------------------------------------------*/
     abyss_bool retval;
 
     if (connectionP->hasOwnThread) {

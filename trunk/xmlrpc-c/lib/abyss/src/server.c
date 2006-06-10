@@ -6,11 +6,11 @@
 #include <time.h>
 #include <sys/errno.h>
 #ifdef WIN32
-#include <io.h>
+  #include <io.h>
 #else
-#include <unistd.h>
-#include <grp.h>
-#endif  /* WIN32 */
+  #include <unistd.h>
+  #include <grp.h>
+#endif
 #include <fcntl.h>
 
 #include "xmlrpc_config.h"
@@ -19,9 +19,15 @@
 #include "xmlrpc-c/sleep_int.h"
 
 #include "xmlrpc-c/abyss.h"
+#include "trace.h"
 #include "session.h"
 #include "conn.h"
 #include "socket.h"
+#ifdef WIN32
+  #include "socket_win.h"
+#else
+  #include "socket_unix.h"
+#endif
 #include "http.h"
 #include "date.h"
 #include "abyss_info.h"
@@ -682,44 +688,26 @@ logClose(struct _TServer * const srvP) {
 
 
 static void
-initLogFile(struct _TServer * const srvP,
-            const char *      const logfilename) {
-
-    srvP->logfileisopen = FALSE;
-    if (logfilename)
-        srvP->logfilename = strdup(logfilename); 
-    else
-        srvP->logfilename = NULL;
-}
-
-
-
-static void
 initSocketStuff(struct _TServer * const srvP,
-                abyss_bool        const useBoundSocket,
-                TSocket *         const socketP,
-                abyss_bool        const makeSocket,
+                abyss_bool        const noAccept,
+                TSocket *         const userSocketP,
                 uint16_t          const port,
-                abyss_bool *      const successP) {
+                const char **     const errorP) {
 
-    if (useBoundSocket && makeSocket) {
-        TraceMsg("You can't specify both 'useBoundSocket' and "
-                 "'makeSocket'");
-        *successP = FALSE;
-    } else if (useBoundSocket) {
-        *successP = TRUE;
+    if (userSocketP) {
+        *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
         srvP->socketBound = TRUE;
-        srvP->listenSocketP = socketP;
-    } else if (makeSocket) {
-        *successP = TRUE;
+        srvP->listenSocketP = userSocketP;
+    } else if (noAccept) {
+        *errorP = NULL;
+        srvP->serverAcceptsConnections = FALSE;
+        srvP->socketBound = FALSE;
+    } else {
+        *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
         srvP->socketBound = FALSE;
         srvP->port = port;
-    } else {
-        *successP = TRUE;
-        srvP->serverAcceptsConnections = FALSE;
-        srvP->socketBound = FALSE;
     }
     srvP->weCreatedListenSocket = FALSE;
 }
@@ -728,57 +716,46 @@ initSocketStuff(struct _TServer * const srvP,
 
 static void
 createServer(struct _TServer ** const srvPP,
-             const char *       const name,
-             abyss_bool         const useBoundSocket,
-             TSocket *          const socketP,
-             abyss_bool         const makeSocket,
-             uint16_t           const port,
-             const char *       const filespath,
-             const char *       const logfilename,
-             abyss_bool *       const successP) {
+             abyss_bool         const noAccept,
+             TSocket *          const userSocketP,
+             uint16_t           const portNumber,             
+             const char **      const errorP) {
 
     struct _TServer * srvP;
 
     MALLOCVAR(srvP);
 
     if (srvP == NULL) {
-        TraceMsg("Unable to allocate space for server descriptor");
-        *successP = FALSE;
+        xmlrpc_asprintf(errorP,
+                        "Unable to allocate space for server descriptor");
     } else {
         srvP->terminationRequested = false;
 
-        if (name)
-            srvP->name = strdup(name);
-        else
-            srvP->name = strdup("unnamed");
+        initSocketStuff(srvP, noAccept, userSocketP, portNumber, errorP);
 
-        initSocketStuff(srvP, useBoundSocket, socketP, makeSocket, port,
-                        successP);
-        if (*successP) {
+        if (!*errorP) {
             srvP->defaulthandler = ServerDefaultHandlerFunc;
 
-            if (filespath)
-                srvP->filespath = strdup(filespath);
-            else
-                srvP->filespath = strdup(DEFAULT_DOCS);
-
+            srvP->name             = strdup("unnamed");
+            srvP->filespath        = strdup(DEFAULT_DOCS);
+            srvP->logfilename      = NULL;
             srvP->keepalivetimeout = 15;
             srvP->keepalivemaxconn = 30;
-            srvP->timeout = 15;
-            srvP->advertise = TRUE;
-            srvP->mimeTypeP = NULL;
-            srvP->useSigchld = FALSE;
-
+            srvP->timeout          = 15;
+            srvP->advertise        = TRUE;
+            srvP->mimeTypeP        = NULL;
+            srvP->useSigchld       = FALSE;
+            
             initUnixStuff(srvP);
 
             ListInitAutoFree(&srvP->handlers);
             ListInitAutoFree(&srvP->defaultfilenames);
 
-            initLogFile(srvP, logfilename);
+            srvP->logfileisopen = FALSE;
 
-            *successP = TRUE;
+            *errorP = NULL;
         }        
-        if (!*successP)
+        if (*errorP)
             free(srvP);
     }
     *srvPP = srvP;
@@ -786,24 +763,66 @@ createServer(struct _TServer ** const srvPP,
 
 
 
+static void
+setNamePathLog(TServer *    const serverP,
+               const char * const name,
+               const char * const filesPath,
+               const char * const logFileName) {
+/*----------------------------------------------------------------------------
+   This odd function exists to help with backward compatibility.
+   Today, we have the expandable model where you create a server with
+   default parameters, then use ServerSet... functions to choose
+   non-default parameters.  But before, you specified these three
+   parameters right in the arguments of various create functions.
+-----------------------------------------------------------------------------*/
+    if (name)
+        ServerSetName(serverP, name);
+    if (filesPath)
+        ServerSetFilesPath(serverP, filesPath);
+    if (logFileName)
+        ServerSetLogFileName(serverP, logFileName);
+}
+
+
+
 abyss_bool
 ServerCreate(TServer *    const serverP,
              const char * const name,
-             uint16_t     const port,
-             const char * const filespath,
-             const char * const logfilename) {
+             uint16_t     const portNumber,
+             const char * const filesPath,
+             const char * const logFileName) {
 
-    abyss_bool const useBoundSocketFalse = FALSE;
-    abyss_bool const makeSocketTrue      = TRUE;
+    abyss_bool const noAcceptFalse = FALSE;
 
     abyss_bool success;
+    const char * error;
 
-    createServer(&serverP->srvP, name,
-                 useBoundSocketFalse, 0,
-                 makeSocketTrue, port,
-                 filespath, logfilename, &success);
+    createServer(&serverP->srvP, noAcceptFalse, NULL, portNumber, &error);
+
+    if (error) {
+        TraceMsg(error);
+        xmlrpc_strfree(error);
+        success = FALSE;
+    } else {
+        success = TRUE;
+    
+        setNamePathLog(serverP, name, filesPath, logFileName);
+    }
 
     return success;
+}
+
+
+
+static void
+createSocketFromOsSocket(TOsSocket    const osSocket,
+                         TSocket **   const socketPP) {
+
+#ifdef WIN32
+    SocketWinCreateWinsock(osSocket, socketPP);
+#else
+    SocketUnixCreateFd(osSocket, socketPP);
+#endif
 }
 
 
@@ -812,18 +831,32 @@ abyss_bool
 ServerCreateSocket(TServer *    const serverP,
                    const char * const name,
                    TOsSocket    const socketFd,
-                   const char * const filespath,
-                   const char * const logfilename) {
+                   const char * const filesPath,
+                   const char * const logFileName) {
 
-    abyss_bool const useBoundSocketTrue = TRUE;
-    abyss_bool const makeSocketFalse    = FALSE;
     abyss_bool success;
-    TSocket socket = socketFd;
+    TSocket * socketP;
 
-    createServer(&serverP->srvP, name,
-                 useBoundSocketTrue, &socket,
-                 makeSocketFalse, 0,
-                 filespath, logfilename, &success);
+    createSocketFromOsSocket(socketFd, &socketP);
+
+    if (socketP) {
+        abyss_bool const noAcceptFalse = FALSE;
+
+        const char * error;
+
+        createServer(&serverP->srvP, noAcceptFalse, socketP, 0, &error);
+
+        if (error) {
+            TraceMsg(error);
+            success = FALSE;
+            xmlrpc_strfree(error);
+        } else {
+            success = TRUE;
+            
+            setNamePathLog(serverP, name, filesPath, logFileName);
+        }
+    } else
+        success = FALSE;
 
     return success;
 }
@@ -833,19 +866,40 @@ ServerCreateSocket(TServer *    const serverP,
 abyss_bool
 ServerCreateNoAccept(TServer *    const serverP,
                      const char * const name,
-                     const char * const filespath,
-                     const char * const logfilename) {
+                     const char * const filesPath,
+                     const char * const logFileName) {
 
-    abyss_bool const useBoundSocketFalse = FALSE;
-    abyss_bool const makeSocketFalse     = FALSE;
+    abyss_bool const noAcceptTrue = TRUE;
+
     abyss_bool success;
+    const char * error;
 
-    createServer(&serverP->srvP, name,
-                 useBoundSocketFalse, 0,
-                 makeSocketFalse, 0,
-                 filespath, logfilename, &success);
+    createServer(&serverP->srvP, noAcceptTrue, NULL, 0, &error);
 
+    if (error) {
+        TraceMsg(error);
+        success = FALSE;
+        xmlrpc_strfree(error);
+    } else {
+        success = TRUE;
+        
+        setNamePathLog(serverP, name, filesPath, logFileName);
+    }
     return success;
+}
+
+
+
+void
+ServerCreateSocket2(TServer *     const serverP,
+                    TSocket *     const socketP,
+                    const char ** const errorP) {
+    
+    abyss_bool const noAcceptFalse = FALSE;
+
+    assert(socketP);
+
+    createServer(&serverP->srvP, noAcceptFalse, socketP, 0, errorP);
 }
 
 
@@ -893,6 +947,42 @@ ServerFree(TServer * const serverP) {
         xmlrpc_strfree(srvP->logfilename);
 
     free(srvP);
+}
+
+
+
+void
+ServerSetName(TServer *    const serverP,
+              const char * const name) {
+
+    xmlrpc_strfree(serverP->srvP->name);
+    
+    serverP->srvP->name = strdup(name);
+}
+
+
+
+void
+ServerSetFilesPath(TServer *    const serverP,
+                   const char * const filesPath) {
+
+    xmlrpc_strfree(serverP->srvP->filespath);
+    
+    serverP->srvP->filespath = strdup(filesPath);
+}
+
+
+
+void
+ServerSetLogFileName(TServer *    const serverP,
+                     const char * const logFileName) {
+    
+    struct _TServer * const srvP = serverP->srvP;
+
+    if (srvP->logfilename)
+        xmlrpc_strfree(srvP->logfilename);
+    
+    srvP->logfilename = strdup(logFileName);
 }
 
 
@@ -1001,10 +1091,10 @@ processDataFromClient(TConn *      const connectionP,
 }
 
 
-static TThreadProc ServerFunc;
+static TThreadProc serverFunc;
 
 static void
-ServerFunc(void * const userHandle) {
+serverFunc(void * const userHandle) {
 /*----------------------------------------------------------------------------
    Do server stuff on one connection.  At its simplest, this means do
    one HTTP request.  But with keepalive, it can be many requests.
@@ -1045,7 +1135,6 @@ ServerFunc(void * const userHandle) {
             ConnReadInit(connectionP);
         }
     }
-    SocketDestroy(connectionP->socketP);
 }
 
 
@@ -1061,7 +1150,7 @@ createAndBindSocket(struct _TServer * const srvP) {
     else {
         TSocket * socketP;
         
-        SocketCreate(&socketP);
+        SocketUnixCreate(&socketP);
         
         if (!socketP)
             TraceMsg("Can't create a socket");
@@ -1112,8 +1201,7 @@ ServerInit(TServer * const serverP) {
             success = SocketListen(srvP->listenSocketP, MAX_CONN);
 
             if (!success)
-                TraceMsg("Failed to listen on socket with file descriptor %d",
-                         *srvP->listenSocketP);
+                TraceMsg("Failed to listen on bound socket.");
         } else
             success = FALSE;
     }
@@ -1278,6 +1366,27 @@ ServerUseSigchld(TServer * const serverP) {
 
 
 
+TThreadDoneFn destroySocket;
+
+static void
+destroyConnSocket(void * const userHandle) {
+/*----------------------------------------------------------------------------
+   This is a "connection done" function for the connection the server
+   serves.  It gets called some time after the connection has done its
+   thing.  Its job is to clean up stuff the server created for use by
+   the connection, but the server can't clean up because the
+   connection might be processed asynchronously in a background
+   thread.
+
+   To wit, we destroy the connection's socket.
+-----------------------------------------------------------------------------*/
+    TConn * const connectionP = userHandle;
+
+    SocketDestroy(connectionP->socketP);
+}
+
+
+
 static void 
 serverRun2(TServer * const serverP) {
 
@@ -1306,20 +1415,22 @@ serverRun2(TServer * const serverP) {
             waitForConnectionCapacity(outstandingConnListP);
 
             ConnCreate(&connectionP, serverP, connectedSocketP,
-                       &ServerFunc, NULL, ABYSS_BACKGROUND, srvP->useSigchld,
+                       &serverFunc, &destroyConnSocket, ABYSS_BACKGROUND,
+                       srvP->useSigchld,
                        &error);
             if (!error) {
                 addToOutstandingConnList(outstandingConnListP, connectionP);
                 ConnProcess(connectionP);
-                if (ThreadForks())
-                    SocketDestroy(connectedSocketP);
-                        /* Close parent's copy of socket */
+                /* When connection is done (which could be later, courtesy
+                   of a background thread), destroyConnSocket() will
+                   destroy *connectedSocketP.
+                */
             } else {
                 xmlrpc_strfree(error);
                 SocketDestroy(connectedSocketP);
             }
         } else if (failed)
-            TraceMsg("Socket Error=%d", SocketError());
+            TraceMsg("Socket Error=%d", SocketError(srvP->listenSocketP));
     }
     waitForNoConnections(outstandingConnListP);
 
@@ -1348,7 +1459,7 @@ serverRunConn(TServer * const serverP,
               TSocket * const connectedSocketP) {
 /*----------------------------------------------------------------------------
    Do the HTTP transaction on the TCP connection on the socket
-   'connectedOsSocket'.
+   'connectedSocketP'.
    (socket must be in connected state, with nothing having been read or
    written on the connection yet).
 -----------------------------------------------------------------------------*/
@@ -1361,12 +1472,11 @@ serverRunConn(TServer * const serverP,
 
     ConnCreate(&connectionP, 
                serverP, connectedSocketP,
-               &ServerFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
+               &serverFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
                &error);
     if (error) {
-        TraceMsg("Couldn't create HTTP connection out of socket "
-                 "with file descriptor %d.  %s",
-                 (int)*connectedSocketP, error);
+        TraceMsg("Couldn't create HTTP connection out of "
+                 "connected socket.  %s", error);
         xmlrpc_strfree(error);
     } else {
         ConnProcess(connectionP);
@@ -1378,8 +1488,9 @@ serverRunConn(TServer * const serverP,
 
 
 void
-ServerRunConn(TServer * const serverP,
-              TOsSocket const connectedOsSocket) {
+ServerRunConn2(TServer *     const serverP,
+               TSocket *     const connectedSocketP,
+               const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Do the HTTP transaction on the TCP connection on the socket
    'connectedOsSocket'.
@@ -1389,12 +1500,37 @@ ServerRunConn(TServer * const serverP,
     struct _TServer * const srvP = serverP->srvP;
 
     if (srvP->serverAcceptsConnections)
-        TraceMsg("This server is configured to accept connections on "
-                 "its own socket.  "
-                 "Try ServerRun() or ServerCreateNoAccept().");
+        xmlrpc_asprintf(errorP,
+                        "This server is configured to accept connections on "
+                        "its own socket.  "
+                        "Try ServerRun() or ServerCreateNoAccept().");
     else {
-        TOsSocket osSocket = connectedOsSocket;
-        serverRunConn(serverP, &osSocket);
+        serverRunConn(serverP, connectedSocketP);
+        *errorP = NULL;
+    }
+}
+
+
+
+void
+ServerRunConn(TServer * const serverP,
+              TOsSocket const connectedOsSocket) {
+
+    TSocket * socketP;
+    createSocketFromOsSocket(connectedOsSocket, &socketP);
+    if (!socketP)
+        TraceExit("Unable to use supplied socket");
+    else {
+        const char * error;
+
+        ServerRunConn2(serverP, socketP, &error);
+
+        if (error) {
+            TraceExit("Failed to run server on connection on file "
+                      "descriptor %d.  %s", connectedOsSocket, error);
+            xmlrpc_strfree(error);
+        }
+        SocketDestroy(socketP);
     }
 }
 
@@ -1431,7 +1567,7 @@ ServerRunOnce(TServer * const serverP) {
             serverRunConn(serverP, connectedSocketP);
             SocketDestroy(connectedSocketP);
         } else if (failed)
-            TraceMsg("Socket Error=%d", SocketError());
+            TraceMsg("Socket Error=%d", SocketError(srvP->listenSocketP));
     }
 }
 
@@ -1614,8 +1750,9 @@ LogWrite(TServer *    const serverP,
         abyss_bool success;
         success = MutexLock(&srvP->logmutex);
         if (success) {
+            const char * const lbr = "\n";
             FileWrite(&srvP->logfile, msg, strlen(msg));
-            FileWrite(&srvP->logfile, LBR, strlen(LBR));
+            FileWrite(&srvP->logfile, lbr, strlen(lbr));
         
             MutexUnlock(&srvP->logmutex);
         }

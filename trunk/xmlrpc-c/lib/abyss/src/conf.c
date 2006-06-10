@@ -47,6 +47,7 @@
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
+#include "trace.h"
 #include "server.h"
 #include "http.h"
 

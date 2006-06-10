@@ -7,8 +7,8 @@
 
 #include "file.h"
 #include "data.h"
-/* We can get rid of socket.h when TSocket becomes a struct */
-#include "socket.h"
+
+typedef struct _Tsocket Tsocket;
 
 struct _TServer {
     abyss_bool terminationRequested;

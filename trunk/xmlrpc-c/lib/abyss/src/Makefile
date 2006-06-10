@@ -37,6 +37,7 @@ ABYSS_OBJS = \
   server.lo \
   session.lo \
   socket.lo \
+  socket_unix.lo \
   token.lo \
   $(THREAD_MODULE).lo \
   trace.lo \
