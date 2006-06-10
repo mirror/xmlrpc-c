@@ -88,10 +88,10 @@ typedef struct {
     int http_status;
 
     /* Low-level information used by libwww. */
-    HTRequest *request;
-    HTChunk *response_data;
-    HTParentAnchor *source_anchor;
-    HTAnchor *dest_anchor;
+    HTRequest *      request;
+    HTChunk *        response_data;
+    HTParentAnchor * source_anchor;
+    HTAnchor *       dest_anchor;
 
     xmlrpc_transport_asynch_complete complete;
     struct xmlrpc_call_info * callInfoP; 
@@ -233,6 +233,44 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 **  HTTP Error Reporting
 **=======================================================================*/
 
+static void
+formatLibwwwError(HTRequest *   const requestP,
+                  const char ** const msgP) {
+/*----------------------------------------------------------------------------
+   When something fails in a Libwww request, Libwww generates a stack
+   of error information (precious little information, of course, in the
+   Unix tradition) and attaches it to the request object.  We make a message
+   out of that information.
+
+   We rely on Libwww's HTDialog_errorMessage() to do the bulk of the
+   formatting; we might be able to coax more information out of the request
+   if we interpreted the error stack directly.
+-----------------------------------------------------------------------------*/
+    HTList * const errStack = HTRequest_error(requestP);
+    
+    if (errStack == NULL)
+        xmlrpc_asprintf(msgP, "Libwww supplied no error details");
+    else {
+        /* Get an error message from libwww.  The middle three
+           parameters to HTDialog_errorMessage appear to be ignored.
+           XXX - The documentation for this API is terrible, so we may
+           be using it incorrectly.  
+        */
+        const char * msg =
+            HTDialog_errorMessage(requestP, HT_A_MESSAGE, HT_MSG_NULL,
+                                  "An error occurred", errStack);
+        
+        if (msg == NULL)
+            xmlrpc_asprintf(msgP, "Libwww supplied some error detail, "
+                            "but its HTDialog_errorMessage() subroutine "
+                            "mysteriously failed to interpret it for us.");
+        else
+            *msgP = msg;
+    }
+}
+
+
+
 static void 
 set_fault_from_http_request(xmlrpc_env * const envP,
                             int          const status,
@@ -246,45 +284,20 @@ set_fault_from_http_request(xmlrpc_env * const envP,
     if (status == 200) {
         /* No error.  Don't set one in *envP */
     } else {
-        /* Get an error message from libwww. The middle three
-           parameters to HTDialog_errorMessage appear to be ignored.
-           XXX - The documentation for this API is terrible, so we may
-           be using it incorrectly.  
-        */
-        HTList * const errStack = HTRequest_error(requestP);
-    
-        if (errStack == NULL) {
-            /* I think this is probably impossible, because we didn't get
-               status 200, but I don't completely understand HTTP and libwww.
-            */
+        const char * libwwwMsg;
+        formatLibwwwError(requestP, &libwwwMsg);
+
+        if (status == -1)
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_NETWORK_ERROR,
-                "HTTP error #%d occurred, but there was no additional "
-                "error information supplied", status);
-        } else {
-            const char * const msg = 
-                HTDialog_errorMessage(requestP, HT_A_MESSAGE, HT_MSG_NULL,
-                                      "An error occurred", errStack);
-
-            if (msg == NULL)
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_NETWORK_ERROR,
-                    "HTTP error #%d occurred.  Libwww's "
-                    "HTDialog_errorMessage() routine was mysteriously "
-                    "unable to interpret the additional error information, "
-                    "so we have none to report.", status);
-            else {
-                /* Set our fault.  Note that this may inlcude line breaks,
-                   because 'msg' may.  We should fix that.  Formatting for
-                   display is none of our business at this level.
-                */
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_NETWORK_ERROR,
-                    "HTTP error #%d occurred.  libwww says %s", status, msg);
-                
-                xmlrpc_strfree(msg);
-            }
+                "Unable to complete the HTTP request.  %s", libwwwMsg);
+        else {
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_NETWORK_ERROR,
+                "HTTP request completed with HTTp error %d.  %s",
+                status, libwwwMsg);
         }
+        xmlrpc_strfree(libwwwMsg);
     }
 }
 
