@@ -805,7 +805,7 @@ extractServerCreateParms(
     unsigned int                      const parmSize,
     abyss_bool *                      const socketBoundP,
     unsigned int *                    const portNumberP,
-    TSocket *                         const socketFdP,
+    TOsSocket *                       const socketFd,
     const char **                     const logFileNameP) {
                    
 
@@ -855,7 +855,7 @@ createServer(xmlrpc_env *                      const envP,
 -----------------------------------------------------------------------------*/
     abyss_bool socketBound;
     unsigned int portNumber;
-    TSocket socketFd;
+    TOsSocket socketFd;
     const char * logFileName;
 
     extractServerCreateParms(envP, parmsP, parmSize,
