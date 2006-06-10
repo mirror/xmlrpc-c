@@ -24,7 +24,10 @@ namespace {
 
 static void 
 sigterm(int const signalClass) {
-    TraceExit("Signal of Class %d received. Exiting...\n", signalClass);
+
+    cerr << "Signal of Class " << signalClass << " received.  Exiting" << endl;
+
+    exit(1);
 }
 
 
