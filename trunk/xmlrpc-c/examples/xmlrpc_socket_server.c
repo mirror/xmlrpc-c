@@ -87,7 +87,5 @@ main(int           const argc,
 
     xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(socket_handle));
 
-    /* xmlrpc_server_abyss() never returns */
-
     return 0;
 }
