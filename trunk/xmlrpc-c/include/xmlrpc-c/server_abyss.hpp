@@ -93,7 +93,7 @@ private:
     setAdditionalServerParms(constrOpt const& opt);
 
     void
-    serverAbyss::initialize(constrOpt const& opt);
+    initialize(constrOpt const& opt);
 };
 
 
