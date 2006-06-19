@@ -3,6 +3,7 @@
 #include <memory>
 #include <signal.h>
 #include <errno.h>
+#include <iostream>
 #include <sys/wait.h>
 
 #include "xmlrpc-c/girerr.hpp"
