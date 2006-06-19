@@ -4,7 +4,8 @@ endif
 SUBDIR := src/cpp
 # BLDDIR is for use in places where a symbolic link won't work.
 # BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
+# symbolic link (but in directories that don't, like this one, have
+# blddir, these places use something else -- hence the variable).
 BLDDIR = ../..
 BUILDDIR := blddir
 VPATH = .:$(SRCDIR)
