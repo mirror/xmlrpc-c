@@ -46,9 +46,9 @@
    program does, User is responsible for making sure it doesn't
    interfere with our use of the library.
 
-   Note that we we say what the Curl library does, we're also talking
-   about various other libraries Curl uses internally, and in fact
-   much of what we're saying about global variables springs from
+   Note that when we say what the Curl library does, we're also
+   talking about various other libraries Curl uses internally, and in
+   fact much of what we're saying about global variables springs from
    such subordinate libraries as OpenSSL and Winsock.
 -----------------------------------------------------------------------------*/
 
