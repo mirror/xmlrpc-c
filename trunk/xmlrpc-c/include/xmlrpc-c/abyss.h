@@ -192,6 +192,7 @@ void
 ServerRunConn(TServer * const serverP,
               TOsSocket const connectedSocket);
 
+#define HAVE_SERVER_RUN_CONN_2
 void
 ServerRunConn2(TServer *     const serverP,
                TSocket *     const connectedSocketP,
