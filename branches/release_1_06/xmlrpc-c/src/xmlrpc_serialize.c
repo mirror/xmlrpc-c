@@ -62,8 +62,8 @@ cleanup:
 
 
 static void 
-assertValidUtf8(const char * const str,
-                size_t       const len) {
+assertValidUtf8(const char * const str ATTR_UNUSED,
+                size_t       const len ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    Assert that the string 'str' of length 'len' is valid UTF-8.
 -----------------------------------------------------------------------------*/

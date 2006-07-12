@@ -717,9 +717,9 @@ unregister_asynch_call(void) {
 
 
 static int 
-timer_callback(HTTimer *   const timer ATTR_UNUSED,
+timer_callback(HTTimer *   const timer     ATTR_UNUSED,
                void *      const user_data ATTR_UNUSED,
-               HTEventType const event) {
+               HTEventType const event     ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
   A handy timer callback which cancels the running event loop. 
 -----------------------------------------------------------------------------*/

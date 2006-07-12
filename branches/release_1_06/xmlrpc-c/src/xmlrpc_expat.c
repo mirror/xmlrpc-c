@@ -289,7 +289,7 @@ startElement(void *      const userData,
 
 static void
 endElement(void *     const userData,
-           XML_Char * const name) {
+           XML_Char * const name ATTR_UNUSED) {
 
     parseContext * const contextP = userData;
 
