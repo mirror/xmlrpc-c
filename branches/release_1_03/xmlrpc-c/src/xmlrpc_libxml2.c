@@ -30,7 +30,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <xmlparser.h>
+#else
 #include <libxml/parser.h>
+#endif
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
