@@ -71,7 +71,7 @@ extern "C" {
     while (0)
 
 #else
-#define XMLRPC_ASSERT(cond) (0)
+#define XMLRPC_ASSERT(cond) while (0) {}
 #endif
 
 void

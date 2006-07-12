@@ -114,7 +114,7 @@ void
 xmlrpc_registry_add_method_w_doc(
     xmlrpc_env *      const envP,
     xmlrpc_registry * const registryP,
-    const char *      const host,
+    const char *      const host ATTR_UNUSED,
     const char *      const methodName,
     xmlrpc_method     const method,
     void *            const userData,

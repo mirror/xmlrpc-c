@@ -535,7 +535,7 @@ xmlrpc_server_abyss_default_handler(TSession * const sessionP) {
 
 
 static void 
-sigchld(int const signalClass) {
+sigchld(int const signalClass ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
    one of our child processes has terminated).
