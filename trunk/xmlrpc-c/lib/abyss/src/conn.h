@@ -2,7 +2,6 @@
 #define CONN_H_INCLUDED
 
 #include "xmlrpc-c/abyss.h"
-#include "socket.h"
 #include "file.h"
 
 #define BUFFER_SIZE 4096 
@@ -22,8 +21,7 @@ struct _TConn {
            the next byte to be delivered to the user is.
         */
     uint32_t inbytes,outbytes;  
-    TSocket * socketP;
-    TIPAddr peerip;
+    TChannel * channelP;
     abyss_bool hasOwnThread;
     TThread * threadP;
     abyss_bool finished;
@@ -51,7 +49,7 @@ void ConnFree(TConn * const connectionP);
 void
 ConnCreate(TConn **            const connectionPP,
            TServer *           const serverP,
-           TSocket *           const connectedSocketP,
+           TChannel *          const channelP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
@@ -94,5 +92,9 @@ ConnWriteFromFile(TConn *  const connectionP,
 
 TServer *
 ConnServer(TConn * const connectionP);
+
+void
+ConnFormatClientAddr(TConn *       const connectionP,
+                     const char ** const clientAddrPP);
 
 #endif

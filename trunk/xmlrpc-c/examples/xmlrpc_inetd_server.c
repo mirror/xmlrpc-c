@@ -7,6 +7,15 @@
    xmlrpc_sample_add_server.c is a server that does the same thing,
    but you give it a TCP port number and it listens for TCP connecitons
    and processes RPCs ad infinitum.
+
+   Here is an easy way to test this program:
+
+     socketexec --accept --local_port=8080 --stdin -- ./xmlrpc_inetd_server
+
+   Now run the client program 'xmlrpc_sample_add_client'.  Socketexec
+   will accept the connection that the client program requests and pass it
+   to this program on Standard Input.  This program will perform the RPC,
+   respond to the client, then exit.
 */
 
 #include <stdlib.h>

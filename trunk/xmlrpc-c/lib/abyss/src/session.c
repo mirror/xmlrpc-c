@@ -99,20 +99,22 @@ SessionLog(TSession * const sessionP) {
 
         const char * logline;
         char date[30];
+        const char * peerInfo;
 
         DateToLogString(&sessionP->date, date);
 
-        xmlrpc_asprintf(&logline, "%d.%d.%d.%d - %s - [%s] \"%s\" %d %d",
-                        IPB1(sessionP->conn->peerip),
-                        IPB2(sessionP->conn->peerip),
-                        IPB3(sessionP->conn->peerip),
-                        IPB4(sessionP->conn->peerip),
+        ConnFormatClientAddr(sessionP->conn, &peerInfo);
+
+        xmlrpc_asprintf(&logline, "%s - %s - [%s] \"%s\" %d %d",
+                        peerInfo,
                         user ? user : "",
                         date, 
                         sessionP->request_info.requestline,
                         sessionP->status,
                         sessionP->conn->outbytes
             );
+        xmlrpc_strfree(peerInfo);
+
         if (logline) {
             LogWrite(sessionP->conn->server, logline);
 

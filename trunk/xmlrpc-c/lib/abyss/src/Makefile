@@ -27,12 +27,15 @@ all: libxmlrpc_abyss.la
 
 
 ABYSS_OBJS = \
+  channel.lo \
+  chanswitch.lo \
   conf.lo \
   conn.lo \
   data.lo \
   date.lo \
   file.lo \
   http.lo \
+  init.lo \
   response.lo \
   server.lo \
   session.lo \

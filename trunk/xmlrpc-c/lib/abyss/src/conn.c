@@ -12,7 +12,7 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/sleep_int.h"
 #include "xmlrpc-c/abyss.h"
-#include "socket.h"
+#include "channel.h"
 #include "server.h"
 #include "thread.h"
 
@@ -105,7 +105,7 @@ makeThread(TConn *             const connectionP,
 void
 ConnCreate(TConn **            const connectionPP,
            TServer *           const serverP,
-           TSocket *           const connectedSocketP,
+           TChannel *          const channelP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
@@ -116,7 +116,7 @@ ConnCreate(TConn **            const connectionPP,
 
    A connection carries one or more HTTP transactions (request/response).
 
-   'connectedSocketP' transports the requests and responses.
+   *channelP transports the requests and responses.
 
    The connection handles those HTTP requests.
 
@@ -142,11 +142,8 @@ ConnCreate(TConn **            const connectionPP,
         xmlrpc_asprintf(errorP, "Unable to allocate memory for a connection "
                         "descriptor.");
     else {
-        abyss_bool success;
-        uint16_t peerPortNumber;
-
         connectionP->server     = serverP;
-        connectionP->socketP    = connectedSocketP;
+        connectionP->channelP   = channelP;
         connectionP->buffersize = 0;
         connectionP->bufferpos  = 0;
         connectionP->finished   = FALSE;
@@ -156,13 +153,7 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->outbytes   = 0;
         connectionP->trace      = getenv("ABYSS_TRACE_CONN");
 
-        SocketGetPeerName(connectedSocketP,
-                          &connectionP->peerip, &peerPortNumber, &success);
-
-        if (success)
-            makeThread(connectionP, foregroundBackground, useSigchld, errorP);
-        else
-            xmlrpc_asprintf(errorP, "Failed to get peer name from socket.");
+        makeThread(connectionP, foregroundBackground, useSigchld, errorP);
     }
     *connectionPP = connectionP;
 }
@@ -258,25 +249,25 @@ traceBuffer(const char * const label,
 
 
 static void
-traceSocketRead(TConn *      const connectionP,
-                unsigned int const size) {
+traceChannelRead(TConn *      const connectionP,
+                 unsigned int const size) {
 
     if (connectionP->trace)
-        traceBuffer("READ FROM SOCKET:",
+        traceBuffer("READ FROM CHANNEL:",
                     connectionP->buffer + connectionP->buffersize, size);
 }
 
 
 
 static void
-traceSocketWrite(TConn *      const connectionP,
-                 const char * const buffer,
-                 unsigned int const size,
-                 abyss_bool   const failed) {
-
+traceChannelWrite(TConn *      const connectionP,
+                  const char * const buffer,
+                  unsigned int const size,
+                  abyss_bool   const failed) {
+    
     if (connectionP->trace) {
         const char * const label =
-            failed ? "FAILED TO WRITE TO SOCKET:" : "WROTE TO SOCKET";
+            failed ? "FAILED TO WRITE TO CHANNEL:" : "WROTE TO CHANNEL";
         traceBuffer(label, buffer, size);
     }
 }
@@ -295,7 +286,7 @@ abyss_bool
 ConnRead(TConn *  const connectionP,
          uint32_t const timeout) {
 /*----------------------------------------------------------------------------
-   Read some stuff on connection *connectionP from the socket.
+   Read some stuff on connection *connectionP from the channel.
 
    Don't wait more than 'timeout' seconds for data to arrive.  Fail if
    nothing arrives within that time.
@@ -316,15 +307,15 @@ ConnRead(TConn *  const connectionP,
         else {
             int rc;
             
-            rc = SocketWait(connectionP->socketP, TRUE, FALSE,
-                            timeLeft * 1000);
+            rc = ChannelWait(connectionP->channelP, TRUE, FALSE,
+                             timeLeft * 1000);
             
             if (rc != 1)
                 cantGetData = TRUE;
             else {
                 uint32_t bytesAvail;
             
-                bytesAvail = SocketAvailableReadBytes(connectionP->socketP);
+                bytesAvail = ChannelAvailableReadBytes(connectionP->channelP);
                 
                 if (bytesAvail <= 0)
                     cantGetData = TRUE;
@@ -334,12 +325,12 @@ ConnRead(TConn *  const connectionP,
 
                     uint32_t bytesRead;
 
-                    bytesRead = SocketRead(
-                        connectionP->socketP,
+                    bytesRead = ChannelRead(
+                        connectionP->channelP,
                         connectionP->buffer + connectionP->buffersize,
                         bytesToRead);
                     if (bytesRead > 0) {
-                        traceSocketRead(connectionP, bytesRead);
+                        traceChannelRead(connectionP, bytesRead);
                         connectionP->inbytes += bytesRead;
                         connectionP->buffersize += bytesRead;
                         connectionP->buffer[connectionP->buffersize] = '\0';
@@ -364,9 +355,9 @@ ConnWrite(TConn *      const connectionP,
 
     abyss_bool failed;
 
-    SocketWrite(connectionP->socketP, buffer, size, &failed);
+    ChannelWrite(connectionP->channelP, buffer, size, &failed);
 
-    traceSocketWrite(connectionP, buffer, size, failed);
+    traceChannelWrite(connectionP, buffer, size, failed);
 
     if (!failed)
         connectionP->outbytes += size;
@@ -455,7 +446,7 @@ processHeaderLine(char *       const start,
 
   Process means:
 
-     - Determine whether more data from the socket is needed to get a full
+     - Determine whether more data from the channel is needed to get a full
        header (or to determine that we've already one -- note that we may
        have to see the next line to know if it's a continuation line).
 
@@ -548,7 +539,7 @@ ConnReadHeader(TConn * const connectionP,
 
    We use stuff already in the internal buffer (perhaps left by a
    previous call to this subroutine) before reading any more from from
-   the socket.
+   the channel.
 
    Return as *headerP the header value.  This is in the connection's
    internal buffer.  This contains no line delimiters.
@@ -574,7 +565,7 @@ ConnReadHeader(TConn * const connectionP,
             error = TRUE;
         else {
             if (p >= connectionP->buffer + connectionP->buffersize)
-                /* Need more data from the socket to chew on */
+                /* Need more data from the channel to chew on */
                 error = !ConnRead(connectionP, timeLeft);
 
             if (!error) {
@@ -602,6 +593,15 @@ ConnReadHeader(TConn * const connectionP,
 TServer *
 ConnServer(TConn * const connectionP) {
     return connectionP->server;
+}
+
+
+
+void
+ConnFormatClientAddr(TConn *       const connectionP,
+                     const char ** const clientAddrPP) {
+
+    ChannelFormatPeerInfo(connectionP->channelP, clientAddrPP);
 }
 
 

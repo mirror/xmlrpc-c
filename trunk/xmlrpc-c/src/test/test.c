@@ -20,6 +20,7 @@
 #include "cgi.h"
 #include "xml_data.h"
 #include "client.h"
+#include "abyss.h"
 #include "server_abyss.h"
 #include "method_registry.h"
 
@@ -687,6 +688,7 @@ main(int     argc,
         test_sample_files();
         printf("\n");
         test_server_cgi_maybe();
+        test_abyss();
         test_server_abyss();
 
         test_utf8_coding();

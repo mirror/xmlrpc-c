@@ -33,6 +33,16 @@ extern "C" {
 
 typedef int abyss_bool;
 
+/****************************************************************************
+  GLOBAL (STATIC) PROGRAM STUFF
+****************************************************************************/
+
+void
+AbyssInit(const char ** const errorP);
+
+void
+AbyssTerm(void);
+
 /*********************************************************************
 ** MIMEType
 *********************************************************************/
@@ -64,6 +74,8 @@ MIMETypeAdd(const char * const type,
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
 
+typedef struct _TChanSwitch TChanSwitch;
+typedef struct _TChannel TChannel;
 typedef struct _TSocket TSocket;
 
 /* TOsSocket is the type of a conventional socket offered by our OS.
@@ -71,26 +83,16 @@ typedef struct _TSocket TSocket;
    sockets today.
 */
 #ifdef WIN32
-void
-SocketWinCreate(TSocket ** const socketPP);
+  #include <xmlrpc-c/abyss_winsock.h>
+#else
+  #include <xmlrpc-c/abyss_unixsock.h>
+#endif
 
 void
-SocketWinCreateWinsock(SOCKET     const winsock,
-                       TSocket ** const socketPP);
-
-typedef SOCKET TOsSocket;
-
-#else  /* WIN32 */
+ChanSwitchDestroy(TChanSwitch * const chanSwitchP);
 
 void
-SocketUnixCreate(TSocket ** const socketPP);
-
-void
-SocketUnixCreateFd(int        const fd,
-                   TSocket ** const socketPP);
-
-typedef int TOsSocket;
-#endif  /* WIN32 */
+ChannelDestroy(TChannel * const channelP);
 
 void
 SocketDestroy(TSocket * const socketP);
@@ -114,6 +116,11 @@ ServerCreate(TServer *    const serverP,
              uint16_t     const port,
              const char * const filespath,
              const char * const logfilename);
+
+void
+ServerCreateSwitch(TServer *     const serverP,
+                   TChanSwitch * const chanSwitchP,
+                   const char ** const errorP);
 
 abyss_bool
 ServerCreateSocket(TServer *    const serverP,
@@ -191,6 +198,11 @@ ServerRunOnce2(TServer *           const serverP,
 void
 ServerRunConn(TServer * const serverP,
               TOsSocket const connectedSocket);
+
+void
+ServerRunChannel(TServer *     const serverP,
+                 TChannel *    const channelP,
+                 const char ** const errorP);
 
 #define HAVE_SERVER_RUN_CONN_2
 void

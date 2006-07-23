@@ -67,9 +67,29 @@ test_fault(xmlrpc_env * const envP,
 
 ;
 
+
+static inline void
+test_null_string(const char * const string,
+                 const char * const fileName,
+                 unsigned int const lineNumber) {
+
+    ++total_tests;
+    if (string != NULL)
+        test_failure(fileName, lineNumber, "string not null", string);
+    else
+        printf(".");
+}
+
+
+#define TEST_NULL_STRING(string) \
+    do { test_null_string(string, __FILE__, __LINE__); } while(0)
+
+;
+
 #define TEST_ERROR(reason) \
 do { \
     printf("Unable to test at %s/%u.  %s", __FILE__, __LINE__, reason); \
     abort(); \
    } while (0)
 
+;

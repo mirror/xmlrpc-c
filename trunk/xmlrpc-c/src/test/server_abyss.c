@@ -62,12 +62,9 @@ testServerParms(void) {
 void
 test_server_abyss(void) {
 
-    xmlrpc_env env;
     TServer abyssServer;
 
-    printf("Running Abyss server tests...\n");
-
-    xmlrpc_env_init(&env);
+    printf("Running Abyss XML-RPC server tests...\n");
 
     ServerCreate(&abyssServer, "testserver", 8080, NULL, NULL);
     
@@ -88,5 +85,5 @@ test_server_abyss(void) {
     testServerParms();
 
     printf("\n");
-    printf("Abyss server tests done.\n");
+    printf("Abyss XML-RPC server tests done.\n");
 }

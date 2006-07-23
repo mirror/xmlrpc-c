@@ -22,6 +22,8 @@
 #include "trace.h"
 #include "session.h"
 #include "conn.h"
+#include "chanswitch.h"
+#include "channel.h"
 #include "socket.h"
 #ifdef WIN32
   #include "socket_win.h"
@@ -688,28 +690,27 @@ logClose(struct _TServer * const srvP) {
 
 
 static void
-initSocketStuff(struct _TServer * const srvP,
-                abyss_bool        const noAccept,
-                TSocket *         const userSocketP,
-                uint16_t          const port,
-                const char **     const errorP) {
-
-    if (userSocketP) {
+initChanSwitchStuff(struct _TServer * const srvP,
+                    abyss_bool        const noAccept,
+                    TChanSwitch *         const userSwitchP,
+                    uint16_t          const port,
+                    const char **     const errorP) {
+    
+    if (userSwitchP) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
-        srvP->socketBound = TRUE;
-        srvP->listenSocketP = userSocketP;
+        srvP->chanSwitchP = userSwitchP;
     } else if (noAccept) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = FALSE;
-        srvP->socketBound = FALSE;
+        srvP->chanSwitchP = NULL;
     } else {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
-        srvP->socketBound = FALSE;
+        srvP->chanSwitchP = NULL;
         srvP->port = port;
     }
-    srvP->weCreatedListenSocket = FALSE;
+    srvP->weCreatedChanSwitch = FALSE;
 }
 
 
@@ -717,7 +718,7 @@ initSocketStuff(struct _TServer * const srvP,
 static void
 createServer(struct _TServer ** const srvPP,
              abyss_bool         const noAccept,
-             TSocket *          const userSocketP,
+             TChanSwitch *          const userChanSwitchP,
              uint16_t           const portNumber,             
              const char **      const errorP) {
 
@@ -731,7 +732,8 @@ createServer(struct _TServer ** const srvPP,
     } else {
         srvP->terminationRequested = false;
 
-        initSocketStuff(srvP, noAccept, userSocketP, portNumber, errorP);
+        initChanSwitchStuff(srvP, noAccept, userChanSwitchP, portNumber,
+                            errorP);
 
         if (!*errorP) {
             srvP->defaulthandler = ServerDefaultHandlerFunc;
@@ -815,13 +817,28 @@ ServerCreate(TServer *    const serverP,
 
 
 static void
-createSocketFromOsSocket(TOsSocket    const osSocket,
-                         TSocket **   const socketPP) {
+createSwitchFromOsSocket(TOsSocket      const osSocket,
+                         TChanSwitch ** const chanSwitchPP,
+                         const char **  const errorP) {
 
 #ifdef WIN32
-    SocketWinCreateWinsock(osSocket, socketPP);
+    ChanSwitchWinCreateWinsock(osSocket, chanSwitchPP, errorP);
 #else
-    SocketUnixCreateFd(osSocket, socketPP);
+    ChanSwitchUnixCreateFd(osSocket, chanSwitchPP, errorP);
+#endif
+}
+
+
+
+static void
+createChannelFromOsSocket(TOsSocket     const osSocket,
+                          TChannel **   const channelPP,
+                          const char ** const errorP) {
+
+#ifdef WIN32
+    ChannelWinCreateWinsock(osSocket, channelPP, errorP);
+#else
+    ChannelUnixCreateFd(osSocket, channelPP, errorP);
 #endif
 }
 
@@ -835,16 +852,20 @@ ServerCreateSocket(TServer *    const serverP,
                    const char * const logFileName) {
 
     abyss_bool success;
-    TSocket * socketP;
+    TChanSwitch * chanSwitchP;
+    const char * error;
 
-    createSocketFromOsSocket(socketFd, &socketP);
+    createSwitchFromOsSocket(socketFd, &chanSwitchP, &error);
 
-    if (socketP) {
+    if (error) {
+        success = FALSE;
+        xmlrpc_strfree(error);
+    } else {
         abyss_bool const noAcceptFalse = FALSE;
 
         const char * error;
 
-        createServer(&serverP->srvP, noAcceptFalse, socketP, 0, &error);
+        createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, &error);
 
         if (error) {
             TraceMsg(error);
@@ -855,8 +876,7 @@ ServerCreateSocket(TServer *    const serverP,
             
             setNamePathLog(serverP, name, filesPath, logFileName);
         }
-    } else
-        success = FALSE;
+    }
 
     return success;
 }
@@ -891,15 +911,35 @@ ServerCreateNoAccept(TServer *    const serverP,
 
 
 void
+ServerCreateSwitch(TServer *     const serverP,
+                   TChanSwitch *     const chanSwitchP,
+                   const char ** const errorP) {
+    
+    abyss_bool const noAcceptFalse = FALSE;
+
+    assert(serverP);
+    assert(chanSwitchP);
+
+    createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, errorP);
+}
+
+
+
+void
 ServerCreateSocket2(TServer *     const serverP,
                     TSocket *     const socketP,
                     const char ** const errorP) {
     
-    abyss_bool const noAcceptFalse = FALSE;
+    TChanSwitch * const chanSwitchP = SocketGetChanSwitch(socketP);
 
     assert(socketP);
 
-    createServer(&serverP->srvP, noAcceptFalse, socketP, 0, errorP);
+    if (!chanSwitchP)
+        xmlrpc_asprintf(
+            errorP, "Socket is not a listening socket.  "
+            "You should use ServerCreateSwitch() instead, anyway.");
+    else
+        ServerCreateSwitch(serverP, chanSwitchP, errorP);
 }
 
 
@@ -928,8 +968,8 @@ ServerFree(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
-    if (srvP->weCreatedListenSocket)
-        SocketDestroy(srvP->listenSocketP);
+    if (srvP->weCreatedChanSwitch)
+        ChanSwitchDestroy(srvP->chanSwitchP);
 
     xmlrpc_strfree(srvP->name);
 
@@ -1140,36 +1180,26 @@ serverFunc(void * const userHandle) {
 
 
 static void
-createAndBindSocket(struct _TServer * const srvP) {
+createChanSwitch(struct _TServer * const srvP,
+                 const char **     const errorP) {
 
-    abyss_bool success;
+    TChanSwitch * chanSwitchP;
+    const char * error;
+    
+    /* Not valid to call this when channel switch already exists: */
+    assert(srvP->chanSwitchP == NULL);
 
-    success = SocketInit();
-    if (!success)
-        TraceMsg("Can't initialize TCP sockets");
-    else {
-        TSocket * socketP;
+    ChanSwitchUnixCreate(srvP->port, &chanSwitchP, &error);
+    
+    if (error) {
+        xmlrpc_asprintf(errorP,
+                        "Can't create channel switch.  %s", error);
+        xmlrpc_strfree(error);
+    } else {
+        *errorP = NULL;
         
-        SocketUnixCreate(&socketP);
-        
-        if (!socketP)
-            TraceMsg("Can't create a socket");
-        else {
-            abyss_bool success;
-            
-            success = SocketBind(socketP, NULL, srvP->port);
-            
-            if (!success)
-                TraceMsg("Failed to bind listening socket to port number %u",
-                         srvP->port);
-            else {
-                srvP->weCreatedListenSocket = TRUE;
-                srvP->socketBound = TRUE;
-                srvP->listenSocketP = socketP;
-            }
-            if (!success)
-                SocketDestroy(socketP);
-        }
+        srvP->weCreatedChanSwitch = TRUE;
+        srvP->chanSwitchP         = chanSwitchP;
     }
 }
 
@@ -1183,30 +1213,50 @@ ServerInit(TServer * const serverP) {
    Do not confuse this with creating the server -- ServerCreate().
 
    Not necessary or valid with a server that doesn't accept connections (i.e.
-   user supplies the TCP connections).
+   user supplies the channels (TCP connections)).
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
-    abyss_bool success;
+    const char * retError;
     
-    if (!srvP->serverAcceptsConnections) {
-        TraceMsg("ServerInit() is not valid on a server that doesn't "
-                 "accept connections "
-                 "(i.e. created with ServerCreateNoAccept)");
-        success = FALSE;
-    } else {
-        if (!srvP->socketBound)
-            createAndBindSocket(srvP);
+    if (!srvP->serverAcceptsConnections)
+        xmlrpc_asprintf(&retError,
+                        "ServerInit() is not valid on a server that doesn't "
+                        "accept connections "
+                        "(i.e. created with ServerCreateNoAccept)");
+    else {
+        retError = NULL;  /* initial value */
 
-        if (srvP->socketBound) {
-            success = SocketListen(srvP->listenSocketP, MAX_CONN);
+        if (!srvP->chanSwitchP) {
+            const char * error;
+            createChanSwitch(srvP, &error);
 
-            if (!success)
-                TraceMsg("Failed to listen on bound socket.");
-        } else
-            success = FALSE;
+            if (error) {
+                xmlrpc_asprintf(&retError, "Unable to create a channel switch "
+                                "for the server.  %s", error);
+                xmlrpc_strfree(error);
+            }
+        }
+
+        if (!retError) {
+            const char * error;
+
+            assert(srvP->chanSwitchP);
+
+            ChanSwitchListen(srvP->chanSwitchP, MAX_CONN, &error);
+
+            if (error) {
+                xmlrpc_asprintf(&retError,
+                                "Failed to listen on bound socket.  %s",
+                                error);
+                xmlrpc_strfree(error);
+            }
+        }
     }
-    if (!success)
+    if (retError) {
+        TraceMsg("ServerInit() failed.  %s", retError);
         exit(1);
+        xmlrpc_strfree(retError);
+    }
 }
 
 
@@ -1366,10 +1416,10 @@ ServerUseSigchld(TServer * const serverP) {
 
 
 
-TThreadDoneFn destroySocket;
+static TThreadDoneFn destroyChannel;
 
 static void
-destroyConnSocket(void * const userHandle) {
+destroyChannel(void * const userHandle) {
 /*----------------------------------------------------------------------------
    This is a "connection done" function for the connection the server
    serves.  It gets called some time after the connection has done its
@@ -1378,11 +1428,60 @@ destroyConnSocket(void * const userHandle) {
    connection might be processed asynchronously in a background
    thread.
 
-   To wit, we destroy the connection's socket.
+   To wit, we destroy the connection's channel.
 -----------------------------------------------------------------------------*/
     TConn * const connectionP = userHandle;
 
-    SocketDestroy(connectionP->socketP);
+    ChannelDestroy(connectionP->channelP);
+}
+
+
+
+static void
+acceptAndProcessNextConnection(
+    TServer *             const serverP,
+    outstandingConnList * const outstandingConnListP) {
+
+    struct _TServer * const srvP = serverP->srvP;
+
+    TConn * connectionP;
+    const char * error;
+    TChannel * channelP;
+        
+    ChanSwitchAccept(srvP->chanSwitchP, &channelP, &error);
+    
+    if (error) {
+        TraceMsg("Failed to accept the next connection from a client "
+                 "at the channel level.  %s", error);
+        xmlrpc_strfree(error);
+    } else {
+        if (channelP) {
+            const char * error;
+
+            freeFinishedConns(outstandingConnListP);
+            
+            waitForConnectionCapacity(outstandingConnListP);
+            
+            ConnCreate(&connectionP, serverP, channelP,
+                       &serverFunc, &destroyChannel, ABYSS_BACKGROUND,
+                       srvP->useSigchld,
+                       &error);
+            if (!error) {
+                addToOutstandingConnList(outstandingConnListP,
+                                         connectionP);
+                ConnProcess(connectionP);
+                /* When connection is done (which could be later, courtesy
+                   of a background thread), destroyChannel() will
+                   destroy *channelP.
+                */
+            } else {
+                xmlrpc_strfree(error);
+                ChannelDestroy(channelP);
+            }
+        } else {
+            /* Accept function was interrupted before it got a connection */
+        }
+    }
 }
 
 
@@ -1395,45 +1494,11 @@ serverRun2(TServer * const serverP) {
 
     createOutstandingConnList(&outstandingConnListP);
 
-    while (!srvP->terminationRequested) {
-        TConn * connectionP;
+    while (!srvP->terminationRequested)
+        acceptAndProcessNextConnection(serverP, outstandingConnListP);
 
-        abyss_bool connected;
-        abyss_bool failed;
-        TSocket * connectedSocketP;
-        TIPAddr peerIpAddr;
-
-        SocketAccept(srvP->listenSocketP,
-                     &connected, &failed,
-                     &connectedSocketP, &peerIpAddr);
-        
-        if (connected) {
-            const char * error;
-
-            freeFinishedConns(outstandingConnListP);
-
-            waitForConnectionCapacity(outstandingConnListP);
-
-            ConnCreate(&connectionP, serverP, connectedSocketP,
-                       &serverFunc, &destroyConnSocket, ABYSS_BACKGROUND,
-                       srvP->useSigchld,
-                       &error);
-            if (!error) {
-                addToOutstandingConnList(outstandingConnListP, connectionP);
-                ConnProcess(connectionP);
-                /* When connection is done (which could be later, courtesy
-                   of a background thread), destroyConnSocket() will
-                   destroy *connectedSocketP.
-                */
-            } else {
-                xmlrpc_strfree(error);
-                SocketDestroy(connectedSocketP);
-            }
-        } else if (failed)
-            TraceMsg("Socket Error=%d", SocketError(srvP->listenSocketP));
-    }
     waitForNoConnections(outstandingConnListP);
-
+    
     destroyOutstandingConnList(outstandingConnListP);
 }
 
@@ -1444,7 +1509,7 @@ ServerRun(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
-    if (!srvP->socketBound)
+    if (!srvP->chanSwitchP)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
                  "Try ServerRunConn() or ServerInit()");
@@ -1455,13 +1520,13 @@ ServerRun(TServer * const serverP) {
 
 
 static void
-serverRunConn(TServer * const serverP,
-              TSocket * const connectedSocketP) {
+serverRunChannel(TServer *     const serverP,
+                 TChannel *    const channelP,
+                 const char ** const errorP) {
 /*----------------------------------------------------------------------------
-   Do the HTTP transaction on the TCP connection on the socket
-   'connectedSocketP'.
-   (socket must be in connected state, with nothing having been read or
-   written on the connection yet).
+   Do the HTTP transaction on the channel 'channelP'.
+   (channel must be at the beginning of the HTTP request -- nothing having
+   been read or written yet).
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
@@ -1471,18 +1536,43 @@ serverRunConn(TServer * const serverP,
     srvP->keepalivemaxconn = 1;
 
     ConnCreate(&connectionP, 
-               serverP, connectedSocketP,
+               serverP, channelP,
                &serverFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
                &error);
     if (error) {
-        TraceMsg("Couldn't create HTTP connection out of "
-                 "connected socket.  %s", error);
+        xmlrpc_asprintf(errorP, "Couldn't create HTTP connection out of "
+                        "channel (connected socket).  %s", error);
         xmlrpc_strfree(error);
     } else {
+        *errorP = NULL;
+
         ConnProcess(connectionP);
 
         ConnWaitAndRelease(connectionP);
     }
+}
+
+
+
+void
+ServerRunChannel(TServer *     const serverP,
+                 TChannel *    const channelP,
+                 const char ** const errorP) {
+/*----------------------------------------------------------------------------
+  Do the HTTP transaction on the channel 'channelP'.
+
+  (channel must be at the beginning of the HTTP request -- nothing having
+  been read or written yet).
+-----------------------------------------------------------------------------*/
+    struct _TServer * const srvP = serverP->srvP;
+
+    if (srvP->serverAcceptsConnections)
+        xmlrpc_asprintf(errorP,
+                        "This server is configured to accept connections on "
+                        "its own socket.  "
+                        "Try ServerRun() or ServerCreateNoAccept().");
+    else
+        serverRunChannel(serverP, channelP, errorP);
 }
 
 
@@ -1493,21 +1583,18 @@ ServerRunConn2(TServer *     const serverP,
                const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Do the HTTP transaction on the TCP connection on the socket
-   'connectedOsSocket'.
+   *connectedSocketP.
    (socket must be connected state, with nothing having been read or
    written on the connection yet).
 -----------------------------------------------------------------------------*/
-    struct _TServer * const srvP = serverP->srvP;
+    TChannel * const channelP = SocketGetChannel(connectedSocketP);
 
-    if (srvP->serverAcceptsConnections)
-        xmlrpc_asprintf(errorP,
-                        "This server is configured to accept connections on "
-                        "its own socket.  "
-                        "Try ServerRun() or ServerCreateNoAccept().");
-    else {
-        serverRunConn(serverP, connectedSocketP);
-        *errorP = NULL;
-    }
+    if (!channelP)
+        xmlrpc_asprintf(errorP, "The socket supplied is not a connected "
+                        "socket.  You should use ServerRunChannel() instead, "
+                        "anyway.");
+    else
+        ServerRunChannel(serverP, channelP, errorP);
 }
 
 
@@ -1516,21 +1603,24 @@ void
 ServerRunConn(TServer * const serverP,
               TOsSocket const connectedOsSocket) {
 
-    TSocket * socketP;
-    createSocketFromOsSocket(connectedOsSocket, &socketP);
-    if (!socketP)
+    TChannel * channelP;
+    const char * error;
+
+    createChannelFromOsSocket(connectedOsSocket, &channelP, &error);
+    if (error) {
         TraceExit("Unable to use supplied socket");
-    else {
+        xmlrpc_strfree(error);
+    } else {
         const char * error;
 
-        ServerRunConn2(serverP, socketP, &error);
+        ServerRunChannel(serverP, channelP, &error);
 
         if (error) {
             TraceExit("Failed to run server on connection on file "
                       "descriptor %d.  %s", connectedOsSocket, error);
             xmlrpc_strfree(error);
         }
-        SocketDestroy(socketP);
+        ChannelDestroy(channelP);
     }
 }
 
@@ -1539,35 +1629,46 @@ ServerRunConn(TServer * const serverP,
 void
 ServerRunOnce(TServer * const serverP) {
 /*----------------------------------------------------------------------------
-   Accept a connection from the listening socket and do the HTTP
+   Accept a connection from the channel switch and do the HTTP
    transaction that comes over it.
 
-   If no connection is presently waiting on the listening socket, wait
-   for one.  But return immediately if we receive a signal during the
-   wait.
+   If no connection is presently waiting at the switch, wait for one.
+   But return immediately if we receive a signal during the wait.
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
-    if (!srvP->socketBound)
+    if (!srvP->chanSwitchP)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRunOnce().  "
-                 "Try ServerRunConn() or ServerInit()");
+                 "Try ServerRunChannel() or ServerInit()");
     else {
-        abyss_bool connected;
-        abyss_bool failed;
-        TSocket *  connectedSocketP;
-        TIPAddr    remoteAddr;
+        const char * error;
+        TChannel *   channelP;
     
         srvP->keepalivemaxconn = 1;
 
-        SocketAccept(srvP->listenSocketP,
-                     &connected, &failed,
-                     &connectedSocketP, &remoteAddr);
-        if (connected) {
-            serverRunConn(serverP, connectedSocketP);
-            SocketDestroy(connectedSocketP);
-        } else if (failed)
-            TraceMsg("Socket Error=%d", SocketError(srvP->listenSocketP));
+        ChanSwitchAccept(srvP->chanSwitchP, &channelP, &error);
+        if (error) {
+            TraceMsg("Failed to accept the next connection from a client "
+                     "at the channel level.  %s", error);
+            xmlrpc_strfree(error);
+        } else {
+            if (channelP) {
+                const char * error;
+
+                serverRunChannel(serverP, channelP, &error);
+
+                if (error) {
+                    const char * peerDesc;
+                    ChannelFormatPeerInfo(channelP, &peerDesc);
+                    TraceExit("Got a connection from '%s', but failed to "
+                              "run server on it.  %s", peerDesc, error);
+                    xmlrpc_strfree(peerDesc);
+                    xmlrpc_strfree(error);
+                }
+                ChannelDestroy(channelP);
+            }
+        }
     }
 }
 

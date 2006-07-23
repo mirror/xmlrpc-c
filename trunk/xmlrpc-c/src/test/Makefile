@@ -29,6 +29,7 @@ LDFLAGS = $(LADD)
 
 TEST_OBJS = \
   test.o \
+  abyss.o \
   cgi.o \
   method_registry.o \
   parse_xml.o \

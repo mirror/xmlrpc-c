@@ -1,7 +1,8 @@
 /*=============================================================================
                                  socket_unix.c
 ===============================================================================
-  This is the implementation of TSocket for a standard Unix (POSIX)
+  This is the implementation of TChanSwitch and TChannel (and
+  obsolete TSocket) for a standard Unix (POSIX)
   stream socket -- what you create with a socket() C library call.
 =============================================================================*/
 
@@ -29,8 +30,11 @@
 #endif
 
 #include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "mallocvar.h"
 #include "trace.h"
+#include "chanswitch.h"
+#include "channel.h"
 #include "socket.h"
 #include "xmlrpc-c/abyss.h"
 
@@ -40,7 +44,8 @@
 
 struct socketUnix {
 /*----------------------------------------------------------------------------
-   The properties/state of a TSocket unique to a Unix TSocket.
+   The properties/state of a TChanSwitch or TChannel unique to the
+   Unix variety.
 -----------------------------------------------------------------------------*/
     int fd;
         /* File descriptor of the POSIX socket (such as is created by
@@ -53,10 +58,38 @@ struct socketUnix {
 };
 
 
-void
-SocketUnixInit(abyss_bool * const succeededP) {
+static abyss_bool
+connected(int const fd) {
+/*----------------------------------------------------------------------------
+   Return TRUE iff the socket on file descriptor 'fd' is in the connected
+   state.
 
-    *succeededP = TRUE;
+   If 'fd' does not identify a stream socket or we are unable to determine
+   the state of the stream socket, the answer is "false".
+-----------------------------------------------------------------------------*/
+    abyss_bool connected;
+    struct sockaddr sockaddr;
+    socklen_t nameLen;
+    int rc;
+
+    nameLen = sizeof(sockaddr);
+
+    rc = getpeername(fd, &sockaddr, &nameLen);
+
+    if (rc == 0)
+        connected = TRUE;
+    else
+        connected = FALSE;
+
+    return connected;
+}
+
+
+
+void
+SocketUnixInit(const char ** const errorP) {
+
+    *errorP = NULL;
 }
 
 
@@ -68,98 +101,21 @@ SocketUnixTerm(void) {
 
 
 
-static SocketDestroyImpl            socketDestroy;
-static SocketWriteImpl              socketWrite;
-static SocketReadImpl               socketRead;
-static SocketConnectImpl            socketConnect;
-static SocketBindImpl               socketBind;
-static SocketListenImpl             socketListen;
-static SocketAcceptImpl             socketAccept;
-static SocketErrorImpl              socketError;
-static SocketWaitImpl               socketWait;
-static SocketAvailableReadBytesImpl socketAvailableReadBytes;
-static SocketGetPeerNameImpl        socketGetPeerName;
+/*=============================================================================
+      TChannel
+=============================================================================*/
 
-
-static struct TSocketVtbl const vtbl = {
-    &socketDestroy,
-    &socketWrite,
-    &socketRead,
-    &socketConnect,
-    &socketBind,
-    &socketListen,
-    &socketAccept,
-    &socketError,
-    &socketWait,
-    &socketAvailableReadBytes,
-    &socketGetPeerName
-};
-
-
-
-void
-SocketUnixCreate(TSocket ** const socketPP) {
-
-    struct socketUnix * socketUnixP;
-
-    MALLOCVAR(socketUnixP);
-
-    if (socketUnixP) {
-        int rc;
-        rc = socket(AF_INET, SOCK_STREAM, 0);
-        if (rc < 0)
-            *socketPP = NULL;
-        else {
-            socketUnixP->fd = rc;
-            socketUnixP->userSuppliedFd = FALSE;
-            
-            {
-                int32_t n = 1;
-                int rc;
-                rc = setsockopt(socketUnixP->fd, SOL_SOCKET, SO_REUSEADDR,
-                                (char*)&n, sizeof(n));
-                if (rc < 0)
-                    *socketPP = NULL;
-                else
-                    SocketCreate(&vtbl, socketUnixP, socketPP);
-            }
-            if (!*socketPP)
-                close(socketUnixP->fd);
-        }
-        if (!*socketPP)
-            free(socketUnixP);
-    } else
-        *socketPP = NULL;
-}
-
-
-
-void
-SocketUnixCreateFd(int        const fd,
-                   TSocket ** const socketPP) {
-
-    struct socketUnix * socketUnixP;
-
-    MALLOCVAR(socketUnixP);
-
-    if (socketUnixP) {
-        socketUnixP->fd = fd;
-        socketUnixP->userSuppliedFd = TRUE;
-
-        SocketCreate(&vtbl, socketUnixP, socketPP);
-
-        if (!*socketPP)
-            free(socketUnixP);
-    } else
-        *socketPP = NULL;
-}
-
+static ChannelWriteImpl              channelWrite;
+static ChannelReadImpl               channelRead;
+static ChannelWaitImpl               channelWait;
+static ChannelAvailableReadBytesImpl channelAvailableReadBytes;
+static ChannelFormatPeerInfoImpl     channelFormatPeerInfo;
 
 
 static void
-socketDestroy(TSocket * const socketP) {
+channelDestroy(TChannel * const channelP) {
 
-    struct socketUnix * const socketUnixP = socketP->implP;
+    struct socketUnix * const socketUnixP = channelP->implP;
 
     if (!socketUnixP->userSuppliedFd)
         close(socketUnixP->fd);
@@ -170,12 +126,12 @@ socketDestroy(TSocket * const socketP) {
 
 
 static void
-socketWrite(TSocket *             const socketP,
-            const unsigned char * const buffer,
-            uint32_t              const len,
-            abyss_bool *          const failedP) {
+channelWrite(TChannel *            const channelP,
+             const unsigned char * const buffer,
+             uint32_t              const len,
+             abyss_bool *          const failedP) {
 
-    struct socketUnix * const socketUnixP = socketP->implP;
+    struct socketUnix * const socketUnixP = channelP->implP;
 
     size_t bytesLeft;
     abyss_bool error;
@@ -192,7 +148,7 @@ socketWrite(TSocket *             const socketP,
         rc = send(socketUnixP->fd, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
 
-        if (SocketTraceIsActive) {
+        if (ChannelTraceIsActive) {
             if (rc < 0)
                 fprintf(stderr, "Abyss socket: send() failed.  errno=%d (%s)",
                         errno, strerror(errno));
@@ -201,7 +157,7 @@ socketWrite(TSocket *             const socketP,
                         "Socket closed.\n");
             else
                 fprintf(stderr, "Abyss socket: sent %u bytes: '%.*s'\n",
-                        -rc, -rc, &buffer[len-bytesLeft]);
+                        rc, rc, &buffer[len-bytesLeft]);
         }
         if (rc <= 0)
             /* 0 means connection closed; < 0 means severe error */
@@ -215,15 +171,15 @@ socketWrite(TSocket *             const socketP,
 
 
 static uint32_t
-socketRead(TSocket * const socketP, 
-           char *    const buffer, 
-           uint32_t  const len) {
+channelRead(TChannel * const channelP, 
+            char *     const buffer, 
+            uint32_t   const len) {
 
-    struct socketUnix * const socketUnixP = socketP->implP;
+    struct socketUnix * const socketUnixP = channelP->implP;
 
     int rc;
     rc = recv(socketUnixP->fd, buffer, len, 0);
-    if (SocketTraceIsActive) {
+    if (ChannelTraceIsActive) {
         if (rc < 0)
             fprintf(stderr, "Abyss socket: recv() failed.  errno=%d (%s)",
                     errno, strerror(errno));
@@ -236,146 +192,13 @@ socketRead(TSocket * const socketP,
 
 
 
-abyss_bool
-socketConnect(TSocket * const socketP,
-              TIPAddr * const addrP,
-              uint16_t  const portNumber) {
-
-    struct socketUnix * const socketUnixP = socketP->implP;
-
-    struct sockaddr_in name;
-    int rc;
-
-    name.sin_family = AF_INET;
-    name.sin_port = htons(portNumber);
-    name.sin_addr = *addrP;
-
-    rc = connect(socketUnixP->fd, (struct sockaddr *)&name, sizeof(name));
-
-    return rc != -1;
-}
-
-
-
-abyss_bool
-socketBind(TSocket * const socketP,
-           TIPAddr * const addrP,
-           uint16_t  const portNumber) {
-
-    struct socketUnix * const socketUnixP = socketP->implP;
-
-    struct sockaddr_in name;
-    int rc;
-
-    name.sin_family = AF_INET;
-    name.sin_port   = htons(portNumber);
-    if (addrP)
-        name.sin_addr = *addrP;
-    else
-        name.sin_addr.s_addr = INADDR_ANY;
-
-    rc = bind(socketUnixP->fd, (struct sockaddr *)&name, sizeof(name));
-
-    return (rc != -1);
-}
-
-
-
-abyss_bool
-socketListen(TSocket * const socketP,
-             uint32_t  const backlog) {
-
-    struct socketUnix * const socketUnixP = socketP->implP;
-
-    int32_t const minus1 = -1;
-
-    int rc;
-
-    /* Disable the Nagle algorithm to make persistant connections faster */
-
-    setsockopt(socketUnixP->fd, IPPROTO_TCP,TCP_NODELAY,
-               &minus1, sizeof(minus1));
-
-    rc = listen(socketUnixP->fd, backlog);
-
-    return (rc != -1);
-}
-
-
-
-static void
-socketAccept(TSocket *    const listenSocketP,
-             abyss_bool * const connectedP,
-             abyss_bool * const failedP,
-             TSocket **   const acceptedSocketPP,
-             TIPAddr *    const ipAddrP) {
-/*----------------------------------------------------------------------------
-   Accept a connection on the listening socket 'listenSocketP'.  Return as
-   *acceptedSocketPP the socket for the accepted connection.
-
-   If no connection is waiting on 'listenSocketP', wait until one is.
-
-   If we receive a signal while waiting, return immediately.
-
-   Return *connectedP true iff we accepted a connection.  Return
-   *failedP true iff we were unable to accept a connection for some
-   reason other than that we were interrupted.  Return both false if
-   our wait for a connection was interrupted by a signal.
------------------------------------------------------------------------------*/
-    struct socketUnix * const listenSocketUnixP = listenSocketP->implP;
-
-    abyss_bool connected, failed, interrupted;
-
-    connected  = FALSE;
-    failed      = FALSE;
-    interrupted = FALSE;
-
-    while (!connected && !failed && !interrupted) {
-        struct sockaddr_in sa;
-        socklen_t size = sizeof(sa);
-        int rc;
-        rc = accept(listenSocketUnixP->fd, (struct sockaddr *)&sa, &size);
-        if (rc >= 0) {
-            int const acceptedFd = rc;
-            struct socketUnix * acceptedSocketUnixP;
-
-            MALLOCVAR(acceptedSocketUnixP);
-
-            if (acceptedSocketUnixP) {
-                acceptedSocketUnixP->fd = acceptedFd;
-                acceptedSocketUnixP->userSuppliedFd = FALSE;
-                
-                SocketCreate(&vtbl, acceptedSocketUnixP, acceptedSocketPP);
-                if (!*acceptedSocketPP)
-                    failed = TRUE;
-                else {
-                    connected = TRUE;
-                    *ipAddrP = sa.sin_addr;
-                }
-                if (failed)
-                    free(acceptedSocketUnixP);
-            } else
-                failed = TRUE;
-            if (failed)
-                close(acceptedFd);
-        } else if (errno == EINTR)
-            interrupted = TRUE;
-        else
-            failed = TRUE;
-    }   
-    *failedP    = failed;
-    *connectedP = connected;
-}
-
-
-
 static uint32_t
-socketWait(TSocket *  const socketP,
-           abyss_bool const rd,
-           abyss_bool const wr,
-           uint32_t   const timems) {
+channelWait(TChannel * const channelP,
+            abyss_bool const rd,
+            abyss_bool const wr,
+            uint32_t   const timems) {
 
-    struct socketUnix * const socketUnixP = socketP->implP;
+    struct socketUnix * const socketUnixP = channelP->implP;
 
     fd_set rfds, wfds;
     struct timeval tv;
@@ -421,9 +244,9 @@ socketWait(TSocket *  const socketP,
 
 
 static uint32_t
-socketAvailableReadBytes(TSocket * const socketP) {
+channelAvailableReadBytes(TChannel * const channelP) {
 
-    struct socketUnix * const socketUnixP = socketP->implP;
+    struct socketUnix * const socketUnixP = channelP->implP;
 
     uint32_t x;
     int rc;
@@ -435,56 +258,425 @@ socketAvailableReadBytes(TSocket * const socketP) {
 
 
 
-static void
-socketGetPeerName(TSocket *    const socketP,
-                  TIPAddr *    const ipAddrP,
-                  uint16_t *   const portNumberP,
-                  abyss_bool * const successP) {
+void
+ChannelUnixGetPeerName(TChannel *         const channelP,
+                       struct sockaddr ** const sockaddrPP,
+                       size_t  *          const sockaddrLenP,
+                       const char **      const errorP) {
 
-    struct socketUnix * const socketUnixP = socketP->implP;
+    struct socketUnix * const socketUnixP = channelP->implP;
 
-    socklen_t addrlen;
-    int rc;
-    struct sockaddr sockAddr;
+    unsigned char * peerName;
+    socklen_t nameSize;
 
-    addrlen = sizeof(sockAddr);
+    nameSize = sizeof(struct sockaddr) + 1;
     
-    rc = getpeername(socketUnixP->fd, &sockAddr, &addrlen);
+    peerName = malloc(nameSize);
 
-    if (rc < 0) {
-        TraceMsg("getpeername() failed.  errno=%d (%s)",
-                 errno, strerror(errno));
-        *successP = FALSE;
-    } else {
-        if (addrlen != sizeof(sockAddr)) {
-            TraceMsg("getpeername() returned a socket address of the wrong "
-                     "size: %u.  Expected %u", addrlen, sizeof(sockAddr));
-            *successP = FALSE;
-        } else {
-            if (sockAddr.sa_family != AF_INET) {
-                TraceMsg("Socket does not use the Inet (IP) address "
-                         "family.  Instead it uses family %d",
-                         sockAddr.sa_family);
-                *successP = FALSE;
-            } else {
-                struct sockaddr_in * const sockAddrInP = (struct sockaddr_in *)
-                    &sockAddr;
+    if (peerName == NULL)
+        xmlrpc_asprintf(errorP, "Unable to allocate space for peer name");
+    else {
+        int rc;
+        socklen_t nameLen;
+        nameLen = nameSize;  /* initial value */
+        rc = getpeername(socketUnixP->fd, (struct sockaddr *)peerName,
+                         &nameLen);
 
-                *ipAddrP     = sockAddrInP->sin_addr;
-                *portNumberP = sockAddrInP->sin_port;
-
-                *successP = TRUE;
+        if (rc < 0)
+            xmlrpc_asprintf(errorP, "getpeername() failed.  errno=%d (%s)",
+                            errno, strerror(errno));
+        else {
+            if (nameLen > nameSize-1)
+                xmlrpc_asprintf(errorP,
+                                "getpeername() says the socket name is "
+                                "larger than %u bytes, which means it is "
+                                "not in the expected format.",
+                                nameSize-1);
+            else {
+                *sockaddrPP = (struct sockaddr *)peerName;
+                *sockaddrLenP = nameLen;
+                *errorP = NULL;
             }
+        }
+        if (*errorP)
+            free(peerName);
+    }
+}
+
+
+
+static void
+channelFormatPeerInfo(TChannel *    const channelP,
+                      const char ** const peerStringP) {
+
+    struct socketUnix * const socketUnixP = channelP->implP;
+
+    struct sockaddr sockaddr;
+    socklen_t sockaddrLen;
+    int rc;
+
+    sockaddrLen = sizeof(sockaddr);
+    
+    rc = getpeername(socketUnixP->fd, &sockaddr, &sockaddrLen);
+    
+    if (rc < 0)
+        xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  errno=%d (%s)",
+                        errno, strerror(errno));
+    else {
+        switch (sockaddr.sa_family) {
+        case AF_INET: {
+            struct sockaddr_in * const sockaddrInP =
+                (struct sockaddr_in *) &sockaddr;
+            if (sockaddrLen < sizeof(*sockaddrInP))
+                xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
+                                "the wrong size");
+            else {
+                unsigned char * const ipaddr = (unsigned char *)
+                    &sockaddrInP->sin_addr.s_addr;
+                xmlrpc_asprintf(peerStringP, "%u.%u.%u.%u:%hu",
+                                ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
+                                sockaddrInP->sin_port);
+            }
+        } break;
+        default:
+            xmlrpc_asprintf(peerStringP, "??? AF=%u", sockaddr.sa_family);
         }
     }
 }
 
 
 
-static uint32_t
-socketError(TSocket * const socketP) {
+static struct TChannelVtbl const channelVtbl = {
+    &channelDestroy,
+    &channelWrite,
+    &channelRead,
+    &channelWait,
+    &channelAvailableReadBytes,
+    &channelFormatPeerInfo,
+};
 
-    if (socketP){} /* defeat compiler warning */
 
-    return errno;
+
+void
+ChannelUnixCreateFd(int           const fd,
+                    TChannel **   const channelPP,
+                    const char ** const errorP) {
+
+    if (!connected(fd))
+        xmlrpc_asprintf(errorP, "Socket on file descriptor %d is not in "
+                        "connected state.", fd);
+    else {
+        struct socketUnix * socketUnixP;
+
+        MALLOCVAR(socketUnixP);
+
+        if (socketUnixP == NULL)
+            xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
+                            "socket descriptor");
+        else {
+            TChannel * channelP;
+
+            socketUnixP->fd = fd;
+            socketUnixP->userSuppliedFd = TRUE;
+            
+            ChannelCreate(&channelVtbl, socketUnixP, &channelP);
+
+            if (channelP == NULL)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                                "channel descriptor.");
+            else {
+                *channelPP = channelP;
+                *errorP = NULL;
+            }
+            if (*errorP)
+                free(socketUnixP);
+        }
+    }
+}
+
+
+
+/*=============================================================================
+      TChanSwitch
+=============================================================================*/
+
+static SwitchDestroyImpl chanSwitchDestroy;
+static SwitchListenImpl  chanSwitchListen;
+static SwitchAcceptImpl  chanSwitchAccept;
+
+static struct TChanSwitchVtbl const chanSwitchVtbl = {
+    &chanSwitchDestroy,
+    &chanSwitchListen,
+    &chanSwitchAccept,
+};
+
+
+
+static void
+setSocketOptions(int           const fd,
+                 const char ** const errorP) {
+
+    int32_t n = 1;
+    int rc;
+
+    rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n));
+
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "Failed to set socket options.  "
+                        "setsockopt() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else
+        *errorP = NULL;
+}
+
+
+
+static void
+bindSocketToPort(int              const fd,
+                 struct in_addr * const addrP,
+                 uint16_t         const portNumber,
+                 const char **    const errorP) {
+
+    struct sockaddr_in name;
+    int rc;
+
+    name.sin_family = AF_INET;
+    name.sin_port   = htons(portNumber);
+    if (addrP)
+        name.sin_addr = *addrP;
+    else
+        name.sin_addr.s_addr = INADDR_ANY;
+
+    rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
+
+    if (rc == -1)
+        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %hu.  "
+                        "bind() failed with errno %d (%s)",
+                        portNumber, errno, strerror(errno));
+    else
+        *errorP = NULL;
+}
+
+
+
+void
+ChanSwitchUnixCreate(uint16_t       const portNumber,
+                     TChanSwitch ** const chanSwitchPP,
+                     const char **  const errorP) {
+/*----------------------------------------------------------------------------
+   Create a POSIX-socket-based channel switch.
+
+   Use an IP socket.
+
+   Set the socket's local address so that a subsequent "listen" will listen
+   on all IP addresses, port number 'portNumber'.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * socketUnixP;
+
+    MALLOCVAR(socketUnixP);
+
+    if (!socketUnixP)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix socket "
+                        "descriptor structure.");
+    else {
+        int rc;
+        rc = socket(AF_INET, SOCK_STREAM, 0);
+        if (rc < 0)
+            xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                            errno, strerror(errno));
+        else {
+            socketUnixP->fd = rc;
+            socketUnixP->userSuppliedFd = FALSE;
+
+            setSocketOptions(socketUnixP->fd, errorP);
+            if (!*errorP) {
+                bindSocketToPort(socketUnixP->fd, NULL, portNumber, errorP);
+                
+                if (!*errorP)
+                    ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
+                                     chanSwitchPP);
+            }
+            if (*errorP)
+                close(socketUnixP->fd);
+        }
+        if (*errorP)
+            free(socketUnixP);
+    }
+}
+
+
+
+void
+ChanSwitchUnixCreateFd(int            const fd,
+                       TChanSwitch ** const chanSwitchPP,
+                       const char **  const errorP) {
+
+    struct socketUnix * socketUnixP;
+
+    if (connected(fd))
+        xmlrpc_asprintf(errorP,
+                        "Socket (file descriptor %d) is not in connected "
+                        "state.", fd);
+    else {
+        MALLOCVAR(socketUnixP);
+
+        if (socketUnixP == NULL)
+            xmlrpc_asprintf(errorP, "unable to allocate memory for Unix "
+                            "socket descriptor.");
+        else {
+            TChanSwitch * chanSwitchP;
+
+            socketUnixP->fd = fd;
+            socketUnixP->userSuppliedFd = TRUE;
+            
+            ChanSwitchCreate(&chanSwitchVtbl, socketUnixP, &chanSwitchP);
+
+            if (chanSwitchP == NULL)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                                "channel switch descriptor");
+            else {
+                *chanSwitchPP = chanSwitchP;
+                *errorP = NULL;
+            }
+            if (*errorP)
+                free(socketUnixP);
+        }
+    }
+}
+
+
+
+static void
+chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
+
+    struct socketUnix * const socketUnixP = chanSwitchP->implP;
+
+    if (!socketUnixP->userSuppliedFd)
+        close(socketUnixP->fd);
+
+    free(socketUnixP);
+}
+
+
+
+static void
+chanSwitchListen(TChanSwitch * const chanSwitchP,
+                 uint32_t      const backlog,
+                 const char ** const errorP) {
+
+    struct socketUnix * const socketUnixP = chanSwitchP->implP;
+
+    int32_t const minus1 = -1;
+
+    int rc;
+
+    /* Disable the Nagle algorithm to make persistant connections faster */
+
+    setsockopt(socketUnixP->fd, IPPROTO_TCP,TCP_NODELAY,
+               &minus1, sizeof(minus1));
+
+    rc = listen(socketUnixP->fd, backlog);
+
+    if (rc == -1)
+        xmlrpc_asprintf(errorP, "setsockopt() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else
+        *errorP = NULL;
+}
+
+
+
+static void
+chanSwitchAccept(TChanSwitch * const chanSwitchP,
+                 TChannel **   const channelPP,
+                 const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Accept a connection via the channel switch *chanSwitchP.  Return as
+   *channelPP the channel for the accepted connection.
+
+   If no connection is waiting at *chanSwitchP, wait until one is.
+
+   If we receive a signal while waiting, return immediately with
+   *channelPP == NULL.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * const listenSocketP = chanSwitchP->implP;
+
+    abyss_bool interrupted;
+    TChannel * channelP;
+
+    interrupted = FALSE; /* Haven't been interrupted yet */
+    channelP    = NULL;  /* No connection yet */
+    *errorP     = NULL;  /* No error yet */
+
+    while (!channelP && !*errorP && !interrupted) {
+        struct sockaddr_in sa;
+        socklen_t size = sizeof(sa);
+        int rc;
+
+        rc = accept(listenSocketP->fd, (struct sockaddr *)&sa, &size);
+
+        if (rc >= 0) {
+            int const acceptedFd = rc;
+            struct socketUnix * acceptedSocketP;
+
+            MALLOCVAR(acceptedSocketP);
+
+            if (!acceptedSocketP)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory");
+            else {
+                acceptedSocketP->fd = acceptedFd;
+                acceptedSocketP->userSuppliedFd = FALSE;
+                
+                ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
+                if (!channelP)
+                    xmlrpc_asprintf(errorP,
+                                    "Failed to create TChannel object.");
+                else
+                    *errorP = NULL;
+
+                if (*errorP)
+                    free(acceptedSocketP);
+            }
+            if (*errorP)
+                close(acceptedFd);
+        } else if (errno == EINTR)
+            interrupted = TRUE;
+        else
+            xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
+                            errno, strerror(errno));
+    }
+    *channelPP = channelP;
+}
+
+
+
+
+/*=============================================================================
+      obsolete TSocket interface
+=============================================================================*/
+
+
+void
+SocketUnixCreateFd(int        const fd,
+                   TSocket ** const socketPP) {
+
+    TSocket * socketP;
+    const char * error;
+
+    if (connected(fd)) {
+        TChannel * channelP;
+        ChannelUnixCreateFd(fd, &channelP, &error);
+        if (!error)
+            SocketCreateChannel(channelP, &socketP);
+    } else {
+        TChanSwitch * chanSwitchP;
+        ChanSwitchUnixCreateFd(fd, &chanSwitchP, &error);
+        if (!error)
+            SocketCreateChanSwitch(chanSwitchP, &socketP);
+    }
+    if (error) {
+        *socketPP = NULL;
+        xmlrpc_strfree(error);
+    } else
+        *socketPP = socketP;
 }

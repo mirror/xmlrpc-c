@@ -845,28 +845,27 @@ extractServerCreateParms(
 
 
 static void
-createServerBoundSocket(xmlrpc_env * const envP,
-                        TOsSocket    const socketFd,
-                        const char * const logFileName,
-                        TServer *    const serverP,
-                        TSocket **   const socketPP) {
+createServerBoundSocket(xmlrpc_env *   const envP,
+                        TOsSocket      const socketFd,
+                        const char *   const logFileName,
+                        TServer *      const serverP,
+                        TChanSwitch ** const chanSwitchPP) {
 
-    TSocket * socketP;
+    TChanSwitch * chanSwitchP;
     const char * error;
     
-    SocketUnixCreateFd(socketFd, &socketP);
-    
-    if (!socketP)
+    ChanSwitchUnixCreateFd(socketFd, &chanSwitchP, &error);
+    if (error) {
         xmlrpc_faultf(envP, "Unable to create Abyss socket out of "
-                      "file descriptor %d.", socketFd);
-    else {
-        ServerCreateSocket2(serverP, socketP, &error);
+                      "file descriptor %d.  %s", socketFd, error);
+        xmlrpc_strfree(error);
+    } else {
+        ServerCreateSwitch(serverP, chanSwitchP, &error);
         if (error) {
-            xmlrpc_faultf(envP, "Abyss failed to create server.  %s",
-                          error);
+            xmlrpc_faultf(envP, "Abyss failed to create server.  %s", error);
             xmlrpc_strfree(error);
         } else {
-            *socketPP = socketP;
+            *chanSwitchPP = chanSwitchP;
                     
             ServerSetName(serverP, "XmlRpcServer");
             
@@ -874,7 +873,7 @@ createServerBoundSocket(xmlrpc_env * const envP,
                 ServerSetLogFileName(serverP, logFileName);
         }
         if (envP->fault_occurred)
-                    SocketDestroy(socketP);
+            ChanSwitchDestroy(chanSwitchP);
     }
 }
 
@@ -885,7 +884,7 @@ createServer(xmlrpc_env *                      const envP,
              const xmlrpc_server_abyss_parms * const parmsP,
              unsigned int                      const parmSize,
              TServer *                         const serverP,
-             TSocket **                        const socketPP) {
+             TChanSwitch **                    const chanSwitchPP) {
 /*----------------------------------------------------------------------------
    Create a bare server.  It will need further setup before it is ready
    to use.
@@ -902,12 +901,12 @@ createServer(xmlrpc_env *                      const envP,
     if (!envP->fault_occurred) {
         if (socketBound)
             createServerBoundSocket(envP, socketFd, logFileName,
-                                    serverP, socketPP);
+                                    serverP, chanSwitchPP);
         else {
             ServerCreate(serverP, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
                          logFileName);
             
-            *socketPP = NULL;
+            *chanSwitchPP = NULL;
         }
         if (logFileName)
             xmlrpc_strfree(logFileName);
@@ -978,11 +977,11 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
                     unsigned int                      const parmSize) {
     
     TServer server;
-    TSocket * socketP;
+    TChanSwitch * chanSwitchP;
 
     DateInit();
 
-    createServer(envP, parmsP, parmSize, &server, &socketP);
+    createServer(envP, parmsP, parmSize, &server, &chanSwitchP);
 
     if (!envP->fault_occurred) {
         struct signalHandlers oldHandlers;
@@ -1007,8 +1006,8 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
 
         ServerFree(&server);
 
-        if (socketP)
-            SocketDestroy(socketP);
+        if (chanSwitchP)
+            ChanSwitchDestroy(chanSwitchP);
     }
 }
 
@@ -1018,7 +1017,16 @@ void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
                     unsigned int                      const parmSize) {
- 
+/*----------------------------------------------------------------------------
+   Note that this is not re-entrant and not thread-safe, due to the
+   global library initialization.  If you want to run a server inside
+   a thread of a multi-threaded program, create your own Abyss server
+   and attach the Xmlrpc-c facilities with
+   xmlrpc_server_abyss_add_handlers() instead of using
+   xmlrpc_server_abyss().  As a user of the Abyss library, your code
+   will contain a call to AbyssInit() early in your program, when it is
+   only one thread.
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
 
     if (parmSize < XMLRPC_APSIZE(registryP))
@@ -1029,10 +1037,20 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                       "but you specified a size of %u",
                       XMLRPC_APSIZE(registryP), parmSize);
     else {
-        if (parmsP->config_file_name)
-            oldHighLevelAbyssRun(envP, parmsP, parmSize);
-        else
-            normalLevelAbyssRun(envP, parmsP, parmSize);
+        const char * error;
+        AbyssInit(&error);
+        if (error) {
+            xmlrpc_faultf(envP, "Failed to initialize the Abyss library.  %s",
+                          error);
+            xmlrpc_strfree(error);
+        } else {
+            if (parmsP->config_file_name)
+                oldHighLevelAbyssRun(envP, parmsP, parmSize);
+            else
+                normalLevelAbyssRun(envP, parmsP, parmSize);
+            
+            AbyssTerm();
+        }
     }
 }
 

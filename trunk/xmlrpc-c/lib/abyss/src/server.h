@@ -8,7 +8,6 @@
 #include "file.h"
 #include "data.h"
 
-typedef struct _Tsocket Tsocket;
 
 struct _TServer {
     abyss_bool terminationRequested;
@@ -16,17 +15,16 @@ struct _TServer {
            in particular before accepting any more connections and without
            waiting for any.
         */
-    abyss_bool socketBound;
-        /* The listening socket exists and is bound to a local address
+    abyss_bool chanSwitchBound;
+        /* The channel switch exists and is bound to a local address
            (may already be listening as well)
         */
-    TSocket * listenSocketP;
-        /* Meaningful only when 'socketBound' is true: file descriptor of
-           the listening socket ("listening socket" means socket for listening,
-           not a socket that is listening right now).
+    TChanSwitch * chanSwitchP;
+        /* Meaningful only when 'chanSwitchBound' is true: the channel
+           switch which directs connections from clients to this server.
         */
-    abyss_bool weCreatedListenSocket;
-        /* We created the listen socket (whose fd is 'listensock'), as
+    abyss_bool weCreatedChanSwitch;
+        /* We created the channel switch 'chanSwitchP', as
            opposed to 1) User supplied it; or 2) there isn't one.
         */
     const char * logfilename;
@@ -41,14 +39,14 @@ struct _TServer {
            for each transaction)
         */
     uint16_t port;
-        /* Meaningful only when 'socketBound' is false: port number to which
-           we should bind the listening socket
+        /* Meaningful only when 'chanSwitchBound' is false: TCP port
+           number to which we should bind the switch.
         */
     uint32_t keepalivetimeout;
     uint32_t keepalivemaxconn;
     uint32_t timeout;
         /* Maximum time in seconds the server will wait to read a header
-           or a data chunk from the socket.
+           or a data chunk from the channel.
         */
     TList handlers;
     TList defaultfilenames;
