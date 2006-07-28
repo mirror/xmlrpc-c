@@ -7,6 +7,9 @@ VPATH = .:$(SRCDIR)
 
 include $(BUILDDIR)/Makefile.config
 
+ABYSS_LIBDIR = $(BUILDDIR)/lib/abyss/src/.libs
+LIBUTIL_LIBDIR = $(BUILDDIR)/lib/libutil/.libs
+
 default: all
 
 SUBDIRS =
@@ -19,15 +22,28 @@ WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
 CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
 LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
 
+# TRANSPORT_OBJS is the list of modules that have to go into the client
+# library to provide the client XML transport functions.  Since there is
+# some variability in what XML transports we can build into the client
+# library, this is a little complicated.
+
+# TRANSPORT_LIBDEP is linker -l options to declare what libraries contain
+# things to which the transport objects refer.  (like LIBxxx_LIBDEP --
+# see below)
+
 TRANSPORT_OBJS =
+TRANSPORT_LIBDEP =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
+  TRANSPORT_LIBDEP += $(wininet-config --libs)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   TRANSPORT_OBJS += $(CURL_TRANSPORT_DIR)/xmlrpc_curl_transport.lo
+  TRANSPORT_LIBDEP += $(curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
+  TRANSPORT_LIBDEP += $(libwww-config --libs)
 endif
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
@@ -38,15 +54,32 @@ endif
 
 ABYSS_INCLUDES = -I$(SRCDIR)/lib/abyss/src
 
-LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo xmlrpc_client_global.lo
-LIBXMLRPC_SERVER_OBJS = registry.lo system_method.lo
-LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
-
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   XMLRPC_XML_PARSER = xmlrpc_libxml2.lo
 else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo
 endif
+
+# LIBxxx_OBJS is the list of object files that make up library libxxx.
+
+# LIBxxx_LIBDEP is linker -l options to declare what libraries contain
+# things to which the library being built refers.  This information
+# makes its way to the dynamic linker, so it knows to load the
+# referred-to library before it loads libxxx.  Note that the link command
+# may require the necessary -L options in addition.
+
+LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo xmlrpc_client_global.lo
+LIBXMLRPC_CLIENT_LIBDEP = -lxmlrpc_util -lxmlrpc
+
+LIBXMLRPC_SERVER_OBJS = registry.lo system_method.lo
+LIBXMLRPC_SERVER_LIBDEP = -lxmlrpc_util -lxmlrpc
+
+LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
+LIBXMLRPC_SERVER_ABYSS_LIBDEP = \
+  -lxmlrpc_util -lxmlrpc_server -L$(ABYSS_LIBDIR) -lxmlrpc_abyss -lxmlrpc
+
+LIBXMLRPC_SERVER_CGI_OBJS = xmlrpc_server_cgi.lo
+LIBXMLRPC_SERVER_CGI_LIBDEP = -lxmlrpc_util -lxmlrpc_server -lxmlrpc
 
 LIBXMLRPC_OBJS = \
 	trace.lo \
@@ -61,6 +94,8 @@ LIBXMLRPC_OBJS = \
 	xmlrpc_base64.lo \
 	xmlrpc_utf8.lo \
 	xmlrpc_authcookie.lo \
+
+LIBXMLRPC_LIBDEP = -lxmlrpc_util
 
 LIB_OBJS = $(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS)
 
@@ -97,26 +132,36 @@ all: $(TARGET_LTLIBRARIES) $(SUBDIRS:%=%/all)
 
 LDFLAGS = $(LADD)
 
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
+LIBPATHS = -L.libs -L$(LIBUTIL_LIBDIR)
+
+LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LIBPATHS) $(LADD)
+
 
 libxmlrpc.la: $(LIBXMLRPC_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
+	  $(LIBXMLRPC_OBJS) $(LIBXMLRPC_LIBDEP) 
 
 libxmlrpc_client.la: $(LIBXMLRPC_CLIENT_OBJS) $(TRANSPORT_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
+	  $(LIBXMLRPC_CLIENT_OBJS) $(TRANSPORT_OBJS) \
+	  $(LIBXMLRPC_CLIENT_LIBDEP) $(TRANSPORT_LIBDEP) \
 
 libxmlrpc_server.la: $(LIBXMLRPC_SERVER_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
+	  $(LIBXMLRPC_SERVER_OBJS) $(LIBXMLRPC_SERVER_LIBDEP)
 
 libxmlrpc_server_abyss.la: $(LIBXMLRPC_SERVER_ABYSS_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
+	  $(LIBXMLRPC_SERVER_ABYSS_OBJS) $(LIBXMLRPC_SERVER_ABYSS_LIBDEP)
 
-libxmlrpc_server_cgi.la: xmlrpc_server_cgi.lo
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+libxmlrpc_server_cgi.la: $(LIBXMLRPC_SERVER_CGI_OBJS)
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
+	  $(LIBXMLRPC_SERVER_CGI_OBJS) $(LIBXMLRPC_SERVER_CGI_LIBDEP)
+
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-$(LIB_OBJS):%.lo:%.c
+$(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS):%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
 
 $(LIBXMLRPC_OBJS):%.lo:%.c
