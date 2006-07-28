@@ -84,10 +84,11 @@ LIBXMLRPC_SERVER_CGI_LIBDEP = -lxmlrpc_util -lxmlrpc_server -lxmlrpc
 LIBXMLRPC_OBJS = \
 	trace.lo \
 	xmlrpc_data.lo \
-	xmlrpc_builddecomp.lo \
 	xmlrpc_datetime.lo \
 	xmlrpc_array.lo \
 	xmlrpc_struct.lo \
+	xmlrpc_build.lo \
+	xmlrpc_decompose.lo \
 	$(XMLRPC_XML_PARSER) \
 	xmlrpc_parse.lo \
 	xmlrpc_serialize.lo \
