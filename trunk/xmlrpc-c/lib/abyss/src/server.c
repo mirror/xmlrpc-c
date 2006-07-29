@@ -349,7 +349,7 @@ ServerDirectoryHandler(TSession * const r,
     TDate dirdate;
     const char * imsHdr;
     
-    determineSortType(r->request_info.query, &ascending, &sort, &text, &error);
+    determineSortType(r->requestInfo.query, &ascending, &sort, &text, &error);
 
     if (error) {
         ResponseStatus(r,400);
@@ -375,7 +375,7 @@ ServerDirectoryHandler(TSession * const r,
         return TRUE;
     }
 
-    generateListing(&list, z, r->request_info.uri,
+    generateListing(&list, z, r->requestInfo.uri,
                     &pool, &error, &responseStatus);
     if (error) {
         ResponseStatus(r, responseStatus);
@@ -394,9 +394,9 @@ ServerDirectoryHandler(TSession * const r,
     ResponseChunked(r);
     ResponseWrite(r);
 
-    if (r->request_info.method!=m_head)
+    if (r->requestInfo.method!=m_head)
         sendDirectoryDocument(&list, ascending, sort, text,
-                              r->request_info.uri, mimeTypeP, r, z);
+                              r->requestInfo.uri, mimeTypeP, r, z);
 
     HTTPWriteEndChunk(r);
 
@@ -534,7 +534,7 @@ ServerFileHandler(TSession * const r,
 
     ResponseWrite(r);
 
-    if (r->request_info.method != m_head)
+    if (r->requestInfo.method != m_head)
         sendBody(r, &file, filesize, mediatype, start, end, z);
 
     FileClose(&file);
@@ -561,22 +561,22 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
     }
 
     /* Must check for * (asterisk uri) in the future */
-    if (sessionP->request_info.method == m_options) {
+    if (sessionP->requestInfo.method == m_options) {
         ResponseAddField(sessionP, "Allow", "GET, HEAD");
         ResponseContentLength(sessionP, 0);
         ResponseStatus(sessionP, 200);
         return TRUE;
     }
 
-    if ((sessionP->request_info.method != m_get) &&
-        (sessionP->request_info.method != m_head)) {
+    if ((sessionP->requestInfo.method != m_get) &&
+        (sessionP->requestInfo.method != m_head)) {
         ResponseAddField(sessionP, "Allow", "GET, HEAD");
         ResponseStatus(sessionP, 405);
         return TRUE;
     }
 
     strcpy(z, srvP->filespath);
-    strcat(z, sessionP->request_info.uri);
+    strcat(z, sessionP->requestInfo.uri);
 
     p = z + strlen(z) - 1;
     if (*p == '/') {
@@ -604,7 +604,7 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
         ** to avoid problems with some browsers (IE for examples) when
         ** they generate relative urls */
         if (!endingslash) {
-            strcpy(z, sessionP->request_info.uri);
+            strcpy(z, sessionP->requestInfo.uri);
             p = z+strlen(z);
             *p = '/';
             *(p+1) = '\0';
@@ -1116,18 +1116,21 @@ processDataFromClient(TConn *      const connectionP,
         else
             runUserHandler(&session, connectionP->server->srvP);
     }
+
     assert(session.status != 0);
-    
+
     if (session.responseStarted)
         HTTPWriteEndChunk(&session);
     else
         ResponseError(&session);
 
     *keepAliveP = HTTPKeepalive(&session);
-    
+
     SessionLog(&session);
 
+fprintf(stderr, "about to RequestFree()\n");
     RequestFree(&session);
+fprintf(stderr, "done with RequestFree()\n");
 }
 
 

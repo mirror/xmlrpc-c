@@ -11,7 +11,7 @@ abyss_bool RequestValidURI(TSession *r);
 abyss_bool RequestValidURIPath(TSession *r);
 abyss_bool RequestUnescapeURI(TSession *r);
 
-abyss_bool RequestRead(TSession *r);
+void RequestRead(TSession *r);
 void RequestInit(TSession *r,TConn *c);
 void RequestFree(TSession *r);
 

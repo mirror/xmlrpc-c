@@ -45,12 +45,12 @@ initRequestInfo(TRequestInfo * const requestInfoP,
   controlled by headers, use the defaults -- I.e. the value that
   applies if the request contains no applicable header.
 -----------------------------------------------------------------------------*/
-    requestInfoP->requestline = requestLine;
+    requestInfoP->requestline = strdup(requestLine);
     requestInfoP->method      = httpMethod;
-    requestInfoP->host        = host;
+    requestInfoP->host        = xmlrpc_strdupnull(host);
     requestInfoP->port        = port;
-    requestInfoP->uri         = path;
-    requestInfoP->query       = query;
+    requestInfoP->uri         = strdup(path);
+    requestInfoP->query       = xmlrpc_strdupnull(query);
     requestInfoP->from        = NULL;
     requestInfoP->useragent   = NULL;
     requestInfoP->referer     = NULL;
@@ -68,11 +68,9 @@ initRequestInfo(TRequestInfo * const requestInfoP,
 static void
 freeRequestInfo(TRequestInfo * const requestInfoP) {
 
-    if (requestInfoP->requestline)
-        xmlrpc_strfree(requestInfoP->requestline);
+    xmlrpc_strfreenull(requestInfoP->host);
 
-    if (requestInfoP->user)
-        xmlrpc_strfree(requestInfoP->user);
+    xmlrpc_strfreenull(requestInfoP->user);
 }
 
 
@@ -82,6 +80,8 @@ RequestInit(TSession * const sessionP,
             TConn *    const connectionP) {
 
     time_t nowtime;
+
+    sessionP->validRequest = false;  /* Don't have valid request yet */
 
     time(&nowtime);
     sessionP->date = *gmtime(&nowtime);
@@ -108,7 +108,8 @@ RequestInit(TSession * const sessionP,
 void
 RequestFree(TSession * const sessionP) {
 
-    freeRequestInfo(&sessionP->request_info);
+    if (sessionP->validRequest)
+        freeRequestInfo(&sessionP->requestInfo);
 
     ListFree(&sessionP->cookies);
     ListFree(&sessionP->ranges);
@@ -187,37 +188,47 @@ unescapeUri(char *       const uri,
 
 
 static void
-parseHostPort(char *           const hostport,
+parseHostPort(const char *     const hostport,
               const char **    const hostP,
               unsigned short * const portP,
               uint16_t *       const httpErrorCodeP) {
-    
+/*----------------------------------------------------------------------------
+   Parse a 'hostport', a string in the form www.acme.com:8080 .
+
+   Return the host name part (www.acme.com) as *hostP (in newly
+   malloced storage), and the port part (8080) as *portP.
+
+   Default the port to 80 if 'hostport' doesn't have the port part.
+-----------------------------------------------------------------------------*/
+    char * buffer;
     char * colonPos;
 
-    colonPos = strchr(hostport, ':');
+    buffer = strdup(hostport);
+
+    colonPos = strchr(buffer, ':');
     if (colonPos) {
         const char * p;
         uint32_t port;
 
         *colonPos = '\0';  /* Split hostport at the colon */
 
-        *hostP = hostport;
-
         for (p = colonPos + 1, port = 0;
              isdigit(*p) && port < 65535;
              (port = port * 10 + (*p - '0')), ++p);
             
-        *portP = port;
-
         if (*p || port == 0)
             *httpErrorCodeP = 400;  /* Bad Request */
-        else
+        else {
+            *hostP = strdup(buffer);
+            *portP = port;
             *httpErrorCodeP = 0;
+        }
     } else {
-        *hostP          = hostport;
+        *hostP          = strdup(buffer);
         *portP          = 80;
         *httpErrorCodeP = 0;
     }
+    free(buffer);
 }
 
 
@@ -225,19 +236,30 @@ parseHostPort(char *           const hostport,
 static void
 parseRequestUri(char *           const requestUri,
                 const char **    const hostP,
+                unsigned short * const portP,
                 const char **    const pathP,
                 const char **    const queryP,
-                unsigned short * const portP,
                 uint16_t *       const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
   Parse the request URI (in the request line
-  "GET http://www.myserver.com/myfile?parm HTTP/1.1",
-  "http://www.myserver.com/myfile?parm" is the request URI).
+  "GET http://www.myserver.com:8080/myfile.cgi?parm HTTP/1.1",
+  "http://www.myserver.com:8080/myfile.cgi?parm" is the request URI).
 
-  This destroys *requestUri and returns pointers into *requestUri!
+  Return as *hostP the "www.myserver.com" in the above example.  If
+  that part of the URI doesn't exist, return *hostP == NULL.
 
-  This is extremely ugly.  We need to redo it with dynamically allocated
-  storage.  We should return individual malloc'ed strings.
+  Return as *portP the 8080 in the above example.  If it doesn't exist,
+  return 80.
+
+  Return as *pathP the "/myfile.cgi" in the above example.  If it
+  doesn't exist, return "*".
+
+  Return as *queryP the "parm" in the above example.  If it doesn't
+  exist, return *queryP == NULL.
+
+  Return strings in newly malloc'ed storage.
+
+  This destroys 'requestUri'.  We should fix that.
 -----------------------------------------------------------------------------*/
     abyss_bool error;
 
@@ -256,28 +278,34 @@ parseRequestUri(char *           const requestUri,
             
             if (qmark) {
                 *qmark = '\0';
-                *queryP = qmark + 1;
+                *queryP = strdup(qmark + 1);
             } else
                 *queryP = NULL;
+
+            requestUriNoQuery = requestUri;
         }
-        
-        requestUriNoQuery = requestUri;
 
         if (requestUriNoQuery[0] == '/') {
             *hostP = NULL;
-            *pathP = requestUriNoQuery;
+            *pathP = strdup(requestUriNoQuery);
             *portP = 80;
+            *httpErrorCodeP = 0;
         } else {
             if (!xmlrpc_strneq(requestUriNoQuery, "http://", 7))
                 *httpErrorCodeP = 400;  /* Bad Request */
             else {
                 char * const hostportpath = &requestUriNoQuery[7];
                 char * const slashPos = strchr(hostportpath, '/');
+
+                const char * host;
+                const char * path;
+                unsigned short port;
+
                 char * hostport;
                 
                 if (slashPos) {
                     char * p;
-                    *pathP = slashPos;
+                    path = strdup(slashPos);
                     
                     /* Nul-terminate the host name.  To make space for
                        it, slide the whole name back one character.
@@ -291,12 +319,18 @@ parseRequestUri(char *           const requestUri,
                     hostport = hostportpath - 1;
                     *httpErrorCodeP = 0;
                 } else {
-                    *pathP = "*";
+                    path = strdup("*");
                     hostport = hostportpath;
                     *httpErrorCodeP = 0;
                 }
                 if (!*httpErrorCodeP)
-                    parseHostPort(hostport, hostP, portP, httpErrorCodeP);
+                    parseHostPort(hostport, &host, &port, httpErrorCodeP);
+                if (*httpErrorCodeP)
+                    xmlrpc_strfree(path);
+
+                *hostP  = host;
+                *portP  = port;
+                *pathP  = path;
             }
         }
     }
@@ -356,7 +390,12 @@ parseRequestLine(char *           const requestLine,
         if (!requestUri)
             *httpErrorCodeP = 400;  /* Bad Request */
         else {
-            parseRequestUri(requestUri, hostP, pathP, queryP, portP,
+            const char * host;
+            unsigned short port;
+            const char * path;
+            const char * query;
+
+            parseRequestUri(requestUri, &host, &port, &path, &query,
                             httpErrorCodeP);
 
             if (!*httpErrorCodeP) {
@@ -384,7 +423,16 @@ parseRequestLine(char *           const requestLine,
                     *httpErrorCodeP = 0;  /* no error */
                     *moreLinesP = FALSE;
                 }
+                if (*httpErrorCodeP) {
+                    xmlrpc_strfree(host);
+                    xmlrpc_strfree(path);
+                    xmlrpc_strfree(query);
+                }
             }
+            *hostP = host;
+            *portP = port;
+            *pathP = path;
+            *queryP = query;
         }
     }
 }
@@ -450,18 +498,22 @@ processHeader(const char * const fieldName,
 
     if (xmlrpc_streq(fieldName, "connection")) {
         if (xmlrpc_strcaseeq(fieldValue, "keep-alive"))
-            sessionP->request_info.keepalive = TRUE;
+            sessionP->requestInfo.keepalive = TRUE;
         else
-            sessionP->request_info.keepalive = FALSE;
-    } else if (xmlrpc_streq(fieldName, "host"))
-        parseHostPort(fieldValue, &sessionP->request_info.host,
-                      &sessionP->request_info.port, httpErrorCodeP);
-    else if (xmlrpc_streq(fieldName, "from"))
-        sessionP->request_info.from = fieldValue;
+            sessionP->requestInfo.keepalive = FALSE;
+    } else if (xmlrpc_streq(fieldName, "host")) {
+        if (sessionP->requestInfo.host) {
+            xmlrpc_strfree(sessionP->requestInfo.host);
+            sessionP->requestInfo.host = NULL;
+        }
+        parseHostPort(fieldValue, &sessionP->requestInfo.host,
+                      &sessionP->requestInfo.port, httpErrorCodeP);
+    } else if (xmlrpc_streq(fieldName, "from"))
+        sessionP->requestInfo.from = fieldValue;
     else if (xmlrpc_streq(fieldName, "user-agent"))
-        sessionP->request_info.useragent = fieldValue;
+        sessionP->requestInfo.useragent = fieldValue;
     else if (xmlrpc_streq(fieldName, "referer"))
-        sessionP->request_info.referer = fieldValue;
+        sessionP->requestInfo.referer = fieldValue;
     else if (xmlrpc_streq(fieldName, "range")) {
         if (xmlrpc_strneq(fieldValue, "bytes=", 6)) {
             abyss_bool succeeded;
@@ -477,8 +529,64 @@ processHeader(const char * const fieldName,
 
 
 
-abyss_bool
+static void
+readAndProcessHeaders(TSession * const sessionP,
+                      uint16_t * const httpErrorCodeP) {
+/*----------------------------------------------------------------------------
+   Read all the HTTP headers from the session *sessionP, which has at
+   least one header coming.  Update *sessionP to reflect the
+   information in the headers.
+
+   If we find an error in the headers or while trying to read them, we
+   return an appropriate HTTP error code as *httpErrorCodeP.  Otherwise,x
+   we return *httpErrorCodeP = 0.
+-----------------------------------------------------------------------------*/
+    abyss_bool endOfHeaders;
+
+    assert(!sessionP->validRequest);
+        /* Calling us doesn't make sense if there is already a valid request */
+
+    *httpErrorCodeP = 0;  /* initial assumption */
+    endOfHeaders = false;  /* Caller assures us there is at least one header */
+
+    while (!endOfHeaders && !*httpErrorCodeP) {
+        char * p;
+        abyss_bool succeeded;
+        succeeded = ConnReadHeader(sessionP->conn, &p);
+        if (!succeeded)
+            *httpErrorCodeP = 408;  /* Request Timeout */
+        else {
+            if (!*p)
+                /* We have reached the empty line so all the request
+                   was read.
+                */
+                endOfHeaders = true;
+            else {
+                char * fieldName;
+                getFieldNameToken(&p, &fieldName, httpErrorCodeP);
+                if (!*httpErrorCodeP) {
+                    char * fieldValue;
+                    
+                    NextToken((const char **)&p);
+                    
+                    fieldValue = p;
+                    
+                    TableAdd(&sessionP->request_headers,
+                             fieldName, fieldValue);
+                    
+                    processHeader(fieldName, fieldValue, sessionP,
+                                  httpErrorCodeP);
+                }
+            }
+        }
+    }
+}
+
+
+
+void
 RequestRead(TSession * const sessionP) {
+
     uint16_t httpErrorCode;  /* zero for no error */
     char * requestLine;
 
@@ -495,54 +603,35 @@ RequestRead(TSession * const sessionP) {
                          &host, &port, &path, &query,
                          &moreHeaders, &httpErrorCode);
 
-        if (!httpErrorCode)
-            initRequestInfo(&sessionP->request_info, sessionP->version,
-                            strdup(requestLine),
+        if (!httpErrorCode) {
+            initRequestInfo(&sessionP->requestInfo, sessionP->version,
+                            requestLine,
                             httpMethod, host, port, path, query);
 
-        while (moreHeaders && !httpErrorCode) {
-            char * p;
-            abyss_bool succeeded;
-            succeeded = ConnReadHeader(sessionP->conn, &p);
-            if (!succeeded)
-                httpErrorCode = 408;  /* Request Timeout */
-            else {
-                if (!*p)
-                    /* We have reached the empty line so all the request
-                       was read.
-                    */
-                    moreHeaders = FALSE;
-                else {
-                    char * fieldName;
-                    getFieldNameToken(&p, &fieldName, &httpErrorCode);
-                    if (!httpErrorCode) {
-                        char * fieldValue;
+            if (moreHeaders)
+                readAndProcessHeaders(sessionP, &httpErrorCode);
 
-                        NextToken((const char **)&p);
-                        
-                        fieldValue = p;
-                        
-                        TableAdd(&sessionP->request_headers,
-                                 fieldName, fieldValue);
-                        
-                        processHeader(fieldName, fieldValue, sessionP,
-                                      &httpErrorCode);
-                    }
-                }
-            }
+            if (httpErrorCode == 0)
+                sessionP->validRequest = true;
+            else
+                sessionP->validRequest = false;
+
+            xmlrpc_strfreenull(host);
+            xmlrpc_strfree(path);
+            xmlrpc_strfreenull(query);
         }
     }
     if (httpErrorCode)
         ResponseStatus(sessionP, httpErrorCode);
-
-    return !httpErrorCode;
 }
 
 
 
-char *RequestHeaderValue(TSession *r,char *name)
-{
-    return (TableFind(&r->request_headers,name));
+char *
+RequestHeaderValue(TSession *   const sessionP,
+                   const char * const name) {
+
+    return (TableFind(&sessionP->request_headers, name));
 }
 
 
@@ -550,13 +639,13 @@ char *RequestHeaderValue(TSession *r,char *name)
 abyss_bool
 RequestValidURI(TSession * const sessionP) {
 
-    if (!sessionP->request_info.uri)
+    if (!sessionP->requestInfo.uri)
         return FALSE;
     
-    if (xmlrpc_streq(sessionP->request_info.uri, "*"))
-        return (sessionP->request_info.method != m_options);
+    if (xmlrpc_streq(sessionP->requestInfo.uri, "*"))
+        return (sessionP->requestInfo.method != m_options);
 
-    if (strchr(sessionP->request_info.uri, '*'))
+    if (strchr(sessionP->requestInfo.uri, '*'))
         return FALSE;
 
     return TRUE;
@@ -570,7 +659,7 @@ RequestValidURIPath(TSession * const sessionP) {
     uint32_t i;
     const char * p;
 
-    p = sessionP->request_info.uri;
+    p = sessionP->requestInfo.uri;
 
     i = 0;
 
@@ -619,7 +708,7 @@ RequestAuth(TSession *r,char *credential,char *user,char *pass) {
                 Base64Encode(z,t);
 
                 if (strcmp(p,t)==0) {
-                    r->request_info.user=strdup(user);
+                    r->requestInfo.user=strdup(user);
                     return TRUE;
                 };
             };
@@ -796,7 +885,7 @@ HTTPKeepalive(TSession * const sessionP) {
    Return value: the connection should be kept alive after the session
    *sessionP is over.
 -----------------------------------------------------------------------------*/
-    return (sessionP->request_info.keepalive &&
+    return (sessionP->requestInfo.keepalive &&
             !sessionP->serverDeniesKeepalive &&
             sessionP->status < 400);
 }

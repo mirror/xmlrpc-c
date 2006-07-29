@@ -21,8 +21,14 @@ xmlrpc_vasprintf(const char ** const retvalP,
 void GNU_PRINTF_ATTR(2,3)
 xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...);
 
+const char *
+xmlrpc_strdupnull(const char * const string);
+
 void
 xmlrpc_strfree(const char * const string);
+
+void
+xmlrpc_strfreenull(const char * const string);
 
 static __inline__ bool
 xmlrpc_streq(const char * const a,

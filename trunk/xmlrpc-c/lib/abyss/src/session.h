@@ -11,14 +11,28 @@ typedef struct {
 } httpVersion;
 
 struct _TSession {
-    TRequestInfo request_info;
+    abyss_bool validRequest;
+        /* Client has sent, and server has recognized, a valid HTTP request.
+           This is false when the session is new.  If and when the server
+           reads the request from the client and finds it to be valid HTTP,
+           it becomes true.
+        */
+    TRequestInfo requestInfo;
+        /* Some of the strings this references are in individually malloc'ed
+           memory, but some are pointers into arbitrary other data structures
+           that happen to live as long as the session.  Some day, we will
+           fix that.
+
+           'requestInfo' is valid only if 'validRequest' is true.
+        */
     uint32_t nbfileds;
     TList cookies;
     TList ranges;
 
     uint16_t status;
-        /* Response status from handler.  Zero means handler has not
-           set it.
+        /* Response status from handler.  Zero means session is not ready
+           for a response yet.  This can mean that we ran a handler and it
+           did not call ResponseStatus() to declare this fact.
         */
     TString header;
 

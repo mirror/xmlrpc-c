@@ -85,9 +85,32 @@ xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...) {
 
 
 
+const char *
+xmlrpc_strdupnull(const char * const string) {
+
+    if (string)
+        return strdup(string);
+    else
+        return NULL;
+}
+
+
+
 void
 xmlrpc_strfree(const char * const string) {
 
     if (string != xmlrpc_strsol)
         free((void *)string);
 }
+
+
+
+void
+xmlrpc_strfreenull(const char * const string) {
+
+    if (string)
+        xmlrpc_strfree(string);
+}
+
+
+

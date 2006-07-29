@@ -82,7 +82,7 @@ void
 SessionGetRequestInfo(TSession *            const sessionP,
                       const TRequestInfo ** const requestInfoPP) {
     
-    *requestInfoPP = &sessionP->request_info;
+    *requestInfoPP = &sessionP->requestInfo;
 }
 
 
@@ -90,39 +90,40 @@ SessionGetRequestInfo(TSession *            const sessionP,
 abyss_bool
 SessionLog(TSession * const sessionP) {
 
-    abyss_bool retval;
+    const char * logline;
+    const char * user;
+    char date[30];
+    const char * peerInfo;
 
-    if (sessionP->request_info.requestline == NULL)
-        retval = FALSE;
-    else {
-        const char * const user = sessionP->request_info.user;
-
-        const char * logline;
-        char date[30];
-        const char * peerInfo;
-
-        DateToLogString(&sessionP->date, date);
-
-        ConnFormatClientAddr(sessionP->conn, &peerInfo);
-
-        xmlrpc_asprintf(&logline, "%s - %s - [%s] \"%s\" %d %d",
-                        peerInfo,
-                        user ? user : "",
-                        date, 
-                        sessionP->request_info.requestline,
-                        sessionP->status,
-                        sessionP->conn->outbytes
-            );
-        xmlrpc_strfree(peerInfo);
-
-        if (logline) {
-            LogWrite(sessionP->conn->server, logline);
-
-            xmlrpc_strfree(logline);
-        }
-        retval = TRUE;
+    if (sessionP->validRequest) {
+        if (sessionP->requestInfo.user)
+            user = sessionP->requestInfo.user;
+        else
+            user = "no_user";
+    } else
+        user = "???";
+    
+    DateToLogString(&sessionP->date, date);
+    
+    ConnFormatClientAddr(sessionP->conn, &peerInfo);
+    
+    xmlrpc_asprintf(&logline, "%s - %s - [%s] \"%s\" %d %d",
+                    peerInfo,
+                    user,
+                    date, 
+                    sessionP->validRequest ?
+                        sessionP->requestInfo.requestline : "???",
+                    sessionP->status,
+                    sessionP->conn->outbytes
+        );
+    xmlrpc_strfree(peerInfo);
+    
+    if (logline) {
+        LogWrite(sessionP->conn->server, logline);
+        
+        xmlrpc_strfree(logline);
     }
-    return retval;
+    return true;
 }
 
 
