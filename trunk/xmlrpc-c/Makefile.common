@@ -41,11 +41,19 @@ endif
 
 DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
-LDFLAGS_VERSINFO = -version-info 7:0:4
+# LDFLAGS_VERSINFO is a libtool link option that tells it what version
+# numbers to put on the shared libraries (and maybe in those special
+# libtool link files).  It's format is said to be mysterious, but I
+# know that the last number is what becomes the shared library minor
+# number.  The major number is 3, and I haven't the slightest idea why.
+# The revision number (0 in libxmlrpc.so.3.4.0) is probably the second
+# number.
+#
+# Our strategy is to set the minor number to the Xmlrpc-c minor release
+# number, such that Xmlrpc-c 1.04 has libxmlrpc.so.3.4.0 and leave the
+# revision number always 0.
 
-# MAJ and MIN are major and minor version numbers for shared libraries
-MAJ = 1
-MIN = 05
+LDFLAGS_VERSINFO = -version-info 7:0:6
 
 # CURDIR was introduced in GNU Make 3.77.
 ifeq ($(CURDIR)x,x)
