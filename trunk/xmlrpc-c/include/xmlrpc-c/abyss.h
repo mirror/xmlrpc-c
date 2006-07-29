@@ -286,19 +286,24 @@ typedef struct {
     const char * uri;
         /* This is NOT the URI.  It is the pathname part of the URI.
            We really should fix that and put the pathname in another
-           member.
+           member.  If the URI does not contain a pathname, this is "*".
         */
     const char * query;
-        /* The query part of the URI (stuff after '?') */
+        /* The query part of the URI (stuff after '?').  NULL if none. */
     const char * host;
         /* NOT the value of the host: header.  Rather, the name of the
-           target host (could be part of the host: value).  No port number.
+           target host (could be part of the host: value; could be from the
+           URI).  No port number.  NULL if request does not specify a host
+           name.
         */
     const char * from;
     const char * useragent;
     const char * referer;
     const char * requestline;
     const char * user;
+        /* Requesting user (from authorization: header).  NULL if
+           request doesn't specify
+        */
     unsigned short port;
     abyss_bool keepalive;
 } TRequestInfo;
@@ -320,8 +325,8 @@ SessionGetRequestInfo(TSession *            const sessionP,
                       const TRequestInfo ** const requestInfoPP);
 
 char *
-RequestHeaderValue(TSession * const sessionP,
-                   char *     const name);
+RequestHeaderValue(TSession *   const sessionP,
+                   const char * const name);
 
 abyss_bool
 ResponseAddField(TSession *   const sessionP,
