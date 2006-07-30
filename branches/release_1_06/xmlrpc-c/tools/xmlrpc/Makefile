@@ -1,11 +1,15 @@
 ifeq ($(SRCDIR)x,x)
 SRCDIR = $(CURDIR)/../..
-BUILDDIR = $(SRCDIR)
 endif
+# BLDDIR is for use in places where a symbolic link won't work.
+# BUILDDIR is for places in Makefile.common that can use the 'blddir'
+# symbolic link (but in other directories, doesn't).
+BLDDIR = $(SRCDIR)
+BUILDDIR = blddir
 
-all: xmlrpc
+default: all
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 PROGRAMS_TO_INSTALL = xmlrpc
 
@@ -15,26 +19,39 @@ INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
-LDFLAGS = $(CLIENT_LDFLAGS) $(LADD)
+LDFLAGS = $(LADD)
+
+all: xmlrpc
 
 UTIL_OBJS = cmdline_parser.o getoptx.o casprintf.o
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL) \
-  $(UTILS)
+# These are the Libtool .la files.  We use them only for make dependencies.
+# We'd like to use these in the link rule, by using libtool --link, but
+# Libtool adds -l options to the link to cover the dependencies that are
+# recorded inside the shared libraries.  And it doesn't add the necessary
+# -L options (it can't), so we end up with a messy mixture of the two
+# forms of specifying libraries.
+
+LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 
 XMLRPC_OBJS = xmlrpc.o dumpvalue.o
 
-xmlrpc: $(XMLRPC_OBJS) $(LIBS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
+xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
+	$(CCLD) -o $@ $(LDFLAGS) $(CLIENT_LDLIBS) $(XMLRPC_OBJS) $(UTILS)
 
 %.o:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS) $<
 
 *.c: config.h
 
 config.h:
-	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
+
+# This Makefile.config dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(BLDDIR)/Makefile.config: blddir srcdir
 
 include Makefile.depend
 

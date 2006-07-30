@@ -11,6 +11,12 @@ typedef struct {
 } httpVersion;
 
 struct _TSession {
+    abyss_bool validRequest;
+        /* Client has sent, and server has recognized, a valid HTTP request.
+           This is false when the session is new.  If and when the server
+           reads the request from the client and finds it to be valid HTTP,
+           it becomes true.
+        */
     TRequestInfo request_info;
     uint32_t nbfileds;
     TList cookies;

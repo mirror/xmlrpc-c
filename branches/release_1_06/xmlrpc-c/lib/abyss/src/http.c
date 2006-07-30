@@ -83,6 +83,8 @@ RequestInit(TSession * const sessionP,
 
     time_t nowtime;
 
+    sessionP->validRequest = false;  /* Don't have valid request yet */
+
     time(&nowtime);
     sessionP->date = *gmtime(&nowtime);
 
@@ -108,7 +110,8 @@ RequestInit(TSession * const sessionP,
 void
 RequestFree(TSession * const sessionP) {
 
-    freeRequestInfo(&sessionP->request_info);
+    if (sessionP->validRequest)
+        freeRequestInfo(&sessionP->request_info);
 
     ListFree(&sessionP->cookies);
     ListFree(&sessionP->ranges);
@@ -534,6 +537,8 @@ RequestRead(TSession * const sessionP) {
     }
     if (httpErrorCode)
         ResponseStatus(sessionP, httpErrorCode);
+    else
+        sessionP->validRequest = true;
 
     return !httpErrorCode;
 }

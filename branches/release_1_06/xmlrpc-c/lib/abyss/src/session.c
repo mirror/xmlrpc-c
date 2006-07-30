@@ -92,7 +92,7 @@ SessionLog(TSession * const sessionP) {
 
     abyss_bool retval;
 
-    if (sessionP->request_info.requestline == NULL)
+    if (!sessionP->validRequest)
         retval = FALSE;
     else {
         const char * const user = sessionP->request_info.user;

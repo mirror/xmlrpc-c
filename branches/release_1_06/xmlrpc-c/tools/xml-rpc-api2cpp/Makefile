@@ -17,7 +17,9 @@ INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include
 
 CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-LDFLAGS = $(CLIENT_LDFLAGS)
+LDFLAGS = $(LADD)
+
+LDLIBS = -Lblddir/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
 
 all: xml-rpc-api2cpp
 
@@ -36,10 +38,10 @@ xml-rpc-api2cpp: \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_XML) \
   $(LIBXMLRPC_UTIL)
-	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
+	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS)
 
 %.o:%.cpp
-	$(LIBTOOL) --mode=compile $(CXX) -c $(CXXFLAGS) $<
+	$(CXX) -c $(CXXFLAGS) $<
 
 # This Makefile.config dependency makes sure the symlinks get built before
 # this make file is used for anything.

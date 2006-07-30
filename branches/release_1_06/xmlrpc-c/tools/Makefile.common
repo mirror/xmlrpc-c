@@ -1,17 +1,21 @@
 # -*-makefile-*-    <-- an Emacs control
 
-CLIENT_LDFLAGS =
+CLIENT_LDLIBS = -L$(BUILDDIR)/src/.libs -lxmlrpc_client -lxmlrpc
+
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  CLIENT_LDFLAGS += $(shell libwww-config --libs)
+  CLIENT_LDLIBS += $(shell libwww-config --libs)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  CLIENT_LDFLAGS += $(shell curl-config --libs)
+  CLIENT_LDLIBS += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
-  CLIENT_LDFLAGS += $(shell wininet-config --libs)
+  CLIENT_LDLIBS += $(shell wininet-config --libs)
 endif
 
-CLIENT_LDFLAGS += $(EXTERNAL_XML_LINK)
+CLIENT_LDLIBS += $(LDLIBS_XML)
+
+CLIENT_LDLIBS += -L$(BUILDDIR)/lib/libutil/.libs -lxmlrpc_util
+
 
 UTIL_DIR = $(BUILDDIR)/lib/util
 
