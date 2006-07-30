@@ -613,8 +613,6 @@ RequestRead(TSession * const sessionP) {
 
             if (httpErrorCode == 0)
                 sessionP->validRequest = true;
-            else
-                sessionP->validRequest = false;
 
             xmlrpc_strfreenull(host);
             xmlrpc_strfree(path);
