@@ -35,15 +35,15 @@ TRANSPORT_OBJS =
 TRANSPORT_LIBDEP =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
-  TRANSPORT_LIBDEP += $(wininet-config --libs)
+  TRANSPORT_LIBDEP += $(shell wininet-config --libs)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   TRANSPORT_OBJS += $(CURL_TRANSPORT_DIR)/xmlrpc_curl_transport.lo
-  TRANSPORT_LIBDEP += $(curl-config --libs)
+  TRANSPORT_LIBDEP += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
-  TRANSPORT_LIBDEP += $(libwww-config --libs)
+  TRANSPORT_LIBDEP += $(shell libwww-config --libs)
 endif
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)

@@ -41,29 +41,43 @@ endif
 
 DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
-# LDFLAGS_VERSINFO is a libtool link option that tells it what version
-# numbers to put on the shared libraries (and maybe in those special
-# libtool link files).  It's format is said to be mysterious, but I
-# know that the last number is what becomes the shared library minor
-# number.  The major number is 3, and I haven't the slightest idea why.
-# The revision number (0 in libxmlrpc.so.3.4.0) is probably the second
-# number.
-#
-# Our strategy is to set the minor number to the Xmlrpc-c minor release
-# number, such that Xmlrpc-c 1.04 has libxmlrpc.so.3.4.0 and leave the
-# revision number always 0.
+# MAJ and MIN are major and minor version numbers for shared libraries.
+# Libtool builds are controlled by LDFLAGS_VERSINFO instead.
+MAJ = 3
+MIN = 06
 
-LDFLAGS_VERSINFO = -version-info 7:0:6
+# LDFLAGS_VERSINFO is a libtool link option (--version-info) that
+# tells it what version numbers to put on the shared libraries (and
+# maybe in those special libtool link files).  Exactly how it works is
+# somewhat mysterious; it's designed to be part of a linking system
+# where you always use libtool to link the libraries, and libtool
+# figures out which if any version of a library meets the link's
+# requirements.  But we expect our libraries to be linked with the
+# regular (non-libtool) linker, so what we care about is the major,
+# minor, and revision numbers in the file names and sonames.  Libtool
+# has an option --version-number that supposedly lets us specify that,
+# but it doesn't seem to work.  All I get is 0.0.0.  So we manipulate
+# --version-info instead.
+#
+# This appears to work: in the option --version-info A.B.C:
+#
+#   C is the minor number
+#   B is the revision number
+#   A minus C is the major number.
+#
+# So you would get libxmlrpc.so.A-C.C.B .
+#
+# Our strategy is to make the library version numbers the same as the
+# Xmlrpc-c version numbers except that we update the major number when and
+# only when we make a non-backward-compatible change to the library.  So
+# e.g. libxmlrpc for Xmlrpc-c 1.06.01 is named libxmlrpc.so.3.6.1.
+
+LDFLAGS_VERSINFO = -version-info 10:0:7  # 3.7.0
 
 # CURDIR was introduced in GNU Make 3.77.
 ifeq ($(CURDIR)x,x)
   CURDIR := $(shell /bin/pwd)
 endif
-
-ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  EXTERNAL_XML_LINK = $(shell xml2-config --libs)
-endif
-
 
 LIBXMLRPC_UTIL           = $(BUILDDIR)/lib/libutil/libxmlrpc_util.la
 LIBXMLRPC                = $(BUILDDIR)/src/libxmlrpc.la
@@ -96,11 +110,20 @@ UTILS = $(CASPRINTF)
 
 # LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
 # XML.  If we're using an external library to parse XML, this is null.
+# LDLIBS_XMLRPC_XML is the corresonding -l options.
 
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
   LIBXMLRPC_XML = $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLTOK)
+  LDLIBS_XML = \
+        -L $(BUILDDIR)/lib/expat/xmlparse/.libs \
+	-lxmlrpc_xmlparse \
+        -L $(BUILDDIR)/lib/expat/xmltok/.libs \
+	-lxmlrpc_xmltok
+else
+  LDLIBS_XML = $(shell xml2-config --libs)
 endif
+
 
 ##############################################################################
 #                           BUILD RULES                                      #
@@ -311,8 +334,7 @@ install-headers: $(HEADERS_TO_INSTALL)
 	done
 
 
-INSTALL_PROGRAM_CMD = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p \
-  $(DESTDIR)$(PROGRAMINST_DIR)/$$p
+INSTALL_PROGRAM_CMD = $(INSTALL_PROGRAM) $$p $(DESTDIR)$(PROGRAMINST_DIR)/$$p
 
 install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
 	@list='$(PROGRAMS_TO_INSTALL)'; \
