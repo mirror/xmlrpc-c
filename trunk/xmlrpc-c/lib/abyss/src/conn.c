@@ -439,7 +439,7 @@ processHeaderLine(char *       const start,
   header.
 
   It is part of a header that starts at 'headerStart' and has been
-  previously processed up to *pP.  The data in the buffer is
+  previously processed up to *nextP.  The data in the buffer is
   terminated by a NUL.
 
   WE MODIFY THE DATA.
@@ -447,18 +447,18 @@ processHeaderLine(char *       const start,
   Process means:
 
      - Determine whether more data from the channel is needed to get a full
-       header (or to determine that we've already one -- note that we may
+       header (or to determine that we've already got one -- note that we may
        have to see the next line to know if it's a continuation line).
 
        Return the determination as *gotHeaderP.
 
      - blank out the first line delimiter (LF or CRLF) if we know there
        is a continuation line after it (blanking out the delimiter fuses
-       the two lines).  In that case, move the cursor *pP to point to
+       the two lines).  In that case, move the cursor *nextP to point to
        continuation line.
 
-     - If there's a full header at 'lineStart' now, replace the final line
-       delimiter (LF or CRLF) with a NUL and make the cursor *pP
+     - If there's a full header at 'headerStart' now, replace the final line
+       delimiter (LF or CRLF) with a NUL and make the cursor *nextP
        point to the buffer content following the header and its line
        delimiter.
 -----------------------------------------------------------------------------*/
@@ -496,7 +496,7 @@ processHeaderLine(char *       const start,
             }
         } else {
             /* We're looking at an empty line (i.e. what marks the
-               end of the header)
+               end of the headers)
             */
             p = lfPos;  /* Point to LF */
             gotHeader = TRUE;

@@ -121,19 +121,27 @@ RequestFree(TSession * const sessionP) {
 
 
 static void
-readRequestLine(TSession *   const sessionP,
-                char **      const requestLineP,
-                uint16_t *   const httpErrorCodeP) {
+readRequestLine(TSession * const sessionP,
+                char **    const requestLineP,
+                uint16_t * const httpErrorCodeP) {
 
-    *httpErrorCodeP = 0;
+    char * line;
+    abyss_bool gotNonEmptyLine;
+
+    *httpErrorCodeP = 0;  /* initial assumption */
+    gotNonEmptyLine = false;
 
     /* Ignore CRLFs in the beginning of the request (RFC2068-P30) */
-    do {
+    while (!gotNonEmptyLine && *httpErrorCodeP == 0) {
         abyss_bool success;
-        success = ConnReadHeader(sessionP->conn, requestLineP);
-        if (!success)
+        success = ConnReadHeader(sessionP->conn, &line);
+        if (success) {
+            if (line[0] != '\0')
+                gotNonEmptyLine = true;
+        } else
             *httpErrorCodeP = 408;  /* Request Timeout */
-    } while ((*requestLineP)[0] == '\0' && !*httpErrorCodeP);
+    }
+    *requestLineP = line;
 }
 
 
@@ -349,7 +357,7 @@ parseRequestLine(char *           const requestLine,
                  abyss_bool *     const moreLinesP,
                  uint16_t *       const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
-   Modifies *header1 and returns pointers to its storage!
+   Modifies *requestLine and returns pointers to its storage!
 -----------------------------------------------------------------------------*/
     const char * httpMethodName;
     char * p;
