@@ -3,6 +3,9 @@ SRCDIR = $(CURDIR)/../../..
 endif
 SUBDIR = lib/abyss/src
 
+BUILDDIR = $(SRCDIR)
+VPATH = .:$(SRCDIR)
+
 include $(SRCDIR)/Makefile.config
 
 CFLAGS = $(CFLAGS_COMMON)
@@ -44,7 +47,6 @@ ABYSS_OBJS = \
   token.lo \
   $(THREAD_MODULE).lo \
   trace.lo \
-
 
 libxmlrpc_abyss.la: $(ABYSS_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^

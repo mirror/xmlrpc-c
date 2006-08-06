@@ -15,6 +15,7 @@
 #include <time.h>
 
 #include "xmlrpc_config.h"
+#include "version.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -42,8 +43,11 @@ ResponseError(TSession * const sessionP) {
     
     xmlrpc_asprintf(&errorDocument,
                     "<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
-                    "<BODY><H1>Error %d</H1><P>%s</P>" SERVER_HTML_INFO 
-                    "</BODY></HTML>",
+                    "<BODY>"
+                    "<H1>Error %d</H1>"
+                    "<P>%s</P>" SERVER_HTML_INFO 
+                    "</BODY>"
+                    "</HTML>",
                     sessionP->status, sessionP->status, reason);
     
     ConnWrite(sessionP->conn, errorDocument, strlen(errorDocument)); 
@@ -119,6 +123,28 @@ ResponseAddField(TSession *   const sessionP,
 
 
 static void
+addConnectionHeader(TSession * const sessionP) {
+
+    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+
+    if (HTTPKeepalive(sessionP)) {
+        const char * keepaliveValue;
+        
+        ResponseAddField(sessionP, "Connection", "Keep-Alive");
+
+        xmlrpc_asprintf(&keepaliveValue, "timeout=%u, max=%u",
+                        srvP->keepalivetimeout, srvP->keepalivemaxconn);
+
+        ResponseAddField(sessionP, "Keep-Alive", keepaliveValue);
+
+        xmlrpc_strfree(keepaliveValue);
+    } else
+        ResponseAddField(sessionP, "Connection", "close");
+}
+    
+
+
+static void
 addDateHeader(TSession * const sessionP) {
 
     char dateValue[64];
@@ -128,6 +154,20 @@ addDateHeader(TSession * const sessionP) {
 
     if (sessionP->status >= 200 && validDate)
         ResponseAddField(sessionP, "Date", dateValue);
+}
+
+
+
+static void
+addServerHeader(TSession * const sessionP) {
+
+    const char * serverValue;
+
+    xmlrpc_asprintf(&serverValue, "XMLRPC_ABYSS/%s", XMLRPC_C_VERSION);
+
+    ResponseAddField(sessionP, "Server", serverValue);
+
+    xmlrpc_strfree(serverValue);
 }
 
 
@@ -156,28 +196,15 @@ ResponseWriteStart(TSession * const sessionP) {
         xmlrpc_strfree(line);
     }
 
-    if (HTTPKeepalive(sessionP)) {
-        const char * keepaliveValue;
-        
-        ResponseAddField(sessionP, "Connection", "Keep-Alive");
+    addConnectionHeader(sessionP);
 
-        xmlrpc_asprintf(&keepaliveValue, "timeout=%u, max=%u",
-                        srvP->keepalivetimeout, srvP->keepalivemaxconn);
-
-        ResponseAddField(sessionP, "Keep-Alive", keepaliveValue);
-
-        xmlrpc_strfree(keepaliveValue);
-    } else
-        ResponseAddField(sessionP, "Connection", "close");
-    
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode)
         ResponseAddField(sessionP, "Transfer-Encoding", "chunked");
 
     addDateHeader(sessionP);
 
-    /* Generation of the server field */
     if (srvP->advertise)
-        ResponseAddField(sessionP, "Server", SERVER_HVERSION);
+        addServerHeader(sessionP);
 
     /* send all the fields */
     for (i = 0; i < sessionP->response_headers.size; ++i) {
