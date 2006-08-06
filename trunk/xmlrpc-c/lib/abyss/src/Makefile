@@ -4,7 +4,6 @@ endif
 SUBDIR = lib/abyss/src
 
 BUILDDIR = $(SRCDIR)
-VPATH = .:$(SRCDIR)
 
 include $(SRCDIR)/Makefile.config
 
