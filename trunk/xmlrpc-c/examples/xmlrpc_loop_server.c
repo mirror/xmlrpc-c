@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
@@ -39,12 +42,34 @@ setupSignalHandlers(void) {
 
 
 
+static void
+printPeerIpAddr(TSession * const abyssSessionP) {
+
+    struct abyss_unix_chaninfo * channelInfoP;
+    struct sockaddr_in * sockAddrInP;
+    unsigned char * ipAddr;  /* 4 byte array */
+
+    SessionGetChannelInfo(abyssSessionP, (void*)&channelInfoP);
+
+    sockAddrInP = (struct sockaddr_in *) &channelInfoP->peerAddr;
+
+    ipAddr = (unsigned char *)&sockAddrInP->sin_addr.s_addr;
+
+    printf("RPC is from IP address %u.%u.%u.%u\n",
+           ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3]);
+}
+
+
+
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP, 
            xmlrpc_value * const paramArrayP,
-           void *         const userData ATTR_UNUSED) {
+           void *         const serverInfo ATTR_UNUSED,
+           void *         const channelInfo) {
     
     xmlrpc_int x, y, z;
+
+    printPeerIpAddr(channelInfo);
 
     /* Parse our argument array. */
     xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
@@ -102,8 +127,8 @@ main(int           const argc,
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method(
-        &env, registryP, NULL, "sample.add", &sample_add, NULL);
+    xmlrpc_registry_add_method2(
+        &env, registryP, "sample.add", &sample_add, NULL, NULL, NULL);
 
     xmlrpc_registry_set_shutdown(registryP,
                                  &requestShutdown, &terminationRequested);

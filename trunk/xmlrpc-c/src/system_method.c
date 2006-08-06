@@ -19,10 +19,10 @@ struct systemMethodReg {
 /*----------------------------------------------------------------------------
    Information needed to register a system method
 -----------------------------------------------------------------------------*/
-    const char *  const methodName;
-    xmlrpc_method const methodFunction;
-    const char *  const signatureString;
-    const char *  const helpText;
+    const char *   const methodName;
+    xmlrpc_method2 const methodFunction;
+    const char *   const signatureString;
+    const char *   const helpText;
 };
 
 
@@ -173,6 +173,8 @@ xmlrpc_buildSignatureArray(xmlrpc_env *    const envP,
   the string.  (Signatures are separated by commas.  The "ii,s" example
   is two signatures: "ii" and "s").  Each element is itself an array
   as described under parseOneSignature().
+
+  If 'sigListString' is NULL, make an empty array.
 -----------------------------------------------------------------------------*/
     xmlrpc_value * signatureListP;
 
@@ -219,115 +221,150 @@ xmlrpc_buildSignatureArray(xmlrpc_env *    const envP,
   system.multicall
 =========================================================================*/
 
-static xmlrpc_value *
-call_one_method(xmlrpc_env *env, xmlrpc_registry *registry,
-                xmlrpc_value *method_info) {
+static void
+callOneMethod(xmlrpc_env *      const envP,
+              xmlrpc_registry * const registryP,
+              xmlrpc_value *    const rpcDescP,
+              void *            const callInfo,
+              xmlrpc_value **   const resultPP) {
 
-    xmlrpc_value *result_val, *result;
-    char *method_name;
-    xmlrpc_value *param_array;
+    const char * methodName;
+    xmlrpc_value * paramArrayP;
 
-    /* Error-handling preconditions. */
-    result = result_val = NULL;
-    
-    /* Extract our method name and parameters. */
-    xmlrpc_parse_value(env, method_info, "{s:s,s:A,*}",
-                       "methodName", &method_name,
-                       "params", &param_array);
-    XMLRPC_FAIL_IF_FAULT(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
 
-    /* Watch out for a deep recursion attack. */
-    if (strcmp(method_name, "system.multicall") == 0)
-        XMLRPC_FAIL(env, XMLRPC_REQUEST_REFUSED_ERROR,
-                    "Recursive system.multicall strictly forbidden");
-    
-    /* Perform the call. */
-    xmlrpc_dispatchCall(env, registry, method_name, param_array, &result_val);
-    XMLRPC_FAIL_IF_FAULT(env);
-    
-    /* Build our one-item result array. */
-    result = xmlrpc_build_value(env, "(V)", result_val);
-    XMLRPC_FAIL_IF_FAULT(env);
-    
- cleanup:
-    if (result_val)
-        xmlrpc_DECREF(result_val);
-    if (env->fault_occurred) {
-        if (result)
-            xmlrpc_DECREF(result);
-        return NULL;
+    if (xmlrpc_value_type(rpcDescP) != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR,
+            "An element of the multicall array is type %u, but should "
+            "be a struct (with members 'methodName' and 'params')",
+            xmlrpc_value_type(rpcDescP));
+    else {
+        xmlrpc_decompose_value(envP, rpcDescP, "{s:s,s:A,*}",
+                               "methodName", &methodName,
+                               "params", &paramArrayP);
+        if (!envP->fault_occurred) {
+            /* Watch out for a deep recursion attack. */
+            if (xmlrpc_streq(methodName, "system.multicall"))
+                xmlrpc_env_set_fault_formatted(
+                    envP,
+                    XMLRPC_REQUEST_REFUSED_ERROR,
+                    "Recursive system.multicall forbidden");
+            else {
+                xmlrpc_env env;
+                xmlrpc_value * resultValP;
+
+                xmlrpc_env_init(&env);
+                xmlrpc_dispatchCall(&env, registryP, methodName, paramArrayP,
+                                    callInfo,
+                                    &resultValP);
+                if (env.fault_occurred) {
+                    /* Method failed, so result is a fault structure */
+                    *resultPP = 
+                        xmlrpc_build_value(
+                            envP, "{s:i,s:s}",
+                            "faultCode", (xmlrpc_int32) env.fault_code,
+                            "faultString", env.fault_string);
+                } else {
+                    *resultPP = xmlrpc_build_value(envP, "(V)", resultValP);
+
+                    xmlrpc_DECREF(resultValP);
+                }
+                xmlrpc_env_clean(&env);
+            }
+            xmlrpc_DECREF(paramArrayP);
+            xmlrpc_strfree(methodName);
+        }
     }
-    return result;
+}
+
+
+
+static void
+getMethListFromMulticallPlist(xmlrpc_env *    const envP,
+                              xmlrpc_value *  const paramArrayP,
+                              xmlrpc_value ** const methlistPP) {
+
+    if (xmlrpc_array_size(envP, paramArrayP) != 1)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR,
+            "system.multicall takes one parameter, which is an "
+            "array, each element describing one RPC.  You "
+            "supplied %u arguments", 
+            xmlrpc_array_size(envP, paramArrayP));
+    else {
+        xmlrpc_value * methlistP;
+
+        xmlrpc_array_read_item(envP, paramArrayP, 0, &methlistP);
+
+        XMLRPC_ASSERT_ENV_OK(envP);
+
+        if (xmlrpc_value_type(methlistP) != XMLRPC_TYPE_ARRAY)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_TYPE_ERROR,
+                "system.multicall's parameter should be an array, "
+                "each element describing one RPC.  But it is type "
+                "%u instead.", xmlrpc_value_type(methlistP));
+        else
+            *methlistPP = methlistP;
+
+        if (envP->fault_occurred)
+            xmlrpc_DECREF(methlistP);
+    }
 }
 
 
 
 static xmlrpc_value *
-system_multicall(xmlrpc_env *env,
-                 xmlrpc_value *param_array,
-                 void *user_data) {
+system_multicall(xmlrpc_env *   const envP,
+                 xmlrpc_value * const paramArrayP,
+                 void *         const serverInfo,
+                 void *         const callInfo) {
 
-    xmlrpc_registry *registry;
-    xmlrpc_value *methlist, *methinfo, *results, *result;
-    size_t size, i;
-    xmlrpc_env env2;
+    xmlrpc_registry * registryP;
+    xmlrpc_value * resultsP;
+    xmlrpc_value * methlistP;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
-    XMLRPC_ASSERT_PTR_OK(user_data);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_ARRAY_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
 
-    /* Error-handling preconditions. */
-    results = result = NULL;
-    xmlrpc_env_init(&env2);
-    
+    resultsP = NULL;  /* defeat compiler warning */
+
     /* Turn our arguments into something more useful. */
-    registry = (xmlrpc_registry*) user_data;
-    xmlrpc_parse_value(env, param_array, "(A)", &methlist);
-    XMLRPC_FAIL_IF_FAULT(env);
+    registryP = (xmlrpc_registry*) serverInfo;
 
-    /* Create an empty result list. */
-    results = xmlrpc_build_value(env, "()");
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Loop over our input list, calling each method in turn. */
-    size = xmlrpc_array_size(env, methlist);
-    XMLRPC_ASSERT_ENV_OK(env);
-    for (i = 0; i < size; i++) {
-        methinfo = xmlrpc_array_get_item(env, methlist, i);
-        XMLRPC_ASSERT_ENV_OK(env);
-        
-        /* Call our method. */
-        xmlrpc_env_clean(&env2);
-        xmlrpc_env_init(&env2);
-        result = call_one_method(&env2, registry, methinfo);
-        
-        /* Turn any fault into a structure. */
-        if (env2.fault_occurred) {
-            XMLRPC_ASSERT(result == NULL);
-            result = 
-                xmlrpc_build_value(env, "{s:i,s:s}",
-                                   "faultCode", (xmlrpc_int32) env2.fault_code,
-                                   "faultString", env2.fault_string);
-            XMLRPC_FAIL_IF_FAULT(env);
+    getMethListFromMulticallPlist(envP, paramArrayP, &methlistP);
+    if (!envP->fault_occurred) {
+        /* Create an initially empty result list. */
+        resultsP = xmlrpc_array_new(envP);
+        if (!envP->fault_occurred) {
+            /* Loop over our input list, calling each method in turn. */
+            unsigned int const methodCount =
+                xmlrpc_array_size(envP, methlistP);
+            unsigned int i;
+            for (i = 0; i < methodCount && !envP->fault_occurred; ++i) {
+                xmlrpc_value * const methinfoP = 
+                    xmlrpc_array_get_item(envP, methlistP, i);
+            
+                xmlrpc_value * resultP;
+            
+                XMLRPC_ASSERT_ENV_OK(envP);
+            
+                callOneMethod(envP, registryP, methinfoP, callInfo, &resultP);
+            
+                if (!envP->fault_occurred) {
+                    /* Append this method result to our master array. */
+                    xmlrpc_array_append_item(envP, resultsP, resultP);
+                    xmlrpc_DECREF(resultP);
+                }
+            }
+            if (envP->fault_occurred)
+                xmlrpc_DECREF(resultsP);
+            xmlrpc_DECREF(methlistP);
         }
-        
-        /* Append this method result to our master array. */
-        xmlrpc_array_append_item(env, results, result);
-        xmlrpc_DECREF(result);
-        result = NULL;
-        XMLRPC_FAIL_IF_FAULT(env);
     }
-
- cleanup:
-    xmlrpc_env_clean(&env2);
-    if (result)
-        xmlrpc_DECREF(result);
-    if (env->fault_occurred) {
-        if (results)
-            xmlrpc_DECREF(results);
-        return NULL;
-    }
-    return results;
+    return resultsP;
 }
 
 
@@ -350,11 +387,11 @@ static struct systemMethodReg const multicall = {
 =========================================================================*/
 
 
-
 static xmlrpc_value *
-system_listMethods(xmlrpc_env *env,
-                   xmlrpc_value *param_array,
-                   void *user_data) {
+system_listMethods(xmlrpc_env *   const env,
+                   xmlrpc_value * const param_array,
+                   void *         const serverInfo,
+                   void *         const callInfo ATTR_UNUSED) {
 
     xmlrpc_registry *registry;
     xmlrpc_value *method_names, *method_name, *method_info;
@@ -362,13 +399,13 @@ system_listMethods(xmlrpc_env *env,
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(param_array);
-    XMLRPC_ASSERT_PTR_OK(user_data);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
 
     /* Error-handling preconditions. */
     method_names = NULL;
 
     /* Turn our arguments into something more useful. */
-    registry = (xmlrpc_registry*) user_data;
+    registry = (xmlrpc_registry*) serverInfo;
     xmlrpc_parse_value(env, param_array, "()");
     XMLRPC_FAIL_IF_FAULT(env);
     
@@ -413,10 +450,12 @@ static struct systemMethodReg const listMethods = {
   system.methodHelp
 =========================================================================*/
 
+
 static xmlrpc_value *
-system_methodHelp(xmlrpc_env *env,
-                  xmlrpc_value *param_array,
-                  void *user_data) {
+system_methodHelp(xmlrpc_env *   const env,
+                  xmlrpc_value * const param_array,
+                  void *         const serverInfo,
+                  void *         const callInfo ATTR_UNUSED) {
 
     xmlrpc_registry *registry;
     char *method_name;
@@ -424,10 +463,10 @@ system_methodHelp(xmlrpc_env *env,
 
     XMLRPC_ASSERT_ENV_OK(env);
     XMLRPC_ASSERT_VALUE_OK(param_array);
-    XMLRPC_ASSERT_PTR_OK(user_data);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
 
     /* Turn our arguments into something more useful. */
-    registry = (xmlrpc_registry*) user_data;
+    registry = (xmlrpc_registry*) serverInfo;
     xmlrpc_parse_value(env, param_array, "(s)", &method_name);
     XMLRPC_FAIL_IF_FAULT(env);
     
@@ -569,9 +608,10 @@ getSignatureList(xmlrpc_env *      const envP,
 static xmlrpc_value *
 system_methodSignature(xmlrpc_env *   const envP,
                        xmlrpc_value * const paramArrayP,
-                       void *         const userData) {
+                       void *         const serverInfo,
+                       void *         const callInfo ATTR_UNUSED) {
 
-    xmlrpc_registry * const registryP = (xmlrpc_registry *) userData;
+    xmlrpc_registry * const registryP = (xmlrpc_registry *) serverInfo;
 
     xmlrpc_value * retvalP;
     const char * methodName;
@@ -579,7 +619,7 @@ system_methodSignature(xmlrpc_env *   const envP,
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
-    XMLRPC_ASSERT_PTR_OK(userData);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
 
     xmlrpc_env_init(&env);
 
@@ -633,9 +673,10 @@ static struct systemMethodReg const methodSignature = {
 static xmlrpc_value *
 system_shutdown(xmlrpc_env *   const envP,
                 xmlrpc_value * const paramArrayP,
-                void *         const userData) {
+                void *         const serverInfo,
+                void *         const callInfo ATTR_UNUSED) {
     
-    xmlrpc_registry * const registryP = (xmlrpc_registry *) userData;
+    xmlrpc_registry * const registryP = (xmlrpc_registry *) serverInfo;
 
     xmlrpc_value * retvalP;
     const char * comment;
@@ -643,7 +684,7 @@ system_shutdown(xmlrpc_env *   const envP,
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
-    XMLRPC_ASSERT_PTR_OK(userData);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
 
     xmlrpc_env_init(&env);
 
@@ -705,10 +746,10 @@ registerSystemMethod(xmlrpc_env *           const envP,
     xmlrpc_env env;
     xmlrpc_env_init(&env);
     
-    xmlrpc_registry_add_method_w_doc(
-        &env, registryP, NULL, methodReg.methodName,
-        methodReg.methodFunction, registryP,
-        methodReg.signatureString, methodReg.helpText);
+    xmlrpc_registry_add_method2(
+        &env, registryP, methodReg.methodName,
+        methodReg.methodFunction,
+        methodReg.signatureString, methodReg.helpText, registryP);
     
     if (env.fault_occurred)
         xmlrpc_faultf(envP, "Failed to register '%s' system method.  %s",

@@ -812,13 +812,16 @@ processRPCCall(
                     //       a ULONG, this will not work for entity bodies that
                     //       are larger than 4 GB. For supporting large entity
                     //       bodies, we would have to use a ULONGLONG.
-					TraceA("xmlrpc_server RPC2 handler processing RPC request.\n");
+					TraceA("xmlrpc_server RPC2 handler processing "
+                           "RPC request.\n");
 										
 					// Process the RPC.
-					output = xmlrpc_registry_process_call(
-										envP, global_registryP, NULL, 
-										XMLRPC_MEMBLOCK_CONTENTS(char, body),
-										XMLRPC_MEMBLOCK_SIZE(char, body));
+					xmlrpc_registry_process_call2(
+                        envP, global_registryP,
+                        XMLRPC_MEMBLOCK_CONTENTS(char, body),
+                        XMLRPC_MEMBLOCK_SIZE(char, body),
+                        NULL,
+                        &output);
 					if (envP->fault_occurred) 
 						goto Done;
 

@@ -77,11 +77,6 @@ test_server_abyss(void) {
 
     ServerFree(&abyssServer);
 
-    ServerCreateSocket(&abyssServer, "testserver", STDIN_FILENO,
-                       "/home/http", "/tmp/logfile");
-
-    ServerFree(&abyssServer);
-
     testServerParms();
 
     printf("\n");

@@ -14,21 +14,48 @@
 #include "method_registry.h"
 
 
-#define FOO_USER_DATA ((void*) 0xF00)
-#define BAR_USER_DATA ((void*) 0xBAF)
-
+#define FOO_SERVERINFO     ((void*) 0xF00)
+#define FOO_CALLINFO       ((void*) 0xFC0)
+#define BAR_SERVERINFO     ((void*) 0xBAF)
+#define BAR_CALLINFO       ((void*) 0xBAC)
+#define MULTI_CALLINFO     ((void*) 0xFFF)
+#define DEFAULT_SERVERINFO ((void*) 0xD00)
+#define DEFAULT_CALLINFO   ((void*) 0xDC0)
 
 
 static xmlrpc_value *
 test_foo(xmlrpc_env *   const envP,
          xmlrpc_value * const paramArrayP,
-         void *         const userData) {
+         void *         const serverInfo,
+         void *         const callInfo) {
 
     xmlrpc_int32 x, y;
 
     TEST_NO_FAULT(envP);
     TEST(paramArrayP != NULL);
-    TEST(userData == FOO_USER_DATA);
+    TEST(serverInfo == FOO_SERVERINFO);
+    TEST(callInfo == FOO_CALLINFO || callInfo == MULTI_CALLINFO);
+
+    xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
+    TEST_NO_FAULT(envP);
+    TEST(x == 25);
+    TEST(y == 17);
+
+    return xmlrpc_build_value(envP, "i", (xmlrpc_int32) x + y);
+}
+
+
+
+static xmlrpc_value *
+test_foo_type1(xmlrpc_env *   const envP,
+               xmlrpc_value * const paramArrayP,
+               void *         const serverInfo) {
+    
+    xmlrpc_int32 x, y;
+
+    TEST_NO_FAULT(envP);
+    TEST(paramArrayP != NULL);
+    TEST(serverInfo == FOO_SERVERINFO);
 
     xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
     TEST_NO_FAULT(envP);
@@ -43,13 +70,15 @@ test_foo(xmlrpc_env *   const envP,
 static xmlrpc_value *
 test_bar(xmlrpc_env *   const envP,
          xmlrpc_value * const paramArrayP,
-         void *         const userData) {
+         void *         const serverInfo,
+         void *         const callInfo) {
 
     xmlrpc_int32 x, y;
 
     TEST_NO_FAULT(envP);
     TEST(paramArrayP != NULL);
-    TEST(userData == BAR_USER_DATA);
+    TEST(serverInfo == BAR_SERVERINFO);
+    TEST(callInfo == BAR_CALLINFO || callInfo == MULTI_CALLINFO);
 
     xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
     TEST_NO_FAULT(envP);
@@ -65,16 +94,24 @@ test_bar(xmlrpc_env *   const envP,
 
 static xmlrpc_value *
 test_default(xmlrpc_env *   const envP,
-             const char *   const host ATTR_UNUSED,
-             const char *   const methodName ATTR_UNUSED,
+             const char *   const callInfo,
+             const char *   const methodName,
              xmlrpc_value * const paramArrayP,
-             void *         const userData) {
+             void *         const serverInfo) {
 
     xmlrpc_int32 x, y;
 
     TEST_NO_FAULT(envP);
     TEST(paramArrayP != NULL);
-    TEST(userData == FOO_USER_DATA);
+    TEST(serverInfo == DEFAULT_SERVERINFO);
+
+    TEST(streq(methodName, "test.nosuch") ||
+         streq(methodName, "test.nosuch.old"));
+
+    if (streq(methodName, "nosuch.method"))
+        TEST(callInfo == DEFAULT_CALLINFO);
+    else if (streq(methodName, "nosuch.method.old"))
+        TEST(callInfo == NULL);
 
     xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
     TEST_NO_FAULT(envP);
@@ -91,6 +128,7 @@ doRpc(xmlrpc_env *      const envP,
       xmlrpc_registry * const registryP,
       const char *      const methodName,
       xmlrpc_value *    const argArrayP,
+      void *            const callInfo,
       xmlrpc_value **   const resultPP) {
 /*----------------------------------------------------------------------------
    Do what an XML-RPC server would do -- pass an XML call to the registry
@@ -107,9 +145,19 @@ doRpc(xmlrpc_env *      const envP,
     TEST_NO_FAULT(envP);
     xmlrpc_serialize_call(envP, callP, methodName, argArrayP);
     TEST_NO_FAULT(envP);
-    responseP = xmlrpc_registry_process_call(envP, registryP, NULL,
-                                             xmlrpc_mem_block_contents(callP),
-                                             xmlrpc_mem_block_size(callP));
+
+    if (callInfo)
+        xmlrpc_registry_process_call2(
+            envP, registryP,
+            xmlrpc_mem_block_contents(callP),
+            xmlrpc_mem_block_size(callP),
+            callInfo, &responseP);
+    else
+        responseP = xmlrpc_registry_process_call(
+            envP, registryP, NULL,
+            xmlrpc_mem_block_contents(callP),
+            xmlrpc_mem_block_size(callP));
+
     TEST_NO_FAULT(envP);
     TEST(responseP != NULL);
 
@@ -173,13 +221,15 @@ test_signature_method(xmlrpc_registry * const registryP) {
     xmlrpc_env_init(&env);
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.nosuchmethod");
-    doRpc(&env, registryP, "system.methodSignature", argArrayP, &resultP);
+    doRpc(&env, registryP, "system.methodSignature", argArrayP, NULL,
+          &resultP);
     TEST_FAULT(&env, XMLRPC_NO_SUCH_METHOD_ERROR);
     xmlrpc_DECREF(argArrayP);
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.nosig0");
 
-    doRpc(&env, registryP, "system.methodSignature", argArrayP, &resultP);
+    doRpc(&env, registryP, "system.methodSignature", argArrayP, NULL,
+          &resultP);
     TEST_NO_FAULT(&env);
 
     xmlrpc_read_string(&env, resultP, &nosigstring);
@@ -191,7 +241,8 @@ test_signature_method(xmlrpc_registry * const registryP) {
     xmlrpc_DECREF(argArrayP);
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.validsig0");
-    doRpc(&env, registryP, "system.methodSignature", argArrayP, &resultP);
+    doRpc(&env, registryP, "system.methodSignature", argArrayP, NULL,
+          &resultP);
     TEST_NO_FAULT(&env);
 
     xmlrpc_decompose_value(&env, resultP, "((s))", &type0);
@@ -202,7 +253,8 @@ test_signature_method(xmlrpc_registry * const registryP) {
     xmlrpc_DECREF(argArrayP);
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.validsig2");
-    doRpc(&env, registryP, "system.methodSignature", argArrayP, &resultP);
+    doRpc(&env, registryP, "system.methodSignature", argArrayP, NULL,
+          &resultP);
     TEST_NO_FAULT(&env);
     xmlrpc_decompose_value(&env, resultP, "((ssssssss))",
                            &type0, &type1, &type2, &type3,
@@ -222,7 +274,8 @@ test_signature_method(xmlrpc_registry * const registryP) {
     xmlrpc_DECREF(argArrayP);
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.validsig3");
-    doRpc(&env, registryP, "system.methodSignature", argArrayP, &resultP);
+    doRpc(&env, registryP, "system.methodSignature", argArrayP, NULL,
+          &resultP);
     TEST_NO_FAULT(&env);
     xmlrpc_decompose_value(&env, resultP, "((s)(s))", &type0, &type1);
 
@@ -251,22 +304,20 @@ test_signature(void) {
     registryP = xmlrpc_registry_new(&env);
     TEST_NO_FAULT(&env);
 
-    xmlrpc_registry_add_method_w_doc(&env, registryP, NULL, "test.nosig0",
-                                     test_foo, FOO_USER_DATA,
-                                     NULL, NULL);
+    xmlrpc_registry_add_method2(&env, registryP, "test.nosig0",
+                                test_foo, NULL, NULL, FOO_SERVERINFO);
     TEST_NO_FAULT(&env);
 
-    xmlrpc_registry_add_method_w_doc(&env, registryP, NULL, "test.nosig1",
-                                     test_foo, FOO_USER_DATA,
-                                     "?", NULL);
+    xmlrpc_registry_add_method2(&env, registryP, "test.nosig1",
+                                test_foo, "?", NULL, FOO_SERVERINFO);
     TEST_NO_FAULT(&env);
 
     for (i = 0; validSigString[i]; ++i) {
         const char * methodName;
         casprintf(&methodName, "test.validsig%u", i);
-        xmlrpc_registry_add_method_w_doc(&env, registryP, NULL, methodName,
-                                         test_foo, FOO_USER_DATA,
-                                         validSigString[i], NULL);
+        xmlrpc_registry_add_method2(&env, registryP, methodName,
+                                    test_foo,
+                                    validSigString[i], NULL, FOO_SERVERINFO);
         TEST_NO_FAULT(&env);
         strfree(methodName);
     }
@@ -274,12 +325,22 @@ test_signature(void) {
     for (i = 0; invalidSigString[i]; ++i) {
         const char * methodName;
         casprintf(&methodName, "test.invalidsig%u", i);
-        xmlrpc_registry_add_method_w_doc(&env, registryP, NULL, methodName,
-                                         test_foo, FOO_USER_DATA,
-                                         invalidSigString[i], NULL);
+        xmlrpc_registry_add_method2(&env, registryP, methodName,
+                                    test_foo,
+                                    invalidSigString[i], NULL, FOO_SERVERINFO);
         TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
         strfree(methodName);
     }
+
+    xmlrpc_registry_add_method_w_doc(&env, registryP, NULL, "test.old",
+                                     test_foo_type1, FOO_SERVERINFO,
+                                     NULL, NULL);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_registry_add_method_w_doc(&env, registryP, NULL, "test.old.invalid",
+                                     test_foo_type1, FOO_SERVERINFO,
+                                     invalidSigString[0], NULL);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     test_signature_method(registryP);
 
@@ -300,9 +361,8 @@ test_system_multicall(xmlrpc_registry * const registryP) {
     xmlrpc_env env;
     xmlrpc_value * multiP;
     xmlrpc_int32 foo1_result, foo2_result;
-    xmlrpc_int32 bar_code, nosuch_code, multi_code, bogus1_code, bogus2_code;
-    char *bar_string, *nosuch_string, *multi_string;
-    char *bogus1_string, *bogus2_string;
+    xmlrpc_int32 bar_code, nosuch_code;
+    char *bar_string, *nosuch_string;
     xmlrpc_value * valueP;
     xmlrpc_value * argArrayP;
 
@@ -316,36 +376,36 @@ test_system_multicall(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);
 
     multiP = xmlrpc_build_value(&env,
-                               "(({s:s,s:V}{s:s,s:V}{s:s,s:V}"
-                               "{s:s,s:()}s{}{s:s,s:V}))",
-                               "methodName", "test.foo",
-                               "params", argArrayP,
-                               "methodName", "test.bar",
-                               "params", argArrayP,
-                               "methodName", "test.nosuch",
-                               "params", argArrayP,
-                               "methodName", "system.multicall",
-                               "params",
-                               "bogus_entry",
-                               "methodName", "test.foo",
-                               "params", argArrayP);
+                                "(("
+                                "{s:s,s:A}"   /* test.foo */
+                                "{s:s,s:A}"   /* test.bar */
+                                "{s:s,s:A}"   /* test.nosuch */
+                                "{s:s,s:A}"   /* test.foo */
+                                "))",
+                                "methodName", "test.foo",
+                                "params", argArrayP,
+                                "methodName", "test.bar",
+                                "params", argArrayP,
+                                "methodName", "test.nosuch",
+                                "params", argArrayP,
+                                "methodName", "test.foo",
+                                "params", argArrayP);
     TEST_NO_FAULT(&env);    
-    doRpc(&env, registryP, "system.multicall", multiP, &valueP);
+    doRpc(&env, registryP, "system.multicall", multiP, MULTI_CALLINFO,
+          &valueP);
     TEST_NO_FAULT(&env);
     xmlrpc_decompose_value(&env, valueP,
-                           "((i){s:i,s:s,*}{s:i,s:s,*}"
-                           "{s:i,s:s,*}{s:i,s:s,*}{s:i,s:s,*}(i))",
+                           "("
+                           "(i)"           /* result of test.foo */
+                           "{s:i,s:s,*}"   /* result of test.bar */
+                           "{s:i,s:s,*}"   /* result of test.nosuch */
+                           "(i)"           /* result of test.foo #2 */
+                           ")",
                            &foo1_result,
                            "faultCode", &bar_code,
                            "faultString", &bar_string,
                            "faultCode", &nosuch_code,
                            "faultString", &nosuch_string,
-                           "faultCode", &multi_code,
-                           "faultString", &multi_string,
-                           "faultCode", &bogus1_code,
-                           "faultString", &bogus1_string,
-                           "faultCode", &bogus2_code,
-                           "faultString", &bogus2_string,
                            &foo2_result);
     xmlrpc_DECREF(valueP);
     TEST_NO_FAULT(&env);    
@@ -353,14 +413,70 @@ test_system_multicall(xmlrpc_registry * const registryP) {
     TEST(bar_code == 123);
     TEST(strcmp(bar_string, "Test fault") == 0);
     TEST(nosuch_code == XMLRPC_NO_SUCH_METHOD_ERROR);
-    TEST(multi_code == XMLRPC_REQUEST_REFUSED_ERROR);
     TEST(foo2_result == 42);
     xmlrpc_DECREF(multiP);
     free(bar_string);
-    free(nosuch_string);
-    free(multi_string);
-    free(bogus1_string);
-    free(bogus2_string);
+    
+
+    /* Now for some invalid multi calls */
+
+    multiP = xmlrpc_build_value(&env,
+                               "(({s:s,s:V}{s:s,s:()}{s:s,s:V}))",
+                               "methodName", "test.foo",
+                               "params", argArrayP,
+                               "methodName", "system.multicall",
+                               "params",
+                               "methodName", "test.foo",
+                               "params", argArrayP);
+    TEST_NO_FAULT(&env);    
+    doRpc(&env, registryP, "system.multicall", multiP, MULTI_CALLINFO,
+          &valueP);
+    TEST_FAULT(&env, XMLRPC_REQUEST_REFUSED_ERROR);
+
+    xmlrpc_DECREF(multiP);
+    
+    multiP = xmlrpc_build_value(&env,
+                                "(({s:s,s:V}d))",
+                                "methodName", "test.foo",
+                                "params", argArrayP,
+                                5);
+
+    TEST_NO_FAULT(&env);
+    doRpc(&env, registryP, "system.multicall", multiP, MULTI_CALLINFO,
+          &valueP);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+
+    xmlrpc_DECREF(multiP);
+
+    multiP = xmlrpc_build_value(&env,
+                                "({s:s,s:V})",
+                                "methodName", "test.foo",
+                                "params", argArrayP);
+
+    TEST_NO_FAULT(&env);
+    doRpc(&env, registryP, "system.multicall", multiP, MULTI_CALLINFO,
+          &valueP);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+
+    xmlrpc_DECREF(multiP);
+
+    multiP = xmlrpc_build_value(&env, "(({}))");
+    TEST_NO_FAULT(&env);
+    doRpc(&env, registryP, "system.multicall", multiP, MULTI_CALLINFO,
+          &valueP);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+
+    xmlrpc_DECREF(multiP);
+
+    multiP = xmlrpc_build_value(&env, "(({s:s}))",
+                                "methodName", "test.foo");
+    TEST_NO_FAULT(&env);
+    doRpc(&env, registryP, "system.multicall", multiP, MULTI_CALLINFO,
+          &valueP);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+
+    xmlrpc_DECREF(multiP);
+
     
     xmlrpc_DECREF(argArrayP);
 
@@ -390,7 +506,7 @@ testCall(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);
 
     /* Call test.foo and check the result. */
-    doRpc(&env, registryP, "test.foo", argArrayP, &valueP);
+    doRpc(&env, registryP, "test.foo", argArrayP, FOO_CALLINFO, &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP != NULL);
     xmlrpc_decompose_value(&env, valueP, "i", &i);
@@ -400,7 +516,7 @@ testCall(xmlrpc_registry * const registryP) {
 
     /* Call test.bar and check the result. */
     xmlrpc_env_init(&env2);
-    doRpc(&env2, registryP, "test.bar", argArrayP, &valueP);
+    doRpc(&env2, registryP, "test.bar", argArrayP, BAR_CALLINFO, &valueP);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == 123);
     TEST(env2.fault_string && strcmp(env2.fault_string, "Test fault") == 0);
@@ -408,7 +524,7 @@ testCall(xmlrpc_registry * const registryP) {
 
     /* Call a non-existant method and check the result. */
     xmlrpc_env_init(&env2);
-    doRpc(&env2, registryP, "test.nosuch", argArrayP, &valueP);
+    doRpc(&env2, registryP, "test.nosuch", argArrayP, FOO_CALLINFO, &valueP);
     TEST(valueP == NULL);
     TEST_FAULT(&env2, XMLRPC_NO_SUCH_METHOD_ERROR);
     xmlrpc_env_clean(&env2);
@@ -439,9 +555,10 @@ testDefaultMethod(xmlrpc_registry * const registryP) {
                                    (xmlrpc_int32) 25, (xmlrpc_int32) 17); 
 
     xmlrpc_registry_set_default_method(&env, registryP, &test_default,
-                                       FOO_USER_DATA);
+                                       DEFAULT_SERVERINFO);
     TEST_NO_FAULT(&env);
-    doRpc(&env, registryP, "test.nosuch", argArrayP, &valueP);
+    doRpc(&env, registryP, "test.nosuch", argArrayP, DEFAULT_CALLINFO,
+          &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP != NULL);
     xmlrpc_decompose_value(&env, valueP, "i", &i);
@@ -449,9 +566,19 @@ testDefaultMethod(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);
     TEST(i == 84);
 
+    /* Now try it with old method interface */
+
+    doRpc(&env, registryP, "test.nosuch.old", argArrayP, NULL, &valueP);
+    TEST_NO_FAULT(&env);
+    TEST(valueP != NULL);
+    xmlrpc_read_int(&env, valueP, &i);
+    TEST_NO_FAULT(&env);
+    xmlrpc_DECREF(valueP);
+    TEST(i == 84);
+
     /* Change the default method. */
     xmlrpc_registry_set_default_method(&env, registryP, &test_default,
-                                       BAR_USER_DATA);
+                                       BAR_SERVERINFO);
     TEST_NO_FAULT(&env);
 
     xmlrpc_DECREF(argArrayP);
@@ -468,8 +595,8 @@ test_method_registry(void) {
 
     xmlrpc_env env, env2;
     xmlrpc_value * valueP;
-    xmlrpc_registry *registryP;
-    xmlrpc_mem_block *response;
+    xmlrpc_registry * registryP;
+    xmlrpc_mem_block * responseP;
 
     xmlrpc_env_init(&env);
 
@@ -482,10 +609,10 @@ test_method_registry(void) {
 
     /* Add some test methods. */
     xmlrpc_registry_add_method(&env, registryP, NULL, "test.foo",
-                               test_foo, FOO_USER_DATA);
+                               test_foo_type1, FOO_SERVERINFO);
     TEST_NO_FAULT(&env);
-    xmlrpc_registry_add_method(&env, registryP, NULL, "test.bar",
-                               test_bar, BAR_USER_DATA);
+    xmlrpc_registry_add_method2(&env, registryP, "test.bar",
+                                test_bar, NULL, NULL, BAR_SERVERINFO);
     TEST_NO_FAULT(&env);
 
     printf("\n");
@@ -493,20 +620,19 @@ test_method_registry(void) {
 
     test_system_multicall(registryP);
 
-    /* PASS bogus XML data and make sure our parser pukes gracefully.
-    ** (Because of the way the code is laid out, and the presence of other
-    ** test suites, this lets us skip tests for invalid XML-RPC data.) */
     xmlrpc_env_init(&env2);
-    response = xmlrpc_registry_process_call(&env, registryP, NULL,
-                                            expat_error_data,
-                                            strlen(expat_error_data));
+    xmlrpc_registry_process_call2(&env, registryP,
+                                  expat_error_data,
+                                  strlen(expat_error_data),
+                                  NULL,
+                                  &responseP);
     TEST_NO_FAULT(&env);
-    TEST(response != NULL);
-    valueP = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(response),
-                                  xmlrpc_mem_block_size(response));
+    TEST(responseP != NULL);
+    valueP = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(responseP),
+                                  xmlrpc_mem_block_size(responseP));
     TEST(valueP == NULL);
     TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
-    xmlrpc_mem_block_free(response);
+    xmlrpc_mem_block_free(responseP);
     xmlrpc_env_clean(&env2);
 
     printf("\n");

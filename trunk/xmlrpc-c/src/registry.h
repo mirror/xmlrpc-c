@@ -25,6 +25,7 @@ xmlrpc_dispatchCall(struct _xmlrpc_env *      const envP,
                     struct _xmlrpc_registry * const registryP,
                     const char *              const methodName, 
                     struct _xmlrpc_value *    const paramArrayP,
+                    void *                    const callInfoP,
                     struct _xmlrpc_value **   const resultPP);
 
 #endif

@@ -18,16 +18,24 @@ typedef void
                            void *         const userData);
 
 typedef xmlrpc_value *
-(*xmlrpc_method)(xmlrpc_env *   const envP,
-                 xmlrpc_value * const paramArrayP,
-                 void *         const userData);
+(*xmlrpc_method1)(xmlrpc_env *   const envP,
+                  xmlrpc_value * const paramArrayP,
+                  void *         const serverInfo);
+
+typedef xmlrpc_value *
+(*xmlrpc_method2)(xmlrpc_env *   const envP,
+                  xmlrpc_value * const paramArrayP,
+                  void *         const serverInfo,
+                  void *         const callInfo);
+
+typedef xmlrpc_method1 xmlrpc_method;  /* backward compatibility */
 
 typedef xmlrpc_value *
 (*xmlrpc_default_method)(xmlrpc_env *   const envP,
-                         const char *   const host,
+                         const char *   const callInfoP,
                          const char *   const methodName,
                          xmlrpc_value * const paramArrayP,
-                         void *         const userData);
+                         void *         const serverInfo);
 
 xmlrpc_registry *
 xmlrpc_registry_new(xmlrpc_env * const envP);
@@ -44,7 +52,7 @@ xmlrpc_registry_add_method(xmlrpc_env *      const envP,
                            const char *      const host,
                            const char *      const methodName,
                            xmlrpc_method     const method,
-                           void *            const userData);
+                           void *            const serverInfo);
 
 void
 xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
@@ -52,9 +60,18 @@ xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
                                  const char *      const host,
                                  const char *      const methodName,
                                  xmlrpc_method     const method,
-                                 void *            const userData,
+                                 void *            const serverInfo,
                                  const char *      const signature,
                                  const char *      const help);
+
+void
+xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            const char *      const methodName,
+                            xmlrpc_method2          method,
+                            const char *      const signatureString,
+                            const char *      const help,
+                            void *            const serverInfoP);
 
 void
 xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
@@ -84,6 +101,14 @@ xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
    Lower interface -- services to be used by an HTTP request handler
 -----------------------------------------------------------------------------*/
                     
+void
+xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
+                              xmlrpc_registry *   const registryP,
+                              const char *        const xmlData,
+                              size_t              const xmlLen,
+                              void *              const callInfo,
+                              xmlrpc_mem_block ** const outputPP);
+
 xmlrpc_mem_block *
 xmlrpc_registry_process_call(xmlrpc_env *      const envP,
                              xmlrpc_registry * const registryP,

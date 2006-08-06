@@ -833,12 +833,13 @@ createSwitchFromOsSocket(TOsSocket      const osSocket,
 static void
 createChannelFromOsSocket(TOsSocket     const osSocket,
                           TChannel **   const channelPP,
+                          void **       const channelInfoPP,
                           const char ** const errorP) {
 
 #ifdef WIN32
-    ChannelWinCreateWinsock(osSocket, channelPP, errorP);
+    ChannelWinCreateWinsock(osSocket, channelPP, channelInfoPP, errorP);
 #else
-    ChannelUnixCreateFd(osSocket, channelPP, errorP);
+    ChannelUnixCreateFd(osSocket, channelPP, channelInfoPP, errorP);
 #endif
 }
 
@@ -1390,6 +1391,12 @@ waitForConnectionCapacity(outstandingConnList * const outstandingConnListP) {
    Wait until there are fewer than the maximum allowed connections in
    progress.
 -----------------------------------------------------------------------------*/
+    /* We need to make this number configurable.  Note that MAX_CONN (16) is
+       also the backlog limit on the TCP socket, and they really aren't
+       related.  As it stands, we can have 16 connections in progress inside
+       Abyss plus 16 waiting in the the channel switch.
+    */
+
     while (outstandingConnListP->count >= MAX_CONN) {
         freeFinishedConns(outstandingConnListP);
         if (outstandingConnListP->firstP)
@@ -1431,11 +1438,13 @@ destroyChannel(void * const userHandle) {
    connection might be processed asynchronously in a background
    thread.
 
-   To wit, we destroy the connection's channel.
+   To wit, we destroy the connection's channel and release the memory
+   for the information about that channel.
 -----------------------------------------------------------------------------*/
     TConn * const connectionP = userHandle;
 
     ChannelDestroy(connectionP->channelP);
+    free(connectionP->channelInfoP);
 }
 
 
@@ -1450,8 +1459,9 @@ acceptAndProcessNextConnection(
     TConn * connectionP;
     const char * error;
     TChannel * channelP;
+    void * channelInfoP;
         
-    ChanSwitchAccept(srvP->chanSwitchP, &channelP, &error);
+    ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
     
     if (error) {
         TraceMsg("Failed to accept the next connection from a client "
@@ -1465,7 +1475,7 @@ acceptAndProcessNextConnection(
             
             waitForConnectionCapacity(outstandingConnListP);
             
-            ConnCreate(&connectionP, serverP, channelP,
+            ConnCreate(&connectionP, serverP, channelP, channelInfoP,
                        &serverFunc, &destroyChannel, ABYSS_BACKGROUND,
                        srvP->useSigchld,
                        &error);
@@ -1480,6 +1490,7 @@ acceptAndProcessNextConnection(
             } else {
                 xmlrpc_strfree(error);
                 ChannelDestroy(channelP);
+                free(channelInfoP);
             }
         } else {
             /* Accept function was interrupted before it got a connection */
@@ -1525,6 +1536,7 @@ ServerRun(TServer * const serverP) {
 static void
 serverRunChannel(TServer *     const serverP,
                  TChannel *    const channelP,
+                 void *        const channelInfoP,
                  const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Do the HTTP transaction on the channel 'channelP'.
@@ -1539,7 +1551,7 @@ serverRunChannel(TServer *     const serverP,
     srvP->keepalivemaxconn = 1;
 
     ConnCreate(&connectionP, 
-               serverP, channelP,
+               serverP, channelP, channelInfoP,
                &serverFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
                &error);
     if (error) {
@@ -1560,6 +1572,7 @@ serverRunChannel(TServer *     const serverP,
 void
 ServerRunChannel(TServer *     const serverP,
                  TChannel *    const channelP,
+                 void *        const channelInfoP,
                  const char ** const errorP) {
 /*----------------------------------------------------------------------------
   Do the HTTP transaction on the channel 'channelP'.
@@ -1575,7 +1588,7 @@ ServerRunChannel(TServer *     const serverP,
                         "its own socket.  "
                         "Try ServerRun() or ServerCreateNoAccept().");
     else
-        serverRunChannel(serverP, channelP, errorP);
+        serverRunChannel(serverP, channelP, channelInfoP, errorP);
 }
 
 
@@ -1597,7 +1610,9 @@ ServerRunConn2(TServer *     const serverP,
                         "socket.  You should use ServerRunChannel() instead, "
                         "anyway.");
     else
-        ServerRunChannel(serverP, channelP, errorP);
+        ServerRunChannel(serverP,
+                         channelP, SocketGetChannelInfo(connectedSocketP),
+                         errorP);
 }
 
 
@@ -1607,16 +1622,18 @@ ServerRunConn(TServer * const serverP,
               TOsSocket const connectedOsSocket) {
 
     TChannel * channelP;
+    void * channelInfoP;
     const char * error;
 
-    createChannelFromOsSocket(connectedOsSocket, &channelP, &error);
+    createChannelFromOsSocket(connectedOsSocket,
+                              &channelP, &channelInfoP, &error);
     if (error) {
         TraceExit("Unable to use supplied socket");
         xmlrpc_strfree(error);
     } else {
         const char * error;
 
-        ServerRunChannel(serverP, channelP, &error);
+        ServerRunChannel(serverP, channelP, channelInfoP, &error);
 
         if (error) {
             TraceExit("Failed to run server on connection on file "
@@ -1624,6 +1641,7 @@ ServerRunConn(TServer * const serverP,
             xmlrpc_strfree(error);
         }
         ChannelDestroy(channelP);
+        free(channelInfoP);
     }
 }
 
@@ -1647,10 +1665,11 @@ ServerRunOnce(TServer * const serverP) {
     else {
         const char * error;
         TChannel *   channelP;
+        void *       channelInfoP;
     
         srvP->keepalivemaxconn = 1;
 
-        ChanSwitchAccept(srvP->chanSwitchP, &channelP, &error);
+        ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
         if (error) {
             TraceMsg("Failed to accept the next connection from a client "
                      "at the channel level.  %s", error);
@@ -1659,7 +1678,7 @@ ServerRunOnce(TServer * const serverP) {
             if (channelP) {
                 const char * error;
 
-                serverRunChannel(serverP, channelP, &error);
+                serverRunChannel(serverP, channelP, channelInfoP, &error);
 
                 if (error) {
                     const char * peerDesc;
@@ -1670,6 +1689,7 @@ ServerRunOnce(TServer * const serverP) {
                     xmlrpc_strfree(error);
                 }
                 ChannelDestroy(channelP);
+                free(channelInfoP);
             }
         }
     }

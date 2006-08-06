@@ -32,10 +32,13 @@ struct _TSocket {
     */
     TChanSwitch *  chanSwitchP;
     TChannel * channelP;
+
+    void * channelInfoP;  /* Defined only for a channel socket */
 };
 
 void
 SocketCreateChannel(TChannel * const channelP,
+                    void *     const channelInfoP,
                     TSocket ** const socketPP);
 
 void
@@ -47,6 +50,9 @@ SocketGetChanSwitch(TSocket * const socketP);
 
 TChannel *
 SocketGetChannel(TSocket * const socketP);
+
+void *
+SocketGetChannelInfo(TSocket * const socketP);
 
 #endif
 

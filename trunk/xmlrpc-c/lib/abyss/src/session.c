@@ -87,6 +87,15 @@ SessionGetRequestInfo(TSession *            const sessionP,
 
 
 
+void
+SessionGetChannelInfo(TSession * const sessionP,
+                      void **    const channelInfoPP) {
+    
+    *channelInfoPP = sessionP->conn->channelInfoP;
+}
+
+
+
 abyss_bool
 SessionLog(TSession * const sessionP) {
 

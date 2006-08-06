@@ -46,6 +46,7 @@ socketCreate(TSocket ** const socketPP) {
 
 void
 SocketCreateChannel(TChannel * const channelP,
+                    void *     const channelInfoP,
                     TSocket ** const socketPP) {
 
     TSocket * socketP;
@@ -53,8 +54,9 @@ SocketCreateChannel(TChannel * const channelP,
     socketCreate(&socketP);
 
     if (socketP) {
-        socketP->channelP    = channelP;
-        socketP->chanSwitchP = NULL;
+        socketP->channelP     = channelP;
+        socketP->chanSwitchP  = NULL;
+        socketP->channelInfoP = channelInfoP;
         *socketPP = socketP;
     }
 }
@@ -83,8 +85,10 @@ SocketDestroy(TSocket * const socketP) {
 
     assert(socketP->signature == socketSignature);
 
-    if (socketP->channelP)
+    if (socketP->channelP) {
         ChannelDestroy(socketP->channelP);
+        free(socketP->channelInfoP);
+    }
 
     if (socketP->chanSwitchP)
         ChanSwitchDestroy(socketP->chanSwitchP);
@@ -108,4 +112,12 @@ TChannel *
 SocketGetChannel(TSocket * const socketP) {
 
     return socketP->channelP;
+}
+
+
+
+void *
+SocketGetChannelInfo(TSocket * const socketP) {
+
+    return socketP->channelInfoP;
 }

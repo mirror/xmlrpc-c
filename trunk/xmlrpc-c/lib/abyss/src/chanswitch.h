@@ -21,6 +21,7 @@ typedef void SwitchListenImpl(TChanSwitch * const chanSwitchP,
 
 typedef void SwitchAcceptImpl(TChanSwitch * const chanSwitchP,
                               TChannel **   const channelPP,
+                              void **       const channelInfoP,
                               const char ** const errorP);
 
 struct TChanSwitchVtbl {
@@ -61,6 +62,7 @@ ChanSwitchListen(TChanSwitch * const chanSwitchP,
 void
 ChanSwitchAccept(TChanSwitch * const chanSwitchP,
                  TChannel **   const channelPP,
+                 void **       const channelInfoPP,
                  const char ** const errorP);
 
 #endif

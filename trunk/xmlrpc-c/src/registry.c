@@ -30,10 +30,15 @@
   the struct a "method info" array.  A method info array has the
   following items:
 
-     0: cptr: method function ptr
+     0: cptr: method function ptr, Type 1
      1: cptr: user data
      2: array: signature list
      3: string: help text.
+     4: cptr: method function ptr, Type 2
+
+  One of the method funciton pointers is null and the other isn't.
+  (The reason there are two is backward compatibility.  Old programs
+  set up the registry with Type 1; modern ones set it up with Type 2).
     
   The signature list array contains one item for each form of call (a
   single method might have multiple forms, e.g. one takes two integer
@@ -110,16 +115,15 @@ xmlrpc_registry_free(xmlrpc_registry * const registryP) {
 
 
 
-void 
-xmlrpc_registry_add_method_w_doc(
-    xmlrpc_env *      const envP,
-    xmlrpc_registry * const registryP,
-    const char *      const host ATTR_UNUSED,
-    const char *      const methodName,
-    xmlrpc_method     const method,
-    void *            const userData,
-    const char *      const signatureString,
-    const char *      const help) {
+static void 
+registryAddMethod(xmlrpc_env *      const envP,
+                  xmlrpc_registry * const registryP,
+                  const char *      const methodName,
+                  xmlrpc_method1          method1,
+                  xmlrpc_method2          method2,
+                  const char *      const signatureString,
+                  const char *      const help,
+                  void *            const serverInfoP) {
 
     const char * const helpString =
         help ? help : "No help is available for this method.";
@@ -129,9 +133,8 @@ xmlrpc_registry_add_method_w_doc(
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(registryP);
-    XMLRPC_ASSERT(host == NULL);
     XMLRPC_ASSERT_PTR_OK(methodName);
-    XMLRPC_ASSERT_PTR_OK(method);
+    XMLRPC_ASSERT(method1 != NULL || method2 != NULL);
 
     xmlrpc_env_init(&env);
 
@@ -144,8 +147,9 @@ xmlrpc_registry_add_method_w_doc(
 
         XMLRPC_ASSERT_VALUE_OK(signatureListP);
 
-        methodInfoP = xmlrpc_build_value(envP, "(ppVs)", (void*) method,
-                                         userData, signatureListP, helpString);
+        methodInfoP = xmlrpc_build_value(
+            envP, "(ppAsp)", method1, serverInfoP,
+            signatureListP, helpString, method2);
         if (!envP->fault_occurred) {
             xmlrpc_struct_set_value(envP, registryP->_methods,
                                     methodName, methodInfoP);
@@ -160,86 +164,99 @@ xmlrpc_registry_add_method_w_doc(
 
 
 void 
-xmlrpc_registry_add_method(xmlrpc_env *env,
-                           xmlrpc_registry *registry,
-                           const char *host,
-                           const char *method_name,
-                           xmlrpc_method method,
-                           void *user_data) {
+xmlrpc_registry_add_method_w_doc(
+    xmlrpc_env *      const envP,
+    xmlrpc_registry * const registryP,
+    const char *      const host ATTR_UNUSED,
+    const char *      const methodName,
+    xmlrpc_method1    const method,
+    void *            const serverInfo,
+    const char *      const signatureString,
+    const char *      const help) {
 
-    xmlrpc_registry_add_method_w_doc (env, registry, host, method_name,
-                      method, user_data, "?",
-                      "No help is available for this method.");
+    XMLRPC_ASSERT(host == NULL);
+
+    registryAddMethod(envP, registryP, methodName, method, NULL,
+                      signatureString, help, serverInfo);
 }
 
 
 
-/*=========================================================================
-**  xmlrpc_registry_set_default_method
-**=========================================================================
-**  See xmlrpc.h for more documentation.
-*/
+void 
+xmlrpc_registry_add_method(xmlrpc_env *      const envP,
+                           xmlrpc_registry * const registryP,
+                           const char *      const host,
+                           const char *      const methodName,
+                           xmlrpc_method1          method,
+                           void *            const serverInfoP) {
+
+    xmlrpc_registry_add_method_w_doc(
+        envP, registryP, host, methodName,
+        method, serverInfoP, "?", "No help is available for this method.");
+}
+
+
+
+void
+xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            const char *      const methodName,
+                            xmlrpc_method2          method,
+                            const char *      const signatureString,
+                            const char *      const help,
+                            void *            const serverInfo) {
+
+    registryAddMethod(envP, registryP, methodName, NULL, method,
+                      signatureString, help, serverInfo);
+}
+
+
 
 void 
-xmlrpc_registry_set_default_method(xmlrpc_env *env,
-                                   xmlrpc_registry *registry,
-                                   xmlrpc_default_method handler,
-                                   void *user_data) {
-    xmlrpc_value *method_info;
+xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
+                                   xmlrpc_registry *     const registryP,
+                                   xmlrpc_default_method       handler,
+                                   void *                const serverInfoP) {
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(registry);
+    xmlrpc_value * methodInfoP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(registryP);
     XMLRPC_ASSERT_PTR_OK(handler);
 
-    /* Error-handling preconditions. */
-    method_info = NULL;
-    
-    /* Store our method and user data into our hash table. */
-    method_info = xmlrpc_build_value(env, "(pp)", (void*) handler, user_data);
-    XMLRPC_FAIL_IF_FAULT(env);
+    methodInfoP = xmlrpc_build_value(envP, "(pp)", (void*) handler,
+                                     serverInfoP);
+    if (!envP->fault_occurred) {
+        /* First dispose of any pre-existing default method */
+        if (registryP->_default_method)
+            xmlrpc_DECREF(registryP->_default_method);
 
-    /* Dispose of any pre-existing default method and install ours. */
-    if (registry->_default_method)
-        xmlrpc_DECREF(registry->_default_method);
-    registry->_default_method = method_info;
-    
-cleanup:
-    if (env->fault_occurred) {
-        if (method_info)
-            xmlrpc_DECREF(method_info);
-    }
+        registryP->_default_method = methodInfoP;
+    }    
 }
 
 
 
 
 void 
-xmlrpc_registry_set_preinvoke_method(xmlrpc_env *env,
-                                     xmlrpc_registry *registry,
+xmlrpc_registry_set_preinvoke_method(xmlrpc_env *      const envP,
+                                     xmlrpc_registry * const registryP,
                                      xmlrpc_preinvoke_method handler,
-                                     void *user_data) {
-    xmlrpc_value *method_info;
+                                     void *            const serverInfo) {
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(registry);
+    xmlrpc_value * methodInfoP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(registryP);
     XMLRPC_ASSERT_PTR_OK(handler);
 
-    /* Error-handling preconditions. */
-    method_info = NULL;
-
     /* Store our method and user data into our hash table. */
-    method_info = xmlrpc_build_value(env, "(pp)", (void*) handler, user_data);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Dispose of any pre-existing preinvoke method and install ours. */
-    if (registry->_preinvoke_method)
-        xmlrpc_DECREF(registry->_preinvoke_method);
-    registry->_preinvoke_method = method_info;
-
- cleanup:
-    if (env->fault_occurred) {
-        if (method_info)
-            xmlrpc_DECREF(method_info);
+    methodInfoP = xmlrpc_build_value(envP, "(pp)",
+                                     (void*) handler, serverInfo);
+    if (!envP->fault_occurred) {
+        if (registryP->_preinvoke_method)
+            xmlrpc_DECREF(registryP->_preinvoke_method);
+        registryP->_preinvoke_method = methodInfoP;
     }
 }
 
@@ -276,14 +293,47 @@ callPreinvokeMethodIfAny(xmlrpc_env *      const envP,
     /* Get the preinvoke method, if it is set. */
     if (registryP->_preinvoke_method) {
         xmlrpc_preinvoke_method preinvoke_method;
-        void * user_data;
+        void * serverInfo;
 
         xmlrpc_parse_value(envP, registryP->_preinvoke_method, "(pp)",
-                           &preinvoke_method, &user_data);
+                           &preinvoke_method, &serverInfo);
         if (!envP->fault_occurred)
             (*preinvoke_method)(envP, methodName,
-                                paramArrayP, user_data);
+                                paramArrayP, serverInfo);
     }
+}
+
+
+
+static void
+callNamedMethod(xmlrpc_env *    const envP,
+                xmlrpc_value *  const methodInfoP,
+                xmlrpc_value *  const paramArrayP,
+                void *          const callInfoP,
+                xmlrpc_value ** const resultPP) {
+
+    xmlrpc_method1 methodType1;
+    xmlrpc_method2 methodType2;
+    void * serverInfoP;
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_value(&env, methodInfoP, "(pp--p*)",
+                       &methodType1, &serverInfoP, &methodType2);
+    if (envP->fault_occurred)
+        xmlrpc_faultf(envP, "Internal method registry error.  Couldn't "
+                      "parse method info.  %s", env.fault_string);
+    else {
+        if (methodType2)
+            *resultPP = (*methodType2)(envP, paramArrayP,
+                                       serverInfoP, callInfoP);
+        else {
+            assert(methodType1);
+            *resultPP = (*methodType1)(envP, paramArrayP, serverInfoP);
+        }
+    }
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -293,35 +343,27 @@ callDefaultMethod(xmlrpc_env *    const envP,
                   xmlrpc_value *  const defaultMethodInfo,
                   const char *    const methodName,
                   xmlrpc_value *  const paramArrayP,
+                  void *          const callInfoP,
                   xmlrpc_value ** const resultPP) {
 
-    xmlrpc_default_method default_method;
-    void * user_data;
+    xmlrpc_default_method defaultMethod;
+    void * serverInfo;
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
 
     xmlrpc_parse_value(envP, defaultMethodInfo, "(pp)",
-                       &default_method, &user_data);
+                       &defaultMethod, &serverInfo);
+    if (envP->fault_occurred)
+        xmlrpc_faultf(envP, "Internal method registry error.  Couldn't "
+                      "parse default method info.  %s", env.fault_string);
+    else
+        *resultPP = (*defaultMethod)(envP, callInfoP, methodName,
+                                     paramArrayP, serverInfo);
 
-    if (!envP->fault_occurred)
-        *resultPP = (*default_method)(envP, NULL, methodName,
-                                      paramArrayP, user_data);
+    xmlrpc_env_clean(&env);
 }
     
-
-
-static void
-callNamedMethod(xmlrpc_env *    const envP,
-                xmlrpc_value *  const methodInfo,
-                xmlrpc_value *  const paramArrayP,
-                xmlrpc_value ** const resultPP) {
-
-    xmlrpc_method method;
-    void * user_data;
-    
-    xmlrpc_parse_value(envP, methodInfo, "(pp*)", &method, &user_data);
-    if (!envP->fault_occurred)
-        *resultPP = (*method)(envP, paramArrayP, user_data);
-}
-
 
 
 void
@@ -329,6 +371,7 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
                     xmlrpc_registry * const registryP,
                     const char *      const methodName, 
                     xmlrpc_value *    const paramArrayP,
+                    void *            const callInfoP,
                     xmlrpc_value **   const resultPP) {
 
     callPreinvokeMethodIfAny(envP, registryP, methodName, paramArrayP);
@@ -339,12 +382,13 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
                                  methodName, &methodInfoP);
         if (!envP->fault_occurred) {
             if (methodInfoP) {
-                callNamedMethod(envP, methodInfoP, paramArrayP, resultPP);
+                callNamedMethod(envP, methodInfoP, paramArrayP, callInfoP,
+                                resultPP);
                 xmlrpc_DECREF(methodInfoP);
             } else {
                 if (registryP->_default_method)
                     callDefaultMethod(envP, registryP->_default_method, 
-                                      methodName, paramArrayP,
+                                      methodName, paramArrayP, callInfoP,
                                       resultPP);
                 else {
                     /* No matching method, and no default. */
@@ -368,34 +412,35 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
 **
 */
 
-xmlrpc_mem_block *
-xmlrpc_registry_process_call(xmlrpc_env *      const envP,
-                             xmlrpc_registry * const registryP,
-                             const char *      const host ATTR_UNUSED,
-                             const char *      const xml_data,
-                             size_t            const xml_len) {
+void
+xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
+                              xmlrpc_registry *   const registryP,
+                              const char *        const callXml,
+                              size_t              const callXmlLen,
+                              void *              const callInfo,
+                              xmlrpc_mem_block ** const responseXmlPP) {
 
-    xmlrpc_mem_block * output;
+    xmlrpc_mem_block * responseXmlP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(xml_data);
+    XMLRPC_ASSERT_PTR_OK(callXml);
     
-    xmlrpc_traceXml("XML-RPC CALL", xml_data, xml_len);
+    xmlrpc_traceXml("XML-RPC CALL", callXml, callXmlLen);
 
     /* Allocate our output buffer.
     ** If this fails, we need to die in a special fashion. */
-    output = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
+    responseXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
     if (!envP->fault_occurred) {
         const char * methodName;
-        xmlrpc_value * paramArray;
+        xmlrpc_value * paramArrayP;
         xmlrpc_env fault;
         xmlrpc_env parseEnv;
 
         xmlrpc_env_init(&fault);
         xmlrpc_env_init(&parseEnv);
 
-        xmlrpc_parse_call(&parseEnv, xml_data, xml_len, 
-                          &methodName, &paramArray);
+        xmlrpc_parse_call(&parseEnv, callXml, callXmlLen, 
+                          &methodName, &paramArrayP);
 
         if (parseEnv.fault_occurred)
             xmlrpc_env_set_fault_formatted(
@@ -405,11 +450,11 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
         else {
             xmlrpc_value * result;
             
-            xmlrpc_dispatchCall(&fault, registryP, methodName, paramArray,
-                                &result);
+            xmlrpc_dispatchCall(&fault, registryP, methodName, paramArrayP,
+                                callInfo, &result);
 
             if (!fault.fault_occurred) {
-                xmlrpc_serialize_response(envP, output, result);
+                xmlrpc_serialize_response(envP, responseXmlP, result);
 
                 /* A comment here used to say that
                    xmlrpc_serialize_response() could fail and "leave
@@ -421,23 +466,42 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
                 xmlrpc_DECREF(result);
             } 
             xmlrpc_strfree(methodName);
-            xmlrpc_DECREF(paramArray);
+            xmlrpc_DECREF(paramArrayP);
         }
         if (!envP->fault_occurred && fault.fault_occurred)
-            xmlrpc_serialize_fault(envP, output, &fault);
+            xmlrpc_serialize_fault(envP, responseXmlP, &fault);
 
         xmlrpc_env_clean(&parseEnv);
         xmlrpc_env_clean(&fault);
 
         if (envP->fault_occurred)
-            XMLRPC_MEMBLOCK_FREE(char, output);
-        else
+            XMLRPC_MEMBLOCK_FREE(char, responseXmlP);
+        else {
+            *responseXmlPP = responseXmlP;
             xmlrpc_traceXml("XML-RPC RESPONSE", 
-                            XMLRPC_MEMBLOCK_CONTENTS(char, output),
-                            XMLRPC_MEMBLOCK_SIZE(char, output));
+                            XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlP),
+                            XMLRPC_MEMBLOCK_SIZE(char, responseXmlP));
+        }
     }
-    return output;
 }
+
+
+
+xmlrpc_mem_block *
+xmlrpc_registry_process_call(xmlrpc_env *      const envP,
+                             xmlrpc_registry * const registryP,
+                             const char *      const host ATTR_UNUSED,
+                             const char *      const callXml,
+                             size_t            const callXmlLen) {
+
+    xmlrpc_mem_block * responseXmlP;
+
+    xmlrpc_registry_process_call2(envP, registryP, callXml, callXmlLen, NULL,
+                                  &responseXmlP);
+
+    return responseXmlP;
+}
+
 
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.

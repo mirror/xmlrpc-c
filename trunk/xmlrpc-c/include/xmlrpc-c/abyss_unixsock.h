@@ -1,6 +1,11 @@
 /* This is just a sub-file for abyss.h */
 
-struct sockaddr;
+#include <sys/socket.h>
+
+struct abyss_unix_chaninfo {
+    size_t peerAddrLen;
+    struct sockaddr peerAddr;
+};
 
 void
 ChanSwitchUnixCreate(uint16_t       const portNumber,
@@ -13,9 +18,10 @@ ChanSwitchUnixCreateFd(int            const fd,
                        const char **  const errorP);
 
 void
-ChannelUnixCreateFd(int           const fd,
-                    TChannel **   const channelPP,
-                    const char ** const errorP);
+ChannelUnixCreateFd(int                           const fd,
+                    TChannel **                   const channelPP,
+                    struct abyss_unix_chaninfo ** const channelInfoPP,
+                    const char **                 const errorP);
 
 void
 ChannelUnixGetPeerName(TChannel *         const channelP,
@@ -28,3 +34,9 @@ SocketUnixCreateFd(int        const fd,
                    TSocket ** const socketPP);
 
 typedef int TOsSocket;
+    /* TOsSocket is the type of a conventional socket offered by our OS.
+       This is for backward compatibility; everyone should use TChanSwitch
+       and TChannel instead today.
+    */
+
+

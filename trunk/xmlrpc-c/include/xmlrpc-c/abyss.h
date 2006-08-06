@@ -73,20 +73,22 @@ MIMETypeAdd(const char * const type,
 
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
+#define HAVE_CHANSWITCH
 
 typedef struct _TChanSwitch TChanSwitch;
 typedef struct _TChannel TChannel;
 typedef struct _TSocket TSocket;
 
-/* TOsSocket is the type of a conventional socket offered by our OS.
-   This is for backward compatibility; everyone should use TSocket
-   sockets today.
-*/
 #ifdef WIN32
   #include <xmlrpc-c/abyss_winsock.h>
 #else
   #include <xmlrpc-c/abyss_unixsock.h>
 #endif
+
+/* If you're wondering where the constructors for TChanSwitch,
+   TChannel, and TSocket are: They're implementation-specific, so look
+   in abyss_unixsock.h, etc.
+*/
 
 void
 ChanSwitchDestroy(TChanSwitch * const chanSwitchP);
@@ -202,6 +204,7 @@ ServerRunConn(TServer * const serverP,
 void
 ServerRunChannel(TServer *     const serverP,
                  TChannel *    const channelP,
+                 void *        const channelInfoP,
                  const char ** const errorP);
 
 #define HAVE_SERVER_RUN_CONN_2
@@ -323,6 +326,10 @@ SessionGetReadData(TSession *    const sessionP,
 void
 SessionGetRequestInfo(TSession *            const sessionP,
                       const TRequestInfo ** const requestInfoPP);
+
+void
+SessionGetChannelInfo(TSession * const sessionP,
+                      void **    const channelInfoPP);
 
 char *
 RequestHeaderValue(TSession *   const sessionP,

@@ -441,6 +441,9 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
                        const struct decompTreeNode * const decompRootP) {
 
     switch (decompRootP->formatSpecChar) {
+    case '-':
+        /* There's nothing to validate or return */
+        break;
     case 'i':
         xmlrpc_read_int(envP, valueP, decompRootP->store.Tinteger.valueP);
         break;
@@ -917,6 +920,9 @@ createDecompTreeNext(xmlrpc_env *             const envP,
         decompNodeP->formatSpecChar = *(*formatP)++;
         
         switch (decompNodeP->formatSpecChar) {
+        case '-':
+            /* There's nothing to store */
+            break;
         case 'i':
             decompNodeP->store.Tinteger.valueP =
                 (xmlrpc_int32*) va_arg(*argsP, xmlrpc_int32*);
@@ -963,6 +969,7 @@ createDecompTreeNext(xmlrpc_env *             const envP,
             break;
 
         case 'n':
+            /* There's no value to store */
             break;
 
         case 'p':

@@ -106,6 +106,7 @@ void
 ConnCreate(TConn **            const connectionPP,
            TServer *           const serverP,
            TChannel *          const channelP,
+           void *              const channelInfoP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
@@ -142,16 +143,17 @@ ConnCreate(TConn **            const connectionPP,
         xmlrpc_asprintf(errorP, "Unable to allocate memory for a connection "
                         "descriptor.");
     else {
-        connectionP->server     = serverP;
-        connectionP->channelP   = channelP;
-        connectionP->buffersize = 0;
-        connectionP->bufferpos  = 0;
-        connectionP->finished   = FALSE;
-        connectionP->job        = job;
-        connectionP->done       = done;
-        connectionP->inbytes    = 0;
-        connectionP->outbytes   = 0;
-        connectionP->trace      = getenv("ABYSS_TRACE_CONN");
+        connectionP->server       = serverP;
+        connectionP->channelP     = channelP;
+        connectionP->channelInfoP = channelInfoP;
+        connectionP->buffersize   = 0;
+        connectionP->bufferpos    = 0;
+        connectionP->finished     = FALSE;
+        connectionP->job          = job;
+        connectionP->done         = done;
+        connectionP->inbytes      = 0;
+        connectionP->outbytes     = 0;
+        connectionP->trace        = getenv("ABYSS_TRACE_CONN");
 
         makeThread(connectionP, foregroundBackground, useSigchld, errorP);
     }

@@ -58,7 +58,8 @@ setupSignalHandlers(void) {
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP, 
            xmlrpc_value * const paramArrayP,
-           void *         const userData ATTR_UNUSED) {
+           void *         const serverInfo ATTR_UNUSED,
+           void *         const channelInfo ATTR_UNUSED) {
     
     xmlrpc_int x, y, z;
 
@@ -95,8 +96,8 @@ main(int           const argc,
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method(
-        &env, registryP, NULL, "sample.add", &sample_add, NULL);
+    xmlrpc_registry_add_method2(
+        &env, registryP, "sample.add", &sample_add, NULL, NULL, NULL);
 
     ServerCreateNoAccept(&abyssServer, "XmlRpcServer", NULL, NULL);
     

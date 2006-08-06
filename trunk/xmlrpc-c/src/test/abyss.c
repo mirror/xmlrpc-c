@@ -107,7 +107,6 @@ testChanSwitch(void) {
 static void
 testChannel(void) {
 
-    TChannel * channelP;
     int rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
@@ -118,9 +117,11 @@ testChannel(void) {
     } else {
         int const fd = rc;
 
+        TChannel * channelP;
+        struct abyss_unix_chaninfo * channelInfoP;
         const char * error;
 
-        ChannelUnixCreateFd(fd, &channelP, &error);
+        ChannelUnixCreateFd(fd, &channelP, &channelInfoP, &error);
 
         TEST(strstr(error, "not in connected"));
     }

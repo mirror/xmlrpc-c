@@ -357,39 +357,92 @@ static struct TChannelVtbl const channelVtbl = {
 
 
 
-void
-ChannelUnixCreateFd(int           const fd,
-                    TChannel **   const channelPP,
-                    const char ** const errorP) {
+static void
+makeChannelInfo(struct abyss_unix_chaninfo ** const channelInfoPP,
+                struct sockaddr               const peerAddr,
+                socklen_t                     const peerAddrLen,
+                const char **                 const errorP) {
 
-    if (!connected(fd))
-        xmlrpc_asprintf(errorP, "Socket on file descriptor %d is not in "
-                        "connected state.", fd);
+    struct abyss_unix_chaninfo * channelInfoP;
+
+    MALLOCVAR(channelInfoP);
+    
+    if (channelInfoP == NULL)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory");
     else {
-        struct socketUnix * socketUnixP;
+        channelInfoP->peerAddrLen = peerAddrLen;
+        channelInfoP->peerAddr    = peerAddr;
+        
+        *channelInfoPP = channelInfoP;
 
-        MALLOCVAR(socketUnixP);
+        *errorP = NULL;
+    }
+}
 
-        if (socketUnixP == NULL)
-            xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
-                            "socket descriptor");
+
+
+static void
+makeChannelFromFd(int const fd,
+                  TChannel ** const channelPP,
+                  const char ** const errorP) {
+
+    struct socketUnix * socketUnixP;
+
+    MALLOCVAR(socketUnixP);
+    
+    if (socketUnixP == NULL)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
+                        "socket descriptor");
+    else {
+        TChannel * channelP;
+        
+        socketUnixP->fd = fd;
+        socketUnixP->userSuppliedFd = TRUE;
+        
+        ChannelCreate(&channelVtbl, socketUnixP, &channelP);
+        
+        if (channelP == NULL)
+            xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                            "channel descriptor.");
         else {
-            TChannel * channelP;
+            *channelPP = channelP;
+            *errorP = NULL;
+        }
+        if (*errorP)
+            free(socketUnixP);
+    }
+}
 
-            socketUnixP->fd = fd;
-            socketUnixP->userSuppliedFd = TRUE;
-            
-            ChannelCreate(&channelVtbl, socketUnixP, &channelP);
 
-            if (channelP == NULL)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
-                                "channel descriptor.");
-            else {
-                *channelPP = channelP;
-                *errorP = NULL;
-            }
+
+void
+ChannelUnixCreateFd(int                           const fd,
+                    TChannel **                   const channelPP,
+                    struct abyss_unix_chaninfo ** const channelInfoPP,
+                    const char **                 const errorP) {
+
+    struct sockaddr peerAddr;
+    socklen_t peerAddrLen;
+    int rc;
+
+    peerAddrLen = sizeof(peerAddrLen);
+
+    rc = getpeername(fd, &peerAddr, &peerAddrLen);
+
+    if (rc != 0) {
+        if (errno == ENOTCONN)
+            xmlrpc_asprintf(errorP, "Socket on file descriptor %d is not in "
+                            "connected state.", fd);
+        else
+            xmlrpc_asprintf(errorP, "getpeername() failed on fd %d.  "
+                            "errno=%d (%s)", fd, errno, strerror(errno));
+    } else {
+        makeChannelInfo(channelInfoPP, peerAddr, peerAddrLen, errorP);
+        if (!*errorP) {
+            makeChannelFromFd(fd, channelPP, errorP);
+
             if (*errorP)
-                free(socketUnixP);
+                free(*channelInfoPP);
         }
     }
 }
@@ -572,7 +625,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 
     /* Disable the Nagle algorithm to make persistant connections faster */
 
-    setsockopt(socketUnixP->fd, IPPROTO_TCP,TCP_NODELAY,
+    setsockopt(socketUnixP->fd, IPPROTO_TCP, TCP_NODELAY,
                &minus1, sizeof(minus1));
 
     rc = listen(socketUnixP->fd, backlog);
@@ -589,6 +642,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 static void
 chanSwitchAccept(TChanSwitch * const chanSwitchP,
                  TChannel **   const channelPP,
+                 void **       const channelInfoPP,
                  const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Accept a connection via the channel switch *chanSwitchP.  Return as
@@ -609,11 +663,11 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
     *errorP     = NULL;  /* No error yet */
 
     while (!channelP && !*errorP && !interrupted) {
-        struct sockaddr_in sa;
-        socklen_t size = sizeof(sa);
+        struct sockaddr peerAddr;
+        socklen_t size = sizeof(peerAddr);
         int rc;
 
-        rc = accept(listenSocketP->fd, (struct sockaddr *)&sa, &size);
+        rc = accept(listenSocketP->fd, &peerAddr, &size);
 
         if (rc >= 0) {
             int const acceptedFd = rc;
@@ -624,16 +678,24 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
             if (!acceptedSocketP)
                 xmlrpc_asprintf(errorP, "Unable to allocate memory");
             else {
+                struct abyss_unix_chaninfo * channelInfoP;
                 acceptedSocketP->fd = acceptedFd;
                 acceptedSocketP->userSuppliedFd = FALSE;
                 
-                ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
-                if (!channelP)
-                    xmlrpc_asprintf(errorP,
-                                    "Failed to create TChannel object.");
-                else
-                    *errorP = NULL;
+                makeChannelInfo(&channelInfoP, peerAddr, size, errorP);
+                if (!*errorP) {
+                    *channelInfoPP = channelInfoP;
 
+                    ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
+                    if (!channelP)
+                        xmlrpc_asprintf(errorP,
+                                        "Failed to create TChannel object.");
+                    else
+                        *errorP = NULL;
+
+                    if (*errorP)
+                        free(channelInfoP);
+                }
                 if (*errorP)
                     free(acceptedSocketP);
             }
@@ -665,9 +727,10 @@ SocketUnixCreateFd(int        const fd,
 
     if (connected(fd)) {
         TChannel * channelP;
-        ChannelUnixCreateFd(fd, &channelP, &error);
+        struct abyss_unix_chaninfo * channelInfoP;
+        ChannelUnixCreateFd(fd, &channelP, &channelInfoP, &error);
         if (!error)
-            SocketCreateChannel(channelP, &socketP);
+            SocketCreateChannel(channelP, channelInfoP, &socketP);
     } else {
         TChanSwitch * chanSwitchP;
         ChanSwitchUnixCreateFd(fd, &chanSwitchP, &error);

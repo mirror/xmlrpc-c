@@ -140,16 +140,16 @@ ChanSwitchListen(TChanSwitch * const chanSwitchP,
 void
 ChanSwitchAccept(TChanSwitch * const chanSwitchP,
                  TChannel **   const channelPP,
+                 void **       const channelInfoPP,
                  const char ** const errorP) {
 
     if (SwitchTraceIsActive)
         fprintf(stderr, "Getting a connection from Channel switch %p...\n",
                 chanSwitchP);
 
-    (*chanSwitchP->vtbl.accept)(chanSwitchP, channelPP, errorP);
+    (*chanSwitchP->vtbl.accept)(chanSwitchP, channelPP, channelInfoPP, errorP);
 
     if (SwitchTraceIsActive)
         fprintf(stderr, "Got connection from channel switch.  "
                 "Channel = %p\n", *channelPP);
 }
-

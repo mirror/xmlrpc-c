@@ -22,6 +22,12 @@ struct _TConn {
         */
     uint32_t inbytes,outbytes;  
     TChannel * channelP;
+    void * channelInfoP;
+        /* Information about the channel, such as who is on the other end.
+           Format depends on the type of channel.  The user of the connection
+           is expected to know that type, because he supplied the channel
+           when he created the channel.
+        */
     abyss_bool hasOwnThread;
     TThread * threadP;
     abyss_bool finished;
@@ -50,6 +56,7 @@ void
 ConnCreate(TConn **            const connectionPP,
            TServer *           const serverP,
            TChannel *          const channelP,
+           void *              const channelInfoP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,

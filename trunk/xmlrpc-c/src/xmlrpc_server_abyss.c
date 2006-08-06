@@ -379,10 +379,12 @@ processCall(TSession *        const abyssSessionP,
         if (!env.fault_occurred) {
             xmlrpc_mem_block * output;
             /* Process the RPC. */
-            output = xmlrpc_registry_process_call(
-                &env, registryP, NULL, 
+            xmlrpc_registry_process_call2(
+                &env, registryP,
                 XMLRPC_MEMBLOCK_CONTENTS(char, body),
-                XMLRPC_MEMBLOCK_SIZE(char, body));
+                XMLRPC_MEMBLOCK_SIZE(char, body),
+                abyssSessionP,
+                &output);
             if (!env.fault_occurred) {
                 /* Send out the result. */
                 sendXmlData(&env, abyssSessionP, 
