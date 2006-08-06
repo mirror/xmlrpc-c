@@ -116,9 +116,9 @@ ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
   LIBXMLRPC_XML = $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLTOK)
   LDLIBS_XML = \
-        -L $(BUILDDIR)/lib/expat/xmlparse/.libs \
+        -L$(BUILDDIR)/lib/expat/xmlparse/.libs \
 	-lxmlrpc_xmlparse \
-        -L $(BUILDDIR)/lib/expat/xmltok/.libs \
+        -L$(BUILDDIR)/lib/expat/xmltok/.libs \
 	-lxmlrpc_xmltok
 else
   LDLIBS_XML = $(shell xml2-config --libs)
