@@ -837,9 +837,13 @@ createChannelFromOsSocket(TOsSocket     const osSocket,
                           const char ** const errorP) {
 
 #ifdef WIN32
-    ChannelWinCreateWinsock(osSocket, channelPP, channelInfoPP, errorP);
+    ChannelWinCreateWinsock(osSocket, channelPP,
+                            channelInfoPP,
+                            errorP);
 #else
-    ChannelUnixCreateFd(osSocket, channelPP, channelInfoPP, errorP);
+    ChannelUnixCreateFd(osSocket, channelPP,
+                        (struct abyss_unix_chaninfo**)channelInfoPP,
+                        errorP);
 #endif
 }
 
