@@ -135,7 +135,7 @@ readRequestLine(TSession *   const sessionP,
         success = ConnReadHeader(sessionP->conn, requestLineP);
         if (!success)
             *httpErrorCodeP = 408;  /* Request Timeout */
-    } while ((*requestLineP)[0] == '\0' && !*httpErrorCodeP);
+    } while (!*httpErrorCodeP && (*requestLineP)[0] == '\0');
 }
 
 
