@@ -12,6 +12,13 @@ default: all
 all: xmlrpc-c/config.h
 
 xmlrpc-c/config.h:
+	echo "/* This file, part of XML-RPC For C/C++, is meant to "
+	echo "   define characteristics of this particular installation "
+	echo "   that the other <xmlrpc-c/...> header files need in order to "
+	echo "   compile correctly when #included in a Xmlrpc-c user code."
+	echo ""
+	echo "   Those header files #include this one."
+	echo "*/"
 	echo "#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)" >$@
 
 
