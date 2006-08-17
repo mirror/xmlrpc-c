@@ -61,7 +61,7 @@ xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
                                  const char *      const methodName,
                                  xmlrpc_method     const method,
                                  void *            const serverInfo,
-                                 const char *      const signature,
+                                 const char *      const signatureString,
                                  const char *      const help);
 
 void
@@ -71,7 +71,7 @@ xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
                             xmlrpc_method2          method,
                             const char *      const signatureString,
                             const char *      const help,
-                            void *            const serverInfoP);
+                            void *            const serverInfo);
 
 void
 xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
