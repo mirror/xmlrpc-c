@@ -135,7 +135,7 @@ main(int           const argc,
 
     ServerCreate(&abyssServer, "XmlRpcServer", atoi(argv[1]), NULL, NULL);
     
-    xmlrpc_server_abyss_set_handlers(&abyssServer, registryP);
+    xmlrpc_server_abyss_set_handlers2(&abyssServer, "/RPC2", registryP);
 
     ServerInit(&abyssServer);
 
