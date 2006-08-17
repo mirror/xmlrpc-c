@@ -198,10 +198,6 @@ ServerRunOnce2(TServer *           const serverP,
                enum abyss_foreback const foregroundBackground);
 
 void
-ServerRunConn(TServer * const serverP,
-              TOsSocket const connectedSocket);
-
-void
 ServerRunChannel(TServer *     const serverP,
                  TChannel *    const channelP,
                  void *        const channelInfoP,
@@ -212,6 +208,10 @@ void
 ServerRunConn2(TServer *     const serverP,
                TSocket *     const connectedSocketP,
                const char ** const errorP);
+
+void
+ServerRunConn(TServer * const serverP,
+              TOsSocket const connectedSocket);
 
 void
 ServerDaemonize(TServer * const serverP);
@@ -277,7 +277,7 @@ LogWrite(TServer *    const srvP,
          const char * const c);
 
 /****************************************************************************
-  STUFF FOR URI HANDLERS TO USE
+  STUFF FOR HTTP REQUEST HANDLERS TO USE
 ****************************************************************************/
 
 typedef enum {
@@ -308,6 +308,9 @@ typedef struct {
            request doesn't specify
         */
     unsigned short port;
+        /* The port number from the URI, or default 80 if the URI doesn't
+           specify a port.
+        */
     abyss_bool keepalive;
 } TRequestInfo;
 
