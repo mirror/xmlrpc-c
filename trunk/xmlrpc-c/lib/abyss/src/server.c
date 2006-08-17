@@ -1546,6 +1546,8 @@ serverRunChannel(TServer *     const serverP,
    Do the HTTP transaction on the channel 'channelP'.
    (channel must be at the beginning of the HTTP request -- nothing having
    been read or written yet).
+
+   channelInfoP == NULL means no channel info supplied.
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 

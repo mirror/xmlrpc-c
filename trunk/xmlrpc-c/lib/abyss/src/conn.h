@@ -27,6 +27,8 @@ struct _TConn {
            Format depends on the type of channel.  The user of the connection
            is expected to know that type, because he supplied the channel
            when he created the channel.
+
+           NULL means no channel info is available.
         */
     abyss_bool hasOwnThread;
     TThread * threadP;

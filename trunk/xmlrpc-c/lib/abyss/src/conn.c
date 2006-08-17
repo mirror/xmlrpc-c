@@ -134,6 +134,8 @@ ConnCreate(TConn **            const connectionPP,
 
    Some time after the HTTP transactions are all done, 'done' gets
    called in some context.
+
+   'channelInfoP' == NULL means no channel info supplied.
 -----------------------------------------------------------------------------*/
     TConn * connectionP;
 
