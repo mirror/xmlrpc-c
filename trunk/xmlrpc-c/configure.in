@@ -7,7 +7,9 @@ dnl =======================================================================
 dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
 dnl =======================================================================
 
-dnl Increment the package version for each release.
+dnl This ultimately controls the make file variable XMLRPC_C_VERSION.
+dnl For a new release, update this and MAJ, MIN, and LDFLAGS_VERSINFO in
+dnl Makefile.common.
 AM_INIT_AUTOMAKE(xmlrpc-c, 1.06)
 
 dnl Define @build@, @build_cpu@, @build_vendor@, @build_os,
