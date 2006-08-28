@@ -944,12 +944,24 @@ uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
 
 
 
+static bool
+enableShutdownParm(const xmlrpc_server_abyss_parms * const parmsP,
+                   unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(enable_shutdown) &&
+        parmsP->enable_shutdown;
+}
+
+
+
 static xmlrpc_server_shutdown_fn shutdownAbyss;
 
 static void
 shutdownAbyss(xmlrpc_env * const envP,
               void *       const context,
-              const char * const comment ATTR_UNUSED) {
+              const char * const comment ATTR_UNUSED,
+              void *       const callInfo ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    Tell Abyss to wrap up whatever it's doing and shut down.
 
@@ -999,8 +1011,9 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
 
         ServerUseSigchld(&server);
         
-        xmlrpc_registry_set_shutdown(parmsP->registryP,
-                                     &shutdownAbyss, &server);
+        if (enableShutdownParm(parmsP, parmSize))
+            xmlrpc_registry_set_shutdown(parmsP->registryP,
+                                         &shutdownAbyss, &server);
         
         ServerRun(&server);
 

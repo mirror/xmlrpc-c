@@ -674,7 +674,7 @@ static xmlrpc_value *
 system_shutdown(xmlrpc_env *   const envP,
                 xmlrpc_value * const paramArrayP,
                 void *         const serverInfo,
-                void *         const callInfo ATTR_UNUSED) {
+                void *         const callInfo) {
     
     xmlrpc_registry * const registryP = (xmlrpc_registry *) serverInfo;
 
@@ -703,7 +703,7 @@ system_shutdown(xmlrpc_env *   const envP,
                 "shutting down");
         else {
             registryP->_shutdown_server_fn(
-                &env, registryP->_shutdown_context, comment);
+                &env, registryP->_shutdown_context, comment, callInfo);
 
             if (env.fault_occurred)
                 xmlrpc_env_set_fault(envP, env.fault_code, env.fault_string);
