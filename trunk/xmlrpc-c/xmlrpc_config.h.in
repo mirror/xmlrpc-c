@@ -1,5 +1,19 @@
 /* xmlrpc_config.h is generated from xmlrpc_config.h.in by 'configure'.
 
+   The purpose of this file is to define stuff particular to the build
+   environment being used to build Xmlrpc-c.  Xmlrpc-c source files can
+   #include this file and have build-environment-independent source code.
+
+   A major goal of this file is to reduce conditional compilation in
+   the other source files as much as possible.  Even more, we want to avoid
+   having to generate source code particular to to a build environment
+   except in this file.   
+
+   This file is NOT meant to be used by any code outside of the
+   Xmlrpc-c source tree.  There is a similar file that gets installed
+   as <xmlrpc-c/config.h> that performs the same function for Xmlrpc-c
+   interface header files that get compiled as part of a user's program.
+
    This file just uses plain AC_SUBST substitution, the same as
    Makefile.config.  Wherever you see @XXX@, that gets replaced by the
    value of 'configure' variable XXX.
