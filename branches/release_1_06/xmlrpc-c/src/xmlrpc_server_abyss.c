@@ -998,8 +998,12 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
 
         ServerUseSigchld(&server);
         
-        xmlrpc_registry_set_shutdown(parmsP->registryP,
-                                     &shutdownAbyss, &server);
+        if (0)
+            /* Too much of a security risk.  In 1.07, there is a server
+               parameter to enable this.
+            */
+            xmlrpc_registry_set_shutdown(parmsP->registryP,
+                                         &shutdownAbyss, &server);
         
         ServerRun(&server);
 
