@@ -43,7 +43,7 @@ struct _TSession {
         */
     abyss_bool responseStarted;
         /* Handler has at least started the response (i.e. called
-           ResponseWrite())
+           ResponseWriteStart())
         */
 
     struct _TConn * conn;

@@ -56,7 +56,7 @@ void Answer(TSession *r, uint16_t statuscode, char *buffer)
 
     ResponseContentType(r,"text/html");
 
-    ResponseWrite(r);
+    ResponseWriteStart(r);
     
     HTTPWrite(r,"<HTML><BODY>",12);
     

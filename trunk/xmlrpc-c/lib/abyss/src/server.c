@@ -364,7 +364,7 @@ ServerDirectoryHandler(TSession * const r,
         if (DateDecode(imsHdr, &date)) {
             if (DateCompare(&dirdate, &date) <= 0) {
                 ResponseStatus(r, 304);
-                ResponseWrite(r);
+                ResponseWriteStart(r);
                 return TRUE;
             }
         }
@@ -392,7 +392,7 @@ ServerDirectoryHandler(TSession * const r,
         ResponseAddField(r, "Last-Modified", z);
     
     ResponseChunked(r);
-    ResponseWrite(r);
+    ResponseWriteStart(r);
 
     if (r->requestInfo.method!=m_head)
         sendDirectoryDocument(&list, ascending, sort, text,
@@ -488,7 +488,7 @@ ServerFileHandler(TSession * const r,
         if (DateDecode(p,&date)) {
             if (DateCompare(&filedate, &date) <= 0) {
                 ResponseStatus(r, 304);
-                ResponseWrite(r);
+                ResponseWriteStart(r);
                 return TRUE;
             } else
                 r->ranges.size = 0;
@@ -532,7 +532,7 @@ ServerFileHandler(TSession * const r,
     if (DateToString(&filedate, z))
         ResponseAddField(r, "Last-Modified", z);
 
-    ResponseWrite(r);
+    ResponseWriteStart(r);
 
     if (r->requestInfo.method != m_head)
         sendBody(r, &file, filesize, mediatype, start, end, z);
@@ -610,7 +610,7 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
             *(p+1) = '\0';
             ResponseAddField(sessionP, "Location", z);
             ResponseStatus(sessionP, 302);
-            ResponseWrite(sessionP);
+            ResponseWriteStart(sessionP);
             return TRUE;
         }
 
