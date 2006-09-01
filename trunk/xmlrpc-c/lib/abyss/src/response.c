@@ -147,13 +147,16 @@ addConnectionHeader(TSession * const sessionP) {
 static void
 addDateHeader(TSession * const sessionP) {
 
-    char dateValue[64];
-    abyss_bool validDate;
+    if (sessionP->status >= 200) {
+        const char * dateValue;
 
-    validDate = DateToString(&sessionP->date, dateValue);
+        DateToString(&sessionP->date, &dateValue);
 
-    if (sessionP->status >= 200 && validDate)
-        ResponseAddField(sessionP, "Date", dateValue);
+        if (dateValue) {
+            ResponseAddField(sessionP, "Date", dateValue);
+            xmlrpc_strfree(dateValue);
+        }
+    }
 }
 
 

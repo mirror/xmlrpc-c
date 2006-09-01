@@ -388,8 +388,14 @@ ServerDirectoryHandler(TSession * const r,
     ResponseStatus(r, 200);
     ResponseContentType(r, (text ? "text/plain" : "text/html"));
 
-    if (DateToString(&dirdate, z))
-        ResponseAddField(r, "Last-Modified", z);
+    {
+        const char * lastModifiedValue;
+        DateToString(&dirdate, &lastModifiedValue);
+        if (lastModifiedValue) {
+            ResponseAddField(r, "Last-Modified", lastModifiedValue);
+            xmlrpc_strfree(lastModifiedValue);
+        }
+    }
     
     ResponseChunked(r);
     ResponseWriteStart(r);
@@ -461,10 +467,13 @@ sendBody(TSession *   const sessionP,
 
 static abyss_bool
 ServerFileHandler(TSession * const r,
-                  char *     const z,
+                  char *     const fileName,
                   time_t     const fileModTime,
                   MIMEType * const mimeTypeP) {
-
+/*----------------------------------------------------------------------------
+   This is an HTTP request handler for a GET.  It does the classic
+   web server thing: send the file named in the URL to the client.
+-----------------------------------------------------------------------------*/
     const char * mediatype;
     TFile file;
     uint64_t filesize;
@@ -474,9 +483,9 @@ ServerFileHandler(TSession * const r,
     char * p;
     TDate filedate;
     
-    mediatype = MIMETypeGuessFromFile2(mimeTypeP, z);
+    mediatype = MIMETypeGuessFromFile2(mimeTypeP, fileName);
 
-    if (!FileOpen(&file,z,O_BINARY | O_RDONLY)) {
+    if (!FileOpen(&file, fileName, O_BINARY | O_RDONLY)) {
         ResponseStatusErrno(r);
         return TRUE;
     }
@@ -510,10 +519,14 @@ ServerFileHandler(TSession * const r,
             ResponseStatus(r, 200);
             break;
         }
-        
-        sprintf(z, "bytes %llu-%llu/%llu", start, end, filesize);
 
-        ResponseAddField(r, "Content-range", z);
+        {
+            const char * contentRange;
+            xmlrpc_asprintf(&contentRange, "bytes %llu-%llu/%llu",
+                            start, end, filesize);
+            ResponseAddField(r, "Content-range", contentRange);
+            xmlrpc_strfree(contentRange);
+        }
         ResponseContentLength(r, end - start + 1);
         ResponseStatus(r, 206);
     } break;
@@ -529,13 +542,19 @@ ServerFileHandler(TSession * const r,
         ResponseContentType(r, mediatype);
     }
     
-    if (DateToString(&filedate, z))
-        ResponseAddField(r, "Last-Modified", z);
+    {
+        const char * lastModifiedValue;
+        DateToString(&filedate, &lastModifiedValue);
+        if (lastModifiedValue) {
+            ResponseAddField(r, "Last-Modified", lastModifiedValue);
+            xmlrpc_strfree(lastModifiedValue);
+        }
+}
 
     ResponseWriteStart(r);
 
     if (r->requestInfo.method != m_head)
-        sendBody(r, &file, filesize, mediatype, start, end, z);
+        sendBody(r, &file, filesize, mediatype, start, end, fileName);
 
     FileClose(&file);
 

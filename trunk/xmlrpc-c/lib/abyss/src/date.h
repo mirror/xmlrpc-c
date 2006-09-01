@@ -7,9 +7,9 @@
 
 typedef struct tm TDate;
 
-abyss_bool
-DateToString(TDate * const tmP,
-             char *  const s);
+void
+DateToString(const TDate * const dateTime,
+             const char ** const dateStringP);
 
 abyss_bool
 DateToLogString(TDate * const tmP,

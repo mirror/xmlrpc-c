@@ -72,6 +72,8 @@ abyss_bool HandleTime(TSession *r)
     char z[50];
     time_t ltime;
     TDate date;
+    const char * dateString;
+    const char * answer;
 
     if (strcmp(r->uri,"/time")!=0)
         return FALSE;
@@ -79,14 +81,17 @@ abyss_bool HandleTime(TSession *r)
     if (!RequestAuth(r,"Mot de passe","moez","hello"))
         return TRUE;
 
-    time( &ltime );
-    DateFromGMT(&date,ltime);
-    
+    time(&ltime);
+    DateFromGMT(&date, ltime);
 
-    strcpy(z,"The time is ");
-    DateToString(&date,z+strlen(z));
+    DateToString(&date, &dateString);
 
-    Answer(r,200,z);
+    xmlrpc_asprintf(&answer, "The time is %s", dateString);
+
+    Answer(r, 200, answer);
+
+    xmlrpc_strfree(dateString);
+    xmlrpc_strfree(answer);
 
     return TRUE;
 }

@@ -2,9 +2,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-
-
 #include <inttypes.h>
+
+#include "xmlrpc-c/string_int.h"
+
 #include "date.h"
 
 /*********************************************************************
@@ -24,18 +25,25 @@ static char *_DateMonth[12]=
 static int32_t _DateTimeBias=0;
 static char _DateTimeBiasStr[6]="";
 
-abyss_bool DateToString(TDate *tm,char *s)
-{
-    if (mktime(tm)==(time_t)(-1))
-    {
-        *s='\0';
-        return FALSE;
-    };
 
-    sprintf(s,"%s, %02d %s %04d %02d:%02d:%02d GMT",_DateDay[tm->tm_wday],tm->tm_mday,
-                _DateMonth[tm->tm_mon],tm->tm_year+1900,tm->tm_hour,tm->tm_min,tm->tm_sec);
 
-    return TRUE;
+void
+DateToString(const TDate * const brokenTimeP,
+             const char ** const dateStringP) {
+
+    struct tm brokenTime = *brokenTimeP;
+
+    if (mktime(&brokenTime) == (time_t)-1)
+        *dateStringP = NULL;
+    else
+        xmlrpc_asprintf(dateStringP, "%s, %02u %s %04u %02u:%02u:%02u UTC",
+                        _DateDay[brokenTimeP->tm_wday],
+                        brokenTimeP->tm_mday,
+                        _DateMonth[brokenTimeP->tm_mon],
+                        1900 + brokenTimeP->tm_year,
+                        brokenTimeP->tm_hour,
+                        brokenTimeP->tm_min,
+                        brokenTimeP->tm_sec);
 }
 
 
