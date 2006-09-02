@@ -122,13 +122,13 @@ sendXmlData(xmlrpc_env * const envP,
 
 static void
 sendError(TSession *   const abyssSessionP, 
-          unsigned int const status) {
+          unsigned int const status,
+          const char * const explanation) {
 /*----------------------------------------------------------------------------
   Send an error response back to the client.
-   
 -----------------------------------------------------------------------------*/
     ResponseStatus(abyssSessionP, (uint16_t) status);
-    ResponseError(abyssSessionP);
+    ResponseError2(abyssSessionP, explanation);
 }
 
 
@@ -214,7 +214,7 @@ getBody(xmlrpc_env *        const envP,
 
 static void
 storeCookies(TSession *     const httpRequestP,
-             unsigned int * const httpErrorP) {
+             const char **  const errorP) {
 /*----------------------------------------------------------------------------
    Get the cookie settings from the HTTP headers and remember them for
    use in responses.
@@ -231,7 +231,7 @@ storeCookies(TSession *     const httpRequestP,
     }
     /* TODO: parse HTTP_COOKIE to find auth pair, if there is one */
 
-    *httpErrorP = 0;
+    *errorP = NULL;
 }
 
 
@@ -239,18 +239,19 @@ storeCookies(TSession *     const httpRequestP,
 
 static void
 validateContentType(TSession *     const httpRequestP,
-                    unsigned int * const httpErrorP) {
+                    const char **  const errorP) {
 /*----------------------------------------------------------------------------
-   If the client didn't specify a content-type of "text/xml", return      
-   "400 Bad Request".  We can't allow the client to default this header,
-   because some firewall software may rely on all XML-RPC requests
-   using the POST method and a content-type of "text/xml". 
+   If the client didn't specify a content-type of "text/xml", fail.
+   We can't allow the client to default this header, because some
+   firewall software may rely on all XML-RPC requests using the POST
+   method and a content-type of "text/xml".x
 -----------------------------------------------------------------------------*/
     const char * const content_type =
         RequestHeaderValue(httpRequestP, "content-type");
 
     if (content_type == NULL)
-        *httpErrorP = 400;
+        xmlrpc_asprintf(errorP,
+                        "You did not supply a content-type HTTP header");
     else {
         const char * const sempos = strchr(content_type, ';');
         unsigned int baselen;
@@ -264,9 +265,11 @@ validateContentType(TSession *     const httpRequestP,
             baselen = strlen(content_type);
 
         if (!xmlrpc_strneq(content_type, "text/xml", baselen))
-            *httpErrorP = 400;
+            xmlrpc_asprintf(errorP, "Your content-type HTTP header value '%s' "
+                            "does not have a base type of 'text/xml'",
+                            content_type);
         else
-            *httpErrorP = 0;
+            *errorP = NULL;
     }
 }
 
@@ -275,21 +278,25 @@ validateContentType(TSession *     const httpRequestP,
 static void
 processContentLength(TSession *     const httpRequestP,
                      size_t *       const inputLenP,
-                     unsigned int * const httpErrorP) {
+                     abyss_bool *   const missingP,
+                     const char **  const errorP) {
 /*----------------------------------------------------------------------------
   Make sure the content length is present and non-zero.  This is
   technically required by XML-RPC, but we only enforce it because we
   don't want to figure out how to safely handle HTTP < 1.1 requests
-  without it.  If the length is missing, return "411 Length Required". 
+  without it.
 -----------------------------------------------------------------------------*/
     const char * const content_length = 
         RequestHeaderValue(httpRequestP, "content-length");
 
-    if (content_length == NULL)
-        *httpErrorP = 411;
-    else {
+    if (content_length == NULL) {
+        *missingP = TRUE;
+        *errorP = NULL;
+    } else {
+        *missingP = FALSE;
         if (content_length[0] == '\0')
-            *httpErrorP = 400;
+            xmlrpc_asprintf(errorP, "The value in your content-length "
+                            "HTTP header value is a null string");
         else {
             unsigned long contentLengthValue;
             char * tail;
@@ -297,15 +304,21 @@ processContentLength(TSession *     const httpRequestP,
             contentLengthValue = strtoul(content_length, &tail, 10);
         
             if (*tail != '\0')
-                /* There's non-numeric crap in the length */
-                *httpErrorP = 400;
+                xmlrpc_asprintf(errorP, "There's non-numeric crap in "
+                                "the value of your content-length "
+                                "HTTP header: '%s'", tail);
             else if (contentLengthValue < 1)
-                *httpErrorP = 400;
+                xmlrpc_asprintf(errorP, "According to your content-length "
+                                "HTTP header, your request is empty (zero "
+                                "length)");
             else if ((unsigned long)(size_t)contentLengthValue 
                      != contentLengthValue)
-                *httpErrorP = 400;
+                xmlrpc_asprintf(errorP, "According to your content-length "
+                                "HTTP header, your request is too big to "
+                                "process; we can't even do arithmetic on its "
+                                "size: %s bytes", content_length);
             else {
-                *httpErrorP = 0;
+                *errorP = NULL;
                 *inputLenP = (size_t)contentLengthValue;
             }
         }
@@ -398,10 +411,13 @@ processCall(TSession *        const abyssSessionP,
         }
     }
     if (env.fault_occurred) {
+        uint16_t httpResponseStatus;
         if (env.fault_code == XMLRPC_TIMEOUT_ERROR)
-            sendError(abyssSessionP, 408); /* 408 Request Timeout */
+            httpResponseStatus = 408;  /* Request Timeout */
         else
-            sendError(abyssSessionP, 500); /* 500 Internal Server Error */
+            httpResponseStatus = 500;  /* Internal Server Error */
+
+        sendError(abyssSessionP, httpResponseStatus, env.fault_string);
     }
 
     xmlrpc_env_clean(&env);
@@ -478,34 +494,44 @@ handleXmlrpcReq(URIHandler2 * const this,
     else {
         *handledP = TRUE;
 
-        /* We understand only the POST HTTP method.  For anything else, return
-           "405 Method Not Allowed". 
-        */
         if (requestInfoP->method != m_post)
-            sendError(abyssSessionP, 405);
+            sendError(abyssSessionP, 405,
+                      "POST is the only HTTP method this server understands");
+                /* 405 = Method Not Allowed */
         else {
-            unsigned int httpError;
-            storeCookies(abyssSessionP, &httpError);
-            if (httpError)
-                sendError(abyssSessionP, httpError);
-            else {
-                unsigned int httpError;
-                validateContentType(abyssSessionP, &httpError);
-                if (httpError)
-                    sendError(abyssSessionP, httpError);
-                else {
-                    unsigned int httpError;
+            const char * error;
+            storeCookies(abyssSessionP, &error);
+            if (error) {
+                sendError(abyssSessionP, 400, error);
+                xmlrpc_strfree(error);
+            } else {
+                const char * error;
+                validateContentType(abyssSessionP, &error);
+                if (error) {
+                    sendError(abyssSessionP, 400, error);
+                        /* 400 = Bad Request */
+                    xmlrpc_strfree(error);
+                } else {
+                    const char * error;
+                    abyss_bool missing;
                     size_t contentSize;
 
                     processContentLength(abyssSessionP, 
-                                         &contentSize, &httpError);
-                    if (httpError)
-                        sendError(abyssSessionP, httpError);
-                    else 
-                        processCall(abyssSessionP, contentSize,
-                                    uriHandlerXmlrpcP->registryP,
-                                    uriHandlerXmlrpcP->chunkResponse,
-                                    trace_abyss);
+                                         &contentSize, &missing, &error);
+                    if (error) {
+                        sendError(abyssSessionP, 400, error);
+                        xmlrpc_strfree(error);
+                    } else {
+                        if (missing)
+                            sendError(abyssSessionP, 411, "You must send a "
+                                      "content-length HTTP header in an "
+                                      "XML-RPC call.");
+                        else
+                            processCall(abyssSessionP, contentSize,
+                                        uriHandlerXmlrpcP->registryP,
+                                        uriHandlerXmlrpcP->chunkResponse,
+                                        trace_abyss);
+                    }
                 }
             }
         }
@@ -526,10 +552,26 @@ handleXmlrpcReq(URIHandler2 * const this,
 static xmlrpc_bool 
 xmlrpc_server_abyss_default_handler(TSession * const sessionP) {
 
+    const TRequestInfo * requestInfoP;
+
+    const char * explanation;
+
     if (trace_abyss)
         fprintf(stderr, "xmlrpc_server_abyss default handler called.\n");
 
-    sendError(sessionP, 404);
+    SessionGetRequestInfo(sessionP, &requestInfoP);
+
+    xmlrpc_asprintf(
+        &explanation,
+        "This XML-RPC For C/C++ Abyss XML-RPC server "
+        "responds to only one URI path.  "
+        "I don't know what URI path that is, "
+        "but it's not the one you requested: '%s'.  (Typically, it's "
+        "'/RPC2')", requestInfoP->uri);
+
+    sendError(sessionP, 404, explanation);
+
+    xmlrpc_strfree(explanation);
 
     return TRUE;
 }
