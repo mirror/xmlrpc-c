@@ -1152,9 +1152,7 @@ processDataFromClient(TConn *      const connectionP,
 
     SessionLog(&session);
 
-fprintf(stderr, "about to RequestFree()\n");
     RequestFree(&session);
-fprintf(stderr, "done with RequestFree()\n");
 }
 
 

@@ -32,9 +32,9 @@
 
 
 void
-ResponseError(TSession * const sessionP) {
+ResponseError2(TSession *   const sessionP,
+               const char * const explanation) {
 
-    const char * const reason = HTTPReasonByStatus(sessionP->status);
     const char * errorDocument;
 
     ResponseAddField(sessionP, "Content-type", "text/html");
@@ -48,12 +48,21 @@ ResponseError(TSession * const sessionP) {
                     "<P>%s</P>" SERVER_HTML_INFO 
                     "</BODY>"
                     "</HTML>",
-                    sessionP->status, sessionP->status, reason);
+                    sessionP->status, sessionP->status, explanation);
     
     ConnWrite(sessionP->conn, errorDocument, strlen(errorDocument)); 
 
     xmlrpc_strfree(errorDocument);
 }
+
+
+
+void
+ResponseError(TSession * const sessionP) {
+
+    ResponseError2(sessionP, HTTPReasonByStatus(sessionP->status));
+}
+
 
 
 

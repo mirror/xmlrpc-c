@@ -379,6 +379,10 @@ ResponseContentLength(TSession * const sessionP,
                       uint64_t   const len);
 
 void
+ResponseError2(TSession *   const sessionP,
+               const char * const explanation);
+
+void
 ResponseError(TSession * const sessionP);
 
 const char *
