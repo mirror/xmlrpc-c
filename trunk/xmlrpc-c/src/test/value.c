@@ -6,6 +6,7 @@
 #include <errno.h>
 
 #include "casprintf.h"
+#include "girstring.h"
 
 #include "xmlrpc_config.h"
 
@@ -47,13 +48,15 @@ test_value_alloc_dealloc(void) {
 
 
 static void
-test_value_integer(void) { 
+test_value_int(void) { 
 
     xmlrpc_value * v;
     xmlrpc_env env;
     xmlrpc_int32 i;
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_INT), "INT"));
 
     v = xmlrpc_int_new(&env, (xmlrpc_int32) 25);
     TEST_NO_FAULT(&env);
@@ -63,10 +66,18 @@ test_value_integer(void) {
     TEST(i == 25);
     xmlrpc_DECREF(v);
 
+    v = xmlrpc_int_new(&env, (xmlrpc_int32) -25);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_INT);
+    xmlrpc_read_int(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == -25);
+    xmlrpc_DECREF(v);
+
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 10);
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
-    TEST(XMLRPC_TYPE_INT == xmlrpc_value_type(v));
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_INT);
     xmlrpc_decompose_value(&env, v, "i", &i);
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
@@ -87,6 +98,8 @@ test_value_bool(void) {
     /* Test booleans. */
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_BOOL), "BOOL"));
 
     v = xmlrpc_bool_new(&env, (xmlrpc_bool) 1);
     TEST_NO_FAULT(&env);
@@ -118,6 +131,8 @@ test_value_double(void) {
     double d;
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DOUBLE), "DOUBLE"));
 
     v = xmlrpc_double_new(&env, -3.25);
     TEST_NO_FAULT(&env);
@@ -153,6 +168,8 @@ test_value_datetime(void) {
     time_t dt;
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DATETIME), "DATETIME"));
 
     v = xmlrpc_datetime_new_str(&env, datestring);
     TEST_NO_FAULT(&env);
@@ -202,13 +219,16 @@ test_value_datetime(void) {
 static void
 test_value_string_no_null(void) {
 
+    /* Test strings (without '\0' bytes). */
+
     xmlrpc_value * v;
     xmlrpc_env env;
     const char * str;
     size_t len;
 
-    /* Test strings (without '\0' bytes). */
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_STRING), "STRING"));
 
     v = xmlrpc_string_new(&env, test_string_1);
     TEST_NO_FAULT(&env);
@@ -477,6 +497,8 @@ test_value_base64(void) {
 
     xmlrpc_env_init(&env);
 
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_BASE64), "BASE64"));
+
     v = xmlrpc_base64_new(&env, sizeof(data1), data1);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
@@ -539,6 +561,8 @@ test_value_array(void) {
     /* Basic array-building test. */
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_ARRAY), "ARRAY"));
 
     v = xmlrpc_array_new(&env);
     TEST_NO_FAULT(&env);
@@ -775,32 +799,6 @@ test_value_array_nil(void) {
 
 
 static void
-test_value_type_mismatch(void) {
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    xmlrpc_env env2;
-    char * str;
-
-    /* Test for one, simple kind of type mismatch error. We assume that
-    ** if one of these typechecks works, the rest work fine. */
-
-    xmlrpc_env_init(&env);
-    xmlrpc_env_init(&env2);
-
-    v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
-    TEST_NO_FAULT(&env);
-    xmlrpc_decompose_value(&env2, v, "s", &str);
-    xmlrpc_DECREF(v);
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-
-    xmlrpc_env_clean(&env2);
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
 test_value_cptr(void) {
 
     xmlrpc_value * v;
@@ -812,6 +810,8 @@ test_value_cptr(void) {
     */
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_C_PTR), "C_PTR"));
 
     v = xmlrpc_build_value(&env, "p", (void*) 0x00000017);
     TEST_NO_FAULT(&env);
@@ -834,6 +834,8 @@ test_value_nil(void) {
 
     xmlrpc_env_init(&env);
 
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_NIL), "NIL"));
+
     v = xmlrpc_nil_new(&env);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_NIL == xmlrpc_value_type(v));
@@ -846,6 +848,72 @@ test_value_nil(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_i8(void) { 
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_int64 i;
+
+    xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_I8), "I8"));
+
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64) 25);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_read_i8(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == 25);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64) -25);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_read_i8(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == -25);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64) (1ull << 40));
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_read_i8(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == (1ull << 40));
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_type_mismatch(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_env env2;
+    char * str;
+
+    /* Test for one, simple kind of type mismatch error. We assume that
+    ** if one of these typechecks works, the rest work fine. */
+
+    xmlrpc_env_init(&env);
+    xmlrpc_env_init(&env2);
+
+    v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
+    TEST_NO_FAULT(&env);
+    xmlrpc_decompose_value(&env2, v, "s", &str);
+    xmlrpc_DECREF(v);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
+
+    xmlrpc_env_clean(&env2);
     xmlrpc_env_clean(&env);
 }
 
@@ -1432,7 +1500,7 @@ test_value(void) {
     printf("Running value tests.");
 
     test_value_alloc_dealloc();
-    test_value_integer();
+    test_value_int();
     test_value_bool();
     test_value_double();
     test_value_datetime();
@@ -1448,6 +1516,7 @@ test_value(void) {
     test_value_AS_typecheck();
     test_value_cptr();
     test_value_nil();
+    test_value_i8();
     test_value_type_mismatch();
     test_value_invalid_type();
     test_value_missing_array_delim();

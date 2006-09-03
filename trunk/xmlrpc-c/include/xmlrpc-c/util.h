@@ -15,6 +15,7 @@
 #define XMLRPC_C_UTIL_H_INCLUDED
 
 #include <sys/types.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,6 +143,13 @@ void
 xmlrpc_env_set_fault(xmlrpc_env * const env, 
                      int          const faultCode, 
                      const char * const faultDescription);
+
+/* The same as the above, but using varargs */
+void
+xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
+                             int          const code,
+                             const char * const format,
+                             va_list      const args);
 
 /* The same as the above, but using a printf-style format string. */
 void 

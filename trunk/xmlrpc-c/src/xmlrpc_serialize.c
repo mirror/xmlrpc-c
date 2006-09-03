@@ -306,6 +306,10 @@ xmlrpc_serialize_value(xmlrpc_env *env,
         format_out(env, output, "<i4>%i</i4>", value->_value.i);
         break;
 
+    case XMLRPC_TYPE_I8:
+        format_out(env, output, "<i8>%lld</i8>", value->_value.i8);
+        break;
+
     case XMLRPC_TYPE_BOOL:
         /* XXX - We assume that '%i' is the appropriate format specifier
         ** for an xmlrpc_bool value. */
@@ -318,6 +322,14 @@ xmlrpc_serialize_value(xmlrpc_env *env,
         format_out(env, output, "<double>%.17g</double>", value->_value.d);
         break;
 
+    case XMLRPC_TYPE_DATETIME:
+        format_out(env, output, "<dateTime.iso8601>");
+        XMLRPC_FAIL_IF_FAULT(env);
+        serializeUtf8MemBlock(env, output, &value->_block);
+        XMLRPC_FAIL_IF_FAULT(env);
+        format_out(env, output, "</dateTime.iso8601>");
+        break;
+
     case XMLRPC_TYPE_STRING:
         format_out(env, output, "<string>");
         XMLRPC_FAIL_IF_FAULT(env);
@@ -325,6 +337,17 @@ xmlrpc_serialize_value(xmlrpc_env *env,
         XMLRPC_FAIL_IF_FAULT(env);
         format_out(env, output, "</string>");
         break;
+
+    case XMLRPC_TYPE_BASE64:
+        format_out(env, output, "<base64>"CRLF);
+        XMLRPC_FAIL_IF_FAULT(env);
+        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char,
+                                                   &value->_block);
+        size = XMLRPC_TYPED_MEM_BLOCK_SIZE(unsigned char, &value->_block);
+        xmlrpc_serialize_base64_data(env, output, contents, size);
+        XMLRPC_FAIL_IF_FAULT(env);
+        format_out(env, output, "</base64>");
+        break;      
 
     case XMLRPC_TYPE_ARRAY:
         format_out(env, output, "<array><data>"CRLF);
@@ -347,25 +370,6 @@ xmlrpc_serialize_value(xmlrpc_env *env,
 
     case XMLRPC_TYPE_STRUCT:
         xmlrpc_serialize_struct(env, output, value);
-        break;
-
-    case XMLRPC_TYPE_BASE64:
-        format_out(env, output, "<base64>"CRLF);
-        XMLRPC_FAIL_IF_FAULT(env);
-        contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char,
-                                                   &value->_block);
-        size = XMLRPC_TYPED_MEM_BLOCK_SIZE(unsigned char, &value->_block);
-        xmlrpc_serialize_base64_data(env, output, contents, size);
-        XMLRPC_FAIL_IF_FAULT(env);
-        format_out(env, output, "</base64>");
-        break;      
-
-    case XMLRPC_TYPE_DATETIME:
-        format_out(env, output, "<dateTime.iso8601>");
-        XMLRPC_FAIL_IF_FAULT(env);
-        serializeUtf8MemBlock(env, output, &value->_block);
-        XMLRPC_FAIL_IF_FAULT(env);
-        format_out(env, output, "</dateTime.iso8601>");
         break;
 
     case XMLRPC_TYPE_C_PTR:

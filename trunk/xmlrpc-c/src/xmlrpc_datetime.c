@@ -90,8 +90,8 @@ validateDatetimeType(xmlrpc_env *         const envP,
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
             "type %s was expected.", 
-            xmlrpc_typeName(valueP->_type), 
-            xmlrpc_typeName(XMLRPC_TYPE_DATETIME));
+            xmlrpc_type_name(valueP->_type), 
+            xmlrpc_type_name(XMLRPC_TYPE_DATETIME));
     }
 }
 

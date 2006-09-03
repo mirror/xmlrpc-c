@@ -32,16 +32,19 @@ struct _xmlrpc_value {
     /* Certain data types store their data directly in the xmlrpc_value. */
     union {
         xmlrpc_int32 i;
+        xmlrpc_int64 i8;
         xmlrpc_bool b;
         double d;
         /* time_t t */
-        void *c_ptr;
+        void * c_ptr;
     } _value;
     
     /* Other data types use a memory block.
 
        For a string, this is the characters of the string in UTF-8, plus
        a NUL added to the end.
+
+       For base64, this is bytes of the byte string, directly.
     */
     xmlrpc_mem_block _block;
 

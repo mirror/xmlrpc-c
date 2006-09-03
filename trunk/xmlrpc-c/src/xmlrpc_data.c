@@ -57,6 +57,9 @@ destroyValue(xmlrpc_value * const valueP) {
     case XMLRPC_TYPE_NIL:
         break;
 
+    case XMLRPC_TYPE_I8:
+        break;
+
     case XMLRPC_TYPE_DEAD:
         XMLRPC_ASSERT(false); /* Can't happen, per entry conditions */
 
@@ -113,9 +116,9 @@ xmlrpc_DECREF (xmlrpc_value * const valueP) {
 =========================================================================*/
 
 const char *
-xmlrpc_typeName(xmlrpc_type const type) {
+xmlrpc_type_name(xmlrpc_type const type) {
 
-    switch(type) {
+    switch (type) {
 
     case XMLRPC_TYPE_INT:      return "INT";
     case XMLRPC_TYPE_BOOL:     return "BOOL";
@@ -127,8 +130,10 @@ xmlrpc_typeName(xmlrpc_type const type) {
     case XMLRPC_TYPE_STRUCT:   return "STRUCT";
     case XMLRPC_TYPE_C_PTR:    return "C_PTR";
     case XMLRPC_TYPE_NIL:      return "NIL";
+    case XMLRPC_TYPE_I8:       return "I8";
     case XMLRPC_TYPE_DEAD:     return "DEAD";
     default:                   return "???";
+
     }
 }
 
@@ -186,7 +191,7 @@ validateType(xmlrpc_env *         const envP,
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
             "type %s was expected.", 
-            xmlrpc_typeName(valueP->_type), xmlrpc_typeName(expectedType));
+            xmlrpc_type_name(valueP->_type), xmlrpc_type_name(expectedType));
     }
 }
 
@@ -565,6 +570,18 @@ xmlrpc_read_base64_size(xmlrpc_env *           const envP,
 
 
 void
+xmlrpc_read_cptr(xmlrpc_env *         const envP,
+                 const xmlrpc_value * const valueP,
+                 void **              const ptrValueP) {
+
+    validateType(envP, valueP, XMLRPC_TYPE_C_PTR);
+    if (!envP->fault_occurred)
+        *ptrValueP = valueP->_value.c_ptr;
+}
+
+
+
+void
 xmlrpc_read_nil(xmlrpc_env *   const envP,
                 xmlrpc_value * const valueP) {
 /*----------------------------------------------------------------------------
@@ -577,14 +594,14 @@ xmlrpc_read_nil(xmlrpc_env *   const envP,
 
 
 
-void
-xmlrpc_read_cptr(xmlrpc_env *         const envP,
-                 const xmlrpc_value * const valueP,
-                 void **              const ptrValueP) {
+void 
+xmlrpc_read_i8(xmlrpc_env *         const envP,
+               const xmlrpc_value * const valueP,
+               long long *          const intValueP) {
 
-    validateType(envP, valueP, XMLRPC_TYPE_C_PTR);
+    validateType(envP, valueP, XMLRPC_TYPE_I8);
     if (!envP->fault_occurred)
-        *ptrValueP = valueP->_value.c_ptr;
+        *intValueP = valueP->_value.i8;
 }
 
 
@@ -637,6 +654,23 @@ xmlrpc_int_new(xmlrpc_env * const envP,
 
 
 xmlrpc_value *
+xmlrpc_i8_new(xmlrpc_env * const envP, 
+              long long    const value) {
+
+    xmlrpc_value * valP;
+
+    xmlrpc_createXmlrpcValue(envP, &valP);
+
+    if (!envP->fault_occurred) {
+        valP->_type     = XMLRPC_TYPE_I8;
+        valP->_value.i8 = value;
+    }
+    return valP;
+}
+
+
+
+xmlrpc_value *
 xmlrpc_bool_new(xmlrpc_env * const envP, 
                 xmlrpc_bool  const value) {
 
@@ -670,6 +704,18 @@ xmlrpc_double_new(xmlrpc_env * const envP,
 
 
 
+static void
+validateUtf(xmlrpc_env * const envP,
+            const char * const value,
+            size_t       const length) {
+
+#if HAVE_UNICODE_WCHAR
+    xmlrpc_validate_utf8(envP, value, length);
+#endif
+}
+
+
+
 xmlrpc_value *
 xmlrpc_string_new_lp(xmlrpc_env * const envP, 
                      size_t       const length,
@@ -677,20 +723,24 @@ xmlrpc_string_new_lp(xmlrpc_env * const envP,
 
     xmlrpc_value * valP;
 
-    xmlrpc_createXmlrpcValue(envP, &valP);
+    validateUtf(envP, value, length);
 
     if (!envP->fault_occurred) {
-        valP->_type = XMLRPC_TYPE_STRING;
-        valP->_wcs_block = NULL;
-        XMLRPC_MEMBLOCK_INIT(char, envP, &valP->_block, length + 1);
+        xmlrpc_createXmlrpcValue(envP, &valP);
+
         if (!envP->fault_occurred) {
-            char * const contents =
-                XMLRPC_MEMBLOCK_CONTENTS(char, &valP->_block);
-            memcpy(contents, value, length);
-            contents[length] = '\0';
+            valP->_type = XMLRPC_TYPE_STRING;
+            valP->_wcs_block = NULL;
+            XMLRPC_MEMBLOCK_INIT(char, envP, &valP->_block, length + 1);
+            if (!envP->fault_occurred) {
+                char * const contents =
+                    XMLRPC_MEMBLOCK_CONTENTS(char, &valP->_block);
+                memcpy(contents, value, length);
+                contents[length] = '\0';
+            }
+            if (envP->fault_occurred)
+                free(valP);
         }
-        if (envP->fault_occurred)
-            free(valP);
     }
     return valP;
 }

@@ -75,11 +75,11 @@ xmlrpc_env_set_fault(xmlrpc_env * const envP,
 
 
 
-static void
-set_fault_formatted_v(xmlrpc_env * const envP,
-                      int          const code,
-                      const char * const format,
-                      va_list      const args) {
+void
+xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
+                             int          const code,
+                             const char * const format,
+                             va_list      const args) {
 
     char buffer[ERROR_BUFFER_SZ];
 
@@ -106,7 +106,7 @@ xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP,
 
     /* Print our error message to the buffer. */
     va_start(args, format);
-    set_fault_formatted_v(envP, code, format, args);
+    xmlrpc_set_fault_formatted_v(envP, code, format, args);
     va_end(args);
 }
 
@@ -124,7 +124,7 @@ xmlrpc_faultf(xmlrpc_env * const envP,
 
     /* Print our error message to the buffer. */
     va_start(args, format);
-    set_fault_formatted_v(envP, XMLRPC_INTERNAL_ERROR, format, args);
+    xmlrpc_set_fault_formatted_v(envP, XMLRPC_INTERNAL_ERROR, format, args);
     va_end(args);
 
 }

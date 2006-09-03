@@ -7,42 +7,28 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "bool.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/util.h"
 #include "xmlrpc-c/xmlparser.h"
 
 
-/*=========================================================================
-**  Data Format
-**=========================================================================
-**  An XML-RPC document consists of a single methodCall or methodResponse
-**  element.
-**
-**  methodCall     methodName, params
-**  methodResponse (params|fault)
-**  params         param*
-**  param          value
-**  fault          value
-**  value          (i4|int|boolean|string|double|dateTime.iso8601|base64|
-**                  nil|struct|array)
-**  array          data
-**  data           value*
-**  struct         member*
-**  member         name, value
-**
-**  Contain CDATA: methodName, i4, int, boolean, string, double,
-**                 dateTime.iso8601, base64, name
-**
-**  We attempt to validate the structure of the XML document carefully.
-**  We also try *very* hard to handle malicious data gracefully, and without
-**  leaking memory.
-**
-**  The CHECK_NAME and CHECK_CHILD_COUNT macros examine an XML element, and
-**  invoke XMLRPC_FAIL if something looks wrong.
+/* Notes about XML-RPC XML documents:
+
+   Contain CDATA: methodName, i4, int, boolean, string, double,
+                  dateTime.iso8601, base64, name
+
+   We attempt to validate the structure of the XML document carefully.
+   We also try *very* hard to handle malicious data gracefully, and without
+   leaking memory.
+
+   The CHECK_NAME and CHECK_CHILD_COUNT macros examine an XML element, and
+   invoke XMLRPC_FAIL if something looks wrong.
 */
 
 #define CHECK_NAME(env,elem,name) \
@@ -82,132 +68,169 @@ get_child_by_name (xmlrpc_env *env, xml_element *parent, char *name)
 }
 
 
-/*=========================================================================
-**  Number-Parsing Functions
-**=========================================================================
-**  These functions mirror atoi, atof, etc., but provide better
-**  error-handling.  These routines may reset errno to zero.
-*/
 
-static xmlrpc_int32
-xmlrpc_atoi(xmlrpc_env *env, char *str, size_t strlen,
-            xmlrpc_int32 min, xmlrpc_int32 max)
-{
-    long i;
-    char *end;
+static void
+parseFault(xmlrpc_env * const envP,
+           const char * const format,
+           ...) {
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(str);
-
-    /* Suppress compiler warnings. */
-    i = 0;
-
-    /* Check for leading white space. */
-    if (isspace(str[0]))
-    XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
-                 "\"%s\" must not contain whitespace", str);
-
-    /* Convert the value. */
-    end = str + strlen;
-    errno = 0;
-    i = strtol(str, &end, 10);
-
-    /* Look for ERANGE. */
-    if (errno != 0)
-        /* XXX - Do all operating systems have thread-safe strerror? */
-        XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR,
-                     "error parsing \"%s\": %s (%d)",
-                     str, strerror(errno), errno);
-    
-    /* Look for out-of-range errors which didn't produce ERANGE. */
-    if (i < min || i > max)
-        XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR,
-                     "\"%s\" must be in range %d to %d", str, min, max);
-
-    /* Check for unused characters. */
-    if (end != str + strlen)
-        XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
-                     "\"%s\" contained trailing data", str);
-    
- cleanup:
-    errno = 0;
-    if (env->fault_occurred)
-        return 0;
-    return (xmlrpc_int32) i;
+    va_list args;
+    va_start(args, format);
+    xmlrpc_set_fault_formatted_v(envP, XMLRPC_PARSE_ERROR, format, args);
+    va_end(args);
 }
 
 
 
-static double
-xmlrpc_atod(xmlrpc_env *env, char *str, size_t strlen)
-{
-    double d;
-    char *end;
+static void
+parseInt(xmlrpc_env *    const envP,
+         const char *    const str,
+         xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+   Parse the content of a <int> XML-RPC XML element, e.g. "34".
 
-    XMLRPC_ASSERT_ENV_OK(env);
+   'str' is that content.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(str);
 
-    /* Suppress compiler warnings. */
-    d = 0.0;
+    if (str[0] == '\0')
+        parseFault(envP, "<int> XML element content is empty.");
+    else if (isspace(str[0]))
+        parseFault(envP, "<int> content '%s' starts with white space.", str);
+    else {
+        long i;
+        char * tail;
 
-    /* Check for leading white space. */
-    if (isspace(str[0]))
-        XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
-                     "\"%s\" must not contain whitespace", str);
-    
-    /* Convert the value. */
-    end = str + strlen;
-    errno = 0;
-    d = strtod(str, &end);
-    
-    /* Look for ERANGE. */
-    if (errno != 0)
-        /* XXX - Do all operating systems have thread-safe strerror? */
-        XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR,
-                     "error parsing \"%s\": %s (%d)",
-                     str, strerror(errno), errno);
-    
-    /* Check for unused characters. */
-    if (end != str + strlen)
-        XMLRPC_FAIL1(env, XMLRPC_PARSE_ERROR,
-                     "\"%s\" contained trailing data", str);
+        errno = 0;
+        i = strtol(str, &tail, 10);
 
- cleanup:
-    errno = 0;
-    if (env->fault_occurred)
-        return 0.0;
-    return d;
+        /* Look for ERANGE. */
+        if (errno == ERANGE)
+            parseFault(envP, "<int> XML element value '%s' represents a "
+                       "number beyond the range that "
+                       "XML-RPC allows (%d - %d)", str,
+                       XMLRPC_INT32_MIN, XMLRPC_INT32_MAX);
+        else if (errno != 0)
+            parseFault(envP, "unexpected error parsing <int> XML element "
+                       "value '%s'.  strtol() failed with errno %d (%s)",
+                       str, errno, strerror(errno));
+        else {
+            /* Look for out-of-range errors which didn't produce ERANGE. */
+            if (i < XMLRPC_INT32_MIN)
+                parseFault(envP, "<int> value %d is below the range allowed "
+                           "by XML-RPC (minimum is %d)",
+                           i, XMLRPC_INT32_MIN);
+            else if (i > XMLRPC_INT32_MAX)
+                parseFault(envP, "<int> value %d is above the range allowed "
+                           "by XML-RPC (maximum is %d)",
+                           i, XMLRPC_INT32_MAX);
+            else {
+                if (tail[0] != '\0')
+                    parseFault(envP, "<int> value '%s' contains non-numerical "
+                               "junk: '%s'", str, tail);
+                else
+                    *valuePP = xmlrpc_int_new(envP, i);
+            }
+        }
+    }
 }
 
 
-/*=========================================================================
-**  make_string
-**=========================================================================
-**  Make an XML-RPC string.
-**
-** SECURITY: We validate our UTF-8 first.  This incurs a performance
-** penalty, but ensures that we will never pass maliciously malformed
-** UTF-8 data back up to the user layer, where it could wreak untold
-** damange. Don't comment out this check unless you know *exactly* what
-** you're doing.  (Win32 developers who remove this check are *begging*
-** to wind up on BugTraq, because many of the Win32 filesystem routines
-** rely on an insecure UTF-8 decoder.)
-**
-** XXX - This validation is redundant if the user chooses to convert
-** UTF-8 data into a wchar_t string.
-*/
 
-static xmlrpc_value *
-make_string(xmlrpc_env * const envP,
-            char *       const cdata,
-            size_t       const cdata_size) {
-#if HAVE_UNICODE_WCHAR
-    xmlrpc_validate_utf8(envP, cdata, cdata_size);
-#endif
+static void
+parseBoolean(xmlrpc_env *    const envP,
+             const char *    const str,
+             xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+   Parse the content of a <boolean> XML-RPC XML element, e.g. "1".
 
-    if (envP->fault_occurred)
-        return NULL;
-    return xmlrpc_build_value(envP, "s#", cdata, cdata_size);
+   'str' is that content.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(str);
+
+    if (xmlrpc_streq(str, "0") || xmlrpc_streq(str, "1"))
+        *valuePP = xmlrpc_bool_new(envP, xmlrpc_streq(str, "1") ? 1 : 0);
+    else
+        parseFault(envP, "<boolean> XML element content must be either "
+                   "'0' or '1' according to XML-RPC.  This one has '%s'",
+                   str);
+}
+
+
+
+static void
+parseDouble(xmlrpc_env *    const envP,
+            const char *    const str,
+            xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+   Parse the content of a <double> XML-RPC XML element, e.g. "34.5".
+
+   'str' is that content.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(str);
+
+    if (str[0] == '\0')
+        parseFault(envP, "<double> XML element content is empty.");
+    else if (isspace(str[0]))
+        parseFault(envP, "<double> content '%s' starts with white space.",
+                   str);
+    else {
+        double d;
+        char * tail;
+
+        errno = 0;
+
+        d = strtod(str, &tail);
+    
+        if (errno == ERANGE)
+            parseFault(envP, "<double> XML element value '%s' represents a "
+                       "number beyond the range that "
+                       "XML-RPC allows", str);
+        else if (errno != 0)
+            parseFault(envP, "unexpected error parsing <double> XML element "
+                       "value '%s'.  strtod() failed with errno %d (%s)",
+                       str, errno, strerror(errno));
+        else {
+            if (tail[0] != '\0')
+                parseFault(envP, "<double> value '%s' contains non-numerical "
+                           "junk: '%s'", str, tail);
+            else
+                *valuePP = xmlrpc_double_new(envP, d);
+        }
+    }            
+}
+
+
+
+static void
+parseBase64(xmlrpc_env *    const envP,
+            const char *    const str,
+            size_t          const strLength,
+            xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+   Parse the content of a <base64> XML-RPC XML element, e.g. "FD32YY".
+
+   'str' is that content.
+-----------------------------------------------------------------------------*/
+    xmlrpc_mem_block * decoded;
+    
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(str);
+
+    decoded = xmlrpc_base64_decode(envP, str, strLength);
+    if (!envP->fault_occurred) {
+        unsigned char * const bytes =
+            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, decoded);
+        size_t const byteCount =
+            XMLRPC_MEMBLOCK_SIZE(unsigned char, decoded);
+
+        *valuePP = xmlrpc_base64_new(envP, byteCount, bytes);
+        
+        XMLRPC_MEMBLOCK_FREE(unsigned char, decoded);
+    }
 }
 
 
@@ -217,29 +240,6 @@ static xmlrpc_value *
 convert_value(xmlrpc_env *  const envP,
               unsigned int  const maxRecursion,
               xml_element * const elemP);
-
-
-
-static void
-convertBase64(xmlrpc_env *    const envP,
-              const char *    const cdata,
-              size_t          const cdata_size,
-              xmlrpc_value ** const valuePP) {
-    
-    xmlrpc_mem_block *decoded;
-    
-    decoded = xmlrpc_base64_decode(envP, cdata, cdata_size);
-    if (!envP->fault_occurred) {
-        unsigned char * const asciiData =
-            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, decoded);
-        size_t const asciiLen =
-            XMLRPC_MEMBLOCK_SIZE(unsigned char, decoded);
-
-        *valuePP = xmlrpc_build_value(envP, "6", asciiData, asciiLen);
-        
-        XMLRPC_MEMBLOCK_FREE(unsigned char, decoded);
-    }
-}
 
 
 
@@ -342,7 +342,7 @@ convert_struct(xmlrpc_env *  const envP,
         CHECK_CHILD_COUNT(envP, name_elemP, 0);
         cdata = xml_element_cdata(name_elemP);
         cdata_size = xml_element_cdata_size(name_elemP);
-        key = make_string(envP, cdata, cdata_size);
+        key = xmlrpc_string_new_lp(envP, cdata_size, cdata);
         XMLRPC_FAIL_IF_FAULT(envP);
 
         /* Get our value. */
@@ -373,6 +373,103 @@ convert_struct(xmlrpc_env *  const envP,
         return NULL;
     }
     return strct;
+}
+
+
+
+static void
+parseI8(xmlrpc_env *    const envP,
+        const char *    const str,
+        xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+   Parse the content of a <i8> XML-RPC XML element, e.g. "34".
+
+   'str' is that content.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(str);
+
+    if (str[0] == '\0')
+        parseFault(envP, "<int> XML element content is empty.");
+    else if (isspace(str[0]))
+        parseFault(envP, "<int> content '%s' starts with white space.", str);
+    else {
+        long long i;
+        char * tail;
+
+        errno = 0;
+        i = strtoll(str, &tail, 10);
+
+        if (errno == ERANGE)
+            parseFault(envP, "<int> XML element value '%s' represents a "
+                       "number beyond the range that "
+                       "XML-RPC allows (%d - %d)", str,
+                       XMLRPC_INT64_MIN, XMLRPC_INT64_MAX);
+        else if (errno != 0)
+            parseFault(envP, "unexpected error parsing <int> XML element "
+                       "value '%s'.  strtoll() failed with errno %d (%s)",
+                       str, errno, strerror(errno));
+        else {
+            /* Look for out-of-range errors which didn't produce ERANGE. */
+            if (i < XMLRPC_INT64_MIN)
+                parseFault(envP, "<int> value %d is below the range allowed "
+                           "by XML-RPC (minimum is %d)",
+                           i, XMLRPC_INT64_MIN);
+            else if (i > XMLRPC_INT64_MAX)
+                parseFault(envP, "<int> value %d is above the range allowed "
+                           "by XML-RPC (maximum is %d)",
+                           i, XMLRPC_INT64_MAX);
+            else {
+                if (tail[0] != '\0')
+                    parseFault(envP, "<int> value '%s' contains non-numerical "
+                               "junk: '%s'", str, tail);
+                else
+                    *valuePP = xmlrpc_i8_new(envP, i);
+            }
+        }
+    }
+}
+
+
+
+static void
+parseSimpleValue(xmlrpc_env *    const envP,
+                 const char *    const elementName,
+                 const char *    const cdata,
+                 size_t          const cdataLength,
+                 xmlrpc_value ** const valuePP) {
+
+    /* We need to straighten out the whole character set / encoding thing
+       some day.  What is 'cdata', and what should it be?  Does it have
+       embedded NUL?  Some of the code here assumes it doesn't.  Is it
+       text?
+
+       The <string> parser assumes it's UTF 8 with embedded NULs.
+       But the <int> parser will get terribly confused if there are any
+       UTF-8 multibyte sequences or NUL characters.  So will most of the
+       others.
+    */
+    
+    if (xmlrpc_streq(elementName, "i4") ||
+        xmlrpc_streq(elementName, "int"))
+        parseInt(envP, cdata, valuePP);
+    else if (xmlrpc_streq(elementName, "boolean"))
+        parseBoolean(envP, cdata, valuePP);
+    else if (xmlrpc_streq(elementName, "double"))
+        parseDouble(envP, cdata, valuePP);
+    else if (xmlrpc_streq(elementName, "dateTime.iso8601"))
+        *valuePP = xmlrpc_datetime_new_str(envP, cdata);
+    else if (xmlrpc_streq(elementName, "string"))
+        *valuePP = xmlrpc_string_new_lp(envP, cdataLength, cdata);
+    else if (xmlrpc_streq(elementName, "base64"))
+        parseBase64(envP, cdata, cdataLength, valuePP);
+    else if (xmlrpc_streq(elementName, "nil"))
+        *valuePP = xmlrpc_nil_new(envP);
+    else if (xmlrpc_streq(elementName, "i8"))
+        parseI8(envP, cdata, valuePP);
+    else
+        parseFault(envP, "Unknown value type -- XML element is named "
+                   "<%s>", elementName);
 }
 
 
@@ -413,7 +510,7 @@ convert_value(xmlrpc_env *  const envP,
         /* We have no type element, so treat the value as a string. */
         char * const cdata      = xml_element_cdata(elemP);
         size_t const cdata_size = xml_element_cdata_size(elemP);
-        retval = make_string(envP, cdata, cdata_size);
+        retval = xmlrpc_string_new_lp(envP, cdata_size, cdata);
     } else {
         /* We should have a type tag inside our value tag. */
         xml_element * child;
@@ -424,6 +521,7 @@ convert_value(xmlrpc_env *  const envP,
         
         /* Parse our value-containing element. */
         child_name = xml_element_name(child);
+
         if (xmlrpc_streq(child_name, "struct")) {
             retval = convert_struct(envP, maxRecursion, child);
         } else if (xmlrpc_streq(child_name, "array")) {
@@ -436,40 +534,10 @@ convert_value(xmlrpc_env *  const envP,
             CHECK_CHILD_COUNT(envP, child, 0);
             cdata = xml_element_cdata(child);
             cdata_size = xml_element_cdata_size(child);
-            if (xmlrpc_streq(child_name, "i4") ||
-                xmlrpc_streq(child_name, "int")) {
-                xmlrpc_int32 const i =
-                    xmlrpc_atoi(envP, cdata, strlen(cdata),
-                                XMLRPC_INT32_MIN, XMLRPC_INT32_MAX);
-                XMLRPC_FAIL_IF_FAULT(envP);
-                retval = xmlrpc_build_value(envP, "i", i);
-            } else if (xmlrpc_streq(child_name, "string")) {
-                retval = make_string(envP, cdata, cdata_size);
-            } else if (xmlrpc_streq(child_name, "boolean")) {
-                xmlrpc_int32 const i =
-                    xmlrpc_atoi(envP, cdata, strlen(cdata), 0, 1);
-                XMLRPC_FAIL_IF_FAULT(envP);
-                retval = xmlrpc_build_value(envP, "b", (xmlrpc_bool) i);
-            } else if (xmlrpc_streq(child_name, "double")) {
-                double const d = xmlrpc_atod(envP, cdata, strlen(cdata));
-                XMLRPC_FAIL_IF_FAULT(envP);
-                retval = xmlrpc_build_value(envP, "d", d);
-            } else if (xmlrpc_streq(child_name, "dateTime.iso8601")) {
-                retval = xmlrpc_build_value(envP, "8", cdata);
-            } else if (xmlrpc_streq(child_name, "nil")) {
-                retval = xmlrpc_build_value(envP, "n");
-            } else if (xmlrpc_streq(child_name, "base64")) {
-                /* No more tail calls once we do this! */
 
-                convertBase64(envP, cdata, cdata_size, &retval);
-                if (envP->fault_occurred)
-                    /* Just for cleanup code: */
-                    retval = NULL;
-            } else {
-                XMLRPC_FAIL1(envP, XMLRPC_PARSE_ERROR,
-                             "Unknown value type -- XML element is named "
-                             "<%s>", child_name);
-            }
+            parseSimpleValue(envP, child_name, cdata, cdata_size, &retval);
+
+            XMLRPC_FAIL_IF_FAULT(envP);
         }
     }
 

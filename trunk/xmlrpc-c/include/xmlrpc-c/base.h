@@ -28,7 +28,9 @@ extern "C" {
 typedef signed int xmlrpc_int;  
     /* An integer of the type defined by XML-RPC <int>; i.e. 32 bit */
 typedef signed int xmlrpc_int32;
-    /* An integer of the type defined by XML-RPC <int4>; i.e. 32 bit */
+    /* An integer of the type defined by XML-RPC <i4>; i.e. 32 bit */
+typedef signed long long xmlrpc_int64;
+    /* An integer of the type defined by "XML-RPC" <i8>; i.e. 64 bit */
 typedef int xmlrpc_bool;
     /* A boolean (of the type defined by XML-RPC <boolean>, but there's
        really only one kind)
@@ -46,9 +48,11 @@ typedef SOCKET xmlrpc_socket;
 typedef int xmlrpc_socket;
 #endif
 
-#define XMLRPC_INT32_MAX (2147483647)
+#define XMLRPC_INT32_MAX 0x7fffffff
 #define XMLRPC_INT32_MIN (-XMLRPC_INT32_MAX - 1)
 
+#define XMLRPC_INT64_MAX 0x7fffffffffffffffll
+#define XMLRPC_INT64_MIN (-XMLRPC_INT64_MAX - 1)
 
 
 /*=========================================================================
@@ -58,21 +62,27 @@ typedef int xmlrpc_socket;
 */
 
 typedef enum {
-    XMLRPC_TYPE_INT      = 0,
-    XMLRPC_TYPE_BOOL     = 1,
-    XMLRPC_TYPE_DOUBLE   = 2,
-    XMLRPC_TYPE_DATETIME = 3,
-    XMLRPC_TYPE_STRING   = 4,
-    XMLRPC_TYPE_BASE64   = 5,
-    XMLRPC_TYPE_ARRAY    = 6,
-    XMLRPC_TYPE_STRUCT   = 7,
-    XMLRPC_TYPE_C_PTR    = 8,
-    XMLRPC_TYPE_NIL      = 9,
+    XMLRPC_TYPE_INT      =  0,
+    XMLRPC_TYPE_BOOL     =  1,
+    XMLRPC_TYPE_DOUBLE   =  2,
+    XMLRPC_TYPE_DATETIME =  3,
+    XMLRPC_TYPE_STRING   =  4,
+    XMLRPC_TYPE_BASE64   =  5,
+    XMLRPC_TYPE_ARRAY    =  6,
+    XMLRPC_TYPE_STRUCT   =  7,
+    XMLRPC_TYPE_C_PTR    =  8,
+    XMLRPC_TYPE_NIL      =  9,
+    XMLRPC_TYPE_I8       = 10,
     XMLRPC_TYPE_DEAD     = 0xDEAD
 } xmlrpc_type;
 
+#define XMLRPC_HAVE_I8 1
+
 /* These are *always* allocated on the heap. No exceptions. */
 typedef struct _xmlrpc_value xmlrpc_value;
+
+const char *
+xmlrpc_type_name(xmlrpc_type const type);
 
 void
 xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
@@ -93,6 +103,10 @@ extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* value);
 xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP,
                int          const intValue);
+
+xmlrpc_value *
+xmlrpc_i8_new(xmlrpc_env * const envP, 
+              long long    const value);
 
 void 
 xmlrpc_read_int(xmlrpc_env *         const envP,
@@ -237,16 +251,6 @@ int index,
                                   xmlrpc_value* value);
 */
 
-void
-xmlrpc_read_nil(xmlrpc_env *   const envP,
-                xmlrpc_value * const valueP);
-                
-
-void
-xmlrpc_read_cptr(xmlrpc_env *         const envP,
-                 const xmlrpc_value * const valueP,
-                 void **              const ptrValueP);
-
 xmlrpc_value *
 xmlrpc_struct_new(xmlrpc_env * env);
 
@@ -377,6 +381,22 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
                                 int             index,
                                 xmlrpc_value ** out_keyval,
                                 xmlrpc_value ** out_value);
+
+void
+xmlrpc_read_cptr(xmlrpc_env *         const envP,
+                 const xmlrpc_value * const valueP,
+                 void **              const ptrValueP);
+
+void
+xmlrpc_read_nil(xmlrpc_env *   const envP,
+                xmlrpc_value * const valueP);
+                
+
+void 
+xmlrpc_read_i8(xmlrpc_env *         const envP,
+               const xmlrpc_value * const valueP,
+               long long *          const intValueP);
+
 
 xmlrpc_value *
 xmlrpc_cptr_new(xmlrpc_env * const envP,
