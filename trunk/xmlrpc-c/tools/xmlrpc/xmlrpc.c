@@ -40,8 +40,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "config.h"  /* information about this build environment */
+#include "bool.h"
 #include "casprintf.h"
 #include "mallocvar.h"
 #include "cmdline_parser.h"
@@ -249,7 +251,7 @@ buildString(xmlrpc_env *    const envP,
             const char *    const valueString,
             xmlrpc_value ** const paramPP) {
 
-    *paramPP = xmlrpc_build_value(envP, "s", valueString);
+    *paramPP = xmlrpc_string_new(envP, valueString);
 }
 
 
@@ -264,17 +266,46 @@ buildInt(xmlrpc_env *    const envP,
     else {
         long value;
         char * tailptr;
+
+        errno = 0;
         
         value = strtol(valueString, &tailptr, 10);
 
-        if (*tailptr != '\0')
-            setError(envP, 
-                     "Integer argument has non-digit crap in it: '%s'",
-                     tailptr);
-        else
-            *paramPP = xmlrpc_build_value(envP, "i", value);
+        if (errno == ERANGE)
+            setError(envP, "'%s' is out of range for a 32 bit integer",
+                     valueString);
+        else if (errno != 0)
+            setError(envP, "Mysterious failure of strtol(), errno=%d (%s)",
+                     errno, strerror(errno));
+        else {
+            if (*tailptr != '\0')
+                setError(envP, 
+                         "Integer argument has non-digit crap in it: '%s'",
+                         tailptr);
+            else
+                *paramPP = xmlrpc_int_new(envP, value);
+        }
     }
 }
+
+
+
+static void
+buildBool(xmlrpc_env *    const envP,
+          const char *    const valueString,
+          xmlrpc_value ** const paramPP) {
+
+    if (strcmp(valueString, "t") == 0 ||
+        strcmp(valueString, "true") == 0)
+        *paramPP = xmlrpc_bool_new(envP, true);
+    else if (strcmp(valueString, "f") == 0 ||
+        strcmp(valueString, "false") == 0)
+        *paramPP = xmlrpc_bool_new(envP, false);
+    else
+        setError(envP, "Boolean argument has unrecognized value '%s'.  "
+                 "recognized values are 't', 'f', 'true', and 'false'.",
+                 valueString);
+} 
 
 
 
@@ -296,28 +327,9 @@ buildDouble(xmlrpc_env *    const envP,
                      "\"Double\" argument has non-decimal crap in it: '%s'",
                      tailptr);
         else
-            *paramPP = xmlrpc_build_value(envP, "d", value);
+            *paramPP = xmlrpc_double_new(envP, value);
     }
 }
-
-
-
-static void
-buildBool(xmlrpc_env *    const envP,
-          const char *    const valueString,
-          xmlrpc_value ** const paramPP) {
-
-    if (strcmp(valueString, "t") == 0 ||
-        strcmp(valueString, "true") == 0)
-        *paramPP = xmlrpc_build_value(envP, "b", 1);
-    else if (strcmp(valueString, "f") == 0 ||
-        strcmp(valueString, "false") == 0)
-        *paramPP = xmlrpc_build_value(envP, "b", 0);
-    else
-        setError(envP, "Boolean argument has unrecognized value '%s'.  "
-                 "recognized values are 't', 'f', 'true', and 'false'.",
-                 valueString);
-} 
 
 
 
@@ -329,7 +341,41 @@ buildNil(xmlrpc_env *    const envP,
     if (strlen(valueString) > 0)
         setError(envP, "Nil argument has something after the 'n/'");
     else {
-        *paramPP = xmlrpc_build_value(envP, "n");
+        *paramPP = xmlrpc_nil_new(envP);
+    }
+}
+
+
+
+static void
+buildI8(xmlrpc_env *    const envP,
+        const char *    const valueString,
+        xmlrpc_value ** const paramPP) {
+
+    if (strlen(valueString) < 1)
+        setError(envP, "Integer argument has nothing after the 'I/'");
+    else {
+        long long value;
+        char * tailptr;
+        
+        errno = 0;
+
+        value = strtoll(valueString, &tailptr, 10);
+
+        if (errno == ERANGE)
+            setError(envP, "'%s' is out of range for a 64 bit integer",
+                     valueString);
+        else if (errno != 0)
+            setError(envP, "Mysterious failure of strtoll(), errno=%d (%s)",
+                     errno, strerror(errno));
+        else {
+            if (*tailptr != '\0')
+                setError(envP, "64 bit integer argument has non-digit crap "
+                         "in it: '%s'",
+                         tailptr);
+            else
+                *paramPP = xmlrpc_i8_new(envP, value);
+        }
     }
 }
 
@@ -344,6 +390,8 @@ computeParameter(xmlrpc_env *    const envP,
         buildString(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "i/", 2) == 0) 
         buildInt(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "I/", 2) == 0) 
+        buildI8(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "d/", 2) == 0) 
         buildDouble(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "b/", 2) == 0)
@@ -370,7 +418,7 @@ computeParamArray(xmlrpc_env *    const envP,
 
     xmlrpc_value * paramArrayP;
 
-    paramArrayP = xmlrpc_build_value(envP, "()");
+    paramArrayP = xmlrpc_array_new(envP);
 
     for (i = 0; i < paramCount && !envP->fault_occurred; ++i) {
         xmlrpc_value * paramP;

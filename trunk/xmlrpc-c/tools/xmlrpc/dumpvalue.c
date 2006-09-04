@@ -30,10 +30,11 @@ dumpInt(const char *   const prefix,
     
     xmlrpc_env_init(&env);
 
-    xmlrpc_parse_value(&env, valueP, "i", &value);
+    xmlrpc_read_int(&env, valueP, &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse integer xmlrpc_value %lx.  %s\n",
+        printf("Internal error: unable to extract value of "
+               "integer xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
         printf("%sInteger: %d\n", prefix, value);
@@ -52,17 +53,17 @@ dumpBool(const char *   const prefix,
     
     xmlrpc_env_init(&env);
 
-    xmlrpc_parse_value(&env, valueP, "b", &value);
+    xmlrpc_read_bool(&env, valueP, &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse boolean xmlrpc_value %lx.  %s\n",
+        printf("Internal error: Unable to extract value of "
+               "boolean xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
         printf("%sBoolean: %s\n", prefix, value ? "TRUE" : "FALSE");
 
     xmlrpc_env_clean(&env);
 }
-
 
 
 
@@ -75,10 +76,11 @@ dumpDouble(const char *   const prefix,
     
     xmlrpc_env_init(&env);
 
-    xmlrpc_parse_value(&env, valueP, "d", &value);
+    xmlrpc_read_double(&env, valueP, &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse floating point number xmlrpc_value %lx.  %s\n",
+        printf("Internal error: Unable to extract value from "
+               "floating point number xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
         printf("%sFloating Point: %f\n", prefix, value);
@@ -103,18 +105,27 @@ dumpString(const char *   const prefix,
            xmlrpc_value * const valueP) {
 
     xmlrpc_env env;
+    size_t length;
     const char * value;
     
     xmlrpc_env_init(&env);
 
-    xmlrpc_parse_value(&env, valueP, "s", &value);
+    xmlrpc_read_string_lp(&env, valueP, &length, &value);
     
     if (env.fault_occurred)
-        printf("Unable to parse string xmlrpc_value %lx.  %s\n",
+        printf("Internal error: Unable to extract value from "
+               "string xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
-    else
+    else {
+        if (strlen(value) != length)
+            printf("String value contains a NUL character, which means the "
+                   "XML-RPC response was not valid XML.  We report only up to "
+                   "the NUL.\n");
+
         printf("%sString: '%s'\n", prefix, value);
 
+        strfree(value);
+    }
     xmlrpc_env_clean(&env);
 }
 
@@ -130,7 +141,7 @@ dumpBase64(const char *   const prefix,
     
     xmlrpc_env_init(&env);
 
-    xmlrpc_parse_value(&env, valueP, "6", &value, &length);
+    xmlrpc_read_base64(&env, valueP, &length, &value);
     
     if (env.fault_occurred)
         printf("Unable to parse base64 bit string xmlrpc_value %lx.  %s\n",
@@ -141,6 +152,8 @@ dumpBase64(const char *   const prefix,
         printf("%sBit string: ", prefix);
         for (i = 0; i < length; ++i)
             printf("%02x", value[i]);
+
+        free((void*)value);
     }
     xmlrpc_env_clean(&env);
 }
@@ -277,17 +290,17 @@ dumpCPtr(const char *   const prefix,
          xmlrpc_value * const valueP) {
 
     xmlrpc_env env;
-    const char * value;
+    void * value;
 
     xmlrpc_env_init(&env);
 
-    xmlrpc_parse_value(&env, valueP, "p", &value);
+    xmlrpc_read_cptr(&env, valueP, &value);
         
     if (env.fault_occurred)
         printf("Unable to parse C pointer xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
-        printf("%sC pointer: '%p'\n", prefix, value);
+        printf("%sC pointer: '%lux'\n", prefix, (unsigned long)value);
 
     xmlrpc_env_clean(&env);
 }
@@ -302,13 +315,37 @@ dumpNil(const char *   const prefix,
 
     xmlrpc_env_init(&env);
 
-    xmlrpc_parse_value(&env, valueP, "n");
+    xmlrpc_read_nil(&env, valueP);
         
     if (env.fault_occurred)
-        printf("Unable to parse nil value xmlrpc_value %lx.  %s\n",
+        printf("Internal error: nil value xmlrpc_value %lx "
+               "is not valid.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
         printf("%sNil\n", prefix);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+dumpI8(const char *   const prefix,
+       xmlrpc_value * const valueP) {
+
+    xmlrpc_env env;
+    xmlrpc_int64 value;
+    
+    xmlrpc_env_init(&env);
+
+    xmlrpc_read_i8(&env, valueP, &value);
+    
+    if (env.fault_occurred)
+        printf("Internal error: unable to extract value of "
+               "64-bit integer xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
+    else
+        printf("%s64-bit integer: %lld\n", prefix, value);
 
     xmlrpc_env_clean(&env);
 }
@@ -360,6 +397,9 @@ dumpValue(const char *   const prefix,
         break;
     case XMLRPC_TYPE_NIL:
         dumpNil(prefix, valueP);
+        break;
+    case XMLRPC_TYPE_I8:
+        dumpI8(prefix, valueP);
         break;
     default:
         dumpUnknown(prefix, valueP);
