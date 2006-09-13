@@ -763,5 +763,52 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
 
 
 
-} // namespace
+value_i8::value_i8(long long const cppvalue) {
 
+    class cWrapper {
+    public:
+        xmlrpc_value * valueP;
+        
+        cWrapper(long long const cppvalue) {
+            env_wrap env;
+            
+            this->valueP = xmlrpc_i8_new(&env.env_c, cppvalue);
+            throwIfError(env);
+        }
+        ~cWrapper() {
+            xmlrpc_DECREF(this->valueP);
+        }
+    };
+    
+    cWrapper wrapper(cppvalue);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+
+value_i8::value_i8(xmlrpc_c::value const baseValue) {
+
+    if (baseValue.type() != xmlrpc_c::value::TYPE_I8)
+        throw(error("Not 64 bit integer type.  See type() method"));
+    else {
+        this->instantiate(baseValue.cValueP);
+    }
+}
+
+
+
+value_i8::operator long long() const {
+
+    long long retval;
+    env_wrap env;
+
+    xmlrpc_read_i8(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
+}
+
+
+
+} // namespace

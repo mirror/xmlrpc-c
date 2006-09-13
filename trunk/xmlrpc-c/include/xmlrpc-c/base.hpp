@@ -36,6 +36,7 @@ public:
         TYPE_STRUCT     = 7,
         TYPE_C_PTR      = 8,
         TYPE_NIL        = 9,
+        TYPE_I8         = 10,
         TYPE_DEAD       = 0xDEAD
     };
 
@@ -147,15 +148,6 @@ public:
 
 
 
-class value_nil : public value {
-public:
-    value_nil();
-
-    value_nil(xmlrpc_c::value const baseValue);
-};
-
-
-
 class value_struct : public value {
 public:
     value_struct(std::map<std::string, xmlrpc_c::value> const& cvalue);
@@ -178,6 +170,26 @@ public:
 
     size_t
     size() const;
+};
+
+
+
+class value_nil : public value {
+public:
+    value_nil();
+
+    value_nil(xmlrpc_c::value const baseValue);
+};
+
+
+
+class value_i8 : public value {
+public:
+    value_i8(long long const cvalue);
+
+    value_i8(xmlrpc_c::value const baseValue);
+
+    operator long long() const;
 };
 
 

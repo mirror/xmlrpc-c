@@ -433,6 +433,31 @@ public:
 
 
 
+class i8TestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "i8TestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        value_i8 int1(7);
+        TEST(static_cast<long long>(int1) == 7);
+        value_i8 int2(-7);
+        TEST(static_cast<long long>(int2) == -7);
+        value_i8 int5(1ull << 40);
+        TEST(static_cast<long long>(int5) == (1ull << 40));
+        value val1(int1);
+        TEST(val1.type() == value::TYPE_I8);
+        value_i8 int3(val1);
+        TEST(static_cast<long long>(int3) == 7);
+        try {
+            value_i8 int4(value_double(3.7));
+            TEST_FAILED("invalid cast double-i8 suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
 class structTestSuite : public testSuite {
 public:
     virtual string suiteName() {
@@ -511,6 +536,7 @@ public:
         stringTestSuite().run(indentation+1);
         bytestringTestSuite().run(indentation+1);
         nilTestSuite().run(indentation+1);
+        i8TestSuite().run(indentation+1);
         structTestSuite().run(indentation+1);
         arrayTestSuite().run(indentation+1);
     }
