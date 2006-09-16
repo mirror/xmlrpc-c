@@ -1,6 +1,11 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  EXPATDIR := $(call updir,$(CURDIR))
+  LIBDIR := $(call updir,$(EXPATDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
+SUBDIR := lib/expat/gennmtab
 
 include $(SRCDIR)/Makefile.config
 

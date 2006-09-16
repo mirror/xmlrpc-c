@@ -8,16 +8,13 @@
 # library, which have nothing in particular to do with XML-RPC.
 ###############################################################################
 
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  LIBDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib/libutil
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
-BLDDIR = ../..
-BUILDDIR = blddir
-VPATH = .:$(SRCDIR)
+SUBDIR := lib/libutil
 
 include $(BLDDIR)/Makefile.config
 
@@ -33,7 +30,7 @@ LIBXMLRPC_UTIL_OBJS = \
   resource.lo \
   sleep.lo \
 
-INCLUDES = -Iblddir -I$(SRCDIR) \
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
            -Isrcdir/include -Isrcdir/lib/util/include
 
 LDFLAGS = $(LADD)
@@ -64,7 +61,7 @@ dep: dep-common
 # This 'Makefile.common' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/Makefile.common: srcdir
 
 include $(SRCDIR)/Makefile.common
 

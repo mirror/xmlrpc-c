@@ -1,9 +1,11 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  ABYSSDIR := $(call updir,$(CURDIR))
+  LIBDIR := $(call updir,$(ABYSSDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib/abyss/src
-
-BUILDDIR = $(SRCDIR)
+SUBDIR := lib/abyss/src
 
 include $(SRCDIR)/Makefile.config
 

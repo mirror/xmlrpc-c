@@ -1,13 +1,11 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  SRCCPPDIR := $(call updir,$(CURDIR))
+  srcDIR := $(call updir,$(SRCCPPDIR))
+  SRCDIR := $(call updir,$(srcDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = src/test/cpp
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
-BLDDIR = ../../..
-BUILDDIR = blddir
-VPATH = .:$(SRCDIR)
+SUBDIR := src/test/cpp
 
 include $(BLDDIR)/Makefile.config
 
@@ -17,7 +15,7 @@ default: all
 
 all: $(PROGS)
 
-XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
+XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
@@ -34,12 +32,12 @@ LDFLAGS += "-lpthread"
 
 LDFLAGS += $(LADD)
 
-INCLUDES = -Isrcdir/include -Iblddir -Isrcdir -Isrcdir/lib/util/include
+INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 
 # This 'Makefile' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-Makefile: blddir srcdir
+Makefile: srcdir
 
 include $(SRCDIR)/Makefile.common
 

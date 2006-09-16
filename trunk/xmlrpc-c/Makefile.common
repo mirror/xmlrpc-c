@@ -9,7 +9,7 @@
 # The following make variables are meaningful as input to this file:
 #
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
-# BUILDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
+# BLDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
 
 LIBTOOL = $(SRCDIR)/libtool
 LINK = $(LIBTOOL) --mode=link $(CCLD)
@@ -39,7 +39,7 @@ ifeq ($(CXX_COMPILER_GNU),yes)
   CXXFLAGS_COMMON += $(GCC_CXX_WARNINGS) -g
 endif
 
-DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
+DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
 # MAJ and MIN are major and minor version numbers for shared libraries.
 # Libtool builds are controlled by LDFLAGS_VERSINFO instead.
@@ -79,46 +79,46 @@ ifeq ($(CURDIR)x,x)
   CURDIR := $(shell /bin/pwd)
 endif
 
-LIBXMLRPC_UTIL           = $(BUILDDIR)/lib/libutil/libxmlrpc_util.la
-LIBXMLRPC                = $(BUILDDIR)/src/libxmlrpc.la
-LIBXMLRPC_CLIENT         = $(BUILDDIR)/src/libxmlrpc_client.la
-LIBXMLRPC_SERVER         = $(BUILDDIR)/src/libxmlrpc_server.la
-LIBXMLRPC_SERVER_ABYSS   = $(BUILDDIR)/src/libxmlrpc_server_abyss.la
-LIBXMLRPC_SERVER_CGI     = $(BUILDDIR)/src/libxmlrpc_server_cgi.la
-LIBXMLRPC_ABYSS          = $(BUILDDIR)/lib/abyss/src/libxmlrpc_abyss.la
-LIBXMLRPC_XMLPARSE       = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
-LIBXMLRPC_XMLTOK         = $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
-LIBXMLRPC_UTIL_A         = $(BUILDDIR)/lib/libutil/.libs/libxmlrpc_util.a
-LIBXMLRPC_A              = $(BUILDDIR)/src/.libs/libxmlrpc.a
-LIBXMLRPC_CLIENT_A       = $(BUILDDIR)/src/.libs/libxmlrpc_client.a
-LIBXMLRPC_SERVER_A       = $(BUILDDIR)/src/.libs/libxmlrpc_server.a
-LIBXMLRPC_SERVER_ABYSS_A = $(BUILDDIR)/src/.libs/libxmlrpc_server_abyss.a
-LIBXMLRPC_SERVER_CGI_A   = $(BUILDDIR)/src/.libs/libxmlrpc_server_cgi.a
-LIBXMLRPC_ABYSS_A        = $(BUILDDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
-LIBXMLRPC_XMLPARSE_A     = $(BUILDDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a
-LIBXMLRPC_XMLTOK_A       = $(BUILDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
-LIBXMLRPC_CPP            = $(BUILDDIR)/src/cpp/libxmlrpc_cpp.a
-LIBXMLRPC++              = $(BUILDDIR)/src/cpp/libxmlrpc++.a
-LIBXMLRPC_CLIENT++       = $(BUILDDIR)/src/cpp/libxmlrpc_client++.a
-LIBXMLRPC_SERVER++       = $(BUILDDIR)/src/cpp/libxmlrpc_server++.a
-LIBXMLRPC_SERVER_ABYSS++ = $(BUILDDIR)/src/cpp/libxmlrpc_server_abyss++.a
+LIBXMLRPC_UTIL           = $(BLDDIR)/lib/libutil/libxmlrpc_util.la
+LIBXMLRPC                = $(BLDDIR)/src/libxmlrpc.la
+LIBXMLRPC_CLIENT         = $(BLDDIR)/src/libxmlrpc_client.la
+LIBXMLRPC_SERVER         = $(BLDDIR)/src/libxmlrpc_server.la
+LIBXMLRPC_SERVER_ABYSS   = $(BLDDIR)/src/libxmlrpc_server_abyss.la
+LIBXMLRPC_SERVER_CGI     = $(BLDDIR)/src/libxmlrpc_server_cgi.la
+LIBXMLRPC_ABYSS          = $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss.la
+LIBXMLRPC_XMLPARSE       = $(BLDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
+LIBXMLRPC_XMLTOK         = $(BLDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
+LIBXMLRPC_UTIL_A         = $(BLDDIR)/lib/libutil/.libs/libxmlrpc_util.a
+LIBXMLRPC_A              = $(BLDDIR)/src/.libs/libxmlrpc.a
+LIBXMLRPC_CLIENT_A       = $(BLDDIR)/src/.libs/libxmlrpc_client.a
+LIBXMLRPC_SERVER_A       = $(BLDDIR)/src/.libs/libxmlrpc_server.a
+LIBXMLRPC_SERVER_ABYSS_A = $(BLDDIR)/src/.libs/libxmlrpc_server_abyss.a
+LIBXMLRPC_SERVER_CGI_A   = $(BLDDIR)/src/.libs/libxmlrpc_server_cgi.a
+LIBXMLRPC_ABYSS_A        = $(BLDDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
+LIBXMLRPC_XMLPARSE_A     = $(BLDDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a
+LIBXMLRPC_XMLTOK_A       = $(BLDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
+LIBXMLRPC_CPP            = $(BLDDIR)/src/cpp/libxmlrpc_cpp.a
+LIBXMLRPC++              = $(BLDDIR)/src/cpp/libxmlrpc++.a
+LIBXMLRPC_CLIENT++       = $(BLDDIR)/src/cpp/libxmlrpc_client++.a
+LIBXMLRPC_SERVER++       = $(BLDDIR)/src/cpp/libxmlrpc_server++.a
+LIBXMLRPC_SERVER_ABYSS++ = $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++.a
 
-CASPRINTF                = $(BUILDDIR)/lib/util/casprintf.o
+CASPRINTF                = $(BLDDIR)/lib/util/casprintf.o
 
 UTILS = $(CASPRINTF)
 
 
 # LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
 # XML.  If we're using an external library to parse XML, this is null.
-# LDLIBS_XMLRPC_XML is the corresonding -l options.
+# LDLIBS_XMLRPC_XML is the corresponding -l options.
 
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
   LIBXMLRPC_XML = $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLTOK)
   LDLIBS_XML = \
-        -L$(BUILDDIR)/lib/expat/xmlparse/.libs \
+        -L$(BLDDIR)/lib/expat/xmlparse/.libs \
 	-lxmlrpc_xmlparse \
-        -L$(BUILDDIR)/lib/expat/xmltok/.libs \
+        -L$(BLDDIR)/lib/expat/xmltok/.libs \
 	-lxmlrpc_xmltok
 else
   LDLIBS_XML = $(shell xml2-config --libs)
@@ -129,16 +129,19 @@ endif
 #                           BUILD RULES                                      #
 ##############################################################################
 
-# We use the srcdir and blddir symbolic links simply to make the make
-# rules easier to read in the make output.  We could use $(SRCDIR) and
-# $(BLDDIR) variables, but that makes the compile and link commands
+# We use the srcdir symbolic link simply to make the make
+# rules easier to read in the make output.  We could use the $(SRCDIR)
+# variable, but that makes the compile and link commands
 # a mile long.  Note that Make sometime figures that a directory which
 # is a dependency is newer than the symbolic link pointing to it and wants
-# to rebuild the symbolic link.  So we don't make $(BLDDIR) a
-# dependency of 'blddir'.
+# to rebuild the symbolic link.  So we don't make $(SRCDIR) a
+# dependency of 'srcdir'.
 
-blddir:
-	$(LN_S) $(BLDDIR) $@
+# We tried this same strategy for shortening references to $(BLDDIR),
+# but found that that screws up parallel make, since Make isn't smart
+# enough to figure out that the target ./blddir/obj.o in two different
+# directories would be the same file, so launches a make of both at
+# the same time.
 
 srcdir:
 	$(LN_S) $(SRCDIR) $@
@@ -171,15 +174,15 @@ $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
-$(BUILDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
+$(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \
 	    $(notdir $@)
 
-$(BUILDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo: FORCE
+$(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/curl_transport/Makefile \
 	    $(notdir $@)
 
-$(BUILDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
+$(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libwww_transport/Makefile \
 	    $(notdir $@)
 
@@ -204,18 +207,18 @@ $(LIBXMLRPC) $(LIBXMLRPC_CLIENT) $(LIBXMLRPC_SERVER): FORCE
 	    $(notdir $@)
 
 $(LIBXMLRPC++) $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_SERVER++) \
-  $(LIBXMLRPC_SERVER_ABYSS++): FORCE
+  $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_CPP): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPC_UTIL_A): $(LIBXMLRPC_UTIL)
-$(LIBXMLRPC_A): $(LIBXMLRPC)
-$(LIBXMLRPC_CLIENT_A): $(LIBXMLRPC_CLIENT)
+$(LIBXMLRPC_UTIL_A):         $(LIBXMLRPC_UTIL)
+$(LIBXMLRPC_A):              $(LIBXMLRPC)
+$(LIBXMLRPC_CLIENT_A):       $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_SERVER_ABYSS_A): $(LIBXMLRPC_SERVER_ABYSS)
-$(LIBXMLRPC_CGI_A): $(LIBXMLRPC_CGI)
-$(LIBXMLRPC_ABYSS_A): $(LIBXMLRPC_ABYSS)
-$(LIBXMLRPC_XMLPARSE_A): $(LIBXMLRPC_XMLPARSE)
-$(LIBXMLRPC_XMLTOK_A): $(LIBXMLRPC_XMLTOK)
+$(LIBXMLRPC_CGI_A):          $(LIBXMLRPC_CGI)
+$(LIBXMLRPC_ABYSS_A):        $(LIBXMLRPC_ABYSS)
+$(LIBXMLRPC_XMLPARSE_A):     $(LIBXMLRPC_XMLPARSE)
+$(LIBXMLRPC_XMLTOK_A):       $(LIBXMLRPC_XMLTOK)
 
 $(UTILS): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/util/Makefile \
@@ -233,24 +236,24 @@ $(UTILS): FORCE
 
 ifneq ($(OMIT_VERSION_H),Y)
 
-$(BUILDDIR)/version.h:
+$(BLDDIR)/version.h:
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/GNUmakefile $(notdir $@)
 
-version.h: $(BUILDDIR)/version.h
+version.h: $(BLDDIR)/version.h
 	$(LN_S) $< $@
 
 endif
 
-$(BUILDDIR)/include/xmlrpc-c/config.h:
-	$(MAKE) -C $(BUILDDIR)/include -f $(SRCDIR)/include/Makefile \
+$(BLDDIR)/include/xmlrpc-c/config.h:
+	$(MAKE) -C $(BLDDIR)/include -f $(SRCDIR)/include/Makefile \
           xmlrpc-c/config.h
 
 ifneq ($(OMIT_TRANSPORT_CONFIG_H),Y)
-$(BUILDDIR)/transport_config.h:
+$(BLDDIR)/transport_config.h:
 	$(MAKE) -C $(dir $@) $(notdir $@)
 endif
 
-$(ALL_OBJS): $(BUILDDIR)/include/xmlrpc-c/config.h
+$(ALL_OBJS): $(BLDDIR)/include/xmlrpc-c/config.h
 
 
 ##############################################################################
@@ -382,7 +385,7 @@ distclean-common:
 #
 	cat /dev/null >Makefile.depend
 	rm -f TAGS
-	rm -f blddir srcdir
+	rm -f srcdir
 ifneq ($(OMIT_VERSION_H),Y)
 	rm -f version.h
 endif

@@ -1,15 +1,13 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  EXPATDIR := $(call updir,$(CURDIR))
+  LIBDIR := $(call updir,$(EXPATDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib/expat/xmlparse
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
-BLDDIR = ../../..
-BUILDDIR = blddir
-VPATH = .:$(SRCDIR)
+SUBDIR := lib/expat/xmlparse
 
-XMLTOKDIR = ../xmltok
+XMLTOKDIR = $(SRCDIR)/lib/expat/xmltok
 UTILDIR = $(SRCDIR)/lib/util
 
 include $(BLDDIR)/Makefile.config
@@ -20,7 +18,7 @@ all: libxmlrpc_xmlparse.la
 
 LIBXMLRPC_XMLPARSE_OBJS = xmlparse.lo
 
-INCLUDES = -Iblddir -I$(SRCDIR) -I$(UTILDIR)/include -I$(XMLTOKDIR)
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR) -I$(UTILDIR)/include -I$(XMLTOKDIR)
 
 LDFLAGS = $(LADD)
 
@@ -50,7 +48,7 @@ dep: dep-common
 # This 'Makefile.common' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/Makefile.common: srcdir
 
 include $(SRCDIR)/Makefile.common
 

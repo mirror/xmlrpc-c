@@ -1,13 +1,14 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  srcDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(srcDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = src/test
-BUILDDIR = $(SRCDIR)
-VPATH = .:$(SRCDIR)
+SUBDIR := src/test
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
-XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
+XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 LDADD_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) client --ldadd)
@@ -18,7 +19,7 @@ LDADD_CGI_SERVER = \
 
 default: all
 
-INCLUDES = -I$(BUILDDIR) -I$(SRCDIR) \
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
            -I $(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
 
 PROGS = test cgitest1

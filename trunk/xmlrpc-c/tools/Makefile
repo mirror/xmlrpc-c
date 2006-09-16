@@ -1,8 +1,9 @@
-SUBDIR=tools
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/..
-BUILDDIR = $(SRCDIR)
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  SRCDIR := $(call updir,$(CURDIR))
+  BLDDIR := $(SRCDIR)
 endif
+SUBDIR := tools
 
 include $(SRCDIR)/Makefile.config
 

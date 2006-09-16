@@ -1,11 +1,10 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  TOOLSDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(TOOLSDIR))
+  BLDDIR := $(SRCDIR)
 endif
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
-BLDDIR = $(SRCDIR)
-BUILDDIR = blddir
+SUBDIR := tools/xml-rpc-api2cpp
 
 default: all
 
@@ -19,7 +18,7 @@ CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 LDFLAGS = $(LADD)
 
-LDLIBS = -Lblddir/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
+LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
 
 all: xml-rpc-api2cpp
 
@@ -46,7 +45,7 @@ xml-rpc-api2cpp: \
 # This Makefile.config dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: blddir srcdir
+$(BLDDIR)/Makefile.config: srcdir
 
 include Makefile.depend
 

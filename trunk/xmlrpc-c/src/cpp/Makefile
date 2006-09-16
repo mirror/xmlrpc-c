@@ -1,14 +1,10 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR := $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  srcDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(srcDIR))
+  BLDDIR := $(SRCDIR)
 endif
 SUBDIR := src/cpp
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in directories that don't, like this one, have
-# blddir, these places use something else -- hence the variable).
-BLDDIR = ../..
-BUILDDIR := blddir
-VPATH = .:$(SRCDIR)
 
 include $(BLDDIR)/Makefile.config
 
@@ -71,14 +67,14 @@ include $(SRCDIR)/Makefile.common
 # This 'Makefile.common' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/Makefile.common: srcdir
 
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \
   -I$(CURL_TRANSPORT_DIR) \
   -I$(LIBWWW_TRANSPORT_DIR) \
 
-BASIC_INCLUDES = -Isrcdir/include -Iblddir -Isrcdir \
+BASIC_INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir \
   -Isrcdir/lib/util/include
 
 ifeq ($(SHARED_LIB_TYPE),unix)
@@ -159,7 +155,7 @@ CLIENT_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
 $(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
 	$(CXX) -c $(CLIENT_INCLUDES) $(CXXFLAGS) $<
 
-client.o curl.o libwww.o wininet.o: $(BUILDDIR)/transport_config.h
+client.o curl.o libwww.o wininet.o: $(BLDDIR)/transport_config.h
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES
@@ -181,6 +177,6 @@ distclean: clean distclean-local distclean-common
 distclean-local:
 
 .PHONY: dep
-dep: dep-common $(BUILDDIR)/transport_config.h
+dep: dep-common $(BLDDIR)/transport_config.h
 
 include Makefile.depend

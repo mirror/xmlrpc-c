@@ -1,6 +1,6 @@
 # -*-makefile-*-    <-- an Emacs control
 
-CLIENT_LDLIBS = -L$(BUILDDIR)/src/.libs -lxmlrpc_client -lxmlrpc
+CLIENT_LDLIBS = -L$(BLDDIR)/src/.libs -lxmlrpc_client -lxmlrpc
 
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   CLIENT_LDLIBS += $(shell libwww-config --libs)
@@ -14,10 +14,10 @@ endif
 
 CLIENT_LDLIBS += $(LDLIBS_XML)
 
-CLIENT_LDLIBS += -L$(BUILDDIR)/lib/libutil/.libs -lxmlrpc_util
+CLIENT_LDLIBS += -L$(BLDDIR)/lib/libutil/.libs -lxmlrpc_util
 
 
-UTIL_DIR = $(BUILDDIR)/lib/util
+UTIL_DIR = $(BLDDIR)/lib/util
 
 BUILDABLE_UTILS = cmdline_parser.o getoptx.o
 

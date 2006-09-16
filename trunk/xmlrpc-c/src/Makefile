@@ -1,14 +1,14 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  SRCDIR := $(call updir,$(CURDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = src
-BUILDDIR = $(SRCDIR)
-VPATH = .:$(SRCDIR)
+SUBDIR := src
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
-ABYSS_LIBDIR = $(BUILDDIR)/lib/abyss/src/.libs
-LIBUTIL_LIBDIR = $(BUILDDIR)/lib/libutil/.libs
+ABYSS_LIBDIR = $(BLDDIR)/lib/abyss/src/.libs
+LIBUTIL_LIBDIR = $(BLDDIR)/lib/libutil/.libs
 
 default: all
 
@@ -105,7 +105,7 @@ TRANSPORT_INCLUDES = \
   -I$(CURL_TRANSPORT_DIR) \
   -I$(LIBWWW_TRANSPORT_DIR) \
 
-INCLUDES = -I$(BUILDDIR) -I$(SRCDIR) \
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
            -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
 	   -I$(SRCDIR)/lib/abyss/src \
 	   $(TRANSPORT_INCLUDES) \
@@ -194,10 +194,10 @@ clean-local:
 distclean: clean-common clean-local distclean-common $(SUBDIRS:%=%/distclean)
 
 .PHONY: dep
-dep: $(SUBDIRS:%=%/dep) $(BUILDDIR)/transport_config.h dep-common
+dep: $(SUBDIRS:%=%/dep) $(BLDDIR)/transport_config.h dep-common
 
 include $(SRCDIR)/Makefile.common
 
-xmlrpc_client.lo: $(BUILDDIR)/transport_config.h
+xmlrpc_client.lo: $(BLDDIR)/transport_config.h
 
 include Makefile.depend

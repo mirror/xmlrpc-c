@@ -17,22 +17,24 @@
 # just link utility object modules into each Xmlrpc-c library.
 ##############################################################################
 
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  LIBDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib/util
-BUILDDIR = $(SRCDIR)
+SUBDIR := lib/util
 
 default: all
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 include $(SRCDIR)/Makefile.common
 
 .PHONY: all
 all: cmdline_parser.lo getoptx.lo casprintf.lo
 
-INCLUDES = -Iinclude -I$(BUILDDIR)
+INCLUDES = -Iinclude -I$(BLDDIR)
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 

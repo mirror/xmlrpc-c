@@ -5,14 +5,14 @@
 # these programs depend.
 
 
-ifeq ($(SRCDIR)x,x)
+ifeq ($(SRCDIR),)
 SRCDIR = $(CURDIR)/../..
-BUILDDIR = ../..
+BLDDIR = ../..
 endif
 
 default: all
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
@@ -20,7 +20,7 @@ LDFLAGS = $(LADD)
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
 # found in the user's PATH.
-XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
+XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 
 SERVERPROGS_ABYSS = \
@@ -77,9 +77,9 @@ $(CLIENTPROGS):%:%.o
 *.c: config.h xmlrpc_amconfig.h
 
 config.h:
-	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
 xmlrpc_amconfig.h:
-	$(LN_S) $(BUILDDIR)/$@ .
+	$(LN_S) $(BLDDIR)/$@ .
 
 include $(SRCDIR)/Makefile.common
 

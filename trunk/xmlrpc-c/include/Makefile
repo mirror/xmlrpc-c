@@ -1,11 +1,11 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  SRCDIR := $(call updir,$(CURDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = src
-BUILDDIR = $(SRCDIR)
-VPATH = .:$(SRCDIR)
+SUBDIR := include
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 default: all
 
