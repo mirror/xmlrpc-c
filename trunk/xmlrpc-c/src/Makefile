@@ -131,6 +131,10 @@ endif
 
 all: $(TARGET_LTLIBRARIES) $(SUBDIRS:%=%/all)
 
+# Extra dependencies to make parallel make work in spite of all the submakes
+# (See top level make file for details)
+cpp/all: $(BLDDIR)/transport_config.h
+
 LDFLAGS = $(LADD)
 
 LIBPATHS = -L.libs -L$(LIBUTIL_LIBDIR)

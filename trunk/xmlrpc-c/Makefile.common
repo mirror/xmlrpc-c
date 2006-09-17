@@ -137,42 +137,56 @@ endif
 # to rebuild the symbolic link.  So we don't make $(SRCDIR) a
 # dependency of 'srcdir'.
 
-# We tried this same strategy for shortening references to $(BLDDIR),
-# but found that that screws up parallel make, since Make isn't smart
-# enough to figure out that the target ./blddir/obj.o in two different
-# directories would be the same file, so launches a make of both at
-# the same time.
+# We should do the same for 'blddir'.  We did once before, then undid
+# it in an erroneous effort to enable parallel make.  It's a little harder
+# with blddir; when we did it before, we had to use the non-symlink
+# version in a few places.
 
 srcdir:
 	$(LN_S) $(SRCDIR) $@
 
+#
+# Recursive subdirectory makes
+#
+
+.PHONY: $(SUBDIRS:%=%/all)
 $(SUBDIRS:%=%/all): %/all: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
+.PHONY: $(SUBDIRS:%=%/install)
 $(SUBDIRS:%=%/install): %/install: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
+.PHONY: $(SUBDIRS:%=%/clean)
 $(SUBDIRS:%=%/clean): %/clean: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
+.PHONY: $(SUBDIRS:%=%/distclean)
 $(SUBDIRS:%=%/distclean): %/distclean: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
+.PHONY: $(SUBDIRS:%=%/check)
 $(SUBDIRS:%=%/check): %/check: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
+.PHONY: $(SUBDIRS:%=%/distdir)
 $(SUBDIRS:%=%/distdir): %/distdir: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
+.PHONY: $(SUBDIRS:%=%/dep)
 $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
+
+#
+# Rules to build cross-component dependencies
+#
 
 $(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \

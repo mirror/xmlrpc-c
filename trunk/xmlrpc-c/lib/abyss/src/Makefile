@@ -56,6 +56,10 @@ $(ABYSS_OBJS):%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) \
 	  $(CFLAGS) $<
 
+# Need this dependency for those who don't use Makefile.depend.
+# Without it, version.h doesn't get created.
+response.lo: version.h
+
 .PHONY: clean
 clean: clean-common
 
