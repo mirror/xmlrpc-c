@@ -159,6 +159,8 @@ CLIENT_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
 $(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
 	$(CXX) -c $(CLIENT_INCLUDES) $(CXXFLAGS) $<
 
+client.o curl.o libwww.o wininet.o: $(BUILDDIR)/transport_config.h
+
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES
 #-----------------------------------------------------------------------------
@@ -179,6 +181,6 @@ distclean: clean distclean-local distclean-common
 distclean-local:
 
 .PHONY: dep
-dep: dep-common
+dep: dep-common $(BUILDDIR)/transport_config.h
 
 include Makefile.depend
