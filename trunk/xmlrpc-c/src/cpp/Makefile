@@ -77,31 +77,39 @@ TRANSPORT_INCLUDES = \
 BASIC_INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir \
   -Isrcdir/lib/util/include
 
-ifeq ($(SHARED_LIB_TYPE),unix)
-  include unix.make
-  endif
+# LIBXMLRPC_CPP_SHLIB is e.g. "libxmlrpc_cpp.so.3.1"
 
-ifeq ($(SHARED_LIB_TYPE),irix)
-  include irix.make
-  endif
+LIBXMLRPC_CPP_SHLIB      = $(call shlibfn, libxmlrpc_cpp)
+LIBXMLRPCPP_SHLIB        = $(call shlibfn, libxmlrpc++)
+LIBXMLRPC_SERVERPP       = $(call shlibfn, libxmlrpc_server++)
+LIBXMLRPC_SERVER_ABYSSPP = $(call shlibfn, libxmlrpc_server_abyss++)
+LIBXMLRPC_CLIENTPP       = $(call shlibfn, libxmlrpc_client++)
 
-ifeq ($(SHARED_LIB_TYPE),dll)
-  include dll.make
-  endif
-
-ifeq ($(SHARED_LIB_TYPE),dylib)
-  include dylib.make
-  endif
 
 ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBRARIES = $(TARGET_LIBRARY_NAMES:%=%.$(SHLIB_SUFFIX))
+  TARGET_SHARED_LIBRARIES = \
+    $(call shlibfn, $(TARGET_LIBRARY_NAMES)) \
+    $(call shliblefn, $(TARGET_LIBRARY_NAMES))
   endif
 
 TARGET_STATIC_LIBRARIES = $(TARGET_LIBRARY_NAMES:%=%.a)
 
-TARGET_LIBRARIES = $(TARGET_STATIC_LIBRARIES) $(ALL_SHARED_LIBRARIES)
+all: $(TARGET_STATIC_LIBRARIES) $(TARGET_SHARED_LIBRARIES)
 
-all: $(TARGET_LIBRARIES)
+$(LIBXMLRPC_CPP_SHLIB): XmlRpcCpp.o
+	$(SHLIBPP_CMD)
+
+$(LIBXMLRPCPP_SHLIB): $(LIBXMLRPCPP_OBJS)
+	$(SHLIBPP_CMD)
+
+$(LIBXMLRPC_SERVERPP): $(LIBXMLRPC_SERVERPP_OBJS)
+	$(SHLIBPP_CMD)
+
+$(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
+	$(SHLIBPP_CMD)
+
+$(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_OBJS)
+	$(SHLIBPP_CMD)
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
 	-rm -f $@

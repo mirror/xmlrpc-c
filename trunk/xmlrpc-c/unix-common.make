@@ -2,6 +2,9 @@
 
 # The including make file must define these make variables:
 #
+# SHARED_LIBS_TO_BUILD: List of the shared libraries that need to be
+#   built -- just the basic library names.  E.g. "libfoo libbar"
+#
 # SHARED_LIBS_TO_INSTALL: List of the shared libraries that need to be
 #   installed -- just the basic library names.  E.g. "libfoo libbar"
 #
@@ -30,7 +33,16 @@
 # This make file defines these make variables that the including make file
 # can use:
 #
-# ALL_SHARED_LIBRARIES: list of targets to be dependencies of all: .
+#   SHLIB_CMD: a command to build a shared library for C linkage
+#     You can use this in a rule to build a shared library
+#   SHLIBPP_CMD: Same, but for C++ linkage
+
+# This make file defines these functions that the including make file
+# can use:
+#
+#   $(call shlibfn, LIBNAMELIST): file names of a shared libraries
+#     whose base names are LIBNAMELIST.  E.g. if LIBNAMELIST is
+#     "libfoo libbar", function returns "libfoo.so.3.1 libbar.so.3.1"
 
 # Including make file must contain a rule to build each library file
 # (e.g. libfoo.3.1)
@@ -40,28 +52,39 @@
 # install-shared-libraries: install all shared libraries and the necessary
 # symbolic links.
 
-ALL_SHARED_LIBRARIES = \
-  $(SHARED_LIBS_TO_BUILD:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
-
-# SONAME is to be referenced by $(LDSHLIB) in $(SHLIB_RULE)
+# SONAME is to be referenced by $(LDFLAGS_SHLIB) in $(SHLIB_RULE)
 # SONAME is the name of the library file being built, with the minor
 #   version number cut off.  E.g. if we're building libfoo.so.1.2, SONAME
 #   is libfoo.so.1 .
 SONAME = $(@:%.$(MIN)=%)
 
-SHLIB_RULE = $(CXXLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
+SHLIB_CMD = $(CCLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
 
-SHLIB_INSTALL_TARGETS = $(SHARED_LIBS_TO_INSTALL:%=%/install)
+SHLIBPP_CMD = $(CXXLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
 
-#SHLIB_INSTALL_TARGETS is like "install/libfoo install/libbar"
+# Functions to be $(call)'ed (described above)
+shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+
+
+SHLIB_LE_TARGETS = $(call shliblefn, $(SHARED_LIBS_TO_BUILD))
+
+$(SHLIB_LE_TARGETS):%:%.$(MAJ).$(MIN)
+	rm -f $@
+	$(LN_S) $< $@
+
 
 .PHONY: $(SHLIB_INSTALL_TARGETS)
 .PHONY: install-shared-libraries
 
+SHLIB_INSTALL_TARGETS = $(SHARED_LIBS_TO_INSTALL:%=%/install)
+
+#SHLIB_INSTALL_TARGETS is like "libfoo/install libbar/install"
+
 install-shared-libraries: $(SHLIB_INSTALL_TARGETS)
 
 $(SHLIB_INSTALL_TARGETS) X/install:%/install:%.$(SHLIB_SUFFIX).$(MAJ).$(MIN)
-# $< is a library file name, e.g. libfoo.3.1 .
+# $< is a library file name, e.g. libfoo.so.3.1 .
 	$(INSTALL_SHLIB) $< $(DESTDIR)$(LIBINST_DIR)/$<
 	cd $(DESTDIR)$(LIBINST_DIR); \
 	  $(LN_S) $< $(<:%.$(MIN)=%)

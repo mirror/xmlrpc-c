@@ -7,7 +7,7 @@ SUBDIR := src
 
 include $(BLDDIR)/Makefile.config
 
-ABYSS_LIBDIR = $(BLDDIR)/lib/abyss/src/.libs
+ABYSS_LIBDIR = $(BLDDIR)/lib/abyss/src
 LIBUTIL_LIBDIR = $(BLDDIR)/lib/libutil/.libs
 
 default: all
@@ -17,6 +17,8 @@ SUBDIRS =
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   SUBDIRS += cpp
 endif
+
+include $(SRCDIR)/Makefile.common
 
 WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
 CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
@@ -68,6 +70,12 @@ endif
 # referred-to library before it loads libxxx.  Note that the link command
 # may require the necessary -L options in addition.
 
+# LIBxxx_LIBDEP_DEP is the actual files that the linker will access
+# when it resolves the LIBxxx_LIBDEP linker options.  The build of
+# library LIBxxx depends upon those files existing.  For example, if
+# LIBxxx_LIBDEP contains "-L ... -lfoo", LIBxxx_LIBDEP_DEP might contain
+# ".../libfoo.so".
+
 LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo xmlrpc_client_global.lo
 LIBXMLRPC_CLIENT_LIBDEP = -lxmlrpc_util -lxmlrpc
 
@@ -77,6 +85,7 @@ LIBXMLRPC_SERVER_LIBDEP = -lxmlrpc_util -lxmlrpc
 LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
 LIBXMLRPC_SERVER_ABYSS_LIBDEP = \
   -lxmlrpc_util -lxmlrpc_server -L$(ABYSS_LIBDIR) -lxmlrpc_abyss -lxmlrpc
+LIBXMLRPC_SERVER_ABYSS_LIBDEP_DEP = $(LIBXMLRPC_ABYSS)
 
 LIBXMLRPC_SERVER_CGI_OBJS = xmlrpc_server_cgi.lo
 LIBXMLRPC_SERVER_CGI_LIBDEP = -lxmlrpc_util -lxmlrpc_server -lxmlrpc
@@ -116,7 +125,7 @@ INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
 # libmxlrpc_server_abyss should not get built.  But
 # libxmlrpc_server_abyss is not part of the Abyss server; it is merely
 # some code that exploits an Abyss server, and you don't need to have a
-# built Abyss server to build it.
+# built the Abyss server to build it.
 
 TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_server.la \
      libxmlrpc_server_abyss.la
@@ -139,7 +148,7 @@ LDFLAGS = $(LADD)
 
 LIBPATHS = -L.libs -L$(LIBUTIL_LIBDIR)
 
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LIBPATHS) $(LADD)
+LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LIBPATHS) $(LADD)
 
 
 libxmlrpc.la: $(LIBXMLRPC_OBJS)
@@ -155,7 +164,9 @@ libxmlrpc_server.la: $(LIBXMLRPC_SERVER_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
 	  $(LIBXMLRPC_SERVER_OBJS) $(LIBXMLRPC_SERVER_LIBDEP)
 
-libxmlrpc_server_abyss.la: $(LIBXMLRPC_SERVER_ABYSS_OBJS)
+libxmlrpc_server_abyss.la: \
+  $(LIBXMLRPC_SERVER_ABYSS_OBJS) \
+  $(LIBXMLRPC_SERVER_ABYSS_LIBDEP_DEP)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
 	  $(LIBXMLRPC_SERVER_ABYSS_OBJS) $(LIBXMLRPC_SERVER_ABYSS_LIBDEP)
 
@@ -199,8 +210,6 @@ distclean: clean-common clean-local distclean-common $(SUBDIRS:%=%/distclean)
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BLDDIR)/transport_config.h dep-common
-
-include $(SRCDIR)/Makefile.common
 
 xmlrpc_client.lo: $(BLDDIR)/transport_config.h
 

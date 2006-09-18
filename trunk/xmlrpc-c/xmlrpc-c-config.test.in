@@ -72,7 +72,7 @@ while test $# -gt 0; do
         the_libs="-lpthread $the_libs"
         fi
       the_libs="${LSOCKET} $the_libs"
-      the_libs="${BUILDDIR}/lib/abyss/src/.libs/libxmlrpc_abyss.a $the_libs"
+      the_libs="${BUILDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
       if test "${needCpp}" = "yes"; then

@@ -39,6 +39,13 @@ ifeq ($(CXX_COMPILER_GNU),yes)
   CXXFLAGS_COMMON += $(GCC_CXX_WARNINGS) -g
 endif
 
+# This is the Libtool option to specify the runtime path of shared
+# libraries that the program Libtools builds will link at runtime.
+# That's important on a system where you don't locate a shared library
+# by using a standard search path at run time.
+
+RPATH = -rpath $(LIBINST_DIR)
+
 DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
 # MAJ and MIN are major and minor version numbers for shared libraries.
@@ -79,15 +86,45 @@ ifeq ($(CURDIR)x,x)
   CURDIR := $(shell /bin/pwd)
 endif
 
+##############################################################################
+#                 SHARED LIBRARY RULES, VARIABLES                            #
+##############################################################################
+
+ifeq ($(SHARED_LIB_TYPE),unix)
+  include $(SRCDIR)/unix-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),irix)
+  include $(SRCDIR)/irix-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),dll)
+  include $(SRCDIR)/dll-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),dylib)
+  include $(SRCDIR)/dylib-common.make
+  endif
+
+ifeq ($(SHARED_LIB_TYPE),NONE)
+  shlibfn = $(1:%=%.shlibdummy)
+  shliblefn = $(1:%=%.shlibledummy)
+  install-shared-libraries:
+  endif
+
+
 LIBXMLRPC_UTIL           = $(BLDDIR)/lib/libutil/libxmlrpc_util.la
 LIBXMLRPC                = $(BLDDIR)/src/libxmlrpc.la
 LIBXMLRPC_CLIENT         = $(BLDDIR)/src/libxmlrpc_client.la
 LIBXMLRPC_SERVER         = $(BLDDIR)/src/libxmlrpc_server.la
 LIBXMLRPC_SERVER_ABYSS   = $(BLDDIR)/src/libxmlrpc_server_abyss.la
 LIBXMLRPC_SERVER_CGI     = $(BLDDIR)/src/libxmlrpc_server_cgi.la
-LIBXMLRPC_ABYSS          = $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss.la
+LIBXMLRPC_ABYSS          = \
+  $(call shliblefn, $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss)
 LIBXMLRPC_XMLPARSE       = $(BLDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
 LIBXMLRPC_XMLTOK         = $(BLDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
+
+
 LIBXMLRPC_UTIL_A         = $(BLDDIR)/lib/libutil/.libs/libxmlrpc_util.a
 LIBXMLRPC_A              = $(BLDDIR)/src/.libs/libxmlrpc.a
 LIBXMLRPC_CLIENT_A       = $(BLDDIR)/src/.libs/libxmlrpc_client.a
@@ -126,7 +163,7 @@ endif
 
 
 ##############################################################################
-#                           BUILD RULES                                      #
+#                           MISC BUILD RULES                                 #
 ##############################################################################
 
 # We use the srcdir symbolic link simply to make the make
@@ -145,9 +182,9 @@ endif
 srcdir:
 	$(LN_S) $(SRCDIR) $@
 
-#
-# Recursive subdirectory makes
-#
+##############################################################################
+#                    RECURSIVE SUBDIRECOTRY BUILD RULES                      #
+##############################################################################
 
 .PHONY: $(SUBDIRS:%=%/all)
 $(SUBDIRS:%=%/all): %/all: $(CURDIR)/%
@@ -184,9 +221,10 @@ $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
-#
-# Rules to build cross-component dependencies
-#
+
+##############################################################################
+#                         CROSS-COMPONENT BUILD RULES                        #
+##############################################################################
 
 $(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \
@@ -220,6 +258,10 @@ $(LIBXMLRPC) $(LIBXMLRPC_CLIENT) $(LIBXMLRPC_SERVER): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
 	    $(notdir $@)
 
+$(LIBXMLRPC_ABYSS_A): FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
+	    $(notdir $@)
+
 $(LIBXMLRPC++) $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_SERVER++) \
   $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_CPP): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
@@ -230,7 +272,6 @@ $(LIBXMLRPC_A):              $(LIBXMLRPC)
 $(LIBXMLRPC_CLIENT_A):       $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_SERVER_ABYSS_A): $(LIBXMLRPC_SERVER_ABYSS)
 $(LIBXMLRPC_CGI_A):          $(LIBXMLRPC_CGI)
-$(LIBXMLRPC_ABYSS_A):        $(LIBXMLRPC_ABYSS)
 $(LIBXMLRPC_XMLPARSE_A):     $(LIBXMLRPC_XMLPARSE)
 $(LIBXMLRPC_XMLTOK_A):       $(LIBXMLRPC_XMLTOK)
 
@@ -268,31 +309,6 @@ $(BLDDIR)/transport_config.h:
 endif
 
 $(ALL_OBJS): $(BLDDIR)/include/xmlrpc-c/config.h
-
-
-##############################################################################
-#                          SHARED LIBRARY RULES                              #
-##############################################################################
-
-ifeq ($(SHARED_LIB_TYPE),unix)
-  include $(SRCDIR)/unix-common.make
-  endif
-
-ifeq ($(SHARED_LIB_TYPE),irix)
-  include $(SRCDIR)/irix-common.make
-  endif
-
-ifeq ($(SHARED_LIB_TYPE),dll)
-  include $(SRCDIR)/dll-common.make
-  endif
-
-ifeq ($(SHARED_LIB_TYPE),dylib)
-  include $(SRCDIR)/dylib-common.make
-  endif
-
-ifeq ($(SHARED_LIB_TYPE),NONE)
-  install-shared-libraries:
-  endif
 
 
 ##############################################################################
@@ -373,6 +389,9 @@ clean-common:
 	rm -f *.o *.a *.s *.i *.la *.lo
 	rm -f *.$(SHLIB_SUFFIX) *.$(SHLIB_SUFFIX).*
 	rm -rf .libs
+ifneq ($(OMIT_VERSION_H),Y)
+	rm -f version.h
+endif
 
 .PHONY: distclean-common
 distclean-common:
@@ -400,9 +419,6 @@ distclean-common:
 	cat /dev/null >Makefile.depend
 	rm -f TAGS
 	rm -f srcdir
-ifneq ($(OMIT_VERSION_H),Y)
-	rm -f version.h
-endif
 
 .PHONY: distdir-common
 distdir-common:

@@ -9,6 +9,17 @@ SUBDIR := lib/abyss/src
 
 include $(SRCDIR)/Makefile.config
 
+default: all
+
+TARGET_LIBRARY_NAMES := libxmlrpc_abyss
+
+STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_abyss.a
+
+SHARED_LIBS_TO_BUILD := libxmlrpc_abyss
+SHARED_LIBS_TO_INSTALL := libxmlrpc_abyss
+
+include $(SRCDIR)/Makefile.common
+
 CFLAGS = $(CFLAGS_COMMON)
 CFLAGS += -D_UNIX
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
@@ -17,48 +28,57 @@ else
   THREAD_MODULE = thread_fork
 endif
 CFLAGS += $(CFLAGS_PERSONAL) $(CADD)
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR)
-LIBLDFLAGS += $(LADD)
 
 INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
 
-LTLIBRARIES_TO_INSTALL = libxmlrpc_abyss.la
+ABYSS_SHLIB = $(call shlibfn,libxmlrpc_abyss)
+#ABYSS_SHLIB is e.g. libxmlrpc_abyss.so.3.1
+ABYSS_SHLIBLE = $(call shliblefn,libxmlrpc_abyss)
+#ABYSS_SHLIBLE is e.g. libxmlrpc_abyss.so
 
-default: all
+ifneq ($(SHARED_LIB_TYPE),NONE)
+  TARGET_SHARED_LIBS := $(ABYSS_SHLIB) $(ABYSS_SHLIBLE)
+  endif
+
 
 .PHONY: all
-all: libxmlrpc_abyss.la
+all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBS)
 
 
 ABYSS_OBJS = \
-  channel.lo \
-  chanswitch.lo \
-  conf.lo \
-  conn.lo \
-  data.lo \
-  date.lo \
-  file.lo \
-  http.lo \
-  init.lo \
-  response.lo \
-  server.lo \
-  session.lo \
-  socket.lo \
-  socket_unix.lo \
-  token.lo \
-  $(THREAD_MODULE).lo \
-  trace.lo \
+  channel.o \
+  chanswitch.o \
+  conf.o \
+  conn.o \
+  data.o \
+  date.o \
+  file.o \
+  http.o \
+  init.o \
+  response.o \
+  server.o \
+  session.o \
+  socket.o \
+  socket_unix.o \
+  token.o \
+  $(THREAD_MODULE).o \
+  trace.o \
 
-libxmlrpc_abyss.la: $(ABYSS_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
 
-$(ABYSS_OBJS):%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) \
-	  $(CFLAGS) $<
+$(ABYSS_SHLIB): $(ABYSS_OBJS)
+	$(SHLIB_CMD)
+
+libxmlrpc_abyss.a: $(ABYSS_OBJS)
+	-rm -f $@
+	$(AR) cru $@ $^
+	$(RANLIB) $@
+
+$(ABYSS_OBJS):%.o:%.c
+	$(CC) -c $(INCLUDES) $(CFLAGS) $<
 
 # Need this dependency for those who don't use Makefile.depend.
 # Without it, version.h doesn't get created.
-response.lo: version.h
+response.o: version.h
 
 .PHONY: clean
 clean: clean-common
@@ -77,7 +97,5 @@ install: install-common
 
 .PHONY: dep
 dep: dep-common
-
-include $(SRCDIR)/Makefile.common
 
 include Makefile.depend

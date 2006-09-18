@@ -33,9 +33,7 @@ LIBXMLRPC_UTIL_OBJS = \
 INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
            -Isrcdir/include -Isrcdir/lib/util/include
 
-LDFLAGS = $(LADD)
-
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
+LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LADD)
 
 libxmlrpc_util.la: $(LIBXMLRPC_UTIL_OBJS)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^

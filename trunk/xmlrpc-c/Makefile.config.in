@@ -163,10 +163,13 @@ endif
 
 ifeq ($(HOST_OS),irix)
   # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
+  # If you can finish it and make it work on Irix, please do.
   # SHARED_LIB_TYPE = irix
   SHLIB_SUFFIX = so
-  LDFLAGS_SHLIB = -shared -n32
+  VERSIONPERLPROG = \
+    print "sgi$(MAJ)." . join(":sgi$(MAJ) . ", (0..$(MIN))) . "\n"
+  LDFLAGS_SHLIB = -shared -n32 -soname $(SONAME) \
+    -set_version $(shell perl -e '$(VERSIONPERLPROG)') -lc
 endif
 
 ifeq ($(HOST_OS),hpux)
@@ -210,9 +213,13 @@ endif
 
 ifeq ($(HOST_OS),cygwin)
   # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
+  # If you can finish it and make it work on Cygwin, please do.
   # SHARED_LIB_TYPE = dll
   SHLIB_SUFFIX = dll
+  SHLIB_PREFIX = cyg
+  LDFLAGS_SHLIB = \
+    -Wl,--export-all-symbols -Wl,-soname,$(SONAME) \
+    -Wl,--out-implib,$(IMPLIB)
 endif
 
 ##############################################################################
