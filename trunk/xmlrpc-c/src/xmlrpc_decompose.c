@@ -511,8 +511,9 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
     case 'A':
         if (xmlrpc_value_type(valueP) != XMLRPC_TYPE_ARRAY)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_TYPE_ERROR, "Non-array type supplied for "
-                "'A' specifier");
+                envP, XMLRPC_TYPE_ERROR, "Value to be decomposed is of type "
+                "%s, but the 'A' specifier requires type ARRAY",
+                xmlrpc_type_name(xmlrpc_value_type(valueP)));
         else {
             *decompRootP->store.TarrayVal.valueP = valueP;
             if (!oldstyleMemMgmt)
@@ -523,8 +524,9 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
     case 'S':
         if (xmlrpc_value_type(valueP) != XMLRPC_TYPE_STRUCT)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_TYPE_ERROR, "Non-struct type supplied for "
-                "'S' specifier");
+                envP, XMLRPC_TYPE_ERROR, "Value to be decomposed is of type "
+                "%s, but the 'S' specifier requires type STRUCT.",
+                xmlrpc_type_name(xmlrpc_value_type(valueP)));
         else {
             *decompRootP->store.TstructVal.valueP = valueP;
             if (!oldstyleMemMgmt)
@@ -535,8 +537,9 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
     case '(':
         if (xmlrpc_value_type(valueP) != XMLRPC_TYPE_ARRAY)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_TYPE_ERROR, "Non-array type supplied for "
-                "'()' specifier");
+                envP, XMLRPC_TYPE_ERROR, "Value to be decomposed is of type "
+                "%s, but the '(...)' specifier requires type ARRAY",
+                xmlrpc_type_name(xmlrpc_value_type(valueP)));
         else
             parsearray(envP, valueP, decompRootP->store.Tarray,
                        oldstyleMemMgmt);
@@ -545,8 +548,9 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
     case '{':
         if (xmlrpc_value_type(valueP) != XMLRPC_TYPE_STRUCT)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_TYPE_ERROR, "Non-struct type supplied for "
-                "'{}' specifier");
+                envP, XMLRPC_TYPE_ERROR, "Value to be decomposed is of type "
+                "%s, but the '{...}' specifier requires type STRUCT",
+                xmlrpc_type_name(xmlrpc_value_type(valueP)));
         else
             parsestruct(envP, valueP, decompRootP->store.Tstruct,
                         oldstyleMemMgmt);
