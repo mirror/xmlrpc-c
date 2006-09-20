@@ -78,17 +78,23 @@ endif
 
 LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo xmlrpc_client_global.lo
 LIBXMLRPC_CLIENT_LIBDEP = -lxmlrpc_util -lxmlrpc
+LIBXMLRPC_CLIENT_LIBDEP_DEP = $(LIBXMLRPC_UTIL) $(LIBXMLRPC)
 
 LIBXMLRPC_SERVER_OBJS = registry.lo system_method.lo
 LIBXMLRPC_SERVER_LIBDEP = -lxmlrpc_util -lxmlrpc
+LIBXMLRPC_SERVER_LIBDEP_DEP = $(LIBXMLRPC_UTIL) $(LIBXMLRPC)
 
 LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
 LIBXMLRPC_SERVER_ABYSS_LIBDEP = \
   -lxmlrpc_util -lxmlrpc_server -L$(ABYSS_LIBDIR) -lxmlrpc_abyss -lxmlrpc
-LIBXMLRPC_SERVER_ABYSS_LIBDEP_DEP = $(LIBXMLRPC_ABYSS)
+LIBXMLRPC_SERVER_ABYSS_LIBDEP_DEP = \
+  $(LIBXMLRPC_UTIL) $(LIBXMLRPC_SERVER) $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC)
 
 LIBXMLRPC_SERVER_CGI_OBJS = xmlrpc_server_cgi.lo
 LIBXMLRPC_SERVER_CGI_LIBDEP = -lxmlrpc_util -lxmlrpc_server -lxmlrpc
+LIBXMLRPC_SERVER_CGI_LIBDEP_DEP = \
+  $(LIBXMRPC_UTIL) $(LIBXMLRPC_SERVER) $(LIBXMLRPC)
 
 LIBXMLRPC_OBJS = \
 	trace.lo \
@@ -106,6 +112,7 @@ LIBXMLRPC_OBJS = \
 	xmlrpc_authcookie.lo \
 
 LIBXMLRPC_LIBDEP = -lxmlrpc_util
+LIBXMLRPC_LIBDEP_DEP = $(LIBXMLRPC_UTIL)
 
 LIB_OBJS = $(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS)
 
@@ -120,15 +127,15 @@ INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
 	   $(TRANSPORT_INCLUDES) \
 	   $(LIBXML_INCLUDES) \
 
-# People sometimes think that when the Xmlrpc-c build has been
-# configured for no Abyss server (configure --disable-abyss), that
-# libmxlrpc_server_abyss should not get built.  But
-# libxmlrpc_server_abyss is not part of the Abyss server; it is merely
-# some code that exploits an Abyss server, and you don't need to have a
-# built the Abyss server to build it.
+TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_server.la
 
-TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_server.la \
-     libxmlrpc_server_abyss.la
+# We cannot build libxmlrpc_server_abyss if we can't also build Abyss,
+# because we need libxmlrpc_abyss in order to build the proper runtime
+# dependencies into libxmlrpc_server_abyss.
+
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  TARGET_LTLIBRARIES += libxmlrpc_server_abyss.la
+endif
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TARGET_LTLIBRARIES += libxmlrpc_client.la
@@ -151,26 +158,27 @@ LIBPATHS = -L.libs -L$(LIBUTIL_LIBDIR)
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LIBPATHS) $(LADD)
 
 
-libxmlrpc.la: $(LIBXMLRPC_OBJS)
+libxmlrpc.la: $(LIBXMLRPC_OBJS) $(LIBXMLRPC_LIBDEP_DEP)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
 	  $(LIBXMLRPC_OBJS) $(LIBXMLRPC_LIBDEP) 
 
-libxmlrpc_client.la: $(LIBXMLRPC_CLIENT_OBJS) $(TRANSPORT_OBJS)
+libxmlrpc_client.la: \
+  $(LIBXMLRPC_CLIENT_OBJS) $(TRANSPORT_OBJS) $(LIBXMLRPC_CLIENT_LIBDEP_DEP)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
 	  $(LIBXMLRPC_CLIENT_OBJS) $(TRANSPORT_OBJS) \
 	  $(LIBXMLRPC_CLIENT_LIBDEP) $(TRANSPORT_LIBDEP) \
 
-libxmlrpc_server.la: $(LIBXMLRPC_SERVER_OBJS)
+libxmlrpc_server.la: $(LIBXMLRPC_SERVER_OBJS) $(LIBXMLRPC_SERVER_LIBDEP_DEP)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
 	  $(LIBXMLRPC_SERVER_OBJS) $(LIBXMLRPC_SERVER_LIBDEP)
 
 libxmlrpc_server_abyss.la: \
-  $(LIBXMLRPC_SERVER_ABYSS_OBJS) \
-  $(LIBXMLRPC_SERVER_ABYSS_LIBDEP_DEP)
+  $(LIBXMLRPC_SERVER_ABYSS_OBJS) $(LIBXMLRPC_SERVER_ABYSS_LIBDEP_DEP)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
 	  $(LIBXMLRPC_SERVER_ABYSS_OBJS) $(LIBXMLRPC_SERVER_ABYSS_LIBDEP)
 
-libxmlrpc_server_cgi.la: $(LIBXMLRPC_SERVER_CGI_OBJS)
+libxmlrpc_server_cgi.la: \
+  $(LIBXMLRPC_SERVER_CGI_OBJS) $(LIBXMLRPC_SERVER_CGI_LIBDEP_DEP)
 	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
 	  $(LIBXMLRPC_SERVER_CGI_OBJS) $(LIBXMLRPC_SERVER_CGI_LIBDEP)
 
