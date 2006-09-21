@@ -58,8 +58,12 @@ ABYSS_INCLUDES = -I$(SRCDIR)/lib/abyss/src
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   XMLRPC_XML_PARSER = xmlrpc_libxml2.lo
+  XML_PARSER_LIBDEP = $(shell xml2-config --libs)
+  XML_PARSER_LIBDEP_DEP =
 else
   XMLRPC_XML_PARSER = xmlrpc_expat.lo
+  XML_PARSER_LIBDEP = -L$(BLDDIR)/lib/expat/xmlparse/.libs -lxmlrpc_xmlparse
+  XML_PARSER_LIBDEP_DEP = $(LIBXMLRPC_XMLPARSE)
 endif
 
 # LIBxxx_OBJS is the list of object files that make up library libxxx.
@@ -111,8 +115,8 @@ LIBXMLRPC_OBJS = \
 	xmlrpc_utf8.lo \
 	xmlrpc_authcookie.lo \
 
-LIBXMLRPC_LIBDEP = -lxmlrpc_util
-LIBXMLRPC_LIBDEP_DEP = $(LIBXMLRPC_UTIL)
+LIBXMLRPC_LIBDEP = -lxmlrpc_util $(XML_PARSER_LIBDEP)
+LIBXMLRPC_LIBDEP_DEP = $(LIBXMLRPC_UTIL) $(XML_PARSER_LIBDEP_DEP)
 
 LIB_OBJS = $(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS)
 
