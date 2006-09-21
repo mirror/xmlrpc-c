@@ -8,13 +8,6 @@ IMPLIB = $(@:%:%.dll.a)
 
 SHLIB_CMD = $(CCLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
 
-SHLIBPP_CMD = $(CXXLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
-
-# Functions to be $(call)'ed (described above)
-shlibfn = $(1:lib%=$(SHLIB_PREFIX)%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
-shliblefn = $(1:%=%.shlibdummyle)
-
-
 .PHONY: $(SHLIB_INSTALL_TARGETS)
 .PHONY: install-shared-libraries
 

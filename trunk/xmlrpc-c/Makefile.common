@@ -87,7 +87,27 @@ ifeq ($(CURDIR)x,x)
 endif
 
 ##############################################################################
-#                 SHARED LIBRARY RULES, VARIABLES                            #
+#                        STATIC LINK LIBRARY RULES                           #
+##############################################################################
+
+
+# To use this rule, the including make file must set a target_specific
+# variable OBJECTS (and declare dependencies that include OBJECTS).  Example:
+#   FOO_OBJECTS = foo1.o foo2.o
+#   libfoo.a: OBJECTS = $(FOO_OBJECTS)
+#   libfoo.a: $(FOO_OBJECTS)
+#   TARGET_LIBRARY_NAMES = libfoo
+
+TARGET_STATIC_LIBRARIES = \
+  $(TARGET_LIBRARY_NAMES:%=%.a) $(TARGET_LIB_NAMES_PP:%=%.a)
+$(TARGET_STATIC_LIBRARIES):
+	-rm -f $@
+	$(AR) cru $@ $(OBJECTS)
+	$(RANLIB) $@
+
+
+##############################################################################
+#                     SHARED LIBRARY RULES, VARIABLES                        #
 ##############################################################################
 
 ifeq ($(SHARED_LIB_TYPE),unix)
@@ -107,10 +127,29 @@ ifeq ($(SHARED_LIB_TYPE),dylib)
   endif
 
 ifeq ($(SHARED_LIB_TYPE),NONE)
-  shlibfn = $(1:%=%.shlibdummy)
-  shliblefn = $(1:%=%.shlibledummy)
   install-shared-libraries:
   endif
+
+# To use this rule, the including make file must set a target_specific
+# variable OBJECTS (and declare dependencies that include OBJECTS).
+# Analogous to static library rule above.
+
+ifeq ($(SHARED_LIB_TYPE),NONE)
+  TARGET_SHARED_LIBRARIES =
+  TARGET_SHARED_LIBS_PP =
+  TARGET_SHARED_LE_LIBS =
+else
+  TARGET_SHARED_LIBRARIES = $(call shlibfn, $(TARGET_LIBRARY_NAMES))
+  TARGET_SHARED_LIBS_PP = $(call shlibfn, $(TARGET_LIB_NAMES_PP))
+  TARGET_SHARED_LE_LIBS = \
+    $(call shliblefn, $(TARGET_LIBRARY_NAMES) $(TARGET_LIB_NAMES_PP))
+endif
+
+$(TARGET_SHARED_LIBRARIES) dummyshlib:
+	$(CCLD) $(LDFLAGS_SHLIB) -o $@ $(OBJECTS) $(LADD)
+
+$(TARGET_SHARED_LIBS_PP) dummyshlibpp:
+	$(CXXLD) $(LDFLAGS_SHLIB) -o $@ $(OBJECTS) $(LADD)
 
 
 LIBXMLRPC_UTIL           = $(BLDDIR)/lib/libutil/libxmlrpc_util.la
@@ -181,9 +220,11 @@ endif
 
 srcdir:
 	$(LN_S) $(SRCDIR) $@
+blddir:
+	$(LN_S) $(BLDDIR) $@
 
 ##############################################################################
-#                    RECURSIVE SUBDIRECOTRY BUILD RULES                      #
+#                    RECURSIVE SUBDIRECTORY BUILD RULES                      #
 ##############################################################################
 
 .PHONY: $(SUBDIRS:%=%/all)
@@ -418,7 +459,7 @@ distclean-common:
 #
 	cat /dev/null >Makefile.depend
 	rm -f TAGS
-	rm -f srcdir
+	rm -f srcdir blddir
 
 .PHONY: distdir-common
 distdir-common:

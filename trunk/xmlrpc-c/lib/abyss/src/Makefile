@@ -29,7 +29,7 @@ else
 endif
 CFLAGS += $(CFLAGS_PERSONAL) $(CADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
+INCLUDES = -Isrcdir -Isrcdir/include -Isrcdir/lib/util/include
 
 ABYSS_SHLIB = $(call shlibfn,libxmlrpc_abyss)
 #ABYSS_SHLIB is e.g. libxmlrpc_abyss.so.3.1
@@ -41,8 +41,13 @@ ifneq ($(SHARED_LIB_TYPE),NONE)
   endif
 
 
+# This 'Makefile.common' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/Makefile.common: srcdir blddir
+
 .PHONY: all
-all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBS)
+all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
 
 ABYSS_OBJS = \
@@ -65,13 +70,14 @@ ABYSS_OBJS = \
   trace.o \
 
 
+# Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
 $(ABYSS_SHLIB): $(ABYSS_OBJS)
-	$(SHLIB_CMD)
+$(ABYSS_SHLIB): OBJECTS = $(ABYSS_OBJS)
+
+# Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
 
 libxmlrpc_abyss.a: $(ABYSS_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
+libxmlrpc_abyss.a: OBJECTS = $(ABYSS_OBJS)
 
 $(ABYSS_OBJS):%.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<

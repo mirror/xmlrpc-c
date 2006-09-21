@@ -7,13 +7,6 @@ SONAME = $(@:%.$(MAJ):%)
 
 SHLIB_CMD = $(CCLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
 
-SHLIBPP_CMD = $(CXXLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
-
-# Functions to be $(call)'ed (described above)
-shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
-shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-
-
 SHLIB_LE_TARGETS = $(call shliblefn, $(SHARED_LIBS_TO_BUILD))
 
 $(SHLIB_LE_TARGETS):%:%.$(MAJ)

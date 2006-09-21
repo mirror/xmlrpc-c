@@ -37,13 +37,6 @@
 #     You can use this in a rule to build a shared library
 #   SHLIBPP_CMD: Same, but for C++ linkage
 
-# This make file defines these functions that the including make file
-# can use:
-#
-#   $(call shlibfn, LIBNAMELIST): file names of a shared libraries
-#     whose base names are LIBNAMELIST.  E.g. if LIBNAMELIST is
-#     "libfoo libbar", function returns "libfoo.so.3.1 libbar.so.3.1"
-
 # Including make file must contain a rule to build each library file
 # (e.g. libfoo.3.1)
 
@@ -60,19 +53,11 @@ SONAME = $(@:%.$(MIN)=%)
 
 SHLIB_CMD = $(CCLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
 
-SHLIBPP_CMD = $(CXXLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
-
-# Functions to be $(call)'ed (described above)
-shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
-shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-
-
 SHLIB_LE_TARGETS = $(call shliblefn, $(SHARED_LIBS_TO_BUILD))
 
 $(SHLIB_LE_TARGETS):%:%.$(MAJ).$(MIN)
 	rm -f $@
 	$(LN_S) $< $@
-
 
 .PHONY: $(SHLIB_INSTALL_TARGETS)
 .PHONY: install-shared-libraries

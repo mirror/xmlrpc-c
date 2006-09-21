@@ -13,7 +13,7 @@ default: all
 # libxmlrpc_cpp is the legacy C++ wrapper library.  The others are the
 # more elaborate replacements.
 
-TARGET_LIBRARY_NAMES := \
+TARGET_LIB_NAMES_PP := \
   libxmlrpc_cpp \
   libxmlrpc++ \
   libxmlrpc_server++ \
@@ -22,8 +22,8 @@ TARGET_LIBRARY_NAMES := \
 
 STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
 
-SHARED_LIBS_TO_BUILD := $(TARGET_LIBRARY_NAMES)
-SHARED_LIBS_TO_INSTALL := $(TARGET_LIBRARY_NAMES)
+SHARED_LIBS_TO_BUILD := $(TARGET_LIB_NAMES_PP)
+SHARED_LIBS_TO_INSTALL := $(TARGET_LIB_NAMES_PP)
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
 INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
@@ -64,17 +64,18 @@ ALL_OBJS = \
 
 include $(SRCDIR)/Makefile.common
 
+
 # This 'Makefile.common' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir
+$(SRCDIR)/Makefile.common: srcdir blddir
 
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \
   -I$(CURL_TRANSPORT_DIR) \
   -I$(LIBWWW_TRANSPORT_DIR) \
 
-BASIC_INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir \
+BASIC_INCLUDES = -Isrcdir/include -Iblddir -Isrcdir \
   -Isrcdir/lib/util/include
 
 # LIBXMLRPC_CPP_SHLIB is e.g. "libxmlrpc_cpp.so.3.1"
@@ -86,55 +87,45 @@ LIBXMLRPC_SERVER_ABYSSPP = $(call shlibfn, libxmlrpc_server_abyss++)
 LIBXMLRPC_CLIENTPP       = $(call shlibfn, libxmlrpc_client++)
 
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBRARIES = \
-    $(call shlibfn, $(TARGET_LIBRARY_NAMES)) \
-    $(call shliblefn, $(TARGET_LIBRARY_NAMES))
-  endif
+all: \
+  $(TARGET_STATIC_LIBRARIES) \
+  $(TARGET_SHARED_LIBS_PP) \
+  $(TARGET_SHARED_LE_LIBS)
 
-TARGET_STATIC_LIBRARIES = $(TARGET_LIBRARY_NAMES:%=%.a)
 
-all: $(TARGET_STATIC_LIBRARIES) $(TARGET_SHARED_LIBRARIES)
+# Rules for these are in Makefile.common, courtesy of TARGET_SHARED_LIBS_PP:
 
 $(LIBXMLRPC_CPP_SHLIB): XmlRpcCpp.o
-	$(SHLIBPP_CMD)
+$(LIBXMLRPC_CPP_SHLIB): OBJECTS = XmlRpcCpp.o
 
 $(LIBXMLRPCPP_SHLIB): $(LIBXMLRPCPP_OBJS)
-	$(SHLIBPP_CMD)
+$(LIBXMLRPCPP_SHLIB): OBJECTS = $(LIBXMLRPCPP_OBJS)
 
 $(LIBXMLRPC_SERVERPP): $(LIBXMLRPC_SERVERPP_OBJS)
-	$(SHLIBPP_CMD)
+$(LIBXMLRPC_SERVERPP): OBJECTS = $(LIBXMLRPC_SERVERPP_OBJS)
 
 $(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
-	$(SHLIBPP_CMD)
+$(LIBXMLRPC_SERVER_ABYSSPP): OBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
 
 $(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_OBJS)
-	$(SHLIBPP_CMD)
+$(LIBXMLRPC_CLIENTPP): OBJECTS = $(LIBXMLRPC_CLIENTPP_OBJS)
+
+# Rules for these are in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
+libxmlrpc_cpp.a: OBJECTS = XmlRpcCpp.o
 
 libxmlrpc++.a: $(LIBXMLRPCPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
+libxmlrpc++.a: OBJECTS = $(LIBXMLRPCPP_OBJS)
 
 libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
+libxmlrpc_server++.a: OBJECTS = $(LIBXMLRPC_SERVERPP_OBJS)
 
 libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
+libxmlrpc_server_abyss++.a: OBJECTS=$(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
 
 libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
+libxmlrpc_client++.a: OBJECTS = $(LIBXMLRPC_CLIENTPP_OBJS)
 
 #-----------------------------------------------------------------------------
 #  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
