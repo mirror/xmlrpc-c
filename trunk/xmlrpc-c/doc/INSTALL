@@ -46,6 +46,36 @@ a significant amount of time.
 See './configure --help' for the options that disable certain transports.
 
 
+SEPARATE BUILD TREE
+-------------------
+
+While it's traditional to build a Unix package by adding object files
+to the same tree with the source files, it's actually much cleaner to
+keep your source tree exactly as you got it and put the built files in
+a separate directory, called the build tree.
+
+To do this, just create an empty directory and run 'configure' in it,
+then 'make':
+
+  mkdir xmlrpcbuild
+  cd xmlrpcbuild
+  /usr/src/xmlrpc-c/configure
+  ...
+  make
+
+But if you plan to work on Xmlrpc-c source code, you'll probably find
+it more convenient to build the traditional way, with a single tree
+for source and build.
+
+In the source tree, you can type 'make' in any directory to do the
+default make for that directory, or make FILENAME to make the file of
+that name there.  In the separate build tree, there are special
+facilities to allow you to do a simple make from the _top level
+directory_, but if you want to make a subcomponent or individual part,
+you have to have a -f option and set SRCDIR and BLDDIR on your 'make'
+command.
+
+
 COMMON PROBLEMS
 ---------------
 
