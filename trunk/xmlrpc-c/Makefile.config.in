@@ -131,15 +131,29 @@ endif
 # LDFLAGS_SHLIB is the linker (Ld) flags needed to generate a shared
 # library from object files.  It may use $(SONAME) as the soname for
 # the shared library being created (assuming sonames exist).
+#
+# This make file defines these functions that the including make file
+# can use:
+#
+#   $(call shlibfn, LIBNAMELIST): file names of a shared libraries
+#     whose base names are LIBNAMELIST.  E.g. if LIBNAMELIST is
+#     "libfoo libbar", function returns "libfoo.so.3.1 libbar.so.3.1"
+#
+#   $(call sliblefn, LIBNAMELIST): same as shlibfn, but for the file you
+#     use at link-edit time.  E.g. libfoo.so .
 
 # We build shared libraries only for platforms for which we've figured
 # out how.  For the rest, we have this default:
 SHARED_LIB_TYPE = NONE
+shlibfn = $(1:%=%.shlibdummy)
+shliblefn = $(1:%=%.shlibledummy)
 
 ifeq ($(HOST_OS),linux-gnu)
   # Assume linker is GNU Compiler (gcc)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
 #  SHLIB_CLIB = -lc
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
@@ -149,6 +163,8 @@ ifeq ($(findstring solaris,$(HOST_OS)),FIND)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -Wl,-Bdynamic,-G,-h,$(SONAME)
   CFLAGS_SHLIB = -Kpic
 endif
@@ -158,14 +174,19 @@ ifeq ($(HOST_OS),aix)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = a
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -qmkshrobj
 endif
 
 ifeq ($(HOST_OS),irix)
   # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on Irix, please do.
+  # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = irix
   SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+
   VERSIONPERLPROG = \
     print "sgi$(MAJ)." . join(":sgi$(MAJ) . ", (0..$(MIN))) . "\n"
   LDFLAGS_SHLIB = -shared -n32 -soname $(SONAME) \
@@ -177,6 +198,8 @@ ifeq ($(HOST_OS),hpux)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = sl
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB: -shared -fPIC
 endif
 
@@ -185,6 +208,8 @@ ifeq ($(HOST_OS),osf)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -shared -expect_unresolved
 endif
 
@@ -193,6 +218,8 @@ ifeq ($(findstring netbsd,$(HOST_OS)),FIND)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   CFLAGS_SHLIB = -fpic
 endif
 
@@ -201,6 +228,8 @@ ifeq ($(HOST_OS),darwin)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = dylib
   SHLIB_SUFFIX = dylib
+  shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
 endif
 
 ifeq ($(HOST_OS),beos)
@@ -208,18 +237,18 @@ ifeq ($(HOST_OS),beos)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -nostart
 endif
 
 ifeq ($(HOST_OS),cygwin)
   # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on Cygwin, please do.
+  # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = dll
   SHLIB_SUFFIX = dll
-  SHLIB_PREFIX = cyg
-  LDFLAGS_SHLIB = \
-    -Wl,--export-all-symbols -Wl,-soname,$(SONAME) \
-    -Wl,--out-implib,$(IMPLIB)
+  shlibfn = $(1:lib%=$(SHLIB_PREFIX)%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.shlibdummyle)
 endif
 
 ##############################################################################
