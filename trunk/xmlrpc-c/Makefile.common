@@ -11,7 +11,7 @@
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
 # BLDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
 
-LIBTOOL = $(SRCDIR)/libtool
+LIBTOOL = $(BLDDIR)/libtool
 LINK = $(LIBTOOL) --mode=link $(CCLD)
 
 GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline -Wundef
@@ -51,7 +51,7 @@ DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 # MAJ and MIN are major and minor version numbers for shared libraries.
 # Libtool builds are controlled by LDFLAGS_VERSINFO instead.
 MAJ = 3
-MIN = 06
+MIN = 07
 
 # LDFLAGS_VERSINFO is a libtool link option (--version-info) that
 # tells it what version numbers to put on the shared libraries (and
@@ -346,11 +346,15 @@ $(BLDDIR)/include/xmlrpc-c/config.h:
 
 ifneq ($(OMIT_TRANSPORT_CONFIG_H),Y)
 $(BLDDIR)/transport_config.h:
-	$(MAKE) -C $(dir $@) $(notdir $@)
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/GNUmakefile $(notdir $@)
 endif
 
 $(ALL_OBJS): $(BLDDIR)/include/xmlrpc-c/config.h
 
+# With a separate build directory, you have to make the directory itself
+# before you can make anything in it.  Here's the rule to do that.
+$(SUBDIRS:%=$(CURDIR)/%):
+	mkdir $@
 
 ##############################################################################
 #                           INSTALL RULES                                    #
@@ -402,7 +406,7 @@ install-headers: $(HEADERS_TO_INSTALL)
 	$(MKINSTALLDIRS) $(HEADERDESTDIR)
 	$(MKINSTALLDIRS) $(HEADERDESTDIR)/xmlrpc-c
 	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
-	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  if test -f "$$p"; then d= ; else d="$(SRCDIR)/$(SUBDIR)/"; fi; \
 	  echo " $(INSTALL_HDR_CMD)"; \
 	  $(INSTALL_HDR_CMD); \
 	done

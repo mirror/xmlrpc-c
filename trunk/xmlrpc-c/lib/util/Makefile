@@ -34,7 +34,7 @@ include $(SRCDIR)/Makefile.common
 .PHONY: all
 all: cmdline_parser.lo getoptx.lo casprintf.lo
 
-INCLUDES = -Iinclude -I$(BLDDIR)
+INCLUDES = -I$(SRCDIR)/$(SUBDIR)/include -I$(BLDDIR)
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 

@@ -18,7 +18,7 @@ all: libxmlrpc_xmlparse.la
 
 LIBXMLRPC_XMLPARSE_OBJS = xmlparse.lo
 
-INCLUDES = -I$(BLDDIR) -I$(SRCDIR) -I$(UTILDIR)/include -I$(XMLTOKDIR)
+INCLUDES = -I$(BLDDIR) -I$(UTILDIR)/include -I$(XMLTOKDIR)
 
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LADD)
 

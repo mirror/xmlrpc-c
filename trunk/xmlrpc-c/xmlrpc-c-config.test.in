@@ -7,9 +7,7 @@
 # directory.  A real application program would instead use xmlrpc-c-config
 # and get the Xmlrpc-c libraries from their installed home.
 
-# @srcdir@ and @top_srcdir@ are useless because they can be relative.
-
-SRCDIR="@BUILDDIR@"  # until we figure out how to do it right
+SRCDIR="@abs_srcdir@"
 BUILDDIR="@BUILDDIR@"
 ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND@"
 ENABLE_ABYSS_THREADS="@ENABLE_ABYSS_THREADS@"
@@ -40,7 +38,7 @@ LIBXMLRPC="${BUILDDIR}/src/.libs/libxmlrpc.a"
 LIBXMLRPC_UTIL="${BUILDDIR}/lib/libutil/.libs/libxmlrpc_util.a"
 
 the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML}"
-the_includes="-I${SRCDIR}/include"
+the_includes="-I${BLDDIR}/include -I${SRCDIR}/include"
 sopath="${BUILDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do

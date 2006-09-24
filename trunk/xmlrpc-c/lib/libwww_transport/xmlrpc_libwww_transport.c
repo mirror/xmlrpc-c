@@ -30,11 +30,9 @@
 #include "bool.h"
 #include "mallocvar.h"
 
-#include "xmlrpc-c/base.h"
-#include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
-#include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
+#include "xmlrpc-c/transport.h"
 
 /* The libwww interface */
 
@@ -524,8 +522,8 @@ static void
 rpcDestroy(rpc * const rpcP) {
 
     XMLRPC_ASSERT_PTR_OK(rpcP);
-    XMLRPC_ASSERT(rpcP->request != XMLRPC_BAD_POINTER);
-    XMLRPC_ASSERT(rpcP->response_data != XMLRPC_BAD_POINTER);
+    XMLRPC_ASSERT(rpcP->request != NULL);
+    XMLRPC_ASSERT(rpcP->response_data != NULL);
 
     /* Junji Kanemaru reports on 05.04.11 that with asynch calls, he
        get a segfault, and reversing the order of deleting the request
@@ -539,9 +537,9 @@ rpcDestroy(rpc * const rpcP) {
     */
 
     HTRequest_delete(rpcP->request);
-    rpcP->request = XMLRPC_BAD_POINTER;
+    rpcP->request = NULL;
     HTChunk_delete(rpcP->response_data);
-    rpcP->response_data = XMLRPC_BAD_POINTER;
+    rpcP->response_data = NULL;
 
     /* This anchor points to private data, so we're allowed to delete it.  */
     deleteSourceAnchor(rpcP->source_anchor);

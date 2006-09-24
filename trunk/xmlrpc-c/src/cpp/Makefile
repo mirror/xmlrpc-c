@@ -75,7 +75,10 @@ TRANSPORT_INCLUDES = \
   -I$(CURL_TRANSPORT_DIR) \
   -I$(LIBWWW_TRANSPORT_DIR) \
 
-BASIC_INCLUDES = -Isrcdir/include -Iblddir -Isrcdir \
+BASIC_INCLUDES = \
+  -Iblddir/include \
+  -Isrcdir/include \
+  -Iblddir \
   -Isrcdir/lib/util/include
 
 # LIBXMLRPC_CPP_SHLIB is e.g. "libxmlrpc_cpp.so.3.1"

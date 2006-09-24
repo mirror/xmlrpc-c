@@ -7,13 +7,13 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/expat/gennmtab
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 LDFLAGS = $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/lib/util/include
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
 
 default: all
 

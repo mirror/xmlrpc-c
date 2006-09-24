@@ -7,12 +7,13 @@
 
 ifeq ($(SRCDIR),)
 SRCDIR = $(CURDIR)/../..
-BLDDIR = ../..
+BLDDIR = $(SRCDIR)
 endif
-
-default: all
+SUBDIR=examples/cpp
 
 include $(BLDDIR)/Makefile.config
+
+default: all
 
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
@@ -46,7 +47,7 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
   PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)
 endif
 
-INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
+INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 
 LDADD_SERVER_ABYSS = \
   $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --ldadd)
@@ -71,10 +72,14 @@ $(LEGACY_CLIENTPROGS):%:%.o
 $(CLIENTPROGS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
 
-%.o:%.cpp
+OBJECTS = $(PROGS:%=%.o)
+
+$(OBJECTS):%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
 
-*.c: config.h xmlrpc_amconfig.h
+# See example/Makefile for an explanation of config.h and xmlrpc_amconfig.h
+
+$(OBJECTS): config.h xmlrpc_amconfig.h
 
 config.h:
 	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@

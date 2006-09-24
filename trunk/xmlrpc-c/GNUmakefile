@@ -1,10 +1,12 @@
-ifeq ($(SRCDIR),)
-  SRCDIR = $(CURDIR)
-  BLDDIR = $(SRCDIR)
-endif
-SUBDIR = .
+include Makefile.srcdir
 
-include $(SRCDIR)/Makefile.config
+BLDDIR = $(CURDIR)
+SUBDIR =
+
+export SRCDIR
+export BLDDIR
+
+include $(BLDDIR)/Makefile.config
 
 SUBDIRS = include lib src tools examples
 
@@ -104,7 +106,7 @@ clean-local:
 distclean: $(SUBDIRS:%=%/distclean) distclean-common distclean-local
 
 distclean-local: clean-local
-	rm -f config.log config.status Makefile.config libtool 
+	rm -f config.log config.status Makefile.config Makefile.srcdir libtool 
 	rm -f xmlrpc_config.h xmlrpc_amconfig.h stamp-h 
 	rm -f xmlrpc-c-config xmlrpc-c-config.test
 

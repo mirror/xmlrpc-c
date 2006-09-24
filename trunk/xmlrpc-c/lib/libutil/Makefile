@@ -30,8 +30,8 @@ LIBXMLRPC_UTIL_OBJS = \
   resource.lo \
   sleep.lo \
 
-INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
-           -Isrcdir/include -Isrcdir/lib/util/include
+INCLUDES = -I$(BLDDIR) -Isrcdir \
+           -I$(BLDDIR)/include -Isrcdir/include -Isrcdir/lib/util/include
 
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LADD)
 

@@ -20,10 +20,6 @@ endif
 
 include $(SRCDIR)/Makefile.common
 
-WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
-CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
-LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
-
 # TRANSPORT_OBJS is the list of modules that have to go into the client
 # library to provide the client XML transport functions.  Since there is
 # some variability in what XML transports we can build into the client
@@ -36,15 +32,15 @@ LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
 TRANSPORT_OBJS =
 TRANSPORT_LIBDEP =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
-  TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
+  TRANSPORT_OBJS += $(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo
   TRANSPORT_LIBDEP += $(shell wininet-config --libs)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  TRANSPORT_OBJS += $(CURL_TRANSPORT_DIR)/xmlrpc_curl_transport.lo
+  TRANSPORT_OBJS += $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo
   TRANSPORT_LIBDEP += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
+  TRANSPORT_OBJS += $(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo
   TRANSPORT_LIBDEP += $(shell libwww-config --libs)
 endif
 
@@ -121,15 +117,18 @@ LIBXMLRPC_LIBDEP_DEP = $(LIBXMLRPC_UTIL) $(XML_PARSER_LIBDEP_DEP)
 LIB_OBJS = $(LIBXMLRPC_CLIENT_OBJS) $(LIBXMLRPC_SERVER_OBJS)
 
 TRANSPORT_INCLUDES = \
-  -I$(WININET_TRANSPORT_DIR) \
-  -I$(CURL_TRANSPORT_DIR) \
-  -I$(LIBWWW_TRANSPORT_DIR) \
+  -I$($SRCDIR)/lib/wininet_transport \
+  -I$(SRCDIR)/lib/curl_transport \
+  -I$(SRCDIR)/lib/libwww_transport \
 
-INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
-           -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
-	   -I$(SRCDIR)/lib/abyss/src \
-	   $(TRANSPORT_INCLUDES) \
-	   $(LIBXML_INCLUDES) \
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(BLDDIR)/include \
+  -I$(SRCDIR)/include \
+  -I$(SRCDIR)/lib/util/include \
+  -I$(SRCDIR)/lib/abyss/src \
+  $(TRANSPORT_INCLUDES) \
+  $(LIBXML_INCLUDES) \
 
 TARGET_LTLIBRARIES = libxmlrpc.la libxmlrpc_server.la
 

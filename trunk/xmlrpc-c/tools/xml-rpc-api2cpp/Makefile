@@ -10,9 +10,9 @@ default: all
 
 include $(BLDDIR)/Makefile.config
 
-include ../Makefile.common
+include $(SRCDIR)/tools/Makefile.common
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include
+INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
 
 CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 

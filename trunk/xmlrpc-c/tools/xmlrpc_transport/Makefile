@@ -12,9 +12,13 @@ include $(BLDDIR)/Makefile.config
 
 PROGRAMS_TO_INSTALL = xmlrpc_transport
 
-include ../Makefile.common
+include $(SRCDIR)/tools/Makefile.common
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(BLDDIR)/include \
+  -I$(SRCDIR)/include \
+  -I$(SRCDIR)/lib/util/include
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
@@ -39,11 +43,6 @@ xmlrpc_transport:%:%.o $(LIBS) $(UTILS)
 
 %.o:%.c
 	$(CC) -c $(CFLAGS) $<
-
-*.c: config.h
-
-config.h:
-	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
 
 # This Makefile.config dependency makes sure the symlinks get built before
 # this make file is used for anything.

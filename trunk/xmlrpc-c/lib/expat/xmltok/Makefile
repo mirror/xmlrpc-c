@@ -7,7 +7,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/expat/xmltok
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 # I can't figure out what XML_BYTE_ORDER is, but it doesn't look like the
 # code has ever defined it.  That means it's treated like 0 in #if.  Since
@@ -18,7 +18,8 @@ CFLAGS = $(CFLAGS_COMMON) -DXML_BYTE_ORDER=0 $(CFLAGS_PERSONAL) $(CADD)
 
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/lib/util/include
+# -I. is necessary when blddir != srcdir
+INCLUDES = -I. -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
 
 default: all
 

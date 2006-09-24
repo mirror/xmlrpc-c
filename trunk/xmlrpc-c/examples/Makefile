@@ -9,10 +9,11 @@ ifeq ($(SRCDIR),)
 SRCDIR = $(CURDIR)/..
 BLDDIR = $(SRCDIR)
 endif
-
-default: all
+SUBDIR = examples
 
 include $(BLDDIR)/Makefile.config
+
+default: all
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
@@ -56,7 +57,7 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
   PROGS += $(SERVERPROGS_CGI) 
 endif
 
-INCLUDES = $(shell $(XMLRPC_C_CONFIG) client abyss-server --cflags)
+INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) client abyss-server --cflags)
 
 LDADD_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) client --ldadd)
@@ -77,8 +78,12 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
 endif
 
 .PHONY: cpp/all
-cpp/all:
-	$(MAKE) -C $(dir $@) $(notdir $@)
+cpp/all: $(BLDDIR)/examples/cpp
+	$(MAKE) -C cpp -f $(SRCDIR)/examples/cpp/Makefile all
+
+# When building in separate tree, directory won't exist yet
+$(BLDDIR)/examples/cpp:
+	mkdir $@
 
 $(CLIENTPROGS):%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
@@ -92,10 +97,18 @@ $(SERVERPROGS_ABYSS):%:%.o
 gen_sample_add_xml:%:%.o
 	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_BASE)
 
-%.o:%.c
+OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
+
+$(OBJECTS):%.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<
 
-*.c: config.h xmlrpc_amconfig.h
+# config.h and xmlrpc_amconfig.h just describe the build environment.
+# We use them so that the example programs will build in users'
+# various environments.  If you're copying these examples, you can
+# just remove these headers from the programs and hardcode whatever is
+# right for your build environment.
+
+$(OBJECTS): config.h xmlrpc_amconfig.h
 
 config.h:
 	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@

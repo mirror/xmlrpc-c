@@ -10,7 +10,7 @@ dnl =======================================================================
 dnl This ultimately controls the make file variable XMLRPC_C_VERSION.
 dnl For a new release, update this and MAJ, MIN, and LDFLAGS_VERSINFO in
 dnl Makefile.common.
-AM_INIT_AUTOMAKE(xmlrpc-c, 1.06)
+AM_INIT_AUTOMAKE(xmlrpc-c, 1.07)
 
 dnl Define @build@, @build_cpu@, @build_vendor@, @build_os,
 dnl @host, @host_cpu@, @host_vender, and @host_os@ substitutions.
@@ -624,6 +624,7 @@ AC_SUBST(CPP_WARN_FLAGS)
 BUILDDIR=`pwd`
 AC_SUBST(BUILDDIR)
 
+
 dnl =======================================================================
 dnl Libtool
 dnl =======================================================================
@@ -637,10 +638,20 @@ dnl =======================================================================
 dnl Note that AM_CONFIG_HEADER at the top of this file outputs another
 dnl result: xmlrpc_amconfig.h .
 
-AC_OUTPUT(xmlrpc-c-config \
-          xmlrpc-c-config.test \
+AC_OUTPUT( \
+          Makefile.srcdir \
           Makefile.config \
           xmlrpc_config.h \
+          xmlrpc-c-config \
+          xmlrpc-c-config.test \
           )
 chmod +x xmlrpc-c-config
 chmod +x xmlrpc-c-config.test
+
+
+if test ! -f GNUmakefile; then
+  ln -s "${srcdir}/GNUmakefile" .
+fi
+if test ! -f Makefile; then
+  ln -s "${srcdir}/Makefile" .
+fi

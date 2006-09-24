@@ -19,8 +19,7 @@ LDADD_CGI_SERVER = \
 
 default: all
 
-INCLUDES = -I$(BLDDIR) -I$(SRCDIR) \
-           -I $(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
+INCLUDES = -I$(BLDDIR) -I $(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
 
 PROGS = test cgitest1
 

@@ -5,7 +5,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "xmlrpc-c/base_int.h"
+#include "c_util.h"
+#include "bool.h"
 
 #ifdef __cplusplus
 extern "C" {

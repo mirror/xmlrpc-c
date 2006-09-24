@@ -42,7 +42,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "config.h"  /* information about this build environment */
+#include "xmlrpc_config.h"  /* information about this build environment */
 #include "bool.h"
 #include "casprintf.h"
 #include "mallocvar.h"

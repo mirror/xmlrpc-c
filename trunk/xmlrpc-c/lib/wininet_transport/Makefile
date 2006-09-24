@@ -6,12 +6,12 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/wininet_transport
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = -lpthread $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/src
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/include
 
 default: all
 

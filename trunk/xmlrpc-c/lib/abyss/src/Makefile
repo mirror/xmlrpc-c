@@ -7,7 +7,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/abyss/src
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 default: all
 
@@ -20,16 +20,15 @@ SHARED_LIBS_TO_INSTALL := libxmlrpc_abyss
 
 include $(SRCDIR)/Makefile.common
 
-CFLAGS = $(CFLAGS_COMMON)
-CFLAGS += -D_UNIX
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
   THREAD_MODULE = thread_pthread
 else
   THREAD_MODULE = thread_fork
 endif
-CFLAGS += $(CFLAGS_PERSONAL) $(CADD)
 
-INCLUDES = -Isrcdir -Isrcdir/include -Isrcdir/lib/util/include
+CFLAGS = $(CFLAGS_COMMON) -D_UNIX $(CFLAGS_PERSONAL) $(CADD)
+
+INCLUDES = -Iblddir -Isrcdir -Isrcdir/include -Isrcdir/lib/util/include
 
 ABYSS_SHLIB = $(call shlibfn,libxmlrpc_abyss)
 #ABYSS_SHLIB is e.g. libxmlrpc_abyss.so.3.1
@@ -39,7 +38,6 @@ ABYSS_SHLIBLE = $(call shliblefn,libxmlrpc_abyss)
 ifneq ($(SHARED_LIB_TYPE),NONE)
   TARGET_SHARED_LIBS := $(ABYSS_SHLIB) $(ABYSS_SHLIBLE)
   endif
-
 
 # This 'Makefile.common' dependency makes sure the symlinks get built before
 # this make file is used for anything.

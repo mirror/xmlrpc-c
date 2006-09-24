@@ -6,7 +6,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/curl_transport
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 CURL_INCLUDES := $(shell curl-config --cflags)
 # We expect that curl-config --cflags just gives us -I options, because
@@ -16,7 +16,11 @@ CURL_INCLUDES := $(shell curl-config --cflags)
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(BLDDIR)/include \
+  -I$(SRCDIR)/include \
+  -I$(SRCDIR)/lib/util/include \
   $(CURL_INCLUDES)
 
 default: all

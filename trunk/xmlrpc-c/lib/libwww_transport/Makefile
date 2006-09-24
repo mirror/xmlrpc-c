@@ -6,14 +6,18 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/libwww_transport
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(BLDDIR)/include \
+  -I$(SRCDIR)/include \
+  -I$(SRCDIR)/lib/util/include \
   $(LIBWWW_INCLUDES)
 
 default: all

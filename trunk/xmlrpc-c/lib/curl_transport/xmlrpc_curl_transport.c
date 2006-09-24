@@ -66,10 +66,7 @@
 #include "girstring.h"
 #include "pthreadx.h"
 
-#include "xmlrpc-c/base.h"
-#include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
-#include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
 #include "version.h"

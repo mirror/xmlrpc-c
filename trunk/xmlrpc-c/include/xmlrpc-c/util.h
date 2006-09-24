@@ -17,19 +17,10 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
+#include <xmlrpc-c/c_util.h>  /* for GNU_PRINTF_ATTR */
+
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-
-/* GNU_PRINTF_ATTR lets the GNU compiler check printf-type
-   calls to be sure the arguments match the format string, thus preventing
-   runtime segmentation faults and incorrect messages.
-*/
-#ifdef __GNUC__
-#define GNU_PRINTF_ATTR(a,b) __attribute__ ((format (printf, a, b)))
-#else
-#define GNU_PRINTF_ATTR(a,b)
 #endif
 
 

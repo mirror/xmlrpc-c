@@ -6,7 +6,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/abyss
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 SUBDIRS = src
 

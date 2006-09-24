@@ -14,6 +14,8 @@
 #ifndef  XMLRPC_CLIENT_INT_H_INCLUDED
 #define  XMLRPC_CLIENT_INT_H_INCLUDED
 
+#include "xmlrpc-c/util.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -24,8 +26,9 @@ struct _xmlrpc_server_info {
 };
 
 /* Create a new server info record, with a copy of the old server. */
-extern xmlrpc_server_info * 
-xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *aserver);
+struct _xmlrpc_server_info * 
+xmlrpc_server_info_copy(xmlrpc_env *                 const envP,
+                        struct _xmlrpc_server_info * const serverInfoP);
 
 
 /*=========================================================================

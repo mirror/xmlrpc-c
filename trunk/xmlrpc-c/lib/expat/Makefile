@@ -6,7 +6,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/expat
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/Makefile.config
 
 # Build up SUBDIRS:
 SUBDIRS = gennmtab xmlparse xmltok

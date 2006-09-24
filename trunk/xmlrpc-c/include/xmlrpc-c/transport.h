@@ -6,7 +6,8 @@
 extern "C" {
 #endif
 
-#include "xmlrpc-c/base.h"
+#include <xmlrpc-c/util.h>
+#include <xmlrpc-c/client.h>
 
 struct xmlrpc_call_info;
 
