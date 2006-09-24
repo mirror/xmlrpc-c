@@ -256,3 +256,14 @@ prefix = @prefix@
 LIBINST_DIR = @libdir@
 HEADERINST_DIR = @includedir@
 PROGRAMINST_DIR = @bindir@
+
+# VPATH probably doesn't belong in this file, but it's a convenient
+# place to set it once.  VPATH is a special Make variable that tells
+# Make where to look for dependencies.  E.g. if a make file says bar.c
+# is a dependency of bar.o and VPATH is ".:/usr/src/mypkg", Make will
+# look for bar.c first in the current directory (.) (as it would with
+# no VPATH), then in /usr/src/mypkg.  The purpose of this is to allow
+# you to build in a fresh build directory, while your source stays in
+# the read-only directory /usr/src/mypkg .
+
+VPATH := .:$(SRCDIR)/$(SUBDIR)
