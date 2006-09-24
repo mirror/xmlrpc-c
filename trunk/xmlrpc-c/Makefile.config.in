@@ -159,9 +159,7 @@ ifeq ($(HOST_OS),linux-gnu)
 endif
 
 ifeq ($(findstring solaris,$(HOST_OS)),FIND)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = unix
+  SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
@@ -170,9 +168,7 @@ ifeq ($(findstring solaris,$(HOST_OS)),FIND)
 endif
 
 ifeq ($(HOST_OS),aix)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = unix
+  SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = a
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
@@ -180,9 +176,7 @@ ifeq ($(HOST_OS),aix)
 endif
 
 ifeq ($(HOST_OS),irix)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = irix
+  SHARED_LIB_TYPE = irix
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
@@ -194,9 +188,7 @@ ifeq ($(HOST_OS),irix)
 endif
 
 ifeq ($(HOST_OS),hpux)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = unix
+  SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = sl
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
@@ -204,9 +196,7 @@ ifeq ($(HOST_OS),hpux)
 endif
 
 ifeq ($(HOST_OS),osf)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = unix
+  SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
@@ -214,9 +204,7 @@ ifeq ($(HOST_OS),osf)
 endif
 
 ifeq ($(findstring netbsd,$(HOST_OS)),FIND)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = unix
+  SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
@@ -224,18 +212,14 @@ ifeq ($(findstring netbsd,$(HOST_OS)),FIND)
 endif
 
 ifeq ($(HOST_OS),darwin)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = dylib
+  SHARED_LIB_TYPE = dylib
   SHLIB_SUFFIX = dylib
   shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
 endif
 
 ifeq ($(HOST_OS),beos)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = unix
+  SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
@@ -243,9 +227,7 @@ ifeq ($(HOST_OS),beos)
 endif
 
 ifeq ($(HOST_OS),cygwin)
-  # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
-  # If you can finish it and make it work on AIX, please do.
-  # SHARED_LIB_TYPE = dll
+  SHARED_LIB_TYPE = dll
   SHLIB_SUFFIX = dll
   shlibfn = $(1:lib%=$(SHLIB_PREFIX)%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.shlibdummyle)
