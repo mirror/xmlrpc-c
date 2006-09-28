@@ -135,11 +135,11 @@ endif
 # This make file defines these functions that the including make file
 # can use:
 #
-#   $(call shlibfn, LIBNAMELIST): file names of a shared libraries
+#   $(call shlibfn, LIBNAMELIST): file names of shared libraries
 #     whose base names are LIBNAMELIST.  E.g. if LIBNAMELIST is
 #     "libfoo libbar", function returns "libfoo.so.3.1 libbar.so.3.1"
 #
-#   $(call sliblefn, LIBNAMELIST): same as shlibfn, but for the file you
+#   $(call shliblefn, LIBNAMELIST): same as shlibfn, but for the file you
 #     use at link-edit time.  E.g. libfoo.so .
 
 # We build shared libraries only for platforms for which we've figured
@@ -156,6 +156,7 @@ ifeq ($(HOST_OS),linux-gnu)
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
 #  SHLIB_CLIB = -lc
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  CFLAGS_SHLIB=-fPIC
 endif
 
 ifeq ($(findstring solaris,$(HOST_OS)),FIND)
