@@ -2,13 +2,13 @@
 # Stolen from rep-config and adapted for use with xmlrpc-c.
 # Other bits stolen from gnome-config & automake output.
 
-prefix='@prefix@'
-exec_prefix='@exec_prefix@'
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
 
-bindir='@bindir@'
-datadir='@datadir@'
-libdir='@libdir@'
-includedir='@includedir@'
+bindir="@bindir@"
+datadir="@datadir@"
+libdir="@libdir@"
+includedir="@includedir@"
 
 ENABLE_LIBXML2_BACKEND='@ENABLE_LIBXML2_BACKEND@'
 ENABLE_ABYSS_THREADS='@ENABLE_ABYSS_THREADS@'
