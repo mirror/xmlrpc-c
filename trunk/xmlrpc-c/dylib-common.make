@@ -25,7 +25,7 @@ SHLIB_INSTALL_TARGETS = $(SHARED_LIBS_TO_INSTALL:%=%/install)
 
 install-shared-libraries: $(SHLIB_INSTALL_TARGETS)
 
-$(SHLIB_INSTALL_TARGETS) X/install:%/install:%.$(MAJ).$(MIN).$(SHLIB_SUFFIX)
+$(SHLIB_INSTALL_TARGETS):%/install:%.$(MAJ).$(MIN).$(SHLIB_SUFFIX)
 # $< is a library file name, e.g. libfoo.so.3.1 .
 	$(INSTALL_SHLIB) $< $(DESTDIR)$(LIBINST_DIR)/$<
 	cd $(DESTDIR)$(LIBINST_DIR); \

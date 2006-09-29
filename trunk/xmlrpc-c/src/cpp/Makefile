@@ -40,27 +40,20 @@ else
   LIBXML_INCLUDES = -Isrcdir/lib/expat/xmlparse
 endif
 
-LIBXMLRPCPP_OBJS = \
-	base64.o \
-	env_wrap.o \
-	fault.o \
-	girerr.o \
-	girmem.o \
-	outcome.o \
-	param_list.o \
-	value.o \
-	xml.o \
+LIBXMLRPCPP_MODS = \
+  base64 env_wrap fault girerr girmem outcome param_list value xml
+LIBXMLRPC_SERVERPP_MODS = registry
+LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
+LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet
 
-LIBXMLRPC_SERVERPP_OBJS = registry.o
-LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
-LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o curl.o libwww.o wininet.o
+TARGET_MODS_PP = \
+  XmlRpcCpp \
+  $(LIBXMLRPCPP_MODS) \
+  $(LIBXMLRPC_SERVERPP_MODS) \
+  $(LIBXMLRPC_SERVER_ABYSSPP_MODS) \
+  $(LIBXMLRPC_CLIENTPP_MODS)
 
-ALL_OBJS = \
-  XmlRpcCpp.o \
-  $(LIBXMLRPCCPP_OBJS) \
-  $(LIBXMLRPC_SERVERPP_OBJS) \
-  $(LIBXMLRPC_SERVER_ABYSSPP_OBJS) \
-  $(LIBXMLRPC_CLIENTPP_OBJS)
+OMIT_CPP_LIB_RULES = Y
 
 include $(SRCDIR)/Makefile.common
 
@@ -81,10 +74,11 @@ BASIC_INCLUDES = \
   -Iblddir \
   -Isrcdir/lib/util/include
 
-# LIBXMLRPC_CPP_SHLIB is e.g. "libxmlrpc_cpp.so.3.1"
 
-LIBXMLRPC_CPP_SHLIB      = $(call shlibfn, libxmlrpc_cpp)
-LIBXMLRPCPP_SHLIB        = $(call shlibfn, libxmlrpc++)
+# LIBXMLRPC_CPP is e.g. "libxmlrpc_cpp.so.3.1"
+
+LIBXMLRPC_CPP            = $(call shlibfn, libxmlrpc_cpp)
+LIBXMLRPCPP              = $(call shlibfn, libxmlrpc++)
 LIBXMLRPC_SERVERPP       = $(call shlibfn, libxmlrpc_server++)
 LIBXMLRPC_SERVER_ABYSSPP = $(call shlibfn, libxmlrpc_server_abyss++)
 LIBXMLRPC_CLIENTPP       = $(call shlibfn, libxmlrpc_client++)
@@ -96,68 +90,77 @@ all: \
   $(TARGET_SHARED_LE_LIBS)
 
 
+#-----------------------------------------------------------------------------
+#  RULES TO LINK LIBRARIES
+#-----------------------------------------------------------------------------
+
 # Rules for these are in Makefile.common, courtesy of TARGET_SHARED_LIBS_PP:
 
-$(LIBXMLRPC_CPP_SHLIB): XmlRpcCpp.o
-$(LIBXMLRPC_CPP_SHLIB): OBJECTS = XmlRpcCpp.o
+$(LIBXMLRPC_CPP): XmlRpcCpp.o
+$(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.o
 
-$(LIBXMLRPCPP_SHLIB): $(LIBXMLRPCPP_OBJS)
-$(LIBXMLRPCPP_SHLIB): OBJECTS = $(LIBXMLRPCPP_OBJS)
+$(LIBXMLRPCPP): $(LIBXMLRPCPP_MODS:%=%.osh)
+$(LIBXMLRPCPP): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
 
-$(LIBXMLRPC_SERVERPP): $(LIBXMLRPC_SERVERPP_OBJS)
-$(LIBXMLRPC_SERVERPP): OBJECTS = $(LIBXMLRPC_SERVERPP_OBJS)
+$(LIBXMLRPC_SERVERPP): $(LIBXMLRPC_SERVERPP_MODS:%=%.osh )
+$(LIBXMLRPC_SERVERPP): LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.osh)
 
-$(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
-$(LIBXMLRPC_SERVER_ABYSSPP): OBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
+$(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 
-$(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_OBJS)
-$(LIBXMLRPC_CLIENTPP): OBJECTS = $(LIBXMLRPC_CLIENTPP_OBJS)
+$(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
+$(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 
 # Rules for these are in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
-libxmlrpc_cpp.a: OBJECTS = XmlRpcCpp.o
+libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o
 
-libxmlrpc++.a: $(LIBXMLRPCPP_OBJS)
-libxmlrpc++.a: OBJECTS = $(LIBXMLRPCPP_OBJS)
+libxmlrpc++.a: $(LIBXMLRPCPP_MODS:%=%.o)
+libxmlrpc++.a: LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.o)
 
-libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_OBJS)
-libxmlrpc_server++.a: OBJECTS = $(LIBXMLRPC_SERVERPP_OBJS)
+libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
+libxmlrpc_server++.a: LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
 
-libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
-libxmlrpc_server_abyss++.a: OBJECTS=$(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
+libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
+libxmlrpc_server_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
 
-libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS)
-libxmlrpc_client++.a: OBJECTS = $(LIBXMLRPC_CLIENTPP_OBJS)
+libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_MODS:%=%.o)
+libxmlrpc_client++.a: LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.o)
 
 #-----------------------------------------------------------------------------
 #  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
 #-----------------------------------------------------------------------------
 
-CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+# Rules for these are in Makefile.common, courtesy of TARGET_MODS_PP:
 
-XmlRpcCpp.o:%.o:%.cpp
-	$(CXX) -c $(BASIC_INCLUDES) $(CXXFLAGS) $<
+XmlRpcCpp.o% XmlrpcCpp.osh: \
+  INCLUDES = $(BASIC_INCLUDES)
 
-$(LIBXMLRPCPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(BASIC_INCLUDES) $(CXXFLAGS) $<
+$(LIBXMLRPCPP_MODS:%=%.o) \
+$(LIBXMLRPCPP_MODS:%=%.osh): \
+  INCLUDES = $(BASIC_INCLUDES)
 
 SERVER_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES)
 
-$(LIBXMLRPC_SERVERPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(SERVER_INCLUDES) $(CXXFLAGS) $<
+$(LIBXMLRPC_SERVERPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVERPP_MODS:%=%.osh): \
+  INCLUDES = $(SERVER_INCLUDES)
 
-SERVER_ABYSS_INCLUDES = $(SERVER_INCLUDES) -Isrcdir/lib/abyss/src
+$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o): \
+  INCLUDES = $(SERVER_INCLUDES) -Isrcdir/lib/abyss/src
 
-$(LIBXMLRPC_SERVER_ABYSSPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(SERVER_ABYSS_INCLUDES) $(CXXFLAGS) $<
+$(LIBXMLRPC_CLIENTPP_MODS:%=%.o) \
+$(LIBXMLRPC_CLIENTPP_MODS:%=%.osh): \
+  INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
 
-CLIENT_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
+CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-$(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(CLIENT_INCLUDES) $(CXXFLAGS) $<
+TRANSPORT_CONFIG_USERS = client curl libwww wininet
 
-client.o curl.o libwww.o wininet.o: $(BLDDIR)/transport_config.h
+$(TRANSPORT_CONFIG_USERS:%=%.o) $(TRANSPORT_CONFIG_USERS:%=%.osh): \
+  $(BLDDIR)/transport_config.h
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

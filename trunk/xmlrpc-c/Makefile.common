@@ -92,9 +92,10 @@ endif
 
 
 # To use this rule, the including make file must set a target_specific
-# variable OBJECTS (and declare dependencies that include OBJECTS).  Example:
+# variable LIBOBJECTS (and declare dependencies that include LIBOBJECTS).
+# Example:
 #   FOO_OBJECTS = foo1.o foo2.o
-#   libfoo.a: OBJECTS = $(FOO_OBJECTS)
+#   libfoo.a: LIBOBJECTS = $(FOO_OBJECTS)
 #   libfoo.a: $(FOO_OBJECTS)
 #   TARGET_LIBRARY_NAMES = libfoo
 
@@ -102,7 +103,7 @@ TARGET_STATIC_LIBRARIES = \
   $(TARGET_LIBRARY_NAMES:%=%.a) $(TARGET_LIB_NAMES_PP:%=%.a)
 $(TARGET_STATIC_LIBRARIES):
 	-rm -f $@
-	$(AR) cru $@ $(OBJECTS)
+	$(AR) cru $@ $(LIBOBJECTS)
 	$(RANLIB) $@
 
 
@@ -131,7 +132,7 @@ ifeq ($(SHARED_LIB_TYPE),NONE)
   endif
 
 # To use this rule, the including make file must set a target_specific
-# variable OBJECTS (and declare dependencies that include OBJECTS).
+# variable LIBOBJECTS (and declare dependencies that include LIBOBJECTS).
 # Analogous to static library rule above.
 
 ifeq ($(SHARED_LIB_TYPE),NONE)
@@ -146,10 +147,10 @@ else
 endif
 
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
-	$(CCLD) $(LDFLAGS_SHLIB) -o $@ $(OBJECTS) $(LADD)
+	$(CCLD) $(LDFLAGS_SHLIB) -o $@ $(LIBOBJECTS) $(LADD)
 
 $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
-	$(CXXLD) $(LDFLAGS_SHLIB) -o $@ $(OBJECTS) $(LADD)
+	$(CXXLD) $(LDFLAGS_SHLIB) -o $@ $(LIBOBJECTS) $(LADD)
 
 
 LIBXMLRPC_UTIL           = $(BLDDIR)/lib/libutil/libxmlrpc_util.la
@@ -158,8 +159,6 @@ LIBXMLRPC_CLIENT         = $(BLDDIR)/src/libxmlrpc_client.la
 LIBXMLRPC_SERVER         = $(BLDDIR)/src/libxmlrpc_server.la
 LIBXMLRPC_SERVER_ABYSS   = $(BLDDIR)/src/libxmlrpc_server_abyss.la
 LIBXMLRPC_SERVER_CGI     = $(BLDDIR)/src/libxmlrpc_server_cgi.la
-LIBXMLRPC_ABYSS          = \
-  $(call shliblefn, $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss)
 LIBXMLRPC_XMLPARSE       = $(BLDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
 LIBXMLRPC_XMLTOK         = $(BLDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
 
@@ -170,14 +169,32 @@ LIBXMLRPC_CLIENT_A       = $(BLDDIR)/src/.libs/libxmlrpc_client.a
 LIBXMLRPC_SERVER_A       = $(BLDDIR)/src/.libs/libxmlrpc_server.a
 LIBXMLRPC_SERVER_ABYSS_A = $(BLDDIR)/src/.libs/libxmlrpc_server_abyss.a
 LIBXMLRPC_SERVER_CGI_A   = $(BLDDIR)/src/.libs/libxmlrpc_server_cgi.a
-LIBXMLRPC_ABYSS_A        = $(BLDDIR)/lib/abyss/src/.libs/libxmlrpc_abyss.a
 LIBXMLRPC_XMLPARSE_A     = $(BLDDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a
 LIBXMLRPC_XMLTOK_A       = $(BLDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
-LIBXMLRPC_CPP            = $(BLDDIR)/src/cpp/libxmlrpc_cpp.a
-LIBXMLRPC++              = $(BLDDIR)/src/cpp/libxmlrpc++.a
-LIBXMLRPC_CLIENT++       = $(BLDDIR)/src/cpp/libxmlrpc_client++.a
-LIBXMLRPC_SERVER++       = $(BLDDIR)/src/cpp/libxmlrpc_server++.a
-LIBXMLRPC_SERVER_ABYSS++ = $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++.a
+
+ifneq ($(OMIT_ABYSS_LIB_RULE),Y)
+LIBXMLRPC_ABYSS          = \
+  $(call shliblefn, $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss)
+LIBXMLRPC_ABYSS_A        = $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss.a
+endif
+
+ifneq ($(OMIT_CPP_LIB_RULES),Y)
+LIBXMLRPC_CPP              = \
+  $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_cpp)
+LIBXMLRPC_CPP_A            = $(BLDDIR)/src/cpp/libxmlrpc_cpp.a
+LIBXMLRPCPP                = \
+  $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc++)
+LIBXMLRPCPP_A              = $(BLDDIR)/src/cpp/libxmlrpc++.a
+LIBXMLRPC_CLIENTPP         =  \
+  $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_client++)
+LIBXMLRPC_CLIENTPP_A       = $(BLDDIR)/src/cpp/libxmlrpc_client++.a
+LIBXMLRPC_SERVERPP         = \
+  $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_server++)
+LIBXMLRPC_SERVERPP_A       = $(BLDDIR)/src/cpp/libxmlrpc_server++.a
+LIBXMLRPC_SERVER_ABYSSPP   = \
+  $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++)
+LIBXMLRPC_SERVER_ABYSSPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++.a
+endif
 
 CASPRINTF                = $(BLDDIR)/lib/util/casprintf.o
 
@@ -186,7 +203,8 @@ UTILS = $(CASPRINTF)
 
 # LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
 # XML.  If we're using an external library to parse XML, this is null.
-# LDLIBS_XMLRPC_XML is the corresponding -l options.
+# LDLIBS_XML is the corresponding -L/-l options, which may work only
+# for a Libtool link.
 
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
@@ -199,6 +217,47 @@ ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
 else
   LDLIBS_XML = $(shell xml2-config --libs)
 endif
+
+
+##############################################################################
+#            RULES TO BUILD OBJECT FILES TO LINK INTO LIBRARIES              #
+##############################################################################
+
+# The including make file sets TARGET_MODS to a list of all modules that
+# might go into a library.  Its a list of the bare module names.  The
+# including make file also sets INCLUDES, in a target-dependent manner,
+# to the string of -I options needed for each target.  Example:
+
+#   TARGET_MODS = foo bar
+#
+#   foo.o foo.osh: INCLUDES = -Iinclude -I/usr/include/foostuff
+#   bar.o bar.osh: INCLUDES = -Iinclude -I/usr/include/barstuff
+#
+#   include Makefile.common
+#
+# The above generates rules to build foo.o, bar.o, foo.osh, and bar.osh
+#
+# For C++ source files, use TARGET_MODS_PP instead.
+
+# CFLAGS and CXXFLAGS are designed to be overridden on the make command
+# line.  We pile all the options except -I into these variables so the
+# user can override them all if he wants.
+
+$(TARGET_MODS:%=%.o):%.o:%.c
+	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $<
+
+$(TARGET_MODS:%=%.o): CFLAGS_COMMON += $(CFLAGS_SHLIB)
+
+$(TARGET_MODS:%=%.osh):%.osh:%.c
+	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $(CFLAGS_SHLIB) $<
+
+$(TARGET_MODS_PP:%=%.o):%.o:%.cpp
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
+
+$(TARGET_MODS_PP:%=%.osh): CXXFLAGS_COMMON += $(CFLAGS_SHLIB)
+
+$(TARGET_MODS_PP:%=%.osh):%.osh:%.cpp
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
 
 
 ##############################################################################
@@ -303,8 +362,8 @@ $(LIBXMLRPC_ABYSS_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPC++) $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_SERVER++) \
-  $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_CPP): FORCE
+$(LIBXMLRPCPP) $(LIBXMLRPC_CLIENTPP) $(LIBXMLRPC_SERVERPP) \
+  $(LIBXMLRPC_SERVER_ABYSSPP) $(LIBXMLRPC_CPP): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
 
@@ -349,7 +408,8 @@ $(BLDDIR)/transport_config.h:
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/GNUmakefile $(notdir $@)
 endif
 
-$(ALL_OBJS): $(BLDDIR)/include/xmlrpc-c/config.h
+$(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh): \
+  $(BLDDIR)/include/xmlrpc-c/config.h
 
 # With a separate build directory, you have to make the directory itself
 # before you can make anything in it.  Here's the rule to do that.
@@ -431,7 +491,7 @@ $(DESTDIR)$(PROGRAMINST_DIR):
 
 .PHONY: clean-common
 clean-common:
-	rm -f *.o *.a *.s *.i *.la *.lo
+	rm -f *.o *.osh *.a *.s *.i *.la *.lo
 	rm -f *.$(SHLIB_SUFFIX) *.$(SHLIB_SUFFIX).*
 	rm -rf .libs
 ifneq ($(OMIT_VERSION_H),Y)
@@ -495,11 +555,11 @@ TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 
 DEP_SOURCES = $(wildcard *.c *.cpp)
 
-# This is a filter to turn "foo.o:" rules into "foo.o foo.lo:" because Libtool
-# uses .lo for object files.  I'd like to purge the build of Libtool some day
-# and eliminate this complication.
+# This is a filter to turn "foo.o:" rules into "foo.o foo.lo foo.osh:"
+# to make dependencies for all the various forms of object file out of
+# a file made by a depedency generator that knows only about .o.
 
-LIBTOOL_DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo:}'
+LIBTOOL_DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo $$1.osh:}'
 
 
 

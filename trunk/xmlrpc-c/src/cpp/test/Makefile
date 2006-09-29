@@ -46,18 +46,34 @@ TEST_OBJS = test.o server_abyss.o tools.o
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
-  CLIENT_LIBS = $(LIBXMLRPC_CLIENT++) $(LIBXMLRPC_CLIENT_A)
+  CLIENT_LIBS = $(LIBXMLRPC_CLIENTPP_A) $(LIBXMLRPC_CLIENT_A)
 else
   TEST_OBJS += testclient_dummy.o
   CLIENT_LIBS =
 endif
 
 
-test:$(TEST_OBJS) $(LIBXMLRPC_SERVER_ABYSS++) $(LIBXMLRPC_SERVER++) \
-  $(CLIENT_LIBS) $(LIBXMLRPC++) $(LIBXMLRPC_CPP) \
-  $(LIBXMLRPC_SERVER_ABYSS_A) $(LIBXMLRPC_SERVER_A) \
-  $(LIBXMLRPC_A) $(LIBXMLRPC_ABYSS_A) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL_A) 
-	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
+TEST_LIBS = \
+  $(LIBXMLRPC_SERVER_ABYSSPP_A) \
+  $(LIBXMLRPC_SERVERPP_A) \
+  $(CLIENT_LIBS) $(LIBXMLRPCPP_A) \
+  $(LIBXMLRPC_CPP_A) \
+  $(LIBXMLRPC_SERVER_ABYSS_A) \
+  $(LIBXMLRPC_SERVER_A) \
+  $(LIBXMLRPC_A) \
+  $(LIBXMLRPC_ABYSS_A) \
+  $(LIBXMLRPC_UTIL_A) \
+
+ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
+  # We're using the internal Expat XML parser
+  TEST_LIBS += $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
+  LDADD_XML =
+else
+  LDADD_XML = $(shell xml2-config --libs)
+endif
+
+test: $(TEST_OBJS) $(TEST_LIBS)
+	$(CXXLD) -o $@ $(LDFLAGS) $(LDADD_XML) $^
 
 %.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<

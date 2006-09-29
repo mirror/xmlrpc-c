@@ -18,13 +18,34 @@ STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_abyss.a
 SHARED_LIBS_TO_BUILD := libxmlrpc_abyss
 SHARED_LIBS_TO_INSTALL := libxmlrpc_abyss
 
-include $(SRCDIR)/Makefile.common
-
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
   THREAD_MODULE = thread_pthread
 else
   THREAD_MODULE = thread_fork
 endif
+
+TARGET_MODS = \
+  channel \
+  chanswitch \
+  conf \
+  conn \
+  data \
+  date \
+  file \
+  http \
+  init \
+  response \
+  server \
+  session \
+  socket \
+  socket_unix \
+  token \
+  $(THREAD_MODULE) \
+  trace \
+
+OMIT_ABYSS_LIB_RULE = Y
+
+include $(SRCDIR)/Makefile.common
 
 CFLAGS = $(CFLAGS_COMMON) -D_UNIX $(CFLAGS_PERSONAL) $(CADD)
 
@@ -48,41 +69,26 @@ $(SRCDIR)/Makefile.common: srcdir blddir
 all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
 
-ABYSS_OBJS = \
-  channel.o \
-  chanswitch.o \
-  conf.o \
-  conn.o \
-  data.o \
-  date.o \
-  file.o \
-  http.o \
-  init.o \
-  response.o \
-  server.o \
-  session.o \
-  socket.o \
-  socket_unix.o \
-  token.o \
-  $(THREAD_MODULE).o \
-  trace.o \
-
-
 # Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
-$(ABYSS_SHLIB): $(ABYSS_OBJS)
-$(ABYSS_SHLIB): OBJECTS = $(ABYSS_OBJS)
+$(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh)
+$(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
 
 # Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
 
-libxmlrpc_abyss.a: $(ABYSS_OBJS)
-libxmlrpc_abyss.a: OBJECTS = $(ABYSS_OBJS)
+libxmlrpc_abyss.a: $(TARGET_MODS:%=%.o)
+libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 
-$(ABYSS_OBJS):%.o:%.c
-	$(CC) -c $(INCLUDES) $(CFLAGS) $<
+#-----------------------------------------------------------------------------
+#  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
+#-----------------------------------------------------------------------------
+
+# Rules to compile object modules from which to build the static and shared
+# Abyss library are in Makefile.common, courtesy of TARGET_MODS.
+
 
 # Need this dependency for those who don't use Makefile.depend.
 # Without it, version.h doesn't get created.
-response.o: version.h
+response.o response.osh: version.h
 
 .PHONY: clean
 clean: clean-common
