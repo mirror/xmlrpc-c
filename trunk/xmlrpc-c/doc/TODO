@@ -7,17 +7,6 @@ be useful to anyone proposing changes of any kind.
 FUNCTIONAL CHANGES
 ------------------
 
-Make xmlrpc_server_abyss() catch a SIGTERM and terminate cleanly.
-
-Make a system.shutdown XML-RPC method to send SIGTERM to its server.
-Don't know what kind of security.
-
-Provide an interface for Abyss servers where the user accepts the TCP
-connection and passes to Xmlrpc-c the open socket.  This would be
-useful for inetd servers, among others.  For the C++ interface, this
-should be a new constructor option to create a server with no socket
-and a doRpc() method that has a connected socket as parameter.
-
 Put details in the manual for the xmlrpc-c/server_abyss.hpp interface:
 libxmlrpc_server_abyss++.html.
 
@@ -26,9 +15,6 @@ client side.
 
 Create a non-XML non-HTTP efficient transport, client and server.
 The tools/binmode-rpc-kit/ directory might be useful.  Consider XDR.
-
-Make clients and servers reentrant (this requires getting or making
-reentrant HTTP libraries).
 
 Change the argument order of asynchronous response callbacks to be
 more consistent with the xmlrpc_client_call_asynch function.  Also
@@ -55,8 +41,6 @@ no need for fault codes at all.  Just use the string descriptions.
 
 IMPLEMENTATION CHANGES
 ----------------------
-
-Replace dynamically created make files with static ones based on GNU make.
 
 Use function pointers to access cleanup code in xmlrpc_DECREF?
 
