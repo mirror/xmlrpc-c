@@ -8,12 +8,12 @@ dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
 dnl =======================================================================
 
 dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 1.06.05)
+AM_INIT_AUTOMAKE(xmlrpc-c, 1.06.06)
 
 dnl This version number needs to be changed in several *different* tricky
 dnl ways for each release. Please read the libtool documentation very
 dnl closely before touching this or making a release!
-VERSION_INFO="-version-info 7:0:5"
+VERSION_INFO="-version-info 7:0:6"
 AC_SUBST(VERSION_INFO)
 
 dnl Define @build@, @build_cpu@, @build_vendor@, @build_os,
