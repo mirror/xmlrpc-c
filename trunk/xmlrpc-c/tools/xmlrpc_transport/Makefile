@@ -39,7 +39,7 @@ UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 
 xmlrpc_transport:%:%.o $(LIBS) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $(CLIENT_LDLIBS) $< $(UTILS)
+	$(CCLD) -o $@ $(LDFLAGS) $< $(CLIENT_LDLIBS) $(UTILS)
 
 %.o:%.c
 	$(CC) -c $(CFLAGS) $<
