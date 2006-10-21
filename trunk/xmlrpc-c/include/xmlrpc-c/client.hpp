@@ -150,7 +150,7 @@ public:
 
     void
     start(xmlrpc_c::carriageParm *       const  carriageParmP,
-          std::string                    const  methodName,
+          std::string                    const& methodName,
           xmlrpc_c::paramList            const& paramList,
           xmlrpc_c::clientTransactionPtr const& tranP);
 

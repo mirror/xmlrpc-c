@@ -585,7 +585,7 @@ client_xml::call(carriageParm * const  carriageParmP,
 
 void
 client_xml::start(carriageParm *       const  carriageParmP,
-                  string               const  methodName,
+                  string               const& methodName,
                   paramList            const& paramList,
                   clientTransactionPtr const& tranP) {
 
