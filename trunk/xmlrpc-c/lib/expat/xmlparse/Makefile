@@ -48,6 +48,8 @@ dep: dep-common
 
 $(SRCDIR)/Makefile.common: srcdir
 
+OMIT_XMLPARSE_LIB_RULE=Y
+
 include $(SRCDIR)/Makefile.common
 
 include Makefile.depend
