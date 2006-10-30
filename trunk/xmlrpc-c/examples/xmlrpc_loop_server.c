@@ -32,12 +32,14 @@ setupSignalHandlers(void) {
        obviously don't want to die just because a client didn't complete
        an RPC, so we ignore SIGPIPE.
     */
+#ifndef WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
     mysigaction.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &mysigaction, NULL);
+#endif
 }
 
 

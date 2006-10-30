@@ -619,8 +619,12 @@ sigchld(int const signalClass ATTR_UNUSED) {
 
 
 struct signalHandlers {
+#ifndef WIN32
     struct sigaction pipe;
     struct sigaction chld;
+#else
+    int dummy;
+#endif
 };
 
 
