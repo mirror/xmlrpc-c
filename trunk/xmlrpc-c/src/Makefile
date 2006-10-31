@@ -18,6 +18,8 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
   SUBDIRS += cpp
 endif
 
+OMIT_XMLRPC_LIB_RULE=Y
+
 include $(SRCDIR)/Makefile.common
 
 # TRANSPORT_OBJS is the list of modules that have to go into the client
@@ -152,7 +154,9 @@ all: $(TARGET_LTLIBRARIES) $(SUBDIRS:%=%/all)
 
 # Extra dependencies to make parallel make work in spite of all the submakes
 # (See top level make file for details)
+ifeq ($MUST_BUILD_CLIENT),yes)
 cpp/all: $(BLDDIR)/transport_config.h
+endif
 
 LDFLAGS = $(LADD)
 

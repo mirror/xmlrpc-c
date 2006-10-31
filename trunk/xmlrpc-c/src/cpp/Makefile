@@ -18,7 +18,10 @@ TARGET_LIB_NAMES_PP := \
   libxmlrpc++ \
   libxmlrpc_server++ \
   libxmlrpc_server_abyss++ \
-  libxmlrpc_client++ \
+
+ifeq ($MUST_BUILD_CLIENT),yes)
+  TARGET_LIB_NAMES_PP += libxmlrpc_client++
+endif
 
 STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
 
@@ -84,6 +87,9 @@ LIBXMLRPC_SERVER_ABYSSPP = $(call shlibfn, libxmlrpc_server_abyss++)
 LIBXMLRPC_CLIENTPP       = $(call shlibfn, libxmlrpc_client++)
 
 
+# TARGET_STATIC_LIBARIES, etc. are set by Makefile.common, based on
+# TARGET_LIB_NAMES_PP.
+
 all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBS_PP) \
@@ -94,7 +100,7 @@ all: \
 #  RULES TO LINK LIBRARIES
 #-----------------------------------------------------------------------------
 
-# Rules for these are in Makefile.common, courtesy of TARGET_SHARED_LIBS_PP:
+# Rules for these are in Makefile.common, courtesy of TARGET_LIB_NAMES_PP:
 
 $(LIBXMLRPC_CPP): XmlRpcCpp.o
 $(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.o
@@ -111,7 +117,7 @@ $(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.os
 $(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 
-# Rules for these are in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
+# Rules for these are in Makefile.common, courtesy of TARGET_LIB_NAMES_PP:
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o

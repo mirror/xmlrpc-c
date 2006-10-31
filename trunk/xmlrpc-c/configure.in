@@ -92,11 +92,6 @@ AC_MSG_RESULT($MUST_BUILD_LIBWWW_CLIENT)
 AC_SUBST(MUST_BUILD_LIBWWW_CLIENT)
 
 
-if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-  AC_MSG_NOTICE([We are not building any client XML transport, therefore we will not build the client library at all.])
-fi
-
-
 dnl Set up the appropriate Makefile substitutions.
 
 LIBXMLRPC_CLIENT_LA=libxmlrpc_client.la
@@ -655,3 +650,10 @@ fi
 if test ! -f Makefile; then
   ln -s "${srcdir}/Makefile" .
 fi
+
+
+if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
+  AC_MSG_NOTICE([\n\n==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY.])
+fi
+
+

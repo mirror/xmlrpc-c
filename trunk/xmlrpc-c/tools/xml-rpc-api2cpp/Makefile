@@ -20,7 +20,13 @@ LDFLAGS = $(LADD)
 
 LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
 
-all: xml-rpc-api2cpp
+PROGS :=
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += xml-rpc-api2cpp
+endif
+
+all: $(PROGS)
 
 OBJECTS = \
   xml-rpc-api2cpp.o \
@@ -51,7 +57,7 @@ include Makefile.depend
 
 .PHONY: clean
 clean: clean-common
-	rm -f xml-rpc-api2cpp
+	rm -f $(PROGS)
 
 .PHONY: distclean
 distclean: clean distclean-common
