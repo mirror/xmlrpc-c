@@ -154,21 +154,26 @@ $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
 
 
 LIBXMLRPC_UTIL           = $(BLDDIR)/lib/libutil/libxmlrpc_util.la
+LIBXMLRPC_XMLTOK         = $(BLDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
+
+LIBXMLRPC_UTIL_A         = $(BLDDIR)/lib/libutil/.libs/libxmlrpc_util.a
+LIBXMLRPC_XMLTOK_A       = $(BLDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
+
+ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
+
 LIBXMLRPC                = $(BLDDIR)/src/libxmlrpc.la
 LIBXMLRPC_CLIENT         = $(BLDDIR)/src/libxmlrpc_client.la
 LIBXMLRPC_SERVER         = $(BLDDIR)/src/libxmlrpc_server.la
 LIBXMLRPC_SERVER_ABYSS   = $(BLDDIR)/src/libxmlrpc_server_abyss.la
 LIBXMLRPC_SERVER_CGI     = $(BLDDIR)/src/libxmlrpc_server_cgi.la
-LIBXMLRPC_XMLTOK         = $(BLDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
 
-
-LIBXMLRPC_UTIL_A         = $(BLDDIR)/lib/libutil/.libs/libxmlrpc_util.a
 LIBXMLRPC_A              = $(BLDDIR)/src/.libs/libxmlrpc.a
 LIBXMLRPC_CLIENT_A       = $(BLDDIR)/src/.libs/libxmlrpc_client.a
 LIBXMLRPC_SERVER_A       = $(BLDDIR)/src/.libs/libxmlrpc_server.a
 LIBXMLRPC_SERVER_ABYSS_A = $(BLDDIR)/src/.libs/libxmlrpc_server_abyss.a
 LIBXMLRPC_SERVER_CGI_A   = $(BLDDIR)/src/.libs/libxmlrpc_server_cgi.a
-LIBXMLRPC_XMLTOK_A       = $(BLDDIR)/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a
+
+endif
 
 ifneq ($(OMIT_XMLPARSE_LIB_RULE),Y)
 LIBXMLRPC_XMLPARSE       = $(BLDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
