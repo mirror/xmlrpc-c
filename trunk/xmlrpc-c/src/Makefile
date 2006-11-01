@@ -207,6 +207,9 @@ xmlrpc_server_cgi.lo:%.lo:%.c
 	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) \
 	  $(CFLAGS) $<
 
+# A built header virtually everyone needs:
+$(LIB_OBJS): $(BLDDIR)/include/xmlrpc-c/config.h
+
 LTLIBRARIES_TO_INSTALL = $(TARGET_LTLIBRARIES)
 
 check:
