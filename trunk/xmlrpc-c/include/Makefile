@@ -87,4 +87,6 @@ check:
 .PHONY: dep
 dep:
 
+OMIT_CONFIG_H_RULE = Y
+
 include $(SRCDIR)/Makefile.common
