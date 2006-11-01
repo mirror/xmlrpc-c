@@ -119,8 +119,11 @@ initLibwww(const char * const appname,
            const char * const appversion) {
     
     /* We initialize the library using a robot profile, because we don't
-    ** care about redirects or HTTP authentication, and we want to
-    ** reduce our application footprint as much as possible. */
+       care about redirects or HTTP authentication, and we want to
+       reduce our application footprint as much as possible.
+       
+       This takes the place of HTLibInit().
+    */
     HTProfile_newRobot(appname, appversion);
 
     /* Ilya Goldberg <igg@mit.edu> provided the following code to access
@@ -221,6 +224,7 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 
     if (!(clientTransportP->saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
         HTProfile_delete();
+            /* This takes the place of HTLibTerminate() */
     }
     destroyCookieJar(clientTransportP->cookieJarP);
 }
@@ -570,6 +574,16 @@ extract_response_chunk(xmlrpc_env *        const envP,
                        rpc *               const rpcP,
                        xmlrpc_mem_block ** const responseXmlPP) {
 
+    /* Implementation warning: A Libwww chunk has nothing to do with
+       an HTTP chunk.  HTTP chunks (as in a chunked response) are not
+       visible to us; Libwww delivers the entire unchunked body to us
+       at once (we never see chunk headers and trailers).  This
+       subroutine is about a Libwww chunk, which is just a memory
+       buffer.  (Libwww is capable of delivering the response in a
+       number of ways other than a chunk, e.g. it can write it to a
+       file.
+    */
+
     /* Check to make sure that w3c-libwww actually sent us some data.
     ** XXX - This may happen if libwww is shut down prematurely, believe it
     ** or not--we'll get a 200 OK and no data. Gag me with a bogus design
@@ -698,7 +712,7 @@ static int timer_called = 0;
 static void 
 register_asynch_call(void) {
     XMLRPC_ASSERT(outstanding_asynch_calls >= 0);
-    outstanding_asynch_calls++;
+    ++outstanding_asynch_calls;
 }
 
 
@@ -707,7 +721,7 @@ static void
 unregister_asynch_call(void) {
 
     XMLRPC_ASSERT(outstanding_asynch_calls > 0);
-    outstanding_asynch_calls--;
+    --outstanding_asynch_calls;
     if (outstanding_asynch_calls == 0)
         HTEventList_stopLoop();
 }
