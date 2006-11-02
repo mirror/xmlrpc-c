@@ -44,9 +44,4 @@ particular environments. */
 #define XML_UNICODE
 #endif
 
-/* Enable external parameter entity parsing in expat */
-#ifndef XML_DTD
-#define XML_DTD 1
-#endif
-
 #endif /* MOZILLA_CLIENT */

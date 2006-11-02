@@ -23,6 +23,9 @@ INCLUDES = -I. -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
 
 default: all
 
+
+OMIT_XMLTOK_LIB_RULE = Y
+
 include $(SRCDIR)/Makefile.common
 
 .PHONY: all
