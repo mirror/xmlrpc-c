@@ -46,6 +46,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
+OMIT_CURL_TRANSPORT_RULE=Y
+
 include $(SRCDIR)/Makefile.common
 
 include Makefile.depend

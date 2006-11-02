@@ -153,9 +153,10 @@ $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
 	$(CXXLD) $(LDFLAGS_SHLIB) -o $@ $(LIBOBJECTS) $(LADD)
 
 
+ifneq ($(OMIT_LIBXMLRPC_UTIL_RULE),Y)
 LIBXMLRPC_UTIL           = $(BLDDIR)/lib/libutil/libxmlrpc_util.la
-
 LIBXMLRPC_UTIL_A         = $(BLDDIR)/lib/libutil/.libs/libxmlrpc_util.a
+endif
 
 ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
 
@@ -337,17 +338,23 @@ $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 #                         CROSS-COMPONENT BUILD RULES                        #
 ##############################################################################
 
+ifneq ($(OMIT_WININET_TRANSPORT_RULE),Y)
 $(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \
 	    $(notdir $@)
+endif
 
+ifneq ($(OMIT_CURL_TRANSPORT_RULE),Y)
 $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/curl_transport/Makefile \
 	    $(notdir $@)
+endif
 
+ifneq ($(OMIT_LIBWWW_TRANSPORT_RULE),Y)
 $(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libwww_transport/Makefile \
 	    $(notdir $@)
+endif
 
 $(LIBXMLRPC_ABYSS): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
@@ -386,9 +393,11 @@ $(LIBXMLRPC_CGI_A):          $(LIBXMLRPC_CGI)
 $(LIBXMLRPC_XMLPARSE_A):     $(LIBXMLRPC_XMLPARSE)
 $(LIBXMLRPC_XMLTOK_A):       $(LIBXMLRPC_XMLTOK)
 
+ifneq ($(OMIT_UTILS_RULE),Y)
 $(UTILS): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/util/Makefile \
 	    $(notdir $@)
+endif
 
 # About version.h:  This is a built header file, which means it is a supreme
 # pain in the ass.  The biggest problem is that when we automatically make

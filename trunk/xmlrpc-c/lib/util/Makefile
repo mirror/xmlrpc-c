@@ -29,6 +29,8 @@ default: all
 
 include $(BLDDIR)/Makefile.config
 
+OMIT_UTILS_RULE = Y
+
 include $(SRCDIR)/Makefile.common
 
 .PHONY: all

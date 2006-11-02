@@ -43,6 +43,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
+OMIT_LIBWWW_TRANSPORT_RULE=Y
+
 include $(SRCDIR)/Makefile.common
 
 include Makefile.depend

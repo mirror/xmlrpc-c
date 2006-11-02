@@ -61,6 +61,8 @@ dep: dep-common
 
 $(SRCDIR)/Makefile.common: srcdir
 
+OMIT_LIBXMLRPC_UTIL_RULE=Y
+
 include $(SRCDIR)/Makefile.common
 
 include Makefile.depend
