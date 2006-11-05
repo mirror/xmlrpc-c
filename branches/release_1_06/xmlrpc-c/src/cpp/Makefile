@@ -22,7 +22,10 @@ TARGET_LIBRARY_NAMES := \
   libxmlrpc++ \
   libxmlrpc_server++ \
   libxmlrpc_server_abyss++ \
-  libxmlrpc_client++ \
+
+ifeq ($MUST_BUILD_CLIENT),yes)
+  TARGET_LIBRARY_NAMES += libxmlrpc_client++
+endif
 
 STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
 

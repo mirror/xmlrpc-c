@@ -21,7 +21,13 @@ LDFLAGS = $(LADD)
 
 LDLIBS = -Lblddir/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
 
-all: xml-rpc-api2cpp
+PROGS :=
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += xml-rpc-api2cpp
+endif
+
+all: $(PROGS)
 
 OBJECTS = \
   xml-rpc-api2cpp.o \
