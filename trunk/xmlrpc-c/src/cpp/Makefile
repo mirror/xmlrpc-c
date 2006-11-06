@@ -19,7 +19,7 @@ TARGET_LIB_NAMES_PP := \
   libxmlrpc_server++ \
   libxmlrpc_server_abyss++ \
 
-ifeq ($MUST_BUILD_CLIENT),yes)
+ifeq ($(MUST_BUILD_CLIENT),yes)
   TARGET_LIB_NAMES_PP += libxmlrpc_client++
 endif
 
