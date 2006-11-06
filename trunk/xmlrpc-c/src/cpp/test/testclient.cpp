@@ -438,12 +438,28 @@ public:
 
         rpcPtr rpc2P("blowme", paramList0);
 
-        // This fails because the server doesn't exist
-        EXPECT_ERROR(rpc2P->start(&client0, &carriageParmCurl););
+        // This RPC fails to execute because the server doesn't exist,
+        // But libcurl "starts" it just fine.
+        rpc2P->start(&client0, &carriageParmCurl);
+
+        transportc0.finishAsync(5000);
+
+        TEST(rpc2P->isFinished());
+
+        TEST(!rpc2P->isSuccessful());
+
+        // Because the RPC did not return an XML-RPC failure (because the
+        // server doesn't exist), this throws:
+        EXPECT_ERROR(rpc2P->getFault(););
 
         rpcPtr rpc3P("blowme", paramList0);
-        // This fails because the server doesn't exist
-        EXPECT_ERROR(rpc3P->start(connection0););
+        // This RPC fails to execute because the server doesn't exist
+        rpc3P->start(connection0);
+
+        transportc0.finishAsync(5000);
+        TEST(rpc2P->isFinished());
+        TEST(!rpc2P->isSuccessful());
+
 #else
         // This fails because there is no Curl transport in the library.
         EXPECT_ERROR(clientXmlTransport_curl transportc0;);
