@@ -277,13 +277,6 @@ xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
 
 
 
-/*=========================================================================
-**  dispatch_call
-**=========================================================================
-**  An internal method which actually does the dispatch. This may get
-**  prettified and exported at some point in the future.
-*/
-
 static void
 callPreinvokeMethodIfAny(xmlrpc_env *      const envP,
                          xmlrpc_registry * const registryP,
