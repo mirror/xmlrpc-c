@@ -51,7 +51,7 @@ DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 # MAJ and MIN are major and minor version numbers for shared libraries.
 # Libtool builds are controlled by LDFLAGS_VERSINFO instead.
 MAJ = 3
-MIN = 08
+MIN = 09
 
 # LDFLAGS_VERSINFO is a libtool link option (--version-info) that
 # tells it what version numbers to put on the shared libraries (and
@@ -79,7 +79,7 @@ MIN = 08
 # only when we make a non-backward-compatible change to the library.  So
 # e.g. libxmlrpc for Xmlrpc-c 1.06.01 is named libxmlrpc.so.3.6.1.
 
-LDFLAGS_VERSINFO = -version-info 11:0:8  # 3.8.0
+LDFLAGS_VERSINFO = -version-info 12:0:9  # 3.9.0
 
 # CURDIR was introduced in GNU Make 3.77.
 ifeq ($(CURDIR)x,x)
