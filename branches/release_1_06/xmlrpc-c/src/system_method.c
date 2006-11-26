@@ -472,19 +472,23 @@ getMethodInfo(xmlrpc_env *      const envP,
     
     xmlrpc_env_init(&env);
     
-    xmlrpc_struct_find_value(&env, registryP->_methods, methodName,
-                             &methodInfoP);
+    /* We can't use xmlrpc_struct_find_value() here because it isn't
+       thread-safe (it manipulates the reference count) and servers
+       sometimes call system methods from multiple threads at once.
+    */
+    methodInfoP = xmlrpc_struct_get_value(
+        &env, registryP->_methods, methodName);
     
-    if (env.fault_occurred)
-        xmlrpc_faultf(envP, "Unable to look up method named '%s' in the "
-                      "registry.  %s", methodName, env.fault_string);
-    else {
-        if (methodInfoP == NULL)
+    if (env.fault_occurred) {
+        if (env.fault_code == XMLRPC_INDEX_ERROR)
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_NO_SUCH_METHOD_ERROR,
                 "Method '%s' does not exist", methodName);
-    }
-    *methodInfoPP = methodInfoP;
+        else
+            xmlrpc_faultf(envP, "Unable to look up method named '%s' in the "
+                          "registry.  %s", methodName, env.fault_string);
+    } else
+        *methodInfoPP = methodInfoP;
 
     xmlrpc_env_clean(&env);
 }
@@ -514,6 +518,36 @@ buildNoSigSuppliedResult(xmlrpc_env *    const envP,
 
 
 static void
+makeSigListCopy(xmlrpc_env *    const envP,
+                xmlrpc_value *  const oldP,
+                xmlrpc_value ** const newPP) {
+
+    xmlrpc_value * newP;
+
+    newP = xmlrpc_array_new(envP);
+
+    if (!envP->fault_occurred) {
+        unsigned int const size = xmlrpc_array_size(envP, oldP);
+        if (!envP->fault_occurred) {
+            unsigned int i;
+            for (i = 0; i < size; ++i) {
+                /* We can't use xmlrpc_array_read_item() here because
+                   it isn't thread-safe (it manipulates the reference count)
+                   an servers sometimes call system methods from multiple
+                   threads at once.
+                */
+                xmlrpc_value * const itemP =
+                    xmlrpc_array_get_item(envP, oldP, i);
+                xmlrpc_array_append_item(envP, newP, itemP);
+            }
+        }                
+    }
+    *newPP = newP;
+}
+
+
+
+static void
 getSignatureList(xmlrpc_env *      const envP,
                  xmlrpc_registry * const registryP,
                  const char *      const methodName,
@@ -536,7 +570,11 @@ getSignatureList(xmlrpc_env *      const envP,
         
         xmlrpc_env_init(&env);
         
-        xmlrpc_array_read_item(&env, methodInfoP, 2, &signatureListP);
+        /* We can't use xmlrpc_array_read_item() because it isn't thread
+           safe (it manipulates the reference count) and servers sometimes
+           run system methods from multiple threads at once.
+        */
+        signatureListP = xmlrpc_array_get_item(&env, methodInfoP, 2);
 
         if (env.fault_occurred)
             xmlrpc_faultf(envP, "Failed to read signature list "
@@ -553,14 +591,11 @@ getSignatureList(xmlrpc_env *      const envP,
                 if (arraySize == 0)
                     *signatureListPP = NULL;
                 else {
-                    *signatureListPP = signatureListP;
-                    xmlrpc_INCREF(signatureListP);
+                    makeSigListCopy(envP, signatureListP, signatureListPP);
                 }
             }
-            xmlrpc_DECREF(signatureListP);
         }
         xmlrpc_env_clean(&env);
-        xmlrpc_DECREF(methodInfoP);
     }
 }
 
@@ -617,7 +652,7 @@ system_methodSignature(xmlrpc_env *   const envP,
 static struct systemMethodReg const methodSignature = {
     "system.methodSignature",
     &system_methodSignature,
-    "s:s",
+    "A:s",
     "Given the name of a method, return an array of legal signatures. "
     "Each signature is an array of strings.  The first item of each signature "
     "is the return type, and any others items are parameter types.",

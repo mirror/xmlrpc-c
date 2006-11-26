@@ -270,14 +270,14 @@ xmlrpc_struct_find_value(xmlrpc_env *    const envP,
 
 
 
-void
-xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
-                           xmlrpc_value *  const structP,
-                           xmlrpc_value *  const keyP,
-                           xmlrpc_value ** const valuePP) {
+static void
+findValueVNoRef(xmlrpc_env *    const envP,
+                xmlrpc_value *  const structP,
+                xmlrpc_value *  const keyP,
+                xmlrpc_value ** const valuePP) {
 /*----------------------------------------------------------------------------
-  Given a key, retrieve a value from the struct.  If the key is not
-  present, return NULL as *valuePP.
+  Same as xmlrpc_find_value_v(), except we don't increment the reference
+  count on the xmlrpc_value we return.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_VALUE_OK(structP);
@@ -308,11 +308,26 @@ xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
                 *valuePP = members[index].value;
                 
                 XMLRPC_ASSERT_VALUE_OK(*valuePP);
-                
-                xmlrpc_INCREF(*valuePP);
             }
         }
     }
+}
+
+
+
+void
+xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
+                           xmlrpc_value *  const structP,
+                           xmlrpc_value *  const keyP,
+                           xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+  Given a key, retrieve a value from the struct.  If the key is not
+  present, return NULL as *valuePP.
+-----------------------------------------------------------------------------*/
+    findValueVNoRef(envP, structP, keyP, valuePP);
+
+    if (!envP->fault_occurred && *valuePP)
+        xmlrpc_INCREF(*valuePP);
 }
 
 
@@ -383,7 +398,12 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
     
     keyP = xmlrpc_build_value(envP, "s#", key, keyLen);
     if (!envP->fault_occurred) {
-        xmlrpc_struct_find_value_v(envP, structP, keyP, &retval);
+        /* We cannot use xmlrpc_find_value_v here because 
+           some legacy code uses xmlrpc_struct_get_value() from multiple
+           simultaneous threads and xmlrpc_find_value isn't thread safe
+           due to its manipulation of the reference count.
+        */
+        findValueVNoRef(envP, structP, keyP, &retval);
 
         if (!envP->fault_occurred) {
             if (retval == NULL) {
@@ -393,9 +413,7 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                     (int)keyLen, key);
                 /* We should fix the error message to format the key
                    for display */
-            } else
-                /* For backward compatibility.  */
-                xmlrpc_DECREF(retval);
+            }
         }
         xmlrpc_DECREF(keyP);
     }

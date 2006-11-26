@@ -58,6 +58,22 @@
   information in the registry (it doesn't mean there are no valid forms
   of calling the method -- just that the registry declines to state).
 
+
+  WARNING: there's a basic problem with using xmlrpc_value objects to
+  represent the registry: xmlrpc_value objects are defined to be not
+  thread-safe: you can't use one from two threads at the same time.
+  But XML-RPC servers are often threaded, with multiple threads
+  simultaneously executing multiple RPCs.  The normal Xmlrpc-c Abyss
+  server is a good example.
+
+  As a hack to make this work, we use the old, deprecated "get"
+  functions that don't take a reference in the call dispatching code.
+  Maintaining the reference count is the only way that the the
+  thread-unsafety can manifest itself in our application.  Since the
+  registry has at least one reference to each xmlrpc_value as long as
+  the registry exists, we don't really need the exact reference count,
+  so the deprecated functions work fine.
+
 =========================================================================*/
 
 
@@ -335,24 +351,24 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
     if (!envP->fault_occurred) {
         xmlrpc_value * methodInfoP;
 
-        xmlrpc_struct_find_value(envP, registryP->_methods,
-                                 methodName, &methodInfoP);
-        if (!envP->fault_occurred) {
-            if (methodInfoP) {
-                callNamedMethod(envP, methodInfoP, paramArrayP, resultPP);
-                xmlrpc_DECREF(methodInfoP);
-            } else {
-                if (registryP->_default_method)
-                    callDefaultMethod(envP, registryP->_default_method, 
-                                      methodName, paramArrayP,
-                                      resultPP);
-                else {
-                    /* No matching method, and no default. */
-                    xmlrpc_env_set_fault_formatted(
-                        envP, XMLRPC_NO_SUCH_METHOD_ERROR,
-                        "Method '%s' not defined", methodName);
-                }
-            } 
+        /* See comments at top of file about why we use the deprecated
+           xmlrpc_struct_get_value() here
+        */
+        methodInfoP = xmlrpc_struct_get_value(envP, registryP->_methods,
+                                              methodName);
+        if (!envP->fault_occurred)
+            callNamedMethod(envP, methodInfoP, paramArrayP, resultPP);
+        else if (envP->fault_code == XMLRPC_INDEX_ERROR) {
+            if (registryP->_default_method)
+                callDefaultMethod(envP, registryP->_default_method, 
+                                  methodName, paramArrayP,
+                                  resultPP);
+            else {
+                /* No matching method, and no default. */
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_NO_SUCH_METHOD_ERROR,
+                    "Method '%s' not defined", methodName);
+            }
         }
     }
     /* For backward compatibility, for sloppy users: */
