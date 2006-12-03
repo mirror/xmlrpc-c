@@ -1,4 +1,17 @@
-/* Copyright information is at end of file */
+/*=========================================================================
+  XML-RPC Server Method Registry
+===========================================================================
+  These are the functions that implement the XML-RPC method registry.
+
+  A method registry is a list of XML-RPC methods for a server to
+  implement, along with the details of how to implement each -- most
+  notably a function pointer for a function that executes the method.
+
+  To build an XML-RPC server, just add a communication facility.
+
+  Copyright information is at end of file
+
+=========================================================================*/
 
 #include "xmlrpc_config.h"
 
@@ -12,58 +25,250 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
+#include "method.h"
 #include "system_method.h"
 
 #include "registry.h"
 
-/*=========================================================================
-  XML-RPC Server Method Registry
-===========================================================================
-  A method registry is a list of XML-RPC methods for a server to
-  implement, along with the details of how to implement each -- most
-  notably a function pointer for a function that executes the method.
 
-  To build an XML-RPC server, just add a communication facility.
+static void
+signatureDestroy(struct xmlrpc_signature * const signatureP) {
 
-  The registry object consists principally of an xmlrpc_value.  That
-  xmlrpc_value is a struct, with method name as key.  Each value in
-  the struct a "method info" array.  A method info array has the
-  following items:
+    if (signatureP->argList)
+        free(signatureP->argList);
 
-     0: cptr: method function ptr, Type 1
-     1: cptr: user data
-     2: array: signature list
-     3: string: help text.
-     4: cptr: method function ptr, Type 2
+    free(signatureP);
+}
 
-  One of the method funciton pointers is null and the other isn't.
-  (The reason there are two is backward compatibility.  Old programs
-  set up the registry with Type 1; modern ones set it up with Type 2).
+
+
+static void
+translateTypeSpecifierToName(xmlrpc_env *  const envP,
+                             char          const typeSpecifier,
+                             const char ** const typeNameP) {
+
+    switch (typeSpecifier) {
+    case 'i': *typeNameP = "int";              break;
+    case 'b': *typeNameP = "boolean";          break;
+    case 'd': *typeNameP = "double";           break;
+    case 's': *typeNameP = "string";           break;
+    case '8': *typeNameP = "dateTime.iso8601"; break;
+    case '6': *typeNameP = "base64";           break;
+    case 'S': *typeNameP = "struct";           break;
+    case 'A': *typeNameP = "array";            break;
+    case 'n': *typeNameP = "nil";              break;
+    default:
+        xmlrpc_faultf(envP, 
+                      "Method registry contains invalid signature "
+                      "data.  It contains the type specifier '%c'",
+                      typeSpecifier);
+    }
+}
+                
+
+
+static void
+makeRoomInArgList(xmlrpc_env *              const envP,
+                  struct xmlrpc_signature * const signatureP,
+                  unsigned int              const minArgCount) {
+
+    if (signatureP->argListSpace < minArgCount) {
+        REALLOCARRAY(signatureP->argList, minArgCount);
+        if (signatureP->argList == NULL) {
+            xmlrpc_faultf(envP, "Couldn't get memory for an argument list for "
+                          "a method signature");
+            signatureP->argListSpace = 0;
+        }
+    }
+}
+
+
+
+static void
+parseArgumentTypeSpecifiers(xmlrpc_env *              const envP,
+                            const char *              const startP,
+                            struct xmlrpc_signature * const signatureP,
+                            const char **             const nextPP) {
+    const char * cursorP;
+
+    cursorP = startP;  /* start at the beginning */
+
+    while (!envP->fault_occurred && *cursorP != ',' && *cursorP != '\0') {
+        const char * typeName;
+
+        translateTypeSpecifierToName(envP, *cursorP, &typeName);
+
+        if (!envP->fault_occurred) {
+            ++cursorP;
+
+            makeRoomInArgList(envP, signatureP, signatureP->argCount + 1);
+
+            signatureP->argList[signatureP->argCount++] = typeName;
+        }
+    }
+    if (!envP->fault_occurred) {
+        if (*cursorP) {
+            XMLRPC_ASSERT(*cursorP == ',');
+            ++cursorP;  /* Move past the signature and comma */
+        }
+    }
+    if (envP->fault_occurred) 
+        free(signatureP->argList);
+
+    *nextPP = cursorP;
+}
+
+
+
+static void
+parseOneSignature(xmlrpc_env *               const envP,
+                  const char *               const startP,
+                  struct xmlrpc_signature ** const signaturePP,
+                  const char **              const nextPP) {
+/*----------------------------------------------------------------------------
+   Parse one signature from the signature string that starts at 'startP'.
+
+   Return that signature as a signature object *signaturePP.
+
+   Return as *nextP the location in the signature string of the next
+   signature (i.e. right after the next comma).  If there is no next
+   signature (the string ends before any comma), make it point to the
+   terminating NUL.
+-----------------------------------------------------------------------------*/
+    struct xmlrpc_signature * signatureP;
+
+    MALLOCVAR(signatureP);
+    if (signatureP == NULL)
+        xmlrpc_faultf(envP, "Couldn't get memory for signature");
+    else {
+        const char * cursorP;
+
+        signatureP->argListSpace = 0;  /* Start with no argument space */
+        signatureP->argList = NULL;   /* Nothing allocated yet */
+        signatureP->argCount = 0;  /* Start with no arguments */
+
+        cursorP = startP;  /* start at the beginning */
+
+        if (*cursorP == ',' || *cursorP == '\0')
+            xmlrpc_faultf(envP, "empty signature (a signature "
+                          "must have at least  return value type)");
+        else {
+            translateTypeSpecifierToName(envP, *cursorP, &signatureP->retType);
+
+            ++cursorP;
+
+            if (*cursorP != ':')
+                xmlrpc_faultf(envP, "No colon (':') after "
+                              "the result type specifier");
+            else {
+                ++cursorP;
+
+                parseArgumentTypeSpecifiers(envP, cursorP, signatureP, nextPP);
+            }
+        }
+        if (envP->fault_occurred)
+            free(signatureP);
+        else
+            *signaturePP = signatureP;
+    }
+}    
+
+
+
+static void
+destroySignatures(struct xmlrpc_signature * const firstSignatureP) {
+
+    struct xmlrpc_signature * p;
+    struct xmlrpc_signature * nextP;
+
+    for (p = firstSignatureP; p; p = nextP) {
+        nextP = p->nextP;
+        signatureDestroy(p);
+    }
+}
+
+
+
+static void
+listSignatures(xmlrpc_env *               const envP,
+               const char *               const sigListString,
+               struct xmlrpc_signature ** const firstSignaturePP) {
     
-  The signature list array contains one item for each form of call (a
-  single method might have multiple forms, e.g. one takes two integer
-  arguments; another takes a single string).  The array for each form
-  represents a signature.  It has an item for each parameter and one
-  for the result.  Item 0 is for the result, the rest are in order of
-  the parameters.  Each item of that array is the name of the XML-RPC
-  element that represents that type, e.g.  "int" or
-  "dateTime.iso8601".
+    struct xmlrpc_signature ** p;
+    const char * cursorP;
 
-  Example signature:
+    *firstSignaturePP = NULL;  /* Start with empty list */
+    
+    p = firstSignaturePP;
+    cursorP = &sigListString[0];
+    
+    while (!envP->fault_occurred && *cursorP != '\0') {
+        struct xmlrpc_signature * signatureP;
+        
+        parseOneSignature(envP, cursorP, &signatureP, &cursorP);
+        
+        /* cursorP now points at next signature in the list or the
+           terminating NUL.
+        */
+        
+        if (!envP->fault_occurred) {
+            signatureP->nextP = NULL;
+            *p = signatureP;
+            p = &signatureP->nextP;
+        }
+    }
+    if (envP->fault_occurred)
+        destroySignatures(*firstSignaturePP);
+}
 
-    (("int"
-      "double"
-      "double"
-     )
-     ("int"
-     )
-    )
 
-  The signature list array is empty to indicate that there is no signature
-  information in the registry (it doesn't mean there are no valid forms
-  of calling the method -- just that the registry declines to state).
 
-=========================================================================*/
+static void
+signatureListCreate(xmlrpc_env *            const envP,
+                    const char *            const sigListString,
+                    xmlrpc_signatureList ** const signatureListPP) {
+
+    xmlrpc_signatureList * signatureListP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    
+    MALLOCVAR(signatureListP);
+
+    if (signatureListP == NULL)
+        xmlrpc_faultf(envP, "Could not allocate memory for signature list");
+    else {
+        signatureListP->firstSignatureP = NULL;
+
+        if (sigListString == NULL || xmlrpc_streq(sigListString, "?")) {
+            /* No signatures -- leave the list empty */
+        } else {
+            listSignatures(envP, sigListString,
+                           &signatureListP->firstSignatureP);
+
+            if (!envP->fault_occurred) {
+                if (!signatureListP->firstSignatureP)
+                    xmlrpc_faultf(envP, "Signature string is empty.");
+
+                if (envP->fault_occurred)
+                    destroySignatures(signatureListP->firstSignatureP);
+            }
+        }
+        if (envP->fault_occurred)
+            free(signatureListP);
+
+        *signatureListPP = signatureListP;
+    }
+}
+
+
+
+static void
+signatureListDestroy(xmlrpc_signatureList * const signatureListP) {
+
+    destroySignatures(signatureListP->firstSignatureP);
+
+    free(signatureListP);
+}
 
 
 
@@ -79,15 +284,15 @@ xmlrpc_registry_new(xmlrpc_env * const envP) {
     if (registryP == NULL)
         xmlrpc_faultf(envP, "Could not allocate memory for registry");
     else {
-        registryP->_introspection_enabled = true;
-        registryP->_default_method        = NULL;
-        registryP->_preinvoke_method      = NULL;
-        registryP->_shutdown_server_fn    = NULL;
+        registryP->introspectionEnabled  = true;
+        registryP->defaultMethodFunction = NULL;
+        registryP->preinvokeFunction     = NULL;
+        registryP->shutdownServerFn      = NULL;
 
-        registryP->_methods = xmlrpc_struct_new(envP);
-        if (!envP->fault_occurred) {
+        xmlrpc_methodListCreate(envP, &registryP->methodListP);
+        if (!envP->fault_occurred)
             xmlrpc_installSystemMethods(envP, registryP);
-        }    
+
         if (envP->fault_occurred)
             free(registryP);
     }
@@ -100,15 +305,8 @@ void
 xmlrpc_registry_free(xmlrpc_registry * const registryP) {
 
     XMLRPC_ASSERT_PTR_OK(registryP);
-    XMLRPC_ASSERT(registryP->_methods != XMLRPC_BAD_POINTER);
 
-    xmlrpc_DECREF(registryP->_methods);
-
-    if (registryP->_default_method != NULL)
-        xmlrpc_DECREF(registryP->_default_method);
-
-    if (registryP->_preinvoke_method != NULL)
-        xmlrpc_DECREF(registryP->_preinvoke_method);
+    xmlrpc_methodListDestroy(registryP->methodListP);
 
     free(registryP);
 }
@@ -123,13 +321,13 @@ registryAddMethod(xmlrpc_env *      const envP,
                   xmlrpc_method2          method2,
                   const char *      const signatureString,
                   const char *      const help,
-                  void *            const serverInfoP) {
+                  void *            const userData) {
 
     const char * const helpString =
         help ? help : "No help is available for this method.";
 
     xmlrpc_env env;
-    xmlrpc_value * signatureListP;
+    xmlrpc_signatureList * signatureListP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(registryP);
@@ -138,25 +336,26 @@ registryAddMethod(xmlrpc_env *      const envP,
 
     xmlrpc_env_init(&env);
 
-    xmlrpc_buildSignatureArray(&env, signatureString, &signatureListP);
+    signatureListCreate(&env, signatureString, &signatureListP);
+
     if (env.fault_occurred)
         xmlrpc_faultf(envP, "Can't interpret signature string '%s'.  %s",
                       signatureString, env.fault_string);
     else {
-        xmlrpc_value * methodInfoP;
+        xmlrpc_methodInfo * methodP;
 
-        XMLRPC_ASSERT_VALUE_OK(signatureListP);
+        xmlrpc_methodCreate(&env, method1, method2, userData,
+                            signatureListP, helpString, &methodP);
 
-        methodInfoP = xmlrpc_build_value(
-            envP, "(ppAsp)", method1, serverInfoP,
-            signatureListP, helpString, method2);
-        if (!envP->fault_occurred) {
-            xmlrpc_struct_set_value(envP, registryP->_methods,
-                                    methodName, methodInfoP);
+        if (!env.fault_occurred) {
+            xmlrpc_methodListAdd(&env, registryP->methodListP, methodName,
+                                 methodP);
 
-            xmlrpc_DECREF(methodInfoP);
+            if (env.fault_occurred)
+                xmlrpc_methodDestroy(methodP);
         }
-        xmlrpc_DECREF(signatureListP);
+        if (env.fault_occurred)
+            signatureListDestroy(signatureListP);
     }
     xmlrpc_env_clean(&env);
 }
@@ -215,24 +414,19 @@ xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
 void 
 xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
                                    xmlrpc_registry *     const registryP,
-                                   xmlrpc_default_method       handler,
-                                   void *                const serverInfoP) {
-
-    xmlrpc_value * methodInfoP;
+                                   xmlrpc_default_method       function,
+                                   void *                const userData) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(registryP);
-    XMLRPC_ASSERT_PTR_OK(handler);
+    XMLRPC_ASSERT_PTR_OK(function);
 
-    methodInfoP = xmlrpc_build_value(envP, "(pp)", (void*) handler,
-                                     serverInfoP);
-    if (!envP->fault_occurred) {
-        /* First dispose of any pre-existing default method */
-        if (registryP->_default_method)
-            xmlrpc_DECREF(registryP->_default_method);
+    /* Note: this may be the first default method, or it may be a replacement
+       of the current one.
+    */
 
-        registryP->_default_method = methodInfoP;
-    }    
+    registryP->defaultMethodFunction = function;
+    registryP->defaultMethodUserData = userData;
 }
 
 
@@ -241,23 +435,15 @@ xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
 void 
 xmlrpc_registry_set_preinvoke_method(xmlrpc_env *      const envP,
                                      xmlrpc_registry * const registryP,
-                                     xmlrpc_preinvoke_method handler,
-                                     void *            const serverInfo) {
-
-    xmlrpc_value * methodInfoP;
+                                     xmlrpc_preinvoke_method function,
+                                     void *            const userData) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(registryP);
-    XMLRPC_ASSERT_PTR_OK(handler);
+    XMLRPC_ASSERT_PTR_OK(function);
 
-    /* Store our method and user data into our hash table. */
-    methodInfoP = xmlrpc_build_value(envP, "(pp)",
-                                     (void*) handler, serverInfo);
-    if (!envP->fault_occurred) {
-        if (registryP->_preinvoke_method)
-            xmlrpc_DECREF(registryP->_preinvoke_method);
-        registryP->_preinvoke_method = methodInfoP;
-    }
+    registryP->preinvokeFunction = function;
+    registryP->preinvokeUserData = userData;
 }
 
 
@@ -270,93 +456,31 @@ xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
     XMLRPC_ASSERT_PTR_OK(registryP);
     XMLRPC_ASSERT_PTR_OK(shutdownFn);
 
-    registryP->_shutdown_server_fn = shutdownFn;
+    registryP->shutdownServerFn = shutdownFn;
 
-    registryP->_shutdown_context = context;
+    registryP->shutdownContext = context;
 }
 
 
 
 static void
-callPreinvokeMethodIfAny(xmlrpc_env *      const envP,
-                         xmlrpc_registry * const registryP,
-                         const char *      const methodName,
-                         xmlrpc_value *    const paramArrayP) {
+callNamedMethod(xmlrpc_env *        const envP,
+                xmlrpc_methodInfo * const methodP,
+                xmlrpc_value *      const paramArrayP,
+                void *              const callInfoP,
+                xmlrpc_value **     const resultPP) {
 
-    /* Get the preinvoke method, if it is set. */
-    if (registryP->_preinvoke_method) {
-        xmlrpc_preinvoke_method preinvoke_method;
-        void * serverInfo;
-
-        xmlrpc_parse_value(envP, registryP->_preinvoke_method, "(pp)",
-                           &preinvoke_method, &serverInfo);
-        if (!envP->fault_occurred)
-            (*preinvoke_method)(envP, methodName,
-                                paramArrayP, serverInfo);
-    }
-}
-
-
-
-static void
-callNamedMethod(xmlrpc_env *    const envP,
-                xmlrpc_value *  const methodInfoP,
-                xmlrpc_value *  const paramArrayP,
-                void *          const callInfoP,
-                xmlrpc_value ** const resultPP) {
-
-    xmlrpc_method1 methodType1;
-    xmlrpc_method2 methodType2;
-    void * serverInfoP;
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, methodInfoP, "(pp--p*)",
-                       &methodType1, &serverInfoP, &methodType2);
-    if (envP->fault_occurred)
-        xmlrpc_faultf(envP, "Internal method registry error.  Couldn't "
-                      "parse method info.  %s", env.fault_string);
+    if (methodP->methodFnType2)
+        *resultPP =
+            methodP->methodFnType2(envP, paramArrayP,
+                                   methodP->userData, callInfoP);
     else {
-        if (methodType2)
-            *resultPP = (*methodType2)(envP, paramArrayP,
-                                       serverInfoP, callInfoP);
-        else {
-            assert(methodType1);
-            *resultPP = (*methodType1)(envP, paramArrayP, serverInfoP);
-        }
+        assert(methodP->methodFnType1);
+        *resultPP =
+            methodP->methodFnType1(envP, paramArrayP, methodP->userData);
     }
-    xmlrpc_env_clean(&env);
 }
 
-
-
-static void
-callDefaultMethod(xmlrpc_env *    const envP,
-                  xmlrpc_value *  const defaultMethodInfo,
-                  const char *    const methodName,
-                  xmlrpc_value *  const paramArrayP,
-                  void *          const callInfoP,
-                  xmlrpc_value ** const resultPP) {
-
-    xmlrpc_default_method defaultMethod;
-    void * serverInfo;
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(envP, defaultMethodInfo, "(pp)",
-                       &defaultMethod, &serverInfo);
-    if (envP->fault_occurred)
-        xmlrpc_faultf(envP, "Internal method registry error.  Couldn't "
-                      "parse default method info.  %s", env.fault_string);
-    else
-        *resultPP = (*defaultMethod)(envP, callInfoP, methodName,
-                                     paramArrayP, serverInfo);
-
-    xmlrpc_env_clean(&env);
-}
-    
 
 
 void
@@ -367,28 +491,28 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
                     void *            const callInfoP,
                     xmlrpc_value **   const resultPP) {
 
-    callPreinvokeMethodIfAny(envP, registryP, methodName, paramArrayP);
-    if (!envP->fault_occurred) {
-        xmlrpc_value * methodInfoP;
+    if (registryP->preinvokeFunction)
+        registryP->preinvokeFunction(envP, methodName, paramArrayP,
+                                     registryP->preinvokeUserData);
 
-        xmlrpc_struct_find_value(envP, registryP->_methods,
-                                 methodName, &methodInfoP);
-        if (!envP->fault_occurred) {
-            if (methodInfoP) {
-                callNamedMethod(envP, methodInfoP, paramArrayP, callInfoP,
-                                resultPP);
-                xmlrpc_DECREF(methodInfoP);
-            } else {
-                if (registryP->_default_method)
-                    callDefaultMethod(envP, registryP->_default_method, 
-                                      methodName, paramArrayP, callInfoP,
-                                      resultPP);
-                else {
-                    /* No matching method, and no default. */
-                    xmlrpc_env_set_fault_formatted(
-                        envP, XMLRPC_NO_SUCH_METHOD_ERROR,
-                        "Method '%s' not defined", methodName);
-                }
+    if (!envP->fault_occurred) {
+        xmlrpc_methodInfo * methodP;
+
+        xmlrpc_methodListLookupByName(registryP->methodListP, methodName,
+                                      &methodP);
+
+        if (methodP)
+            callNamedMethod(envP, methodP, paramArrayP, callInfoP, resultPP);
+        else {
+            if (registryP->defaultMethodFunction)
+                *resultPP = registryP->defaultMethodFunction(
+                    envP, callInfoP, methodName, paramArrayP,
+                    registryP->defaultMethodUserData);
+            else {
+                /* No matching method, and no default. */
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_NO_SUCH_METHOD_ERROR,
+                    "Method '%s' not defined", methodName);
             } 
         }
     }

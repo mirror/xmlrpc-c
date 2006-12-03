@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-typedef struct _xmlrpc_registry xmlrpc_registry;
+typedef struct xmlrpc_registry xmlrpc_registry;
 
 typedef void
 (*xmlrpc_preinvoke_method)(xmlrpc_env *   const envP,

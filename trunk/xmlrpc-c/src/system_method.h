@@ -3,8 +3,8 @@
 
 
 void
-xmlrpc_installSystemMethods(struct _xmlrpc_env *      const envP,
-                            struct _xmlrpc_registry * const registryP);
+xmlrpc_installSystemMethods(struct _xmlrpc_env *     const envP,
+                            struct xmlrpc_registry * const registryP);
 
 void
 xmlrpc_buildSignatureArray(xmlrpc_env *    const envP,

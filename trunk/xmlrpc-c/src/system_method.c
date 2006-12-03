@@ -11,6 +11,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "registry.h"
+#include "method.h"
 
 #include "system_method.h"
 
@@ -32,7 +33,7 @@ xmlrpc_registry_disable_introspection(xmlrpc_registry * const registryP) {
 
     XMLRPC_ASSERT_PTR_OK(registryP);
 
-    registryP->_introspection_enabled = false;
+    registryP->introspectionEnabled = false;
 }
 
 
@@ -387,55 +388,73 @@ static struct systemMethodReg const multicall = {
 =========================================================================*/
 
 
+static void
+createMethodListArray(xmlrpc_env *      const envP,
+                      xmlrpc_registry * const registryP,
+                      xmlrpc_value **   const methodListPP) {
+/*----------------------------------------------------------------------------
+   Create as an XML-RPC array value a list of names of methods registered
+   in registry 'registryP'.
+
+   This is the type of value that the system.listMethods method is supposed
+   to return.
+-----------------------------------------------------------------------------*/
+    xmlrpc_value * methodListP;
+
+    methodListP = xmlrpc_array_new(envP);
+
+    if (!envP->fault_occurred) {
+        xmlrpc_methodNode * methodNodeP;
+        for (methodNodeP = registryP->methodListP->firstMethodP;
+             methodNodeP && !envP->fault_occurred;
+             methodNodeP = methodNodeP->nextP) {
+            
+            xmlrpc_value * methodNameVP;
+            
+            methodNameVP = xmlrpc_string_new(envP, methodNodeP->methodName);
+            
+            if (!envP->fault_occurred) {
+                xmlrpc_array_append_item(envP, methodListP, methodNameVP);
+                
+                xmlrpc_DECREF(methodNameVP);
+            }
+        }
+        if (envP->fault_occurred)
+            xmlrpc_DECREF(methodListP);
+    }
+    *methodListPP = methodListP;
+}
+
+
+
 static xmlrpc_value *
-system_listMethods(xmlrpc_env *   const env,
-                   xmlrpc_value * const param_array,
+system_listMethods(xmlrpc_env *   const envP,
+                   xmlrpc_value * const paramArrayP,
                    void *         const serverInfo,
                    void *         const callInfo ATTR_UNUSED) {
 
-    xmlrpc_registry *registry;
-    xmlrpc_value *method_names, *method_name, *method_info;
-    size_t size, i;
+    xmlrpc_registry * const registryP = serverInfo;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
+    xmlrpc_value * retvalP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
     XMLRPC_ASSERT_PTR_OK(serverInfo);
 
-    /* Error-handling preconditions. */
-    method_names = NULL;
-
-    /* Turn our arguments into something more useful. */
-    registry = (xmlrpc_registry*) serverInfo;
-    xmlrpc_parse_value(env, param_array, "()");
-    XMLRPC_FAIL_IF_FAULT(env);
-    
-    /* Make sure we're allowed to introspect. */
-    if (!registry->_introspection_enabled)
-        XMLRPC_FAIL(env, XMLRPC_INTROSPECTION_DISABLED_ERROR,
-                    "Introspection disabled for security reasons");
-    
-    /* Iterate over all the methods in the registry, adding their names
-    ** to a list. */
-    method_names = xmlrpc_build_value(env, "()");
-    XMLRPC_FAIL_IF_FAULT(env);
-    size = xmlrpc_struct_size(env, registry->_methods);
-    XMLRPC_FAIL_IF_FAULT(env);
-    for (i = 0; i < size; i++) {
-        xmlrpc_struct_get_key_and_value(env, registry->_methods, i,
-                                        &method_name, &method_info);
-        XMLRPC_FAIL_IF_FAULT(env);
-        xmlrpc_array_append_item(env, method_names, method_name);
-        XMLRPC_FAIL_IF_FAULT(env);
+    xmlrpc_decompose_value(envP, paramArrayP, "()");
+    if (!envP->fault_occurred) {
+        if (!registryP->introspectionEnabled)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTROSPECTION_DISABLED_ERROR,
+                "Introspection is disabled in this server "
+                "for security reasons");
+        else
+            createMethodListArray(envP, registryP, &retvalP);
     }
-
- cleanup:
-    if (env->fault_occurred) {
-        if (method_names)
-            xmlrpc_DECREF(method_names);
-        return NULL;
-    }
-    return method_names;
+    return retvalP;
 }
+
+
 
 static struct systemMethodReg const listMethods = {
     "system.listMethods",
@@ -451,40 +470,58 @@ static struct systemMethodReg const listMethods = {
 =========================================================================*/
 
 
+static void
+getHelpString(xmlrpc_env *      const envP,
+              const char *      const methodName,
+              xmlrpc_registry * const registryP,
+              xmlrpc_value **   const helpStringPP) {
+
+    xmlrpc_methodInfo * methodP;
+
+    xmlrpc_methodListLookupByName(registryP->methodListP, methodName,
+                                  &methodP);
+
+    if (!methodP)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_NO_SUCH_METHOD_ERROR,
+            "Method '%s' does not exist", methodName);
+    else
+        *helpStringPP = xmlrpc_string_new(envP, methodP->helpText);
+}
+    
+
+
 static xmlrpc_value *
-system_methodHelp(xmlrpc_env *   const env,
-                  xmlrpc_value * const param_array,
+system_methodHelp(xmlrpc_env *   const envP,
+                  xmlrpc_value * const paramArrayP,
                   void *         const serverInfo,
                   void *         const callInfo ATTR_UNUSED) {
 
-    xmlrpc_registry *registry;
-    char *method_name;
-    xmlrpc_value *ignored1, *ignored2, *ignored3, *help;
+    xmlrpc_registry * const registryP = serverInfo;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
+    xmlrpc_value * retvalP;
+    
+    const char * methodName;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
     XMLRPC_ASSERT_PTR_OK(serverInfo);
 
-    /* Turn our arguments into something more useful. */
-    registry = (xmlrpc_registry*) serverInfo;
-    xmlrpc_parse_value(env, param_array, "(s)", &method_name);
-    XMLRPC_FAIL_IF_FAULT(env);
-    
-    /* Make sure we're allowed to introspect. */
-    if (!registry->_introspection_enabled)
-        XMLRPC_FAIL(env, XMLRPC_INTROSPECTION_DISABLED_ERROR,
-                    "Introspection disabled for security reasons");
-    
-    /* Get our documentation string. */
-    xmlrpc_parse_value(env, registry->_methods, "{s:(VVVV*),*}",
-                       method_name, &ignored1, &ignored2, &ignored3, &help);
-    XMLRPC_FAIL_IF_FAULT(env);
-    
- cleanup:
-    if (env->fault_occurred)
-        return NULL;
-    xmlrpc_INCREF(help);
-    return help;
+    xmlrpc_decompose_value(envP, paramArrayP, "(s)", &methodName);
+
+    if (!envP->fault_occurred) {
+        if (!registryP->introspectionEnabled)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INTROSPECTION_DISABLED_ERROR,
+                "Introspection is disabled in this server "
+                "for security reasons");
+        else
+            getHelpString(envP, methodName, registryP, &retvalP);
+    }
+
+    xmlrpc_strfree(methodName);
+
+    return retvalP;
 }
 
 
@@ -494,39 +531,6 @@ static struct systemMethodReg const methodHelp = {
     "s:s",
     "Given the name of a method, return a help string.",
 };
-
-
-
-static void
-getMethodInfo(xmlrpc_env *      const envP,
-              xmlrpc_registry * const registryP,
-              const char *      const methodName,
-              xmlrpc_value **   const methodInfoPP) {
-/*----------------------------------------------------------------------------
-   Look up the method info for the named method.  Method info
-   is an array (ppss):
------------------------------------------------------------------------------*/
-    xmlrpc_env env;
-    xmlrpc_value * methodInfoP;
-    
-    xmlrpc_env_init(&env);
-    
-    xmlrpc_struct_find_value(&env, registryP->_methods, methodName,
-                             &methodInfoP);
-    
-    if (env.fault_occurred)
-        xmlrpc_faultf(envP, "Unable to look up method named '%s' in the "
-                      "registry.  %s", methodName, env.fault_string);
-    else {
-        if (methodInfoP == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_NO_SUCH_METHOD_ERROR,
-                "Method '%s' does not exist", methodName);
-    }
-    *methodInfoPP = methodInfoP;
-
-    xmlrpc_env_clean(&env);
-}
 
 
 
@@ -553,6 +557,44 @@ buildNoSigSuppliedResult(xmlrpc_env *    const envP,
 
 
 static void
+buildSignatureValue(xmlrpc_env *              const envP,
+                    struct xmlrpc_signature * const signatureP,
+                    xmlrpc_value **           const sigValuePP) {
+
+    xmlrpc_value * sigValueP;
+    unsigned int i;
+
+    sigValueP = xmlrpc_array_new(envP);
+
+    {
+        xmlrpc_value * retTypeVP;
+
+        retTypeVP = xmlrpc_string_new(envP, signatureP->retType);
+
+        xmlrpc_array_append_item(envP, sigValueP, retTypeVP);
+
+        xmlrpc_DECREF(retTypeVP);
+    }
+    for (i = 0; i < signatureP->argCount && !envP->fault_occurred; ++i) {
+        xmlrpc_value * argTypeVP;
+
+        argTypeVP = xmlrpc_string_new(envP, signatureP->argList[i]);
+        if (!envP->fault_occurred) {
+            xmlrpc_array_append_item(envP, sigValueP, argTypeVP);
+
+            xmlrpc_DECREF(argTypeVP);
+        }
+    }
+
+    if (envP->fault_occurred)
+        xmlrpc_DECREF(sigValueP);
+    else
+        *sigValuePP = sigValueP;
+}
+
+                    
+
+static void
 getSignatureList(xmlrpc_env *      const envP,
                  xmlrpc_registry * const registryP,
                  const char *      const methodName,
@@ -566,40 +608,43 @@ getSignatureList(xmlrpc_env *      const envP,
 
   Nonexistent method is considered a failure.
 -----------------------------------------------------------------------------*/
-    xmlrpc_value * methodInfoP;
+    xmlrpc_methodInfo * methodP;
 
-    getMethodInfo(envP, registryP, methodName, &methodInfoP);
-    if (!envP->fault_occurred) {
-        xmlrpc_env env;
-        xmlrpc_value * signatureListP;
-        
-        xmlrpc_env_init(&env);
-        
-        xmlrpc_array_read_item(&env, methodInfoP, 2, &signatureListP);
+    xmlrpc_methodListLookupByName(registryP->methodListP, methodName,
+                                  &methodP);
 
-        if (env.fault_occurred)
-            xmlrpc_faultf(envP, "Failed to read signature list "
-                          "from method info array.  %s",
-                          env.fault_string);
+    if (!methodP)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_NO_SUCH_METHOD_ERROR,
+            "Method '%s' does not exist", methodName);
+    else {
+        if (!methodP->signatureListP->firstSignatureP)
+            *signatureListPP = NULL;
         else {
-            int arraySize;
+            xmlrpc_value * signatureListP;
 
-            arraySize = xmlrpc_array_size(&env, signatureListP);
-            if (env.fault_occurred)
-                xmlrpc_faultf(envP, "xmlrpc_array_size() on signature "
-                              "list array failed!  %s", env.fault_string);
-            else {
-                if (arraySize == 0)
-                    *signatureListPP = NULL;
-                else {
-                    *signatureListPP = signatureListP;
-                    xmlrpc_INCREF(signatureListP);
+            signatureListP = xmlrpc_array_new(envP);
+
+            if (!envP->fault_occurred) {
+                struct xmlrpc_signature * signatureP;
+                for (signatureP = methodP->signatureListP->firstSignatureP;
+                     signatureP && !envP->fault_occurred;
+                     signatureP = signatureP->nextP) {
+                    
+                    xmlrpc_value * signatureVP;
+                    
+                    buildSignatureValue(envP, signatureP, &signatureVP);
+                    
+                    xmlrpc_array_append_item(envP,
+                                             signatureListP, signatureVP);
+                    
+                    xmlrpc_DECREF(signatureVP);
                 }
+                if (envP->fault_occurred)
+                    xmlrpc_DECREF(signatureListP);
             }
-            xmlrpc_DECREF(signatureListP);
+            *signatureListPP = signatureListP;
         }
-        xmlrpc_env_clean(&env);
-        xmlrpc_DECREF(methodInfoP);
     }
 }
 
@@ -630,7 +675,7 @@ system_methodSignature(xmlrpc_env *   const envP,
             envP, env.fault_code,
             "Invalid parameter list.  %s", env.fault_string);
     else {
-        if (!registryP->_introspection_enabled)
+        if (!registryP->introspectionEnabled)
             xmlrpc_env_set_fault(envP, XMLRPC_INTROSPECTION_DISABLED_ERROR,
                                  "Introspection disabled on this server");
         else {
@@ -697,13 +742,13 @@ system_shutdown(xmlrpc_env *   const envP,
             envP, env.fault_code,
             "Invalid parameter list.  %s", env.fault_string);
     else {
-        if (!registryP->_shutdown_server_fn)
+        if (!registryP->shutdownServerFn)
             xmlrpc_env_set_fault(
                 envP, 0, "This server program is not capable of "
                 "shutting down");
         else {
-            registryP->_shutdown_server_fn(
-                &env, registryP->_shutdown_context, comment, callInfo);
+            registryP->shutdownServerFn(
+                &env, registryP->shutdownContext, comment, callInfo);
 
             if (env.fault_occurred)
                 xmlrpc_env_set_fault(envP, env.fault_code, env.fault_string);

@@ -82,7 +82,7 @@ LIBXMLRPC_CLIENT_OBJS = xmlrpc_client.lo xmlrpc_client_global.lo
 LIBXMLRPC_CLIENT_LIBDEP = -lxmlrpc_util -lxmlrpc
 LIBXMLRPC_CLIENT_LIBDEP_DEP = $(LIBXMLRPC_UTIL) $(LIBXMLRPC)
 
-LIBXMLRPC_SERVER_OBJS = registry.lo system_method.lo
+LIBXMLRPC_SERVER_OBJS = registry.lo method.lo system_method.lo
 LIBXMLRPC_SERVER_LIBDEP = -lxmlrpc_util -lxmlrpc
 LIBXMLRPC_SERVER_LIBDEP_DEP = $(LIBXMLRPC_UTIL) $(LIBXMLRPC)
 
