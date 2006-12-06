@@ -119,6 +119,20 @@ already in the search path, and often breaks things because it puts
 the directory too early in the search path.  If your curl-config says to
 link with -L /usr/lib, you should normally edit it to remove that.
 
+As an example of how -L /usr/lib breaks things, here is a problem that
+is often reported: The user has Xmlrpc-c installed on his system, but
+wants to build a new one to replace it, or to use for a particular
+project instead of the system version.  But the build of the new
+version fails with undefined references to symbol "xmlrpc_foo".
+xmlrpc_foo is a new symbol - it was added to Xmlrpc-c in a recent
+release.  The version of Xmlrpc-c installed on the system is too old
+to have it.  The make file obviously specifies the path to the current
+libraries that the user just built in the link library search order,
+but the link is picking up the old system version instead.  Why?
+Because the link options say to search /usr/lib _before_ the local
+build directory.  And it does that because curl-config erroneously
+says that you need a -L /usr/lib link option to find the Curl library.
+
 
 WINDOWS
 -------
