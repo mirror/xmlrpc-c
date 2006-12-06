@@ -187,6 +187,15 @@ xmlrpc_faultf(xmlrpc_env * const envP,
         goto cleanup; \
     } while (0)
 
+#if defined(__GNUC__)
+#define XMLRPC_FAILF( env, code, fmt, ... )  \
+    do {  \
+        xmlrpc_env_set_fault_formatted((env), (code), (fmt),  \
+                                       ##__VA_ARGS__ );  \
+        goto cleanup;  \
+    } while (0)
+#endif
+
 #define XMLRPC_FAIL_IF_NULL(ptr,env,code,str) \
     do { \
         if ((ptr) == NULL) \
