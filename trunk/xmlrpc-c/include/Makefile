@@ -28,6 +28,7 @@ $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 
 HEADERS_TO_INSTALL = \
   xmlrpc-c/config.h \
+  xmlrpc-c/c_util.h \
   xmlrpc-c/util.h \
   xmlrpc-c/base.h \
   xmlrpc-c/abyss.h \
