@@ -187,6 +187,7 @@ xmlrpc_faultf(xmlrpc_env * const envP,
         goto cleanup; \
     } while (0)
 
+#if !defined(__cplusplus)
 #if defined(__GNUC__)
 #define XMLRPC_FAILF( env, code, fmt, ... )  \
     do {  \
@@ -194,6 +195,7 @@ xmlrpc_faultf(xmlrpc_env * const envP,
                                        ##__VA_ARGS__ );  \
         goto cleanup;  \
     } while (0)
+#endif
 #endif
 
 #define XMLRPC_FAIL_IF_NULL(ptr,env,code,str) \
