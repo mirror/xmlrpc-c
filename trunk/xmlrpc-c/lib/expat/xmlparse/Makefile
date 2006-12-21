@@ -20,10 +20,11 @@ LIBXMLRPC_XMLPARSE_OBJS = xmlparse.lo
 
 INCLUDES = -I$(BLDDIR) -I$(UTILDIR)/include -I$(XMLTOKDIR)
 
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LADD)
+LIBLDFLAGS = $(LDFLAGS_VERSINFO) -L../xmltok/.libs $(RPATH) $(LADD)
 
-libxmlrpc_xmlparse.la: $(LIBXMLRPC_XMLPARSE_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+libxmlrpc_xmlparse.la: $(LIBXMLRPC_XMLPARSE_OBJS) $(LIBXMLRPC_XMLTOK)
+	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
+	  $(LIBXMLRPC_XMLPARSE_OBJS) -lxmlrpc_xmltok
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
