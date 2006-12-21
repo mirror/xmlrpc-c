@@ -17,15 +17,31 @@ extern "C" {
 #endif /* __cplusplus */
 
 struct xmlrpc_client;
+struct xmlrpc_client_transport;
+struct xmlrpc_client_transport_ops;
 #ifndef __cplusplus
 typedef struct xmlrpc_client xmlrpc_client;
+typedef struct xmlrpc_client_transport xmlrpc_client_transport;
+typedef struct xmlrpc_client_transport_ops xmlrpc_client_transport_ops;
 #endif
+
+/* libxmlrpc_client typically does _not_ actually include all of the
+   XML transports declared here by xmlrpc_*_transport_ops.
+
+   Use 'xmlrpc-c-config --features' to determine which features are
+   installed.
+*/
+extern struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops;
+extern struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops;
+
 
 struct xmlrpc_xportparms;
     /* This is a "base class".  The struct is never complete; you're
        supposed to cast between struct xmlrpc_xportparms * and 
        "struct xmlrpc_..._xportparms *" in order to use it.  
     */
+
+extern struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops;
 
 enum xmlrpc_sslversion {
     XMLRPC_SSLVERSION_DEFAULT,
@@ -72,10 +88,16 @@ struct xmlrpc_wininet_xportparms {
 /* XMLRPC_WXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
 
 struct xmlrpc_clientparms {
+    /* (transport, transportparmsP, transportparm_size) and
+       (transportOpsP, transportP) are mutually exclusive.
+    */
     const char *               transport;
     struct xmlrpc_xportparms * transportparmsP;
         /* Cast a "struct ..._xportparms *" to fit here */
     size_t                     transportparm_size;
+
+    const struct xmlrpc_client_transport_ops * transportOpsP;
+    xmlrpc_client_transport *  transportP;
 };
 
 #define XMLRPC_CPSIZE(mbrname) \

@@ -32,6 +32,7 @@
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
+#include "xmlrpc-c/transport.h"
 #include "pthreadx.h"
 
 #if defined (WIN32)

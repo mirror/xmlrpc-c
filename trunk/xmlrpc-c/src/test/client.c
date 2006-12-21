@@ -37,6 +37,124 @@ testGlobalConst(void) {
 
 
 static void
+testCreateCurlParms(void) {
+    
+    xmlrpc_env env;
+    xmlrpc_client * clientP;
+    struct xmlrpc_clientparms clientParms1;
+    struct xmlrpc_curl_xportparms curlTransportParms1;
+
+    xmlrpc_env_init(&env);
+
+    clientParms1.transport = "curl";
+    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
+        &curlTransportParms1;
+
+    curlTransportParms1.network_interface = "eth0";
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(network_interface);
+    xmlrpc_client_create(&env, 0, "testprog", "1.0",
+                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+    xmlrpc_client_destroy(clientP);
+
+    curlTransportParms1.no_ssl_verifypeer = 1;
+    curlTransportParms1.no_ssl_verifyhost = 1;
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(no_ssl_verifyhost);
+    xmlrpc_client_create(&env, 0, "testprog", "1.0",
+                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+    xmlrpc_client_destroy(clientP);
+
+    curlTransportParms1.user_agent = "testprog/1.0";
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(user_agent);
+    xmlrpc_client_create(&env, 0, "testprog", "1.0",
+                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+    xmlrpc_client_destroy(clientP);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+testCreateSeparateXport(void) {
+
+    xmlrpc_env env;
+    xmlrpc_client * clientP;
+    struct xmlrpc_clientparms clientParms1;
+    struct xmlrpc_curl_xportparms curlTransportParms1;
+    struct xmlrpc_client_transport * transportP;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_curl_transport_ops.create(
+        &env, 0, "", "",
+        (struct xmlrpc_xportparms *)&curlTransportParms1, 0,
+        &transportP);
+
+    TEST_NO_FAULT(&env);
+
+    clientParms1.transport          = NULL;
+    clientParms1.transportparmsP    = NULL;
+    clientParms1.transportparm_size = 0;
+    clientParms1.transportOpsP      = NULL;
+    clientParms1.transportP         = NULL;
+    
+    xmlrpc_client_create(&env, 0, "", "",
+                         &clientParms1, XMLRPC_CPSIZE(transportP),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+
+    clientParms1.transport = "curl";
+    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
+        &curlTransportParms1;
+    clientParms1.transportparm_size = 0;
+    clientParms1.transportOpsP = NULL;
+    clientParms1.transportP = NULL;
+    
+    xmlrpc_client_create(&env, 0, "", "",
+                         &clientParms1, XMLRPC_CPSIZE(transportP),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+
+    clientParms1.transportP = transportP;
+    xmlrpc_client_create(&env, 0, "", "",
+                         &clientParms1, XMLRPC_CPSIZE(transportP),
+                         &clientP);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+        /* Both transportP and transport specified */
+
+    clientParms1.transport          = NULL;
+    clientParms1.transportparmsP    = NULL;
+    clientParms1.transportparm_size = 0;
+    clientParms1.transportOpsP      = &xmlrpc_curl_transport_ops;
+    clientParms1.transportP         = transportP;
+
+    xmlrpc_client_create(&env, 0, "", "",
+                         &clientParms1, XMLRPC_CPSIZE(transportOpsP),
+                         &clientP);
+
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+        /* Both transportOpsP but no transportP */
+
+    xmlrpc_client_create(&env, 0, "", "",
+                         &clientParms1, XMLRPC_CPSIZE(transportP),
+                         &clientP);
+
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_curl_transport_ops.destroy(transportP);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 testCreateDestroy(void) {
 
     xmlrpc_env env;
@@ -90,30 +208,9 @@ testCreateDestroy(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
 
-    curlTransportParms1.network_interface = "eth0";
-    clientParms1.transportparm_size = XMLRPC_CXPSIZE(network_interface);
-    xmlrpc_client_create(&env, 0, "testprog", "1.0",
-                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
-                         &clientP);
-    TEST_NO_FAULT(&env);
-    xmlrpc_client_destroy(clientP);
+    testCreateCurlParms();
 
-    curlTransportParms1.no_ssl_verifypeer = 1;
-    curlTransportParms1.no_ssl_verifyhost = 1;
-    clientParms1.transportparm_size = XMLRPC_CXPSIZE(no_ssl_verifyhost);
-    xmlrpc_client_create(&env, 0, "testprog", "1.0",
-                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
-                         &clientP);
-    TEST_NO_FAULT(&env);
-    xmlrpc_client_destroy(clientP);
-
-    curlTransportParms1.user_agent = "testprog/1.0";
-    clientParms1.transportparm_size = XMLRPC_CXPSIZE(user_agent);
-    xmlrpc_client_create(&env, 0, "testprog", "1.0",
-                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
-                         &clientP);
-    TEST_NO_FAULT(&env);
-    xmlrpc_client_destroy(clientP);
+    testCreateSeparateXport();
 
     xmlrpc_client_teardown_global_const();
 

@@ -21,8 +21,6 @@ using girmem::autoObject;
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/base_int.h"
 
-#include "xmlrpc_wininet_transport.h"
-
 /* transport_config.h defines MUST_BUILD_WININET_CLIENT */
 #include "transport_config.h"
 

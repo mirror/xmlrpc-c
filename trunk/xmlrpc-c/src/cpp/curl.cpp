@@ -26,8 +26,6 @@ using girmem::autoObject;
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/base_int.h"
 
-#include "xmlrpc_curl_transport.h"
-
 /* transport_config.h defines MUST_BUILD_CURL_CLIENT */
 #include "transport_config.h"
 

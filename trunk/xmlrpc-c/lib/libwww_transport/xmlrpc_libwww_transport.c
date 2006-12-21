@@ -53,8 +53,6 @@
 #include "WWWSSL.h"
 #endif
 
-#include "xmlrpc_libwww_transport.h"
-
 /* This value was discovered by Rick Blair. His efforts shaved two seconds
 ** off of every request processed. Many thanks. */
 #define SMALLEST_LEGAL_LIBWWW_TIMEOUT (21)
@@ -176,6 +174,11 @@ create(xmlrpc_env *                      const envP,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Libwww client transport.
+
+   TODO: put 'appname' and 'appversion' in *transportParmsP and
+   deprecate the create() arguments.  Reason: these are particular to
+   the Libwww transport.  They're create() arguments because originally,
+   Libwww was the only transport.
 -----------------------------------------------------------------------------*/
     /* The Libwww transport is not re-entrant -- you can have only one
        per program instance.  Even if we changed the Xmlrpc-c code not

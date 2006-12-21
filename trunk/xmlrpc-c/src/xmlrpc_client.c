@@ -27,22 +27,17 @@
 */
 #include "transport_config.h"
 
-#if MUST_BUILD_WININET_CLIENT
-#include "xmlrpc_wininet_transport.h"
-#endif
-#if MUST_BUILD_CURL_CLIENT
-#include "xmlrpc_curl_transport.h"
-#endif
-#if MUST_BUILD_LIBWWW_CLIENT
-#include "xmlrpc_libwww_transport.h"
-#endif
-
 struct xmlrpc_client {
 /*----------------------------------------------------------------------------
    This represents a client object.
 -----------------------------------------------------------------------------*/
+    bool myTransport;
+        /* The transport described below was created by this object;
+           No one else knows it exists and this object is responsible
+           for destroying it.
+        */
     struct xmlrpc_client_transport *   transportP;
-    struct xmlrpc_client_transport_ops clientTransportOps;
+    struct xmlrpc_client_transport_ops transportOps;
 };
 
 
@@ -175,23 +170,24 @@ xmlrpc_client_teardown_global_const(void) {
 =========================================================================*/
 
 static void
-getTransportOps(xmlrpc_env *                         const envP,
-                const char *                         const transportName,
-                struct xmlrpc_client_transport_ops * const opsP) {
+getTransportOps(
+    xmlrpc_env *                                const envP,
+    const char *                                const transportName,
+    const struct xmlrpc_client_transport_ops ** const opsPP) {
 
     if (false) {
     }
 #if MUST_BUILD_WININET_CLIENT
     else if (strcmp(transportName, "wininet") == 0)
-        *opsP = xmlrpc_wininet_transport_ops;
+        *opsPP = &xmlrpc_wininet_transport_ops;
 #endif
 #if MUST_BUILD_CURL_CLIENT
     else if (strcmp(transportName, "curl") == 0)
-        *opsP = xmlrpc_curl_transport_ops;
+        *opsPP = &xmlrpc_curl_transport_ops;
 #endif
 #if MUST_BUILD_LIBWWW_CLIENT
     else if (strcmp(transportName, "libwww") == 0)
-        *opsP = xmlrpc_libwww_transport_ops;
+        *opsPP = &xmlrpc_libwww_transport_ops;
 #endif
     else
         xmlrpc_env_set_fault_formatted(
@@ -228,31 +224,137 @@ getTransportParmsFromClientParms(
 
 
 static void
-getTransportInfo(xmlrpc_env *                      const envP,
-                 const struct xmlrpc_clientparms * const clientparmsP,
-                 unsigned int                      const parmSize,
-                 const char **                     const transportNameP,
-                 const struct xmlrpc_xportparms ** const transportparmsPP,
-                 size_t *                          const transportparmSizeP) {
+getTransportInfo(
+    xmlrpc_env *                                const envP,
+    const struct xmlrpc_clientparms *           const clientparmsP,
+    unsigned int                                const parmSize,
+    const char **                               const transportNameP,
+    const struct xmlrpc_xportparms **           const transportparmsPP,
+    size_t *                                    const transportparmSizeP,
+    const struct xmlrpc_client_transport_ops ** const transportOpsPP,
+    xmlrpc_client_transport **                  const transportPP) {
 
-    getTransportParmsFromClientParms(
-        envP, clientparmsP, parmSize, 
-        transportparmsPP, transportparmSizeP);
+    const char * transportName;
+    xmlrpc_client_transport * transportP;
+    const struct xmlrpc_client_transport_ops * transportOpsP;
+
+    if (parmSize < XMLRPC_CPSIZE(transport))
+        transportName = NULL;
+    else
+        transportName = clientparmsP->transport;
     
+    if (parmSize < XMLRPC_CPSIZE(transportP))
+        transportP = NULL;
+    else
+        transportP = clientparmsP->transportP;
+
+    if (parmSize < XMLRPC_CPSIZE(transportOpsP))
+        transportOpsP = NULL;
+    else
+        transportOpsP = clientparmsP->transportOpsP;
+
+    if ((transportOpsP && !transportP) || (transportP && ! transportOpsP))
+        xmlrpc_faultf(envP, "'transportOpsP' and 'transportP' go together. "
+                      "You must specify both or neither");
+    else if (transportName && transportP)
+        xmlrpc_faultf(envP, "You cannot specify both 'transport' and "
+                      "'transportP' transport parameters.");
+    else if (!transportP) {
+        getTransportParmsFromClientParms(
+            envP, clientparmsP, parmSize, 
+            transportparmsPP, transportparmSizeP);
+        
+        if (!envP->fault_occurred) {
+            if (!transportName) {
+                /* He didn't specify a transport class.  Use the default */
+                
+                *transportNameP = xmlrpc_client_get_default_transport(envP);
+                if (*transportparmsPP)
+                    xmlrpc_faultf(
+                        envP,
+                        "You specified transport parameters, but did not "
+                        "specify a transport type.  Parameters are specific "
+                        "to a particular type.");
+            }
+        }
+    }
+    *transportNameP = transportName;
+    *transportOpsPP = transportOpsP;
+    *transportPP    = transportP;
+}
+
+
+
+static void 
+clientCreate(
+    xmlrpc_env *                               const envP,
+    bool                                       const myTransport,
+    const struct xmlrpc_client_transport_ops * const transportOpsP,
+    struct xmlrpc_client_transport *           const transportP,
+    xmlrpc_client **                           const clientPP) {
+
+    XMLRPC_ASSERT_PTR_OK(transportOpsP);
+    XMLRPC_ASSERT_PTR_OK(transportP);
+    XMLRPC_ASSERT_PTR_OK(clientPP);
+
+    if (constSetupCount == 0) {
+        xmlrpc_faultf(envP,
+                      "You have not called "
+                      "xmlrpc_client_setup_global_const().");
+        /* Impl note:  We can't just call it now because it isn't
+           thread-safe.
+        */
+    } else {
+        xmlrpc_client * clientP;
+
+        MALLOCVAR(clientP);
+
+        if (clientP == NULL)
+            xmlrpc_faultf(envP, "Unable to allocate memory for "
+                          "client descriptor.");
+        else {
+            clientP->myTransport  = myTransport;
+            clientP->transportOps = *transportOpsP;
+            clientP->transportP   = transportP;
+
+            *clientPP = clientP;
+        }
+    }
+}
+
+
+
+static void
+createTransportAndClient(
+    xmlrpc_env * const envP,
+    const char * const transportName,
+    const struct xmlrpc_xportparms * const transportparmsP,
+    size_t                           const transportparmSize,
+    int                              const flags,
+    const char *                     const appname,
+    const char *                     const appversion,
+    xmlrpc_client **                 const clientPP) {
+
+    const struct xmlrpc_client_transport_ops * transportOpsP;
+
+    getTransportOps(envP, transportName, &transportOpsP);
     if (!envP->fault_occurred) {
-        if (parmSize < XMLRPC_CPSIZE(transport) ||
-            clientparmsP->transport == NULL) {
+        xmlrpc_client_transport * transportP;
+        
+        /* The following call is not thread-safe */
+        transportOpsP->create(
+            envP, flags, appname, appversion,
+            transportparmsP, transportparmSize,
+            &transportP);
+        if (!envP->fault_occurred) {
+            bool const myTransportTrue = true;
 
-            /* He didn't specify a transport class.  Use the default */
-
-            *transportNameP = xmlrpc_client_get_default_transport(envP);
-            if (*transportparmsPP)
-                xmlrpc_faultf(envP,
-                    "You specified transport parameters, but did not "
-                    "specify a transport type.  Parameters are specific to "
-                    "a particular type.");
-        } else
-            *transportNameP = clientparmsP->transport;
+            clientCreate(envP, myTransportTrue, transportOpsP, transportP,
+                         clientPP);
+            
+            if (envP->fault_occurred)
+                transportOpsP->destroy(transportP);
+        }
     }
 }
 
@@ -277,36 +379,27 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
            thread-safe.
         */
     } else {
-        xmlrpc_client * clientP;
-
-        MALLOCVAR(clientP);
-
-        if (clientP == NULL)
-            xmlrpc_faultf(envP, "Unable to allocate memory for "
-                          "client descriptor.");
-        else {
-            const char * transportName;
-            const struct xmlrpc_xportparms * transportparmsP;
-            size_t transportparmSize;
+        const char * transportName;
+        const struct xmlrpc_xportparms * transportparmsP;
+        size_t transportparmSize;
+        const struct xmlrpc_client_transport_ops * transportOpsP;
+        xmlrpc_client_transport * transportP;
         
-            getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
-                             &transportparmsP, &transportparmSize);
+        getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
+                         &transportparmsP, &transportparmSize,
+                         &transportOpsP, &transportP);
             
-            if (!envP->fault_occurred) {
-                getTransportOps(envP, transportName,
-                                &clientP->clientTransportOps);
-                if (!envP->fault_occurred) {
-                    /* The following call is not thread-safe */
-                    clientP->clientTransportOps.create(
-                        envP, flags, appname, appversion,
-                        transportparmsP, transportparmSize,
-                        &clientP->transportP);
-                    if (!envP->fault_occurred)
-                        *clientPP = clientP;
-                }
+        if (!envP->fault_occurred) {
+            if (transportName)
+                createTransportAndClient(envP, transportName,
+                                         transportparmsP, transportparmSize,
+                                         flags, appname, appversion,
+                                         clientPP);
+            else {
+                bool myTransportFalse = false;
+                clientCreate(envP, myTransportFalse, 
+                             transportOpsP, transportP, clientPP);
             }
-            if (envP->fault_occurred)
-                free(clientP);
         }
     }
 }
@@ -318,7 +411,8 @@ xmlrpc_client_destroy(xmlrpc_client * const clientP) {
 
     XMLRPC_ASSERT_PTR_OK(clientP);
 
-    clientP->clientTransportOps.destroy(clientP->transportP);
+    if (clientP->myTransport)
+        clientP->transportOps.destroy(clientP->transportP);
 
     free(clientP);
 }
@@ -466,7 +560,7 @@ xmlrpc_client_transport_call2(
     XMLRPC_ASSERT_PTR_OK(callXmlP);
     XMLRPC_ASSERT_PTR_OK(respXmlPP);
 
-    clientP->clientTransportOps.call(
+    clientP->transportOps.call(
         envP, clientP->transportP, serverP, callXmlP,
         respXmlPP);
 }
@@ -497,7 +591,7 @@ xmlrpc_client_call2(xmlrpc_env *               const envP,
                         XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
                         XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
         
-        clientP->clientTransportOps.call(
+        clientP->transportOps.call(
             envP, clientP->transportP, serverInfoP, callXmlP, &respXmlP);
         if (!envP->fault_occurred) {
             int faultCode;
@@ -734,7 +828,7 @@ xmlrpc_client_event_loop_finish(xmlrpc_client * const clientP) {
 
     XMLRPC_ASSERT_PTR_OK(clientP);
 
-    clientP->clientTransportOps.finish_asynch(
+    clientP->transportOps.finish_asynch(
         clientP->transportP, timeout_no, 0);
 }
 
@@ -746,7 +840,7 @@ xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
 
     XMLRPC_ASSERT_PTR_OK(clientP);
 
-    clientP->clientTransportOps.finish_asynch(
+    clientP->transportOps.finish_asynch(
         clientP->transportP, timeout_yes, timeout);
 }
 
@@ -839,7 +933,7 @@ xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
                                   serverInfoP->_server_url, methodName,
                                   argP, responseHandler, userData);
         if (!envP->fault_occurred)
-            clientP->clientTransportOps.send_request(
+            clientP->transportOps.send_request(
                 envP, clientP->transportP, serverInfoP,
                 callInfoP->serialized_xml,
                 &asynchComplete, callInfoP);
