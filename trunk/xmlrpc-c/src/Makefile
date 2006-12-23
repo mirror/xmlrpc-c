@@ -99,6 +99,7 @@ LIBXMLRPC_SERVER_CGI_LIBDEP_DEP = \
   $(LIBXMRPC_UTIL) $(LIBXMLRPC_SERVER) $(LIBXMLRPC)
 
 LIBXMLRPC_OBJS = \
+        resource.lo \
 	trace.lo \
 	xmlrpc_data.lo \
 	xmlrpc_datetime.lo \

@@ -603,6 +603,38 @@ extern void xmlrpc_authcookie_set(xmlrpc_env * env,
 
 char *xmlrpc_authcookie(void);
 
+/*=========================================================================
+   Resource Limits
+
+   Ideally, there would be enough resource limits to ensure that
+   XML-RPC partners cannot cause libxmlrpc objects and routines to use
+   more resource than is available for them (either by accident or
+   malice).  We have a long way to go to get there.
+   
+=========================================================================*/
+/* These functions are _not_ re-entrant and the limits are per-process
+   (i.e. their values live in static global variables).
+*/
+
+/* Limit IDs. There will be more of these as time goes on. */
+#define XMLRPC_NESTING_LIMIT_ID   (0)
+#define XMLRPC_XML_SIZE_LIMIT_ID  (1)
+#define XMLRPC_LAST_LIMIT_ID      (XMLRPC_XML_SIZE_LIMIT_ID)
+
+/* By default, deserialized data may be no more than 64 levels deep. */
+#define XMLRPC_NESTING_LIMIT_DEFAULT  (64)
+
+/* By default, XML data from the network may be no larger than 512K.
+** Some client and server modules may fail to enforce this properly. */
+#define XMLRPC_XML_SIZE_LIMIT_DEFAULT (512*1024)
+
+/* Set a specific limit to the specified value. */
+extern void xmlrpc_limit_set (int limit_id, size_t value);
+
+/* Get the value of a specified limit. */
+extern size_t xmlrpc_limit_get (int limit_id);
+
+
 #ifdef __cplusplus
 }
 #endif

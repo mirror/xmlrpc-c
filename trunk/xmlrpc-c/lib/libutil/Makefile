@@ -27,7 +27,6 @@ LIBXMLRPC_UTIL_OBJS = \
   error.lo \
   make_printable.lo \
   memblock.lo \
-  resource.lo \
   sleep.lo \
 
 INCLUDES = -I$(BLDDIR) -Isrcdir \

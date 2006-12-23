@@ -1,6 +1,6 @@
 #include "xmlrpc_config.h"
 
-#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/base.h"
 
 
 /*=========================================================================
