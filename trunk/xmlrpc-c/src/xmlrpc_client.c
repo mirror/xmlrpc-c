@@ -234,14 +234,14 @@ getTransportInfo(
     const struct xmlrpc_client_transport_ops ** const transportOpsPP,
     xmlrpc_client_transport **                  const transportPP) {
 
-    const char * transportName;
+    const char * transportNameParm;
     xmlrpc_client_transport * transportP;
     const struct xmlrpc_client_transport_ops * transportOpsP;
 
     if (parmSize < XMLRPC_CPSIZE(transport))
-        transportName = NULL;
+        transportNameParm = NULL;
     else
-        transportName = clientparmsP->transport;
+        transportNameParm = clientparmsP->transport;
     
     if (parmSize < XMLRPC_CPSIZE(transportP))
         transportP = NULL;
@@ -256,31 +256,33 @@ getTransportInfo(
     if ((transportOpsP && !transportP) || (transportP && ! transportOpsP))
         xmlrpc_faultf(envP, "'transportOpsP' and 'transportP' go together. "
                       "You must specify both or neither");
-    else if (transportName && transportP)
+    else if (transportNameParm && transportP)
         xmlrpc_faultf(envP, "You cannot specify both 'transport' and "
                       "'transportP' transport parameters.");
-    else if (!transportP) {
+    else if (transportP)
+        *transportNameP = NULL;
+    else if (transportNameParm)
+        *transportNameP = transportNameParm;
+    else
+        *transportNameP = xmlrpc_client_get_default_transport(envP);
+
+    *transportOpsPP = transportOpsP;
+    *transportPP    = transportP;
+
+    if (!envP->fault_occurred) {
         getTransportParmsFromClientParms(
             envP, clientparmsP, parmSize, 
             transportparmsPP, transportparmSizeP);
         
         if (!envP->fault_occurred) {
-            if (!transportName) {
-                /* He didn't specify a transport class.  Use the default */
-                
-                *transportNameP = xmlrpc_client_get_default_transport(envP);
-                if (*transportparmsPP)
-                    xmlrpc_faultf(
-                        envP,
-                        "You specified transport parameters, but did not "
-                        "specify a transport type.  Parameters are specific "
-                        "to a particular type.");
-            }
+            if (*transportparmsPP && !transportNameParm)
+                xmlrpc_faultf(
+                    envP,
+                    "You specified transport parameters, but did not "
+                    "specify a transport type.  Parameters are specific "
+                    "to a particular type.");
         }
     }
-    *transportNameP = transportName;
-    *transportOpsPP = transportOpsP;
-    *transportPP    = transportP;
 }
 
 
