@@ -10,9 +10,13 @@ SUBDIR := lib/expat/xmlparse
 XMLTOKDIR = $(SRCDIR)/lib/expat/xmltok
 UTILDIR = $(SRCDIR)/lib/util
 
+default: all
+
 include $(BLDDIR)/Makefile.config
 
-default: all
+OMIT_XMLPARSE_LIB_RULE=Y
+
+include $(SRCDIR)/Makefile.common
 
 all: libxmlrpc_xmlparse.la
 
@@ -48,9 +52,5 @@ dep: dep-common
 # this make file is used for anything.
 
 $(SRCDIR)/Makefile.common: srcdir
-
-OMIT_XMLPARSE_LIB_RULE=Y
-
-include $(SRCDIR)/Makefile.common
 
 include Makefile.depend
