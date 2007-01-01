@@ -7,6 +7,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
+#include "xmlrpc-c/transport.h"
 
 #include "test.h"
 #include "client.h"
@@ -139,7 +140,7 @@ testCreateSeparateXport(void) {
                          &clientP);
 
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-        /* Both transportOpsP but no transportP */
+        /* transportOpsP but no transportP */
 
     xmlrpc_client_create(&env, 0, "", "",
                          &clientParms1, XMLRPC_CPSIZE(transportP),
