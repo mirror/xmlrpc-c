@@ -28,6 +28,7 @@ LIBXMLRPC_UTIL_OBJS = \
   make_printable.lo \
   memblock.lo \
   sleep.lo \
+  time.lo \
 
 INCLUDES = -I$(BLDDIR) -Isrcdir \
            -I$(BLDDIR)/include -Isrcdir/include -Isrcdir/lib/util/include
