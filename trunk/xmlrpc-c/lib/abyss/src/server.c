@@ -14,6 +14,7 @@
 #include <fcntl.h>
 
 #include "xmlrpc_config.h"
+#include "girmath.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/sleep_int.h"
@@ -311,29 +312,51 @@ sendDirectoryDocument(TList *      const listP,
 
 
 
-static void
-fileDate(TSession * const sessionP,
-         time_t     const statFilemodTime,
-         TDate *    const fileDateP) {
+static abyss_bool
+notRecentlyModified(TSession * const sessionP,
+                    time_t     const fileModTime) {
 
-    abyss_bool haveDate;
-    TDate filemodDate;
+    abyss_bool retval;
+    const char * imsHdr;
 
-    haveDate = DateFromLocal(&filemodDate, statFilemodTime);
-
-    if (haveDate) {
-        if (DateCompare(&sessionP->date, &filemodDate) < 0)
-            *fileDateP = sessionP->date;
-        else
-            *fileDateP = filemodDate;
+    imsHdr = RequestHeaderValue(sessionP, "if-modified-since");
+    if (imsHdr) {
+        abyss_bool valid;
+        time_t datetime;
+        DateDecode(imsHdr, &valid, &datetime);
+        if (valid) {
+            if (MIN(fileModTime, sessionP->date) <= datetime)
+                retval = TRUE;
+            else
+                retval = FALSE;
+        } else
+            retval = FALSE;
     } else
-        *fileDateP = sessionP->date;
+        retval = FALSE;
+
+    return retval;
 }
 
 
 
+static void
+addLastModifiedHeader(TSession * const sessionP,
+                      time_t     const fileModTime) {
+
+    const char * lastModifiedValue;
+
+    DateToString(MIN(fileModTime, sessionP->date), &lastModifiedValue);
+
+    if (lastModifiedValue) {
+        ResponseAddField(sessionP, "Last-Modified", lastModifiedValue);
+        xmlrpc_strfree(lastModifiedValue);
+    }
+}
+    
+
+
 static abyss_bool
-ServerDirectoryHandler(TSession * const r,
+ServerDirectoryHandler(TSession * const sessionP,
                        char *     const z,
                        time_t     const fileModTime,
                        MIMEType * const mimeTypeP) {
@@ -343,68 +366,53 @@ ServerDirectoryHandler(TSession * const r,
     abyss_bool ascending;
     uint16_t sort;    /* 1=by name, 2=by date */
     TPool pool;
-    TDate date;
     const char * error;
     uint16_t responseStatus;
-    TDate dirdate;
-    const char * imsHdr;
     
-    determineSortType(r->requestInfo.query, &ascending, &sort, &text, &error);
+    determineSortType(sessionP->requestInfo.query,
+                      &ascending, &sort, &text, &error);
 
     if (error) {
-        ResponseStatus(r,400);
+        ResponseStatus(sessionP, 400);
         xmlrpc_strfree(error);
         return TRUE;
     }
 
-    fileDate(r, fileModTime, &dirdate);
-
-    imsHdr = RequestHeaderValue(r, "If-Modified-Since");
-    if (imsHdr) {
-        if (DateDecode(imsHdr, &date)) {
-            if (DateCompare(&dirdate, &date) <= 0) {
-                ResponseStatus(r, 304);
-                ResponseWriteStart(r);
-                return TRUE;
-            }
-        }
-    }
-
-    if (!PoolCreate(&pool, 1024)) {
-        ResponseStatus(r, 500);
+    if (notRecentlyModified(sessionP, fileModTime)) {
+        ResponseStatus(sessionP, 304);
+        ResponseWriteStart(sessionP);
         return TRUE;
     }
 
-    generateListing(&list, z, r->requestInfo.uri,
+    if (!PoolCreate(&pool, 1024)) {
+        ResponseStatus(sessionP, 500);
+        return TRUE;
+    }
+
+    generateListing(&list, z, sessionP->requestInfo.uri,
                     &pool, &error, &responseStatus);
     if (error) {
-        ResponseStatus(r, responseStatus);
+        ResponseStatus(sessionP, responseStatus);
         xmlrpc_strfree(error);
         PoolFree(&pool);
         return TRUE;
     }
 
     /* Send something to the user to show that we are still alive */
-    ResponseStatus(r, 200);
-    ResponseContentType(r, (text ? "text/plain" : "text/html"));
+    ResponseStatus(sessionP, 200);
+    ResponseContentType(sessionP, (text ? "text/plain" : "text/html"));
 
-    {
-        const char * lastModifiedValue;
-        DateToString(&dirdate, &lastModifiedValue);
-        if (lastModifiedValue) {
-            ResponseAddField(r, "Last-Modified", lastModifiedValue);
-            xmlrpc_strfree(lastModifiedValue);
-        }
-    }
-    
-    ResponseChunked(r);
-    ResponseWriteStart(r);
+    addLastModifiedHeader(sessionP, fileModTime);
 
-    if (r->requestInfo.method!=m_head)
+    ResponseChunked(sessionP);
+    ResponseWriteStart(sessionP);
+
+    if (sessionP->requestInfo.method!=m_head)
         sendDirectoryDocument(&list, ascending, sort, text,
-                              r->requestInfo.uri, mimeTypeP, r, z);
+                              sessionP->requestInfo.uri, mimeTypeP,
+                              sessionP, z);
 
-    HTTPWriteEndChunk(r);
+    HTTPWriteEndChunk(sessionP);
 
     /* Free memory and exit */
     ListFree(&list);
@@ -433,7 +441,7 @@ sendBody(TSession *   const sessionP,
     else {
         uint64_t i;
         for (i = 0; i <= sessionP->ranges.size; ++i) {
-            ConnWrite(sessionP->conn,"--", 2);
+            ConnWrite(sessionP->conn, "--", 2);
             ConnWrite(sessionP->conn, BOUNDARY, strlen(BOUNDARY));
             ConnWrite(sessionP->conn, CRLF, 2);
 
@@ -479,9 +487,6 @@ ServerFileHandler(TSession * const r,
     uint64_t filesize;
     uint64_t start;
     uint64_t end;
-    TDate date;
-    char * p;
-    TDate filedate;
     
     mediatype = MIMETypeGuessFromFile2(mimeTypeP, fileName);
 
@@ -490,19 +495,12 @@ ServerFileHandler(TSession * const r,
         return TRUE;
     }
 
-    fileDate(r, fileModTime, &filedate);
-
-    p = RequestHeaderValue(r, "if-modified-since");
-    if (p) {
-        if (DateDecode(p,&date)) {
-            if (DateCompare(&filedate, &date) <= 0) {
-                ResponseStatus(r, 304);
-                ResponseWriteStart(r);
-                return TRUE;
-            } else
-                r->ranges.size = 0;
-        }
+    if (notRecentlyModified(r, fileModTime)) {
+        ResponseStatus(r, 304);
+        ResponseWriteStart(r);
+        return TRUE;
     }
+
     filesize = FileSize(&file);
 
     switch (r->ranges.size) {
@@ -542,14 +540,7 @@ ServerFileHandler(TSession * const r,
         ResponseContentType(r, mediatype);
     }
     
-    {
-        const char * lastModifiedValue;
-        DateToString(&filedate, &lastModifiedValue);
-        if (lastModifiedValue) {
-            ResponseAddField(r, "Last-Modified", lastModifiedValue);
-            xmlrpc_strfree(lastModifiedValue);
-        }
-}
+    addLastModifiedHeader(r, fileModTime);
 
     ResponseWriteStart(r);
 

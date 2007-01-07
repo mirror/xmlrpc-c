@@ -78,12 +78,9 @@ void
 RequestInit(TSession * const sessionP,
             TConn *    const connectionP) {
 
-    time_t nowtime;
-
     sessionP->validRequest = false;  /* Don't have valid request yet */
 
-    time(&nowtime);
-    sessionP->date = *gmtime(&nowtime);
+    time(&sessionP->date);
 
     sessionP->conn = connectionP;
 
@@ -464,7 +461,13 @@ static void
 getFieldNameToken(char **    const pP,
                   char **    const fieldNameP,
                   uint16_t * const httpErrorCodeP) {
-    
+/*----------------------------------------------------------------------------
+   Assuming that *pP points to the place in an HTTP header where the field
+   name belongs, return the field name and advance *pP past that token.
+
+   The field name is the lower case representation of the value of the
+   field name token.
+-----------------------------------------------------------------------------*/
     char * fieldName;
 
     NextToken((const char **)pP);

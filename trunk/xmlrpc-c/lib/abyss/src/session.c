@@ -101,7 +101,7 @@ SessionLog(TSession * const sessionP) {
 
     const char * logline;
     const char * user;
-    char date[30];
+    const char * date;
     const char * peerInfo;
 
     if (sessionP->validRequest) {
@@ -112,7 +112,7 @@ SessionLog(TSession * const sessionP) {
     } else
         user = "???";
     
-    DateToLogString(&sessionP->date, date);
+    DateToLogString(sessionP->date, &date);
     
     ConnFormatClientAddr(sessionP->conn, &peerInfo);
     
@@ -126,6 +126,7 @@ SessionLog(TSession * const sessionP) {
                     sessionP->conn->outbytes
         );
     xmlrpc_strfree(peerInfo);
+    xmlrpc_strfree(date);
     
     if (logline) {
         LogWrite(sessionP->conn->server, logline);

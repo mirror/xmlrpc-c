@@ -5,6 +5,7 @@
 #include <inttypes.h>
 
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/time_int.h"
 
 #include "date.h"
 
@@ -22,63 +23,92 @@ static char *_DateMonth[12]=
     "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
 };
 
-static int32_t _DateTimeBias=0;
-static char _DateTimeBiasStr[6]="";
-
 
 
 void
-DateToString(const TDate * const brokenTimeP,
+DateToString(time_t        const datetime,
              const char ** const dateStringP) {
 
-    struct tm brokenTime = *brokenTimeP;
+    struct tm brokenTime;
+
+    gmtime_r(&datetime, &brokenTime);
 
     if (mktime(&brokenTime) == (time_t)-1)
         *dateStringP = NULL;
     else
         xmlrpc_asprintf(dateStringP, "%s, %02u %s %04u %02u:%02u:%02u UTC",
-                        _DateDay[brokenTimeP->tm_wday],
-                        brokenTimeP->tm_mday,
-                        _DateMonth[brokenTimeP->tm_mon],
-                        1900 + brokenTimeP->tm_year,
-                        brokenTimeP->tm_hour,
-                        brokenTimeP->tm_min,
-                        brokenTimeP->tm_sec);
+                        _DateDay[brokenTime.tm_wday],
+                        brokenTime.tm_mday,
+                        _DateMonth[brokenTime.tm_mon],
+                        1900 + brokenTime.tm_year,
+                        brokenTime.tm_hour,
+                        brokenTime.tm_min,
+                        brokenTime.tm_sec);
 }
 
 
 
-abyss_bool
-DateToLogString(TDate * const tmP,
-                char *  const s) {
-    time_t t;
+static const char *
+tzOffsetStr(struct tm const tm,
+            time_t    const datetime) {
 
-    t = mktime(tmP);
-    if (t != (time_t)(-1)) {
-        TDate d;
-        abyss_bool success;
-        success = DateFromLocal(&d, t);
-        if (success) {
-            sprintf(s, "%02d/%s/%04d:%02d:%02d:%02d %s",
-                    d.tm_mday, _DateMonth[d.tm_mon],
-                    d.tm_year+1900, d.tm_hour, d.tm_min, d.tm_sec,
-                    _DateTimeBiasStr);
-            return TRUE;
-        }
+    const char * retval;
+    time_t timeIfUtc;
+    const char * error;
+    
+    xmlrpc_timegm(&tm, &timeIfUtc, &error);
+
+    if (error) {
+        xmlrpc_strfree(error);
+        xmlrpc_asprintf(&retval, "%s", "+????");
+    } else {
+        int const tzOffset = datetime - timeIfUtc;
+
+        xmlrpc_asprintf(&retval, "%+03d%02d",
+                        tzOffset/3600, abs(tzOffset % 3600)/60);
     }
-    *s = '\0';
-    return FALSE;
+    return retval;
 }
 
 
 
-abyss_bool
-DateDecode(const char *  const dateString,
-           TDate *       const tmP) {
+void
+DateToLogString(time_t        const datetime,
+                const char ** const dateStringP) {
 
+    const char * tzo;
+    struct tm tm;
+
+    localtime_r(&datetime, &tm);
+
+    tzo = tzOffsetStr(tm, datetime);
+
+    xmlrpc_asprintf(dateStringP, "%02d/%s/%04d:%02d:%02d:%02d %s",
+                    tm.tm_mday, _DateMonth[tm.tm_mon],
+                    1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec,
+                    tzo);
+
+    xmlrpc_strfree(tzo);
+}
+
+
+
+void
+DateDecode(const char * const dateString,
+           abyss_bool * const validP,
+           time_t *     const datetimeP) {
+/*----------------------------------------------------------------------------
+   Return the datetime represented by 'dateString', which is in the
+   format used in an HTTP header.
+
+   We assume that format is always UTC-based; I don't know if HTTP
+   actually requires that -- maybe it could be some local time.
+-----------------------------------------------------------------------------*/
     int rc;
     const char * s;
-    uint32_t n;
+    unsigned int monthOff;
+    struct tm tm;
+    abyss_bool error;
 
     s = &dateString[0];
 
@@ -92,108 +122,79 @@ DateDecode(const char *  const dateString,
     while ((*s==' ') || (*s=='\t'))
         ++s;
 
+    error = FALSE;  /* initial value */
+
     /* try to recognize the date format */
-    rc = sscanf(s, "%*s %d %d:%d:%d %d%*s", &tmP->tm_mday, &tmP->tm_hour,
-                &tmP->tm_min, &tmP->tm_sec, &tmP->tm_year);
-    if (rc != 5) {
+    rc = sscanf(s, "%*s %d %d:%d:%d %d%*s",
+                &tm.tm_mday, &tm.tm_hour,
+                &tm.tm_min, &tm.tm_sec, &tm.tm_year);
+    if (rc == 5)
+        monthOff = 0;
+    else {
         int rc;
         rc = sscanf(s, "%d %n%*s %d %d:%d:%d GMT%*s",
-                    &tmP->tm_mday,&n,&tmP->tm_year,
-                    &tmP->tm_hour, &tmP->tm_min, &tmP->tm_sec);
+                    &tm.tm_mday, &monthOff, &tm.tm_year,
+                    &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
         if (rc != 5) {
             int rc;
             rc = sscanf(s, "%d-%n%*[A-Za-z]-%d %d:%d:%d GMT%*s",
-                        &tmP->tm_mday, &n, &tmP->tm_year,
-                        &tmP->tm_hour, &tmP->tm_min, &tmP->tm_sec);
+                        &tm.tm_mday, &monthOff, &tm.tm_year,
+                        &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
             if (rc != 5)
-                return FALSE;
+                error = TRUE;
         }
     }    
-    /* s points now to the month string */
-    s += n;
-    for (n = 0; n < 12; ++n) {
-        char * p;
+    if (!error) {
+        const char * monthName = s + monthOff;
+            /* This is actually just the point in 'dateString' where
+               the month name begins -- it's not a nul-terminated string
+            */
 
-        p =_DateMonth[n];
+        unsigned int i;
+        abyss_bool gotMonth;
 
-        if (tolower(*p++) == tolower(*s))
-            if (*p++ == tolower(s[1]))
-                if (*p == tolower(s[2]))
-                    break;
+        for (i = 0, gotMonth = FALSE; i < 12; ++i) {
+            const char * p;
+
+            p =_DateMonth[i];
+
+            if (tolower(*p++) == tolower(monthName[0]))
+                if (*p++ == tolower(monthName[1]))
+                    if (*p == tolower(monthName[2])) {
+                        gotMonth = TRUE;
+                        tm.tm_mon = i;
+                    }
+        }
+
+        if (!gotMonth)
+            error = TRUE;
+        else {
+            if (tm.tm_year > 1900)
+                tm.tm_year -= 1900;
+            else {
+                if (tm.tm_year < 70)
+                    tm.tm_year += 100;
+            }
+            tm.tm_isdst = 0;
+
+            {
+                const char * timeError;
+                xmlrpc_timegm(&tm, datetimeP, &timeError);
+                
+                if (timeError) {
+                    error = TRUE;
+                    xmlrpc_strfree(timeError);
+                }
+            }
+        }
     }
-
-    if (n == 12)
-        return FALSE;
-
-    tmP->tm_mon = n;
-
-    /* finish the work */
-    if (tmP->tm_year > 1900)
-        tmP->tm_year -= 1900;
-    else {
-        if (tmP->tm_year < 70)
-            tmP->tm_year += 100;
-    }
-    tmP->tm_isdst = 0;
-
-    return (mktime(tmP) != (time_t)(-1));
-}
-
-
-
-int32_t DateCompare(TDate *d1,TDate *d2)
-{
-    int32_t x;
-
-    if ((x=d1->tm_year-d2->tm_year)==0)
-        if ((x=d1->tm_mon-d2->tm_mon)==0)
-            if ((x=d1->tm_mday-d2->tm_mday)==0)
-                if ((x=d1->tm_hour-d2->tm_hour)==0)
-                    if ((x=d1->tm_min-d2->tm_min)==0)
-                        x=d1->tm_sec-d2->tm_sec;
-
-    return x;
-}
-
-
-
-abyss_bool
-DateFromGMT(TDate *d,time_t t) {
-    TDate *dx;
-
-    dx=gmtime(&t);
-    if (dx) {
-        *d=*dx;
-        return TRUE;
-    };
-
-    return FALSE;
-}
-
-abyss_bool DateFromLocal(TDate *d,time_t t)
-{
-    return DateFromGMT(d,t+_DateTimeBias*2);
+    *validP = !error;
 }
 
 
 
 abyss_bool
 DateInit() {
-    time_t t;
-    TDate gmt,local,*d;
 
-    time(&t);
-    if (DateFromGMT(&gmt,t)) {
-        d=localtime(&t);
-        if (d) {
-            local=*d;
-            _DateTimeBias =
-                (local.tm_sec-gmt.tm_sec)+(local.tm_min-gmt.tm_min)*60
-                +(local.tm_hour-gmt.tm_hour)*3600;
-            sprintf(_DateTimeBiasStr, "%+03d%02d",
-                    _DateTimeBias/3600,(_DateTimeBias % 3600)/60);
-            return TRUE;
-        };
-    }
-    return FALSE;
+    return TRUE;
 }

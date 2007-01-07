@@ -51,9 +51,14 @@ struct _TSession {
     httpVersion version;
 
     TTable request_headers;
+        /* All the headers in the HTTP request.  The key is the header
+           name in lower case.  The value is the verbatim value from
+           the header.
+        */
+
     TTable response_headers;
 
-    TDate date;
+    time_t date;
 
     abyss_bool chunkedwrite;
     abyss_bool chunkedwritemode;

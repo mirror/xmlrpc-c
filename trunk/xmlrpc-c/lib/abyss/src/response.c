@@ -159,7 +159,7 @@ addDateHeader(TSession * const sessionP) {
     if (sessionP->status >= 200) {
         const char * dateValue;
 
-        DateToString(&sessionP->date, &dateValue);
+        DateToString(sessionP->date, &dateValue);
 
         if (dateValue) {
             ResponseAddField(sessionP, "Date", dateValue);
