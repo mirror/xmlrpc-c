@@ -26,9 +26,8 @@ Return XMLRPC_LIMIT_EXCEEDED_ERROR when nesting limits are exceeded.
 This will break binary and source API compatibility in a very minor
 way.
 
-Make a Perl interface to Xmlrpc-c libraries.  This would be better than the
-existing Perl RPC::XML modules because the latter are Perl all the way down
-to the sockets and are thus very slow.
+Expand the Perl interface to Xmlrpc-c libraries to do server functions.
+Maybe match some other features of RPC::XML.
 
 Don't use xmlrpc_value for things that aren't part of an XML-RPC call or
 response.  It's confusing.  In particular, we use an xmlrpc_value
