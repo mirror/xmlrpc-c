@@ -157,10 +157,8 @@ test_value_double(void) {
 
 
 static void
-test_value_datetime(void) {
-
-    const char * datestring = "19980717T14:08:55";
-    time_t const datetime = 900684535;
+test_value_datetime_varytime(const char * const datestring,
+                             time_t       const datetime) {
 
     xmlrpc_value * v;
     xmlrpc_env env;
@@ -169,16 +167,9 @@ test_value_datetime(void) {
 
     xmlrpc_env_init(&env);
 
-    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DATETIME), "DATETIME"));
-
     v = xmlrpc_datetime_new_str(&env, datestring);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-
-    xmlrpc_read_datetime_str(&env, v, &ds);
-    TEST_NO_FAULT(&env);
-    TEST(strcmp(ds, datestring) == 0);
-    strfree(ds);
 
     xmlrpc_read_datetime_sec(&env, v, &dt);
     TEST_NO_FAULT(&env);
@@ -195,11 +186,108 @@ test_value_datetime(void) {
     TEST(strcmp(ds, datestring) == 0);
     strfree(ds);
 
-    xmlrpc_read_datetime_sec(&env, v, &dt);
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_datetime_not_unix(const char * const datestring) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    time_t dt;
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_datetime_new_str(&env, datestring);
     TEST_NO_FAULT(&env);
-    TEST(dt == datetime);
+
+    xmlrpc_read_datetime_sec(&env, v, &dt);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_datetime_invalid(const char * const datestring) {
+
+    /* Ideally, xmlrpc_datetime_new_str() would fail on these, but
+       the code doesn't implement that today.  However,
+       xmlrpc_read_datetime_sec() does catch many cases, so we
+       use that.
+
+       Note that xmlrpc_read_datetime_sec() doesn't catch them all.
+       Sometimes it just returns garbage, e.g. returns July 1 for
+       June 31.
+    */
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    time_t dt;
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_datetime_new_str(&env, datestring);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_read_datetime_sec(&env, v, &dt);
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_datetime(void) {
+
+    const char * datestring = "19980717T14:08:55";
+    time_t const datetime = 900684535;
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    const char * ds;
+
+    xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DATETIME), "DATETIME"));
+
+    /* Valid datetime, generated from XML-RPC string */
+
+    test_value_datetime_varytime(datestring, datetime);
+
+    /* Leap years */
+    test_value_datetime_varytime("20000229T23:59:59", 951868799);
+    test_value_datetime_varytime("20000301T00:00:00", 951868800);
+    test_value_datetime_varytime("20010228T23:59:59", 983404799);
+    test_value_datetime_varytime("20010301T00:00:00", 983404800);
+    test_value_datetime_varytime("20040229T23:59:59", 1078099199);
+    test_value_datetime_varytime("20040301T00:00:00", 1078099200);
+
+    /* Datetimes that can't be represented as time_t */
+    test_value_datetime_not_unix("19691231T23:59:59");
+
+    /* Invalid datetimes */
+    /* Note that the code today does a pretty weak job of validating datetimes,
+       so we test only the validation that we know is implemented.
+    */
+    test_value_datetime_invalid("19700101T25:00:00");
+    test_value_datetime_invalid("19700101T10:61:01");
+    test_value_datetime_invalid("19700101T10:59:61");
+    test_value_datetime_invalid("19700001T10:00:00");
+    test_value_datetime_invalid("19701301T10:00:00");
+    test_value_datetime_invalid("19700132T10:00:00");
+
+    /* xmlrpc_build_value() */
 
     v = xmlrpc_build_value(&env, "8", datestring);
     TEST_NO_FAULT(&env);

@@ -10,6 +10,8 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/time_int.h"
 
 
 /* Future work: the XMLRPC_TYPE_DATETIME xmlrpc_value should store the
@@ -188,143 +190,6 @@ parseDateNumbers(const char * const t,
 }
 
 
-#ifdef HAVE_SETENV
-xmlrpc_bool const haveSetenv = true;
-#else
-xmlrpc_bool const haveSetenv = false;
-static void
-setenv(const char * const name ATTR_UNUSED,
-       const char * const value ATTR_UNUSED,
-       int          const replace ATTR_UNUSED) {
-    assert(FALSE);
-}
-#endif
-
-static void
-makeTimezoneUtc(xmlrpc_env *  const envP,
-                const char ** const oldTzP) {
-
-    const char * const tz = getenv("TZ");
-
-#ifdef WIN32
-	/* Windows implementation does not exist */
-	assert(TRUE);
-#endif
-
-    if (haveSetenv) {
-        if (tz) {
-            *oldTzP = strdup(tz);
-            if (*oldTzP == NULL)
-                xmlrpc_faultf(envP, "Unable to get memory to save TZ "
-                              "environment variable.");
-        } else
-            *oldTzP = NULL;
-
-        if (!envP->fault_occurred)
-            setenv("TZ", "", 1);
-    } else {
-        if (tz && strlen(tz) == 0) {
-            /* Everything's fine.  Nothing to change or restore */
-        } else {
-            /* Note that putenv() is not sufficient.  You can't restore
-               the original value with that, because it sets a pointer into
-               your own storage.
-            */
-            xmlrpc_faultf(envP, "Your TZ environment variable is not a "
-                          "null string and your C library does not have "
-                          "setenv(), so we can't change it.");
-        }
-    }
-}
-    
-
-
-static void
-restoreTimezone(const char * const oldTz) {
-
-    if (haveSetenv) {
-        setenv("TZ", oldTz, 1);
-        free((char*)oldTz);
-    }
-}
-
-
-
-static void
-mkAbsTimeWin32(xmlrpc_env * const envP ATTR_UNUSED,
-               struct tm    const brokenTime ATTR_UNUSED,
-               time_t     * const timeValueP ATTR_UNUSED) {
-#ifdef WIN32
-    /* Windows Implementation */
-    SYSTEMTIME stbrokenTime;
-
-    stbrokenTime.wHour = brokenTime.tm_hour;
-    stbrokenTime.wMinute = brokenTime.tm_min;
-    stbrokenTime.wSecond = brokenTime.tm_sec;
-    stbrokenTime.wMonth = brokenTime.tm_mon;
-    stbrokenTime.wDay = brokenTime.tm_mday;
-    stbrokenTime.wYear = brokenTime.tm_year;
-    stbrokenTime.wMilliseconds = 0;
-
-    /* When the date string is parsed into the tm structure, it was
-       modified to decrement the month count by one and convert the
-       4 digit year to a two digit year.  We undo what the parser 
-       did to make it a true SYSTEMTIME structure, then convert this
-       structure into a UNIX time_t structure
-    */
-    stbrokenTime.wYear+=1900;
-    stbrokenTime.wMonth+=1;
-
-    UnixTimeFromSystemTime(envP, &stbrokenTime,timeValueP);
-#endif
-}
-
-
-static void
-mkAbsTimeUnix(xmlrpc_env * const envP ATTR_UNUSED,
-              struct tm    const brokenTime ATTR_UNUSED,
-              time_t     * const timeValueP ATTR_UNUSED) {
-
-#ifndef WIN32
-    time_t mktimeResult;
-    const char * oldTz;
-    struct tm mktimeWork;
-
-    /* We use mktime() to create the time_t because it's the
-       best we have available, but mktime() takes a local time
-       argument, and we have absolute time.  So we fake it out
-       by temporarily setting the timezone to UTC.
-    */
-    makeTimezoneUtc(envP, &oldTz);
-
-    if (!envP->fault_occurred) {
-        mktimeWork = brokenTime;
-        mktimeResult = mktime(&mktimeWork);
-
-        restoreTimezone(oldTz);
-
-        if (mktimeResult == (time_t)-1)
-            xmlrpc_faultf(envP, "Does not indicate a valid date");
-        else
-            *timeValueP = mktimeResult;
-    }
-#endif
-}
- 
-
-
-static void
-mkAbsTime(xmlrpc_env * const envP,
-          struct tm    const brokenTime,
-          time_t     * const timeValueP) {
-
-    if (win32)
-        mkAbsTimeWin32(envP, brokenTime, timeValueP);
-    else
-        mkAbsTimeUnix(envP, brokenTime, timeValueP);
-}
-
-
 
 static void
 validateFormat(xmlrpc_env * const envP,
@@ -375,6 +240,13 @@ parseDatetime(xmlrpc_env * const envP,
    Example of the format we parse: "19980717T14:08:55"
    Note that this is not quite ISO 8601.  It's a bizarre combination of
    two ISO 8601 formats.
+
+   The input is capable of representing datetimes that cannot be expressed
+   as a time_t.  In that case, we fail, with fault code
+   XMLRPC_INTERNAL_ERROR.
+
+   And of course the input may not validly represent a datetime at all.
+   In that case too, we fail with fault code XMLRPC_PARSE_ERROR.
 -----------------------------------------------------------------------------*/
     validateFormat(envP, t);
 
@@ -383,20 +255,27 @@ parseDatetime(xmlrpc_env * const envP,
         
         parseDateNumbers(t, &Y, &M, &D, &h, &m, &s);
         
-        if (Y < 1900)
-            xmlrpc_faultf(envP, "Year is too early to represent as "
-                          "a standard Unix time");
+        if (Y < 1970)
+            xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
+                                 "Year is too early to represent as "
+                                 "a standard Unix time");
         else {
             struct tm brokenTime;
+            const char * error;
             
-            brokenTime.tm_sec   = s;
-            brokenTime.tm_min   = m;
-            brokenTime.tm_hour  = h;
-            brokenTime.tm_mday  = D;
-            brokenTime.tm_mon   = M - 1;
-            brokenTime.tm_year  = Y - 1900;
+            brokenTime.tm_sec  = s;
+            brokenTime.tm_min  = m;
+            brokenTime.tm_hour = h;
+            brokenTime.tm_mday = D;
+            brokenTime.tm_mon  = M - 1;
+            brokenTime.tm_year = Y - 1900;
             
-            mkAbsTime(envP, brokenTime, timeValueP);
+            xmlrpc_timegm(&brokenTime, timeValueP, &error);
+
+            if (error) {
+                xmlrpc_env_set_fault(envP, XMLRPC_PARSE_ERROR, error);
+                xmlrpc_strfree(error);
+            }
         }
     }
 }
