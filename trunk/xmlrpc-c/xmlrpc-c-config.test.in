@@ -38,7 +38,7 @@ LIBXMLRPC="${BUILDDIR}/src/.libs/libxmlrpc.a"
 LIBXMLRPC_UTIL="${BUILDDIR}/lib/libutil/.libs/libxmlrpc_util.a"
 
 the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML}"
-the_includes="-I${BLDDIR}/include -I${SRCDIR}/include"
+the_includes="-I${BUILDDIR}/include -I${SRCDIR}/include"
 sopath="${BUILDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do
@@ -77,7 +77,6 @@ while test $# -gt 0; do
         the_libs="${BUILDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
         the_libs="${BUILDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
         fi
-      the_includes="-I${SRCDIR}/lib/abyss/src $the_includes"
       sopath="${BUILDDIR}/lib/abyss/src/.libs:$sopath"
       ;;
     client)
