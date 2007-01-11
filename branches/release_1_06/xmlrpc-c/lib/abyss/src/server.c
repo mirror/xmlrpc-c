@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/errno.h>
+#include <errno.h>
 #ifdef WIN32
   #include <io.h>
 #else

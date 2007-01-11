@@ -1119,7 +1119,7 @@ int checkCharRefNumber(int result)
   return result;
 }
 
-int XmlUtf8Encode(int c, char *buf)
+int xmlrpc_XmlUtf8Encode(int c, char *buf)
 {
   enum {
     /* minN is minimum legal resulting value for N byte sequence */
@@ -1155,7 +1155,7 @@ int XmlUtf8Encode(int c, char *buf)
   return 0;
 }
 
-int XmlUtf16Encode(int charNum, unsigned short *buf)
+int xmlrpc_XmlUtf16Encode(int charNum, unsigned short *buf)
 {
   if (charNum < 0)
     return 0;
@@ -1180,7 +1180,7 @@ struct unknown_encoding {
   char utf8[256][4];
 };
 
-int XmlSizeOfUnknownEncoding(void)
+int xmlrpc_XmlSizeOfUnknownEncoding(void)
 {
   return sizeof(struct unknown_encoding);
 }
@@ -1229,7 +1229,7 @@ void unknown_toUtf8(const ENCODING *enc,
     if (n == 0) {
       int c = ((const struct unknown_encoding *)enc)
 	      ->convert(((const struct unknown_encoding *)enc)->userData, *fromP);
-      n = XmlUtf8Encode(c, buf);
+      n = xmlrpc_XmlUtf8Encode(c, buf);
       if (n > toLim - *toP)
 	break;
       utf8 = buf;
@@ -1268,7 +1268,7 @@ void unknown_toUtf16(const ENCODING *enc,
 }
 
 ENCODING *
-XmlInitUnknownEncoding(void *mem,
+xmlrpc_XmlInitUnknownEncoding(void *mem,
 		       int *table,
 		       int (*convert)(void *userData, const char *p),
 		       void *userData)
@@ -1324,7 +1324,7 @@ XmlInitUnknownEncoding(void *mem,
 	e->normal.type[i] = BT_NAME;
       else
 	e->normal.type[i] = BT_OTHER;
-      e->utf8[i][0] = (char)XmlUtf8Encode(c, e->utf8[i] + 1);
+      e->utf8[i][0] = (char)xmlrpc_XmlUtf8Encode(c, e->utf8[i] + 1);
       e->utf16[i] = c;
     }
   }
@@ -1547,12 +1547,12 @@ int initScan(const ENCODING **encodingTable,
 #undef ns
 
 ENCODING *
-XmlInitUnknownEncodingNS(void *mem,
+xmlrpc_XmlInitUnknownEncodingNS(void *mem,
 		         int *table,
 		         int (*convert)(void *userData, const char *p),
 		         void *userData)
 {
-  ENCODING *enc = XmlInitUnknownEncoding(mem, table, convert, userData);
+  ENCODING *enc = xmlrpc_XmlInitUnknownEncoding(mem, table, convert, userData);
   if (enc)
     ((struct normal_encoding *)enc)->type[ASCII_COLON] = BT_COLON;
   return enc;

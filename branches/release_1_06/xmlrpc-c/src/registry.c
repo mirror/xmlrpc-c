@@ -350,15 +350,19 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
     callPreinvokeMethodIfAny(envP, registryP, methodName, paramArrayP);
     if (!envP->fault_occurred) {
         xmlrpc_value * methodInfoP;
+        xmlrpc_env methodLookupEnv;
+
+        xmlrpc_env_init(&methodLookupEnv);
 
         /* See comments at top of file about why we use the deprecated
            xmlrpc_struct_get_value() here
         */
-        methodInfoP = xmlrpc_struct_get_value(envP, registryP->_methods,
+        methodInfoP = xmlrpc_struct_get_value(&methodLookupEnv,
+                                              registryP->_methods,
                                               methodName);
-        if (!envP->fault_occurred)
+        if (!methodLookupEnv.fault_occurred)
             callNamedMethod(envP, methodInfoP, paramArrayP, resultPP);
-        else if (envP->fault_code == XMLRPC_INDEX_ERROR) {
+        else if (methodLookupEnv.fault_code == XMLRPC_INDEX_ERROR) {
             if (registryP->_default_method)
                 callDefaultMethod(envP, registryP->_default_method, 
                                   methodName, paramArrayP,
@@ -369,7 +373,11 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
                     envP, XMLRPC_NO_SUCH_METHOD_ERROR,
                     "Method '%s' not defined", methodName);
             }
-        }
+        } else
+            xmlrpc_faultf(envP, "failed to lookup method in registry's "
+                          "internal method struct.  %s",
+                          methodLookupEnv.fault_string);
+        xmlrpc_env_clean(&methodLookupEnv); 
     }
     /* For backward compatibility, for sloppy users: */
     if (envP->fault_occurred)

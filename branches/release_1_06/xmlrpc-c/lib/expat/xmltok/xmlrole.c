@@ -1245,7 +1245,7 @@ int common(PROLOG_STATE *state, int tok ATTR_UNUSED)
   return XML_ROLE_ERROR;
 }
 
-void XmlPrologStateInit(PROLOG_STATE *state)
+void xmlrpc_XmlPrologStateInit(PROLOG_STATE *state)
 {
   state->handler = prolog0;
 #ifdef XML_DTD

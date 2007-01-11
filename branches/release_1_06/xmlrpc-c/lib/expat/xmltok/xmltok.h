@@ -254,46 +254,72 @@ typedef struct {
   const ENCODING **encPtr;
 } INIT_ENCODING;
 
-int XMLTOKAPI XmlParseXmlDecl(int isGeneralTextEntity,
-			      const ENCODING *enc,
-			      const char *ptr,
-	  		      const char *end,
-			      const char **badPtr,
-			      const char **versionPtr,
-			      const char **encodingNamePtr,
-			      const ENCODING **namedEncodingPtr,
-			      int *standalonePtr);
+int XMLTOKAPI 
+xmlrpc_XmlParseXmlDecl(int               isGeneralTextEntity,
+                       const ENCODING *  enc,
+                       const char *      ptr,
+                       const char *      end,
+                       const char **     badPtr,
+                       const char **     versionPtr,
+                       const char **     encodingNamePtr,
+                       const ENCODING ** namedEncodingPtr,
+                       int *             standalonePtr);
 
-int XMLTOKAPI XmlInitEncoding(INIT_ENCODING *, const ENCODING **, const char *name);
-const ENCODING XMLTOKAPI *XmlGetUtf8InternalEncoding(void);
-const ENCODING XMLTOKAPI *XmlGetUtf16InternalEncoding(void);
-int XMLTOKAPI XmlUtf8Encode(int charNumber, char *buf);
-int XMLTOKAPI XmlUtf16Encode(int charNumber, unsigned short *buf);
+int 
+XMLTOKAPI
+xmlrpc_XmlInitEncoding(INIT_ENCODING *,
+                       const ENCODING **,
+                       const char * name);
 
-int XMLTOKAPI XmlSizeOfUnknownEncoding(void);
+const ENCODING XMLTOKAPI *
+xmlrpc_XmlGetUtf8InternalEncoding(void);
+
+const ENCODING XMLTOKAPI *
+xmlrpc_XmlGetUtf16InternalEncoding(void);
+
+int XMLTOKAPI
+xmlrpc_XmlUtf8Encode(int charNumber, char *buf);
+
+int XMLTOKAPI 
+xmlrpc_XmlUtf16Encode(int              charNumber,
+                      unsigned short * buf);
+
+int XMLTOKAPI
+xmlrpc_XmlSizeOfUnknownEncoding(void);
+
 ENCODING XMLTOKAPI *
-XmlInitUnknownEncoding(void *mem,
-		       int *table,
-		       int (*conv)(void *userData, const char *p),
-		       void *userData);
+xmlrpc_XmlInitUnknownEncoding(void * mem,
+                              int *  table,
+                              int (* conv)(void * userData, const char * p),
+                              void * userData);
 
-int XMLTOKAPI XmlParseXmlDeclNS(int isGeneralTextEntity,
-			        const ENCODING *enc,
-			        const char *ptr,
-	  		        const char *end,
-			        const char **badPtr,
-			        const char **versionPtr,
-			        const char **encodingNamePtr,
-			        const ENCODING **namedEncodingPtr,
-			        int *standalonePtr);
-int XMLTOKAPI XmlInitEncodingNS(INIT_ENCODING *, const ENCODING **, const char *name);
-const ENCODING XMLTOKAPI *XmlGetUtf8InternalEncodingNS(void);
-const ENCODING XMLTOKAPI *XmlGetUtf16InternalEncodingNS(void);
+int XMLTOKAPI
+xmlrpc_XmlParseXmlDeclNS(int               isGeneralTextEntity,
+                         const ENCODING *  enc,
+                         const char *      ptr,
+                         const char *      end,
+                         const char **     badPtr,
+                         const char **     versionPtr,
+                         const char **     encodingNamePtr,
+                         const ENCODING ** namedEncodingPtr,
+                         int *             standalonePtr);
+
+int XMLTOKAPI
+xmlrpc_XmlInitEncodingNS(INIT_ENCODING *,
+                         const ENCODING **,
+                         const char * name);
+
+const ENCODING XMLTOKAPI *
+xmlrpc_XmlGetUtf8InternalEncodingNS(void);
+
+const ENCODING XMLTOKAPI *
+xmlrpc_XmlGetUtf16InternalEncodingNS(void);
+
 ENCODING XMLTOKAPI *
-XmlInitUnknownEncodingNS(void *mem,
-		         int *table,
-		         int (*conv)(void *userData, const char *p),
-		         void *userData);
+xmlrpc_XmlInitUnknownEncodingNS(void * mem,
+                                int *  table,
+                                int (* conv)(void * userData, const char * p),
+                                void * userData);
 #ifdef __cplusplus
 }
 #endif

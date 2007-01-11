@@ -25,17 +25,17 @@ See the file copying.txt for copying permission.
 #ifdef XML_UNICODE
 #define XML_ENCODE_MAX XML_UTF16_ENCODE_MAX
 #define XmlConvert XmlUtf16Convert
-#define XmlGetInternalEncoding XmlGetUtf16InternalEncoding
-#define XmlGetInternalEncodingNS XmlGetUtf16InternalEncodingNS
-#define XmlEncode XmlUtf16Encode
+#define XmlGetInternalEncoding xmlrpc_XmlGetUtf16InternalEncoding
+#define XmlGetInternalEncodingNS xmlrpc_XmlGetUtf16InternalEncodingNS
+#define XmlEncode xmlrpc_XmlUtf16Encode
 #define MUST_CONVERT(enc, s) (!(enc)->isUtf16 || (((unsigned long)s) & 1))
 typedef unsigned short ICHAR;
 #else
 #define XML_ENCODE_MAX XML_UTF8_ENCODE_MAX
 #define XmlConvert XmlUtf8Convert
-#define XmlGetInternalEncoding XmlGetUtf8InternalEncoding
-#define XmlGetInternalEncodingNS XmlGetUtf8InternalEncodingNS
-#define XmlEncode XmlUtf8Encode
+#define XmlGetInternalEncoding xmlrpc_XmlGetUtf8InternalEncoding
+#define XmlGetInternalEncodingNS xmlrpc_XmlGetUtf8InternalEncodingNS
+#define XmlEncode xmlrpc_XmlUtf8Encode
 #define MUST_CONVERT(enc, s) (!(enc)->isUtf8)
 typedef char ICHAR;
 #endif
@@ -43,11 +43,11 @@ typedef char ICHAR;
 
 #ifndef XML_NS
 
-#define XmlInitEncodingNS XmlInitEncoding
-#define XmlInitUnknownEncodingNS XmlInitUnknownEncoding
+#define XmlInitEncodingNS xmlrpc_XmlInitEncoding
+#define XmlInitUnknownEncodingNS xmlrpc_XmlInitUnknownEncoding
 #undef XmlGetInternalEncodingNS
 #define XmlGetInternalEncodingNS XmlGetInternalEncoding
-#define XmlParseXmlDeclNS XmlParseXmlDecl
+#define XmlParseXmlDeclNS xmlrpc_XmlParseXmlDecl
 
 #endif
 
@@ -466,7 +466,7 @@ xmlrpc_XML_ParserCreate(const XML_Char *encodingName)
   if (!parser)
     return parser;
   processor = prologInitProcessor;
-  XmlPrologStateInit(&prologState);
+  xmlrpc_XmlPrologStateInit(&prologState);
   userData = 0;
   handlerArg = 0;
   startElementHandler = 0;
@@ -538,7 +538,7 @@ xmlrpc_XML_ParserCreate(const XML_Char *encodingName)
     return 0;
   }
   dataBufEnd = dataBuf + INIT_DATA_BUF_SIZE;
-  XmlInitEncoding(&initEncoding, &encoding, 0);
+  xmlrpc_XmlInitEncoding(&initEncoding, &encoding, 0);
   internalEncoding = XmlGetInternalEncoding();
   return parser;
 }
@@ -2165,7 +2165,7 @@ initializeEncoding(XML_Parser parser)
 #else
   s = protocolEncodingName;
 #endif
-  if ((ns ? XmlInitEncodingNS : XmlInitEncoding)(&initEncoding, &encoding, s))
+  if ((ns ? XmlInitEncodingNS : xmlrpc_XmlInitEncoding)(&initEncoding, &encoding, s))
     return XML_ERROR_NONE;
   return handleUnknownEncoding(parser, protocolEncodingName);
 }
@@ -2180,7 +2180,7 @@ processXmlDecl(XML_Parser parser, int isGeneralTextEntity,
   int standalone = -1;
   if (!(ns
         ? XmlParseXmlDeclNS
-        : XmlParseXmlDecl)(isGeneralTextEntity,
+        : xmlrpc_XmlParseXmlDecl)(isGeneralTextEntity,
                            encoding,
                            s,
                            next,
@@ -2241,7 +2241,7 @@ handleUnknownEncoding(XML_Parser parser, const XML_Char *encodingName)
     if (unknownEncodingHandler(unknownEncodingHandlerData,
                                encodingName, &info)) {
       ENCODING *enc;
-      unknownEncodingMem = malloc(XmlSizeOfUnknownEncoding());
+      unknownEncodingMem = malloc(xmlrpc_XmlSizeOfUnknownEncoding());
       if (!unknownEncodingMem) {
         if (info.release)
           info.release(info.data);
@@ -2249,7 +2249,7 @@ handleUnknownEncoding(XML_Parser parser, const XML_Char *encodingName)
       }
       enc = (ns
              ? XmlInitUnknownEncodingNS
-             : XmlInitUnknownEncoding)(unknownEncodingMem,
+             : xmlrpc_XmlInitUnknownEncoding)(unknownEncodingMem,
                                        info.map,
                                        info.convert,
                                        info.data);

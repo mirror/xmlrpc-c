@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
 
 
 #include <inttypes.h>
@@ -183,7 +184,7 @@ DateInit() {
                 (local.tm_sec-gmt.tm_sec)+(local.tm_min-gmt.tm_min)*60
                 +(local.tm_hour-gmt.tm_hour)*3600;
             sprintf(_DateTimeBiasStr, "%+03d%02d",
-                    _DateTimeBias/3600,(_DateTimeBias % 3600)/60);
+                    _DateTimeBias/3600,(abs(_DateTimeBias) % 3600)/60);
             return TRUE;
         };
     }

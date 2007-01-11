@@ -1,9 +1,9 @@
-const ENCODING *NS(XmlGetUtf8InternalEncoding)(void)
+const ENCODING *NS(xmlrpc_XmlGetUtf8InternalEncoding)(void)
 {
   return &ns(internal_utf8_encoding).enc;
 }
 
-const ENCODING *NS(XmlGetUtf16InternalEncoding)(void)
+const ENCODING *NS(xmlrpc_XmlGetUtf16InternalEncoding)(void)
 {
 #if XML_BYTE_ORDER == 12
   return &ns(internal_little2_encoding).enc;
@@ -40,7 +40,7 @@ int NS(initScanContent)(const ENCODING *enc, const char *ptr, const char *end,
   return initScan(NS(encodings), (const INIT_ENCODING *)enc, XML_CONTENT_STATE, ptr, end, nextTokPtr);
 }
 
-int NS(XmlInitEncoding)(INIT_ENCODING *p, const ENCODING **encPtr, const char *name)
+int NS(xmlrpc_XmlInitEncoding)(INIT_ENCODING *p, const ENCODING **encPtr, const char *name)
 {
   int i = getEncodingIndex(name);
   if (i == UNKNOWN_ENC)
@@ -73,7 +73,7 @@ const ENCODING *NS(findEncoding)(const ENCODING *enc, const char *ptr, const cha
   return NS(encodings)[i];
 }
 
-int NS(XmlParseXmlDecl)(int isGeneralTextEntity,
+int NS(xmlrpc_XmlParseXmlDecl)(int isGeneralTextEntity,
 			const ENCODING *enc,
 			const char *ptr,
 			const char *end,
