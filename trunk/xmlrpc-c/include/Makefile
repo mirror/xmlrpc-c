@@ -32,6 +32,8 @@ HEADERS_TO_INSTALL = \
   xmlrpc-c/util.h \
   xmlrpc-c/base.h \
   xmlrpc-c/abyss.h \
+  xmlrpc-c/abyss_unixsock.h \
+  xmlrpc-c/abyss_winsock.h \
   xmlrpc-c/server.h \
   xmlrpc-c/server_abyss.h \
   xmlrpc-c/server_w32httpsys.h \
