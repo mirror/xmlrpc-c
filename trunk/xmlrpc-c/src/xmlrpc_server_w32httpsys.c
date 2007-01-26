@@ -43,6 +43,7 @@
 #define _UNICODE
 #endif
 
+#include "xmlrpc_config.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/server_w32httpsys.h"
