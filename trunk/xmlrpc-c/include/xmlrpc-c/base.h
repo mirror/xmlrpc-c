@@ -42,11 +42,10 @@ typedef double xmlrpc_double;
        for mathematical completeness.
     */
 
-#ifdef _WIN32
-typedef SOCKET xmlrpc_socket;
-#else
+/* For Windows, type xmlrpc_socket used to be (Xmlrpc-c 1.08) SOCKET.
+   But now we use the Winsock2 interface.
+*/
 typedef int xmlrpc_socket;
-#endif
 
 #define XMLRPC_INT32_MAX 0x7fffffff
 #define XMLRPC_INT32_MIN (-XMLRPC_INT32_MAX - 1)
