@@ -242,7 +242,7 @@ typedef struct {
   const ENCODING **encPtr;
 } INIT_ENCODING;
 
-int XMLTOKAPI
+XMLTOKAPI int
 xmlrpc_XmlParseXmlDecl(int isGeneralTextEntity,
                        const ENCODING *enc,
                        const char *ptr,
@@ -253,29 +253,29 @@ xmlrpc_XmlParseXmlDecl(int isGeneralTextEntity,
                        const ENCODING **namedEncodingPtr,
                        int *standalonePtr);
 
-const ENCODING *
+XMLTOKAPI const ENCODING *
 xmlrpc_XmlGetUtf8InternalEncoding(void);
 
-const ENCODING *
+XMLTOKAPI const ENCODING *
 xmlrpc_XmlGetUtf16InternalEncoding(void);
 
-int
+XMLTOKAPI int
 xmlrpc_XmlInitEncoding(INIT_ENCODING *   const p,
                        const ENCODING ** const encPtr,
                        const char *      const name);
 
-int
+XMLTOKAPI int
 xmlrpc_XmlUtf8Encode(int    const c,
                      char * const buf);
 
-int
+XMLTOKAPI int
 xmlrpc_XmlUtf16Encode(int              const charNum,
                       unsigned short * const buf);
 
-int
+XMLTOKAPI int
 xmlrpc_XmlSizeOfUnknownEncoding(void);
 
-ENCODING *
+XMLTOKAPI ENCODING *
 xmlrpc_XmlInitUnknownEncoding(void * const mem,
                               int *  const table,
                               int (*convert)(void *userData, const char *p),

@@ -80,10 +80,10 @@ typedef struct prolog_state {
   int documentEntity;
 } PROLOG_STATE;
 
-void
+XMLTOKAPI void
 xmlrpc_XmlPrologStateInit(PROLOG_STATE * const state);
 
-void
+XMLTOKAPI void
 xmlrpc_XmlPrologStateInitExternalEntity(PROLOG_STATE * const state);
 
 #define XmlTokenRole(state, tok, ptr, end, enc) \
