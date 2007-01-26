@@ -48,7 +48,7 @@
 /* Used to mark unused variables under GCC... */
 #define ATTR_UNUSED
 
-#define HAVE_UNICODE_WCHAR
+#define HAVE_UNICODE_WCHAR 1
   
 #define DIRECTORY_SEPARATOR "\\"
 
@@ -70,7 +70,7 @@
 
 
 #include <time.h>
-#include <WINSOCK.h>
+#include <WINSOCK2.h>
 #include <direct.h>  /* for _chdir() */
 
 /* We are linking against the multithreaded versions
