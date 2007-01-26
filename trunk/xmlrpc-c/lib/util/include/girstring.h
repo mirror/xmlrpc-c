@@ -1,6 +1,7 @@
 #ifndef GIRSTRING_H_INCLUDED
 #define GIRSTRING_H_INCLUDED
 
+#include "xmlrpc_config.h"
 #include <string.h>
 #include "bool.h"
 

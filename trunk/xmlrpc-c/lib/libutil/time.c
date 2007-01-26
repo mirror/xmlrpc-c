@@ -1,5 +1,6 @@
 #include <time.h>
 
+#include "xmlrpc_config.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/time_int.h"
 
