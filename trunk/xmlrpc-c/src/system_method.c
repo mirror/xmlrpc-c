@@ -370,7 +370,7 @@ system_multicall(xmlrpc_env *   const envP,
 
 
 
-static struct systemMethodReg const multicall = {
+static struct systemMethodReg const methodMulticall = {
     "system.multicall",
     &system_multicall,
     "A:A",
@@ -456,7 +456,7 @@ system_listMethods(xmlrpc_env *   const envP,
 
 
 
-static struct systemMethodReg const listMethods = {
+static struct systemMethodReg const methodListMethods = {
     "system.listMethods",
     &system_listMethods,
     "A:",
@@ -770,7 +770,7 @@ system_shutdown(xmlrpc_env *   const envP,
 
 
 
-static struct systemMethodReg const shutdown = {
+static struct systemMethodReg const methodShutdown = {
     "system.shutdown",
     &system_shutdown,
     "i:s",
@@ -812,7 +812,7 @@ xmlrpc_installSystemMethods(xmlrpc_env *      const envP,
    Install the built-in methods (system.*) into registry 'registryP'.
 -----------------------------------------------------------------------------*/
     if (!envP->fault_occurred)
-        registerSystemMethod(envP, registryP, listMethods);
+        registerSystemMethod(envP, registryP, methodListMethods);
 
     if (!envP->fault_occurred) 
         registerSystemMethod(envP, registryP, methodSignature);
@@ -821,10 +821,10 @@ xmlrpc_installSystemMethods(xmlrpc_env *      const envP,
         registerSystemMethod(envP, registryP, methodHelp);
 
     if (!envP->fault_occurred)
-        registerSystemMethod(envP, registryP, multicall);
+        registerSystemMethod(envP, registryP, methodMulticall);
 
     if (!envP->fault_occurred)
-        registerSystemMethod(envP, registryP, shutdown);
+        registerSystemMethod(envP, registryP, methodShutdown);
 }
 
 
