@@ -12,7 +12,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
-
+#include "xmlrpc-c/string_int.h"
 
 
 static void
@@ -753,6 +753,52 @@ xmlrpc_string_new(xmlrpc_env * const envP,
 
     return xmlrpc_string_new_lp(envP, strlen(value), value);
 }
+
+
+
+xmlrpc_value *
+xmlrpc_string_new_va(xmlrpc_env * const envP,
+                     const char * const format,
+                     va_list            args) {
+
+    const char * formattedString;
+    xmlrpc_value * retvalP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(format != NULL);
+    
+    xmlrpc_vasprintf(&formattedString, format, args);
+
+    if (formattedString == xmlrpc_strsol) {
+        xmlrpc_faultf(envP, "Out of memory building formatted string");
+        retvalP = NULL;  /* defeat compiler warning */
+    } else
+        retvalP = xmlrpc_string_new(envP, formattedString);
+
+    xmlrpc_strfree(formattedString);
+
+    return retvalP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_string_new_f(xmlrpc_env * const envP,
+                    const char * const format,
+                    ...) {
+
+    va_list args;
+    xmlrpc_value * retval;
+    
+    va_start(args, format);
+    
+    retval = xmlrpc_string_new_va(envP, format, args);
+    
+    va_end(args);
+
+    return retval;
+}
+
 
 
 #if HAVE_UNICODE_WCHAR

@@ -183,7 +183,7 @@ test_value_datetime_varytime(const char * const datestring,
 
     xmlrpc_read_datetime_str(&env, v, &ds);
     TEST_NO_FAULT(&env);
-    TEST(strcmp(ds, datestring) == 0);
+    TEST(streq(ds, datestring));
     strfree(ds);
 
     xmlrpc_DECREF(v);
@@ -296,10 +296,30 @@ test_value_datetime(void) {
     xmlrpc_decompose_value(&env, v, "8", &ds);
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
-    TEST(strcmp(ds, datestring) == 0);
+    TEST(streq(ds, datestring));
     strfree(ds);
 
     xmlrpc_env_clean(&env);
+}
+
+
+
+static xmlrpc_value *
+test_string_new_va(xmlrpc_env * const envP,
+                   const char * const format,
+                   ...) {
+
+    va_list args;
+
+    xmlrpc_value * v;
+
+    va_start(args, format);
+
+    v = xmlrpc_string_new_va(envP, format, args);
+
+    va_end(args);
+
+    return v;
 }
 
 
@@ -320,10 +340,28 @@ test_value_string_no_null(void) {
 
     v = xmlrpc_string_new(&env, test_string_1);
     TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
-    TEST(strcmp(str, test_string_1) == 0);
+    TEST(streq(str, test_string_1));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new_f(&env, "String %s, number %d", "xyz", 7);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "String xyz, number 7"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    test_string_new_va(&env, "String %s, number %d", "xyz", 7);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "String xyz, number 7"));
     xmlrpc_DECREF(v);
     strfree(str);
 
@@ -335,7 +373,7 @@ test_value_string_no_null(void) {
 
     xmlrpc_decompose_value(&env, v, "s", &str);
     TEST_NO_FAULT(&env);
-    TEST(strcmp(str, test_string_1) == 0);
+    TEST(streq(str, test_string_1));
     strfree(str);
 
     xmlrpc_decompose_value(&env, v, "s#", &str, &len);
@@ -1140,8 +1178,8 @@ test_value_parse_value(void) {
         TEST(i == 7);
         TEST(d == 3.14);
         TEST(b == (xmlrpc_bool)1);
-        TEST(strcmp(dt_str, datestring) == 0);
-        TEST(strcmp(s1, "hello world") == 0);
+        TEST(streq(dt_str, datestring));
+        TEST(streq(s1, "hello world"));
         TEST(s2_len == 3);
         TEST(memcmp(s2, "a\0b", 3) == 0);
         TEST(b64_len == strlen("base64 data"));
@@ -1381,7 +1419,7 @@ test_struct_decompose(xmlrpc_value * const testStructP) {
     TEST_NO_FAULT(&env);
     TEST(ival == 1);
     TEST(!bval);
-    TEST(strcmp(sval, "Hello!") == 0);
+    TEST(streq(sval, "Hello!"));
     free(sval);
 
     /* Decompose a deep struct */
