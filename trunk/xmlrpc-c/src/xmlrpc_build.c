@@ -454,7 +454,7 @@ xmlrpc_build_value(xmlrpc_env * const envP,
                    ...) {
 
     va_list args;
-    xmlrpc_value* retval;
+    xmlrpc_value * retval;
     const char * suffix;
 
     va_start(args, format);
