@@ -1069,8 +1069,13 @@ static void
 addUserAgentHeader(xmlrpc_env *         const envP,
                    struct curl_slist ** const headerListP,
                    const char *         const userAgent) {
-    
+
     if (userAgent) {
+        /* Note: Curl has a CURLOPT_USERAGENT option that does some of this
+           work.  We prefer to be totally in control, though, so we build
+           the header explicitly.
+        */
+    
         curl_version_info_data * const curlInfoP =
             curl_version_info(CURLVERSION_NOW);
         char curlVersion[32];
