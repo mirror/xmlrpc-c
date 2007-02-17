@@ -121,6 +121,7 @@ main(int           const argc,
     xmlrpc_registry * registryP;
     xmlrpc_env env;
     int terminationRequested;  /* A boolean value */
+    const char * error;
 
     if (argc-1 != 1) {
         fprintf(stderr, "You must specify 1 argument:  The TCP port number "
@@ -128,6 +129,8 @@ main(int           const argc,
                 "You specified %d.\n",  argc-1);
         exit(1);
     }
+
+    AbyssInit(&error);
     
     xmlrpc_env_init(&env);
 
@@ -160,6 +163,8 @@ main(int           const argc,
     }
 
     ServerFree(&abyssServer);
-    
+
+    AbyssTerm();
+
     return 0;
 }
