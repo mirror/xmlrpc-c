@@ -37,6 +37,12 @@ should instead be a normal C array plus count, or variable argument list.
 Don't use XML-RPC fault codes internally.  It's confusing.  Plus, there's
 no need for fault codes at all.  Just use the string descriptions.
 
+Add a function to deregister a method from a method registry.
+
+Add a "registry" type that works via a filesystem directory.  There is
+a .so file for each method with its code, and probably a configuration
+file.  Make it dynamically updatable.
+
 
 IMPLEMENTATION CHANGES
 ----------------------
