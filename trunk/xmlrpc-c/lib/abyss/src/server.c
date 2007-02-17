@@ -554,6 +554,23 @@ ServerFileHandler(TSession * const r,
 
 
 
+static void
+convertToNativeFileName(char * const fileName ATTR_UNUSED) {
+
+#ifdef WIN32
+    char * p;
+    p = &fileName[0];
+    while (*p) {
+        if ((*p) == '/')
+            *p= '\\';
+
+        ++p;
+    }
+#endif  /* WIN32 */
+}
+
+
+
 static abyss_bool
 ServerDefaultHandlerFunc(TSession * const sessionP) {
 
@@ -594,15 +611,7 @@ ServerDefaultHandlerFunc(TSession * const sessionP) {
         *p = '\0';
     }
 
-#ifdef WIN32
-    p = z;
-    while (*p) {
-        if ((*p) == '/')
-            *p= '\\';
-
-        ++p;
-    }
-#endif  /* WIN32 */
+    convertToNativeFileName(z);
 
     if (!FileStat(z, &fs)) {
         ResponseStatusErrno(sessionP);
