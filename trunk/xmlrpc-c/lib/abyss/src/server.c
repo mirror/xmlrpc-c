@@ -1879,7 +1879,12 @@ void
 ServerDefaultHandler(TServer *  const serverP,
                      URIHandler const handler) {
 
-    serverP->srvP->defaulthandler = handler;
+    struct _TServer * const srvP = serverP->srvP;
+
+    if (handler)
+        srvP->defaulthandler = handler;
+    else
+        srvP->defaulthandler = ServerDefaultHandlerFunc;
 }
 
 
