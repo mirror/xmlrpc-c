@@ -32,6 +32,7 @@ TARGET_MODS = \
   data \
   date \
   file \
+  handler \
   http \
   init \
   response \

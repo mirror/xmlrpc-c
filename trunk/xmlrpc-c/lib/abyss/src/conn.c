@@ -372,13 +372,13 @@ ConnWrite(TConn *      const connectionP,
 
 
 abyss_bool
-ConnWriteFromFile(TConn *  const connectionP,
-                  TFile *  const fileP,
-                  uint64_t const start,
-                  uint64_t const last,
-                  void *   const buffer,
-                  uint32_t const buffersize,
-                  uint32_t const rate) {
+ConnWriteFromFile(TConn *       const connectionP,
+                  const TFile * const fileP,
+                  uint64_t      const start,
+                  uint64_t      const last,
+                  void *        const buffer,
+                  uint32_t      const buffersize,
+                  uint32_t      const rate) {
 /*----------------------------------------------------------------------------
    Write the contents of the file stream *fileP, from offset 'start'
    up through 'last', to the HTTP connection *connectionP.

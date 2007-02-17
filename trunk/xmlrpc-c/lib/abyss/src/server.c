@@ -5,13 +5,9 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#ifdef WIN32
-  #include <io.h>
-#else
-  #include <unistd.h>
+#ifndef WIN32
   #include <grp.h>
 #endif
-#include <fcntl.h>
 
 #include "xmlrpc_config.h"
 #include "girmath.h"
@@ -32,8 +28,7 @@
   #include "socket_unix.h"
 #endif
 #include "http.h"
-#include "date.h"
-#include "abyss_info.h"
+#include "handler.h"
 
 #include "server.h"
 
@@ -54,610 +49,6 @@ ServerResetTerminate(TServer * const serverP) {
     struct _TServer * const srvP = serverP->srvP;
 
     srvP->terminationRequested = false;
-}
-
-
-
-typedef int (*TQSortProc)(const void *, const void *);
-
-static int
-cmpfilenames(const TFileInfo **f1,const TFileInfo **f2) {
-    if (((*f1)->attrib & A_SUBDIR) && !((*f2)->attrib & A_SUBDIR))
-        return (-1);
-    if (!((*f1)->attrib & A_SUBDIR) && ((*f2)->attrib & A_SUBDIR))
-        return 1;
-
-    return strcmp((*f1)->name,(*f2)->name);
-}
-
-static int
-cmpfiledates(const TFileInfo **f1,const TFileInfo **f2) {
-    if (((*f1)->attrib & A_SUBDIR) && !((*f2)->attrib & A_SUBDIR))
-        return (-1);
-    if (!((*f1)->attrib & A_SUBDIR) && ((*f2)->attrib & A_SUBDIR))
-        return 1;
-
-    return ((*f1)->time_write-(*f2)->time_write);
-}
-
-
-
-static void
-determineSortType(const char *  const query,
-                  abyss_bool *  const ascendingP,
-                  uint16_t *    const sortP,
-                  abyss_bool *  const textP,
-                  const char ** const errorP) {
-
-    *ascendingP = TRUE;
-    *sortP = 1;
-    *textP = FALSE;
-    *errorP = NULL;
-    
-    if (query) {
-        if (xmlrpc_streq(query, "plain"))
-            *textP = TRUE;
-        else if (xmlrpc_streq(query, "name-up")) {
-            *sortP = 1;
-            *ascendingP = TRUE;
-        } else if (xmlrpc_streq(query, "name-down")) {
-            *sortP = 1;
-            *ascendingP = FALSE;
-        } else if (xmlrpc_streq(query, "date-up")) {
-            *sortP = 2;
-            *ascendingP = TRUE;
-        } else if (xmlrpc_streq(query, "date-down")) {
-            *sortP = 2;
-            *ascendingP = FALSE;
-        } else  {
-            xmlrpc_asprintf(errorP, "invalid query value '%s'", query);
-        }
-    }
-}
-
-
-
-static void
-generateListing(TList *       const listP,
-                char *        const z,
-                const char *  const uri,
-                TPool *       const poolP,
-                const char ** const errorP,
-                uint16_t *    const responseStatusP) {
-    
-    TFileInfo fileinfo;
-    TFileFind findhandle;
-
-    *errorP = NULL;
-
-    if (!FileFindFirst(&findhandle, z, &fileinfo)) {
-        *responseStatusP = ResponseStatusFromErrno(errno);
-        xmlrpc_asprintf(errorP, "Can't read first entry in directory");
-    } else {
-        ListInit(listP);
-
-        do {
-            TFileInfo * fi;
-            /* Files whose names start with a dot are ignored */
-            /* This includes implicitly the ./ and ../ */
-            if (*fileinfo.name == '.') {
-                if (xmlrpc_streq(fileinfo.name, "..")) {
-                    if (xmlrpc_streq(uri, "/"))
-                        continue;
-                } else
-                    continue;
-            }
-            fi = (TFileInfo *)PoolAlloc(poolP, sizeof(fileinfo));
-            if (fi) {
-                abyss_bool success;
-                memcpy(fi, &fileinfo, sizeof(fileinfo));
-                success =  ListAdd(listP, fi);
-                if (!success)
-                    xmlrpc_asprintf(errorP, "ListAdd() failed");
-            } else
-                xmlrpc_asprintf(errorP, "PoolAlloc() failed.");
-        } while (!*errorP && FileFindNext(&findhandle, &fileinfo));
-
-        if (*errorP) {
-            *responseStatusP = 500;
-            ListFree(listP);
-        }            
-        FileFindClose(&findhandle);
-    }
-}
-
-
-
-static void
-sendDirectoryDocument(TList *      const listP,
-                      abyss_bool   const ascending,
-                      uint16_t     const sort,
-                      abyss_bool   const text,
-                      const char * const uri,
-                      MIMEType *   const mimeTypeP,
-                      TSession *   const sessionP,
-                      char *       const z) {
-
-    char *p,z1[26],z2[20],z3[9],u;
-    const char * z4;
-    int16_t i;
-    uint32_t k;
-
-    if (text) {
-        sprintf(z, "Index of %s" CRLF, uri);
-        i = strlen(z)-2;
-        p = z + i + 2;
-
-        while (i > 0) {
-            *(p++) = '-';
-            --i;
-        }
-
-        *p = '\0';
-        strcat(z, CRLF CRLF
-               "Name                      Size      "
-               "Date-Time             Type" CRLF
-               "------------------------------------"
-               "--------------------------------------------"CRLF);
-    } else {
-        sprintf(z, "<HTML><HEAD><TITLE>Index of %s</TITLE></HEAD><BODY>"
-                "<H1>Index of %s</H1><PRE>",
-                uri, uri);
-        strcat(z, "Name                      Size      "
-               "Date-Time             Type<HR WIDTH=100%>"CRLF);
-    }
-
-    HTTPWriteBodyChunk(sessionP, z, strlen(z));
-
-    /* Sort the files */
-    qsort(listP->item, listP->size, sizeof(void *),
-          (TQSortProc)(sort == 1 ? cmpfilenames : cmpfiledates));
-    
-    /* Write the listing */
-    if (ascending)
-        i = 0;
-    else
-        i = listP->size - 1;
-
-    while ((i < listP->size) && (i >= 0)) {
-        TFileInfo * fi;
-        struct tm ftm;
-
-        fi = listP->item[i];
-
-        if (ascending)
-            ++i;
-        else
-            --i;
-            
-        strcpy(z, fi->name);
-
-        k = strlen(z);
-
-        if (fi->attrib & A_SUBDIR) {
-            z[k++] = '/';
-            z[k] = '\0';
-        }
-
-        if (k > 24) {
-            z[10] = '\0';
-            strcpy(z1, z);
-            strcat(z1, "...");
-            strcat(z1, z + k - 11);
-            k = 24;
-            p = z1 + 24;
-        } else {
-            strcpy(z1, z);
-            
-            ++k;
-            p = z1 + k;
-            while (k < 25)
-                z1[k++] = ' ';
-            
-            z1[25] = '\0';
-        }
-
-        ftm = *gmtime(&fi->time_write);
-        sprintf(z2, "%02u/%02u/%04u %02u:%02u:%02u",ftm.tm_mday,ftm.tm_mon,
-                ftm.tm_year+1900,ftm.tm_hour,ftm.tm_min,ftm.tm_sec);
-
-        if (fi->attrib & A_SUBDIR) {
-            strcpy(z3, "   --  ");
-            z4 = "Directory";
-        } else {
-            if (fi->size < 9999)
-                u = 'b';
-            else {
-                fi->size /= 1024;
-                if (fi->size < 9999)
-                    u = 'K';
-                else {
-                    fi->size /= 1024;
-                    if (fi->size < 9999)
-                        u = 'M';
-                    else
-                        u = 'G';
-                }
-            }
-                
-            sprintf(z3, "%5llu %c", fi->size, u);
-            
-            if (xmlrpc_streq(fi->name, ".."))
-                z4 = "";
-            else
-                z4 = MIMETypeFromFileName2(mimeTypeP, fi->name);
-
-            if (!z4)
-                z4 = "Unknown";
-        }
-
-        if (text)
-            sprintf(z, "%s%s %s    %s   %s"CRLF, z1, p, z3, z2, z4);
-        else
-            sprintf(z, "<A HREF=\"%s%s\">%s</A>%s %s    %s   %s"CRLF,
-                    fi->name, fi->attrib & A_SUBDIR ? "/" : "",
-                    z1, p, z3, z2, z4);
-
-        HTTPWriteBodyChunk(sessionP, z, strlen(z));
-    }
-        
-    /* Write the tail of the file */
-    if (text)
-        strcpy(z, SERVER_PLAIN_INFO);
-    else
-        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>" CRLF CRLF);
-    
-    HTTPWriteBodyChunk(sessionP, z, strlen(z));
-}
-
-
-
-static abyss_bool
-notRecentlyModified(TSession * const sessionP,
-                    time_t     const fileModTime) {
-
-    abyss_bool retval;
-    const char * imsHdr;
-
-    imsHdr = RequestHeaderValue(sessionP, "if-modified-since");
-    if (imsHdr) {
-        abyss_bool valid;
-        time_t datetime;
-        DateDecode(imsHdr, &valid, &datetime);
-        if (valid) {
-            if (MIN(fileModTime, sessionP->date) <= datetime)
-                retval = TRUE;
-            else
-                retval = FALSE;
-        } else
-            retval = FALSE;
-    } else
-        retval = FALSE;
-
-    return retval;
-}
-
-
-
-static void
-addLastModifiedHeader(TSession * const sessionP,
-                      time_t     const fileModTime) {
-
-    const char * lastModifiedValue;
-
-    DateToString(MIN(fileModTime, sessionP->date), &lastModifiedValue);
-
-    if (lastModifiedValue) {
-        ResponseAddField(sessionP, "Last-Modified", lastModifiedValue);
-        xmlrpc_strfree(lastModifiedValue);
-    }
-}
-    
-
-
-static abyss_bool
-ServerDirectoryHandler(TSession * const sessionP,
-                       char *     const z,
-                       time_t     const fileModTime,
-                       MIMEType * const mimeTypeP) {
-
-    TList list;
-    abyss_bool text;
-    abyss_bool ascending;
-    uint16_t sort;    /* 1=by name, 2=by date */
-    TPool pool;
-    const char * error;
-    uint16_t responseStatus;
-    
-    determineSortType(sessionP->requestInfo.query,
-                      &ascending, &sort, &text, &error);
-
-    if (error) {
-        ResponseStatus(sessionP, 400);
-        xmlrpc_strfree(error);
-        return TRUE;
-    }
-
-    if (notRecentlyModified(sessionP, fileModTime)) {
-        ResponseStatus(sessionP, 304);
-        ResponseWriteStart(sessionP);
-        return TRUE;
-    }
-
-    if (!PoolCreate(&pool, 1024)) {
-        ResponseStatus(sessionP, 500);
-        return TRUE;
-    }
-
-    generateListing(&list, z, sessionP->requestInfo.uri,
-                    &pool, &error, &responseStatus);
-    if (error) {
-        ResponseStatus(sessionP, responseStatus);
-        xmlrpc_strfree(error);
-        PoolFree(&pool);
-        return TRUE;
-    }
-
-    /* Send something to the user to show that we are still alive */
-    ResponseStatus(sessionP, 200);
-    ResponseContentType(sessionP, (text ? "text/plain" : "text/html"));
-
-    addLastModifiedHeader(sessionP, fileModTime);
-
-    ResponseChunked(sessionP);
-    ResponseWriteStart(sessionP);
-
-    if (sessionP->requestInfo.method!=m_head)
-        sendDirectoryDocument(&list, ascending, sort, text,
-                              sessionP->requestInfo.uri, mimeTypeP,
-                              sessionP, z);
-
-    HTTPWriteEndChunk(sessionP);
-
-    /* Free memory and exit */
-    ListFree(&list);
-    PoolFree(&pool);
-
-    return TRUE;
-}
-
-
-
-#define BOUNDARY    "##123456789###BOUNDARY"
-
-static void
-sendBody(TSession *   const sessionP,
-         TFile *      const fileP,
-         uint64_t     const filesize,
-         const char * const mediatype,
-         uint64_t     const start0,
-         uint64_t     const end0,
-         char *       const z) {
-
-    if (sessionP->ranges.size == 0)
-        ConnWriteFromFile(sessionP->conn, fileP, 0, filesize - 1, z, 4096, 0);
-    else if (sessionP->ranges.size == 1)
-        ConnWriteFromFile(sessionP->conn, fileP, start0, end0, z, 4096, 0);
-    else {
-        uint64_t i;
-        for (i = 0; i <= sessionP->ranges.size; ++i) {
-            ConnWrite(sessionP->conn, "--", 2);
-            ConnWrite(sessionP->conn, BOUNDARY, strlen(BOUNDARY));
-            ConnWrite(sessionP->conn, CRLF, 2);
-
-            if (i < sessionP->ranges.size) {
-                uint64_t start;
-                uint64_t end;
-                abyss_bool decoded;
-                    
-                decoded = RangeDecode((char *)(sessionP->ranges.item[i]),
-                                      filesize,
-                                      &start, &end);
-                if (decoded) {
-                    /* Entity header, not response header */
-                    sprintf(z, "Content-type: %s" CRLF
-                            "Content-range: bytes %llu-%llu/%llu" CRLF
-                            "Content-length: %llu" CRLF
-                            CRLF, mediatype, start, end,
-                            filesize, end-start+1);
-
-                    ConnWrite(sessionP->conn, z, strlen(z));
-
-                    ConnWriteFromFile(sessionP->conn, fileP, start, end, z,
-                                      4096, 0);
-                }
-            }
-        }
-    }
-}
-
-
-
-static abyss_bool
-ServerFileHandler(TSession * const r,
-                  char *     const fileName,
-                  time_t     const fileModTime,
-                  MIMEType * const mimeTypeP) {
-/*----------------------------------------------------------------------------
-   This is an HTTP request handler for a GET.  It does the classic
-   web server thing: send the file named in the URL to the client.
------------------------------------------------------------------------------*/
-    const char * mediatype;
-    TFile file;
-    uint64_t filesize;
-    uint64_t start;
-    uint64_t end;
-    
-    mediatype = MIMETypeGuessFromFile2(mimeTypeP, fileName);
-
-    if (!FileOpen(&file, fileName, O_BINARY | O_RDONLY)) {
-        ResponseStatusErrno(r);
-        return TRUE;
-    }
-
-    if (notRecentlyModified(r, fileModTime)) {
-        ResponseStatus(r, 304);
-        ResponseWriteStart(r);
-        return TRUE;
-    }
-
-    filesize = FileSize(&file);
-
-    switch (r->ranges.size) {
-    case 0:
-        ResponseStatus(r, 200);
-        break;
-
-    case 1: {
-        abyss_bool decoded;
-        decoded = RangeDecode((char *)(r->ranges.item[0]), filesize,
-                              &start, &end);
-        if (!decoded) {
-            ListFree(&(r->ranges));
-            ResponseStatus(r, 200);
-            break;
-        }
-
-        {
-            const char * contentRange;
-            xmlrpc_asprintf(&contentRange, "bytes %llu-%llu/%llu",
-                            start, end, filesize);
-            ResponseAddField(r, "Content-range", contentRange);
-            xmlrpc_strfree(contentRange);
-        }
-        ResponseContentLength(r, end - start + 1);
-        ResponseStatus(r, 206);
-    } break;
-
-    default:
-        ResponseContentType(r, "multipart/ranges; boundary=" BOUNDARY);
-        ResponseStatus(r, 206);
-        break;
-    }
-    
-    if (r->ranges.size == 0) {
-        ResponseContentLength(r, filesize);
-        ResponseContentType(r, mediatype);
-    }
-    
-    addLastModifiedHeader(r, fileModTime);
-
-    ResponseWriteStart(r);
-
-    if (r->requestInfo.method != m_head)
-        sendBody(r, &file, filesize, mediatype, start, end, fileName);
-
-    FileClose(&file);
-
-    return TRUE;
-}
-
-
-
-static void
-convertToNativeFileName(char * const fileName ATTR_UNUSED) {
-
-#ifdef WIN32
-    char * p;
-    p = &fileName[0];
-    while (*p) {
-        if ((*p) == '/')
-            *p= '\\';
-
-        ++p;
-    }
-#endif  /* WIN32 */
-}
-
-
-
-static abyss_bool
-ServerDefaultHandlerFunc(TSession * const sessionP) {
-
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
-
-    char *p;
-    char z[4096];
-    TFileStat fs;
-    unsigned int i;
-    abyss_bool endingslash=FALSE;
-
-    if (!RequestValidURIPath(sessionP)) {
-        ResponseStatus(sessionP, 400);
-        return TRUE;
-    }
-
-    /* Must check for * (asterisk uri) in the future */
-    if (sessionP->requestInfo.method == m_options) {
-        ResponseAddField(sessionP, "Allow", "GET, HEAD");
-        ResponseContentLength(sessionP, 0);
-        ResponseStatus(sessionP, 200);
-        return TRUE;
-    }
-
-    if ((sessionP->requestInfo.method != m_get) &&
-        (sessionP->requestInfo.method != m_head)) {
-        ResponseAddField(sessionP, "Allow", "GET, HEAD");
-        ResponseStatus(sessionP, 405);
-        return TRUE;
-    }
-
-    strcpy(z, srvP->filespath);
-    strcat(z, sessionP->requestInfo.uri);
-
-    p = z + strlen(z) - 1;
-    if (*p == '/') {
-        endingslash = TRUE;
-        *p = '\0';
-    }
-
-    convertToNativeFileName(z);
-
-    if (!FileStat(z, &fs)) {
-        ResponseStatusErrno(sessionP);
-        return TRUE;
-    }
-
-    if (fs.st_mode & S_IFDIR) {
-        /* Redirect to the same directory but with the ending slash
-        ** to avoid problems with some browsers (IE for examples) when
-        ** they generate relative urls */
-        if (!endingslash) {
-            strcpy(z, sessionP->requestInfo.uri);
-            p = z+strlen(z);
-            *p = '/';
-            *(p+1) = '\0';
-            ResponseAddField(sessionP, "Location", z);
-            ResponseStatus(sessionP, 302);
-            ResponseWriteStart(sessionP);
-            return TRUE;
-        }
-
-        *p = DIRECTORY_SEPARATOR[0];
-        ++p;
-
-        i = srvP->defaultfilenames.size;
-        while (i-- > 0) {
-            *p = '\0';        
-            strcat(z, (srvP->defaultfilenames.item[i]));
-            if (FileStat(z, &fs)) {
-                if (!(fs.st_mode & S_IFDIR))
-                    return ServerFileHandler(sessionP, z, fs.st_mtime,
-                                             srvP->mimeTypeP);
-            }
-        }
-
-        *(p-1) = '\0';
-        
-        if (!FileStat(z, &fs)) {
-            ResponseStatusErrno(sessionP);
-            return TRUE;
-        }
-        return ServerDirectoryHandler(sessionP, z, fs.st_mtime,
-                                      srvP->mimeTypeP);
-    } else
-        return ServerFileHandler(sessionP, z, fs.st_mtime,
-                                 srvP->mimeTypeP);
 }
 
 
@@ -755,26 +146,33 @@ createServer(struct _TServer ** const srvPP,
                             errorP);
 
         if (!*errorP) {
-            srvP->defaulthandler   = ServerDefaultHandlerFunc;
+            srvP->builtinHandlerP = HandlerCreate();
+            if (!srvP->builtinHandlerP)
+                xmlrpc_asprintf(errorP, "Unable to allocate space for "
+                                "builtin handler descriptor");
+            else {
+                srvP->defaultHandler   = HandlerDefaultBuiltin;
+                srvP->defaultHandlerContext = srvP->builtinHandlerP;
 
-            srvP->name             = strdup("unnamed");
-            srvP->filespath        = strdup(DEFAULT_DOCS);
-            srvP->logfilename      = NULL;
-            srvP->keepalivetimeout = 15;
-            srvP->keepalivemaxconn = 30;
-            srvP->timeout          = 15;
-            srvP->advertise        = TRUE;
-            srvP->mimeTypeP        = NULL;
-            srvP->useSigchld       = FALSE;
+                srvP->name             = strdup("unnamed");
+                srvP->logfilename      = NULL;
+                srvP->keepalivetimeout = 15;
+                srvP->keepalivemaxconn = 30;
+                srvP->timeout          = 15;
+                srvP->advertise        = TRUE;
+                srvP->useSigchld       = FALSE;
             
-            initUnixStuff(srvP);
+                initUnixStuff(srvP);
 
-            ListInitAutoFree(&srvP->handlers);
-            ListInitAutoFree(&srvP->defaultfilenames);
+                ListInitAutoFree(&srvP->handlers);
 
-            srvP->logfileisopen = FALSE;
+                srvP->logfileisopen = FALSE;
+                
+                *errorP = NULL;
 
-            *errorP = NULL;
+                if (*errorP)
+                    HandlerDestroy(srvP->builtinHandlerP);
+            }
         }        
         if (*errorP)
             free(srvP);
@@ -997,14 +395,12 @@ ServerFree(TServer * const serverP) {
 
     xmlrpc_strfree(srvP->name);
 
-    xmlrpc_strfree(srvP->filespath);
-    
-    ListFree(&srvP->defaultfilenames);
-
     terminateHandlers(&srvP->handlers);
 
     ListFree(&srvP->handlers);
 
+    HandlerDestroy(srvP->builtinHandlerP);
+    
     logClose(srvP);
 
     if (srvP->logfilename)
@@ -1030,9 +426,7 @@ void
 ServerSetFilesPath(TServer *    const serverP,
                    const char * const filesPath) {
 
-    xmlrpc_strfree(serverP->srvP->filespath);
-    
-    serverP->srvP->filespath = strdup(filesPath);
+    HandlerSetFilesPath(serverP->srvP->builtinHandlerP, filesPath);
 }
 
 
@@ -1089,9 +483,9 @@ ServerSetAdvertise(TServer *  const serverP,
 
 void
 ServerSetMimeType(TServer *  const serverP,
-                  MIMEType * const MIMETypeP) {
-
-    serverP->srvP->mimeTypeP = MIMETypeP;
+                  MIMEType * const mimeTypeP) {
+    
+    HandlerSetMimeType(serverP->srvP->builtinHandlerP, mimeTypeP);
 }
 
 
@@ -1113,9 +507,11 @@ runUserHandler(TSession *        const sessionP,
         else if (handlerP->handleReq1)
             handled = handlerP->handleReq1(sessionP);
     }
+
+    assert(srvP->defaultHandler);
     
     if (!handled)
-        ((URIHandler)(srvP->defaulthandler))(sessionP);
+        srvP->defaultHandler(sessionP);
 }
 
 
@@ -1882,9 +1278,11 @@ ServerDefaultHandler(TServer *  const serverP,
     struct _TServer * const srvP = serverP->srvP;
 
     if (handler)
-        srvP->defaulthandler = handler;
-    else
-        srvP->defaulthandler = ServerDefaultHandlerFunc;
+        srvP->defaultHandler = handler;
+    else {
+        srvP->defaultHandler = HandlerDefaultBuiltin;
+        srvP->defaultHandlerContext = srvP->builtinHandlerP;
+    }
 }
 
 

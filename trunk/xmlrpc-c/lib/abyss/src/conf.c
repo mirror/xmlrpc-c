@@ -50,6 +50,7 @@
 #include "trace.h"
 #include "server.h"
 #include "http.h"
+#include "handler.h"
 
 /*********************************************************************
 ** Configuration Files Parsing Functions
@@ -290,7 +291,8 @@ abyss_bool
 ConfReadServerFile(const char * const filename,
                    TServer *    const serverP) {
 
-    struct _TServer * const srvP = serverP->srvP;
+    struct _TServer * const srvP     = serverP->srvP;
+    BIHandler *       const handlerP = srvP->builtinHandlerP;
 
     TFile f;
     char z[512];
@@ -326,8 +328,7 @@ ConfReadServerFile(const char * const filename,
                 } else if (strcasecmp(option, "path") == 0) {
                     if (FileStat(p, &fs))
                         if (fs.st_mode & S_IFDIR) {
-                            xmlrpc_strfree(srvP->filespath);
-                            srvP->filespath = strdup(p);
+                            HandlerSetFilesPath(handlerP, p);
                             continue;
                         }
                     TraceExit("Invalid path '%s'", p);
@@ -335,7 +336,7 @@ ConfReadServerFile(const char * const filename,
                     const char * filename;
                     
                     while ((filename = ConfGetToken(&p))) {
-                        ListAdd(&srvP->defaultfilenames, strdup(filename));
+                        HandlerAddDefaultFN(handlerP, filename);
                         if (!ConfNextToken(&p))
                             break;
                     }
@@ -354,9 +355,12 @@ ConfReadServerFile(const char * const filename,
                     } else
                         TraceExit("Invalid TimeOut value '%s'", p);
                 } else if (strcasecmp(option, "mimetypes") == 0) {
-                    readMIMETypesFile(p, &srvP->mimeTypeP);
-                    if (!srvP->mimeTypeP)
+                    MIMEType * mimeTypeP;
+                    readMIMETypesFile(p, &mimeTypeP);
+                    if (!mimeTypeP)
                         TraceExit("Can't read MIME Types file '%s'", p);
+                    else
+                        HandlerSetMimeType(handlerP, mimeTypeP);
                 } else if (strcasecmp(option,"logfile") == 0) {
                     srvP->logfilename = strdup(p);
                 } else if (strcasecmp(option,"user") == 0) {

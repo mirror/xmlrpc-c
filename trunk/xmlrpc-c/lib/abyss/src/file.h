@@ -99,17 +99,17 @@ FileWrite(TFile *      const f,
           uint32_t     const len);
 
 int32_t
-FileRead(TFile *  const f,
-         void *   const buffer,
-         uint32_t const len);
+FileRead(const TFile * const fileP,
+         void *        const buffer,
+         uint32_t      const len);
 
 abyss_bool
-FileSeek(TFile *  const f,
-         uint64_t const pos,
-         uint32_t const attrib);
+FileSeek(const TFile * const fileP,
+         uint64_t      const pos,
+         uint32_t      const attrib);
 
 uint64_t
-FileSize(TFile * const f);
+FileSize(const TFile * const fileP);
 
 abyss_bool
 FileStat(const char * const filename,

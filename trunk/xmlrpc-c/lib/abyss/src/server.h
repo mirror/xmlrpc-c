@@ -32,7 +32,6 @@ struct _TServer {
     TFile logfile;
     TMutex logmutex;
     const char * name;
-    const char * filespath;
     abyss_bool serverAcceptsConnections;
         /* We listen for and accept TCP connections for HTTP transactions.
            (The alternative is the user supplies a TCP-connected socket
@@ -55,15 +54,17 @@ struct _TServer {
 
            Each item in the list of of type 'URIHandler2'.
         */
-    TList defaultfilenames;
-    URIHandler defaulthandler;
+    URIHandler defaultHandler;
         /* The handler for HTTP requests that aren't claimed by any handler
            in the list 'handlers'.  This can't be null; if user doesn't
            supply anything better, it is a built-in basic web server
            handler.  */
+    void * defaultHandlerContext;
+        /* This is opaque data to be given to the default handler when it
+           requests it.
+        */
+    void * builtinHandlerP;
     abyss_bool advertise;
-    MIMEType * mimeTypeP;
-        /* NULL means to use the global MIMEType object */
     abyss_bool useSigchld;
         /* Meaningless if not using forking for threads.
            TRUE means user will call ServerHandleSigchld to indicate that

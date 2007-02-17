@@ -138,3 +138,10 @@ SessionLog(TSession * const sessionP) {
 
 
 
+void *
+SessionGetDefaultHandlerCtx(TSession * const sessionP) {
+
+    struct _TServer * const srvP = sessionP->conn->server->srvP;
+
+    return srvP->defaultHandlerContext;
+}

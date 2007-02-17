@@ -79,32 +79,37 @@ FileWrite(TFile *      const f,
 #endif
 }
 
-int32_t FileRead(TFile *f, void *buffer, uint32_t len)
-{
+int32_t
+FileRead(const TFile * const fileP,
+         void *        const buffer,
+         uint32_t      const len) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_read(*f,buffer,len));
+    return (_read(*fileP, buffer, len));
 #else
-    return (read(*f,buffer,len));
+    return (read(*fileP, buffer, len));
 #endif
 }
 
-abyss_bool FileSeek(TFile *f, uint64_t pos, uint32_t attrib)
-{
+abyss_bool
+FileSeek(const TFile * const fileP,
+         uint64_t      const pos,
+         uint32_t      const attrib) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_lseek(*f,pos,attrib)!=(-1));
+    return (_lseek(*fileP, pos, attrib)!=(-1));
 #else
-    return (lseek(*f,pos,attrib)!=(-1));
+    return (lseek(*fileP, pos, attrib)!=(-1));
 #endif
 }
 
-uint64_t FileSize(TFile *f)
-{
+uint64_t
+FileSize(const TFile * const fileP) {
+
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_filelength(*f));
+    return (_filelength(fileP));
 #else
     struct stat fs;
 
-    fstat(*f,&fs);
+    fstat(*fileP, &fs);
     return (fs.st_size);
 #endif  
 }

@@ -91,13 +91,13 @@ ConnReadHeader(TConn * const connectionP,
                char ** const headerP);
 
 abyss_bool
-ConnWriteFromFile(TConn *  const connectionP,
-                  TFile *  const file,
-                  uint64_t const start,
-                  uint64_t const end,
-                  void *   const buffer,
-                  uint32_t const buffersize,
-                  uint32_t const rate);
+ConnWriteFromFile(TConn *       const connectionP,
+                  const TFile * const fileP,
+                  uint64_t      const start,
+                  uint64_t      const last,
+                  void *        const buffer,
+                  uint32_t      const buffersize,
+                  uint32_t      const rate);
 
 TServer *
 ConnServer(TConn * const connectionP);

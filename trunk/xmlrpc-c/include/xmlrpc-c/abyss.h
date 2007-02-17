@@ -260,14 +260,21 @@ abyss_bool
 ServerAddHandler(TServer * const srvP,
                  URIHandler const handler);
 
-void
-ServerDefaultHandler(TServer *  const srvP,
-                     URIHandler const handler);
+typedef abyss_bool (*THandlerDflt) (TSession *);
 
-/* This is inappropriately named; it was a mistake.  But then, so is
-   having this function at all.  The config file is inappropriate for
-   an API.
+/* Note: 'handler' used to be URIHandler;  THandlerDflt is a newer name
+   for the same type
 */
+
+void
+ServerDefaultHandler(TServer *    const srvP,
+                     THandlerDflt const handler);
+
+/* ConfReadServerFile() is inappropriately named; it was a mistake.
+   But then, so is having this function at all.  The config file is
+   inappropriate for an API.
+*/
+
 abyss_bool
 ConfReadServerFile(const char * const filename,
                    TServer *    const srvP);
@@ -333,6 +340,9 @@ SessionGetRequestInfo(TSession *            const sessionP,
 void
 SessionGetChannelInfo(TSession * const sessionP,
                       void **    const channelInfoPP);
+
+void *
+SessionGetDefaultHandlerCtx(TSession * const sessionP);
 
 char *
 RequestHeaderValue(TSession *   const sessionP,
