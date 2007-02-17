@@ -711,7 +711,7 @@ logClose(struct _TServer * const srvP) {
 static void
 initChanSwitchStuff(struct _TServer * const srvP,
                     abyss_bool        const noAccept,
-                    TChanSwitch *         const userSwitchP,
+                    TChanSwitch *     const userSwitchP,
                     uint16_t          const port,
                     const char **     const errorP) {
     
@@ -737,7 +737,7 @@ initChanSwitchStuff(struct _TServer * const srvP,
 static void
 createServer(struct _TServer ** const srvPP,
              abyss_bool         const noAccept,
-             TChanSwitch *          const userChanSwitchP,
+             TChanSwitch *      const userChanSwitchP,
              uint16_t           const portNumber,             
              const char **      const errorP) {
 
@@ -755,7 +755,7 @@ createServer(struct _TServer ** const srvPP,
                             errorP);
 
         if (!*errorP) {
-            srvP->defaulthandler = ServerDefaultHandlerFunc;
+            srvP->defaulthandler   = ServerDefaultHandlerFunc;
 
             srvP->name             = strdup("unnamed");
             srvP->filespath        = strdup(DEFAULT_DOCS);
@@ -936,7 +936,7 @@ ServerCreateNoAccept(TServer *    const serverP,
 
 void
 ServerCreateSwitch(TServer *     const serverP,
-                   TChanSwitch *     const chanSwitchP,
+                   TChanSwitch * const chanSwitchP,
                    const char ** const errorP) {
     
     abyss_bool const noAcceptFalse = FALSE;
