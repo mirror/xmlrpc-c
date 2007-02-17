@@ -49,8 +49,18 @@ struct _TServer {
            or a data chunk from the channel.
         */
     TList handlers;
+        /* Ordered list of HTTP request handlers.  For each HTTP request,
+           Server calls each one in order until one reports that it handled
+           it.
+
+           Each item in the list of of type 'URIHandler2'.
+        */
     TList defaultfilenames;
-    void * defaulthandler;
+    URIHandler defaulthandler;
+        /* The handler for HTTP requests that aren't claimed by any handler
+           in the list 'handlers'.  This can't be null; if user doesn't
+           supply anything better, it is a built-in basic web server
+           handler.  */
     abyss_bool advertise;
     MIMEType * mimeTypeP;
         /* NULL means to use the global MIMEType object */
