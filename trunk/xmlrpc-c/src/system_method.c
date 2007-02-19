@@ -798,7 +798,7 @@ registerSystemMethod(xmlrpc_env *           const envP,
     
     if (env.fault_occurred)
         xmlrpc_faultf(envP, "Failed to register '%s' system method.  %s",
-                      methodReg.methodName, envP->fault_string);
+                      methodReg.methodName, env.fault_string);
     
     xmlrpc_env_clean(&env);
 }
