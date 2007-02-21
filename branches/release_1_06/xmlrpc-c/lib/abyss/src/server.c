@@ -1732,10 +1732,8 @@ void
 ServerDefaultHandler(TServer *  const serverP,
                      URIHandler const handler) {
 
-    if (handler == NULL)
-        srvP->defaulthandler = ServerDefaultHandlerFunc;
-    else 
-        serverP->srvP->defaulthandler = handler;
+    serverP->srvP->defaulthandler =
+        handler ? handler : ServerDefaultHandlerFunc;
 }
 
 
