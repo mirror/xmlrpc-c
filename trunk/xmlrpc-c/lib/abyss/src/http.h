@@ -15,7 +15,11 @@ void RequestRead(TSession *r);
 void RequestInit(TSession *r,TConn *c);
 void RequestFree(TSession *r);
 
-abyss_bool RequestAuth(TSession *r,char *credential,char *user,char *pass);
+abyss_bool
+RequestAuth(TSession *   const sessionP,
+            const char * const credential,
+            const char * const user,
+            const char * const pass);
 
 /*********************************************************************
 ** HTTP

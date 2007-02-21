@@ -389,7 +389,6 @@ parseRequestLine(char *           const requestLine,
         /* URI and Query Decoding */
         NextToken((const char **)&p);
 
-        
         requestUri = GetToken(&p);
         if (!requestUri)
             *httpErrorCodeP = 400;  /* Bad Request */
@@ -700,33 +699,64 @@ RequestValidURIPath(TSession * const sessionP) {
 
 
 abyss_bool
-RequestAuth(TSession *r,char *credential,char *user,char *pass) {
+RequestAuth(TSession *   const sessionP,
+            const char * const credential,
+            const char * const user,
+            const char * const pass) {
+/*----------------------------------------------------------------------------
+   Authenticate requester, in a very simplistic fashion.
 
-    char *p,*x;
-    char z[80],t[80];
+   If the request specifies basic authentication (via Authorization
+   header) with username 'user', password 'pass', then return TRUE.
+   Else, return FALSE and set up an authorization failure response
+   (HTTP response status 401) that says user must supply an identity
+   in the 'credential' domain.
 
-    p=RequestHeaderValue(r,"authorization");
-    if (p) {
-        NextToken((const char **)&p);
-        x=GetToken(&p);
-        if (x) {
-            if (strcasecmp(x,"basic")==0) {
-                NextToken((const char **)&p);
-                sprintf(z,"%s:%s",user,pass);
-                Base64Encode(z,t);
+   When we return TRUE, we also set the username in the request info
+   to 'user' so that a future SessionGetRequestInfo can get it.
+-----------------------------------------------------------------------------*/
+    abyss_bool authorized;
+    char * authHdrPtr;
 
-                if (strcmp(p,t)==0) {
-                    r->requestInfo.user=strdup(user);
-                    return TRUE;
-                };
-            };
-        }
-    };
+    authHdrPtr = RequestHeaderValue(sessionP, "authorization");
+    if (authHdrPtr) {
+        const char * authType;
+        NextToken((const char **)&authHdrPtr);
+        GetTokenConst(&authHdrPtr, &authType);
+        authType = GetToken(&authHdrPtr);
+        if (authType) {
+            if (xmlrpc_strcaseeq(authType, "basic")) {
+                const char * userPass;
+                char userPassEncoded[80];
 
-    sprintf(z,"Basic realm=\"%s\"",credential);
-    ResponseAddField(r,"WWW-Authenticate",z);
-    ResponseStatus(r,401);
-    return FALSE;
+                NextToken((const char **)&authHdrPtr);
+
+                xmlrpc_asprintf(&userPass, "%s:%s", user, pass);
+                Base64Encode(userPass, userPassEncoded);
+                xmlrpc_strfree(userPass);
+
+                if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
+                    sessionP->requestInfo.user = strdup(user);
+                    authorized = TRUE;
+                } else
+                    authorized = FALSE;
+            } else
+                authorized = FALSE;
+        } else
+            authorized = FALSE;
+    } else
+        authorized = FALSE;
+
+    if (!authorized) {
+        const char * hdrValue;
+        xmlrpc_asprintf(&hdrValue, "Basic realm=\"%s\"", credential);
+        ResponseAddField(sessionP, "WWW-Authenticate", hdrValue);
+
+        xmlrpc_strfree(hdrValue);
+
+        ResponseStatus(sessionP, 401);
+    }
+    return authorized;
 }
 
 

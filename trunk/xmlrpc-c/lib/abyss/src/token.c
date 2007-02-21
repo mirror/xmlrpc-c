@@ -52,3 +52,11 @@ GetToken(char ** const pP) {
     }
 }
 
+
+
+void
+GetTokenConst(char **       const pP,
+              const char ** const tokenP) {
+
+    *tokenP = GetToken(pP);
+}

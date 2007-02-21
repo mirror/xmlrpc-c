@@ -626,8 +626,10 @@ MIMETypeGuessFromFile(const char * const fileName) {
 ** Base64
 *********************************************************************/
 
-void Base64Encode(char *s,char *d)
-{
+void
+Base64Encode(const char * const chars,
+             char *       const base64) {
+
     /* Conversion table. */
     static char tbl[64] = {
         'A','B','C','D','E','F','G','H',
@@ -640,12 +642,16 @@ void Base64Encode(char *s,char *d)
         '4','5','6','7','8','9','+','/'
     };
 
-    uint32_t i,length=strlen(s);
-    char *p=d;
+    uint i;
+    uint32_t length;
+    char * p;
+    const char * s;
     
+    length = strlen(chars);  /* initial value */
+    s = &chars[0];  /* initial value */
+    p = &base64[0];  /* initial value */
     /* Transform the 3x8 bits to 4x6 bits, as required by base64. */
-    for (i = 0; i < length; i += 3)
-    {
+    for (i = 0; i < length; i += 3) {
         *p++ = tbl[s[0] >> 2];
         *p++ = tbl[((s[0] & 3) << 4) + (s[1] >> 4)];
         *p++ = tbl[((s[1] & 0xf) << 2) + (s[2] >> 6)];
@@ -662,6 +668,8 @@ void Base64Encode(char *s,char *d)
     /* ...and zero-terminate it. */
     *p = '\0';
 }
+
+
 
 /******************************************************************************
 **
