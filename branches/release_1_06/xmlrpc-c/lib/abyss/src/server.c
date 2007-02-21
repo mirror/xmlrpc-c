@@ -255,7 +255,7 @@ sendDirectoryDocument(TList *      const listP,
         }
 
         ftm = *gmtime(&fi->time_write);
-        sprintf(z2, "%02u/%02u/%04u %02u:%02u:%02u",ftm.tm_mday,ftm.tm_mon,
+        sprintf(z2, "%02u/%02u/%04u %02u:%02u:%02u",ftm.tm_mday,ftm.tm_mon+1,
                 ftm.tm_year+1900,ftm.tm_hour,ftm.tm_min,ftm.tm_sec);
 
         if (fi->attrib & A_SUBDIR) {
@@ -1732,7 +1732,10 @@ void
 ServerDefaultHandler(TServer *  const serverP,
                      URIHandler const handler) {
 
-    serverP->srvP->defaulthandler = handler;
+    if (handler == NULL)
+        srvP->defaulthandler = ServerDefaultHandlerFunc;
+    else 
+        serverP->srvP->defaulthandler = handler;
 }
 
 
