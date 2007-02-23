@@ -957,7 +957,7 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
   to the appropriate value as *resultP and return NULL as
   *faultStringP and nothing as *faultCodeP.
 
-  If the response valid, but indicates a failure of the RPC, return the
+  If the response is valid, but indicates a failure of the RPC, return the
   fault string in newly malloc'ed space as *faultStringP and the fault
   code as *faultCodeP and nothing as *resultP.
 
