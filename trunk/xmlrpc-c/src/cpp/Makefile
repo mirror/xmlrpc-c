@@ -102,8 +102,8 @@ all: \
 
 # Rules for these are in Makefile.common, courtesy of TARGET_LIB_NAMES_PP:
 
-$(LIBXMLRPC_CPP): XmlRpcCpp.o
-$(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.o
+$(LIBXMLRPC_CPP): XmlRpcCpp.osh
+$(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.osh
 
 $(LIBXMLRPCPP): $(LIBXMLRPCPP_MODS:%=%.osh)
 $(LIBXMLRPCPP): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
