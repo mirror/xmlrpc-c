@@ -159,7 +159,7 @@ ifeq ($(HOST_OS),linux-gnu)
   CFLAGS_SHLIB=-fPIC
 endif
 
-ifeq ($(findstring solaris,$(HOST_OS)),FIND)
+ifeq ($(findstring solaris,$(HOST_OS)),solaris)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
@@ -204,7 +204,7 @@ ifeq ($(HOST_OS),osf)
   LDFLAGS_SHLIB = -shared -expect_unresolved
 endif
 
-ifeq ($(findstring netbsd,$(HOST_OS)),FIND)
+ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
