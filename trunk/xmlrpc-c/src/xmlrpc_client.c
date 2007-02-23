@@ -1073,9 +1073,19 @@ xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
 
 
 const char * 
-xmlrpc_client_get_default_transport(xmlrpc_env * const env ATTR_UNUSED) {
+xmlrpc_client_get_default_transport(xmlrpc_env * const envP ATTR_UNUSED) {
 
     return XMLRPC_DEFAULT_TRANSPORT;
+}
+
+
+
+void
+xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
+                            int *           const interruptP) {
+
+    if (clientP->transportOps.set_interrupt)
+        clientP->transportOps.set_interrupt(clientP->transportP, interruptP);
 }
 
 

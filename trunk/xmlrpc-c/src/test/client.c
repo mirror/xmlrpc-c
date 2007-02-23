@@ -162,6 +162,7 @@ testCreateDestroy(void) {
     xmlrpc_client * clientP;
     struct xmlrpc_clientparms clientParms1;
     struct xmlrpc_curl_xportparms curlTransportParms1;
+    int interrupt;
 
     xmlrpc_env_init(&env);
 
@@ -207,6 +208,10 @@ testCreateDestroy(void) {
                          &clientParms1, XMLRPC_CPSIZE(transportparm_size),
                          &clientP);
     TEST_NO_FAULT(&env);
+
+    xmlrpc_client_set_interrupt(clientP, &interrupt);
+    xmlrpc_client_set_interrupt(clientP, NULL);
+
     xmlrpc_client_destroy(clientP);
 
     testCreateCurlParms();

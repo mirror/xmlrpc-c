@@ -312,7 +312,7 @@ typedef struct {
     const char * requestline;
     const char * user;
         /* Requesting user (from authorization: header).  NULL if
-           request doesn't specify
+           request doesn't specify or handler has not authenticated it.
         */
     unsigned short port;
         /* The port number from the URI, or default 80 if the URI doesn't
@@ -519,7 +519,9 @@ abyss_bool DateInit(void);
 ** Base64
 *********************************************************************/
 
-void Base64Encode(char *s,char *d);
+void
+Base64Encode(const char * const chars,
+             char *       const base64);
 
 /*********************************************************************
 ** Session

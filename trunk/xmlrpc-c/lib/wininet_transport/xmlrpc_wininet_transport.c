@@ -892,6 +892,7 @@ struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops = {
     &sendRequest,
     &call,
     &finishAsynch,
+    NULL,
 };
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.

@@ -474,6 +474,12 @@ struct xmlrpc_client_transport {
         */
     struct curlSetup curlSetupStuff;
         /* This is constant */
+    unsigned int * interruptP;
+        /* Pointer to a value that user sets to nonzero to indicate he wants
+           the transport to give up on whatever it is doing and return ASAP.
+
+           NULL means none -- transport never gives up.
+        */
 };
 
 typedef struct {
@@ -569,6 +575,38 @@ addMilliseconds(struct timeval   const addend,
 
     sumP->tv_sec  = addend.tv_sec + newRawUsec / 1000000;
     sumP->tv_usec = newRawUsec % 1000000;
+}
+
+
+
+static int
+curlProgress(void * const contextP ATTR_UNUSED,
+             double const dltotal  ATTR_UNUSED,
+             double const dlnow    ATTR_UNUSED,
+             double const ultotal  ATTR_UNUSED,
+             double const ulnow    ATTR_UNUSED) {
+/*----------------------------------------------------------------------------
+   This is a Curl "progress function."  It's something various Curl
+   functions call every so often, including whenever something gets
+   interrupted by the process receiving, and catching, a signal.
+   There are two purposes of a Curl progress function: 1) lets us log
+   the progress of a long-running transaction such as a big download,
+   e.g. by displaying a progress bar somewhere.  In Xmlrpc-c, we don't
+   implement this purpose.  2) allows us to tell the Curl function,
+   via our return code, that calls it that we don't want to wait
+   anymore for the operation to complete.
+
+   In current Curl (2007.02.20), we get called once per second and
+   signals have no effect.  An update is in the works to get us called
+   immediately after a signal gets caught while Curl is waiting to
+   receive a response from the server.
+
+   All we do is tell Caller it's time to give up if the transport's
+   client says it is via his "interrupt" flag.
+-----------------------------------------------------------------------------*/
+    unsigned int * const interruptP = contextP;
+
+    return *interruptP != 0 ? 1 : 0;
 }
 
 
@@ -971,6 +1009,8 @@ create(xmlrpc_env *                      const envP,
     if (transportP == NULL)
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
+        transportP->interruptP = NULL;
+
         transportP->curlMultiP = createCurlMulti();
         
         if (transportP->curlMultiP == NULL)
@@ -991,6 +1031,15 @@ create(xmlrpc_env *                      const envP,
             free(transportP);
     }
     *handlePP = transportP;
+}
+
+
+
+static void
+setInterrupt(struct xmlrpc_client_transport * const clientTransportP,
+             int *                            const interruptP) {
+
+    clientTransportP->interruptP = interruptP;
 }
 
 
@@ -1159,6 +1208,7 @@ setupCurlSession(xmlrpc_env *             const envP,
                  curlTransaction *        const curlTransactionP,
                  xmlrpc_mem_block *       const callXmlP,
                  xmlrpc_mem_block *       const responseXmlP,
+                 unsigned int *           const interruptP,
                  const struct curlSetup * const curlSetupP) {
 /*----------------------------------------------------------------------------
    Set up the Curl session for the transaction *curlTransactionP so that
@@ -1181,7 +1231,9 @@ setupCurlSession(xmlrpc_env *             const envP,
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, 
                          curlTransactionP->curlError);
-        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
+        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION, curlProgress);
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, interruptP);
         
         curl_easy_setopt(curlSessionP, CURLOPT_HTTPHEADER, 
                          curlTransactionP->headerList);
@@ -1250,6 +1302,7 @@ createCurlTransaction(xmlrpc_env *               const envP,
                       const char *               const userAgent,
                       const struct curlSetup *   const curlSetupStuffP,
                       rpc *                      const rpcP,
+                      unsigned int *             const interruptP,
                       curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
@@ -1272,6 +1325,7 @@ createCurlTransaction(xmlrpc_env *               const envP,
             if (!envP->fault_occurred)
                 setupCurlSession(envP, curlTransactionP,
                                  callXmlP, responseXmlP,
+                                 interruptP,
                                  curlSetupStuffP);
 
             if (envP->fault_occurred)
@@ -1332,14 +1386,20 @@ performCurlTransaction(xmlrpc_env *      const envP,
     CURLcode res;
 
     res = curl_easy_perform(curlSessionP);
-    
-    if (res != CURLE_OK)
+
+    switch (res) {
+    case CURLE_OK:
+        getCurlTransactionError(curlTransactionP, envP);
+        break;
+    case CURLE_ABORTED_BY_CALLBACK:
+        xmlrpc_faultf(envP, "Transport of HTTP transaction aborted by client");
+        break;
+    default:
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_NETWORK_ERROR, "Curl failed to perform "
             "HTTP POST request.  curl_easy_perform() says: %s", 
             curlTransactionP->curlError);
-    else
-        getCurlTransactionError(curlTransactionP, envP);
+    }
 }
 
 
@@ -1373,6 +1433,7 @@ createRpc(xmlrpc_env *                     const envP,
                               clientTransportP->userAgent,
                               &clientTransportP->curlSetupStuff,
                               rpcP,
+                              clientTransportP->interruptP,
                               &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (envP->fault_occurred)
@@ -1855,4 +1916,5 @@ struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops = {
     &sendRequest,
     &call,
     &finishAsynch,
+    &setInterrupt,
 };

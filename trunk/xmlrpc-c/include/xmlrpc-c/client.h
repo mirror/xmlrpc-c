@@ -233,6 +233,10 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          const char *    const format,
                          ...);
 
+void
+xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
+                            int *           const interruptP);
+
 #include <xmlrpc-c/client_global.h>
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.

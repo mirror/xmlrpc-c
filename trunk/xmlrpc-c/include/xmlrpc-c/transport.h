@@ -63,6 +63,9 @@ typedef void (*xmlrpc_transport_finish_asynch)(
     xmlrpc_timeoutType               const timeoutType,
     xmlrpc_timeout                   const timeout);
 
+typedef void (*xmlrpc_transport_set_interrupt)(
+    struct xmlrpc_client_transport * const clientTransportP,
+    int *                            const interruptP);
 
 struct xmlrpc_client_transport_ops {
 
@@ -73,6 +76,7 @@ struct xmlrpc_client_transport_ops {
     xmlrpc_transport_send_request  send_request;
     xmlrpc_transport_call          call;
     xmlrpc_transport_finish_asynch finish_asynch;
+    xmlrpc_transport_set_interrupt set_interrupt;
 };
 
 #ifdef __cplusplus
