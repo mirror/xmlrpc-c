@@ -176,6 +176,47 @@ ifeq ($(HOST_OS),aix)
   LDFLAGS_SHLIB = -qmkshrobj
 endif
 
+ifeq ($(HOST_OS),hpux)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = sl
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  LDFLAGS_SHLIB: -shared -fPIC
+endif
+
+ifeq ($(HOST_OS),osf)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  LDFLAGS_SHLIB = -shared -expect_unresolved
+endif
+
+ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  CFLAGS_SHLIB = -fpic
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+endif
+
+ifeq ($(HOST_OS),beos)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  LDFLAGS_SHLIB = -nostart
+endif
+
+ifeq ($(HOST_OS),darwin)
+  SHARED_LIB_TYPE = dylib
+  SHLIB_SUFFIX = dylib
+  shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+endif
+
 ifeq ($(HOST_OS),irix)
   SHARED_LIB_TYPE = irix
   SHLIB_SUFFIX = so
@@ -188,50 +229,12 @@ ifeq ($(HOST_OS),irix)
     -set_version $(shell perl -e '$(VERSIONPERLPROG)') -lc
 endif
 
-ifeq ($(HOST_OS),hpux)
-  SHARED_LIB_TYPE = unix
-  SHLIB_SUFFIX = sl
-  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
-  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB: -shared -fPIC
-endif
-
-ifeq ($(HOST_OS),osf)
-  SHARED_LIB_TYPE = unix
-  SHLIB_SUFFIX = so
-  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
-  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB = -shared -expect_unresolved
-endif
-
-ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
-  SHARED_LIB_TYPE = unix
-  SHLIB_SUFFIX = so
-  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
-  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  CFLAGS_SHLIB = -fpic
-endif
-
-ifeq ($(HOST_OS),darwin)
-  SHARED_LIB_TYPE = dylib
-  SHLIB_SUFFIX = dylib
-  shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
-  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-endif
-
-ifeq ($(HOST_OS),beos)
-  SHARED_LIB_TYPE = unix
-  SHLIB_SUFFIX = so
-  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ))
-  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB = -nostart
-endif
-
 ifeq ($(HOST_OS),cygwin)
   SHARED_LIB_TYPE = dll
   SHLIB_SUFFIX = dll
   shlibfn = $(1:lib%=$(SHLIB_PREFIX)%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.shlibdummyle)
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
 ##############################################################################
