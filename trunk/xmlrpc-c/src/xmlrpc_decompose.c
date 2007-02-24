@@ -689,20 +689,10 @@ buildArrayDecompBranch(xmlrpc_env *            const envP,
         else {
             struct decompTreeNode * itemNodeP;
             
-            MALLOCVAR(itemNodeP);
-            if (itemNodeP == NULL)
-                xmlrpc_faultf(envP, "Can't get memory for an array item "
-                              "decomposition tree node");
-            else {
-                createDecompTreeNext(envP, formatP, argsP, &itemNodeP);
+            createDecompTreeNext(envP, formatP, argsP, &itemNodeP);
                 
-                if (!envP->fault_occurred)
-                    decompNodeP->store.Tarray.itemArray[itemCnt++] =
-                        itemNodeP;
-
-                if (envP->fault_occurred)
-                    free(itemNodeP);
-            }
+            if (!envP->fault_occurred)
+                decompNodeP->store.Tarray.itemArray[itemCnt++] = itemNodeP;
         }
     }
     if (!envP->fault_occurred) {
@@ -728,20 +718,12 @@ doStructValue(xmlrpc_env *       const envP,
 
     struct decompTreeNode * valueNodeP;
 
-    MALLOCVAR(valueNodeP);
-    if (valueNodeP == NULL)
-        xmlrpc_faultf(envP, "Can't get memory for a member value "
-                      "decomposition tree node");
-    else {
-        mbrP->key = (const char*) va_arg(*argsP, char*);
+    mbrP->key = (const char*) va_arg(*argsP, char*);
         
-        createDecompTreeNext(envP, formatP, argsP,  &valueNodeP);
+    createDecompTreeNext(envP, formatP, argsP,  &valueNodeP);
         
-        if (!envP->fault_occurred) {
-            mbrP->decompTreeP = valueNodeP;
-        } else
-            free(valueNodeP);
-    }
+    if (!envP->fault_occurred)
+        mbrP->decompTreeP = valueNodeP;
 }
 
 
