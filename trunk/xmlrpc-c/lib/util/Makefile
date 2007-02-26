@@ -34,14 +34,14 @@ OMIT_UTILS_RULE = Y
 include $(SRCDIR)/Makefile.common
 
 .PHONY: all
-all: cmdline_parser.lo getoptx.lo casprintf.lo
+all: cmdline_parser.o getoptx.o casprintf.o
 
 INCLUDES = -I$(SRCDIR)/$(SUBDIR)/include -I$(BLDDIR)
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
-%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $<
+%.o:%.c
+	$(CC) -c $(CFLAGS) $<
 
 include Makefile.depend
 
