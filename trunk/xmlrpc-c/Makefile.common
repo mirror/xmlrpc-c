@@ -153,9 +153,12 @@ $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
 	$(CXXLD) $(LDFLAGS_SHLIB) -o $@ $(LIBOBJECTS) $(LADD)
 
 
+LIBXMLRPC_UTIL_DIR = $(BLDDIR)/lib/libutil
+
 ifneq ($(OMIT_LIBXMLRPC_UTIL_RULE),Y)
-LIBXMLRPC_UTIL           = $(BLDDIR)/lib/libutil/libxmlrpc_util.la
-LIBXMLRPC_UTIL_A         = $(BLDDIR)/lib/libutil/.libs/libxmlrpc_util.a
+LIBXMLRPC_UTIL           = \
+  $(call shliblefn, $(LIBXMLRPC_UTIL_DIR)/libxmlrpc_util)
+LIBXMLRPC_UTIL_A         = $(LIBXMLRPC_UTIL_DIR)/libxmlrpc_util.a
 endif
 
 ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
@@ -184,10 +187,12 @@ LIBXMLRPC_XMLPARSE       = $(BLDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
 LIBXMLRPC_XMLPARSE_A     = $(BLDDIR)/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a
 endif
 
+LIBXMLRPC_ABYSS_DIR = $(BLDDIR)/lib/abyss/src
+
 ifneq ($(OMIT_ABYSS_LIB_RULE),Y)
 LIBXMLRPC_ABYSS          = \
-  $(call shliblefn, $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss)
-LIBXMLRPC_ABYSS_A        = $(BLDDIR)/lib/abyss/src/libxmlrpc_abyss.a
+  $(call shliblefn, $(LIBXMLRPC_ABYSS_DIR)/libxmlrpc_abyss)
+LIBXMLRPC_ABYSS_A        = $(LIBXMLRPC_ABYSS_DIR)/libxmlrpc_abyss.a
 endif
 
 ifneq ($(OMIT_CPP_LIB_RULES),Y)
@@ -380,6 +385,10 @@ $(LIBXMLRPC_SERVER_CGI): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
 	    $(notdir $@)
 
+$(LIBXMLRPC_UTIL_A): FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libutil/Makefile \
+	    $(notdir $@)
+
 $(LIBXMLRPC_ABYSS_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
 	    $(notdir $@)
@@ -389,7 +398,6 @@ $(LIBXMLRPCPP) $(LIBXMLRPC_CLIENTPP) $(LIBXMLRPC_SERVERPP) \
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPC_UTIL_A):         $(LIBXMLRPC_UTIL)
 $(LIBXMLRPC_A):              $(LIBXMLRPC)
 $(LIBXMLRPC_CLIENT_A):       $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_SERVER_A):       $(LIBXMLRPC_SERVER)

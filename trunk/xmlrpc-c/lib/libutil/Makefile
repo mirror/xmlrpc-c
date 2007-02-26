@@ -20,30 +20,62 @@ include $(BLDDIR)/Makefile.config
 
 default: all
 
-all: libxmlrpc_util.la
+TARGET_LIBRARY_NAMES := libxmlrpc_util
 
-LIBXMLRPC_UTIL_OBJS = \
-  casprintf.lo \
-  error.lo \
-  make_printable.lo \
-  memblock.lo \
-  sleep.lo \
-  time.lo \
+STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_util.a
+
+SHARED_LIBS_TO_BUILD := libxmlrpc_util
+SHARED_LIBS_TO_INSTALL := libxmlrpc_util
+
+TARGET_MODS = \
+  casprintf \
+  error \
+  make_printable \
+  memblock \
+  sleep \
+  time \
+
+OMIT_LIBXMLRPC_UTIL_RULE=Y
+
+include $(SRCDIR)/Makefile.common
+
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 INCLUDES = -I$(BLDDIR) -Isrcdir \
            -I$(BLDDIR)/include -Isrcdir/include -Isrcdir/lib/util/include
 
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LADD)
+UTIL_SHLIB = $(call shlibfn,libxmlrpc_util)
+#UTIL_SHLIB is e.g. libxmlrpc_util.so.3.1
+UTIL_SHLIBLE = $(call shliblefn,libxmlrpc_util)
+#UTIL_SHLIBLE is e.g. libxmlrpc_util.so
 
-libxmlrpc_util.la: $(LIBXMLRPC_UTIL_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+ifneq ($(SHARED_LIB_TYPE),NONE)
+  TARGET_SHARED_LIBS := $(UTIL_SHLIB) $(UTIL_SHLIBLE)
+  endif
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+# This 'Makefile.common' dependency makes sure the symlinks get built before
+# this make file is used for anything.
 
-$(LIBXMLRPC_UTIL_OBJS):%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+$(SRCDIR)/Makefile.common: srcdir blddir
 
-LTLIBRARIES_TO_INSTALL = libxmlrpc_util.la
+.PHONY: all
+all: libxmlrpc_util.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+
+# Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
+$(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
+$(UTIL_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
+
+# Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
+
+libxmlrpc_util.a: $(TARGET_MODS:%=%.o)
+libxmlrpc_util.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
+
+#-----------------------------------------------------------------------------
+#  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
+#-----------------------------------------------------------------------------
+
+# Rules to compile object modules from which to build the static and shared
+# library are in Makefile.common, courtesy of TARGET_MODS.
 
 .PHONY: install
 install: install-common
@@ -55,14 +87,5 @@ distclean: clean distclean-common
 
 .PHONY: dep
 dep: dep-common
-
-# This 'Makefile.common' dependency makes sure the symlinks get built before
-# this make file is used for anything.
-
-$(SRCDIR)/Makefile.common: srcdir
-
-OMIT_LIBXMLRPC_UTIL_RULE=Y
-
-include $(SRCDIR)/Makefile.common
 
 include Makefile.depend

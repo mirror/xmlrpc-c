@@ -7,9 +7,6 @@ SUBDIR := src
 
 include $(BLDDIR)/Makefile.config
 
-ABYSS_LIBDIR = $(BLDDIR)/lib/abyss/src
-LIBUTIL_LIBDIR = $(BLDDIR)/lib/libutil/.libs
-
 default: all
 
 SUBDIRS =
@@ -88,7 +85,8 @@ LIBXMLRPC_SERVER_LIBDEP_DEP = $(LIBXMLRPC_UTIL) $(LIBXMLRPC)
 
 LIBXMLRPC_SERVER_ABYSS_OBJS = xmlrpc_server_abyss.lo
 LIBXMLRPC_SERVER_ABYSS_LIBDEP = \
-  -lxmlrpc_util -lxmlrpc_server -L$(ABYSS_LIBDIR) -lxmlrpc_abyss -lxmlrpc
+  -lxmlrpc_util -lxmlrpc_server -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
+  -lxmlrpc
 LIBXMLRPC_SERVER_ABYSS_LIBDEP_DEP = \
   $(LIBXMLRPC_UTIL) $(LIBXMLRPC_SERVER) $(LIBXMLRPC_ABYSS) \
   $(LIBXMLRPC)
@@ -161,7 +159,7 @@ endif
 
 LDFLAGS = $(LADD)
 
-LIBPATHS = -L.libs -L$(LIBUTIL_LIBDIR)
+LIBPATHS = -L.libs -L$(LIBXMLRPC_UTIL_DIR)
 
 LIBLDFLAGS = $(LDFLAGS_VERSINFO) $(RPATH) $(LIBPATHS) $(LADD)
 
