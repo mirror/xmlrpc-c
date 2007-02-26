@@ -550,7 +550,7 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
 
     dnl Oh, such massive brain damage! Because there may be another copy
     dnl of curl in the default dynamic loader search path, we need to
-    dnl adjust the search patch manually. Just gag me with a backquote, OK?
+    dnl adjust the search path manually. Just gag me with a backquote, OK?
     AC_MSG_CHECKING(for curl library directory)
     dnl Yawn. We're using the regular boring version.
     CURL_LIBDIR="`$CURL_CONFIG --prefix`/lib"
