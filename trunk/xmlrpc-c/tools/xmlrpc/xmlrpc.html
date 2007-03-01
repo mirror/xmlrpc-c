@@ -78,6 +78,7 @@ http://gggeek.damacom.it/debugger/</a>
 <p>
 <b>i/</b><i>integer</i> |
 <b>s/</b><i>string</i> |
+<b>h/</b><i>hexstring</i> |
 <b>b/</b>{<b>true</b>|<b>false</b>|<b>t</b>|<b>f</b>} |
 <b>d/</b><i>realnum</i> |
 <b>n/</b> |
@@ -124,8 +125,12 @@ possible XML-RPC types, as follows by prefix:
 <dt>s/
 <dd>string (&lt;string&gt;)
 
+<dt>h/
+<dd>byte string (&lt;base64&gt;).  Specify the value in hexadecimal.
+
 <dt>b/
-<dd>boolean (&lt;boolean&gt;)
+<dd>boolean (&lt;boolean&gt;).  Specify the value as &quot;true&quot; or
+&quot;t&quot; for true; &quot;false&quot; or &quot;f&quot; for false.
 
 <dt>d/
 <dd>double (&lt;double&gt;)  (i.e. real number)
