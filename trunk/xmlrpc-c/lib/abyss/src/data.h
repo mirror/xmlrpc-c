@@ -98,7 +98,7 @@ typedef struct {
     TPoolZone * firstzone;
     TPoolZone * currentzone;
     uint32_t zonesize;
-    TMutex mutex;
+    TMutex * mutexP;
 } TPool;
 
 abyss_bool

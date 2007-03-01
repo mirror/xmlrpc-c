@@ -71,7 +71,7 @@ logOpen(struct _TServer * const srvP) {
                              O_WRONLY | O_APPEND);
     if (success) {
         abyss_bool success;
-        success = MutexCreate(&srvP->logmutex);
+        success = MutexCreate(&srvP->logmutexP);
         if (success)
             srvP->logfileisopen = TRUE;
         else
@@ -92,7 +92,7 @@ logClose(struct _TServer * const srvP) {
 
     if (srvP->logfileisopen) {
         FileClose(&srvP->logfile);
-        MutexFree(&srvP->logmutex);
+        MutexFree(srvP->logmutexP);
         srvP->logfileisopen = FALSE;
     }
 }
@@ -1298,13 +1298,13 @@ LogWrite(TServer *    const serverP,
 
     if (srvP->logfileisopen) {
         abyss_bool success;
-        success = MutexLock(&srvP->logmutex);
+        success = MutexLock(srvP->logmutexP);
         if (success) {
             const char * const lbr = "\n";
             FileWrite(&srvP->logfile, msg, strlen(msg));
             FileWrite(&srvP->logfile, lbr, strlen(lbr));
         
-            MutexUnlock(&srvP->logmutex);
+            MutexUnlock(srvP->logmutexP);
         }
     }
 }

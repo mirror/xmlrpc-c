@@ -30,7 +30,7 @@ struct _TServer {
     const char * logfilename;
     abyss_bool logfileisopen;
     TFile logfile;
-    TMutex logmutex;
+    TMutex * logmutexP;
     const char * name;
     abyss_bool serverAcceptsConnections;
         /* We listen for and accept TCP connections for HTTP transactions.

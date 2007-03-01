@@ -516,7 +516,7 @@ PoolCreate(TPool *  const poolP,
 
     poolP->zonesize = zonesize;
 
-    mutexCreated = MutexCreate(&poolP->mutex);
+    mutexCreated = MutexCreate(&poolP->mutexP);
     if (mutexCreated) {
         TPoolZone * const firstZoneP = PoolZoneAlloc(zonesize);
 
@@ -527,7 +527,7 @@ PoolCreate(TPool *  const poolP,
         } else
             success = FALSE;
         if (!success)
-            MutexFree(&poolP->mutex);
+            MutexFree(poolP->mutexP);
     } else
         success = FALSE;
 
@@ -549,7 +549,7 @@ PoolAlloc(TPool *  const poolP,
     else {
         abyss_bool gotMutexLock;
 
-        gotMutexLock = MutexLock(&poolP->mutex);
+        gotMutexLock = MutexLock(poolP->mutexP);
         if (!gotMutexLock)
             retval = NULL;
         else {
@@ -572,7 +572,7 @@ PoolAlloc(TPool *  const poolP,
                 } else
                     retval = NULL;
             }
-            MutexUnlock(&poolP->mutex);
+            MutexUnlock(poolP->mutexP);
         }
     }
     return retval;
@@ -619,6 +619,7 @@ PoolFree(TPool * const poolP) {
         nextPoolZoneP = poolZoneP->next;
         free(poolZoneP);
     }
+    MutexFree(poolP->mutexP);
 }
 
 

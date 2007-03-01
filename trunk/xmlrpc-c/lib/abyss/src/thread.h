@@ -54,16 +54,21 @@ ThreadHandleSigchld(pid_t const pid);
 ** Mutex
 *********************************************************************/
 
-#ifdef WIN32
-typedef HANDLE TMutex;
-#else
-typedef pthread_mutex_t TMutex;
-#endif  /* WIN32 */
+typedef struct abyss_mutex TMutex;
 
-abyss_bool MutexCreate(TMutex *m);
-abyss_bool MutexLock(TMutex *m);
-abyss_bool MutexUnlock(TMutex *m);
-abyss_bool MutexTryLock(TMutex *m);
-void MutexFree(TMutex *m);
+abyss_bool
+MutexCreate(TMutex ** const mutexP);
+
+abyss_bool
+MutexLock(TMutex * const mutexP);
+
+abyss_bool
+MutexUnlock(TMutex * const mutexP);
+
+abyss_bool
+MutexTryLock(TMutex * const mutexP);
+
+void
+MutexFree(TMutex * const mutexP);
 
 #endif

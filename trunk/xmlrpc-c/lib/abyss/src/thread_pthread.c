@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
@@ -8,6 +7,7 @@
 
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
+#include "pthreadx.h"
 
 #include "xmlrpc-c/abyss.h"
 
@@ -184,38 +184,59 @@ ThreadHandleSigchld(pid_t const pid ATTR_UNUSED) {
 ** Mutex
 *********************************************************************/
 
+struct abyss_mutex {
+    pthread_mutex_t pthreadMutex;
+};
 
 
 abyss_bool
-MutexCreate(TMutex * const mutexP) {
+MutexCreate(TMutex ** const mutexPP) {
 
-    return (pthread_mutex_init(mutexP, NULL) == 0);
+    TMutex * mutexP;
+    abyss_bool succeeded;
+
+    MALLOCVAR(mutexP);
+
+    if (mutexP) {
+        int rc;
+        rc = pthread_mutex_init(&mutexP->pthreadMutex, NULL);
+
+        succeeded = (rc == 0);
+    } else
+        succeeded = FALSE;
+
+    if (!succeeded)
+        free(mutexP);
+
+    *mutexPP = mutexP;
+
+    return succeeded;
 }
 
 
 
 abyss_bool
 MutexLock(TMutex * const mutexP) {
-    return (pthread_mutex_lock(mutexP) == 0);
+    return (pthread_mutex_lock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
 abyss_bool
 MutexUnlock(TMutex * const mutexP) {
-    return (pthread_mutex_unlock(mutexP) == 0);
+    return (pthread_mutex_unlock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
 abyss_bool
 MutexTryLock(TMutex * const mutexP) {
-    return (pthread_mutex_trylock(mutexP) == 0);
+    return (pthread_mutex_trylock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
 void
 MutexFree(TMutex * const mutexP) {
-    pthread_mutex_destroy(mutexP);
+    pthread_mutex_destroy(&mutexP->pthreadMutex);
 }
