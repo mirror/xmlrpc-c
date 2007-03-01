@@ -10,7 +10,7 @@ dnl =======================================================================
 dnl This ultimately controls the make file variable XMLRPC_C_VERSION.
 dnl For a new release, update this and MAJ, MIN, and LDFLAGS_VERSINFO in
 dnl Makefile.common.
-AM_INIT_AUTOMAKE(xmlrpc-c, 1.09)
+AM_INIT_AUTOMAKE(xmlrpc-c, 1.10)
 
 dnl Define @build@, @build_cpu@, @build_vendor@, @build_os,
 dnl @host, @host_cpu@, @host_vender, and @host_os@ substitutions.
