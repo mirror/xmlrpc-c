@@ -87,8 +87,7 @@ prerequisite libraries, namely Libwww and Curl.  These libraries are
 designed to be installed along with a -config program (libwww-config
 and curl-config) that tells builders of dependent packages (such as
 Xmlrpc-c) how to use them.  When the -config program is wrong, you get
-Xmlrpc-c build failures with messages about not being able to find
-things.
+Xmlrpc-c build failures with messages about undefined references.
 
 The exact nature of the problems with -config programs can be quite
 involved, especially since there is no guarantee that a -config
