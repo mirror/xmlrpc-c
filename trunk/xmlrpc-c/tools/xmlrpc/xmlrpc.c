@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "xmlrpc_config.h"  /* information about this build environment */
 #include "bool.h"
@@ -257,6 +258,48 @@ buildString(xmlrpc_env *    const envP,
 
 
 static void
+buildBytestring(xmlrpc_env *    const envP,
+                const char *    const valueString,
+                xmlrpc_value ** const paramPP) {
+
+    size_t const valueStringSize = strlen(valueString);
+
+    if (valueStringSize / 2 * 2 != valueStringSize)
+        xmlrpc_faultf(envP, "Hexadecimal text is not an even "
+                      "number of characters (it is %u characters)",
+                      strlen(valueString));
+    else {
+        size_t const byteStringSize = strlen(valueString)/2;
+        
+        unsigned char byteString[byteStringSize];
+        size_t bsCursor;
+        size_t strCursor;
+
+        strCursor = 0;
+        bsCursor = 0;
+
+        while (strCursor < valueStringSize && !envP->fault_occurred) {
+            int rc;
+
+            assert(bsCursor < byteStringSize);
+
+            rc = sscanf(&valueString[strCursor], "%2hhx",
+                        &byteString[bsCursor++]);
+
+            if (rc != 1)
+                xmlrpc_faultf(envP, "Invalid hex data '%s'",
+                              &valueString[strCursor]);
+            else
+                strCursor += 2;
+        }
+        if (!envP->fault_occurred)
+            *paramPP = xmlrpc_base64_new(envP, byteStringSize, byteString);
+    }
+}
+
+
+
+static void
 buildInt(xmlrpc_env *    const envP,
          const char *    const valueString,
          xmlrpc_value ** const paramPP) {
@@ -388,6 +431,8 @@ computeParameter(xmlrpc_env *    const envP,
 
     if (strncmp(paramArg, "s/", 2) == 0)
         buildString(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "h/", 2) == 0)
+        buildBytestring(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "i/", 2) == 0) 
         buildInt(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "I/", 2) == 0) 
