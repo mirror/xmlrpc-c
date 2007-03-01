@@ -201,6 +201,15 @@ ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
+ifeq ($(HOST_OS),dragonfly)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = so
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  CFLAGS_SHLIB = -fpic
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+endif
+
 ifeq ($(HOST_OS),beos)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
