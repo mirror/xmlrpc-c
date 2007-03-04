@@ -580,7 +580,7 @@ addMilliseconds(struct timeval   const addend,
 
 
 static int
-curlProgress(void * const contextP ATTR_UNUSED,
+curlProgress(void * const contextP,
              double const dltotal  ATTR_UNUSED,
              double const dlnow    ATTR_UNUSED,
              double const ultotal  ATTR_UNUSED,
@@ -605,6 +605,11 @@ curlProgress(void * const contextP ATTR_UNUSED,
    client says it is via his "interrupt" flag.
 -----------------------------------------------------------------------------*/
     unsigned int * const interruptP = contextP;
+
+    /* We require anyone setting us up as the Curl progress function to
+       supply an interrupt flag:
+    */
+    assert(contextP);
 
     return *interruptP != 0 ? 1 : 0;
 }
@@ -1213,6 +1218,10 @@ setupCurlSession(xmlrpc_env *             const envP,
 /*----------------------------------------------------------------------------
    Set up the Curl session for the transaction *curlTransactionP so that
    a subsequent curl_easy_perform() will perform said transaction.
+
+   'interruptP' is a pointer to an interrupt flag -- a flag that becomes
+   nonzero when the user wants to abandon this Curl session.  NULL means
+   there is no interrupt flag; user will never want to abandon the session.
 -----------------------------------------------------------------------------*/
     CURL * const curlSessionP = curlTransactionP->curlSessionP;
 
@@ -1231,9 +1240,13 @@ setupCurlSession(xmlrpc_env *             const envP,
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, 
                          curlTransactionP->curlError);
-        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
-        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION, curlProgress);
-        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, interruptP);
+        if (interruptP) {
+            curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
+            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION,
+                             curlProgress);
+            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, interruptP);
+        } else
+            curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
         
         curl_easy_setopt(curlSessionP, CURLOPT_HTTPHEADER, 
                          curlTransactionP->headerList);
