@@ -32,6 +32,7 @@ TARGET_MODS = \
   error \
   make_printable \
   memblock \
+  select \
   sleep \
   time \
 

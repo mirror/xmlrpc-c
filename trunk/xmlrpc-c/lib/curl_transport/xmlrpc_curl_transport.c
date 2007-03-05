@@ -56,6 +56,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#include <sys/select.h>
+#include <signal.h>
 
 #include "xmlrpc_config.h"
 
@@ -67,6 +69,7 @@
 #include "pthreadx.h"
 
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/select_int.h"
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
 #include "version.h"
@@ -1383,7 +1386,8 @@ getCurlTransactionError(curlTransaction * const curlTransactionP,
     else {
         if (http_result != 200)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_NETWORK_ERROR, "HTTP response: %ld",
+                envP, XMLRPC_NETWORK_ERROR,
+                "HTTP response code is %ld, not 200",
                 http_result);
     }
 }
@@ -1606,16 +1610,16 @@ finishCurlTransaction(xmlrpc_env * const envP ATTR_UNUSED,
 
 
 
-static struct timeval
-selectTimeout(xmlrpc_timeoutType const timeoutType,
-              struct timeval     const timeoutTime) {
+static struct timespec
+pselectTimeout(xmlrpc_timeoutType const timeoutType,
+               struct timeval     const timeoutDt) {
 /*----------------------------------------------------------------------------
    Return the value that should be used in the select() call to wait for
    there to be work for the Curl multi manager to do, given that the user
-   wants to timeout according to 'timeoutType' and 'timeoutTime'.
+   wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
     unsigned int selectTimeoutMillisec;
-    struct timeval retval;
+    struct timespec retval;
 
     selectTimeoutMillisec = 0; // quiet compiler warning
 
@@ -1632,14 +1636,14 @@ selectTimeout(xmlrpc_timeoutType const timeoutType,
         int timeLeft;
 
         gettimeofday(&nowTime, NULL);
-        timeLeft = timeDiffMillisec(timeoutTime, nowTime);
+        timeLeft = timeDiffMillisec(timeoutDt, nowTime);
 
         selectTimeoutMillisec = MIN(3000, MAX(0, timeLeft));
     }
     break;
     }
     retval.tv_sec = selectTimeoutMillisec / 1000;
-    retval.tv_usec = (selectTimeoutMillisec % 1000) * 1000;
+    retval.tv_nsec = (selectTimeoutMillisec % 1000) * 1E6;
 
     return retval;
 }        
@@ -1672,8 +1676,29 @@ static void
 waitForWork(xmlrpc_env *       const envP,
             struct curlMulti * const curlMultiP,
             xmlrpc_timeoutType const timeoutType,
-            struct timeval     const deadline) {
-    
+            struct timeval     const deadline,
+            sigset_t *         const sigmaskP) {
+/*----------------------------------------------------------------------------
+   Wait for the Curl multi manager to have work to do, time to run out,
+   or a signal to be received (and caught), whichever comes first.
+
+   Update the Curl multi manager's file descriptor sets to indicate what
+   work we found for it to do.
+
+   Wait under signal mask *sigmaskP.  The point of this is that Caller
+   can make sure that arrival of a signal of a certain class
+   interrupts our wait, even if the signal arrives shortly before we
+   begin waiting.  Caller blocks that signal class, then checks
+   whether a signal of that class has already been received.  If not,
+   he calls us with *sigmaskP indicating that class NOT blocked.
+   Thus, if a signal of that class arrived any time after Caller
+   checked, we will return immediately or when the signal arrives,
+   whichever is sooner.  Note that we can provide this service only
+   only because pselect() has the same atomic unblock/wait feature.
+   
+   If sigmaskP is NULL, wait under whatever the current signal mask
+   is.
+-----------------------------------------------------------------------------*/
     fd_set readFdSet;
     fd_set writeFdSet;
     fd_set exceptFdSet;
@@ -1688,27 +1713,59 @@ waitForWork(xmlrpc_env *       const envP,
                are already complete.
             */
         } else {
-            struct timeval selectTimeoutArg;
-            int rc;
-            
-            selectTimeoutArg = selectTimeout(timeoutType, deadline);
+            struct timespec const pselectTimeoutArg =
+                pselectTimeout(timeoutType, deadline);
 
-            rc = select(maxFd+1, &readFdSet, &writeFdSet, &exceptFdSet,
-                        &selectTimeoutArg);
+            int rc;
+
+            rc = xmlrpc_pselect(maxFd+1, &readFdSet, &writeFdSet, &exceptFdSet,
+                                &pselectTimeoutArg, sigmaskP);
             
-            if (rc < 0)
-                xmlrpc_faultf(envP, "Impossible failure of select() "
+            if (rc < 0 && errno != EINTR)
+                xmlrpc_faultf(envP, "Impossible failure of pselect() "
                               "with errno %d (%s)",
                               errno, strerror(errno));
             else {
                 /* Believe it or not, the Curl multi manager needs the
-                   results of our select().  So hand them over:
+                   results of our pselect().  So hand them over:
                 */
                 curlMulti_updateFdSet(curlMultiP,
                                       readFdSet, writeFdSet, exceptFdSet);
             }
         }
     }
+}
+
+
+
+static void
+waitForWorkInt(xmlrpc_env *       const envP,
+               struct curlMulti * const curlMultiP,
+               xmlrpc_timeoutType const timeoutType,
+               struct timeval     const deadline,
+               int *              const interruptP) {
+/*----------------------------------------------------------------------------
+   Same as waitForWork(), except we guarantee to return if a signal handler
+   sets or has set *interruptP, whereas waitForWork() can miss a signal
+   that happens before or just after it starts.
+
+   We mess with global state -- the signal mask -- so we might mess up
+   a multithreaded program.  Therefore, don't call this if
+   waitForWork() will suffice.
+-----------------------------------------------------------------------------*/
+    sigset_t allSignals;
+    sigset_t callerBlockSet;
+
+    assert(interruptP != NULL);
+
+    sigfillset(&allSignals);
+
+    sigprocmask(SIG_BLOCK, &allSignals, &callerBlockSet);
+    
+    if (*interruptP == 0)
+        waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
+
+    sigprocmask(SIG_SETMASK, &callerBlockSet, NULL);
 }
 
 
@@ -1759,16 +1816,25 @@ static void
 finishCurlSessions(xmlrpc_env *       const envP,
                    struct curlMulti * const curlMultiP,
                    xmlrpc_timeoutType const timeoutType,
-                   struct timeval     const deadline) {
+                   struct timeval     const deadline,
+                   int *              const interruptP) {
 
     bool rpcStillRunning;
     bool timedOut;
-    
+    bool interrupted;
+
     rpcStillRunning = true;  /* initial assumption */
     timedOut = false;
+    interrupted = false;
     
-    while (rpcStillRunning && !timedOut && !envP->fault_occurred) {
-        waitForWork(envP, curlMultiP, timeoutType, deadline);
+    while (rpcStillRunning && !timedOut && !interrupted &&
+           !envP->fault_occurred) {
+
+        if (interruptP) {
+            waitForWorkInt(envP, curlMultiP, timeoutType, deadline,
+                           interruptP);
+        } else 
+            waitForWork(envP, curlMultiP, timeoutType, deadline, NULL);
 
         if (!envP->fault_occurred) {
             struct timeval nowTime;
@@ -1779,6 +1845,8 @@ finishCurlSessions(xmlrpc_env *       const envP,
             
             timedOut = (timeoutType == timeout_yes &&
                         timeIsAfter(nowTime, deadline));
+
+            interrupted = (interruptP && *interruptP != 0);
         }
     }
 }
@@ -1793,6 +1861,12 @@ finishAsynch(
 /*----------------------------------------------------------------------------
    Wait for the Curl multi manager to finish the Curl transactions for
    all outstanding RPCs and destroy those RPCs.
+
+   But give up and return if a) too much time passes as defined by
+   'timeoutType' and 'timeout'; or b) the transport client requests
+   interruption (i.e. the transport's interrupt flag becomes nonzero).
+   Normally, a signal must get our attention for us to notice the
+   interrupt flag.
 
    This does the 'finish_asynch' operation for a Curl client transport.
 
@@ -1818,7 +1892,8 @@ finishAsynch(
     }
 
     finishCurlSessions(&env, clientTransportP->curlMultiP,
-                       timeoutType, waitTimeoutTime);
+                       timeoutType, waitTimeoutTime,
+                       clientTransportP->interruptP);
 
     /* If the above fails, it is catastrophic, because it means there is
        no way to complete outstanding Curl transactions and RPCs, and
