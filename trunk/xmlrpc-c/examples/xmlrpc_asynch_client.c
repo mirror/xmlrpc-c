@@ -55,7 +55,7 @@ handle_sample_add_response(const char *   const server_url,
            "has completed\n", method_name, server_url, addend, adder);
     
     if (faultP->fault_occurred)
-        printf("The RPC failed.  %s", faultP->fault_string);
+        printf("The RPC failed.  %s\n", faultP->fault_string);
     else {
         xmlrpc_int sum;
 
