@@ -144,7 +144,7 @@ ifeq ($(HOST_OS),linux-gnu)
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
-ifeq ($(findstring solaris,$(HOST_OS)),FIND)
+ifeq ($(findstring solaris,$(HOST_OS)),solaris)
   # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
@@ -185,7 +185,7 @@ ifeq ($(HOST_OS),osf)
   LDFLAGS_SHLIB = -shared -expect_unresolved
 endif
 
-ifeq ($(findstring netbsd,$(HOST_OS)),FIND)
+ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
   # This code is not finished; that's why we don't set SHARED_LIB_TYPE.
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix

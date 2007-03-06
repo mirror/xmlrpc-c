@@ -57,6 +57,7 @@ ThreadHandleSigchld(pid_t const pid);
 #ifdef WIN32
 typedef HANDLE TMutex;
 #else
+#include <pthread.h>
 typedef pthread_mutex_t TMutex;
 #endif  /* WIN32 */
 
