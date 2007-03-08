@@ -10,6 +10,7 @@ libtool
 config.status
 xmlrpc_config.h
 xmlrpc_amconfig.h
+shell-config
 xmlrpc-c-config
 xmlrpc-c-config.test
 xmlrpc-c.spec

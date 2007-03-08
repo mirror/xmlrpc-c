@@ -637,11 +637,7 @@ AC_OUTPUT( \
           Makefile.srcdir \
           Makefile.config \
           xmlrpc_config.h \
-          xmlrpc-c-config \
-          xmlrpc-c-config.test \
           )
-chmod +x xmlrpc-c-config
-chmod +x xmlrpc-c-config.test
 
 
 if test ! -f GNUmakefile; then

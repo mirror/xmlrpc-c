@@ -1,20 +1,10 @@
-#!/bin/sh
 # This is like 'xmlrpc-c-config', but for testing Xmlrpc-c from its build
 # directory instead of for an installed instance of Xmlrpc-c.
 #
-# For example, the make file in the examples/ directory uses this program
-# to link the example programs with the Xmlrpc-c libraries in the build
+# For example, the make file in the src/test/ directory uses this program
+# to link the test programs with the Xmlrpc-c libraries in the build
 # directory.  A real application program would instead use xmlrpc-c-config
 # and get the Xmlrpc-c libraries from their installed home.
-
-SRCDIR="@abs_srcdir@"
-BUILDDIR="@BUILDDIR@"
-ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND@"
-ENABLE_ABYSS_THREADS="@ENABLE_ABYSS_THREADS@"
-MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
-MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
-MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
-LSOCKET="@LSOCKET@"
 
 if test $# -eq 0; then
       echo "You need to specify arguments"
@@ -38,7 +28,7 @@ LIBXMLRPC="${BUILDDIR}/src/.libs/libxmlrpc.a"
 LIBXMLRPC_UTIL="${BUILDDIR}/lib/libutil/libxmlrpc_util.a"
 
 the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML}"
-the_includes="-I${BUILDDIR}/include -I${SRCDIR}/include"
+the_includes="-I${BUILDDIR}/include -I${ABS_SRCDIR}/include"
 sopath="${BUILDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do
@@ -82,32 +72,32 @@ while test $# -gt 0; do
     client)
       the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
       if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
-        the_libs="@WININET_LDADD@ $the_libs"
-        the_rpath="@WININET_RPATH@ $the_rpath"
-        the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
+        the_libs="$WININET_LDADD $the_libs"
+        the_rpath="$WININET_RPATH $the_rpath"
+        the_wl_rpath="$WININET_WL_RPATH $the_wl_rpath"
         fi
       if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
-        the_libs="@CURL_LDADD@ $the_libs"
-        the_rpath="@CURL_RPATH@ $the_rpath"
-        the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
+        the_libs="$CURL_LDADD $the_libs"
+        the_rpath="$CURL_RPATH $the_rpath"
+        the_wl_rpath="$CURL_WL_RPATH $the_wl_rpath"
         fi
       if test "${MUST_BUILD_LIBWWW_CLIENT}" = "yes"; then
-        the_libs="@LIBWWW_LDADD@ $the_libs"
-        the_rpath="@LIBWWW_RPATH@ $the_rpath"
-        the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
+        the_libs="$LIBWWW_LDADD $the_libs"
+        the_rpath="$LIBWWW_RPATH $the_rpath"
+        the_wl_rpath="$LIBWWW_WL_RPATH $the_wl_rpath"
         fi
       if test "${needCpp}" = "yes"; then
         the_libs="${BUILDDIR}/src/cpp/libxmlrpc_client++.a $the_libs"
         fi
       ;;
     --version)
-      echo "@VERSION@"
+      echo "$VERSION"
       ;;
     --modules)
-      echo "@FEATURE_LIST@"
+      echo "$FEATURE_LIST"
       ;;
     --features)
-      echo "@FEATURE_LIST@"
+      echo "$FEATURE_LIST"
       ;;
     --cflags)
       echo "$the_includes"
@@ -123,19 +113,6 @@ while test $# -gt 0; do
       ;;
     --sopath)
       echo "$sopath"
-      ;;
-    --prefix)
-      echo "@prefix@"
-      ;;
-    --exec-prefix)
-      echo "@exec_prefix@"
-      ;;
-    --*dir)
-      # Swiped from gnome-config.
-      dirname=\$`echo $1 | sed -e 's,^--,,'`
-      dirname=`eval echo $dirname`
-      test -z "$dirname" && exit 1
-      echo $dirname
       ;;
     --help)
       echo "See the real xmlrpc-c-config program" 1>&2
