@@ -95,11 +95,11 @@ shell_config: $(BLDDIR)/Makefile.config
 	@echo 'PREFIX="$(PREFIX)"'					>>$@
 	@echo 'EXEC_PREFIX="$(EXEC_PREFIX)"'				>>$@
 	@echo 'INCLUDEDIR="$(INCLUDEDIR)"'                              >>$@
-	@echo 'BUILDDIR="$(BUILDDIR)"'                                  >>$@
+	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
 	@echo '#######################################################' >>$@
 
-xmlrpc-c-config xmlrpc-c-config.test: xmlrpc-c-config.main shell_config
+xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
 	@echo '#! /bin/sh' >>$@ || rm $@

@@ -16,20 +16,20 @@ sopath=
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
   LIBXML=$(xml2-config --libs)
 else
-  LIBXML="${BUILDDIR}/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a"
-  sopath="${BUILDDIR}/lib/expat/xmlparse/.libs:$sopath"
-  LIBXML="${LIBXML} ${BUILDDIR}/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a"
-  sopath="${BUILDDIR}/lib/expat/xmltok/.libs:$sopath"
+  LIBXML="${BLDDIR}/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a"
+  sopath="${BLDDIR}/lib/expat/xmlparse/.libs:$sopath"
+  LIBXML="${LIBXML} ${BLDDIR}/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a"
+  sopath="${BLDDIR}/lib/expat/xmltok/.libs:$sopath"
 fi
 
 needCpp=no
 
-LIBXMLRPC="${BUILDDIR}/src/.libs/libxmlrpc.a"
-LIBXMLRPC_UTIL="${BUILDDIR}/lib/libutil/libxmlrpc_util.a"
+LIBXMLRPC="${BLDDIR}/src/.libs/libxmlrpc.a"
+LIBXMLRPC_UTIL="${BLDDIR}/lib/libutil/libxmlrpc_util.a"
 
 the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML}"
-the_includes="-I${BUILDDIR}/include -I${ABS_SRCDIR}/include"
-sopath="${BUILDDIR}/src/.libs:$sopath"
+the_includes="-I${BLDDIR}/include -I${ABS_SRCDIR}/include"
+sopath="${BLDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do
   case $1 in
@@ -39,38 +39,38 @@ while test $# -gt 0; do
       # and server.  So all legacy C++ programs get linked with client
       # and server libraries, whether they need them or not.
 
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
-      the_libs="${BUILDDIR}/src/cpp/libxmlrpc_cpp.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_cpp.a $the_libs"
       ;;
     c++2)
       needCpp=yes
-      the_libs="${BUILDDIR}/src/cpp/libxmlrpc++.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc++.a $the_libs"
       ;;
     server-util)
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       ;;
     cgi-server)
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_cgi.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server_cgi.a $the_libs"
       ;;
     abyss-server)
       if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
         the_libs="-lpthread $the_libs"
         fi
       the_libs="${LSOCKET} $the_libs"
-      the_libs="${BUILDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
+      the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
       if test "${needCpp}" = "yes"; then
-        the_libs="${BUILDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
-        the_libs="${BUILDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
         fi
-      sopath="${BUILDDIR}/lib/abyss/src/.libs:$sopath"
+      sopath="${BLDDIR}/lib/abyss/src/.libs:$sopath"
       ;;
     client)
-      the_libs="${BUILDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
       if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
         the_libs="$WININET_LDADD $the_libs"
         the_rpath="$WININET_RPATH $the_rpath"
@@ -87,7 +87,7 @@ while test $# -gt 0; do
         the_wl_rpath="$LIBWWW_WL_RPATH $the_wl_rpath"
         fi
       if test "${needCpp}" = "yes"; then
-        the_libs="${BUILDDIR}/src/cpp/libxmlrpc_client++.a $the_libs"
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_client++.a $the_libs"
         fi
       ;;
     --version)
