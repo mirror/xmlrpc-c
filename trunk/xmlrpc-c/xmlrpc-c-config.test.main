@@ -11,6 +11,10 @@ if test $# -eq 0; then
       exit 1
 fi
 
+the_libs=
+the_includes=
+the_rpath=
+the_wl_rpath=
 sopath=
 
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
@@ -27,8 +31,8 @@ needCpp=no
 LIBXMLRPC="${BLDDIR}/src/.libs/libxmlrpc.a"
 LIBXMLRPC_UTIL="${BLDDIR}/lib/libutil/libxmlrpc_util.a"
 
-the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML}"
-the_includes="-I${BLDDIR}/include -I${ABS_SRCDIR}/include"
+the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML} $the_libs"
+the_includes="-I${BLDDIR}/include -I${ABS_SRCDIR}/include $the_includes"
 sopath="${BLDDIR}/src/.libs:$sopath"
 
 while test $# -gt 0; do

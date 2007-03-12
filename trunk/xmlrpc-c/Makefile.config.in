@@ -158,6 +158,20 @@ endif
 #   $(call shliblefn, LIBNAMELIST): same as shlibfn, but for the file you
 #     use at link-edit time.  E.g. libfoo.so .
 
+# NEED_RPATH says on this platform, when you link-edit an executable you
+# need to have -R linker options to tell where to look, at run time,
+# for the shared libraries that the program uses.  The linker puts that
+# information into the executable.
+
+# NEED_WL_RPATH is like NEED_RPATH, but it's a compiler option for when
+# you have the compiler call the linker.  So E.g. "-Wl,-rpath,/my/runtime",
+# which tells the compiler to pass the option "-rpath /my/runtime" to
+# the linker.
+
+# Defaults:
+NEED_WL_RPATH=no
+NEED_RPATH=no
+
 # We build shared libraries only for platforms for which we've figured
 # out how.  For the rest, we have this default:
 SHARED_LIB_TYPE = NONE
@@ -215,6 +229,7 @@ ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   CFLAGS_SHLIB = -fpic
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  NEED_WL_RPATH=yes
 endif
 
 ifeq ($(HOST_OS),dragonfly)

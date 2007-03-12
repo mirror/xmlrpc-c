@@ -33,15 +33,18 @@ fi
 needCpp=no
 
 the_libdirs=
-
-# If Xmlrpc-c libraries are installed in the standard linker search
-# path on this system, you should remove the following line:
-the_libdirs="-L$libdir $the_libdirs"
-
-the_libs="-lxmlrpc -lxmlrpc_util ${LIBXML}"
 the_rpath=
 the_wl_rpath=
 cpp_libs=
+
+# If Xmlrpc-c libraries are installed in the standard linker search
+# path on this system, you should remove the following line:
+
+the_libdirs="-L$libdir $the_libdirs"
+
+the_libs="-lxmlrpc -lxmlrpc_util ${LIBXML}"
+the_rpath="-R$libdir $the_rpath"
+the_wl_rpath="-Wl,-rpath,$libdir $the_wl_rpath"
 
 cflags=
 # If Xmlrpc-c library interface header files are installed in the standard
@@ -122,7 +125,15 @@ while test $# -gt 0; do
       echo "$cflags"
       ;;
     --libs)
-      echo "$the_libdirs $the_libs $the_wl_rpath"
+      if test "$NEED_WL_RPATH" = "yes"; then
+          $rpath=$the_wl_rpath
+      elif test "$NEED_RPATH" = "yes"; then
+          $rpath=$the_rpath
+      else
+          $rpath=
+      fi
+
+      echo "$the_libdirs  $rpath $the_libs"
       ;;
     --ldadd)
       echo "$the_libdirs $the_libs"

@@ -80,6 +80,8 @@ shell_config: $(BLDDIR)/Makefile.config
 	@echo 'MUST_BUILD_WININET_CLIENT="$(MUST_BUILD_WININET_CLIENT)"'>>$@
 	@echo 'MUST_BUILD_CURL_CLIENT="$(MUST_BUILD_CURL_CLIENT)"'	>>$@
 	@echo 'MUST_BUILD_LIBWWW_CLIENT="$(MUST_BUILD_LIBWWW_CLIENT)"'	>>$@
+	@echo 'NEED_RPATH="$(NEED_RPATH)"'				>>$@
+	@echo 'NEED_WL_RPATH="$(NEED_WL)RPATH)"'			>>$@
 	@echo 'LSOCKET="$(LSOCKET)"'					>>$@
 	@echo 'WININET_LDADD="$(WININET_LDADD)"'			>>$@
 	@echo 'WININET_RPATH="$(WININET_RPATH)"'			>>$@
