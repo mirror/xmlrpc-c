@@ -71,7 +71,7 @@ include transport_config.make
 shell_config: $(BLDDIR)/Makefile.config
 	rm -f $@
 	@echo "Lots of echoes to '$@' suppressed here ..."
-	@echo '#' >>$@ || rm -f $@
+	@echo '#' >>$@ || rm -f $@; false
 	@echo '#######################################################' >>$@
 	@echo "# From '$@'"                                             >>$@
 	@echo '#######################################################' >>$@
