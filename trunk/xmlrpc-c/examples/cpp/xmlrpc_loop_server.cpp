@@ -50,10 +50,10 @@ main(int           const,
     myRegistry.addMethod("sample.add", sampleAddMethodP);
 
     xmlrpc_c::serverAbyss myAbyssServer(
-        myRegistry,
-        8080,              // TCP port on which to listen
-        "/tmp/xmlrpc_log"  // Log file
-        );
+        xmlrpc_c::serverAbyss::constrOpt()
+        .registryP(&myRegistry)
+        .portNumber(8080)
+        .logFileName("/tmp/xmlrpc_log"));
 
     while (true) {
         cout << "Waiting for next RPC..." << endl;
