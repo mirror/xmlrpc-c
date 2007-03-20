@@ -1800,7 +1800,7 @@ doCurlWork(xmlrpc_env *       const envP,
 
     if (!envP->fault_occurred) {
         /* The work we did may have resulted in asynchronous messages
-           (asynchronous to the thing the refer to, not to us, of course).
+           (asynchronous to the thing they refer to, not to us, of course).
            In particular the message "Curl transaction has completed".
            So we process those now.
         */
