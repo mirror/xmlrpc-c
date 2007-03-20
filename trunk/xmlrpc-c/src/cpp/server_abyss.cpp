@@ -42,7 +42,8 @@ sigchld(int const signalClass) {
    We respond by reaping the zombie process.
 
    Implementation note: In some systems, just setting the signal handler
-   to SIG_IGN (ignore signal) does this.  In others, it doesn't.
+   to SIG_IGN (ignore signal) does this.  In some, the system does this
+   automatically if the signal is blocked.
 -----------------------------------------------------------------------------*/
 #ifndef _WIN32
     /* Reap zombie children until there aren't any more. */
@@ -73,8 +74,23 @@ sigchld(int const signalClass) {
 
 
 
+struct signalHandlers {
+#ifndef WIN32
+    struct sigaction term;
+    struct sigaction int_;
+    struct sigaction hup;
+    struct sigaction usr1;
+    struct sigaction pipe;
+    struct sigaction chld;
+#else
+    int dummy;
+#endif
+};
+
+
+
 void
-setupSignalHandlers(void) {
+setupSignalHandlers(struct signalHandlers * const oldHandlersP) {
 #ifndef _WIN32
     struct sigaction mysigaction;
    
@@ -83,21 +99,35 @@ setupSignalHandlers(void) {
 
     /* These signals abort the program, with tracing */
     mysigaction.sa_handler = sigterm;
-    sigaction(SIGTERM, &mysigaction, NULL);
-    sigaction(SIGINT,  &mysigaction, NULL);
-    sigaction(SIGHUP,  &mysigaction, NULL);
-    sigaction(SIGUSR1, &mysigaction, NULL);
+    sigaction(SIGTERM, &mysigaction, &oldHandlersP->term);
+    sigaction(SIGINT,  &mysigaction, &oldHandlersP->int_);
+    sigaction(SIGHUP,  &mysigaction, &oldHandlersP->hup);
+    sigaction(SIGUSR1, &mysigaction, &oldHandlersP->usr1);
 
     /* This signal indicates connection closed in the middle */
     mysigaction.sa_handler = SIG_IGN;
-    sigaction(SIGPIPE, &mysigaction, NULL);
+    sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
    
     /* This signal indicates a child process (request handler) has died */
     mysigaction.sa_handler = sigchld;
-    sigaction(SIGCHLD, &mysigaction, NULL);
+    sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
 #endif
 }    
 
+
+
+void
+restoreSignalHandlers(struct signalHandlers const& oldHandlers) {
+
+#ifndef _WIN32
+    sigaction(SIGCHLD, &oldHandlers.chld, NULL);
+    sigaction(SIGPIPE, &oldHandlers.pipe, NULL);
+    sigaction(SIGUSR1, &oldHandlers.usr1, NULL);
+    sigaction(SIGHUP,  &oldHandlers.hup,  NULL);
+    sigaction(SIGINT,  &oldHandlers.int_, NULL);
+    sigaction(SIGTERM, &oldHandlers.term, NULL);
+#endif
+}
 
 } // namespace
 
@@ -222,8 +252,6 @@ serverAbyss::initialize(constrOpt const& opt) {
         
         if (opt.present.portNumber || opt.present.socketFd)
             ServerInit(&this->cServer);
-        
-        setupSignalHandlers();
     } catch (...) {
         ServerFree(&this->cServer);
         throw;
@@ -285,7 +313,25 @@ serverAbyss::~serverAbyss() {
 void
 serverAbyss::run() {
 
+    /* We do some pretty ugly stuff for an object method: we set signal
+       handlers, which are process-global.
+
+       One example of where this can be hairy is: Caller has a child
+       process unrelated to the Abyss server.  That child dies.  We
+       get his death of a child signal and Caller never knows.
+
+       We really expect to be the only thing in the process, at least
+       for the time we're running.  If you want want the Abyss Server
+       to behave more like an object and own the signals yourself,
+       use runOnce() in a loop instead of run().
+    */
+    signalHandlers oldHandlers;
+
+    setupSignalHandlers(&oldHandlers);
+
     ServerRun(&this->cServer);
+
+    restoreSignalHandlers(oldHandlers);
 }
  
 
