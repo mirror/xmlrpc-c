@@ -29,7 +29,9 @@ $(SHLIB_INSTALL_TARGETS):%/install:%.$(MAJ).$(MIN).$(SHLIB_SUFFIX)
 # $< is a library file name, e.g. libfoo.so.3.1 .
 	$(INSTALL_SHLIB) $< $(DESTDIR)$(LIBINST_DIR)/$<
 	cd $(DESTDIR)$(LIBINST_DIR); \
+	  rm -f $(<:%.$(MIN).$(SHLIB_SUFFIX)=%.$(SHLIB_SUFFIX)); \
 	  $(LN_S) $< $(<:%.$(MIN).$(SHLIB_SUFFIX)=%.$(SHLIB_SUFFIX))
 	cd $(DESTDIR)$(LIBINST_DIR); \
+	  rm -f $(<:%.$(MAJ).$(MIN).$(SHLIB_SUFFIX)=%.$(SHLIB_SUFFIX)); \
 	  $(LN_S) $(<:%.$(MIN).$(SHLIB_SUFFIX)=%.$(SHLIB_SUFFIX)) \
 	    $(<:%.$(MAJ).$(MIN).$(SHLIB_SUFFIX)=%.$(SHLIB_SUFFIX))
