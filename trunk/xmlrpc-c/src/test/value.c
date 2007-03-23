@@ -984,7 +984,7 @@ test_value_i8(void) {
 
     xmlrpc_value * v;
     xmlrpc_env env;
-    xmlrpc_int64 i;
+    long long i;
 
     xmlrpc_env_init(&env);
 
@@ -1013,6 +1013,15 @@ test_value_i8(void) {
     TEST_NO_FAULT(&env);
     TEST(i == (1ull << 40));
     xmlrpc_DECREF(v);
+
+    v = xmlrpc_build_value(&env, "I", (long long) 10);
+    TEST_NO_FAULT(&env);
+    TEST(v != NULL);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_decompose_value(&env, v, "I", &i);
+    xmlrpc_DECREF(v);
+    TEST_NO_FAULT(&env);
+    TEST(i == 10);
 
     xmlrpc_env_clean(&env);
 }

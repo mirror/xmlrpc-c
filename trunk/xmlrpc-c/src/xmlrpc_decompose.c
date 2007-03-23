@@ -90,6 +90,10 @@ struct cptrDecomp {
     void ** valueP;
 };
 
+struct i8Decomp {
+    long long * valueP;
+};
+
 struct valueDecomp {
     xmlrpc_value ** valueP;
 };
@@ -141,6 +145,7 @@ struct decompTreeNode {
         struct wideStringDecomp TwideString;
         struct bitStringDecomp  TbitString;
         struct cptrDecomp       Tcptr;
+        struct i8Decomp         Ti8;
         struct valueDecomp      Tvalue;
         struct arrayValDecomp   TarrayVal;
         struct structValDecomp  TstructVal;
@@ -198,6 +203,7 @@ releaseDecomposition(const struct decompTreeNode * const decompRootP,
     case 'b':
     case 'd':
     case 'n':
+    case 'I':
     case 'p':
         /* Nothing was allocated; nothing to release */
         break;
@@ -496,6 +502,10 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
 
     case 'n':
         xmlrpc_read_nil(envP, valueP);
+        break;
+
+    case 'I':
+        xmlrpc_read_i8(envP, valueP, decompRootP->store.Ti8.valueP);
         break;
 
     case 'p':
@@ -958,6 +968,11 @@ createDecompTreeNext(xmlrpc_env *             const envP,
             /* There's no value to store */
             break;
 
+        case 'I':
+            decompNodeP->store.Ti8.valueP =
+                (long long *) va_arg(*argsP, long long *);
+            break;
+            
         case 'p':
             decompNodeP->store.Tcptr.valueP =
                 (void**) va_arg(*argsP, void**);

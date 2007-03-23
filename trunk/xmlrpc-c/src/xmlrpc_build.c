@@ -370,6 +370,11 @@ getValue(xmlrpc_env *    const envP,
             xmlrpc_nil_new(envP);
         break;      
 
+    case 'I':
+        *valPP =
+            xmlrpc_i8_new(envP, (long long) va_arg(*argsP, long long));
+        break;
+
     case 'p':
         /* We might someday want to use the code 'p!' to read in a
            cleanup function for this pointer. 
