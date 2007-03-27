@@ -21,10 +21,28 @@ paramList::paramList(unsigned int const paramCount) {
 
 
  
-void
+paramList&
 paramList::add(xmlrpc_c::value const param) {
 
+    // Note: Before Xmlrpc-c 1.10, the return value was void.  Old programs
+    // using this new add() won't notice the difference.  New programs
+    // using this new add() against an old library will, since the old
+    // add() will not return anything.  A new program that wants to get
+    // a link error instead of a crash in this case can use addx() instead.
+
     this->paramVector.push_back(param);
+
+    return *this;
+}
+
+
+
+paramList&
+paramList::addx(xmlrpc_c::value const param) {
+
+    // See add() for an explanation of why this exists.
+
+    return this->add(param);
 }
 
 

@@ -267,8 +267,11 @@ class paramList {
 public:
     paramList(unsigned int const paramCount = 0);
 
-    void
+    paramList&
     add(xmlrpc_c::value const param);
+
+    paramList&
+    addx(xmlrpc_c::value const param);
 
     unsigned int
     size() const;
