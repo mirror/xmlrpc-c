@@ -21,7 +21,7 @@ public:
         // signature and help strings are documentation -- the client
         // can query this information with a system.methodSignature and
         // system.methodHelp RPC.
-        this->_signature = "ii";  // method's arguments are two integers
+        this->_signature = "i:ii";  // method's arguments, result are integers
         this->_help = "This method adds two integers together";
     }
     void
@@ -43,26 +43,30 @@ int
 main(int           const, 
      const char ** const) {
 
-    xmlrpc_c::registry myRegistry;
+    try {
+        xmlrpc_c::registry myRegistry;
 
-    xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);
+        xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);
 
-    myRegistry.addMethod("sample.add", sampleAddMethodP);
+        myRegistry.addMethod("sample.add", sampleAddMethodP);
 
-    xmlrpc_c::serverAbyss myAbyssServer(
-        xmlrpc_c::serverAbyss::constrOpt()
-        .registryP(&myRegistry)
-        .portNumber(8080)
-        .logFileName("/tmp/xmlrpc_log"));
+        xmlrpc_c::serverAbyss myAbyssServer(
+            xmlrpc_c::serverAbyss::constrOpt()
+            .registryP(&myRegistry)
+            .portNumber(8080)
+            .logFileName("/tmp/xmlrpc_log"));
 
-    while (true) {
-        cout << "Waiting for next RPC..." << endl;
+        while (true) {
+            cout << "Waiting for next RPC..." << endl;
 
-        myAbyssServer.runOnce();
+            myAbyssServer.runOnce();
             /* This waits for the next connection, accepts it, reads the
                HTTP POST request, executes the indicated RPC, and closes
                the connection.
             */
+        }
+    } catch (exception const& e) {
+        cerr << "Something failed.  " << e.what() << endl;
     }
     return 0;
 }
