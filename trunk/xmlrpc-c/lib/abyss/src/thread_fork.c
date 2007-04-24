@@ -281,12 +281,6 @@ ThreadForks(void) {
 
 
 
-void
-ThreadUpdateStatus(TThread * const threadP) {
-    /* Necessary only for primitive Unix forking */
-}
-
-
 /*********************************************************************
 ** Mutex
 *********************************************************************/
@@ -296,7 +290,7 @@ ThreadUpdateStatus(TThread * const threadP) {
 */
 
 abyss_bool
-MutexCreate(TMutex * const mutexP ATTR_UNUSED) {
+MutexCreate(TMutex ** const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
