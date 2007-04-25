@@ -40,10 +40,10 @@ RSC=rc.exe
 # PROP Output_Dir "Release\xmlrpc"
 # PROP Intermediate_Dir "Release\xmlrpc"
 # PROP Target_Dir ""
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /FR /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../lib" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I ".." /I "../lib/expat/xmlparse" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../.." /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -65,10 +65,10 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug\xmlrpc"
 # PROP Intermediate_Dir "Debug\xmlrpc"
 # PROP Target_Dir ""
-MTL=midl.exe
 LINK32=link.exe -lib
+MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../lib/" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I "../" /I "../lib/expat/xmlparse" /I "../lib/w3c-libwww-5.3.2/Library/src" /I "../lib/abyss/src" /I "../lib/wininet_transport" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../lib" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I ".." /I "../lib/expat/xmlparse" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../.." /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -89,11 +89,93 @@ LIB32=link.exe -lib
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;cc"
 # Begin Source File
 
-SOURCE=..\lib\util\casprintf.c
+SOURCE=..\lib\libutil\casprintf.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\date.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\libutil\error.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\libutil\make_printable.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\libutil\memblock.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\libutil\MemLeakCheck.c
+
+!IF  "$(CFG)" == "xmlrpc - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\lib\util\pthreadx_win32.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\registry.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\libutil\resource.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\response.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\session.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\libutil\sleep.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\socket_win.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\system_method.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\thread_windows.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\token.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\trace.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\libutil\xml_rpc_alloc.c
+
+!IF  "$(CFG)" == "xmlrpc - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -114,6 +196,10 @@ SOURCE=..\src\xmlrpc_builddecomp.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_client.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\xmlrpc_client_global.c
 # End Source File
 # Begin Source File
 
@@ -144,6 +230,7 @@ SOURCE=..\src\xmlrpc_parse.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_registry.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -156,6 +243,7 @@ SOURCE=..\src\xmlrpc_server_abyss.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_server_w32httpsys.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -164,10 +252,12 @@ SOURCE=..\src\xmlrpc_struct.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_strutil.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_support.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 

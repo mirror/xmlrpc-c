@@ -1,7 +1,7 @@
 #pragma once
 
 /* From xmlrpc_amconfig.h */
-  
+
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 /* #undef size_t */
 
@@ -41,7 +41,7 @@
 
 /* Define if va_list is actually an array. */
 #define VA_LIST_IS_ARRAY 0
-  
+
 /* Define if we're using a copy of libwww with built-in SSL support. */
 #define HAVE_LIBWWW_SSL 0
 
@@ -49,12 +49,12 @@
 #define ATTR_UNUSED
 
 #define HAVE_UNICODE_WCHAR 1
-  
+
 #define DIRECTORY_SEPARATOR "\\"
 
-  
+
 /* Windows-specific includes. */
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,17 +64,17 @@
 #if !defined (snprintf)
   #define snprintf _snprintf
 #endif
-#if !defined (popen) 
+#if !defined (popen)
   #define popen _popen
 #endif
 
 
 #include <time.h>
-#include <WINSOCK2.h>
+#include <WINSOCK.h>
 #include <direct.h>  /* for _chdir() */
 
 /* We are linking against the multithreaded versions
-   of the Microsoft runtimes - this makes gmtime 
+   of the Microsoft runtimes - this makes gmtime
    equiv to gmtime_r in that Windows gmtime is threadsafe
 */
 #if !defined (gmtime_r)
@@ -122,9 +122,20 @@ typedef unsigned __int64  uint64_t;
 #define __inline__ __inline
 
 #define HAVE_SETENV 1
-__inline BOOL setenv(const char* name, const char* value, int i) 
+__inline BOOL setenv(const char* name, const char* value, int i)
 {
 	return (SetEnvironmentVariable(name, value) != 0) ? TRUE : FALSE;
 }
 
 #define strcasecmp(a,b) stricmp((a),(b))
+
+#if defined(HAVE_WCHAR_H) && (HAVE_WCHAR_H)
+#define XMLRPC_HAVE_WCHAR 1
+#endif
+
+#ifdef  _MSC_VER
+#pragma warning(disable:4028)           // disable unwanted "warning C4028: formal parameter # different from declaration"
+// #pragma warning(default:4028)        // use this to reenable, if necessary
+#endif  // _MSC_VER
+
+#include "xml_rpc_alloc.h"

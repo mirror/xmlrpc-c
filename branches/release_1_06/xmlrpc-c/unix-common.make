@@ -64,6 +64,8 @@ $(SHLIB_INSTALL_TARGETS) X/install:%/install:%.$(SHLIB_SUFFIX).$(MAJ).$(MIN)
 # $< is a library file name, e.g. libfoo.3.1 .
 	$(INSTALL_SHLIB) $< $(DESTDIR)$(LIBINST_DIR)/$<
 	cd $(DESTDIR)$(LIBINST_DIR); \
-	  $(LN_S) $< $(<:%.$(MIN)=%)
+	  rm -f $(<:%.$(MIN)=%); \
+          $(LN_S) $< $(<:%.$(MIN)=%)
 	cd $(DESTDIR)$(LIBINST_DIR); \
-	  $(LN_S) $(<:%.$(MIN)=%) $(<:%.$(MAJ).$(MIN)=%)
+	  rm -f $(<:%.$(MAJ).$(MIN)=%); \
+          $(LN_S) $(<:%.$(MIN)=%) $(<:%.$(MAJ).$(MIN)=%)

@@ -3,6 +3,45 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
+Project: "all"=".\all.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc_sample_add_asynch_client
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc_sample_add_server
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc_sample_add_sync_client
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc_sample_auth_client
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name rpctest
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "configwin32"=".\configwin32.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "cpptest"=".\cpptest.dsp" - Package Owner=<4>
 
 Package=<5>
@@ -26,6 +65,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name configwin32
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -115,6 +157,9 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name xmlrpc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name _all_
     End Project Dependency
 }}}
 

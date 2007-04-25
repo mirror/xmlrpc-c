@@ -3,11 +3,11 @@
 #define MUST_BUILD_LIBWWW_CLIENT 0
 static const char * const XMLRPC_DEFAULT_TRANSPORT = "wininet";
 
-/* 
+/*
 Set to zero if you do not wish to build the http.sys
 based XMLRPC-C Server
 */
-#define MUST_BUILD_HTTP_SYS_SERVER 1
+#define MUST_BUILD_HTTP_SYS_SERVER 0
 
 /*
 We use pragma statements to tell the linker what we need to link with.

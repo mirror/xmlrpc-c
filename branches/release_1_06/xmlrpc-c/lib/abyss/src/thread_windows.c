@@ -1,13 +1,3 @@
-/* This code is just a first draft by someone who doesn't know anything
-   about Windows.  It has never been compiled.  It is just a framework
-   for someone who knows Windows to pick and finish.
-
-   Bryan Henderson redesigned the threading structure for Abyss in
-   April 2006 and wrote this file then.  He use the former
-   threading code, which did work on Windows, as a basis.
-*/
-
-
 #include <process.h>
 #include <windows.h>
 
@@ -23,7 +13,9 @@
 
 
 struct abyss_thread {
-    HANDLE handle;
+    HANDLE          handle;
+    void *          userHandle;
+    TThreadDoneFn * threadDone;
 };
 
 #define  THREAD_STACK_SIZE (16*1024L)
@@ -49,8 +41,10 @@ ThreadCreate(TThread **      const threadPP,
         xmlrpc_asprintf(errorP,
                         "Can't allocate memory for thread descriptor.");
     else {
-        threadP->handle = _beginthreadex(NULL, THREAD_STACK_SIZE, func, 
-                                         (WinThreadProc)arg,
+        threadP->userHandle = userHandle;
+        threadP->threadDone = threadDone;
+        threadP->handle = (HANDLE)_beginthreadex(NULL, THREAD_STACK_SIZE, func,
+                                         userHandle,
                                          CREATE_SUSPENDED, &z);
         if (threadP->handle == NULL)
             xmlrpc_asprintf(errorP, "_beginthreadex() failed.");
@@ -91,6 +85,11 @@ void
 ThreadWaitAndRelease(TThread * const threadP) {
 
     ThreadRelease(threadP);
+
+    if (threadP->threadDone)
+        threadP->threadDone(threadP->userHandle);
+
+    free(threadP);
 }
 
 
@@ -119,9 +118,19 @@ ThreadForks(void) {
 
 
 
+void
+ThreadUpdateStatus(TThread * const threadP ATTR_UNUSED) {
+
+    /* Threads keep their own statuses up to date, so there's nothing
+       to do here.
+    */
+}
+
+
+
 abyss_bool
 MutexCreate(TMutex * const mutexP) {
-    
+
     *mutexP = CreateMutex(NULL, FALSE, NULL);
 
     return (*mutexP != NULL);
@@ -155,3 +164,4 @@ void
 MutexFree(TMutex * const mutexP) {
     CloseHandle(*mutexP);
 }
+

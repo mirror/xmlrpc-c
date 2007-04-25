@@ -23,7 +23,7 @@ struct socketWin {
 /*----------------------------------------------------------------------------
    The properties/state of a TSocket unique to a Unix TSocket.
 -----------------------------------------------------------------------------*/
-    SOCKET winsock;
+    SOCKET fd;
     abyss_bool userSuppliedWinsock;
         /* 'socket' was supplied by the user; it belongs to him */
 };
@@ -31,15 +31,14 @@ struct socketWin {
 
 
 void
-SocketWinInit(*succeededP) {
+SocketWinInit(abyss_bool * const succeededP) {
 
-    abyss_bool retval;
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
- 
+
     wVersionRequested = MAKEWORD(2, 0);
- 
+
     err = WSAStartup(wVersionRequested, &wsaData);
     *succeededP = (err == 0);
 }
@@ -48,7 +47,7 @@ SocketWinInit(*succeededP) {
 
 void
 SocketWinTerm(void) {
-    
+
     WSACleanup();
 }
 
@@ -96,13 +95,13 @@ SocketWinCreate(TSocket ** const socketPP) {
         if (rc < 0)
             *socketPP = NULL;
         else {
-            socketUnixP->winsock = rc;
-            socketUnixP->userSuppliedWinsock = FALSE;
-            
+            socketWinP->fd = rc;
+            socketWinP->userSuppliedWinsock = FALSE;
+
             {
                 int32_t n = 1;
                 int rc;
-                rc = setsockopt(socketUnixP->fd, SOL_SOCKET, SO_REUSEADDR,
+                rc = setsockopt(socketWinP->fd, SOL_SOCKET, SO_REUSEADDR,
                                 (char*)&n, sizeof(n));
                 if (rc < 0)
                     *socketPP = NULL;
@@ -110,7 +109,7 @@ SocketWinCreate(TSocket ** const socketPP) {
                     SocketCreate(&vtbl, socketWinP, socketPP);
             }
             if (!*socketPP)
-                closesocket(socketWinP->winsock);
+                closesocket(socketWinP->fd);
         }
         if (!*socketPP)
             free(socketWinP);
@@ -129,7 +128,7 @@ SocketWinCreateWinsock(SOCKET     const winsock,
     MALLOCVAR(socketWinP);
 
     if (socketWinP) {
-        socketWinP->winsock = winsock;
+        socketWinP->fd = winsock;
         socketWinP->userSuppliedWinsock = TRUE;
 
         SocketCreate(&vtbl, socketWinP, socketPP);
@@ -148,7 +147,7 @@ socketDestroy(TSocket * const socketP) {
     struct socketWin * const socketWinP = socketP->implP;
 
     if (!socketWinP->userSuppliedWinsock)
-        closesocket(socketWinP->winsock);
+        closesocket(socketWinP->fd);
 
     free(socketWinP);
 }
@@ -173,9 +172,9 @@ socketWrite(TSocket *             const socketP,
         ) {
         size_t const maxSend = (size_t)(-1) >> 1;
 
-        ssize_t rc;
-        
-        rc = send(socketWinP->winsock, &buffer[len-bytesLeft],
+        int rc;
+
+        rc = send(socketWinP->fd, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
 
         if (rc <= 0)
@@ -190,14 +189,14 @@ socketWrite(TSocket *             const socketP,
 
 
 uint32_t
-socketRead(TSocket * const socketP, 
-           char *    const buffer, 
+socketRead(TSocket * const socketP,
+           char *    const buffer,
            uint32_t  const len) {
 
     struct socketWin * const socketWinP = socketP->implP;
 
     int rc;
-    rc = recv(socketWinP->winsock, buffer, len, 0);
+    rc = recv(socketWinP->fd, buffer, len, 0);
     return rc;
 }
 
@@ -228,7 +227,7 @@ abyss_bool
 socketBind(TSocket * const socketP,
            TIPAddr * const addrP,
            uint16_t  const portNumber) {
-    
+
     struct socketWin * const socketWinP = socketP->implP;
 
     struct sockaddr_in name;
@@ -241,7 +240,7 @@ socketBind(TSocket * const socketP,
     else
         name.sin_addr.s_addr = INADDR_ANY;
 
-    rc = bind(socketUnixP->fd, (struct sockaddr *)&name, sizeof(name));
+    rc = bind(socketWinP->fd, (struct sockaddr *)&name, sizeof(name));
 
     return (rc != -1);
 }
@@ -252,7 +251,7 @@ abyss_bool
 socketListen(TSocket * const socketP,
              uint32_t  const backlog) {
 
-    struct socketUnix * const socketUnixP = socketP->implP;
+    struct socketWin * const socketWinP = socketP->implP;
 
     int32_t const minus1 = -1;
 
@@ -260,10 +259,10 @@ socketListen(TSocket * const socketP,
 
     /* Disable the Nagle algorithm to make persistant connections faster */
 
-    setsockopt(socketUnixP->fd, IPPROTO_TCP,TCP_NODELAY,
-               &minus1, sizeof(minus1));
+    setsockopt(socketWinP->fd, IPPROTO_TCP,TCP_NODELAY,
+               (const char *)&minus1, sizeof(minus1));
 
-    rc = listen(socketUnixP->fd, backlog);
+    rc = listen(socketWinP->fd, backlog);
 
     return (rc != -1);
 }
@@ -293,7 +292,7 @@ socketAccept(TSocket *    const listenSocketP,
 
     abyss_bool connected, failed, interrupted;
 
-    connected  = FALSE;
+    connected   = FALSE;
     failed      = FALSE;
     interrupted = FALSE;
 
@@ -309,9 +308,9 @@ socketAccept(TSocket *    const listenSocketP,
             MALLOCVAR(acceptedSocketWinP);
 
             if (acceptedSocketWinP) {
-                acceptedSocketWinP->winsock = acceptedWinsock;
+                acceptedSocketWinP->fd = acceptedWinsock;
                 acceptedSocketWinP->userSuppliedWinsock = FALSE;
-                
+
                 SocketCreate(&vtbl, acceptedSocketWinP, acceptedSocketPP);
                 if (!*acceptedSocketPP)
                     failed = TRUE;
@@ -324,12 +323,12 @@ socketAccept(TSocket *    const listenSocketP,
             } else
                 failed = TRUE;
             if (failed)
-                close(acceptedFd);
-        } else if (errno == EINTR)
+                closesocket(acceptedWinsock);
+        } else if (socketError(NULL) == WSAEINTR)
             interrupted = TRUE;
         else
             failed = TRUE;
-    }   
+    }
     *failedP    = failed;
     *connectedP = connected;
 }
@@ -351,10 +350,10 @@ socketWait(TSocket *  const socketP,
     FD_ZERO(&wfds);
 
     if (rd)
-        FD_SET(socketWinP->winsock, &rfds);
+        FD_SET(socketWinP->fd, &rfds);
 
     if (wr)
-        FD_SET(socketWinP->winsock, &wfds);
+        FD_SET(socketWinP->fd, &wfds);
 
     tv.tv_sec  = timems / 1000;
     tv.tv_usec = timems % 1000;
@@ -365,20 +364,20 @@ socketWait(TSocket *  const socketP,
         rc = select(socketWinP->fd + 1, &rfds, &wfds, NULL,
                     (timems == TIME_INFINITE ? NULL : &tv));
 
-        switch(rc) {   
+        switch(rc) {
         case 0: /* time out */
             return 0;
 
         case -1:  /* socket error */
-            if (errno == EINTR)
+            if (socketError(NULL) == WSAEINTR)
                 break;
-            
+
             return 0;
-            
+
         default:
-            if (FD_ISSET(socketWinP->winsock, &rfds))
+            if (FD_ISSET(socketWinP->fd, &rfds))
                 return 1;
-            if (FD_ISSET(socketWinP->winsock, &wfds))
+            if (FD_ISSET(socketWinP->fd, &wfds))
                 return 2;
             return 0;
         }
@@ -395,7 +394,7 @@ socketAvailableReadBytes(TSocket * const socketP) {
     uint32_t x;
     int rc;
 
-    rc = ioctlsocket(socketWinP->winsock, FIONREAD, &x);
+    rc = ioctlsocket(socketWinP->fd, FIONREAD, &x);
 
     return rc == 0 ? x : 0;
 }
@@ -415,8 +414,8 @@ socketGetPeerName(TSocket *    const socketP,
     struct sockaddr sockAddr;
 
     addrlen = sizeof(sockAddr);
-    
-    rc = getpeername(socketWinP->winsock, &sockAddr, &addrlen);
+
+    rc = getpeername(socketWinP->fd, &sockAddr, &addrlen);
 
     if (rc < 0) {
         TraceMsg("getpeername() failed.  errno=%d (%s)",
@@ -448,9 +447,9 @@ socketGetPeerName(TSocket *    const socketP,
 
 
 
-uint32_t
-socketError(void) {
-    return WSAGetLastError();
+static uint32_t
+socketError(TSocket * const socketP) {
+    return (uint32_t)WSAGetLastError();
 }
 
 
