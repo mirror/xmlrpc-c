@@ -16,7 +16,7 @@ Options are:
   --ldadd        Libraries to use with automake
   --ldflags      Flags to use with automake & libtool
   --prefix       The prefix under which the package was installed
-  --exec-prefix  The executable prefix under which the package was installed"
+"
 
 if test $# -eq 0; then
       echo "You must specify at least one option."
@@ -40,16 +40,16 @@ cpp_libs=
 # If Xmlrpc-c libraries are installed in the standard linker search
 # path on this system, you should remove the following line:
 
-the_libdirs="-L$libdir $the_libdirs"
+the_libdirs="-L$LIBINST_DIR $the_libdirs"
 
 the_libs="-lxmlrpc -lxmlrpc_util ${LIBXML}"
-the_rpath="-R$libdir $the_rpath"
-the_wl_rpath="-Wl,-rpath,$libdir $the_wl_rpath"
+the_rpath="-R$LIBINST_DIR $the_rpath"
+the_wl_rpath="-Wl,-rpath,$LIBINST_DIR $the_wl_rpath"
 
 cflags=
 # If Xmlrpc-c library interface header files are installed in the standard
 # compiler search path on this system, you should remove the following line:
-cflags="-I$INCLUDEDIR $cflags"
+cflags="-I$HEADERINST_DIR $cflags"
 
 while test $# -gt 0; do
   case $1 in
@@ -126,14 +126,14 @@ while test $# -gt 0; do
       ;;
     --libs)
       if test "$NEED_WL_RPATH" = "yes"; then
-          $rpath=$the_wl_rpath
+          rpath=$the_wl_rpath
       elif test "$NEED_RPATH" = "yes"; then
-          $rpath=$the_rpath
+          rpath=$the_rpath
       else
-          $rpath=
+          rpath=
       fi
 
-      echo "$the_libdirs  $rpath $the_libs"
+      echo "$the_libdirs $rpath $the_libs"
       ;;
     --ldadd)
       echo "$the_libdirs $the_libs"
@@ -145,7 +145,12 @@ while test $# -gt 0; do
       echo "$PREFIX"
       ;;
     --exec-prefix)
-      echo "$EXEC_PREFIX"
+      # This is just here for compatibility.  In a conventional autoconf
+      # system, "prefix" is the prefix specified at 'configure' time and
+      # "exec_prefix" is the prefix as overridden at 'make install' time.
+      # The only reason I can think that this program historically had both
+      # is that the author didn't understand that.
+      echo "$PREFIX"
       ;;
     --help)
       echo "${usage}" 1>&2

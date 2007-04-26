@@ -95,8 +95,8 @@ shell_config: $(BLDDIR)/Makefile.config
 	@echo 'VERSION="$(VERSION)"'					>>$@
 	@echo 'FEATURE_LIST="$(FEATURE_LIST)"'				>>$@
 	@echo 'PREFIX="$(PREFIX)"'					>>$@
-	@echo 'EXEC_PREFIX="$(EXEC_PREFIX)"'				>>$@
-	@echo 'INCLUDEDIR="$(INCLUDEDIR)"'                              >>$@
+	@echo 'HEADERINST_DIR="$(HEADERINST_DIR)"'                      >>$@
+	@echo 'LIBINST_DIR="$(LIBINST_DIR)"'                            >>$@
 	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
 	@echo '#######################################################' >>$@

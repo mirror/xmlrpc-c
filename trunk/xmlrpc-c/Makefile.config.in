@@ -41,8 +41,7 @@ VERSION = @VERSION@
 FEATURE_LIST = @FEATURE_LIST@
 ABS_SRCDIR = @abs_srcdir@
 PREFIX = @prefix@
-EXEC_PREFIX = @exec_prefix@
-INCLUDEDIR = @includedir@
+
 
 HAVE_WCHAR_H_DEFINE = @HAVE_WCHAR_H_DEFINE@
 
@@ -302,15 +301,16 @@ INSTALL_SCRIPT = $(INSTALL) -c -m 755
 
 # Here are the locations at which 'make install' puts files:
 
-# DESTDIR is designed to be overriden at make time in order to relocate
+# PREFIX is designed to be overridden at make time if the user decides
+# he doesn't like the default specified at 'configure' time.
+
+LIBINST_DIR = $(PREFIX)/lib
+HEADERINST_DIR = $(PREFIX)/include
+PROGRAMINST_DIR = $(PREFIX)/bin
+
+# DESTDIR is designed to be overridden at make time in order to relocate
 # the entire install into a subdirectory.
 DESTDIR =
-
-exec_prefix = @exec_prefix@
-prefix = @prefix@
-LIBINST_DIR = @libdir@
-HEADERINST_DIR = @includedir@
-PROGRAMINST_DIR = @bindir@
 
 # VPATH probably doesn't belong in this file, but it's a convenient
 # place to set it once.  VPATH is a special Make variable that tells
