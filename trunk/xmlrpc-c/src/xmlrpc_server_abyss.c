@@ -800,9 +800,13 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
     DateInit();
     
     ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+
+    assert(parmSize >= XMLRPC_APSIZE(config_file_name));
     
     ConfReadServerFile(parmsP->config_file_name, &server);
         
+    assert(parmSize >= XMLRPC_APSIZE(registryP));
+    
     setHandlers(&server, "/RPC2", parmsP->registryP, false);
         
     ServerInit(&server);
