@@ -10,6 +10,7 @@
 
 #include "xmlrpc_config.h"
 #include "mallocvar.h"
+#include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 
@@ -44,6 +45,9 @@ initRequestInfo(TRequestInfo * const requestInfoP,
   controlled by headers, use the defaults -- I.e. the value that
   applies if the request contains no applicable header.
 -----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_PTR_OK(requestLine);
+    XMLRPC_ASSERT_PTR_OK(path);
+
     requestInfoP->requestline = strdup(requestLine);
     requestInfoP->method      = httpMethod;
     requestInfoP->host        = xmlrpc_strdupnull(host);
@@ -263,6 +267,10 @@ parseRequestUri(char *           const requestUri,
 
   Return strings in newly malloc'ed storage.
 
+  Return as *httpErrorCodeP the HTTP error code that describes how the
+  URI is invalid, or 0 if it is valid.  If it's invalid, other return
+  values are meaningless.
+
   This destroys 'requestUri'.  We should fix that.
 -----------------------------------------------------------------------------*/
     abyss_bool error;
@@ -353,7 +361,7 @@ parseRequestLine(char *           const requestLine,
                  abyss_bool *     const moreLinesP,
                  uint16_t *       const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
-   Modifies *requestLine and returns pointers to its storage!
+   Modifies *requestLine!
 -----------------------------------------------------------------------------*/
     const char * httpMethodName;
     char * p;
@@ -431,11 +439,11 @@ parseRequestLine(char *           const requestLine,
                     xmlrpc_strfree(path);
                     xmlrpc_strfree(query);
                 }
+                *hostP = host;
+                *portP = port;
+                *pathP = path;
+                *queryP = query;
             }
-            *hostP = host;
-            *portP = port;
-            *pathP = path;
-            *queryP = query;
         }
     }
 }
