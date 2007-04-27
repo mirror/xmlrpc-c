@@ -14,6 +14,7 @@
 #undef HAVE_SETGROUPS
 #undef HAVE_ASPRINTF
 #undef HAVE_SETENV
+#undef HAVE_PSELECT
 #undef HAVE_WCSNCMP
 
 /* Define if you have the socket library (-lsocket).  */

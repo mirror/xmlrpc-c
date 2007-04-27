@@ -332,13 +332,15 @@ AC_MSG_ERROR(your C library does not provide vsnprintf)
 dnl Unicode function needed by test suites.
 AC_CHECK_FUNCS(wcsncmp)
 
-dnl CygWin looks like Unix, but doesn't provide setgroups.
+dnl CygWin doesn't provide setgroups.
 AC_CHECK_FUNCS(setgroups)
 
 AC_CHECK_FUNCS(asprintf)
 
 AC_CHECK_FUNCS(setenv)
 
+dnl uclib doesn't have pselect
+AC_CHECK_FUNCS(pselect)
 
 dnl =======================================================================
 dnl Checks for operating system features.
