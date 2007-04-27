@@ -74,6 +74,10 @@ freeRequestInfo(TRequestInfo * const requestInfoP) {
     xmlrpc_strfreenull(requestInfoP->host);
 
     xmlrpc_strfreenull(requestInfoP->user);
+
+    xmlrpc_strfree(requestInfoP->uri);
+
+    xmlrpc_strfree(requestInfoP->requestline);
 }
 
 
@@ -124,7 +128,18 @@ static void
 readRequestLine(TSession * const sessionP,
                 char **    const requestLineP,
                 uint16_t * const httpErrorCodeP) {
+/*----------------------------------------------------------------------------
+   Read a line of the HTTP request from session 'sessionP'.  We read
+   through the session's internal buffer; i.e.  we may get data that was
+   previously read from the network, or we may read more from the network.
+   
+   Return as *requestLineP the request line read.  This ASCIIZ string is
+   in the session's internal buffer.
 
+  Return as *httpErrorCodeP the HTTP error code that describes how the
+  URI is invalid, or 0 if it is valid.  If it's invalid, *requestLineP
+  is meaningless.
+-----------------------------------------------------------------------------*/
     char * line;
     abyss_bool gotNonEmptyLine;
 
@@ -605,7 +620,7 @@ void
 RequestRead(TSession * const sessionP) {
 
     uint16_t httpErrorCode;  /* zero for no error */
-    char * requestLine;
+    char * requestLine;  /* In connection;s internal buffer */
 
     readRequestLine(sessionP, &requestLine, &httpErrorCode);
     if (!httpErrorCode) {
