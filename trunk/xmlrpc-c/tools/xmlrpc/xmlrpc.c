@@ -82,8 +82,7 @@ struct cmdlineInfo {
 static void 
 die_if_fault_occurred (xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
-        fprintf(stderr, "Error: %s (%d)\n",
-                envP->fault_string, envP->fault_code);
+        fprintf(stderr, "Failed.  %s\n", envP->fault_string);
         exit(1);
     }
 }
@@ -492,6 +491,26 @@ dumpResult(xmlrpc_value * const resultP) {
 
 
 static void
+callWithClient(xmlrpc_env *               const envP,
+               const xmlrpc_server_info * const serverInfoP,
+               const char *               const methodName,
+               xmlrpc_value *             const paramArrayP,
+               xmlrpc_value **            const resultPP) {
+               
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+    *resultPP = xmlrpc_client_call_server_params(
+        &env, serverInfoP, methodName, paramArrayP);
+    
+    if (env.fault_occurred)
+        xmlrpc_faultf(envP, "Call failed.  %s.  (XML-RPC fault code %d)",
+                      env.fault_string, env.fault_code);
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 doCall(xmlrpc_env *               const envP,
        const char *               const transport,
        const char *               const curlinterface,
@@ -528,9 +547,8 @@ doCall(xmlrpc_env *               const envP,
     xmlrpc_client_init2(envP, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, 
                         &clientparms, XMLRPC_CPSIZE(transportparm_size));
     if (!envP->fault_occurred) {
-        *resultPP = xmlrpc_client_call_server_params(
-            envP, serverInfoP, methodName, paramArrayP);
-    
+        callWithClient(envP, serverInfoP, methodName, paramArrayP, resultPP);
+
         xmlrpc_client_cleanup();
     }
     if (clientparms.transportparmsP)
