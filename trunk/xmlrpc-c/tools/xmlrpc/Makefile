@@ -43,7 +43,7 @@ XMLRPC_OBJS = xmlrpc.o dumpvalue.o
 xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
 	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(CLIENT_LDLIBS) $(UTILS)
 
-%.o:%.c
+%.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS) $<
 
 # This Makefile.config dependency makes sure the symlinks get built before
