@@ -136,9 +136,9 @@ readRequestLine(TSession * const sessionP,
    Return as *requestLineP the request line read.  This ASCIIZ string is
    in the session's internal buffer.
 
-  Return as *httpErrorCodeP the HTTP error code that describes how the
-  URI is invalid, or 0 if it is valid.  If it's invalid, *requestLineP
-  is meaningless.
+   Return as *httpErrorCodeP the HTTP error code that describes how the
+   URI is invalid, or 0 if it is valid.  If it's invalid, *requestLineP
+   is meaningless.
 -----------------------------------------------------------------------------*/
     char * line;
     abyss_bool gotNonEmptyLine;
