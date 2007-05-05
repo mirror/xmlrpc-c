@@ -582,19 +582,21 @@ readAndProcessHeaders(TSession * const sessionP,
     endOfHeaders = false;  /* Caller assures us there is at least one header */
 
     while (!endOfHeaders && !*httpErrorCodeP) {
-        char * p;
+        char * header;
         abyss_bool succeeded;
-        succeeded = ConnReadHeader(sessionP->conn, &p);
+        succeeded = ConnReadHeader(sessionP->conn, &header);
         if (!succeeded)
             *httpErrorCodeP = 408;  /* Request Timeout */
         else {
-            if (!*p)
+            if (header[0] == '\0')
                 /* We have reached the empty line so all the request
                    was read.
                 */
                 endOfHeaders = true;
             else {
+                char * p;
                 char * fieldName;
+                p = &header[0];
                 getFieldNameToken(&p, &fieldName, httpErrorCodeP);
                 if (!*httpErrorCodeP) {
                     char * fieldValue;
@@ -602,7 +604,7 @@ readAndProcessHeaders(TSession * const sessionP,
                     NextToken((const char **)&p);
                     
                     fieldValue = p;
-                    
+
                     TableAdd(&sessionP->request_headers,
                              fieldName, fieldValue);
                     
