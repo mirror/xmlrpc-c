@@ -441,35 +441,20 @@ ConnWriteFromFile(TConn *  const connectionP,
 static void
 processHeaderLine(char *       const start,
                   const char * const headerStart,
+                  TConn *      const connectionP,                  
+                  time_t       const deadline,
                   abyss_bool * const gotHeaderP,
-                  char **      const nextP) {
+                  char **      const nextP,
+                  abyss_bool * const errorP) {
 /*----------------------------------------------------------------------------
   If there's enough data in the buffer at *pP, process a line of HTTP
   header.
 
   It is part of a header that starts at 'headerStart' and has been
-  previously processed up to *pP.  The data in the buffer is
+  previously processed up to 'start'.  The data in the buffer is
   terminated by a NUL.
 
   WE MODIFY THE DATA.
-
-  Process means:
-
-     - Determine whether more data from the socket is needed to get a full
-       header (or to determine that we've already one -- note that we may
-       have to see the next line to know if it's a continuation line).
-
-       Return the determination as *gotHeaderP.
-
-     - blank out the first line delimiter (LF or CRLF) if we know there
-       is a continuation line after it (blanking out the delimiter fuses
-       the two lines).  In that case, move the cursor *pP to point to
-       continuation line.
-
-     - If there's a full header at 'lineStart' now, replace the final line
-       delimiter (LF or CRLF) with a NUL and make the cursor *pP
-       point to the buffer content following the header and its line
-       delimiter.
 -----------------------------------------------------------------------------*/
     abyss_bool gotHeader;
     char * lfPos;
@@ -488,7 +473,11 @@ processHeaderLine(char *       const start,
                    don't know if there's a continuation line coming.
                    Must read more.
                 */
-            } else {
+                int const timeLeft = deadline - time(NULL);
+                
+                *errorP = !ConnRead(connectionP, timeLeft);
+            }
+            if (!*errorP) {
                 p = lfPos; /* Point to LF */
                 
                 /* If the next line starts with whitespace, it's a
@@ -579,7 +568,8 @@ ConnReadHeader(TConn * const connectionP,
 
             if (!error) {
                 assert(connectionP->buffer + connectionP->buffersize > p);
-                processHeaderLine(p, headerStart, &gotHeader, &p);
+                processHeaderLine(p, headerStart, connectionP, deadline,
+                                  &gotHeader, &p, &error);
             }
         }
     }

@@ -45,7 +45,7 @@ initRequestInfo(TRequestInfo * const requestInfoP,
   controlled by headers, use the defaults -- I.e. the value that
   applies if the request contains no applicable header.
 -----------------------------------------------------------------------------*/
-    requestInfoP->requestline = requestLine;
+    requestInfoP->requestline = strdup(requestLine);
     requestInfoP->method      = httpMethod;
     requestInfoP->host        = host;
     requestInfoP->port        = port;
