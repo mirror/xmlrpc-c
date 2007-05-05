@@ -148,6 +148,7 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->server       = serverP;
         connectionP->channelP     = channelP;
         connectionP->channelInfoP = channelInfoP;
+        connectionP->buffer[0]    = '\0';
         connectionP->buffersize   = 0;
         connectionP->bufferpos    = 0;
         connectionP->finished     = FALSE;
@@ -214,16 +215,19 @@ ConnKill(TConn * connectionP) {
 
 void
 ConnReadInit(TConn * const connectionP) {
-    if (connectionP->buffersize>connectionP->bufferpos) {
+
+    if (connectionP->buffersize > connectionP->bufferpos) {
         connectionP->buffersize -= connectionP->bufferpos;
         memmove(connectionP->buffer,
-                connectionP->buffer+connectionP->bufferpos,
+                connectionP->buffer + connectionP->bufferpos,
                 connectionP->buffersize);
         connectionP->bufferpos = 0;
     } else
-        connectionP->buffersize=connectionP->bufferpos = 0;
+        connectionP->buffersize = connectionP->bufferpos = 0;
 
-    connectionP->inbytes=connectionP->outbytes = 0;
+    connectionP->buffer[connectionP->buffersize] = '\0';
+
+    connectionP->inbytes = connectionP->outbytes = 0;
 }
 
 
@@ -257,7 +261,7 @@ traceChannelRead(TConn *      const connectionP,
                  unsigned int const size) {
 
     if (connectionP->trace)
-        traceBuffer("READ FROM CHANNEL:",
+        traceBuffer("READ FROM CHANNEL",
                     connectionP->buffer + connectionP->buffersize, size);
 }
 
@@ -271,7 +275,7 @@ traceChannelWrite(TConn *      const connectionP,
     
     if (connectionP->trace) {
         const char * const label =
-            failed ? "FAILED TO WRITE TO CHANNEL:" : "WROTE TO CHANNEL";
+            failed ? "FAILED TO WRITE TO CHANNEL" : "WROTE TO CHANNEL";
         traceBuffer(label, buffer, size);
     }
 }
@@ -433,95 +437,50 @@ ConnWriteFromFile(TConn *       const connectionP,
 
 
 
-static void
-processHeaderLine(char *       const start,
-                  const char * const headerStart,
-                  abyss_bool * const gotHeaderP,
-                  char **      const nextP) {
-/*----------------------------------------------------------------------------
-  If there's enough data in the buffer at *pP, process a line of HTTP
-  header.
+static char *
+firstLfPos(char *  const lineStart,
+           TConn * const connectionP) {
 
-  It is part of a header that starts at 'headerStart' and has been
-  previously processed up to *nextP.  The data in the buffer is
-  terminated by a NUL.
+    const char * const bufferEnd =
+        connectionP->buffer + connectionP->buffersize;
 
-  WE MODIFY THE DATA.
-
-  Process means:
-
-     - Determine whether more data from the channel is needed to get a full
-       header (or to determine that we've already got one -- note that we may
-       have to see the next line to know if it's a continuation line).
-
-       Return the determination as *gotHeaderP.
-
-     - blank out the first line delimiter (LF or CRLF) if we know there
-       is a continuation line after it (blanking out the delimiter fuses
-       the two lines).  In that case, move the cursor *nextP to point to
-       continuation line.
-
-     - If there's a full header at 'headerStart' now, replace the final line
-       delimiter (LF or CRLF) with a NUL and make the cursor *nextP
-       point to the buffer content following the header and its line
-       delimiter.
------------------------------------------------------------------------------*/
-    abyss_bool gotHeader;
-    char * lfPos;
     char * p;
 
-    p = start;
+    for (p = lineStart; p < bufferEnd && *p != LF; ++p);
 
-    gotHeader = FALSE;  /* initial assumption */
+    if (p < bufferEnd)
+        return p;
+    else
+        return NULL;
+}
 
-    lfPos = strchr(p, LF);
-    if (lfPos) {
-        if ((*p != LF) && (*p != CR)) {
-            /* We're looking at a non-empty line */
-            if (*(lfPos+1) == '\0') {
-                /* There's nothing in the buffer after the line, so we
-                   don't know if there's a continuation line coming.
-                   Must read more.
-                */
-            } else {
-                p = lfPos; /* Point to LF */
-                
-                /* If the next line starts with whitespace, it's a
-                   continuation line, so blank out the line
-                   delimiter (LF or CRLF) so as to join the next
-                   line with this one.
-                */
-                if ((*(p+1) == ' ') || (*(p+1) == '\t')) {
-                    if (p > headerStart && *(p-1) == CR)
-                        *(p-1) = ' ';
-                    *p++ = ' ';
-                } else
-                    gotHeader = TRUE;
-            }
-        } else {
-            /* We're looking at an empty line (i.e. what marks the
-               end of the headers)
-            */
-            p = lfPos;  /* Point to LF */
-            gotHeader = TRUE;
-        }
-    }
 
-    if (gotHeader) {
-        /* 'p' points to the final LF */
 
-        /* Replace the LF or the CR in CRLF with NUL, so as to terminate
-           the string at 'headerStart' that is the full header.
-        */
-        if (p > headerStart && *(p-1) == CR)
-            *(p-1) = '\0';  /* NUL out CR in CRLF */
-        else
-            *p = '\0';  /* NUL out LF */
+static abyss_bool
+isContinuationLine(const char * const line) {
 
-        ++p;  /* Point to next line in buffer */
-    }
-    *gotHeaderP = gotHeader;
-    *nextP = p;
+    return (line[0] == ' ' || line[0] == '\t');
+}
+
+
+
+static void
+convertLineEnd(char * const lineStart,
+               char * const prevLineStart,
+               char   const newVal) {
+/*----------------------------------------------------------------------------
+   Assuming a line begins at 'lineStart' and the line before it (the
+   "previous line") begins at 'prevLineStart', replace the line
+   delimiter at the end of the previous line with the character 'newVal'.
+
+   The line delimiter is either CRLF or LF.  In the CRLF case, we replace
+   both CR and LF with 'newVal'.
+-----------------------------------------------------------------------------*/
+    assert(lineStart >= prevLineStart + 1);
+    *(lineStart-1) = newVal;
+    if (prevLineStart + 1 < lineStart &&
+        *(lineStart-2) == CR)
+        *(lineStart-2) = newVal;
 }
 
 
@@ -530,16 +489,22 @@ abyss_bool
 ConnReadHeader(TConn * const connectionP,
                char ** const headerP) {
 /*----------------------------------------------------------------------------
-   Read an HTTP header on connection *connectionP.
+   Read an HTTP header, or the end of header empty line, on connection
+   *connectionP.
 
    An HTTP header is basically a line, except that if a line starts
    with white space, it's a continuation of the previous line.  A line
-   is delimited by either LF or CRLF.
+   is delimited by either LF or CRLF.  For purposes of this subroutine,
+   we consider the end-of-header empty line to be a header.
+
+   We assume the connection is positioned to a header.  Caller can tell
+   when he's through the headers by seeing the empty header returned.
+   After that, he must not call us.
 
    In the course of reading, we read at least one character past the
-   line delimiter at the end of the header; we may read much more.  We
-   leave everything after the header (and its line delimiter) in the
-   internal buffer, with the buffer pointer pointing to it.
+   line delimiter at the end of the header; we may read much more.
+   But we leave everything after the header (and its line delimiter)
+   in the internal buffer, with the buffer pointer pointing to it.
 
    We use stuff already in the internal buffer (perhaps left by a
    previous call to this subroutine) before reading any more from from
@@ -551,13 +516,13 @@ ConnReadHeader(TConn * const connectionP,
     uint32_t const deadline = time(NULL) + connectionP->server->srvP->timeout;
 
     abyss_bool retval;
-    char * p;
+    char * lineStart;
     char * headerStart;
     abyss_bool error;
     abyss_bool gotHeader;
 
-    p = connectionP->buffer + connectionP->bufferpos;
-    headerStart = p;
+    headerStart = connectionP->buffer + connectionP->bufferpos;
+    lineStart = headerStart;
 
     gotHeader = FALSE;
     error = FALSE;
@@ -568,22 +533,37 @@ ConnReadHeader(TConn * const connectionP,
         if (timeLeft <= 0)
             error = TRUE;
         else {
-            if (p >= connectionP->buffer + connectionP->buffersize)
-                /* Need more data from the channel to chew on */
+            char * const lfPos = firstLfPos(lineStart, connectionP);
+            if (!lfPos)
                 error = !ConnRead(connectionP, timeLeft);
-
-            if (!error) {
-                assert(connectionP->buffer + connectionP->buffersize > p);
-                processHeaderLine(p, headerStart, &gotHeader, &p);
+            else {
+                if (isContinuationLine(lineStart)) {
+                    if (lineStart == headerStart)
+                        /* Continuation line, but no previous line */
+                        error = TRUE;
+                    else
+                        /* Join previous line to this one */
+                        convertLineEnd(lineStart, headerStart, ' ');
+                } else {
+                    if (lineStart != headerStart) {
+                        /* It's a new header.  NUL-terminate previous one
+                           and declare it present
+                        */
+                        convertLineEnd(lineStart, headerStart, '\0');
+                        gotHeader = true;
+                        /* We've consumed this part of the buffer (but
+                           be careful -- you can't reuse that part of
+                           the buffer because the string we will
+                           return is in it!
+                        */
+                        connectionP->bufferpos += (lineStart - headerStart);
+                    }
+                }
+                lineStart = lfPos+1;
             }
         }
     }
     if (gotHeader) {
-        /* We've consumed this part of the buffer (but be careful --
-           you can't reuse that part of the buffer because the string
-           we're returning is in it!
-        */
-        connectionP->bufferpos += p - headerStart;
         *headerP = headerStart;
         retval = TRUE;
     } else
