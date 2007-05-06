@@ -33,9 +33,11 @@ xmlrpc_makePrintable_lp(const char * const input,
              inputCursor < inputLength; 
              ++inputCursor) {
 
-            if (isprint(input[inputCursor]))
-                output[outputCursor++] = input[inputCursor]; 
-            else if (input[inputCursor] == '\n') {
+            if (0) {
+            } else if (input[inputCursor] == '\\') {
+                output[outputCursor++] = '\\';
+                output[outputCursor++] = '\\';
+            } else if (input[inputCursor] == '\n') {
                 output[outputCursor++] = '\\';
                 output[outputCursor++] = 'n';
             } else if (input[inputCursor] == '\t') {
@@ -47,9 +49,8 @@ xmlrpc_makePrintable_lp(const char * const input,
             } else if (input[inputCursor] == '\r') {
                 output[outputCursor++] = '\\';
                 output[outputCursor++] = 'r';
-            } else if (input[inputCursor] == '\\') {
-                output[outputCursor++] = '\\';
-                output[outputCursor++] = '\\';
+            } else if (isprint(input[inputCursor])) {
+                output[outputCursor++] = input[inputCursor]; 
             } else {
                 snprintf(&output[outputCursor], 5, "\\x%02x", 
                          input[inputCursor]);
