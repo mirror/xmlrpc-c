@@ -13,16 +13,16 @@
 #include "config.h"  /* information about this build environment */
 
 static xmlrpc_value *
-sample_add(xmlrpc_env *   const env, 
-           xmlrpc_value * const param_array, 
+sample_add(xmlrpc_env *   const envP,
+           xmlrpc_value * const paramArrayP,
            void *         const serverInfo ATTR_UNUSED,
            void *         const channelInfo ATTR_UNUSED) {
 
     xmlrpc_int32 x, y, z;
 
     /* Parse our argument array. */
-    xmlrpc_decompose_value(env, param_array, "(ii)", &x, &y);
-    if (env->fault_occurred)
+    xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
+    if (envP->fault_occurred)
         return NULL;
 
     /* Add our two numbers. */
@@ -35,7 +35,7 @@ sample_add(xmlrpc_env *   const env,
         sleep(2);
 
     /* Return our result. */
-    return xmlrpc_build_value(env, "i", z);
+    return xmlrpc_build_value(envP, "i", z);
 }
 
 

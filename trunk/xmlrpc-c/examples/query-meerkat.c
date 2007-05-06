@@ -70,11 +70,11 @@ parseCommandLine(int              const argc,
 
 
 static void 
-die_if_fault_occurred(xmlrpc_env * const env) {
+die_if_fault_occurred(xmlrpc_env * const envP) {
     /* We're a command-line utility, so we abort if an error occurs. */
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault #%d: %s\n",
-                env->fault_code, env->fault_string);
+                envP->fault_code, envP->fault_string);
         exit(1);
     }
 }
@@ -87,15 +87,16 @@ main(int          const argc,
      const char** const argv) {
 
     struct cmdline cmdline;
-    char time_period[16];
+    char timePeriod[16];
     xmlrpc_env env;
-    xmlrpc_value *stories, *story;
+    xmlrpc_value * stories;
+    xmlrpc_value * story;
     size_t size, i;
     int first;
 
     parseCommandLine(argc, argv, &cmdline);
 
-    snprintf(time_period, sizeof(time_period), "%dHOUR", cmdline.hours);
+    snprintf(timePeriod, sizeof(timePeriod), "%dHOUR", cmdline.hours);
 
     xmlrpc_env_init(&env);
 
@@ -109,14 +110,14 @@ main(int          const argc,
                                  "meerkat.getItems", "({s:s,s:i,s:s})",
                                  "search", cmdline.searchArg,
                                  "descriptions", (xmlrpc_int32) 76,
-                                 "time_period", time_period);
+                                 "timePeriod", timePeriod);
     die_if_fault_occurred(&env);
     
     /* Loop over the stories. */
     size = xmlrpc_array_size(&env, stories);
     die_if_fault_occurred(&env);
     first = 1;
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < size; ++i) {
         const char * title;
         const char * link;
         const char * description;
