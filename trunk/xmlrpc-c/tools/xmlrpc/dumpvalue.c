@@ -16,6 +16,7 @@
 #include "mallocvar.h"
 
 #include "xmlrpc-c/base.h"
+#include "xmlrpc-c/string_int.h"
 
 #include "dumpvalue.h"
 
@@ -100,6 +101,69 @@ dumpDatetime(const char *   const prefix,
 
 
 
+static size_t
+nextLineSize(const char * const string,
+             size_t       const startPos,
+             size_t       const stringSize) {
+/*----------------------------------------------------------------------------
+   Return the length of the line that starts at offset 'startPos' in the
+   string 'string', which is 'stringSize' characters long.
+
+   'string' in not NUL-terminated.
+   
+   A line begins at beginning of string or after a newline character and
+   runs through the next newline character or end of string.  The line
+   includes the newline character at the end, if any.
+-----------------------------------------------------------------------------*/
+    size_t i;
+
+    for (i = startPos; i < stringSize && string[i] != '\n'; ++i);
+
+    if (i < stringSize)
+        ++i;  /* Include the newline */
+
+    return i - startPos;
+}
+
+
+
+static void
+dumpMultilineString(const char * const prefix,
+                    const char * const value,
+                    size_t       const length) {
+
+    size_t cursor;  /* Index into value[] */
+
+    for (cursor = 0; cursor < length; ) {
+        /* Print one line of buffer */
+
+        size_t const lineSize = nextLineSize(value, cursor, length);
+        const char * const printableLine =
+            xmlrpc_makePrintable_lp(&value[cursor], lineSize);
+        
+        printf("%s%s\n", prefix, printableLine);
+
+        cursor += lineSize;
+
+        strfree(printableLine);
+    }
+}
+
+
+
+static void
+dumpSimpleString(const char * const value,
+                 size_t       const length) {
+
+    const char * const printable = xmlrpc_makePrintable_lp(value, length);
+
+    printf("'%s'\n", printable);
+
+    strfree(printable);
+}
+
+
+
 static void
 dumpString(const char *   const prefix,
            xmlrpc_value * const valueP) {
@@ -117,12 +181,15 @@ dumpString(const char *   const prefix,
                "string xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else {
-        if (strlen(value) != length)
-            printf("String value contains a NUL character, which means the "
-                   "XML-RPC response was not valid XML.  We report only up to "
-                   "the NUL.\n");
-
-        printf("%sString: '%s'\n", prefix, value);
+        printf("%sString: ", prefix);
+        if (strlen(value) == length && strchr(value, '\n')) {
+            const char * prefix2;
+            casprintf(&prefix2, "%s  ", prefix);
+            printf("\n");
+            dumpMultilineString(prefix2, value, length);
+            strfree(prefix2);
+        } else
+            dumpSimpleString(value, length);
 
         strfree(value);
     }
