@@ -291,9 +291,8 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
             
         stringValue = malloc(length+1);
         if (stringValue == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate space "
-                "for %u-character string", length);
+            xmlrpc_faultf(envP, "Unable to allocate space "
+                          "for %u-character string", length);
         else {
             memcpy(stringValue, contents, length);
             stringValue[length] = '\0';
