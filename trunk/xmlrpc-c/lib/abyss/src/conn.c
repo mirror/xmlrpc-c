@@ -232,26 +232,55 @@ ConnReadInit(TConn * const connectionP) {
 
 
 
+static size_t
+nextLineSize(const char * const string,
+             size_t       const startPos,
+             size_t       const stringSize) {
+/*----------------------------------------------------------------------------
+   Return the length of the line that starts at offset 'startPos' in the
+   string 'string', which is 'stringSize' characters long.
+
+   'string' in not NUL-terminated.
+   
+   A line begins at beginning of string or after a newline character and
+   runs through the next newline character or end of string.  The line
+   includes the newline character at the end, if any.
+-----------------------------------------------------------------------------*/
+    size_t i;
+
+    for (i = startPos; i < stringSize && string[i] != '\n'; ++i);
+
+    if (i < stringSize)
+        ++i;  /* Include the newline */
+
+    return i - startPos;
+}
+
+
+
 static void
 traceBuffer(const char * const label,
             const char * const buffer,
             unsigned int const size) {
 
-    unsigned int nonPrintableCount;
-    unsigned int i;
-    
-    nonPrintableCount = 0;  /* Initial value */
-    
-    for (i = 0; i < size; ++i) {
-        if (!isprint(buffer[i]) && buffer[i] != '\n' && buffer[i] != '\r')
-            ++nonPrintableCount;
+    size_t cursor;  /* Index into buffer[] */
+
+    fprintf(stderr, "%s:\n\n", label);
+
+    for (cursor = 0; cursor < size; ) {
+        /* Print one line of buffer */
+
+        size_t const lineSize = nextLineSize(buffer, cursor, size);
+        const char * const printableLine =
+            xmlrpc_makePrintable_lp(&buffer[cursor], lineSize);
+        
+        fprintf(stderr, "%s\n", printableLine);
+
+        cursor += lineSize;
+
+        xmlrpc_strfree(printableLine);
     }
-    if (nonPrintableCount > 0)
-        fprintf(stderr, "%s contains %u nonprintable characters.\n", 
-                label, nonPrintableCount);
-    
-    fprintf(stderr, "%s:\n", label);
-    fprintf(stderr, "%.*s\n", (int)size, buffer);
+    fprintf(stderr, "\n");
 }
 
 
