@@ -152,6 +152,8 @@ class xmlTransactionPtr : public girmem::autoObjectPtr {
 public:
     xmlTransactionPtr();
 
+    xmlTransactionPtr(xmlTransaction * xmlTransP);
+ 
     xmlrpc_c::xmlTransaction *
     operator->() const;
 };

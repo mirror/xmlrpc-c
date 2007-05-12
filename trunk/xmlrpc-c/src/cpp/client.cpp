@@ -88,9 +88,7 @@ carriageParmPtr::carriageParmPtr() {
 
 
 carriageParmPtr::carriageParmPtr(
-    carriageParm * const carriageParmP) {
-    this->point(carriageParmP);
-}
+carriageParm * const carriageParmP) : autoObjectPtr(carriageParmP) {}
 
 
 
@@ -169,9 +167,8 @@ carriageParm_http0Ptr::carriageParm_http0Ptr() {
 
 
 carriageParm_http0Ptr::carriageParm_http0Ptr(
-    carriageParm_http0 * const carriageParmP) {
-    this->point(carriageParmP);
-}
+    carriageParm_http0 * const carriageParmP) :
+    carriageParmPtr(carriageParmP) {}
 
 
 
@@ -207,6 +204,11 @@ xmlTransactionPtr::xmlTransactionPtr() {}
 
 
 
+xmlTransactionPtr::xmlTransactionPtr(xmlTransaction * xmlTransP) :
+    autoObjectPtr(xmlTransP) {}
+ 
+
+
 xmlTransaction *
 xmlTransactionPtr::operator->() const {
     autoObject * const p(this->objectP);
@@ -234,9 +236,8 @@ clientXmlTransport::start(carriageParm *    const  carriageParmP,
 
 
 void
-clientXmlTransport::finishAsync(xmlrpc_c::timeout const timeout) {
-    if (timeout.finite == timeout.finite)
-        throw(error("This class does not have finishAsync()"));
+clientXmlTransport::finishAsync(xmlrpc_c::timeout) {
+    throw(error("This class does not have finishAsync()"));
 }
 
 
@@ -284,9 +285,7 @@ clientXmlTransportPtr::clientXmlTransportPtr() {
 
 
 clientXmlTransportPtr::clientXmlTransportPtr(
-    clientXmlTransport * const transportP) {
-    this->point(transportP);
-}
+    clientXmlTransport * const transportP) : autoObjectPtr(transportP) {}
 
 
 
@@ -473,6 +472,11 @@ clientTransactionPtr::clientTransactionPtr() {}
 
 
 
+clientTransactionPtr::clientTransactionPtr(
+    clientTransaction * const transP) : autoObjectPtr(transP) {}
+
+
+
 clientTransactionPtr::~clientTransactionPtr() {}
 
 
@@ -517,9 +521,7 @@ clientPtr::clientPtr() {
 
 
 clientPtr::clientPtr(
-    client * const clientP) {
-    this->point(clientP);
-}
+    client * const clientP) : autoObjectPtr(clientP) {}
 
 
 
@@ -637,9 +639,8 @@ serverAccessorPtr::serverAccessorPtr() {
 
 
 serverAccessorPtr::serverAccessorPtr(
-    serverAccessor * const serverAccessorParmP) {
-    this->point(serverAccessorParmP);
-}
+    serverAccessor * const serverAccessorParmP) :
+    autoObjectPtr(serverAccessorParmP) {}
 
 
 
@@ -846,17 +847,13 @@ rpcPtr::rpcPtr() {}
 
 
 
-rpcPtr::rpcPtr(rpc * const rpcP) {
-    this->point(rpcP);
-}
+rpcPtr::rpcPtr(rpc * const rpcP) : clientTransactionPtr(rpcP) {}
 
 
 
 rpcPtr::rpcPtr(string              const  methodName,
-               xmlrpc_c::paramList const& paramList) {
-
-    this->point(new rpc(methodName, paramList));
-}
+               xmlrpc_c::paramList const& paramList) :
+                   clientTransactionPtr(new rpc(methodName, paramList)) {}
 
 
 
@@ -906,10 +903,8 @@ xmlTransaction_clientPtr::xmlTransaction_clientPtr() {}
 
 
 xmlTransaction_clientPtr::xmlTransaction_clientPtr(
-    clientTransactionPtr const& tranP) {
-
-    this->point(new xmlTransaction_client(tranP));
-}
+    clientTransactionPtr const& tranP) :
+        xmlTransactionPtr(new xmlTransaction_client(tranP)) {}
 
 
 

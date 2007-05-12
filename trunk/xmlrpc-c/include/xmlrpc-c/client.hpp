@@ -35,6 +35,8 @@ class clientTransactionPtr : public girmem::autoObjectPtr {
 public:
     clientTransactionPtr();
 
+    clientTransactionPtr(clientTransaction * const transP);
+
     virtual ~clientTransactionPtr();
 
     virtual xmlrpc_c::clientTransaction *
