@@ -623,7 +623,9 @@ parseCallXml(xmlrpc_env *   const envP,
              const char *   const xmlData,
              size_t         const xmlLen,
              xml_element ** const callElemPP) {
-
+/*----------------------------------------------------------------------------
+   Parse the XML of an XML-RPC call.
+-----------------------------------------------------------------------------*/
     xml_element * callElemP;
     xmlrpc_env env;
 
@@ -736,23 +738,18 @@ parseCallChildren(xmlrpc_env *    const envP,
 
 
 
-/*=========================================================================
-**  xmlrpc_parse_call
-**=========================================================================
-**  Given some XML text, attempt to parse it as an XML-RPC call. Return
-**  a newly allocated xmlrpc_call structure (or NULL, if an error occurs).
-**  The two output variables will contain either valid values (which
-**  must free() and xmlrpc_DECREF(), respectively) or NULLs (if an error
-**  occurs).
-*/
-
 void 
 xmlrpc_parse_call(xmlrpc_env *    const envP,
                   const char *    const xmlData,
                   size_t          const xmlLen,
                   const char **   const methodNameP,
                   xmlrpc_value ** const paramArrayPP) {
-
+/*----------------------------------------------------------------------------
+  Given some XML text, attempt to parse it as an XML-RPC call.
+  Return as *methodNameP the name of the method identified in the call
+  and as *paramArrayPP the parameter list as an XML-RPC array.
+  Caller must free() and xmlrpc_DECREF() these, respectively).
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(xmlData != NULL);
     XMLRPC_ASSERT(methodNameP != NULL && paramArrayPP != NULL);
@@ -777,6 +774,7 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
         }
     }
     if (envP->fault_occurred) {
+        /* Should not be necessary, but for backward compatibility: */
         *methodNameP  = NULL;
         *paramArrayPP = NULL;
     }

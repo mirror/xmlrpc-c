@@ -325,7 +325,14 @@ static void
 characterData(void *     const userData,
               XML_Char * const s,
               int        const len) {
+/*----------------------------------------------------------------------------
+   This is an Expat character data (cdata) handler.  When an Expat
+   parser comes across cdata, he calls one of these with the cdata as
+   argument.  He can call it multiple times for consecutive cdata.
 
+   We simply append the cdata to the cdata buffer for whatever XML
+   element the parser is presently parsing.
+-----------------------------------------------------------------------------*/
     parseContext * const contextP = userData;
 
     XMLRPC_ASSERT(contextP != NULL);

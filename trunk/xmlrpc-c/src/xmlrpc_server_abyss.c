@@ -369,7 +369,10 @@ processCall(TSession *        const abyssSessionP,
             const char *      const trace) {
 /*----------------------------------------------------------------------------
    Handle an RPC request.  This is an HTTP request that has the proper form
-   to be one of our RPCs.
+   to be an XML-RPC call.
+
+   The text of the call is available through the Abyss session
+   'abyssSessionP'.
 
    Its content length is 'contentSize' bytes.
 -----------------------------------------------------------------------------*/
@@ -386,7 +389,7 @@ processCall(TSession *        const abyssSessionP,
             &env, XMLRPC_LIMIT_EXCEEDED_ERROR,
             "XML-RPC request too large (%d bytes)", contentSize);
     else {
-        xmlrpc_mem_block *body;
+        xmlrpc_mem_block * body;
         /* Read XML data off the wire. */
         getBody(&env, abyssSessionP, contentSize, trace, &body);
         if (!env.fault_occurred) {
