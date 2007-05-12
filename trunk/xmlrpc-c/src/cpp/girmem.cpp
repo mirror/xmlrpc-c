@@ -78,7 +78,7 @@ autoObjectPtr::autoObjectPtr(autoObject * const objectP) {
 
     if (objectP == NULL)
         throw(error("Object creation failed; trying to create autoObjectPtr "
-                    "ith a null autoObject pointer"));
+                    "with a null autoObject pointer"));
         
     this->objectP = objectP;
     objectP->incref();
@@ -128,13 +128,20 @@ autoObjectPtr::unpoint() {
 
 
 autoObjectPtr
-autoObjectPtr::operator=(autoObjectPtr const& autoObjectPtr) {
+autoObjectPtr::operator=(autoObjectPtr const& source) {
 
-    if (this->objectP != NULL)
-        throw(error("Already pointing"));
-    this->objectP = autoObjectPtr.objectP;
-    this->objectP->incref();
+    // If we're overwriting a variable that already points to something,
+    // we have to unpoint it from what it points to now before we can point
+    // it to what 'source' points to.  But if the source and destination
+    // are the same object, we just want to leave the pointing alone.
 
+    if (this == &source) {
+        // Assignment of variable to itself; no-op
+    } else {
+        this->unpoint();
+        this->objectP = source.objectP;
+        this->objectP->incref();
+    }
     return *this;
 }
 
