@@ -38,6 +38,14 @@ xmlrpc_streq(const char * const a,
 }
 
 static __inline__ bool
+xmlrpc_memeq(const void * const a,
+             const void * const b,
+             size_t       const size) {
+
+    return (memcmp(a, b, size) == 0);
+}
+
+static __inline__ bool
 xmlrpc_strcaseeq(const char * const a,
                  const char * const b) {
     return (strcasecmp(a, b) == 0);
