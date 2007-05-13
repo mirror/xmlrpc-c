@@ -47,6 +47,8 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
   PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)
 endif
 
+PROGS += pstream_client pstream_inetd_server
+
 INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 
 LDADD_SERVER_ABYSS = \
@@ -71,6 +73,19 @@ $(LEGACY_CLIENTPROGS):%:%.o
 
 $(CLIENTPROGS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
+
+
+LDADD_PSTREAM_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 client pstream-client --ldadd)
+
+pstream_client:%:%.o
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_PSTREAM_CLIENT)
+
+LDADD_PSTREAM_SERVER = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --ldadd)
+
+pstream_inetd_server:%:%.o
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_PSTREAM_SERVER)
 
 OBJECTS = $(PROGS:%=%.o)
 

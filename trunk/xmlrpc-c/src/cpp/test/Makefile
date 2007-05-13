@@ -42,7 +42,7 @@ Makefile: srcdir
 include $(SRCDIR)/Makefile.common
 
 
-TEST_OBJS = test.o server_abyss.o tools.o
+TEST_OBJS = test.o server_abyss.o server_pstream.o tools.o
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
@@ -55,6 +55,7 @@ endif
 
 TEST_LIBS = \
   $(LIBXMLRPC_SERVER_ABYSSPP_A) \
+  $(LIBXMLRPC_SERVER_PSTREAMPP_A) \
   $(LIBXMLRPC_SERVERPP_A) \
   $(CLIENT_LIBS) $(LIBXMLRPCPP_A) \
   $(LIBXMLRPC_CPP_A) \
@@ -62,6 +63,7 @@ TEST_LIBS = \
   $(LIBXMLRPC_SERVER_A) \
   $(LIBXMLRPC_A) \
   $(LIBXMLRPC_ABYSS_A) \
+  $(LIBXMLRPC_PACKETSOCKET_A) \
   $(LIBXMLRPC_UTIL_A) \
 
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)

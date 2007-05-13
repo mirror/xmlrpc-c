@@ -44,91 +44,6 @@ public:
     get() const;
 };
 
-class carriageParm_http0 : public xmlrpc_c::carriageParm {
-
-public:
-    carriageParm_http0(std::string const serverUrl);
-
-    ~carriageParm_http0();
-
-    void
-    setBasicAuth(std::string const userid,
-                 std::string const password);
-
-    xmlrpc_server_info * c_serverInfoP;
-
-protected:
-    // Only a derived class is allowed to create an object with no
-    // server URL, and the derived class is expected to follow it up
-    // with an instantiate() to establish the server URL.
-
-    carriageParm_http0();
-
-    void
-    instantiate(std::string const serverUrl);
-};
-
-class carriageParm_http0Ptr : public xmlrpc_c::carriageParmPtr {
-
-public:
-    carriageParm_http0Ptr();
-    carriageParm_http0Ptr(xmlrpc_c::carriageParm_http0 * const carriageParmP);
-
-    xmlrpc_c::carriageParm_http0 *
-    operator->() const;
-};
-
-class carriageParm_curl0 : public xmlrpc_c::carriageParm_http0 {
-
-public:
-    carriageParm_curl0(std::string const serverUrl);
-
-};
-
-class carriageParm_curl0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
-
-public:
-    carriageParm_curl0Ptr();
-    carriageParm_curl0Ptr(xmlrpc_c::carriageParm_curl0 * const carriageParmP);
-
-    xmlrpc_c::carriageParm_curl0 *
-    operator->() const;
-};
-
-class carriageParm_libwww0 : public xmlrpc_c::carriageParm_http0 {
-
-public:
-    carriageParm_libwww0(std::string const serverUrl);
-
-};
-
-class carriageParm_libwww0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
-
-public:
-    carriageParm_libwww0Ptr();
-    carriageParm_libwww0Ptr(xmlrpc_c::carriageParm_libwww0 * const);
-
-    xmlrpc_c::carriageParm_libwww0 *
-    operator->() const;
-};
-
-class carriageParm_wininet0 : public xmlrpc_c::carriageParm_http0 {
-
-public:
-    carriageParm_wininet0(std::string const serverUrl);
-
-};
-
-class carriageParm_wininet0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
-
-public:
-    carriageParm_wininet0Ptr();
-    carriageParm_wininet0Ptr(xmlrpc_c::carriageParm_wininet0 * const);
-
-    xmlrpc_c::carriageParm_wininet0 *
-    operator->() const;
-};
-
 //----------------------------------------------------------------------------
 
 class xmlTransactionPtr;
@@ -205,6 +120,44 @@ public:
     get() const;
 };
 
+/*===========================================================================
+                           HTTP
+===========================================================================*/
+
+class carriageParm_http0 : public xmlrpc_c::carriageParm {
+
+public:
+    carriageParm_http0(std::string const serverUrl);
+
+    ~carriageParm_http0();
+
+    void
+    setBasicAuth(std::string const userid,
+                 std::string const password);
+
+    xmlrpc_server_info * c_serverInfoP;
+
+protected:
+    // Only a derived class is allowed to create an object with no
+    // server URL, and the derived class is expected to follow it up
+    // with an instantiate() to establish the server URL.
+
+    carriageParm_http0();
+
+    void
+    instantiate(std::string const serverUrl);
+};
+
+class carriageParm_http0Ptr : public xmlrpc_c::carriageParmPtr {
+
+public:
+    carriageParm_http0Ptr();
+    carriageParm_http0Ptr(xmlrpc_c::carriageParm_http0 * const carriageParmP);
+
+    xmlrpc_c::carriageParm_http0 *
+    operator->() const;
+};
+
 class clientXmlTransport_http : public xmlrpc_c::clientXmlTransport {
 /*----------------------------------------------------------------------------
    A base class for client XML transports that use the simple, classic
@@ -238,6 +191,27 @@ protected:
     const struct xmlrpc_client_transport_ops * c_transportOpsP;
 };
 
+
+/*===========================================================================
+                           curl
+===========================================================================*/
+
+class carriageParm_curl0 : public xmlrpc_c::carriageParm_http0 {
+
+public:
+    carriageParm_curl0(std::string const serverUrl);
+
+};
+
+class carriageParm_curl0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+
+public:
+    carriageParm_curl0Ptr();
+    carriageParm_curl0Ptr(xmlrpc_c::carriageParm_curl0 * const carriageParmP);
+
+    xmlrpc_c::carriageParm_curl0 *
+    operator->() const;
+};
 
 class clientXmlTransport_curl : public xmlrpc_c::clientXmlTransport_http {
 
@@ -321,6 +295,27 @@ private:
     initialize(constrOpt const& opt);
 };
 
+/*===========================================================================
+                           libwww
+===========================================================================*/
+
+class carriageParm_libwww0 : public xmlrpc_c::carriageParm_http0 {
+
+public:
+    carriageParm_libwww0(std::string const serverUrl);
+
+};
+
+class carriageParm_libwww0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+
+public:
+    carriageParm_libwww0Ptr();
+    carriageParm_libwww0Ptr(xmlrpc_c::carriageParm_libwww0 * const);
+
+    xmlrpc_c::carriageParm_libwww0 *
+    operator->() const;
+};
+
 class clientXmlTransport_libwww : public xmlrpc_c::clientXmlTransport_http {
     
 public:
@@ -328,6 +323,27 @@ public:
                               std::string const appversion = "");
 
     ~clientXmlTransport_libwww();
+};
+
+/*===========================================================================
+                           wininet
+===========================================================================*/
+
+class carriageParm_wininet0 : public xmlrpc_c::carriageParm_http0 {
+
+public:
+    carriageParm_wininet0(std::string const serverUrl);
+
+};
+
+class carriageParm_wininet0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+
+public:
+    carriageParm_wininet0Ptr();
+    carriageParm_wininet0Ptr(xmlrpc_c::carriageParm_wininet0 * const);
+
+    xmlrpc_c::carriageParm_wininet0 *
+    operator->() const;
 };
 
 class clientXmlTransport_wininet : public xmlrpc_c::clientXmlTransport_http {
@@ -338,6 +354,58 @@ public:
     ~clientXmlTransport_wininet();
 };
 
+/*===========================================================================
+                           pstream
+===========================================================================*/
+
+class packetSocket;
+
+class carriageParm_pstream : public xmlrpc_c::carriageParm {
+
+    // There are no parameters for carrying an RPC on a packet stream.
+    // There's only one way to carry it.
+};
+
+class carriageParm_pstreamPtr : public xmlrpc_c::carriageParmPtr {
+
+public:
+    carriageParm_pstreamPtr();
+    carriageParm_pstreamPtr(
+        xmlrpc_c::carriageParm_pstream * const carriageParmP);
+
+    xmlrpc_c::carriageParm_pstream *
+    operator->() const;
+};
+
+class clientXmlTransport_pstream : public xmlrpc_c::clientXmlTransport {
+
+public:
+    class constrOpt {
+    public:
+        constrOpt();
+
+        constrOpt & fd                (int         const& arg);
+
+        struct {
+            int         fd;
+        } value;
+        struct {
+            bool fd;
+        } present;
+    };
+
+    clientXmlTransport_pstream(constrOpt const& opt);
+
+    ~clientXmlTransport_pstream();
+
+    void
+    call(xmlrpc_c::carriageParm * const  carriageParmP,
+         std::string              const& callXml,
+         std::string *            const  responseXmlP);
+
+private:
+    packetSocket * packetSocketP;
+};
 
 
 } // namespace

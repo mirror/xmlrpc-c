@@ -208,6 +208,9 @@ LIBXMLRPC_CPP_A            = $(BLDDIR)/src/cpp/libxmlrpc_cpp.a
 LIBXMLRPCPP                = \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc++)
 LIBXMLRPCPP_A              = $(BLDDIR)/src/cpp/libxmlrpc++.a
+LIBXMLRPC_PACKETSOCKET     = \
+  $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_packetsocket)
+LIBXMLRPC_PACKETSOCKET_A   = $(BLDDIR)/src/cpp/libxmlrpc_packetsocket.a
 LIBXMLRPC_CLIENTPP         =  \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_client++)
 LIBXMLRPC_CLIENTPP_A       = $(BLDDIR)/src/cpp/libxmlrpc_client++.a
@@ -217,6 +220,9 @@ LIBXMLRPC_SERVERPP_A       = $(BLDDIR)/src/cpp/libxmlrpc_server++.a
 LIBXMLRPC_SERVER_ABYSSPP   = \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++)
 LIBXMLRPC_SERVER_ABYSSPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++.a
+LIBXMLRPC_SERVER_PSTREAMPP = \
+  $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_server_pstream++)
+LIBXMLRPC_SERVER_PSTREAMPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_pstream++.a
 endif
 
 CASPRINTF                = $(BLDDIR)/lib/util/casprintf.o
@@ -399,8 +405,12 @@ $(LIBXMLRPC_ABYSS_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPCPP) $(LIBXMLRPC_CLIENTPP) $(LIBXMLRPC_SERVERPP) \
-  $(LIBXMLRPC_SERVER_ABYSSPP) $(LIBXMLRPC_CPP): FORCE
+$(LIBXMLRPCPP) \
+$(LIBXMLRPC_PACKETSOCKET) \
+$(LIBXMLRPC_CLIENTPP) \
+$(LIBXMLRPC_SERVERPP) \
+$(LIBXMLRPC_SERVER_ABYSSPP) \
+$(LIBXMLRPC_CPP): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
 

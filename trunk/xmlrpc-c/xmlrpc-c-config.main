@@ -4,8 +4,10 @@ The features are:
   c++            legacy C++ wrapper API
   c++2           modern C++ API
   client         client functions
+  pstream-client pstream-based client functions
   cgi-server     CGI-based server functions
   abyss-server   ABYSS-based server functions
+  pstream-server pstream-based server functions
   server-util    basic server functions (implied by *-server)
 
 Options are:
@@ -36,6 +38,8 @@ the_libdirs=
 the_rpath=
 the_wl_rpath=
 cpp_libs=
+# It's important that packetsocket lib go after client, server libs
+packetsocket_lib=
 
 # If Xmlrpc-c libraries are installed in the standard linker search
 # path on this system, you should remove the following line:
@@ -69,6 +73,14 @@ while test $# -gt 0; do
       needCpp=yes
       the_libs="-lxmlrpc++ $the_libs"
       ;;
+    pstream-client)
+      if test "${needCpp}" = "no"; then
+        echo "You must specify the 'c++2' feature before 'pstream-client'."
+        echo "Pstream client facilities are available only in a C++ version."
+        exit 10
+        fi
+      packetsocket_lib="-lxmlrpc_packetsocket"
+      ;;
     server-util)
       the_libs="-lxmlrpc_server $the_libs"
       ;;
@@ -88,6 +100,19 @@ while test $# -gt 0; do
         the_libs="-lxmlrpc_server++ $the_libs"
         the_libs="-lxmlrpc_server_abyss++ $the_libs"
         fi
+      ;;
+    pstream-server)
+      if test "${needCpp}" = "no"; then
+        echo "You must specify the 'c++2' feature before 'pstream-server'."
+        echo "Pstream server facilities are available only in a C++ version."
+        exit 10
+        fi
+      the_libs="${LSOCKET} $the_libs"
+      the_libs="-lxmlrpc_abyss $the_libs"
+      the_libs="-lxmlrpc_server $the_libs"
+      the_libs="-lxmlrpc_server++ $the_libs"
+      the_libs="-lxmlrpc_server_pstrea++ $the_libs"
+      packetsocket_lib="-lxmlrpc_packetsocket"
       ;;
     client|libwww-client)
       # libwww-client is for backward compatibility
@@ -133,10 +158,10 @@ while test $# -gt 0; do
           rpath=
       fi
 
-      echo "$the_libdirs $rpath $the_libs"
+      echo "$the_libdirs $rpath $the_libs $packetsocket_lib"
       ;;
     --ldadd)
-      echo "$the_libdirs $the_libs"
+      echo "$the_libdirs $the_libs $packetsocket_lib"
       ;;
     --ldflags)
       echo "$the_rpath"

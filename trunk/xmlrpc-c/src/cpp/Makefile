@@ -18,6 +18,8 @@ TARGET_LIB_NAMES_PP := \
   libxmlrpc++ \
   libxmlrpc_server++ \
   libxmlrpc_server_abyss++ \
+  libxmlrpc_server_pstream++ \
+  libxmlrpc_packetsocket \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TARGET_LIB_NAMES_PP += libxmlrpc_client++
@@ -47,14 +49,18 @@ LIBXMLRPCPP_MODS = \
   base64 env_wrap fault girerr girmem outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
-LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet
+LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream
+LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet pstream
+LIBXMLRPC_PACKETSOCKET_MODS = packetsocket
 
 TARGET_MODS_PP = \
   XmlRpcCpp \
   $(LIBXMLRPCPP_MODS) \
   $(LIBXMLRPC_SERVERPP_MODS) \
   $(LIBXMLRPC_SERVER_ABYSSPP_MODS) \
-  $(LIBXMLRPC_CLIENTPP_MODS)
+  $(LIBXMLRPC_SERVER_PSTREAMPP_MODS) \
+  $(LIBXMLRPC_CLIENTPP_MODS) \
+  $(LIBXMLRPC_PACKETSOCKET_MODS) \
 
 OMIT_CPP_LIB_RULES = Y
 
@@ -80,11 +86,13 @@ BASIC_INCLUDES = \
 
 # LIBXMLRPC_CPP is e.g. "libxmlrpc_cpp.so.3.1"
 
-LIBXMLRPC_CPP            = $(call shlibfn, libxmlrpc_cpp)
-LIBXMLRPCPP              = $(call shlibfn, libxmlrpc++)
-LIBXMLRPC_SERVERPP       = $(call shlibfn, libxmlrpc_server++)
-LIBXMLRPC_SERVER_ABYSSPP = $(call shlibfn, libxmlrpc_server_abyss++)
-LIBXMLRPC_CLIENTPP       = $(call shlibfn, libxmlrpc_client++)
+LIBXMLRPC_CPP              = $(call shlibfn, libxmlrpc_cpp)
+LIBXMLRPCPP                = $(call shlibfn, libxmlrpc++)
+LIBXMLRPC_SERVERPP         = $(call shlibfn, libxmlrpc_server++)
+LIBXMLRPC_SERVER_ABYSSPP   = $(call shlibfn, libxmlrpc_server_abyss++)
+LIBXMLRPC_SERVER_PSTREAMPP = $(call shlibfn, libxmlrpc_server_pstream++)
+LIBXMLRPC_CLIENTPP         = $(call shlibfn, libxmlrpc_client++)
+LIBXMLRPC_PACKETSOCKET     = $(call shlibfn, libxmlrpc_packetsocket)
 
 
 # TARGET_STATIC_LIBARIES, etc. are set by Makefile.common, based on
@@ -114,8 +122,14 @@ $(LIBXMLRPC_SERVERPP): LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 
+$(LIBXMLRPC_SERVER_PSTREAMPP): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_PSTREAMPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh)
+
 $(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
+
+$(LIBXMLRPC_PACKETSOCKET): $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
+$(LIBXMLRPC_PACKETSOCKET): LIBOBJECTS = $(PACKETSOCKET_MODS:%=%.osh)
 
 # Rules for these are in Makefile.common, courtesy of TARGET_LIB_NAMES_PP:
 
@@ -131,8 +145,14 @@ libxmlrpc_server++.a: LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
 libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
 libxmlrpc_server_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
 
+libxmlrpc_server_pstream++.a: $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
+libxmlrpc_server_pstream++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
+
 libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_MODS:%=%.o)
 libxmlrpc_client++.a: LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.o)
+
+libxmlrpc_packetsocket.a: $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o)
+libxmlrpc_packetsocket.a: LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o)
 
 #-----------------------------------------------------------------------------
 #  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
@@ -157,9 +177,17 @@ $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o) \
 $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o): \
   INCLUDES = $(SERVER_INCLUDES) -Isrcdir/lib/abyss/src
 
+$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o): \
+  INCLUDES = $(SERVER_INCLUDES)
+
 $(LIBXMLRPC_CLIENTPP_MODS:%=%.o) \
 $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh): \
   INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
+
+$(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o) \
+$(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh): \
+  INCLUDES = $(BASIC_INCLUDES)
 
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 

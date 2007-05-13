@@ -1,4 +1,6 @@
 meerkat-app-list
+pstream_client
+pstream_inetd_server
 xmlrpc_inetd_server
 xmlrpc_loop_server
 xmlrpc_sample_add_server

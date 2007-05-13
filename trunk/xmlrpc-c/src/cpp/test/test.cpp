@@ -15,6 +15,7 @@ using girerr::error;
 
 #include "testclient.hpp"
 #include "server_abyss.hpp"
+#include "server_pstream.hpp"
 #include "tools.hpp"
 
 using namespace xmlrpc_c;
@@ -816,6 +817,7 @@ main(int argc, char**) {
         paramListTestSuite().run(0);
         registryTestSuite().run(0);
         serverAbyssTestSuite().run(0);
+        serverPstreamTestSuite().run(0);
         clientTestSuite().run(0);
 
         testXmlRpcCpp();

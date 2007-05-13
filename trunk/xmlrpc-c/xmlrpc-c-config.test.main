@@ -16,6 +16,8 @@ the_includes=
 the_rpath=
 the_wl_rpath=
 sopath=
+# It's important that packetsocket lib go after client, server libs
+packetsocket_lib=
 
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
   LIBXML=$(xml2-config --libs)
@@ -52,6 +54,9 @@ while test $# -gt 0; do
       needCpp=yes
       the_libs="${BLDDIR}/src/cpp/libxmlrpc++.a $the_libs"
       ;;
+    pstream-client)
+      packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
+      ;;
     server-util)
       the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
       ;;
@@ -72,6 +77,14 @@ while test $# -gt 0; do
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
         fi
       sopath="${BLDDIR}/lib/abyss/src/.libs:$sopath"
+      ;;
+    pstream-server)
+      the_libs="${LSOCKET} $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_pstream++.a $the_libs"
+      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_pstream++.a $the_libs"
+      packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
       ;;
     client)
       the_libs="${BLDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
@@ -107,10 +120,10 @@ while test $# -gt 0; do
       echo "$the_includes"
       ;;
     --libs)
-      echo "$the_libdirs $the_libs $the_wl_rpath"
+      echo "$the_libdirs $the_libs $packetsocket_lib $the_wl_rpath"
       ;;
     --ldadd)
-      echo "$the_libdirs $the_libs"
+      echo "$the_libdirs $the_libs $packetsocket_lib"
       ;;
     --ldflags)
       echo "$the_rpath"

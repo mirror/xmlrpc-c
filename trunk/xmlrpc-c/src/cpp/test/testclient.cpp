@@ -13,6 +13,8 @@
 #include <sstream>
 #include <memory>
 #include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -318,11 +320,11 @@ public:
 
 
 
-class ambivalentTransportTestSuite : public testSuite {
+class ambivalentHttpTransportTestSuite : public testSuite {
 
 public:
     virtual string suiteName() {
-        return "ambivalentTransportTestSuite";
+        return "ambivalentHttpTransportTestSuite";
     }
     virtual void runtests(unsigned int const) {
         vector<string> const typeList(
@@ -347,6 +349,52 @@ public:
 
 
 
+class pstreamTransportTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "pstreamTransportTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        int const devNullFd(open("/dev/null", 0));
+
+        if (devNullFd < 0)
+            throw error("Failed to open /dev/null, needed for test.");
+
+        EXPECT_ERROR(clientXmlTransport_pstream transport1(
+            clientXmlTransport_pstream::constrOpt()
+            .fd(37)
+            ););  // ERROR: no such file descriptor
+
+        carriageParm_pstream carriageParm0;
+
+        {
+            clientXmlTransport_pstream transport2(
+                clientXmlTransport_pstream::constrOpt()
+                .fd(devNullFd)
+                );
+            
+            string callXml("hello");
+            string responseXml;
+            EXPECT_ERROR(transport2.call(NULL, callXml, &responseXml););
+                // Error: carriage parm not of type carriageParm_pstream
+            EXPECT_ERROR(transport2.call(&carriageParm0, callXml,
+                                         &responseXml););
+                // Error: no response
+        }
+        clientXmlTransportPtr transport1P(new clientXmlTransport_pstream(
+            clientXmlTransport_pstream::constrOpt()
+            .fd(devNullFd)
+            ));
+        clientXmlTransportPtr transport2P;
+        transport2P = transport1P;
+
+        close(devNullFd);
+    }
+};
+
+
+
 class clientXmlTransportTestSuite : public testSuite {
 
 public:
@@ -357,7 +405,8 @@ public:
         curlTransportTestSuite().run(indentation + 1);
         libwwwTransportTestSuite().run(indentation + 1);
         wininetTransportTestSuite().run(indentation + 1);
-        ambivalentTransportTestSuite().run(indentation + 1);
+        ambivalentHttpTransportTestSuite().run(indentation + 1);
+        pstreamTransportTestSuite().run(indentation + 1);
     }
 };
 

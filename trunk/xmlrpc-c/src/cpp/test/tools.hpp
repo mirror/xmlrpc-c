@@ -63,7 +63,7 @@ fileLineError(std::string  const filename,
 
 #define EXPECT_ERROR(statement) \
     do { try { statement } catch (error) {break;} \
-      throw(fileLineError(__FILE__, __LINE__, "Didn't get expected error")); \
+      throw(fileLineError(__FILE__, __LINE__, "Expected error; didn't get one")); \
     } while (0)
 
 #define trickToStraightenOutEmacsIndentation \
