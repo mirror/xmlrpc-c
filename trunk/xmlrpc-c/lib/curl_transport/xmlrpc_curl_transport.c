@@ -1081,18 +1081,19 @@ waitForWorkInt(xmlrpc_env *       const envP,
 static void
 doCurlWork(xmlrpc_env * const envP,
            curlMulti *  const curlMultiP,
-           bool *       const rpcStillRunningP) {
+           bool *       const transStillRunningP) {
 /*----------------------------------------------------------------------------
    Do whatever work is ready to be done by the Curl multi manager
    identified by 'curlMultiP'.  This typically is transferring data on
    an HTTP connection because the server is ready.
 
-   Return *rpcStillRunningP false if this work completes all of the
+   For each transaction for which the multi manager finishes all the
+   required work, complete the transaction by calling its
+   "finish" routine.
+
+   Return *transStillRunningP false if this work completes all of the
    manager's transactions so that there is no reason to call us ever
    again.
-
-   Where the multi manager completes an HTTP transaction, also complete
-   the associated RPC.
 -----------------------------------------------------------------------------*/
     bool immediateWorkToDo;
     int runningHandles;
@@ -1114,7 +1115,7 @@ doCurlWork(xmlrpc_env * const envP,
         */
         processCurlMessages(envP, curlMultiP);
 
-        *rpcStillRunningP = runningHandles > 0;
+        *transStillRunningP = runningHandles > 0;
     }
 }
 
@@ -1157,6 +1158,18 @@ curlMulti_finish(xmlrpc_env *       const envP,
             interrupted = (interruptP && *interruptP != 0);
         }
     }
+    if (!envP->fault_occurred) {
+        if (interrupted)
+            xmlrpc_env_set_fault(
+                envP, XMLRPC_TIMEOUT_ERROR,
+                "Wait for HTTP transaction to complete "
+                "at server was interrupted by a signal");
+        else if (timedOut)
+            xmlrpc_env_set_fault(
+                envP, XMLRPC_TIMEOUT_ERROR,
+                "Wait for HTTP transaction to complete "
+                "at server timed out");
+    }
 }
 
 
@@ -1188,17 +1201,64 @@ startCurlTransaction(xmlrpc_env *      const envP,
 
 
 static void
+getCurlTransactionError(curlTransaction * const curlTransactionP,
+                        xmlrpc_env *      const envP) {
+
+    CURLcode res;
+    long http_result;
+
+    res = curl_easy_getinfo(curlTransactionP->curlSessionP,
+                            CURLINFO_HTTP_CODE, &http_result);
+    
+    if (res != CURLE_OK)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INTERNAL_ERROR, 
+            "Curl performed the HTTP POST request, but was "
+            "unable to say what the HTTP result code was.  "
+            "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
+            curlTransactionP->curlError);
+    else {
+        if (http_result != 200)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_NETWORK_ERROR,
+                "HTTP response code is %ld, not 200",
+                http_result);
+    }
+}
+
+
+
+static void
 performCurlTransaction(xmlrpc_env *      const envP,
                        curlTransaction * const curlTransactionP,
                        curlMulti *       const curlMultiP,
                        int *             const interruptP) {
 
-    startCurlTransaction(envP, curlTransactionP, curlMultiP, NULL);
+    void * const finish = NULL;
+        /* We don't need a finish function because we're going to wait here
+           for the transaction to complete and then do the next step
+           ourselves.
+        */
+
+    startCurlTransaction(envP, curlTransactionP, curlMultiP, finish);
+
+    /* Failure here just means something screwy in the multi manager;
+       Above does not even begin to perform the HTTP transaction
+    */
 
     if (!envP->fault_occurred) {
         struct timeval dummy;
 
         curlMulti_finish(envP, curlMultiP, timeout_no, dummy, interruptP);
+
+        /* Failure here just means something screwy in the multi
+           manager; any failure of the HTTP transaction would have been
+           recorded in *curlTransactionP.
+        */
+
+        if (!envP->fault_occurred)
+            /* Curl session completed OK.  But did HTTP transaction work? */
+            getCurlTransactionError(curlTransactionP, envP);
     }
 }
 
@@ -1727,34 +1787,6 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 
 
 static void
-getCurlTransactionError(curlTransaction * const curlTransactionP,
-                        xmlrpc_env *      const envP) {
-
-    CURLcode res;
-    long http_result;
-
-    res = curl_easy_getinfo(curlTransactionP->curlSessionP,
-                            CURLINFO_HTTP_CODE, &http_result);
-    
-    if (res != CURLE_OK)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Curl performed the HTTP POST request, but was "
-            "unable to say what the HTTP result code was.  "
-            "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
-            curlTransactionP->curlError);
-    else {
-        if (http_result != 200)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_NETWORK_ERROR,
-                "HTTP response code is %ld, not 200",
-                http_result);
-    }
-}
-
-
-
-static void
 createRpc(xmlrpc_env *                     const envP,
           struct xmlrpc_client_transport * const clientTransportP,
           CURL *                           const curlSessionP,
@@ -1932,7 +1964,7 @@ finishAsynch(
    Wait for the Curl multi manager to finish the Curl transactions for
    all outstanding RPCs and destroy those RPCs.
 
-   But give up and return if a) too much time passes as defined by
+   But give up and return failure if a) too much time passes as defined by
    'timeoutType' and 'timeout'; or b) the transport client requests
    interruption (i.e. the transport's interrupt flag becomes nonzero).
    Normally, a signal must get our attention for us to notice the
