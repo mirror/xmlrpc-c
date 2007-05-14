@@ -11,19 +11,10 @@
 #include "xmlrpc_config.h"
 
 #include "xmlrpc-c/base.h"
+#include "xmlrpc-c/string_int.h"
 
 #include "test.h"
 #include "value.h"
-
-
-
-/*=========================================================================
-**  Test Data
-**=========================================================================
-**  Some common test data which need to be allocated at a fixed address,
-**  or which are inconvenient to allocate inline.
-*/
-static char* test_string_1 = "foo";
 
 
 
@@ -338,12 +329,12 @@ test_value_string_no_null(void) {
 
     TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_STRING), "STRING"));
 
-    v = xmlrpc_string_new(&env, test_string_1);
+    v = xmlrpc_string_new(&env, "foo");
     TEST_NO_FAULT(&env);
     TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
-    TEST(streq(str, test_string_1));
+    TEST(streq(str, "foo"));
     xmlrpc_DECREF(v);
     strfree(str);
 
@@ -365,7 +356,7 @@ test_value_string_no_null(void) {
     xmlrpc_DECREF(v);
     strfree(str);
 
-    v = xmlrpc_build_value(&env, "s", test_string_1);
+    v = xmlrpc_build_value(&env, "s", "foo");
 
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
@@ -373,13 +364,14 @@ test_value_string_no_null(void) {
 
     xmlrpc_decompose_value(&env, v, "s", &str);
     TEST_NO_FAULT(&env);
-    TEST(streq(str, test_string_1));
+    TEST(streq(str, "foo"));
     strfree(str);
 
     xmlrpc_decompose_value(&env, v, "s#", &str, &len);
     TEST_NO_FAULT(&env);
-    TEST(memcmp(str, test_string_1, strlen(test_string_1)) == 0);
-    TEST(strlen(str) == strlen(test_string_1));
+    TEST(len == strlen("foo"));
+    TEST(xmlrpc_streq(str, "foo"));
+    TEST(strlen(str) == strlen("foo"));
     strfree(str);
 
     xmlrpc_DECREF(v);
@@ -408,7 +400,7 @@ test_value_string_null(void) {
     xmlrpc_read_string_lp(&env, v, &len, &str);
     TEST_NO_FAULT(&env);
     TEST(len == 7);
-    TEST(memcmp(str, "foo\0bar", 7) == 0);
+    TEST(xmlrpc_memeq(str, "foo\0bar", 7));
     xmlrpc_DECREF(v);
     strfree(str);
 
@@ -419,7 +411,7 @@ test_value_string_null(void) {
 
     xmlrpc_decompose_value(&env, v, "s#", &str, &len);
     TEST_NO_FAULT(&env);
-    TEST(memcmp(str, "foo\0bar", 7) == 0);
+    TEST(xmlrpc_memeq(str, "foo\0bar", 7));
     TEST(len == 7);
     strfree(str);
 
@@ -630,7 +622,7 @@ test_value_base64(void) {
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
     xmlrpc_read_base64(&env, v, &len, &data);
     TEST_NO_FAULT(&env);
-    TEST(memcmp(data, data1, sizeof(data1)) == 0);
+    TEST(xmlrpc_memeq(data, data1, sizeof(data1)));
     TEST(len == sizeof(data1));
     xmlrpc_DECREF(v);
     free((void*)data);
@@ -642,7 +634,7 @@ test_value_base64(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
     TEST(len == sizeof(data2));
-    TEST(memcmp(data, data1, sizeof(data2)) == 0);
+    TEST(xmlrpc_memeq(data, data1, sizeof(data2)));
     strfree(data);
 
     xmlrpc_env_clean(&env);
@@ -1190,9 +1182,9 @@ test_value_parse_value(void) {
         TEST(streq(dt_str, datestring));
         TEST(streq(s1, "hello world"));
         TEST(s2_len == 3);
-        TEST(memcmp(s2, "a\0b", 3) == 0);
+        TEST(xmlrpc_memeq(s2, "a\0b", 3));
         TEST(b64_len == strlen("base64 data"));
-        TEST(memcmp(b64, "base64 data", b64_len) == 0);
+        TEST(xmlrpc_memeq(b64, "base64 data", b64_len));
         TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(arrayP));
         TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(structP));
         TEST(cptr == &valueP);
