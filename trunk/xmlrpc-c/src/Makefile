@@ -101,6 +101,7 @@ LIBXMLRPC_OBJS = \
 	trace.lo \
 	xmlrpc_data.lo \
 	xmlrpc_datetime.lo \
+	xmlrpc_string.lo \
 	xmlrpc_array.lo \
 	xmlrpc_struct.lo \
 	xmlrpc_build.lo \

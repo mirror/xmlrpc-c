@@ -109,6 +109,9 @@ xmlrpc_traceXml(const char * const label,
                 unsigned int const xmlLength);
 
 void
+xmlrpc_destroyString(xmlrpc_value * const stringP);
+
+void
 xmlrpc_destroyStruct(xmlrpc_value * const structP);
 
 void
