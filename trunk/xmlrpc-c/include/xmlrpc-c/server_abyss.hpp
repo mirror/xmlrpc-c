@@ -76,6 +76,9 @@ public:
 
     void
     runConn(int const socketFd);
+
+    void
+    terminate();
     
 private:
     // The user has the choice of supplying the registry by plain pointer
