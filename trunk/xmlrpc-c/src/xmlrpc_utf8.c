@@ -271,100 +271,97 @@ xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
   returns an xmlrpc_mem_block with an element type of wchar_t.  Don't
   try to intepret the block in a bytewise fashion--it won't work in
   any useful or portable fashion.
+
+   For backward compatibility, we return a meaningful value even when we
+   fail.  We return NULL when we fail.
 -----------------------------------------------------------------------------*/
-    xmlrpc_mem_block *output;
+    xmlrpc_mem_block * wcsP;
     size_t wcs_length;
 
     /* Allocate a memory block large enough to hold any possible output.
        We assume that each byte of the input may decode to a whcar_t.
     */
-    output = XMLRPC_MEMBLOCK_NEW(wchar_t, envP, utf8_len);
+    wcsP = XMLRPC_MEMBLOCK_NEW(wchar_t, envP, utf8_len);
     if (!envP->fault_occurred) {
         /* Decode the UTF-8 data. */
         decode_utf8(envP, utf8_data, utf8_len,
-                    XMLRPC_MEMBLOCK_CONTENTS(wchar_t, output),
+                    XMLRPC_MEMBLOCK_CONTENTS(wchar_t, wcsP),
                     &wcs_length);
         if (!envP->fault_occurred) {
             /* We can't have overrun our buffer. */
             XMLRPC_ASSERT(wcs_length <= utf8_len);
 
             /* Correct the length of the memory block. */
-            XMLRPC_MEMBLOCK_RESIZE(wchar_t, envP, output, wcs_length);
+            XMLRPC_MEMBLOCK_RESIZE(wchar_t, envP, wcsP, wcs_length);
         }
         if (envP->fault_occurred)
-            xmlrpc_mem_block_free(output);
+            XMLRPC_MEMBLOCK_FREE(wchar_t, wcsP);
     }
     if (envP->fault_occurred)
-        output = NULL;
-
-    return output;
+        return NULL;
+    else
+        return wcsP;
 }
 
 
 
-/*=========================================================================
-**  xmlrpc_utf8_to_wcs
-**=========================================================================
-**  Encode a "wide character string" as UTF-8.
-*/
+xmlrpc_mem_block *
+xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
+                   const wchar_t * const wcs_data,
+                   size_t          const wcs_len) {
+/*----------------------------------------------------------------------------
+   Encode a "wide character string" as UTF-8.
 
-xmlrpc_mem_block *xmlrpc_wcs_to_utf8 (xmlrpc_env *env,
-                                      wchar_t *wcs_data,
-                                      size_t wcs_len)
-{
-    size_t estimate, bytes_used, i;
-    xmlrpc_mem_block *output;
-    unsigned char *buffer;
-    wchar_t wc;
+   For backward compatibility, we return a meaningful value even when we
+   fail.  We return NULL when we fail.
+-----------------------------------------------------------------------------*/
+    size_t const estimate = wcs_len * MAX_ENCODED_BYTES;
+        /* Our conservative estimate of how big the output will be;
+           i.e. we know it won't be larger than this.  For the estimate,
+           we assume that every wchar might encode to the maximum length.
+        */
+    xmlrpc_mem_block * utf8P;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(wcs_data);
 
-    /* Error-handling preconditions. */
-    output = NULL;
+    utf8P = XMLRPC_MEMBLOCK_NEW(char, envP, estimate);
+    if (!envP->fault_occurred) {
+        unsigned char * const buffer = XMLRPC_MEMBLOCK_CONTENTS(char, utf8P);
+        size_t bytesUsed;
+        size_t i;
 
-    /* Allocate a memory block large enough to hold any possible output.
-    ** We assume that every wchar might encode to the maximum length. */
-    estimate = wcs_len * MAX_ENCODED_BYTES;
-    output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, env, estimate);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Output our characters. */
-    buffer = (unsigned char*) XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
-    bytes_used = 0;
-    for (i = 0; i < wcs_len; i++) {
-        wc = wcs_data[i];
-        if (wc <= 0x007F) {
-            buffer[bytes_used++] = wc & 0x7F;
-        } else if (wc <= 0x07FF) {
-            /* 110xxxxx 10xxxxxx */
-            buffer[bytes_used++] = 0xC0 | (wc >> 6);
-            buffer[bytes_used++] = 0x80 | (wc & 0x3F);
-        } else if (wc <= 0xFFFF) {
-            /* 1110xxxx 10xxxxxx 10xxxxxx */
-            buffer[bytes_used++] = 0xE0 | (wc >> 12);
-            buffer[bytes_used++] = 0x80 | ((wc >> 6) & 0x3F);
-            buffer[bytes_used++] = 0x80 | (wc & 0x3F);
-        } else {
-            XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR,
-                        "Don't know how to encode UCS-4 characters yet");
+        bytesUsed = 0;
+        for (i = 0; i < wcs_len && !envP->fault_occurred; ++i) {
+            wchar_t const wc = wcs_data[i];
+            if (wc <= 0x007F)
+                buffer[bytesUsed++] = wc & 0x7F;
+            else if (wc <= 0x07FF) {
+                /* 110xxxxx 10xxxxxx */
+                buffer[bytesUsed++] = 0xC0 | (wc >> 6);
+                buffer[bytesUsed++] = 0x80 | (wc & 0x3F);
+            } else if (wc <= 0xFFFF) {
+                /* 1110xxxx 10xxxxxx 10xxxxxx */
+                buffer[bytesUsed++] = 0xE0 | (wc >> 12);
+                buffer[bytesUsed++] = 0x80 | ((wc >> 6) & 0x3F);
+                buffer[bytesUsed++] = 0x80 | (wc & 0x3F);
+            } else
+                xmlrpc_faultf(envP, 
+                              "Don't know how to encode UCS-4 characters yet");
         }
+        if (!envP->fault_occurred) {
+            XMLRPC_ASSERT(bytesUsed <= estimate);
+
+            XMLRPC_MEMBLOCK_RESIZE(char, envP, utf8P, bytesUsed);
+        }
+        if (envP->fault_occurred)
+            XMLRPC_MEMBLOCK_FREE(char, utf8P);
     }
 
-    /* Make sure we didn't overrun our buffer. */
-    XMLRPC_ASSERT(bytes_used <= estimate);
-
-    /* Correct the length of the memory block. */
-    XMLRPC_TYPED_MEM_BLOCK_RESIZE(char, env, output, bytes_used);
-    XMLRPC_FAIL_IF_FAULT(env);
-
- cleanup:
-    if (env->fault_occurred) {
-        if (output)
-            xmlrpc_mem_block_free(output);
+    if (envP->fault_occurred)
         return NULL;
-    }
-    return output;
+    else 
+        return utf8P;
 }
 
 

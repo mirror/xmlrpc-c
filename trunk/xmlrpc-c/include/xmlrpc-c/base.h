@@ -591,9 +591,9 @@ xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
 
 #if XMLRPC_HAVE_WCHAR
 xmlrpc_mem_block *
-xmlrpc_wcs_to_utf8(xmlrpc_env * env,
-                   wchar_t *    wcs_data,
-                   size_t       wcs_len);
+xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
+                   const wchar_t * const wcs_data,
+                   size_t          const wcs_len);
 #endif
 
 /*=========================================================================
