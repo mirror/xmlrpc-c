@@ -428,6 +428,147 @@ test_value_string_null(void) {
 
 
 
+static void
+test_value_string_multiline(void) {
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    const char * str;
+
+    xmlrpc_env_init(&env);
+
+    /* LF line ending */
+
+    v = xmlrpc_string_new(&env, "foo\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\n\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\nbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\nbar\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\nbar\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\nbaz"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    /* CR line ending */
+
+    v = xmlrpc_string_new(&env, "foo\r");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\r");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\rbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\rbar\r");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\rbar\rbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\nbaz"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    /* CRLF line ending */
+
+    v = xmlrpc_string_new(&env, "foo\r\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\n\r\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\nbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\nbar\r\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\nbar\r\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\nbaz"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 #if HAVE_UNICODE_WCHAR
 
 /* Here is a 3-character, NUL-terminated string, once in UTF-8 chars,
@@ -594,6 +735,24 @@ test_value_string_wide(void) {
 
     xmlrpc_DECREF(valueP);
 
+    {
+        /* Test with various line delimiters */
+
+        wchar_t const wcs_lines[] = {'\n', '\r', '\r', '\n', '\0'};
+        unsigned int i;
+
+        valueP = xmlrpc_string_w_new(&env, wcs_lines);
+        TEST_NO_FAULT(&env);
+
+        xmlrpc_read_string_w_lp(&env, valueP, &len, &wcs);
+        TEST_NO_FAULT(&env);
+fprintf(stderr, "len=%d\n", len);
+        TEST(len == 3);
+        TEST(wcs[len] == '\0');
+        for (i = 0; i < len; ++i)
+            TEST(wcs[i] == '\n');
+        free((void*)wcs);
+    }
     xmlrpc_env_clean(&env);
 #endif /* HAVE_UNICODE_WCHAR */
 }
@@ -1633,6 +1792,7 @@ test_value(void) {
     test_value_datetime();
     test_value_string_no_null();
     test_value_string_null();
+    test_value_string_multiline();
     test_value_string_wide();
     test_value_base64();
     test_value_array();

@@ -48,76 +48,6 @@ getString(xmlrpc_env *    const envP,
 
 
 
-#if HAVE_UNICODE_WCHAR
-static void
-mkWideString(xmlrpc_env *    const envP,
-             wchar_t *       const wcs,
-             size_t          const wcs_len,
-             xmlrpc_value ** const valPP) {
-
-    xmlrpc_value * valP;
-    char *contents;
-    wchar_t *wcs_contents;
-    int block_is_inited;
-    xmlrpc_mem_block *utf8_block;
-    char *utf8_contents;
-    size_t utf8_len;
-
-    /* Error-handling preconditions. */
-    valP = NULL;
-    utf8_block = NULL;
-    block_is_inited = 0;
-
-    /* Initialize our XML-RPC value. */
-    MALLOCVAR(valP);
-    XMLRPC_FAIL_IF_NULL(valP, envP, XMLRPC_INTERNAL_ERROR,
-                        "Could not allocate memory for wide string");
-    valP->_refcount = 1;
-    valP->_type = XMLRPC_TYPE_STRING;
-
-    /* More error-handling preconditions. */
-    valP->_wcs_block = NULL;
-
-    /* Build our wchar_t block first. */
-    valP->_wcs_block =
-        XMLRPC_TYPED_MEM_BLOCK_NEW(wchar_t, envP, wcs_len + 1);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    wcs_contents =
-        XMLRPC_TYPED_MEM_BLOCK_CONTENTS(wchar_t, valP->_wcs_block);
-    memcpy(wcs_contents, wcs, wcs_len * sizeof(wchar_t));
-    wcs_contents[wcs_len] = '\0';
-    
-    /* Convert the wcs block to UTF-8. */
-    utf8_block = xmlrpc_wcs_to_utf8(envP, wcs_contents, wcs_len + 1);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    utf8_contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, utf8_block);
-    utf8_len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, utf8_block);
-
-    /* XXX - We need an extra memcopy to initialize _block. */
-    XMLRPC_TYPED_MEM_BLOCK_INIT(char, envP, &valP->_block, utf8_len);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    block_is_inited = 1;
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &valP->_block);
-    memcpy(contents, utf8_contents, utf8_len);
-
- cleanup:
-    if (utf8_block)
-        xmlrpc_mem_block_free(utf8_block);
-    if (envP->fault_occurred) {
-        if (valP) {
-            if (valP->_wcs_block)
-                xmlrpc_mem_block_free(valP->_wcs_block);
-            if (block_is_inited)
-                xmlrpc_mem_block_clean(&valP->_block);
-            free(valP);
-        }
-    }
-    *valPP = valP;
-}
-#endif /* HAVE_UNICODE_WCHAR */
-
-
-
 static void
 getWideString(xmlrpc_env *    const envP ATTR_UNUSED,
               const char **   const formatP ATTR_UNUSED,
@@ -135,7 +65,7 @@ getWideString(xmlrpc_env *    const envP ATTR_UNUSED,
     } else
         len = wcslen(wcs);
 
-    mkWideString(envP, wcs, len, valPP);
+    *valPP = xmlrpc_string_w_new_lp(envP, len, wcs);
 
 #endif /* HAVE_UNICODE_WCHAR */
 }
