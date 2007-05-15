@@ -9,7 +9,7 @@
 #include "test.h"
 #include "xml_data.h"
 #include "serialize.h"
-
+#include "girstring.h"
 
 
 static void
@@ -52,6 +52,104 @@ test_serialize_basic(void) {
 
     /* Clean up our value. */
     XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_string(void) {
+
+    /* Test serialize of a string, including all the line ending
+       complexity.
+    */
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    xmlrpc_mem_block * xmlP;         /* Serialized result */
+    
+    xmlrpc_env_init(&env);
+
+    TEST_NO_FAULT(&env);
+
+    v = xmlrpc_string_new(&env, "hello world");
+    TEST_NO_FAULT(&env);
+
+    xmlP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    xmlrpc_serialize_value(&env, xmlP, v);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+               "<value><string>hello world</string></value>",
+               XMLRPC_MEMBLOCK_SIZE(char, xmlP)));
+    XMLRPC_MEMBLOCK_FREE(char, xmlP);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new(&env, "");
+    TEST_NO_FAULT(&env);
+    xmlP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    xmlrpc_serialize_value(&env, xmlP, v);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+               "<value><string></string></value>",
+               XMLRPC_MEMBLOCK_SIZE(char, xmlP)));
+    XMLRPC_MEMBLOCK_FREE(char, xmlP);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new_lp(&env, 7, "foo\0bar");
+    TEST_NO_FAULT(&env);
+    xmlP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    xmlrpc_serialize_value(&env, xmlP, v);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+               "<value><string>foo\0bar</string></value>",
+               XMLRPC_MEMBLOCK_SIZE(char, xmlP)));
+    XMLRPC_MEMBLOCK_FREE(char, xmlP);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new_lp(&env, 7, "foo\nbar");
+    TEST_NO_FAULT(&env);
+    xmlP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    xmlrpc_serialize_value(&env, xmlP, v);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+               "<value><string>foo\nbar</string></value>",
+               XMLRPC_MEMBLOCK_SIZE(char, xmlP)));
+    XMLRPC_MEMBLOCK_FREE(char, xmlP);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new_lp(&env, 8, "foo\r\nbar");
+    TEST_NO_FAULT(&env);
+    xmlP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    xmlrpc_serialize_value(&env, xmlP, v);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+               "<value><string>foo\nbar</string></value>",
+               XMLRPC_MEMBLOCK_SIZE(char, xmlP)));
+    XMLRPC_MEMBLOCK_FREE(char, xmlP);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new_lp(&env, 7, "foo\rbar");
+    TEST_NO_FAULT(&env);
+    xmlP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    xmlrpc_serialize_value(&env, xmlP, v);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+               "<value><string>foo\nbar</string></value>",
+               XMLRPC_MEMBLOCK_SIZE(char, xmlP)));
+    XMLRPC_MEMBLOCK_FREE(char, xmlP);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new_lp_cr(&env, 7, "foo\rbar");
+    TEST_NO_FAULT(&env);
+    xmlP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    xmlrpc_serialize_value(&env, xmlP, v);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, xmlP),
+               "<value><string>foo&#x0d;bar</string></value>",
+               XMLRPC_MEMBLOCK_SIZE(char, xmlP)));
+    XMLRPC_MEMBLOCK_FREE(char, xmlP);
     xmlrpc_DECREF(v);
 
     xmlrpc_env_clean(&env);
@@ -272,6 +370,7 @@ test_serialize(void) {
     printf("Running serialize tests.");
 
     test_serialize_basic();
+    test_serialize_string();
     test_serialize_double();
     test_serialize_struct();
     test_serialize_methodResponse();

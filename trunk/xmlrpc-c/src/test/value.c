@@ -400,7 +400,7 @@ test_value_string_null(void) {
     xmlrpc_read_string_lp(&env, v, &len, &str);
     TEST_NO_FAULT(&env);
     TEST(len == 7);
-    TEST(xmlrpc_memeq(str, "foo\0bar", 7));
+    TEST(memeq(str, "foo\0bar", 7));
     xmlrpc_DECREF(v);
     strfree(str);
 
@@ -411,7 +411,7 @@ test_value_string_null(void) {
 
     xmlrpc_decompose_value(&env, v, "s#", &str, &len);
     TEST_NO_FAULT(&env);
-    TEST(xmlrpc_memeq(str, "foo\0bar", 7));
+    TEST(memeq(str, "foo\0bar", 7));
     TEST(len == 7);
     strfree(str);
 
@@ -563,10 +563,39 @@ test_value_string_multiline(void) {
     xmlrpc_DECREF(v);
     strfree(str);
 
-
     xmlrpc_env_clean(&env);
 }
 
+
+
+static void
+test_value_string_cr(void) {
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    const char * str;
+    size_t len;
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_string_new_cr(&env, "foo\r\nbar\r\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar\r\nbaz"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new_lp_cr(&env, 7, "\0foo\rbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string_lp(&env, v, &len, &str);
+    TEST_NO_FAULT(&env);
+    TEST(len == 7);
+    TEST(memeq(str, "\0foo\rbar", len));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    xmlrpc_env_clean(&env);
+}
 
 
 #if HAVE_UNICODE_WCHAR
@@ -746,7 +775,6 @@ test_value_string_wide(void) {
 
         xmlrpc_read_string_w_lp(&env, valueP, &len, &wcs);
         TEST_NO_FAULT(&env);
-fprintf(stderr, "len=%d\n", len);
         TEST(len == 3);
         TEST(wcs[len] == '\0');
         for (i = 0; i < len; ++i)
@@ -781,7 +809,7 @@ test_value_base64(void) {
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
     xmlrpc_read_base64(&env, v, &len, &data);
     TEST_NO_FAULT(&env);
-    TEST(xmlrpc_memeq(data, data1, sizeof(data1)));
+    TEST(memeq(data, data1, sizeof(data1)));
     TEST(len == sizeof(data1));
     xmlrpc_DECREF(v);
     free((void*)data);
@@ -793,7 +821,7 @@ test_value_base64(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
     TEST(len == sizeof(data2));
-    TEST(xmlrpc_memeq(data, data1, sizeof(data2)));
+    TEST(memeq(data, data1, sizeof(data2)));
     strfree(data);
 
     xmlrpc_env_clean(&env);
@@ -1341,9 +1369,9 @@ test_value_parse_value(void) {
         TEST(streq(dt_str, datestring));
         TEST(streq(s1, "hello world"));
         TEST(s2_len == 3);
-        TEST(xmlrpc_memeq(s2, "a\0b", 3));
+        TEST(memeq(s2, "a\0b", 3));
         TEST(b64_len == strlen("base64 data"));
-        TEST(xmlrpc_memeq(b64, "base64 data", b64_len));
+        TEST(memeq(b64, "base64 data", b64_len));
         TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(arrayP));
         TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(structP));
         TEST(cptr == &valueP);
@@ -1793,6 +1821,7 @@ test_value(void) {
     test_value_string_no_null();
     test_value_string_null();
     test_value_string_multiline();
+    test_value_string_cr();
     test_value_string_wide();
     test_value_base64();
     test_value_array();

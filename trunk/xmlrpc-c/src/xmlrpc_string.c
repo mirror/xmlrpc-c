@@ -471,10 +471,13 @@ copySimple(xmlrpc_env *       const envP,
 
 
 
-xmlrpc_value *
-xmlrpc_string_new_lp(xmlrpc_env * const envP, 
-                     size_t       const length,
-                     const char * const value) {
+enum crTreatment { CR_IS_LINEDELIM, CR_IS_CHAR };
+
+static xmlrpc_value *
+stringNew(xmlrpc_env *     const envP, 
+          size_t           const length,
+          const char *     const value,
+          enum crTreatment const crTreatment) {
 
     xmlrpc_value * valP;
 
@@ -487,10 +490,12 @@ xmlrpc_string_new_lp(xmlrpc_env * const envP,
             valP->_type = XMLRPC_TYPE_STRING;
             valP->_wcs_block = NULL;
 
-            if (memchr(value, '\r', length))
+            /* Note that copyLines() works for strings with no CRs, but
+               it's slower.
+            */
+            if (memchr(value, '\r', length) && crTreatment == CR_IS_LINEDELIM)
                 copyLines(envP, value, length, &valP->_block);
             else
-                /* Fast path for usual case */
                 copySimple(envP, value, length, &valP->_block);
 
             if (envP->fault_occurred)
@@ -503,10 +508,39 @@ xmlrpc_string_new_lp(xmlrpc_env * const envP,
 
 
 xmlrpc_value *
+xmlrpc_string_new_lp(xmlrpc_env * const envP, 
+                     size_t       const length,
+                     const char * const value) {
+
+    return stringNew(envP, length, value, CR_IS_LINEDELIM);
+}
+
+
+
+xmlrpc_value *
+xmlrpc_string_new_lp_cr(xmlrpc_env * const envP, 
+                        size_t       const length,
+                        const char * const value) {
+
+    return stringNew(envP, length, value, CR_IS_CHAR);
+}
+
+
+
+xmlrpc_value *
 xmlrpc_string_new(xmlrpc_env * const envP,
                   const char * const value) {
+    
+    return stringNew(envP, strlen(value), value, CR_IS_LINEDELIM);
+}
 
-    return xmlrpc_string_new_lp(envP, strlen(value), value);
+
+
+xmlrpc_value *
+xmlrpc_string_new_cr(xmlrpc_env * const envP,
+                     const char * const value) {
+
+    return stringNew(envP, strlen(value), value, CR_IS_CHAR);
 }
 
 

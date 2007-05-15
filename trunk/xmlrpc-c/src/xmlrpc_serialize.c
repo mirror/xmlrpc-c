@@ -100,6 +100,8 @@ escapedSize(const char * const chars,
             size += 4; /* &gt; */
         else if (chars[i] == '&')
             size += 5; /* &amp; */
+        else if (chars[i] == '\r')
+            size += 6; /* &#x0d; */
         else
             size += 1;
     }
@@ -116,8 +118,20 @@ escapeForXml(xmlrpc_env *        const envP,
 /*----------------------------------------------------------------------------
    Escape & and < in a UTF-8 string so as to make it suitable for the
    content of an XML element.  I.e. turn them into entity references
-   &amp; and &lt;.  Also change > to &gt;, even though not required
-   for XML, for symmetry.
+   &amp; and &lt;.
+
+   Also change > to &gt;, even though not required for XML, for
+   symmetry.
+
+   &lt; etc. are known in XML as "entity references."
+   
+   Also Escape CR as &#x0d; .  While raw CR _is_ allowed in the content
+   of an XML element, it has a special meaning -- it means line ending.
+   Our input uses LF for for line endings.  Since it also means line ending
+   in XML, we just pass it through to our output like it were a regular
+   character.
+
+   &#x0d; is known in XML as a "character reference."
 -----------------------------------------------------------------------------*/
     xmlrpc_mem_block * outputP;
     size_t outputSize;
@@ -151,7 +165,11 @@ escapeForXml(xmlrpc_env *        const envP,
             } else if (chars[i] == '&') {
                 memcpy(p, "&amp;", 5);
                 p += 5;
+            } else if (chars[i] == '\r') {
+                memcpy(p, "&#x0d;", 6);
+                p += 6;
             } else {
+                /* Either a plain character or a LF line delimiter */
                 *p = chars[i];
                 p += 1;
             }

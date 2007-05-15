@@ -167,6 +167,15 @@ xmlrpc_string_new_f(xmlrpc_env * const envP,
                     const char * const format,
                     ...);
 
+xmlrpc_value *
+xmlrpc_string_new_lp_cr(xmlrpc_env * const envP, 
+                        size_t       const length,
+                        const char * const value);
+
+xmlrpc_value *
+xmlrpc_string_new_cr(xmlrpc_env * const envP,
+                     const char * const value);
+
 void
 xmlrpc_read_string(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
