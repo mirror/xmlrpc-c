@@ -30,6 +30,14 @@ streq(const char * const comparator,
     return (strcmp(comparand, comparator) == 0);
 }
 
+static __inline__ bool
+memeq(const void * const a,
+      const void * const b,
+      size_t       const size) {
+    
+    return (memcmp(a, b, size) == 0);
+}
+
 static __inline__ const char *
 sdup(const char * const input) {
     return (const char *) strdup(input);
