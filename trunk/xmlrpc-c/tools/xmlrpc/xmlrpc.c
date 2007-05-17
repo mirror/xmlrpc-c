@@ -45,6 +45,7 @@
 
 #include "xmlrpc_config.h"  /* information about this build environment */
 #include "bool.h"
+#include "girstring.h"
 #include "casprintf.h"
 #include "mallocvar.h"
 #include "cmdline_parser.h"
@@ -194,7 +195,7 @@ parseCommandLine(xmlrpc_env *         const envP,
                 cmd_getOptionValueString(cp, "curluseragent");
 
             if ((!cmdlineP->transport || 
-                 strcmp(cmdlineP->transport, "curl") != 0)
+                 !streq(cmdlineP->transport, "curl"))
                 &&
                 (cmdlineP->curlinterface ||
                  cmdlineP->curlnoverifypeer ||
@@ -337,11 +338,9 @@ buildBool(xmlrpc_env *    const envP,
           const char *    const valueString,
           xmlrpc_value ** const paramPP) {
 
-    if (strcmp(valueString, "t") == 0 ||
-        strcmp(valueString, "true") == 0)
+    if (streq(valueString, "t") || streq(valueString, "true"))
         *paramPP = xmlrpc_bool_new(envP, true);
-    else if (strcmp(valueString, "f") == 0 ||
-        strcmp(valueString, "false") == 0)
+    else if (streq(valueString, "f") == 0 || streq(valueString, "false"))
         *paramPP = xmlrpc_bool_new(envP, false);
     else
         setError(envP, "Boolean argument has unrecognized value '%s'.  "
@@ -528,7 +527,7 @@ doCall(xmlrpc_env *               const envP,
 
     clientparms.transport = transport;
 
-    if (transport && strcmp(transport, "curl") == 0) {
+    if (transport && streq(transport, "curl")) {
         struct xmlrpc_curl_xportparms * curlXportParmsP;
         MALLOCVAR(curlXportParmsP);
 
