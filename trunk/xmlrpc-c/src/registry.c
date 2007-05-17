@@ -75,8 +75,8 @@ makeRoomInArgList(xmlrpc_env *              const envP,
     if (signatureP->argListSpace < minArgCount) {
         REALLOCARRAY(signatureP->argList, minArgCount);
         if (signatureP->argList == NULL) {
-            xmlrpc_faultf(envP, "Couldn't get memory for an argument list for "
-                          "a method signature");
+            xmlrpc_faultf(envP, "Couldn't get memory for a argument list for "
+                          "a method signature with %u arguments", minArgCount);
             signatureP->argListSpace = 0;
         }
     }
