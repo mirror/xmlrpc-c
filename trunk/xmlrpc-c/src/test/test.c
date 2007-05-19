@@ -669,10 +669,9 @@ main(int     argc,
     int retval;
 
     if (argc-1 > 0) {
-        fprintf(stderr, "There are no arguments.");
+        fprintf(stderr, "There are no arguments.\n");
         retval = 1;
     } else {
-        /* Add your test suites here. */
         test_env();
         test_mem_block();
         test_base64_conversion();
@@ -697,8 +696,10 @@ main(int     argc,
 
         test_client_maybe();
 
+        printf("\n");
+
         /* Summarize our test run. */
-        printf("\nRan %d tests, %d failed, %.1f%% passed\n",
+        printf("Ran %d tests, %d failed, %.1f%% passed\n",
                total_tests, total_failures,
                100.0 - (100.0 * total_failures) / total_tests);
 
