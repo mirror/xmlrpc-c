@@ -578,7 +578,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
                    stuff in the buffer."  Don't know what that means,
                    but it sounds like something that needs to be
                    fixed.  The old code aborted the program here if
-                   xmlrpc_serialize_repsonse() failed.  04.11.17 
+                   xmlrpc_serialize_response() failed.  04.11.17 
                 */
                 xmlrpc_DECREF(result);
             } 
