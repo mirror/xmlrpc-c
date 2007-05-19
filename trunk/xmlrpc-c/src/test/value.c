@@ -17,6 +17,17 @@
 #include "value.h"
 
 
+#if HAVE_UNICODE_WCHAR
+
+static bool
+wcsneq(const wchar_t * const comparand,
+       const wchar_t * const comparator,
+       size_t          const length) {
+
+    return(wcsncmp(comparand, comparator, length) == 0);
+}
+
+#endif /* HAVE_UNICODE_WCHAR */
 
 static void
 test_value_alloc_dealloc(void) {
@@ -630,7 +641,7 @@ test_value_string_wide_build(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_DECREF(valueP);
@@ -646,12 +657,66 @@ test_value_string_wide_build(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_DECREF(valueP);
 }
 #endif /* HAVE_UNICODE_WCHAR */
+
+
+static void
+test_value_string_wide_line(void) {
+        /* Test with various line delimiters */
+
+#if HAVE_UNICODE_WCHAR
+    xmlrpc_env env;
+    xmlrpc_value * valueP;
+    const wchar_t * wcs;
+    size_t len;
+
+    wchar_t const wcs_lines[] = {'\n', '\r', '\r', '\n', '\0'};
+    wchar_t const wcs_lines_lf[] = {'\n', '\n', '\n'};
+    wchar_t const wcs_lines_crlf[] = {
+        '\r', '\n', '\r', '\n', '\r', '\n' };
+        
+    xmlrpc_env_init(&env);
+
+    valueP = xmlrpc_string_w_new(&env, wcs_lines);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_read_string_w_lp(&env, valueP, &len, &wcs);
+    TEST_NO_FAULT(&env);
+    TEST(len == 3);
+    TEST(wcs[len] == '\0');
+    TEST(wcsneq(wcs, wcs_lines_lf, len));
+    free((void*)wcs);
+
+    xmlrpc_read_string_w_lp_crlf(&env, valueP, &len, &wcs);
+    TEST_NO_FAULT(&env);
+    TEST(len == 6);
+    TEST(wcs[len] == '\0');
+    TEST(wcsneq(wcs, wcs_lines_crlf, len));
+    free((void*)wcs);
+
+    xmlrpc_DECREF(valueP);
+
+    valueP = xmlrpc_string_w_new_cr(&env, wcs_lines);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_read_string_w_lp(&env, valueP, &len, &wcs);
+    TEST_NO_FAULT(&env);
+    TEST(len == 4);
+    TEST(wcs[len] == '\0');
+    TEST(wcsneq(wcs, wcs_lines, len));
+    free((void*)wcs);
+
+    xmlrpc_DECREF(valueP);
+
+    xmlrpc_env_clean(&env);
+#endif /* HAVE_UNICODE_WCHAR */
+}
+
 
 
 static void 
@@ -676,14 +741,14 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_read_string_w(&env, valueP, &wcs);
     TEST_NO_FAULT(&env);
     TEST(wcs != NULL);
     TEST(wcs[3] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, 3));
+    TEST(wcsneq(wcs, wcs_data, 3));
     free((void*)wcs);
 
     xmlrpc_decompose_value(&env, valueP, "w#", &wcs, &len);
@@ -691,7 +756,7 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     {
@@ -721,7 +786,7 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_DECREF(valueP);
@@ -739,7 +804,7 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == 0x0000);
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
     xmlrpc_DECREF(valueP);
 
@@ -756,7 +821,7 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 4);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_read_string_w(&env, valueP, &wcs);
@@ -764,23 +829,8 @@ test_value_string_wide(void) {
 
     xmlrpc_DECREF(valueP);
 
-    {
-        /* Test with various line delimiters */
+    test_value_string_wide_line();
 
-        wchar_t const wcs_lines[] = {'\n', '\r', '\r', '\n', '\0'};
-        unsigned int i;
-
-        valueP = xmlrpc_string_w_new(&env, wcs_lines);
-        TEST_NO_FAULT(&env);
-
-        xmlrpc_read_string_w_lp(&env, valueP, &len, &wcs);
-        TEST_NO_FAULT(&env);
-        TEST(len == 3);
-        TEST(wcs[len] == '\0');
-        for (i = 0; i < len; ++i)
-            TEST(wcs[i] == '\n');
-        free((void*)wcs);
-    }
     xmlrpc_env_clean(&env);
 #endif /* HAVE_UNICODE_WCHAR */
 }

@@ -121,7 +121,8 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    const char **        const stringValueP) {
 /*----------------------------------------------------------------------------
-   Read the value of an XML-RPC string as an ASCIIZ string.
+   Read the value of an XML-RPC string as an ASCIIZ string, with
+   LF for line delimiters.
 
    Return the string in newly malloc'ed storage that Caller must free.
 
@@ -137,7 +138,7 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
     if (!envP->fault_occurred) {
         char * stringValue;
             
-        stringValue = malloc(length+1);
+        MALLOCARRAY(stringValue, length + 1);
         if (stringValue == NULL)
             xmlrpc_faultf(envP, "Unable to allocate space "
                           "for %u-character string", length);
@@ -147,6 +148,86 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
 
             *stringValueP = stringValue;
         }
+    }
+}
+
+
+
+static unsigned int
+lineDelimCount(const char * const start,
+               const char * const end) {
+    
+    unsigned int count;
+    const char * p;
+
+    count = 0;
+    p = memchr(start, '\n', end-start);
+
+    while (p) {
+        ++count;
+        p = memchr(p, '\n', end-p);
+    }
+
+    return count;
+}
+
+
+
+static void
+copyAndConvertLfToCrlf(xmlrpc_env *  const envP,
+                       size_t        const srcLen,
+                       const char *  const src,
+                       size_t *      const dstLenP,
+                       const char ** const dstP) {
+    
+    const char * const srcEnd = src + srcLen;
+    unsigned int const nLineDelim = lineDelimCount(src, srcEnd);
+    size_t const dstLen = srcLen + nLineDelim;
+    char * dst;
+
+    MALLOCARRAY(dst, dstLen + 1);
+    if (dst == NULL)
+        xmlrpc_faultf(envP, "Unable to allocate space "
+                      "for %u-character string", dstLen + 1);
+    else {
+        const char * p;  /* source pointer */
+        char * q;        /* destination pointer */
+
+        for (p = &src[0], q = &dst[0]; p < srcEnd; ++p) {
+            if (*p == '\n')
+                *q++ = '\r';
+
+            *q++ = *p;
+        }
+        XMLRPC_ASSERT(q == dst + dstLen);
+
+        *q = '\0';
+
+        *dstP    = dst;
+        *dstLenP = dstLen;
+    }
+}
+
+
+
+void
+xmlrpc_read_string_crlf(xmlrpc_env *         const envP,
+                        const xmlrpc_value * const valueP,
+                        const char **        const stringValueP) {
+/*----------------------------------------------------------------------------
+   Same as xmlrpc_read_string(), but return CRLF instead of LF for
+   line delimiters.
+-----------------------------------------------------------------------------*/
+    size_t length;
+    const char * contents;
+
+    accessStringValue(envP, valueP, &length, &contents);
+
+    if (!envP->fault_occurred) {
+        size_t stringLen;
+        
+        copyAndConvertLfToCrlf(envP, length, contents,
+                               &stringLen, stringValueP);
     }
 }
 
@@ -180,14 +261,33 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
 
         stringValue = malloc(size);
         if (stringValue == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate %u bytes "
-                "for string.", size);
+            xmlrpc_faultf(envP, "Unable to allocate %u bytes for string.",
+                          size);
         else {
             memcpy(stringValue, contents, size);
             *stringValueP = stringValue;
             *lengthP = size - 1;  /* Size includes terminating NUL */
         }
+    }
+}
+
+
+
+void
+xmlrpc_read_string_lp_crlf(xmlrpc_env *         const envP,
+                           const xmlrpc_value * const valueP,
+                           size_t *             const lengthP,
+                           const char **        const stringValueP) {
+
+    validateStringType(envP, valueP);
+    if (!envP->fault_occurred) {
+        unsigned int const size = 
+            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+        const char * const contents = 
+            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+
+        copyAndConvertLfToCrlf(envP, size, contents,
+                               lengthP, stringValueP);
     }
 }
 
@@ -269,16 +369,94 @@ xmlrpc_read_string_w(xmlrpc_env *     const envP,
         wchar_t * stringValue;
         MALLOCARRAY(stringValue, length + 1);
         if (stringValue == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, 
-                "Unable to allocate space for %u-byte string", 
-                length);
+            xmlrpc_faultf(envP, "Unable to allocate space for %u-byte string", 
+                          length);
         else {
             memcpy(stringValue, wcontents, length * sizeof(wchar_t));
             stringValue[length] = '\0';
             
             *stringValueP = stringValue;
         }
+    }
+}
+
+
+
+static unsigned int
+lineDelimCountW(const wchar_t * const start,
+                const wchar_t * const end) {
+    
+    unsigned int count;
+    const wchar_t * p;
+
+    count = 0;
+    p = start;
+
+    while (p) {
+        p = wmemchr(p, '\n', end-p);
+        if (p) {
+            ++count; /* count the newline */
+            ++p;  /* skip the newline */
+        }
+    }
+
+    return count;
+}
+
+
+
+static void
+wCopyAndConvertLfToCrlf(xmlrpc_env *     const envP,
+                        size_t           const srcLen,
+                        const wchar_t *  const src,
+                        size_t *         const dstLenP,
+                        const wchar_t ** const dstP) {
+
+    const wchar_t * const srcEnd = src + srcLen;
+    unsigned int const nLineDelim = lineDelimCountW(src, srcEnd);
+    size_t const dstLen = srcLen + nLineDelim;
+    wchar_t * dst;
+
+    MALLOCARRAY(dst, dstLen + 1);
+    if (dst == NULL)
+        xmlrpc_faultf(envP, "Unable to allocate space "
+                      "for %u-character string", dstLen + 1);
+    else {
+        const wchar_t * p;  /* source pointer */
+        wchar_t * q;        /* destination pointer */
+
+        for (p = &src[0], q = &dst[0]; p < srcEnd; ++p) {
+            if (*p == '\n')
+                *q++ = '\r';
+
+            *q++ = *p;
+        }
+        XMLRPC_ASSERT(q == dst + dstLen);
+
+        *q = '\0';
+
+        *dstP    = dst;
+        *dstLenP = dstLen;
+    }
+}
+
+
+
+void
+xmlrpc_read_string_w_crlf(xmlrpc_env *     const envP,
+                          xmlrpc_value *   const valueP,
+                          const wchar_t ** const stringValueP) {
+
+    size_t size;
+    const wchar_t * contents;
+    
+    accessStringValueW(envP, valueP, &size, &contents);
+
+    if (!envP->fault_occurred) {
+        size_t stringLen;
+
+        wCopyAndConvertLfToCrlf(envP, size, contents,
+                                &stringLen, stringValueP);
     }
 }
 
@@ -332,6 +510,30 @@ xmlrpc_read_string_w_lp(xmlrpc_env *     const envP,
 
 
 void
+xmlrpc_read_string_w_lp_crlf(xmlrpc_env *     const envP,
+                             xmlrpc_value *   const valueP,
+                             size_t *         const lengthP,
+                             const wchar_t ** const stringValueP) {
+
+    validateStringType(envP, valueP);
+    if (!envP->fault_occurred) {
+        setupWcsBlock(envP, valueP);
+
+        if (!envP->fault_occurred) {
+            wchar_t * const wcontents = 
+                XMLRPC_MEMBLOCK_CONTENTS(wchar_t, valueP->_wcs_block);
+            size_t const size = 
+                XMLRPC_MEMBLOCK_SIZE(wchar_t, valueP->_wcs_block);
+
+            wCopyAndConvertLfToCrlf(envP, size-1, wcontents,
+                                   lengthP, stringValueP);
+        }
+    }
+}
+
+
+
+void
 xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
                             xmlrpc_value *   const valueP,
                             size_t *         const lengthP,
@@ -347,12 +549,12 @@ xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
             size_t const size = 
                 XMLRPC_MEMBLOCK_SIZE(wchar_t, valueP->_wcs_block);
             
-            *lengthP      = size - 1;  /* size includes terminatnig NUL */
+            *lengthP      = size - 1;  /* size includes terminating NUL */
             *stringValueP = wcontents;
         }
     }
 }
-#endif
+#endif   /* HAVE_UNICODE_WCHAR */
 
 
 
@@ -591,38 +793,28 @@ xmlrpc_string_new_f(xmlrpc_env * const envP,
 
 
 #if HAVE_UNICODE_WCHAR
-xmlrpc_value *
-xmlrpc_string_w_new_lp(xmlrpc_env *    const envP, 
-                       size_t          const length,
-                       const wchar_t * const value) {
+
+static xmlrpc_value *
+stringWNew(xmlrpc_env *     const envP, 
+           size_t           const length,
+           const wchar_t *  const value,
+           enum crTreatment const crTreatment) {
 
     xmlrpc_value * valP;
+    xmlrpc_mem_block * utf8P;
 
-    /* Initialize our XML-RPC value. */
-    xmlrpc_createXmlrpcValue(envP, &valP);
+    valP = NULL;  /* defeat compiler warning */
 
+    utf8P = xmlrpc_wcs_to_utf8(envP, value, length);
     if (!envP->fault_occurred) {
-        xmlrpc_mem_block * utf8P;
-
-        valP->_type = XMLRPC_TYPE_STRING;
-        valP->_wcs_block = NULL;
-
-        utf8P = xmlrpc_wcs_to_utf8(envP, value, length);
+        char * const utf8_value = XMLRPC_MEMBLOCK_CONTENTS(char, utf8P);
+        size_t const utf8_len   = XMLRPC_MEMBLOCK_SIZE(char, utf8P);
+        
         if (!envP->fault_occurred) {
-            char * const utf8_value = XMLRPC_MEMBLOCK_CONTENTS(char, utf8P);
-            size_t const utf8_len   = XMLRPC_MEMBLOCK_SIZE(char, utf8P);
+            valP = stringNew(envP, utf8_len, utf8_value, crTreatment);
 
-            if (!envP->fault_occurred) {
-                if (memchr(utf8_value, '\r', utf8_len))
-                    copyLines(envP, utf8_value, utf8_len, &valP->_block);
-                else
-                    /* Fast path for usual case */
-                    copySimple(envP, utf8_value, utf8_len, &valP->_block);
-            }
             XMLRPC_MEMBLOCK_FREE(char, utf8P);
         }
-        if (envP->fault_occurred)
-            free(valP);
     }
     return valP;
 }
@@ -630,8 +822,41 @@ xmlrpc_string_w_new_lp(xmlrpc_env *    const envP,
 
 
 xmlrpc_value *
+xmlrpc_string_w_new_lp(xmlrpc_env *    const envP, 
+                       size_t          const length,
+                       const wchar_t * const value) {
+
+    return stringWNew(envP, length, value, CR_IS_LINEDELIM);
+}
+
+
+
+
+xmlrpc_value *
+xmlrpc_string_w_new_lp_cr(xmlrpc_env *    const envP, 
+                          size_t          const length,
+                          const wchar_t * const value) {
+
+    return stringWNew(envP, length, value, CR_IS_CHAR);
+}
+
+
+
+
+xmlrpc_value *
 xmlrpc_string_w_new(xmlrpc_env *    const envP,
                     const wchar_t * const value) {
-    return xmlrpc_string_w_new_lp(envP, wcslen(value), value);
+
+    return stringWNew(envP, wcslen(value), value, CR_IS_LINEDELIM);
 }
-#endif
+
+
+
+xmlrpc_value *
+xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
+                       const wchar_t * const value) {
+
+    return stringWNew(envP, wcslen(value), value, CR_IS_CHAR);
+}
+
+#endif   /* HAVE_UNICODE_WCHAR */

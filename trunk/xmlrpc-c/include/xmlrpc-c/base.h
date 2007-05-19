@@ -183,6 +183,17 @@ xmlrpc_read_string(xmlrpc_env *         const envP,
 
 
 void
+xmlrpc_read_string_crlf(xmlrpc_env *         const envP,
+                        const xmlrpc_value * const valueP,
+                        const char **        const stringValueP);
+
+void
+xmlrpc_read_string_lp_crlf(xmlrpc_env *         const envP,
+                           const xmlrpc_value * const valueP,
+                           size_t *             const lengthP,
+                           const char **        const stringValueP);
+
+void
 xmlrpc_read_string_lp(xmlrpc_env *         const envP,
                       const xmlrpc_value * const valueP,
                       size_t *             const lengthP,
@@ -204,10 +215,30 @@ xmlrpc_read_string_w(xmlrpc_env *     const envP,
                      const wchar_t ** const stringValueP);
 
 void
+xmlrpc_read_string_w_crlf(xmlrpc_env *     const envP,
+                          xmlrpc_value *   const valueP,
+                          const wchar_t ** const stringValueP);
+
+void
 xmlrpc_read_string_w_lp(xmlrpc_env *     const envP,
                         xmlrpc_value *   const valueP,
                         size_t *         const lengthP,
                         const wchar_t ** const stringValueP);
+
+void
+xmlrpc_read_string_w_lp_crlf(xmlrpc_env *     const envP,
+                             xmlrpc_value *   const valueP,
+                             size_t *         const lengthP,
+                             const wchar_t ** const stringValueP);
+
+xmlrpc_value *
+xmlrpc_string_w_new_lp_cr(xmlrpc_env *    const envP, 
+                          size_t          const length,
+                          const wchar_t * const value);
+
+xmlrpc_value *
+xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
+                       const wchar_t * const value);
 
 #endif /* XMLRPC_HAVE_WCHAR */
 
