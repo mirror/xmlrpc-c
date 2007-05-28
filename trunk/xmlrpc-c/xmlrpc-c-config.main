@@ -111,7 +111,7 @@ while test $# -gt 0; do
       the_libs="-lxmlrpc_abyss $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server++ $the_libs"
-      the_libs="-lxmlrpc_server_pstrea++ $the_libs"
+      the_libs="-lxmlrpc_server_pstream++ $the_libs"
       packetsocket_lib="-lxmlrpc_packetsocket"
       ;;
     client|libwww-client)
