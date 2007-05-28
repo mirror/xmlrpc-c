@@ -12,15 +12,7 @@ SUBDIRS = include lib src tools examples
 
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 
-# We're in a transition between the bloated, complex GNU
-# Autoconf/Automake style of build, in which 'configure' creates all
-# the make files, to simpler static make files.  Some directories have
-# been converted; some haven't.  So we have the hack of putting
-# 'xmlrpc_config.h' as the first dependency of 'all' to make sure
-# 'configure runs before anything in the case that the user neglects
-# to run 'configure' before doing 'make'.
-
-default: xmlrpc_config.h all
+default: all
 
 .PHONY: all
 all: xmlrpc-c-config xmlrpc-c-config.test $(SUBDIRS:%=%/all)
