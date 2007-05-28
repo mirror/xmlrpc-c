@@ -11,6 +11,12 @@ Essentially, it's just the conventional
   $ make
   $ make install
 
+To build handy tools such as the 'xmlrpc' command line XML-RPC client:
+
+  $ cd tools
+  $ make
+  $ make install
+
 You can also do
 
   $ make check
@@ -19,16 +25,16 @@ to run a battery of tests before you install.  But note that it's as common
 for the tests to fail because the tests are broken as because the product
 is broken, so consider the results carefully.
 
-To see it work, run a simple server like this:
+To see it work, build and run a simple server like this:
 
-  $ examples/xmlrpc_sample_add_server 8080
+  $ cd examples
+  $ make
+  $ ./xmlrpc_sample_add_server 8080
 
-Then run a client that does an RPC to this server:
+That runs forever, serving clients as they arrive.  Now, from another
+shell, run a client that does an RPC to this server:
 
-  $ examples/xmlrpc_sample_add_client
-
-(I don't mean to imply that the above are consecutive shell commands;
-They can't be, because the server program runs indefinitely).
+  $ ./xmlrpc_sample_add_client
 
 Also try other example servers and clients, described in examples/README.
 

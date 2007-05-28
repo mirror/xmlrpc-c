@@ -10,9 +10,22 @@ include $(BLDDIR)/Makefile.config
 
 SUBDIRS = include lib src tools examples
 
+# The reason we don't build tools and examples by default is that they
+# contain executables, which require significantly more from the
+# environment to build than libraries.  Ergo, they are signficantly
+# more likely to fail to build.  Indeed, when 'tools' was built by
+# default, the majority of the reported build problems were with that.
+# Since they are ancillary to the package, building them by default is
+# not worth causing the whole build to fail.
+
+# As with any subdirectory, to build 'tools' or 'examples', cd to the
+# subdirectory and make there.
+
+DEFAULT_SUBDIRS = include lib src
+
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 
-default: all
+default: xmlrpc-c-config xmlrpc-c-config.test $(DEFAULT_SUBDIRS:%=%/all)
 
 .PHONY: all
 all: xmlrpc-c-config xmlrpc-c-config.test $(SUBDIRS:%=%/all)
@@ -29,7 +42,7 @@ all: xmlrpc-c-config xmlrpc-c-config.test $(SUBDIRS:%=%/all)
 # in order to get the examples rebuilt after you modify the Xmlrpc-c
 # libraries.
 
-examples/all: lib/all src/all include/all
+examples/all: xmlrpc-c-config.test lib/all src/all include/all
 
 # Parallel make (make --jobs) is not smart enough to coordinate builds
 # between submakes, so a naive parallel make would cause certain
@@ -37,7 +50,7 @@ examples/all: lib/all src/all include/all
 # unacceptable.  So we introduce extra dependencies here just to make
 # sure such targets are already up to date before the submake starts,
 # for the benefit of parallel make.  Note that we ensure that parallel
-# make works for 'make all' in top top directory, but it may still fail
+# make works for 'make all' in the top directory, but it may still fail
 # for the aforementioned reason for other invocations.
 
 tools/all: include/all lib/all src/all
@@ -129,7 +142,7 @@ DISTFILES =
 distdir: distdir-common
 
 .PHONY: install
-install: $(SUBDIRS:%=%/install) install-common install-compat-hdr
+install: $(DEFAULT_SUBDIRS:%=%/install) install-common install-compat-hdr
 
 .PHONY: install-compat-hdr
 install-compat-hdr:
@@ -154,3 +167,13 @@ xmlrpc_config.h xmlrpc_amconfig.h \
 	$(SRCDIR)/configure
 
 include $(SRCDIR)/Makefile.common
+
+
+# A trick to catch a common user error.  When you don't run 'configure',
+# you don't have a Makefile.srcdir, which means $(SRCDIR) is null.
+
+/Makefile.common:
+	@echo =======================================
+	@echo = You must run Configure before Make. =
+	@echo =======================================
+	false
