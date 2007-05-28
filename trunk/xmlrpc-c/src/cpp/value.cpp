@@ -30,7 +30,7 @@
 
 #include <string>
 #include <vector>
-#include <time.h>
+#include <ctime>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
