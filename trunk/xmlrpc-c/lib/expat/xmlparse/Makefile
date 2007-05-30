@@ -1,3 +1,13 @@
+###############################################################################
+# This directory builds libxmlrpc_xmlparse, an XML parser.  This is
+# essentially the separately distributed Expat library from 2001, but
+# with slight changes.  The main reason it is bundled with Xmlrpc-c is
+# to make the latter easier to build and use.
+#
+# The library is about XML in general.  There is nothing specific to
+# XML-RPC here.
+###############################################################################
+
 ifeq ($(SRCDIR),)
   updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
   EXPATDIR := $(call updir,$(CURDIR))
@@ -14,28 +24,55 @@ default: all
 
 include $(BLDDIR)/Makefile.config
 
+TARGET_LIBRARY_NAMES := libxmlrpc_xmlparse
+
+STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_xmlparse.a
+
+SHARED_LIBS_TO_BUILD := libxmlrpc_xmlparse
+SHARED_LIBS_TO_INSTALL := libxmlrpc_xmlparse
+
+TARGET_MODS = xmlparse
+
 OMIT_XMLPARSE_LIB_RULE=Y
 
 include $(SRCDIR)/Makefile.common
 
-all: libxmlrpc_xmlparse.la
-
-LIBXMLRPC_XMLPARSE_OBJS = xmlparse.lo
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 INCLUDES = -I$(BLDDIR) -I$(UTILDIR)/include -I$(XMLTOKDIR)
 
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -L../xmltok/.libs $(RPATH) $(LADD)
+# LIBDEP is the shared libraries on which libxmlrpc_abyss depends.
+# The runtime loader should load these libraries when it loads libxmlrpc_abyss.
 
-libxmlrpc_xmlparse.la: $(LIBXMLRPC_XMLPARSE_OBJS) $(LIBXMLRPC_XMLTOK)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) \
-	  $(LIBXMLRPC_XMLPARSE_OBJS) -lxmlrpc_xmltok
+LIBDEP = $(LIBXMLRPC_XMLTOK)
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+XMLPARSE_SHLIB = $(call shlibfn,libxmlrpc_xmlparse)
+#XMLPARSE_SHLIB is e.g. libxmlrpc_xmlparse.so.3.1
+XMLPARSE_SHLIBLE = $(call shliblefn,libxmlrpc_xmlparse)
+#XMLPARSE_SHLIBLE is e.g. libxmlrpc_xmlparse.so
 
-$(LIBXMLRPC_XMLPARSE_OBJS):%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+ifneq ($(SHARED_LIB_TYPE),NONE)
+  TARGET_SHARED_LIBS := $(XMLPARSE_SHLIB) $(XMLPARSE_SHLIBLE)
+  endif
 
-LTLIBRARIES_TO_INSTALL = libxmlrpc_xmlparse.la
+.PHONY: all
+all: libxmlrpc_xmlparse.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+
+# Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
+$(XMLPARSE_SHLIB): $(TARGET_MODS:%=%.osh) $(LIBDEP)
+$(XMLPARSE_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh) $(LIBDEP)
+
+# Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
+
+libxmlrpc_xmlparse.a: $(TARGET_MODS:%=%.o)
+libxmlrpc_xmlparse.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
+
+#-----------------------------------------------------------------------------
+#  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
+#-----------------------------------------------------------------------------
+
+# Rules to compile object modules from which to build the static and shared
+# library are in Makefile.common, courtesy of TARGET_MODS.
 
 .PHONY: install
 install: install-common
