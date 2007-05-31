@@ -22,10 +22,10 @@ packetsocket_lib=
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
   LIBXML=$(xml2-config --libs)
 else
-  LIBXML="${BLDDIR}/lib/expat/xmlparse/.libs/libxmlrpc_xmlparse.a"
-  sopath="${BLDDIR}/lib/expat/xmlparse/.libs:$sopath"
-  LIBXML="${LIBXML} ${BLDDIR}/lib/expat/xmltok/.libs/libxmlrpc_xmltok.a"
-  sopath="${BLDDIR}/lib/expat/xmltok/.libs:$sopath"
+  LIBXML="${BLDDIR}/lib/expat/xmlparse/libxmlrpc_xmlparse.a"
+  sopath="${BLDDIR}/lib/expat/xmlparse:$sopath"
+  LIBXML="${LIBXML} ${BLDDIR}/lib/expat/xmltok/libxmlrpc_xmltok.a"
+  sopath="${BLDDIR}/lib/expat/xmltok:$sopath"
 fi
 
 needCpp=no
@@ -76,7 +76,7 @@ while test $# -gt 0; do
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
         fi
-      sopath="${BLDDIR}/lib/abyss/src/.libs:$sopath"
+      sopath="${BLDDIR}/lib/abyss/src:$sopath"
       ;;
     pstream-server)
       the_libs="${LSOCKET} $the_libs"
