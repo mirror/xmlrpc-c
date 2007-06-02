@@ -160,12 +160,13 @@ lineDelimCount(const char * const start,
     unsigned int count;
     const char * p;
 
-    count = 0;
-    p = memchr(start, '\n', end-start);
-
-    while (p) {
-        ++count;
-        p = memchr(p, '\n', end-p);
+    for (p = start, count = 0; p < end; ) {
+        const char * const nlPos = memchr(p, '\n', end-p);
+        if (nlPos) {
+            ++count;
+            p = nlPos + 1;
+        } else
+            p = end;
     }
 
     return count;
