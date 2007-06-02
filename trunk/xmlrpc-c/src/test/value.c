@@ -445,6 +445,7 @@ test_value_string_multiline(void) {
     xmlrpc_env env;
     xmlrpc_value * v;
     const char * str;
+    size_t len;
 
     xmlrpc_env_init(&env);
 
@@ -455,40 +456,60 @@ test_value_string_multiline(void) {
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
     TEST(streq(str, "foo\n"));
-    xmlrpc_DECREF(v);
     strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\n"));
+    strfree(str);
+    xmlrpc_DECREF(v);
 
     v = xmlrpc_string_new(&env, "foo\n\n");
     TEST_NO_FAULT(&env);
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
     TEST(streq(str, "foo\n\n"));
-    xmlrpc_DECREF(v);
     strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\n\r\n"));
+    strfree(str);
+    xmlrpc_DECREF(v);
 
     v = xmlrpc_string_new(&env, "foo\nbar");
     TEST_NO_FAULT(&env);
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
     TEST(streq(str, "foo\nbar"));
-    xmlrpc_DECREF(v);
     strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar"));
+    strfree(str);
+    xmlrpc_DECREF(v);
 
     v = xmlrpc_string_new(&env, "foo\nbar\n");
     TEST_NO_FAULT(&env);
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
     TEST(streq(str, "foo\nbar\n"));
-    xmlrpc_DECREF(v);
     strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar\r\n"));
+    strfree(str);
+    xmlrpc_DECREF(v);
 
     v = xmlrpc_string_new(&env, "foo\nbar\nbaz");
     TEST_NO_FAULT(&env);
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
     TEST(streq(str, "foo\nbar\nbaz"));
-    xmlrpc_DECREF(v);
     strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar\r\nbaz"));
+    strfree(str);
+    xmlrpc_DECREF(v);
 
     /* CR line ending */
 
@@ -573,6 +594,22 @@ test_value_string_multiline(void) {
     TEST(streq(str, "foo\nbar\nbaz"));
     xmlrpc_DECREF(v);
     strfree(str);
+
+    /* Embedded null */
+
+    v = xmlrpc_string_new_lp(&env, 14, "foo\r\n\0bar\r\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string_lp(&env, v, &len, &str);
+    TEST_NO_FAULT(&env);
+    TEST(len == 12);
+    TEST(memeq(str, "foo\n\0bar\nbaz", len));
+    strfree(str);
+    xmlrpc_read_string_lp_crlf(&env, v, &len, &str);
+    TEST_NO_FAULT(&env);
+    TEST(len == 14);
+    TEST(memeq(str, "foo\r\n\0bar\r\nbaz", len));
+    strfree(str);
+    xmlrpc_DECREF(v);
 
     xmlrpc_env_clean(&env);
 }
