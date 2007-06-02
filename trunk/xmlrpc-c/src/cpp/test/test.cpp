@@ -379,8 +379,17 @@ public:
         TEST(static_cast<string>(string3) == "hello world");
         try {
             value_string string4(value_int(4));
-            TEST_FAILED("invalid cast int-string suceeded");
+            TEST_FAILED("invalid cast int-string succeeded");
         } catch (error) {}
+        value_string string5("hello world", value_string::nlCode_all);
+        TEST(static_cast<string>(string5) == "hello world");
+        value_string string6("hello\nthere\rworld\r\n\n",
+                             value_string::nlCode_all);
+        TEST(static_cast<string>(string6) == "hello\nthere\nworld\n\n");
+        TEST(string6.crlfValue() == "hello\r\nthere\r\nworld\r\n\r\n");
+        value_string string7("hello\nthere\rworld\r\n\n",
+                             value_string::nlCode_lf);
+        TEST(static_cast<string>(string7) == "hello\nthere\rworld\r\n\n");
     }
 };
 
