@@ -97,9 +97,15 @@ public:
 
 class value_string : public value {
 public:
-    value_string(std::string const& cvalue);
+    enum nlCode {nlCode_all, nlCode_lf};
+
+    value_string(std::string const& cppvalue,
+                 nlCode      const  nlCode = nlCode_all);
 
     value_string(xmlrpc_c::value const baseValue);
+
+    std::string
+    crlfValue() const;
 
     operator std::string() const;
 };

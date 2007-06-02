@@ -421,16 +421,33 @@ value_datetime::operator time_t() const {
 
 
 
-value_string::value_string(string const& cppvalue) {
+value_string::value_string(std::string          const& cppvalue,
+                           value_string::nlCode const  nlCode) {
     
     class cWrapper {
     public:
         xmlrpc_value * valueP;
         
-        cWrapper(string const cppvalue) {
+        cWrapper(string               const cppvalue,
+                 value_string::nlCode const nlCode) {
             env_wrap env;
             
-            this->valueP = xmlrpc_string_new(&env.env_c, cppvalue.c_str());
+            switch (nlCode) {
+            case value_string::nlCode_all:
+                this->valueP = xmlrpc_string_new_lp(&env.env_c,
+                                                    cppvalue.length(),
+                                                    cppvalue.c_str());
+                break;
+            case value_string::nlCode_lf:
+                this->valueP = xmlrpc_string_new_lp_cr(&env.env_c,
+                                                       cppvalue.length(),
+                                                       cppvalue.c_str());
+                break;
+            default:
+                throw(error("Newline encoding argument to value_string "
+                            "constructor is not one of the defined "
+                            "enumerations of value_string::nlCode"));
+            }
             throwIfError(env);
         }
         ~cWrapper() {
@@ -438,7 +455,7 @@ value_string::value_string(string const& cppvalue) {
         }
     };
     
-    cWrapper wrapper(cppvalue);
+    cWrapper wrapper(cppvalue, nlCode);
     
     this->instantiate(wrapper.valueP);
 }
@@ -452,6 +469,31 @@ value_string::value_string(xmlrpc_c::value const baseValue) {
     else {
         this->instantiate(baseValue.cValueP);
     }
+}
+
+
+
+std::string
+value_string::crlfValue() const {
+
+    class cWrapper {
+    public:
+        const char * str;
+        size_t length;
+        cWrapper(xmlrpc_value * valueP) {
+            env_wrap env;
+            
+            xmlrpc_read_string_lp_crlf(&env.env_c, valueP, &length, &str);
+            throwIfError(env);
+        }
+        ~cWrapper() {
+            free((char*)str);
+        }
+    };
+    
+    cWrapper wrapper(this->cValueP);
+
+    return string(wrapper.str, wrapper.length);
 }
 
 
