@@ -283,11 +283,11 @@ xmlrpc_read_string_lp_crlf(xmlrpc_env *         const envP,
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
         unsigned int const size = 
-            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block); /* Includes NUL */
         const char * const contents = 
             XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
 
-        copyAndConvertLfToCrlf(envP, size, contents,
+        copyAndConvertLfToCrlf(envP, size-1, contents,
                                lengthP, stringValueP);
     }
 }
@@ -521,10 +521,10 @@ xmlrpc_read_string_w_lp_crlf(xmlrpc_env *     const envP,
         setupWcsBlock(envP, valueP);
 
         if (!envP->fault_occurred) {
-            wchar_t * const wcontents = 
-                XMLRPC_MEMBLOCK_CONTENTS(wchar_t, valueP->_wcs_block);
             size_t const size = 
                 XMLRPC_MEMBLOCK_SIZE(wchar_t, valueP->_wcs_block);
+            wchar_t * const wcontents = 
+                XMLRPC_MEMBLOCK_CONTENTS(wchar_t, valueP->_wcs_block);
 
             wCopyAndConvertLfToCrlf(envP, size-1, wcontents,
                                    lengthP, stringValueP);
