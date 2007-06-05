@@ -100,7 +100,9 @@ public:
     enum nlCode {nlCode_all, nlCode_lf};
 
     value_string(std::string const& cppvalue,
-                 nlCode      const  nlCode = nlCode_all);
+                 nlCode      const  nlCode);
+
+    value_string(std::string const& cppvalue);
 
     value_string(xmlrpc_c::value const baseValue);
 

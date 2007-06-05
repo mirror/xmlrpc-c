@@ -421,47 +421,58 @@ value_datetime::operator time_t() const {
 
 
 
+class cNewStringWrapper {
+public:
+    xmlrpc_value * valueP;
+        
+    cNewStringWrapper(string               const cppvalue,
+                      value_string::nlCode const nlCode) {
+        env_wrap env;
+            
+        switch (nlCode) {
+        case value_string::nlCode_all:
+            this->valueP = xmlrpc_string_new_lp(&env.env_c,
+                                                cppvalue.length(),
+                                                cppvalue.c_str());
+            break;
+        case value_string::nlCode_lf:
+            this->valueP = xmlrpc_string_new_lp_cr(&env.env_c,
+                                                   cppvalue.length(),
+                                                   cppvalue.c_str());
+            break;
+        default:
+            throw(error("Newline encoding argument to value_string "
+                        "constructor is not one of the defined "
+                        "enumerations of value_string::nlCode"));
+        }
+        throwIfError(env);
+    }
+    ~cNewStringWrapper() {
+        xmlrpc_DECREF(this->valueP);
+    }
+};
+    
+
+
 value_string::value_string(std::string          const& cppvalue,
                            value_string::nlCode const  nlCode) {
     
-    class cWrapper {
-    public:
-        xmlrpc_value * valueP;
-        
-        cWrapper(string               const cppvalue,
-                 value_string::nlCode const nlCode) {
-            env_wrap env;
-            
-            switch (nlCode) {
-            case value_string::nlCode_all:
-                this->valueP = xmlrpc_string_new_lp(&env.env_c,
-                                                    cppvalue.length(),
-                                                    cppvalue.c_str());
-                break;
-            case value_string::nlCode_lf:
-                this->valueP = xmlrpc_string_new_lp_cr(&env.env_c,
-                                                       cppvalue.length(),
-                                                       cppvalue.c_str());
-                break;
-            default:
-                throw(error("Newline encoding argument to value_string "
-                            "constructor is not one of the defined "
-                            "enumerations of value_string::nlCode"));
-            }
-            throwIfError(env);
-        }
-        ~cWrapper() {
-            xmlrpc_DECREF(this->valueP);
-        }
-    };
-    
-    cWrapper wrapper(cppvalue, nlCode);
+    cNewStringWrapper wrapper(cppvalue, nlCode);
     
     this->instantiate(wrapper.valueP);
 }
 
 
 
+value_string::value_string(std::string const& cppvalue) {
+
+    cNewStringWrapper wrapper(cppvalue, nlCode_all);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+    
 value_string::value_string(xmlrpc_c::value const baseValue) {
 
     if (baseValue.type() != xmlrpc_c::value::TYPE_STRING)
