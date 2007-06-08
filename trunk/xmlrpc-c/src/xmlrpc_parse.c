@@ -454,11 +454,11 @@ parseSimpleValue(xmlrpc_env *    const envP,
        from my imagination.
     */
     
-    if (xmlrpc_streq(elementName, "int") ||
-        xmlrpc_streq(elementName, "i4")
-        xmlrpc_streq(elementName, "i1")
-        xmlrpc_streq(elementName, "i2")
-        xmlrpc_streq(elementName, "ex.i1")
+    if (xmlrpc_streq(elementName, "int")   ||
+        xmlrpc_streq(elementName, "i4")    ||
+        xmlrpc_streq(elementName, "i1")    ||
+        xmlrpc_streq(elementName, "i2")    ||
+        xmlrpc_streq(elementName, "ex.i1") ||
         xmlrpc_streq(elementName, "ex.i2"))
         parseInt(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "boolean"))
