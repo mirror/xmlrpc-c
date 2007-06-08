@@ -61,6 +61,137 @@ static void test_expat (void)
 
 
 static void
+testParseNumberValue(void) {
+
+char const xmldata[] =
+    XML_PROLOGUE
+    "<methodCall>\r\n"
+    "<methodName>test</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><int>2147483647</int></value></param>\r\n" \
+    "<param><value><int>-2147483648</int></value></param>\r\n" \
+    "<param><value><i1>10</i1></value></param>\r\n"
+    "<param><value><i2>10</i2></value></param>\r\n"
+    "<param><value><i4>10</i4></value></param>\r\n"
+    "<param><value><i8>10</i8></value></param>\r\n"
+    "<param><value><ex.i8>10</ex.i8></value></param>\r\n"
+    "<param><value><double>10</double></value></param>\r\n"
+    "<param><value><double>10.1</double></value></param>\r\n"
+    "<param><value><double>-10.1</double></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n";
+    
+    xmlrpc_env env;
+    xmlrpc_value * paramArrayP;
+    const char * methodName;
+    int arraySize;
+    xmlrpc_int int_max, int_min;
+    xmlrpc_int32 i_i1, i_i2, i_i4;
+    xmlrpc_int64 i_i8, i_ex_i8;
+    double d1, d2, d3;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_call(&env, xmldata, strlen(xmldata),
+                      &methodName, &paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    arraySize = xmlrpc_array_size(&env, paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    TEST(arraySize == 10);
+
+    xmlrpc_decompose_value(
+        &env, paramArrayP, "(iiiiiIIddd)", 
+        &int_max, &int_min, &i_i1, &i_i2, &i_i4, &i_i8, &i_ex_i8,
+        &d1, &d2, &d3);
+
+    TEST_NO_FAULT(&env);
+
+    TEST(int_max == INT_MAX);
+    TEST(int_min == INT_MIN);
+    TEST(i_i1 == 10);
+    TEST(i_i2 == 10);
+    TEST(i_i4 == 10);
+    TEST(i_i8 == 10);
+    TEST(i_ex_i8 == 10);
+    TEST(d1 == 10.0);
+    TEST(d2 == 10.1);
+    TEST(d3 == -10.1);
+
+    xmlrpc_DECREF(paramArrayP);
+    strfree(methodName);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+testParseMiscSimpleValue(void) {
+
+char const xmldata[] =
+    XML_PROLOGUE
+    "<methodCall>\r\n"
+    "<methodName>test</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><string>hello</string></value></param>\r\n"
+    "<param><value><boolean>0</boolean></value></param>\r\n"
+    "<param><value><boolean>1</boolean></value></param>\r\n"
+    "<param><value><dateTime.iso8601>19980717T14:08:55</dateTime.iso8601>"
+       "</value></param>\r\n"
+    "<param><value><base64>YmFzZTY0IGRhdGE=</base64></value></param>\r\n"
+    "<param><value><nil/></value></param>\r\n"
+    "<param><value><ex.nil/></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n";
+    
+    xmlrpc_env env;
+    xmlrpc_value * paramArrayP;
+    const char * methodName;
+    int arraySize;
+    const char * str_hello;
+    xmlrpc_bool b_false, b_true;
+    const char * datetime;
+    unsigned char * b64_data;
+    size_t b64_len;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_call(&env, xmldata, strlen(xmldata),
+                      &methodName, &paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    arraySize = xmlrpc_array_size(&env, paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    TEST(arraySize == 7);
+
+    xmlrpc_decompose_value(
+        &env, paramArrayP, "(sbb86nn)", 
+        &str_hello, &b_false, &b_true, &datetime, &b64_data, &b64_len);
+
+    TEST_NO_FAULT(&env);
+
+    TEST(streq(str_hello, "hello"));
+    TEST(!b_false);
+    TEST(b_true);
+    TEST(streq(datetime, "19980717T14:08:55")); 
+    TEST(b64_len == 11);
+    TEST(memcmp(b64_data, "base64 data", b64_len) == 0);
+
+    free(b64_data);
+    strfree(str_hello);
+    strfree(datetime);
+    xmlrpc_DECREF(paramArrayP);
+    strfree(methodName);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 validateParseResponseResult(xmlrpc_value * const valueP) {
 
     xmlrpc_env env;
@@ -379,6 +510,8 @@ test_parse_xml(void) {
 
     printf("Running XML parsing tests.\n");
     test_expat();
+    testParseNumberValue();
+    testParseMiscSimpleValue();
     testParseGoodResponse();
     testParseFaultResponse();
     testParseBadResponse();
