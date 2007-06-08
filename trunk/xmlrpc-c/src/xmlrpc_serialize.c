@@ -334,10 +334,7 @@ formatValueContent(xmlrpc_env *       const envP,
 
     switch (valueP->_type) {
     case XMLRPC_TYPE_INT:
-        /* XXX - We assume that '%i' is the appropriate format specifier
-        ** for an xmlrpc_int32 value. We should add some test cases to
-        ** make sure this works. */
-        format_out(envP, outputP, "<i4>%i</i4>", valueP->_value.i);
+        format_out(envP, outputP, "<i4>%d</i4>", valueP->_value.i);
         break;
 
     case XMLRPC_TYPE_I8:
@@ -345,10 +342,8 @@ formatValueContent(xmlrpc_env *       const envP,
         break;
 
     case XMLRPC_TYPE_BOOL:
-        /* XXX - We assume that '%i' is the appropriate format specifier
-        ** for an xmlrpc_bool value. */
-        format_out(envP, outputP, "<boolean>%i</boolean>",
-                   valueP->_value.b ? 1 : 0);
+        format_out(envP, outputP, "<boolean>%s</boolean>",
+                   valueP->_value.b ? "1" : "0");
         break;
 
     case XMLRPC_TYPE_DOUBLE:
