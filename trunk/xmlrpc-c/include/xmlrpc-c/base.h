@@ -506,26 +506,32 @@ xmlrpc_parse_value_va(xmlrpc_env *   const envP,
 **  Encoding XML
 **=======================================================================*/
 
-/* Serialize an XML value without any XML header. This is primarily used
-** for testing purposes. */
-void
-xmlrpc_serialize_value(xmlrpc_env *       env,
-                       xmlrpc_mem_block * output,
-                       xmlrpc_value *     value);
+typedef enum xmlrpc_dialect {
+    xmlrpc_dialect_i8,
+    xmlrpc_dialect_apache
+} xmlrpc_dialect;
 
-/* Serialize a list of parameters without any XML header. This is
-** primarily used for testing purposes. */
-void
-xmlrpc_serialize_params(xmlrpc_env *       env,
-                        xmlrpc_mem_block * output,
-                        xmlrpc_value *     param_array);
-
-/* Serialize an XML-RPC call. */
 void 
-xmlrpc_serialize_call (xmlrpc_env *       const env,
-                       xmlrpc_mem_block * const output,
-                       const char *       const method_name,
-                       xmlrpc_value *     const param_array);
+xmlrpc_serialize_value2(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const outputP,
+                        xmlrpc_value *     const valueP,
+                        xmlrpc_dialect     const dialect);
+
+void
+xmlrpc_serialize_value(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       xmlrpc_value *     const valueP);
+
+void
+xmlrpc_serialize_params(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const outputP,
+                        xmlrpc_value *     const paramArrayP);
+
+void 
+xmlrpc_serialize_call(xmlrpc_env *       const env,
+                      xmlrpc_mem_block * const output,
+                      const char *       const method_name,
+                      xmlrpc_value *     const param_array);
 
 /* Serialize an XML-RPC return value. */
 extern void

@@ -250,7 +250,8 @@ xmlrpc_serialize_base64_data(xmlrpc_env *       const envP,
 static void 
 serializeStruct(xmlrpc_env *       const envP,
                 xmlrpc_mem_block * const outputP,
-                xmlrpc_value *     const structP) {
+                xmlrpc_value *     const structP,
+                xmlrpc_dialect     const dialect) {
 /*----------------------------------------------------------------------------
    Add to *outputP the content of a <value> element to represent
    the structure value *valueP.  I.e. "<struct> ... </struct>".
@@ -275,7 +276,7 @@ serializeStruct(xmlrpc_env *       const envP,
         XMLRPC_FAIL_IF_FAULT(envP);
         format_out(envP, outputP, "</name>"CRLF);
         XMLRPC_FAIL_IF_FAULT(envP);
-        xmlrpc_serialize_value(envP, outputP, memberValueP);
+        xmlrpc_serialize_value2(envP, outputP, memberValueP, dialect);
         XMLRPC_FAIL_IF_FAULT(envP);
         format_out(envP, outputP, "</member>"CRLF);
         XMLRPC_FAIL_IF_FAULT(envP);
@@ -293,7 +294,8 @@ cleanup:
 static void
 serializeArray(xmlrpc_env *       const envP,
                xmlrpc_mem_block * const outputP,
-               xmlrpc_value *     const valueP) {
+               xmlrpc_value *     const valueP,
+               xmlrpc_dialect     const dialect) {
 /*----------------------------------------------------------------------------
    Add to *outputP the content of a <value> element to represent
    the array value *valueP.  I.e. "<array> ... </array>".
@@ -309,7 +311,7 @@ serializeArray(xmlrpc_env *       const envP,
                 xmlrpc_value * const itemP =
                     xmlrpc_array_get_item(envP, valueP, i);
                 if (!envP->fault_occurred) {
-                    xmlrpc_serialize_value(envP, outputP, itemP);
+                    xmlrpc_serialize_value2(envP, outputP, itemP, dialect);
                     if (!envP->fault_occurred)
                         format_out(envP, outputP, CRLF);
                 }
@@ -325,7 +327,8 @@ serializeArray(xmlrpc_env *       const envP,
 static void
 formatValueContent(xmlrpc_env *       const envP,
                    xmlrpc_mem_block * const outputP,
-                   xmlrpc_value *     const valueP) {
+                   xmlrpc_value *     const valueP,
+                   xmlrpc_dialect     const dialect) {
 /*----------------------------------------------------------------------------
    Add to *outputP the content of a <value> element to represent
    value *valueP.  E.g. "<int>42</int>"
@@ -337,9 +340,12 @@ formatValueContent(xmlrpc_env *       const envP,
         format_out(envP, outputP, "<i4>%d</i4>", valueP->_value.i);
         break;
 
-    case XMLRPC_TYPE_I8:
-        format_out(envP, outputP, "<i8>%lld</i8>", valueP->_value.i8);
-        break;
+    case XMLRPC_TYPE_I8: {
+        const char * const elemName =
+            dialect == xmlrpc_dialect_apache ? "ex.i8" : "i8";
+        format_out(envP, outputP, "<%s>%lld</%s>",
+                   elemName, valueP->_value.i8, elemName);
+    } break;
 
     case XMLRPC_TYPE_BOOL:
         format_out(envP, outputP, "<boolean>%s</boolean>",
@@ -384,20 +390,22 @@ formatValueContent(xmlrpc_env *       const envP,
     } break;      
 
     case XMLRPC_TYPE_ARRAY:
-        serializeArray(envP, outputP, valueP);
+        serializeArray(envP, outputP, valueP, dialect);
         break;
 
     case XMLRPC_TYPE_STRUCT:
-        serializeStruct(envP, outputP, valueP);
+        serializeStruct(envP, outputP, valueP, dialect);
         break;
 
     case XMLRPC_TYPE_C_PTR:
         xmlrpc_faultf(envP, "Tried to serialize a C pointer value.");
         break;
 
-    case XMLRPC_TYPE_NIL:
-        format_out(envP, outputP, "<nil/>");
-        break;
+    case XMLRPC_TYPE_NIL: {
+        const char * const elemName =
+            dialect == xmlrpc_dialect_apache ? "ex.nil" : "nil";
+        format_out(envP, outputP, "<%s/>", elemName);
+    } break;
 
     case XMLRPC_TYPE_DEAD:
         xmlrpc_faultf(envP, "Tried to serialize a dead value.");
@@ -411,9 +419,10 @@ formatValueContent(xmlrpc_env *       const envP,
 
 
 void 
-xmlrpc_serialize_value(xmlrpc_env *       const envP,
-                       xmlrpc_mem_block * const outputP,
-                       xmlrpc_value *     const valueP) {
+xmlrpc_serialize_value2(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const outputP,
+                        xmlrpc_value *     const valueP,
+                        xmlrpc_dialect     const dialect) {
 /*----------------------------------------------------------------------------
    Generate the XML to represent XML-RPC value 'valueP' in XML-RPC.
 
@@ -426,11 +435,21 @@ xmlrpc_serialize_value(xmlrpc_env *       const envP,
     format_out(envP, outputP, "<value>");
 
     if (!envP->fault_occurred) {
-        formatValueContent(envP, outputP, valueP);
+        formatValueContent(envP, outputP, valueP, dialect);
 
         if (!envP->fault_occurred)
             format_out(envP, outputP, "</value>");
     }
+}
+
+
+
+void 
+xmlrpc_serialize_value(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       xmlrpc_value *     const valueP) {
+
+    xmlrpc_serialize_value2(envP, outputP, valueP, xmlrpc_dialect_i8);
 }
 
 
@@ -442,36 +461,36 @@ xmlrpc_serialize_value(xmlrpc_env *       const envP,
 */                
 
 void 
-xmlrpc_serialize_params(xmlrpc_env *env,
-                        xmlrpc_mem_block *output,
-                        xmlrpc_value *param_array) {
+xmlrpc_serialize_params(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const outputP,
+                        xmlrpc_value *     const paramArrayP) {
 
     size_t size, i;
-    xmlrpc_value *item;
+    xmlrpc_value * itemP;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT(output != NULL);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(outputP != NULL);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
 
-    format_out(env, output, "<params>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(env);
+    format_out(envP, outputP, "<params>"CRLF);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Dump each parameter. */
-    size = xmlrpc_array_size(env, param_array);
-    XMLRPC_FAIL_IF_FAULT(env);
-    for (i = 0; i < size; i++) {
-        format_out(env, output, "<param>");
-        XMLRPC_FAIL_IF_FAULT(env);
-        item = xmlrpc_array_get_item(env, param_array, i);
-        XMLRPC_FAIL_IF_FAULT(env);
-        xmlrpc_serialize_value(env, output, item);
-        XMLRPC_FAIL_IF_FAULT(env);
-        format_out(env, output, "</param>"CRLF);
-        XMLRPC_FAIL_IF_FAULT(env);
+    size = xmlrpc_array_size(envP, paramArrayP);
+    XMLRPC_FAIL_IF_FAULT(envP);
+    for (i = 0; i < size; ++i) {
+        format_out(envP, outputP, "<param>");
+        XMLRPC_FAIL_IF_FAULT(envP);
+        itemP = xmlrpc_array_get_item(envP, paramArrayP, i);
+        XMLRPC_FAIL_IF_FAULT(envP);
+        xmlrpc_serialize_value(envP, outputP, itemP);
+        XMLRPC_FAIL_IF_FAULT(envP);
+        format_out(envP, outputP, "</param>"CRLF);
+        XMLRPC_FAIL_IF_FAULT(envP);
     }
 
-    format_out(env, output, "</params>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(env);
+    format_out(envP, outputP, "</params>"CRLF);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
  cleanup:    
     return;

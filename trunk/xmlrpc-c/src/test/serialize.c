@@ -364,6 +364,54 @@ test_serialize_fault(void) {
 
 
 
+static void
+test_serialize_apache_value(void) {
+
+    char const serializedData[] =
+        "<value><array><data>\r\n"
+            "<value><i4>7</i4></value>\r\n"
+            "<value><ex.i8>8</ex.i8></value>\r\n"
+            "<value><ex.nil/></value>\r\n"
+        "</data></array></value>";
+
+    xmlrpc_env env;
+    xmlrpc_value * valueP;
+    xmlrpc_mem_block * outputP;
+    size_t size;
+
+    xmlrpc_env_init(&env);
+
+    valueP = xmlrpc_build_value(&env, "(iIn)", 7, (xmlrpc_int64)8);
+    TEST_NO_FAULT(&env);
+    
+    outputP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
+    TEST_NO_FAULT(&env);
+    xmlrpc_serialize_value2(&env, outputP, valueP, xmlrpc_dialect_apache);
+    TEST_NO_FAULT(&env);
+
+    size = XMLRPC_MEMBLOCK_SIZE(char, outputP);
+
+    TEST(size == strlen(serializedData));
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, outputP), serializedData, size));
+    
+    XMLRPC_MEMBLOCK_FREE(char, outputP);
+    xmlrpc_DECREF(valueP);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_apache(void) {
+
+    /* Serialize various things using the Apache dialect of XML-RPC */
+
+    test_serialize_apache_value();
+}
+
+
+
 void 
 test_serialize(void) {
 
@@ -376,6 +424,7 @@ test_serialize(void) {
     test_serialize_methodResponse();
     test_serialize_methodCall();
     test_serialize_fault();
+    test_serialize_apache();
 
     printf("\n");
     printf("Serialize tests done.\n");
