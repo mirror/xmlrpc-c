@@ -454,46 +454,57 @@ xmlrpc_serialize_value(xmlrpc_env *       const envP,
 
 
 
-/*=========================================================================
-**  xmlrpc_serialize_params
-**=========================================================================
-**  Serialize a list as a set of parameters.
-*/                
-
 void 
-xmlrpc_serialize_params(xmlrpc_env *       const envP,
-                        xmlrpc_mem_block * const outputP,
-                        xmlrpc_value *     const paramArrayP) {
-
-    size_t size, i;
-    xmlrpc_value * itemP;
-
+xmlrpc_serialize_params2(xmlrpc_env *       const envP,
+                         xmlrpc_mem_block * const outputP,
+                         xmlrpc_value *     const paramArrayP,
+                         xmlrpc_dialect     const dialect) {
+/*----------------------------------------------------------------------------
+   Serialize the parameter list of an XML-RPC call.
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(outputP != NULL);
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
 
     format_out(envP, outputP, "<params>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(envP);
+    if (!envP->fault_occurred) {
+        /* Serialize each parameter. */
+        size_t const paramCount = xmlrpc_array_size(envP, paramArrayP);
+        if (!envP->fault_occurred) {
+            size_t paramSeq;
+            for (paramSeq = 0;
+                 paramSeq < paramCount && !envP->fault_occurred;
+                 ++paramSeq) {
 
-    /* Dump each parameter. */
-    size = xmlrpc_array_size(envP, paramArrayP);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    for (i = 0; i < size; ++i) {
-        format_out(envP, outputP, "<param>");
-        XMLRPC_FAIL_IF_FAULT(envP);
-        itemP = xmlrpc_array_get_item(envP, paramArrayP, i);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        xmlrpc_serialize_value(envP, outputP, itemP);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        format_out(envP, outputP, "</param>"CRLF);
-        XMLRPC_FAIL_IF_FAULT(envP);
+                format_out(envP, outputP, "<param>");
+                if (!envP->fault_occurred) {
+                    xmlrpc_value * const itemP =
+                        xmlrpc_array_get_item(envP, paramArrayP, paramSeq);
+                    if (!envP->fault_occurred) {
+                        xmlrpc_serialize_value2(envP, outputP, itemP, dialect);
+                        if (!envP->fault_occurred)
+                            format_out(envP, outputP, "</param>"CRLF);
+                    }
+                }
+            }
+        }
     }
 
-    format_out(envP, outputP, "</params>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(envP);
+    if (!envP->fault_occurred)
+        format_out(envP, outputP, "</params>"CRLF);
+}
 
- cleanup:    
-    return;
+
+
+void 
+xmlrpc_serialize_params(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const outputP,
+                        xmlrpc_value *     const paramArrayP) {
+/*----------------------------------------------------------------------------
+   Serialize the parameter list of an XML-RPC call in the original
+   "i8" dialect.
+-----------------------------------------------------------------------------*/
+    xmlrpc_serialize_params2(envP, outputP, paramArrayP, xmlrpc_dialect_i8);
 }
 
 

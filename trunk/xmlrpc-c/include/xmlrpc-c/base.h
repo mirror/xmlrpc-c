@@ -522,6 +522,12 @@ xmlrpc_serialize_value(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
                        xmlrpc_value *     const valueP);
 
+void 
+xmlrpc_serialize_params2(xmlrpc_env *       const envP,
+                         xmlrpc_mem_block * const outputP,
+                         xmlrpc_value *     const paramArrayP,
+                         xmlrpc_dialect     const dialect);
+
 void
 xmlrpc_serialize_params(xmlrpc_env *       const envP,
                         xmlrpc_mem_block * const outputP,
