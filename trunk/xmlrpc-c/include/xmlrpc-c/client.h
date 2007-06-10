@@ -98,6 +98,7 @@ struct xmlrpc_clientparms {
 
     const struct xmlrpc_client_transport_ops * transportOpsP;
     xmlrpc_client_transport *  transportP;
+    xmlrpc_dialect             dialect;
 };
 
 #define XMLRPC_CPSIZE(mbrname) \

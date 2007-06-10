@@ -195,6 +195,15 @@ testCreateDestroy(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
 
+    clientParms1.transportOpsP = NULL;
+    clientParms1.transportP    = NULL;
+    clientParms1.dialect       = xmlrpc_dialect_apache;
+    xmlrpc_client_create(&env, 0, "testprog", "1.0",
+                         &clientParms1, XMLRPC_CPSIZE(dialect),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+    xmlrpc_client_destroy(clientP);
+
     clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
         &curlTransportParms1;
 

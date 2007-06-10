@@ -38,6 +38,7 @@ struct xmlrpc_client {
         */
     struct xmlrpc_client_transport *   transportP;
     struct xmlrpc_client_transport_ops transportOps;
+    xmlrpc_dialect                     dialect;
 };
 
 
@@ -287,12 +288,27 @@ getTransportInfo(
 
 
 
+static void
+getDialectFromClientParms(
+    const struct xmlrpc_clientparms * const clientparmsP,
+    unsigned int                      const parmSize,
+    xmlrpc_dialect *                  const dialectP) {
+    
+    if (parmSize < XMLRPC_CPSIZE(dialect))
+        *dialectP = xmlrpc_dialect_i8;
+    else
+        *dialectP = clientparmsP->dialect;
+}
+            
+
+
 static void 
 clientCreate(
     xmlrpc_env *                               const envP,
     bool                                       const myTransport,
     const struct xmlrpc_client_transport_ops * const transportOpsP,
     struct xmlrpc_client_transport *           const transportP,
+    xmlrpc_dialect                             const dialect,
     xmlrpc_client **                           const clientPP) {
 
     XMLRPC_ASSERT_PTR_OK(transportOpsP);
@@ -318,7 +334,8 @@ clientCreate(
             clientP->myTransport  = myTransport;
             clientP->transportOps = *transportOpsP;
             clientP->transportP   = transportP;
-
+            clientP->dialect      = dialect;
+            
             *clientPP = clientP;
         }
     }
@@ -335,6 +352,7 @@ createTransportAndClient(
     int                              const flags,
     const char *                     const appname,
     const char *                     const appversion,
+    xmlrpc_dialect                   const dialect,
     xmlrpc_client **                 const clientPP) {
 
     const struct xmlrpc_client_transport_ops * transportOpsP;
@@ -352,7 +370,7 @@ createTransportAndClient(
             bool const myTransportTrue = true;
 
             clientCreate(envP, myTransportTrue, transportOpsP, transportP,
-                         clientPP);
+                         dialect, clientPP);
             
             if (envP->fault_occurred)
                 transportOpsP->destroy(transportP);
@@ -386,21 +404,24 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
         size_t transportparmSize;
         const struct xmlrpc_client_transport_ops * transportOpsP;
         xmlrpc_client_transport * transportP;
+        xmlrpc_dialect dialect;
         
         getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
                          &transportparmsP, &transportparmSize,
                          &transportOpsP, &transportP);
+        
+        getDialectFromClientParms(clientparmsP, parmSize, &dialect);
             
         if (!envP->fault_occurred) {
             if (transportName)
                 createTransportAndClient(envP, transportName,
                                          transportparmsP, transportparmSize,
-                                         flags, appname, appversion,
+                                         flags, appname, appversion, dialect,
                                          clientPP);
             else {
                 bool myTransportFalse = false;
-                clientCreate(envP, myTransportFalse, 
-                             transportOpsP, transportP, clientPP);
+                clientCreate(envP, myTransportFalse,
+                             transportOpsP, transportP, dialect, clientPP);
             }
         }
     }
@@ -429,6 +450,7 @@ static void
 makeCallXml(xmlrpc_env *               const envP,
             const char *               const methodName,
             xmlrpc_value *             const paramArrayP,
+            xmlrpc_dialect             const dialect,
             xmlrpc_mem_block **        const callXmlPP) {
 
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
@@ -443,7 +465,8 @@ makeCallXml(xmlrpc_env *               const envP,
 
         callXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
         if (!envP->fault_occurred) {
-            xmlrpc_serialize_call(envP, callXmlP, methodName, paramArrayP);
+            xmlrpc_serialize_call2(envP, callXmlP, methodName, paramArrayP,
+                                   dialect);
 
             *callXmlPP = callXmlP;
 
@@ -584,7 +607,7 @@ xmlrpc_client_call2(xmlrpc_env *               const envP,
     XMLRPC_ASSERT_PTR_OK(serverInfoP);
     XMLRPC_ASSERT_PTR_OK(paramArrayP);
 
-    makeCallXml(envP, methodName, paramArrayP, &callXmlP);
+    makeCallXml(envP, methodName, paramArrayP, clientP->dialect, &callXmlP);
     
     if (!envP->fault_occurred) {
         xmlrpc_mem_block * respXmlP;
@@ -782,10 +805,11 @@ call_info_free(xmlrpc_call_info * const callInfoP) {
 
 
 static void
-call_info_new(xmlrpc_env *               const envP,
-              const char *               const methodName,
-              xmlrpc_value *             const paramArrayP,
-              xmlrpc_call_info **        const callInfoPP) {
+callInfoNew(xmlrpc_env *        const envP,
+            const char *        const methodName,
+            xmlrpc_value *      const paramArrayP,
+            xmlrpc_dialect      const dialect,
+            xmlrpc_call_info ** const callInfoPP) {
 /*----------------------------------------------------------------------------
    Create a call_info object.  A call_info object represents an XML-RPC
    call.
@@ -797,16 +821,14 @@ call_info_new(xmlrpc_env *               const envP,
 
     MALLOCVAR(callInfoP);
     if (callInfoP == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "Couldn't allocate memory for xmlrpc_call_info");
+        xmlrpc_faultf(envP, "Couldn't allocate memory for xmlrpc_call_info");
     else {
         xmlrpc_mem_block * callXmlP;
 
         /* Clear contents. */
         memset(callInfoP, 0, sizeof(*callInfoP));
         
-        makeCallXml(envP, methodName, paramArrayP, &callXmlP);
+        makeCallXml(envP, methodName, paramArrayP, dialect, &callXmlP);
 
         if (!envP->fault_occurred) {
             xmlrpc_traceXml("XML-RPC CALL", 
@@ -929,7 +951,7 @@ xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
     XMLRPC_ASSERT_PTR_OK(responseHandler);
     XMLRPC_ASSERT_VALUE_OK(argP);
 
-    call_info_new(envP, methodName, argP, &callInfoP);
+    callInfoNew(envP, methodName, argP, clientP->dialect, &callInfoP);
     if (!envP->fault_occurred) {
         call_info_set_asynch_data(envP, callInfoP, 
                                   serverInfoP->_server_url, methodName,
