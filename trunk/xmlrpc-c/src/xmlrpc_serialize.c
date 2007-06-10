@@ -562,9 +562,10 @@ xmlrpc_serialize_call(xmlrpc_env *       const env,
 
 
 void 
-xmlrpc_serialize_response(xmlrpc_env *       const envP,
-                          xmlrpc_mem_block * const outputP,
-                          xmlrpc_value *     const valueP) {
+xmlrpc_serialize_response2(xmlrpc_env *       const envP,
+                           xmlrpc_mem_block * const outputP,
+                           xmlrpc_value *     const valueP,
+                           xmlrpc_dialect     const dialect) {
 /*----------------------------------------------------------------------------
   Serialize a result response to an XML-RPC call.
 
@@ -581,7 +582,7 @@ xmlrpc_serialize_response(xmlrpc_env *       const envP,
         formatOut(envP, outputP,
                   "<methodResponse>"CRLF"<params>"CRLF"<param>");
         if (!envP->fault_occurred) {
-            xmlrpc_serialize_value(envP, outputP, valueP);
+            xmlrpc_serialize_value2(envP, outputP, valueP, dialect);
             if (!envP->fault_occurred) {
                 formatOut(envP, outputP,
                           "</param>"CRLF"</params>"CRLF
@@ -593,16 +594,15 @@ xmlrpc_serialize_response(xmlrpc_env *       const envP,
 
 
 
-/*=========================================================================
-**  xmlrpc_serialize_fault
-**=========================================================================
-**  Serialize an XML-RPC fault.
-**
-**  If this function fails, it will set up the first env argument. You'll
-**  need to take some other drastic action to produce a serialized fault
-**  of your own. (This function should only fail in an out-of-memory
-**  situation, AFAIK.)
-*/                
+void 
+xmlrpc_serialize_response(xmlrpc_env *       const envP,
+                          xmlrpc_mem_block * const outputP,
+                          xmlrpc_value *     const valueP) {
+
+    xmlrpc_serialize_response2(envP, outputP, valueP, xmlrpc_dialect_i8);
+}
+
+
 
 void 
 xmlrpc_serialize_fault(xmlrpc_env *       const envP,
@@ -641,7 +641,6 @@ xmlrpc_serialize_fault(xmlrpc_env *       const envP,
         xmlrpc_DECREF(faultStructP);
     }
 }
-
 
 
 

@@ -539,17 +539,21 @@ xmlrpc_serialize_call(xmlrpc_env *       const env,
                       const char *       const method_name,
                       xmlrpc_value *     const param_array);
 
-/* Serialize an XML-RPC return value. */
-extern void
-xmlrpc_serialize_response(xmlrpc_env *       env,
-                          xmlrpc_mem_block * output,
-                          xmlrpc_value *     value);
+void 
+xmlrpc_serialize_response2(xmlrpc_env *       const envP,
+                           xmlrpc_mem_block * const outputP,
+                           xmlrpc_value *     const valueP,
+                           xmlrpc_dialect     const dialect);
 
-/* Serialize an XML-RPC fault (as specified by 'fault'). */
-extern void
-xmlrpc_serialize_fault(xmlrpc_env *       env,
-                       xmlrpc_mem_block * output,
-                       xmlrpc_env *       fault);
+void
+xmlrpc_serialize_response(xmlrpc_env *       const envP,
+                          xmlrpc_mem_block * const outputP,
+                          xmlrpc_value *     const valueP);
+
+void
+xmlrpc_serialize_fault(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       xmlrpc_env *       const faultP);
 
 
 /*=========================================================================
