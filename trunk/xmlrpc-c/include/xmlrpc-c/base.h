@@ -534,10 +534,17 @@ xmlrpc_serialize_params(xmlrpc_env *       const envP,
                         xmlrpc_value *     const paramArrayP);
 
 void 
-xmlrpc_serialize_call(xmlrpc_env *       const env,
-                      xmlrpc_mem_block * const output,
-                      const char *       const method_name,
-                      xmlrpc_value *     const param_array);
+xmlrpc_serialize_call2(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       const char *       const methodName,
+                       xmlrpc_value *     const paramArrayP,
+                       xmlrpc_dialect     const dialect);
+
+void 
+xmlrpc_serialize_call(xmlrpc_env *       const envP,
+                      xmlrpc_mem_block * const outputP,
+                      const char *       const methodName,
+                      xmlrpc_value *     const paramArrayP);
 
 void 
 xmlrpc_serialize_response2(xmlrpc_env *       const envP,

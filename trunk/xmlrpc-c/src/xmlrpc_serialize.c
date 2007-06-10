@@ -515,48 +515,58 @@ xmlrpc_serialize_params(xmlrpc_env *       const envP,
 */                
 
 void 
-xmlrpc_serialize_call(xmlrpc_env *       const env,
-                      xmlrpc_mem_block * const output,
-                      const char *       const method_name,
-                      xmlrpc_value *     const param_array) {
+xmlrpc_serialize_call2(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       const char *       const methodName,
+                       xmlrpc_value *     const paramArrayP,
+                       xmlrpc_dialect     const dialect) {
+/*----------------------------------------------------------------------------
+   Serialize an XML-RPC call of method named 'methodName' with parameter
+   list *paramArrayP.  Use XML-RPC dialect 'dialect'.
 
-    xmlrpc_mem_block * encodedP;
-    char *contents;
-    size_t size;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT(output != NULL);
-    XMLRPC_ASSERT(method_name != NULL);
-    XMLRPC_ASSERT_VALUE_OK(param_array);
+   Append the call XML ot *outputP.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(outputP != NULL);
+    XMLRPC_ASSERT(methodName != NULL);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
     
-    /* Set up our error-handling preconditions. */
-    encodedP = NULL;
+    formatOut(envP, outputP, XML_PROLOGUE);
+    if (!envP->fault_occurred) {
+        formatOut(envP, outputP, "<methodCall>"CRLF"<methodName>");
+        if (!envP->fault_occurred) {
+            xmlrpc_mem_block * encodedP;
+            escapeForXml(envP, methodName, strlen(methodName), &encodedP);
+            if (!envP->fault_occurred) {
+                const char * const contents =
+                    XMLRPC_MEMBLOCK_CONTENTS(char, encodedP);
+                size_t const size = XMLRPC_MEMBLOCK_SIZE(char, encodedP);
+                XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, contents, size);
+                if (!envP->fault_occurred) {
+                    formatOut(envP, outputP, "</methodName>"CRLF);
+                    if (!envP->fault_occurred) {
+                        xmlrpc_serialize_params2(envP, outputP, paramArrayP,
+                                                 dialect);
+                        if (!envP->fault_occurred)
+                            formatOut(envP, outputP, "</methodCall>"CRLF);
+                    }
+                }
+                XMLRPC_MEMBLOCK_FREE(char, encodedP);
+            }
+        }
+    }
+}
 
-    /* Dump our header. */
-    formatOut(env, output, XML_PROLOGUE);
-    XMLRPC_FAIL_IF_FAULT(env);
-    formatOut(env, output, "<methodCall>"CRLF"<methodName>");
-    XMLRPC_FAIL_IF_FAULT(env);
 
-    /* Dump the method name. */
-    escapeForXml(env, method_name, strlen(method_name), &encodedP);
-    XMLRPC_FAIL_IF_FAULT(env);
-    contents = XMLRPC_MEMBLOCK_CONTENTS(char, encodedP);
-    size = XMLRPC_MEMBLOCK_SIZE(char, encodedP);
-    XMLRPC_MEMBLOCK_APPEND(char, env, output, contents, size);
-    XMLRPC_FAIL_IF_FAULT(env);    
 
-    /* Dump our parameters and footer. */
-    formatOut(env, output, "</methodName>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(env);
-    xmlrpc_serialize_params(env, output, param_array);
-    XMLRPC_FAIL_IF_FAULT(env);
-    formatOut(env, output, "</methodCall>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(env);
+void 
+xmlrpc_serialize_call(xmlrpc_env *       const envP,
+                      xmlrpc_mem_block * const outputP,
+                      const char *       const methodName,
+                      xmlrpc_value *     const paramArrayP) {
 
- cleanup:
-    if (encodedP)
-        XMLRPC_MEMBLOCK_FREE(char, encodedP);
+    xmlrpc_serialize_call2(envP, outputP, methodName, paramArrayP,
+                           xmlrpc_dialect_i8);
 }
 
 
