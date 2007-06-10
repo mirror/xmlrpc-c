@@ -288,6 +288,7 @@ xmlrpc_registry_new(xmlrpc_env * const envP) {
         registryP->defaultMethodFunction = NULL;
         registryP->preinvokeFunction     = NULL;
         registryP->shutdownServerFn      = NULL;
+        registryP->dialect               = xmlrpc_dialect_i8;
 
         xmlrpc_methodListCreate(envP, &registryP->methodListP);
         if (!envP->fault_occurred)
@@ -463,6 +464,21 @@ xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
 
 
 
+void
+xmlrpc_registry_set_dialect(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            xmlrpc_dialect    const dialect) {
+
+    if (dialect != xmlrpc_dialect_i8 &&
+        dialect != xmlrpc_dialect_apache)
+        xmlrpc_faultf(envP, "Invalid dialect argument -- not of type "
+                      "xmlrpc_dialect.  Numerical value is %u", dialect);
+    else
+        registryP->dialect = dialect;
+}
+
+
+
 static void
 callNamedMethod(xmlrpc_env *        const envP,
                 xmlrpc_methodInfo * const methodP,
@@ -565,22 +581,16 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
                 "Call XML not a proper XML-RPC call.  %s",
                 parseEnv.fault_string);
         else {
-            xmlrpc_value * result;
+            xmlrpc_value * resultP;
             
             xmlrpc_dispatchCall(&fault, registryP, methodName, paramArrayP,
-                                callInfo, &result);
+                                callInfo, &resultP);
 
             if (!fault.fault_occurred) {
-                xmlrpc_serialize_response(envP, responseXmlP, result);
+                xmlrpc_serialize_response2(envP, responseXmlP,
+                                           resultP, registryP->dialect);
 
-                /* A comment here used to say that
-                   xmlrpc_serialize_response() could fail and "leave
-                   stuff in the buffer."  Don't know what that means,
-                   but it sounds like something that needs to be
-                   fixed.  The old code aborted the program here if
-                   xmlrpc_serialize_response() failed.  04.11.17 
-                */
-                xmlrpc_DECREF(result);
+                xmlrpc_DECREF(resultP);
             } 
             xmlrpc_strfree(methodName);
             xmlrpc_DECREF(paramArrayP);

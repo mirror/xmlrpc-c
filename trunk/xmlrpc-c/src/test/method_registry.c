@@ -123,6 +123,17 @@ test_default(xmlrpc_env *   const envP,
 
 
 
+static xmlrpc_value *
+test_exttype(xmlrpc_env *   const envP,
+             xmlrpc_value * const paramArrayP ATTR_UNUSED,
+             void *         const serverInfo ATTR_UNUSED,
+             void *         const callInfo ATTR_UNUSED) {
+
+    return xmlrpc_build_value(envP, "(In)", (xmlrpc_int64)8);
+}
+
+
+
 static void
 doRpc(xmlrpc_env *      const envP,
       xmlrpc_registry * const registryP,
@@ -344,6 +355,42 @@ test_signature(void) {
 
     test_signature_method(registryP);
 
+    xmlrpc_registry_free(registryP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
+
+
+
+static void
+test_disable_introspection(void) {
+
+    xmlrpc_env env;
+    xmlrpc_registry * registryP;
+    xmlrpc_value * argArrayP;
+    xmlrpc_value * resultP;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running disable introspection tests.");
+
+    registryP = xmlrpc_registry_new(&env);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_registry_add_method2(&env, registryP, "test.nosig0",
+                                test_foo, NULL, NULL, FOO_SERVERINFO);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_registry_disable_introspection(registryP);
+
+    argArrayP = xmlrpc_build_value(&env, "(s)", "test.nosig0");
+    doRpc(&env, registryP, "system.methodSignature", argArrayP, NULL,
+          &resultP);
+    TEST_FAULT(&env, XMLRPC_INTROSPECTION_DISABLED_ERROR);
+    xmlrpc_DECREF(argArrayP);
+    
     xmlrpc_registry_free(registryP);
 
     xmlrpc_env_clean(&env);
@@ -590,6 +637,79 @@ testDefaultMethod(xmlrpc_registry * const registryP) {
 
 
 
+static void
+test_apache_dialect(void) {
+
+    char const expectedResp[] =
+        XML_PROLOGUE
+        "<methodResponse>\r\n"
+        "<params>\r\n"
+        "<param><value><array><data>\r\n"
+            "<value><ex.i8>8</ex.i8></value>\r\n"
+            "<value><ex.nil/></value>\r\n"
+        "</data></array></value></param>\r\n"
+        "</params>\r\n"
+        "</methodResponse>\r\n";
+
+    xmlrpc_env env;
+    xmlrpc_registry * registryP;
+    xmlrpc_value * argArrayP;
+    xmlrpc_mem_block * callP;
+    xmlrpc_mem_block * responseP;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running apache dialect tests.");
+
+    registryP = xmlrpc_registry_new(&env);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_registry_set_dialect(&env, registryP, xmlrpc_dialect_i8);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_registry_set_dialect(&env, registryP, 100);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_registry_set_dialect(&env, registryP, xmlrpc_dialect_apache);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_registry_add_method2(&env, registryP, "test_exttype",
+                                test_exttype, NULL, NULL, FOO_SERVERINFO);
+    TEST_NO_FAULT(&env);
+
+    argArrayP = xmlrpc_array_new(&env);
+    TEST_NO_FAULT(&env);
+
+    callP = xmlrpc_mem_block_new(&env, 0);
+    TEST_NO_FAULT(&env);
+    xmlrpc_serialize_call(&env, callP, "test_exttype", argArrayP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_registry_process_call2(
+        &env, registryP,
+        xmlrpc_mem_block_contents(callP),
+        xmlrpc_mem_block_size(callP),
+        NULL, &responseP);
+
+    TEST_NO_FAULT(&env);
+
+    TEST(XMLRPC_MEMBLOCK_SIZE(char, responseP) == strlen(expectedResp));
+    TEST(memeq(XMLRPC_MEMBLOCK_CONTENTS(char, responseP),
+               expectedResp,
+               XMLRPC_MEMBLOCK_SIZE(char, responseP)));
+
+    xmlrpc_DECREF(argArrayP);
+    xmlrpc_mem_block_free(callP);
+    xmlrpc_mem_block_free(responseP);
+    xmlrpc_registry_free(registryP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
+
+
+
 void
 test_method_registry(void) {
 
@@ -639,6 +759,10 @@ test_method_registry(void) {
     testDefaultMethod(registryP);
 
     test_signature();
+
+    test_disable_introspection();
+
+    test_apache_dialect();
     
     /* Test cleanup code (w/memprof). */
     xmlrpc_registry_free(registryP);
@@ -647,4 +771,3 @@ test_method_registry(void) {
 
     xmlrpc_env_clean(&env);
 }
-

@@ -50,6 +50,7 @@ struct xmlrpc_registry {
         /* Context for _shutdown_server_fn -- understood only by
            that function, passed to it as argument.
         */
+    xmlrpc_dialect dialect;
 };
 
 void

@@ -96,6 +96,11 @@ xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
                              xmlrpc_server_shutdown_fn * const shutdownFn,
                              void *                      const context);
 
+void
+xmlrpc_registry_set_dialect(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            xmlrpc_dialect    const dialect);
+
 /*----------------------------------------------------------------------------
    Lower interface -- services to be used by an HTTP request handler
 -----------------------------------------------------------------------------*/
