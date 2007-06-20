@@ -80,14 +80,19 @@ struct client_xml_impl {
     */
     clientXmlTransport * transportP;
     clientXmlTransportPtr transportPtr;
+    xmlrpc_dialect dialect;
 
-    client_xml_impl(clientXmlTransport * const transportP) :
-        transportP(transportP) {}
+    client_xml_impl(clientXmlTransport * const transportP,
+                    xmlrpc_dialect       const dialect = xmlrpc_dialect_i8) :
+        transportP(transportP),
+        dialect(dialect) {}
 
     client_xml_impl(clientXmlTransportPtr const transportPtr,
-                    clientXmlTransport *  const transportP) :
+                    clientXmlTransport *  const transportP,
+                    xmlrpc_dialect        const dialect = xmlrpc_dialect_i8) :
         transportP(transportP),
-        transportPtr(transportPtr) {}
+        transportPtr(transportPtr),
+        dialect(dialect) {}
 };
      
 
@@ -574,6 +579,23 @@ client_xml::client_xml(clientXmlTransportPtr const transportPtr) {
 
 
 
+client_xml::client_xml(clientXmlTransport * const transportP,
+                       xmlrpc_dialect       const dialect) {
+
+    this->implP = new client_xml_impl(transportP, dialect);
+}
+
+
+
+client_xml::client_xml(clientXmlTransportPtr const transportPtr,
+                       xmlrpc_dialect        const dialect) {
+
+    this->implP = new client_xml_impl(transportPtr, transportPtr.get(),
+                                      dialect);
+}
+
+
+
 client_xml::~client_xml() {
 
     delete(this->implP);
@@ -590,7 +612,7 @@ client_xml::call(carriageParm * const  carriageParmP,
     string callXml;
     string responseXml;
 
-    xml::generateCall(methodName, paramList, &callXml);
+    xml::generateCall(methodName, paramList, this->implP->dialect, &callXml);
     
     xml::trace("XML-RPC CALL", callXml);
 
@@ -620,7 +642,7 @@ client_xml::start(carriageParm *       const  carriageParmP,
 
     string callXml;
 
-    xml::generateCall(methodName, paramList, &callXml);
+    xml::generateCall(methodName, paramList, this->implP->dialect, &callXml);
     
     xml::trace("XML-RPC CALL", callXml);
 

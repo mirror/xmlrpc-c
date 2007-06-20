@@ -53,6 +53,22 @@ public:
 
 
 
+class testApacheDialectMethod : public method {
+public:
+    void
+    execute(xmlrpc_c::paramList const& paramList,
+            value *             const  retvalP) {
+        
+        paramList.getNil(0);
+        
+        paramList.verifyEnd(1);
+        
+        *retvalP = value_i8(7ll);
+    }
+};
+
+
+
 class carriageParm_direct : public carriageParm {
 public:
     carriageParm_direct(registry * const registryP) : registryP(registryP) {}
@@ -688,6 +704,56 @@ public:
 
 
 
+class xmlTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+   This test suite tests the generation an interpretation of XML-RPC
+   XML, by doing RPCs via an XML client and server.  Each complete RPC
+   involves generating XML and interpreting it, so this is a handy way
+   to test.
+
+   A stronger test would be to make an XML transport that actually verifies
+   the XML.  We're too lazy for that.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "xmlTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+        registry myRegistry;
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        myRegistry.addMethod("apache", methodPtr(new testApacheDialectMethod));
+        carriageParm_direct carriageParmDirect(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        client_xml clientDirect(&transportDirect, xmlrpc_dialect_apache);
+
+        paramList paramListSampleAdd;
+        paramListSampleAdd.add(value_int(5));
+        paramListSampleAdd.add(value_int(7));
+
+        {
+            rpcPtr rpcSampleAddP("sample.add", paramListSampleAdd);
+            rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcSampleAddP->isFinished());
+            TEST(rpcSampleAddP->isSuccessful());
+            value_int const result(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(result) == 12);
+        }
+        paramList paramListApache;
+        paramListApache.add(value_nil());
+
+        {
+            rpcPtr rpcApacheP("apache", paramListApache);
+            rpcApacheP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcApacheP->isFinished());
+            TEST(rpcApacheP->isSuccessful());
+            value_i8 const result(rpcApacheP->getResult());
+            TEST(static_cast<long long>(result) == 7ll);
+        }
+    }
+};
+
+
+
 string
 clientTestSuite::suiteName() {
     return "clientTestSuite";
@@ -713,4 +779,6 @@ clientTestSuite::runtests(unsigned int const indentation) {
     clientSimpleTestSuite().run(indentation+1);
 
     serverAccessorTestSuite().run(indentation+1);
+
+    xmlTestSuite().run(indentation+1);
 }

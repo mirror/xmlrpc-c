@@ -61,12 +61,15 @@ namespace xml {
 
 
 void
-generateCall(string    const& methodName,
-             paramList const& paramList,
-             string *  const  callXmlP) {
+generateCall(string         const& methodName,
+             paramList      const& paramList,
+             xmlrpc_dialect const  dialect,
+             string *       const  callXmlP) {
 /*----------------------------------------------------------------------------
    Generate the XML for an XML-RPC call, given a method name and parameter
    list.
+
+   Use dialect 'dialect' of XML-RPC.
 -----------------------------------------------------------------------------*/
     class memblockWrapper {
         xmlrpc_mem_block * const memblockP;
@@ -89,8 +92,8 @@ generateCall(string    const& methodName,
 
         xmlrpc_value * const paramArrayP(cArrayFromParamList(paramList));
 
-        xmlrpc_serialize_call(&env.env_c, callXmlMP, methodName.c_str(),
-                              paramArrayP);
+        xmlrpc_serialize_call2(&env.env_c, callXmlMP, methodName.c_str(),
+                               paramArrayP, dialect);
         
         *callXmlP = string(XMLRPC_MEMBLOCK_CONTENTS(char, callXmlMP),
                            XMLRPC_MEMBLOCK_SIZE(char, callXmlMP));
@@ -99,6 +102,17 @@ generateCall(string    const& methodName,
     }
     if (env.env_c.fault_occurred)
         throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+generateCall(string    const& methodName,
+             paramList const& paramList,
+             string *  const  callXmlP) {
+
+    generateCall(methodName, paramList, xmlrpc_dialect_i8, callXmlP);
+
 }
 
 

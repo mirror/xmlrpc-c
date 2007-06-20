@@ -142,7 +142,13 @@ class client_xml : public xmlrpc_c::client {
 public:
     client_xml(xmlrpc_c::clientXmlTransport * const transportP);
 
+    client_xml(xmlrpc_c::clientXmlTransport * const transportP,
+               xmlrpc_dialect                 const dialect);
+
     client_xml(xmlrpc_c::clientXmlTransportPtr const transportP);
+
+    client_xml(xmlrpc_c::clientXmlTransportPtr const transportP,
+               xmlrpc_dialect                  const dialect);
 
     ~client_xml();
 
