@@ -829,8 +829,9 @@ buildStructDecompBranch(xmlrpc_env *            const envP,
     while (**formatP && **formatP != delim && **formatP != '*' &&
            !envP->fault_occurred) {
         if (memberCnt >= ARRAY_SIZE(decompNodeP->store.Tstruct.mbrArray))
-            xmlrpc_faultf(envP, "Too many array items in format string.  "
-                          "The most items you can have for an array in "
+            xmlrpc_faultf(envP,
+                          "Too many structure members in format string.  "
+                          "The most members you can specify in "
                           "a format string is %u.",
                           ARRAY_SIZE(decompNodeP->store.Tstruct.mbrArray));
         else {
