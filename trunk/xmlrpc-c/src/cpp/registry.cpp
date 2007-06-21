@@ -322,6 +322,18 @@ registry::disableIntrospection() {
 
 
 void
+registry::setDialect(xmlrpc_dialect const dialect) {
+
+    env_wrap env;
+
+    xmlrpc_registry_set_dialect(&env.env_c, this->c_registryP, dialect);
+
+    throwIfError(env);
+}
+
+
+
+void
 registry::processCall(string   const& callXml,
                       string * const  responseXmlP) const {
 /*----------------------------------------------------------------------------

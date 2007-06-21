@@ -14,6 +14,7 @@ using girerr::error;
 #include "xmlrpc-c/registry.hpp"
 
 #include "testclient.hpp"
+#include "registry.hpp"
 #include "server_abyss.hpp"
 #include "server_pstream.hpp"
 #include "tools.hpp"
@@ -47,39 +48,6 @@ using namespace std;
 //  If you add new tests to this file, please deallocate any data
 //  structures you use in the appropriate fashion. This allows us to test
 //  various destructor code for memory leaks.
-
-
-class sampleAddMethod : public method {
-public:
-    sampleAddMethod() {
-        this->_signature = "i:ii";
-        this->_help = "This method adds two integers together";
-    }
-    void
-    execute(xmlrpc_c::paramList const& paramList,
-            value *             const  retvalP) {
-        
-        int const addend(paramList.getInt(0));
-        int const adder(paramList.getInt(1));
-        
-        paramList.verifyEnd(2);
-        
-        *retvalP = value_int(addend + adder);
-    }
-};
-
-
-
-class nameMethod : public defaultMethod {
-
-    void
-    execute(string              const& methodName,
-            xmlrpc_c::paramList const& ,  // paramList
-            value *             const  retvalP) {
-        
-        *retvalP = value_string(string("no such method: ") + methodName);
-    }
-};
 
 
 //=========================================================================
@@ -553,108 +521,6 @@ public:
 };
 
 
-namespace {
-string const noElementFoundXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<fault>\r\n"
-    "<value><struct>\r\n"
-    "<member><name>faultCode</name>\r\n"
-    "<value><i4>-503</i4></value></member>\r\n"
-    "<member><name>faultString</name>\r\n"
-    "<value><string>Call XML not a proper XML-RPC call.  "
-    "Call is not valid XML.  no element found</string></value>"
-    "</member>\r\n"
-    "</struct></value>\r\n"
-    "</fault>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-string const sampleAddGoodCallXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodCall>\r\n"
-    "<methodName>sample.add</methodName>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>5</i4></value></param>\r\n"
-    "<param><value><i4>7</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodCall>\r\n"
-    );
-
-string const sampleAddGoodResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>12</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-
-string const sampleAddBadCallXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodCall>\r\n"
-    "<methodName>sample.add</methodName>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>5</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodCall>\r\n"
-    );
-
-string const sampleAddBadResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<fault>\r\n"
-    "<value><struct>\r\n"
-    "<member><name>faultCode</name>\r\n"
-    "<value><i4>-501</i4></value></member>\r\n"
-    "<member><name>faultString</name>\r\n"
-    "<value><string>Not enough parameters</string></value></member>\r\n"
-    "</struct></value>\r\n"
-    "</fault>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-
-string const nonexistentMethodCallXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodCall>\r\n"
-    "<methodName>nosuchmethod</methodName>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>5</i4></value></param>\r\n"
-    "<param><value><i4>7</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodCall>\r\n"
-    );
-
-string const nonexistentMethodYesDefResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<params>\r\n"
-    "<param><value><string>no such method: nosuchmethod</string>"
-    "</value></param>\r\n"
-    "</params>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-string const nonexistentMethodNoDefResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<fault>\r\n"
-    "<value><struct>\r\n"
-    "<member><name>faultCode</name>\r\n"
-    "<value><i4>-506</i4></value></member>\r\n"
-    "<member><name>faultString</name>\r\n"
-    "<value><string>Method 'nosuchmethod' not defined</string></value>"
-    "</member>\r\n"
-    "</struct></value>\r\n"
-    "</fault>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-} // namespace
-
-
 class paramListTestSuite : public testSuite {
 
 public:
@@ -717,92 +583,6 @@ public:
         TEST(paramList2.size() == 0);
     }
 };
-
-class registryRegMethodTestSuite : public testSuite {
-
-public:
-    virtual string suiteName() {
-        return "registryRegMethodTestSuite";
-    }
-    virtual void runtests(unsigned int) {
-
-        xmlrpc_c::registry myRegistry;
-        
-        myRegistry.addMethod("sample.add", 
-                             xmlrpc_c::methodPtr(new sampleAddMethod));
-        
-        myRegistry.disableIntrospection();
-        {
-            string response;
-            myRegistry.processCall("", &response);
-            TEST(response == noElementFoundXml);
-        }
-        {
-            string response;
-            myRegistry.processCall(sampleAddGoodCallXml, &response);
-            TEST(response == sampleAddGoodResponseXml);
-        }
-        {
-            string response;
-            myRegistry.processCall(sampleAddBadCallXml, &response);
-            TEST(response == sampleAddBadResponseXml);
-        }
-    }
-};
-
-
-
-class registryDefaultMethodTestSuite : public testSuite {
-
-public:
-    virtual string suiteName() {
-        return "registryDefaultMethodTestSuite";
-    }
-    virtual void runtests(unsigned int) {
-
-        xmlrpc_c::registry myRegistry;
-        
-        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-
-        {
-            string response;
-            myRegistry.processCall(sampleAddGoodCallXml, &response);
-            TEST(response == sampleAddGoodResponseXml);
-        }
-        {
-            string response;
-            myRegistry.processCall(nonexistentMethodCallXml, &response);
-            TEST(response == nonexistentMethodNoDefResponseXml);
-        }
-        // We're actually violating the spirit of setDefaultMethod by
-        // doing this to a registry that's already been used, but as long
-        // as it works, it's a convenient way to implement this test.
-        myRegistry.setDefaultMethod(defaultMethodPtr(new nameMethod));
-
-        {
-            string response;
-            myRegistry.processCall(nonexistentMethodCallXml, &response);
-            TEST(response == nonexistentMethodYesDefResponseXml);
-        }
-    }
-};
-
-
-
-class registryTestSuite : public testSuite {
-
-public:
-    virtual string suiteName() {
-        return "registryTestSuite";
-    }
-    virtual void runtests(unsigned int const indentation) {
-
-        registryRegMethodTestSuite().run(indentation+1);
-        registryDefaultMethodTestSuite().run(indentation+1);
-    }
-};
-
-
 
 //=========================================================================
 //  Test Driver

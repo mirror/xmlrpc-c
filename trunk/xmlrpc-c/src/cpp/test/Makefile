@@ -42,7 +42,7 @@ Makefile: srcdir
 include $(SRCDIR)/Makefile.common
 
 
-TEST_OBJS = test.o server_abyss.o server_pstream.o tools.o
+TEST_OBJS = test.o registry.o server_abyss.o server_pstream.o tools.o
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o

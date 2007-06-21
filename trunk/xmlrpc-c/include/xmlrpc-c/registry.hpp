@@ -123,6 +123,9 @@ public:
 
     void
     disableIntrospection();
+
+    void
+    setDialect(xmlrpc_dialect const dialect);
     
     void
     processCall(std::string   const& body,
