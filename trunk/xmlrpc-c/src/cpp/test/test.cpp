@@ -554,8 +554,9 @@ public:
         structData.insert(member);
         paramList1.add(value_struct(structData));
         paramList1.add(value_nil());
+        paramList1.add(value_i8((long long)UINT_MAX + 1));
 
-        TEST(paramList1.size() == 10);
+        TEST(paramList1.size() == 11);
 
         TEST(paramList1.getInt(0) == 7);
         TEST(paramList1.getInt(0, 7) == 7);
@@ -577,7 +578,8 @@ public:
         TEST(paramList1.getArray(7, 1, 3).size() == 3);
         paramList1.getStruct(8)["the_integer"];
         paramList1.getNil(9);
-        paramList1.verifyEnd(10);
+        TEST(paramList1.getI8(10) == (long long)UINT_MAX + 1);
+        paramList1.verifyEnd(11);
 
         paramList paramList2(5);
         TEST(paramList2.size() == 0);

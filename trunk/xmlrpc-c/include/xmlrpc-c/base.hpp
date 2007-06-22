@@ -323,6 +323,11 @@ public:
     void
     getNil(unsigned int const paramNumber) const;
 
+    long long
+    getI8(unsigned int const paramNumber,
+          long long    const minimum = XMLRPC_INT64_MIN,
+          long long    const maximum = XMLRPC_INT64_MAX) const;
+
     void
     verifyEnd(unsigned int const paramNumber) const;
 

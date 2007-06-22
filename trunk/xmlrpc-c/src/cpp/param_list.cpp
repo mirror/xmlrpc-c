@@ -265,6 +265,32 @@ paramList::getNil(unsigned int const paramNumber) const {
 
 
 
+long long
+paramList::getI8(unsigned int const paramNumber,
+                 long long    const minimum,
+                 long long    const maximum) const {
+
+    if (paramNumber >= this->paramVector.size())
+        throw(fault("Not enough parameters", fault::CODE_TYPE));
+
+    if (this->paramVector[paramNumber].type() != value::TYPE_I8)
+        throw(fault("Parameter that is supposed to be 64-bit integer is not", 
+                    fault::CODE_TYPE));
+
+    long long const longlongvalue(static_cast<long long>(
+        value_i8(this->paramVector[paramNumber])));
+
+    if (longlongvalue < minimum)
+        throw(fault("64-bit integer parameter too low", fault::CODE_TYPE));
+
+    if (longlongvalue > maximum)
+        throw(fault("64-bit integer parameter too high", fault::CODE_TYPE));
+
+    return longlongvalue;
+}
+
+
+
 void
 paramList::verifyEnd(unsigned int const paramNumber) const {
 
