@@ -16,6 +16,8 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
 endif
 
 OMIT_XMLRPC_LIB_RULE=Y
+MAJ=3
+  # Major number of shared libraries in this directory
 
 include $(SRCDIR)/Makefile.common
 

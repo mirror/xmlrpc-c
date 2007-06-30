@@ -45,6 +45,8 @@ TARGET_MODS = \
   trace \
 
 OMIT_ABYSS_LIB_RULE = Y
+MAJ=3
+  # Major number of shared libraries in this directory
 
 include $(SRCDIR)/Makefile.common
 

@@ -34,6 +34,8 @@ SHARED_LIBS_TO_INSTALL := libxmlrpc_xmlparse
 TARGET_MODS = xmlparse
 
 OMIT_XMLPARSE_LIB_RULE=Y
+MAJ=3
+  # Major number of shared libraries in this directory
 
 include $(SRCDIR)/Makefile.common
 

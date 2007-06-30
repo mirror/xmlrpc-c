@@ -41,6 +41,8 @@ SHARED_LIBS_TO_INSTALL := libxmlrpc_xmltok
 TARGET_MODS = xmltok xmlrole
 
 OMIT_XMLTOK_LIB_RULE = Y
+MAJ=3
+  # Major number of shared libraries in this directory
 
 include $(SRCDIR)/Makefile.common
 

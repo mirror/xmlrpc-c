@@ -37,6 +37,8 @@ TARGET_MODS = \
   time \
 
 OMIT_LIBXMLRPC_UTIL_RULE=Y
+MAJ=3
+  # Major number of shared libraries in this directory
 
 include $(SRCDIR)/Makefile.common
 
