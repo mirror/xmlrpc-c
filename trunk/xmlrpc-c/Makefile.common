@@ -45,13 +45,6 @@ ifeq ($(CXX_COMPILER_GNU),yes)
   CXXFLAGS_COMMON += $(GCC_CXX_WARNINGS) -g
 endif
 
-# This is the Libtool option to specify the runtime path of shared
-# libraries that the program Libtools builds will link at runtime.
-# That's important on a system where you don't locate a shared library
-# by using a standard search path at run time.
-
-RPATH = -rpath $(LIBINST_DIR)
-
 DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
 # MIN is the minor version number for shared libraries.
@@ -139,9 +132,15 @@ ifeq ($(SHARED_LIB_TYPE),NONE)
   install-shared-libraries:
   endif
 
-# To use this rule, the including make file must set a target_specific
+# To use this rule, the including make file must set a target-specific
 # variable LIBOBJECTS (and declare dependencies that include LIBOBJECTS).
 # Analogous to static library rule above.
+
+# Optionally, including make file can set LIBDEP (probably
+# target-specific) to the -L and -l options necessary to declare the
+# libraries the target uses at run time.  (This information gets built
+# into the shared library so that the runtime library loader will load
+# the specified libraries when asked to load the target library).
 
 ifeq ($(SHARED_LIB_TYPE),NONE)
   TARGET_SHARED_LIBRARIES =
@@ -154,12 +153,13 @@ else
     $(call shliblefn, $(TARGET_LIBRARY_NAMES) $(TARGET_LIB_NAMES_PP))
 endif
 
+#------ the actual rules ----------------------------------------------------
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
-	$(CCLD) $(LDFLAGS_SHLIB) -o $@ $(LIBOBJECTS) $(LADD)
+	$(CCLD) $(LDFLAGS_SHLIB) $(LIBDEP) -o $@ $(LIBOBJECTS) $(LADD)
 
 $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
-	$(CXXLD) $(LDFLAGS_SHLIB) -o $@ $(LIBOBJECTS) $(LADD)
-
+	$(CXXLD) $(LDFLAGS_SHLIB) $(LIBDEP) -o $@ $(LIBOBJECTS) $(LADD)
+#----------------------------------------------------------------------------
 
 LIBXMLRPC_UTIL_DIR = $(BLDDIR)/lib/libutil
 
@@ -171,17 +171,22 @@ endif
 
 ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
 
-LIBXMLRPC                = $(BLDDIR)/src/libxmlrpc.la
-LIBXMLRPC_CLIENT         = $(BLDDIR)/src/libxmlrpc_client.la
-LIBXMLRPC_SERVER         = $(BLDDIR)/src/libxmlrpc_server.la
-LIBXMLRPC_SERVER_ABYSS   = $(BLDDIR)/src/libxmlrpc_server_abyss.la
-LIBXMLRPC_SERVER_CGI     = $(BLDDIR)/src/libxmlrpc_server_cgi.la
+LIBXMLRPC              = \
+  $(call shliblefn, $(BLDDIR)/src/libxmlrpc)
+LIBXMLRPC_CLIENT       = \
+  $(call shliblefn, $(BLDDIR)/src/libxmlrpc_client)
+LIBXMLRPC_SERVER       = \
+  $(call shliblefn, $(BLDDIR)/src/libxmlrpc_server)
+LIBXMLRPC_SERVER_ABYSS = \
+  $(call shliblefn, $(BLDDIR)/src/libxmlrpc_server_abyss)
+LIBXMLRPC_SERVER_CGI   = \
+  $(call shliblefn, $(BLDDIR)/src/libxmlrpc_server_cgi)
 
-LIBXMLRPC_A              = $(BLDDIR)/src/.libs/libxmlrpc.a
-LIBXMLRPC_CLIENT_A       = $(BLDDIR)/src/.libs/libxmlrpc_client.a
-LIBXMLRPC_SERVER_A       = $(BLDDIR)/src/.libs/libxmlrpc_server.a
-LIBXMLRPC_SERVER_ABYSS_A = $(BLDDIR)/src/.libs/libxmlrpc_server_abyss.a
-LIBXMLRPC_SERVER_CGI_A   = $(BLDDIR)/src/.libs/libxmlrpc_server_cgi.a
+LIBXMLRPC_A              = $(BLDDIR)/src/libxmlrpc.a
+LIBXMLRPC_CLIENT_A       = $(BLDDIR)/src/libxmlrpc_client.a
+LIBXMLRPC_SERVER_A       = $(BLDDIR)/src/libxmlrpc_server.a
+LIBXMLRPC_SERVER_ABYSS_A = $(BLDDIR)/src/libxmlrpc_server_abyss.a
+LIBXMLRPC_SERVER_CGI_A   = $(BLDDIR)/src/libxmlrpc_server_cgi.a
 
 endif
 
@@ -281,7 +286,7 @@ endif
 $(TARGET_MODS:%=%.o):%.o:%.c
 	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $<
 
-$(TARGET_MODS:%=%.o): CFLAGS_COMMON += $(CFLAGS_SHLIB)
+$(TARGET_MODS:%=%.osh): CFLAGS_COMMON += $(CFLAGS_SHLIB)
 
 $(TARGET_MODS:%=%.osh):%.osh:%.c
 	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $(CFLAGS_SHLIB) $<
@@ -362,19 +367,25 @@ $(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
 ##############################################################################
 
 ifneq ($(OMIT_WININET_TRANSPORT_RULE),Y)
-$(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
+$(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.o \
+$(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.osh \
+: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \
 	    $(notdir $@)
 endif
 
 ifneq ($(OMIT_CURL_TRANSPORT_RULE),Y)
-$(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo: FORCE
+$(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.o \
+$(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.osh \
+: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/curl_transport/Makefile \
 	    $(notdir $@)
 endif
 
 ifneq ($(OMIT_LIBWWW_TRANSPORT_RULE),Y)
-$(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
+$(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.o \
+$(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.osh \
+: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libwww_transport/Makefile \
 	    $(notdir $@)
 endif

@@ -8,13 +8,26 @@ SUBDIR := lib/curl_transport
 
 include $(BLDDIR)/Makefile.config
 
+default: all
+
+.PHONY: all
+all: xmlrpc_curl_transport.o xmlrpc_curl_transport.osh
+
+# Rules for the above dependencies are in Makefile.common,
+# courtesy of TARGET_MODS.
+
+TARGET_MODS = xmlrpc_curl_transport
+
+OMIT_CURL_TRANSPORT_RULE=Y
+
+include $(SRCDIR)/Makefile.common
+
 CURL_INCLUDES := $(shell curl-config --cflags)
 # We expect that curl-config --cflags just gives us -I options, because
 # we need just the -I options for 'make dep'.  Plus, it's scary to think
 # of what any other compiler flag would do to our compile.
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = $(LADD)
 
 INCLUDES = \
   -I$(BLDDIR) \
@@ -22,11 +35,6 @@ INCLUDES = \
   -I$(SRCDIR)/include \
   -I$(SRCDIR)/lib/util/include \
   $(CURL_INCLUDES)
-
-default: all
-
-.PHONY: all
-all: xmlrpc_curl_transport.lo
 
 .PHONY: clean
 clean: clean-common
@@ -46,15 +54,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
-OMIT_CURL_TRANSPORT_RULE=Y
-
-include $(SRCDIR)/Makefile.common
-
 include Makefile.depend
-
-xmlrpc_curl_transport.lo:%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
 
 # Need this dependency for those who don't use Makefile.depend.
 # Without it, version.h doesn't get created.
-xmlrpc_curl_transport.lo: version.h
+xmlrpc_curl_transport.o xmlrpc_curl_transport.osh: version.h

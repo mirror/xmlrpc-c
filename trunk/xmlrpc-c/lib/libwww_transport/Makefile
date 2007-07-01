@@ -8,10 +8,23 @@ SUBDIR := lib/libwww_transport
 
 include $(BLDDIR)/Makefile.config
 
+default: all
+
+.PHONY: all
+all: xmlrpc_libwww_transport.o xmlrpc_libwww_transport.osh
+
+# Rules for the above dependencies are in Makefile.common,
+# courtesy of TARGET_MODS.
+
+TARGET_MODS = xmlrpc_libwww_transport
+
+OMIT_LIBWWW_TRANSPORT_RULE=Y
+
+include $(SRCDIR)/Makefile.common
+
 LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = $(LADD)
 
 INCLUDES = \
   -I$(BLDDIR) \
@@ -19,11 +32,6 @@ INCLUDES = \
   -I$(SRCDIR)/include \
   -I$(SRCDIR)/lib/util/include \
   $(LIBWWW_INCLUDES)
-
-default: all
-
-.PHONY: all
-all: xmlrpc_libwww_transport.lo
 
 .PHONY: clean
 clean: clean-common
@@ -43,13 +51,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
-OMIT_LIBWWW_TRANSPORT_RULE=Y
-
-include $(SRCDIR)/Makefile.common
-
 include Makefile.depend
 
-xmlrpc_libwww_transport.lo:%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
-
-
+# Need this dependency for those who don't use Makefile.depend.
+# Without it, version.h doesn't get created.
+xmlrpc_libwww_transport.o xmlrpc_libwww_transport.osh: version.h

@@ -8,15 +8,23 @@ SUBDIR := lib/wininet_transport
 
 include $(BLDDIR)/Makefile.config
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = -lpthread $(LADD)
-
-INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/include
-
 default: all
 
 .PHONY: all
 all: xmlrpc_wininet_transport.lo
+
+# Rules for the above dependencies are in Makefile.common,
+# courtesy of TARGET_MODS.
+
+TARGET_MODS = xmlrpc_wininet_transport
+
+OMIT_WININET_TRANSPORT_RULE=Y
+
+include $(SRCDIR)/Makefile.common
+
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/include
 
 .PHONY: clean
 clean: clean-common
@@ -36,11 +44,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
-OMIT_WININET_TRANSPORT_RULE=Y
-
-include $(SRCDIR)/Makefile.common
-
 include Makefile.depend
 
-xmlrpc_wininet_transport.lo:%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+# Need this dependency for those who don't use Makefile.depend.
+# Without it, version.h doesn't get created.
+xmlrpc_wininet_transport.o xmlrpc_wininet_transport.osh: version.h

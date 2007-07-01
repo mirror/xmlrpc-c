@@ -133,8 +133,6 @@ $(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_PACKETSOCKET): $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
 $(LIBXMLRPC_PACKETSOCKET): LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
 
-# Rules for these are in Makefile.common, courtesy of TARGET_LIB_NAMES_PP:
-
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o
 
