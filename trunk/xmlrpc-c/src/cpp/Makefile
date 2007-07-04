@@ -86,17 +86,6 @@ BASIC_INCLUDES = \
   -Isrcdir/lib/util/include
 
 
-# LIBXMLRPC_CPP is e.g. "libxmlrpc_cpp.so.3.1"
-
-LIBXMLRPC_CPP              = $(call shlibfn, libxmlrpc_cpp)
-LIBXMLRPCPP                = $(call shlibfn, libxmlrpc++)
-LIBXMLRPC_SERVERPP         = $(call shlibfn, libxmlrpc_server++)
-LIBXMLRPC_SERVER_ABYSSPP   = $(call shlibfn, libxmlrpc_server_abyss++)
-LIBXMLRPC_SERVER_PSTREAMPP = $(call shlibfn, libxmlrpc_server_pstream++)
-LIBXMLRPC_CLIENTPP         = $(call shlibfn, libxmlrpc_client++)
-LIBXMLRPC_PACKETSOCKET     = $(call shlibfn, libxmlrpc_packetsocket)
-
-
 # TARGET_STATIC_LIBARIES, etc. are set by Makefile.common, based on
 # TARGET_LIB_NAMES_PP.
 
@@ -112,23 +101,57 @@ all: \
 
 # Rules for these are in Makefile.common, courtesy of TARGET_LIB_NAMES_PP:
 
+# shlibfn generates e.g. libxmlrpc.so.3.1
+# shliblefn generates e.g. libxmlrpc.so
+
+LIBXMLRPC_CPP = $(call shlibfn, libxmlrpc_cpp)
+
 $(LIBXMLRPC_CPP): XmlRpcCpp.osh
 $(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.osh
 
-$(LIBXMLRPCPP): $(LIBXMLRPCPP_MODS:%=%.osh)
+LIBXMLRPCPP = $(call shlibfn, libxmlrpc++)
+
+$(LIBXMLRPCPP): $(LIBXMLRPCPP_MODS:%=%.osh) \
+  $(LIBXMLRPC)
 $(LIBXMLRPCPP): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
+$(LIBXMLRPCPP): LIBDEP = -Lblddir/src -lxmlrpc
 
-$(LIBXMLRPC_SERVERPP): $(LIBXMLRPC_SERVERPP_MODS:%=%.osh )
+LIBXMLRPC_SERVERPP = $(call shlibfn, libxmlrpc_server++)
+
+$(LIBXMLRPC_SERVERPP): $(LIBXMLRPC_SERVERPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_SERVER) \
+  $(LIBXMLRPC)
 $(LIBXMLRPC_SERVERPP): LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVERPP): LIBDEP = -Lblddir/src -lxmlrpc_server -lxmlrpc
 
-$(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
+LIBXMLRPC_SERVER_ABYSSPP = $(call shlibfn, libxmlrpc_server_abyss++)
+
+$(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC)
 $(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_ABYSSPP): LIBDEP = \
+  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlprc_abyss -Lblddir/src -lxmlrpc
 
-$(LIBXMLRPC_SERVER_PSTREAMPP): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh)
+LIBXMLRPC_SERVER_PSTREAMPP = $(call shlibfn, libxmlrpc_server_pstream++)
+
+$(LIBXMLRPC_SERVER_PSTREAMPP): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_SERVER) \
+  $(LIBXMLRPC_PACKETSOCKET)
 $(LIBXMLRPC_SERVER_PSTREAMPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_PSTREAMPP): LIBDEP = \
+  -Lblddir/src -lxmlrpc_server -L. -lxmlrpc_packetsocket
 
-$(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
+LIBXMLRPC_CLIENTPP = $(call shlibfn, libxmlrpc_client++)
+
+$(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
+  $(LIBXMLRPCPP) \
+  $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
+$(LIBXMLRPC_CLIENTPP): LIBDEP = \
+  -L. -lxmlrpc++ -Lblddir/src -lxmlrpc_client
+
+LIBXMLRPC_PACKETSOCKET = $(call shlibfn, libxmlrpc_packetsocket)
 
 $(LIBXMLRPC_PACKETSOCKET): $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
 $(LIBXMLRPC_PACKETSOCKET): LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
