@@ -117,14 +117,6 @@ include $(SRCDIR)/Makefile.common
 
 $(SRCDIR)/Makefile.common: srcdir blddir
 
-# LIBXMLRPC_CLIENT is e.g. "libxmlrpc_client.so.3.1"
-
-LIBXMLRPC                  = $(call shlibfn, libxmlrpc)
-LIBXMLRPC_SERVER           = $(call shlibfn, libxmlrpc_server)
-LIBXMLRPC_SERVER_ABYSS     = $(call shlibfn, libxmlrpc_server_abyss)
-LIBXMLRPC_SERVER_CGI       = $(call shlibfn, libxmlrpc_server_cgi)
-LIBXMLRPC_CLIENT           = $(call shlibfn, libxmlrpc_client)
-
 # TARGET_STATIC_LIBRARIES, etc. are set by Makefile.common, based on
 # TARGET_LIBRARY_NAMES.
 
@@ -147,6 +139,11 @@ endif
 
 # Rules for these are in Makefile.common, courtesy of TARGET_LIBRARY_NAMES:
 
+# shlibfn generates e.g. libxmlrpc.so.3.1
+# shliblefn generates e.g. libxmlrpc.so
+
+LIBXMLRPC = $(call shlibfn, libxmlrpc)
+
 $(LIBXMLRPC): $(LIBXMLRPC_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
   $(XML_PARSER_LIBDEP_DEP)
@@ -155,20 +152,24 @@ $(LIBXMLRPC): LIBDEP = \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
   $(XML_PARSER_LIBDEP)
 
+LIBXMLRPC_SERVER = $(call shlibfn, libxmlrpc_server)
+
 $(LIBXMLRPC_SERVER): \
   $(LIBXMLRPC_SERVER_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
-  $(LIBXMLRPC)
+  $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_SERVER): LIBOBJECTS = $(LIBXMLRPC_SERVER_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER): LIBDEP = \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -L. -lxmlrpc
 
+LIBXMLRPC_SERVER_ABYSS = $(call shlibfn, libxmlrpc_server_abyss)
+
 $(LIBXMLRPC_SERVER_ABYSS): \
   $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
-  $(LIBXMLRPC_SERVER) \
-  $(LIBXMLRPC_ABYSS) \
-  $(LIBXMLRPC)
+  $(call shliblefn, libxmlrpc_server) \
+  $(call shliblefn, libxmlrpc_abyss) \
+  $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_SERVER_ABYSS): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSS): LIBDEP = \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
@@ -176,20 +177,24 @@ $(LIBXMLRPC_SERVER_ABYSS): LIBDEP = \
   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
   -lxmlrpc
 
+LIBXMLRPC_SERVER_CGI = $(call shlibfn, libxmlrpc_server_cgi)
+
 $(LIBXMLRPC_SERVER_CGI): \
   $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh) \
   $(LIBXMRPC_UTIL) \
-  $(LIBXMLRPC_SERVER) \
-  $(LIBXMLRPC)
+  $(call shliblefn, libxmlrpc_server) \
+  $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_SERVER_CGI): LIBOBJECTS = $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_CGI): LIBDEP = \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -L. -lxmlrpc_server -lxmlrpc
+
+LIBXMLRPC_CLIENT = $(call shlibfn, libxmlrpc_client)
 
 $(LIBXMLRPC_CLIENT): \
   $(LIBXMLRPC_CLIENT_MODS:%=%.osh) \
   $(TRANSPORT_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
-  $(LIBXMLRPC)
+  $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_CLIENT): LIBOBJECTS = \
   $(LIBXMLRPC_CLIENT_MODS:%=%.osh) \
   $(TRANSPORT_MODS:%=%.osh)
