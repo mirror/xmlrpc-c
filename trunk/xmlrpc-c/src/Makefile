@@ -167,8 +167,8 @@ LIBXMLRPC_SERVER_ABYSS = $(call shlibfn, libxmlrpc_server_abyss)
 $(LIBXMLRPC_SERVER_ABYSS): \
   $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
+  $(LIBXMLRPC_ABYSS) \
   $(call shliblefn, libxmlrpc_server) \
-  $(call shliblefn, libxmlrpc_abyss) \
   $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_SERVER_ABYSS): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSS): LIBDEP = \
