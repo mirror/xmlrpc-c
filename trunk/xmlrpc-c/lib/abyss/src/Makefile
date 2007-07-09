@@ -96,7 +96,7 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 
 # Need this dependency for those who don't use Makefile.depend.
 # Without it, version.h doesn't get created.
-response.o response.osh: version.h
+response.o response.osh handler.o handler.osh: version.h
 
 .PHONY: clean
 clean: clean-common
