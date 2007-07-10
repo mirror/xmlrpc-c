@@ -131,7 +131,7 @@ $(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSSPP): LIBDEP = \
-  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlprc_abyss -Lblddir/src -lxmlrpc
+  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss -Lblddir/src -lxmlrpc
 
 LIBXMLRPC_SERVER_PSTREAMPP = $(call shlibfn, libxmlrpc_server_pstream++)
 
