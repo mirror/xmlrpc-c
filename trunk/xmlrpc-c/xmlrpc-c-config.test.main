@@ -30,12 +30,12 @@ fi
 
 needCpp=no
 
-LIBXMLRPC="${BLDDIR}/src/.libs/libxmlrpc.a"
+LIBXMLRPC="${BLDDIR}/src/libxmlrpc.a"
 LIBXMLRPC_UTIL="${BLDDIR}/lib/libutil/libxmlrpc_util.a"
 
 the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML} $the_libs"
 the_includes="-I${BLDDIR}/include -I${ABS_SRCDIR}/include $the_includes"
-sopath="${BLDDIR}/src/.libs:$sopath"
+sopath="${BLDDIR}/src:$sopath"
 
 while test $# -gt 0; do
   case $1 in
@@ -45,9 +45,9 @@ while test $# -gt 0; do
       # and server.  So all legacy C++ programs get linked with client
       # and server libraries, whether they need them or not.
 
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server_abyss.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_client.a $the_libs"
       the_libs="${BLDDIR}/src/cpp/libxmlrpc_cpp.a $the_libs"
       ;;
     c++2)
@@ -58,11 +58,11 @@ while test $# -gt 0; do
       packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
       ;;
     server-util)
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       ;;
     cgi-server)
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server_cgi.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server_cgi.a $the_libs"
       ;;
     abyss-server)
       if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
@@ -70,8 +70,8 @@ while test $# -gt 0; do
         fi
       the_libs="${LSOCKET} $the_libs"
       the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server_abyss.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server_abyss.a $the_libs"
       if test "${needCpp}" = "yes"; then
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
@@ -81,13 +81,13 @@ while test $# -gt 0; do
     pstream-server)
       the_libs="${LSOCKET} $the_libs"
       the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_pstream++.a $the_libs"
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
       the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_pstream++.a $the_libs"
       packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
       ;;
     client)
-      the_libs="${BLDDIR}/src/.libs/libxmlrpc_client.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_client.a $the_libs"
       if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
         the_libs="$WININET_LDADD $the_libs"
         the_rpath="$WININET_RPATH $the_rpath"
