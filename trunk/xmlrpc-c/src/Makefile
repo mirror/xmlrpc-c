@@ -39,9 +39,7 @@ SHARED_LIBS_TO_BUILD := $(TARGET_LIBRARY_NAMES)
 SHARED_LIBS_TO_INSTALL := $(TARGET_LIBRARY_NAMES)
 
 # TRANSPORT_MODS is the list of modules that have to go into the client
-# library to provide the client XML transport functions.  Since there
-# is some variability in what XML transports we can build into the
-# client library, this is a little complicated.
+# library to provide the client XML transport functions.
 
 # TRANSPORT_LIBDEP is linker -l options to declare what libraries contain
 # things to which the transport objects refer.  (like LIBxxx_LIBDEP --
@@ -216,7 +214,7 @@ libxmlrpc_server_abyss.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.o)
 libxmlrpc_server_cgi.a: $(LIBXMLRPC_SERVER_CGI_MODS:%=%.o)
 libxmlrpc_server_cgi.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_CGI_MODS:%=%.o)
 
-libxmlrpc_client.a: $(LIBXMLRPC_CLIENT_MODS:%=%.o)
+libxmlrpc_client.a: $(LIBXMLRPC_CLIENT_MODS:%=%.o) $(TRANSPORT_MODS:%=%.o)
 libxmlrpc_client.a: LIBOBJECTS = \
   $(LIBXMLRPC_CLIENT_MODS:%=%.o) \
   $(TRANSPORT_MODS:%=%.o)
