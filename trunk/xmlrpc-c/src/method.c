@@ -26,12 +26,271 @@
 #include "method.h"
 
 
+static void
+signatureDestroy(struct xmlrpc_signature * const signatureP) {
+
+    if (signatureP->argList)
+        free(signatureP->argList);
+
+    free(signatureP);
+}
+
+
+
+static void
+translateTypeSpecifierToName(xmlrpc_env *  const envP,
+                             char          const typeSpecifier,
+                             const char ** const typeNameP) {
+
+    switch (typeSpecifier) {
+    case 'i': *typeNameP = "int";              break;
+    case 'b': *typeNameP = "boolean";          break;
+    case 'd': *typeNameP = "double";           break;
+    case 's': *typeNameP = "string";           break;
+    case '8': *typeNameP = "dateTime.iso8601"; break;
+    case '6': *typeNameP = "base64";           break;
+    case 'S': *typeNameP = "struct";           break;
+    case 'A': *typeNameP = "array";            break;
+    case 'n': *typeNameP = "nil";              break;
+    default:
+        xmlrpc_faultf(envP, 
+                      "Method registry contains invalid signature "
+                      "data.  It contains the type specifier '%c'",
+                      typeSpecifier);
+    }
+}
+                
+
+
+static void
+makeRoomInArgList(xmlrpc_env *              const envP,
+                  struct xmlrpc_signature * const signatureP,
+                  unsigned int              const minArgCount) {
+
+    if (signatureP->argListSpace < minArgCount) {
+        REALLOCARRAY(signatureP->argList, minArgCount);
+        if (signatureP->argList == NULL) {
+            xmlrpc_faultf(envP, "Couldn't get memory for a argument list for "
+                          "a method signature with %u arguments", minArgCount);
+            signatureP->argListSpace = 0;
+        }
+    }
+}
+
+
+
+static void
+parseArgumentTypeSpecifiers(xmlrpc_env *              const envP,
+                            const char *              const startP,
+                            struct xmlrpc_signature * const signatureP,
+                            const char **             const nextPP) {
+    const char * cursorP;
+
+    cursorP = startP;  /* start at the beginning */
+
+    while (!envP->fault_occurred && *cursorP != ',' && *cursorP != '\0') {
+        const char * typeName;
+
+        translateTypeSpecifierToName(envP, *cursorP, &typeName);
+
+        if (!envP->fault_occurred) {
+            ++cursorP;
+
+            makeRoomInArgList(envP, signatureP, signatureP->argCount + 1);
+
+            signatureP->argList[signatureP->argCount++] = typeName;
+        }
+    }
+    if (!envP->fault_occurred) {
+        if (*cursorP) {
+            XMLRPC_ASSERT(*cursorP == ',');
+            ++cursorP;  /* Move past the signature and comma */
+        }
+    }
+    if (envP->fault_occurred) 
+        free(signatureP->argList);
+
+    *nextPP = cursorP;
+}
+
+
+
+static void
+parseOneSignature(xmlrpc_env *               const envP,
+                  const char *               const startP,
+                  struct xmlrpc_signature ** const signaturePP,
+                  const char **              const nextPP) {
+/*----------------------------------------------------------------------------
+   Parse one signature from the signature string that starts at 'startP'.
+
+   Return that signature as a signature object *signaturePP.
+
+   Return as *nextP the location in the signature string of the next
+   signature (i.e. right after the next comma).  If there is no next
+   signature (the string ends before any comma), make it point to the
+   terminating NUL.
+-----------------------------------------------------------------------------*/
+    struct xmlrpc_signature * signatureP;
+
+    MALLOCVAR(signatureP);
+    if (signatureP == NULL)
+        xmlrpc_faultf(envP, "Couldn't get memory for signature");
+    else {
+        const char * cursorP;
+
+        signatureP->argListSpace = 0;  /* Start with no argument space */
+        signatureP->argList = NULL;   /* Nothing allocated yet */
+        signatureP->argCount = 0;  /* Start with no arguments */
+
+        cursorP = startP;  /* start at the beginning */
+
+        if (*cursorP == ',' || *cursorP == '\0')
+            xmlrpc_faultf(envP, "empty signature (a signature "
+                          "must have at least  return value type)");
+        else {
+            translateTypeSpecifierToName(envP, *cursorP, &signatureP->retType);
+
+            ++cursorP;
+
+            if (*cursorP != ':')
+                xmlrpc_faultf(envP, "No colon (':') after "
+                              "the result type specifier");
+            else {
+                ++cursorP;
+
+                parseArgumentTypeSpecifiers(envP, cursorP, signatureP, nextPP);
+            }
+        }
+        if (envP->fault_occurred)
+            free(signatureP);
+        else
+            *signaturePP = signatureP;
+    }
+}    
+
+
+
+static void
+destroySignatures(struct xmlrpc_signature * const firstSignatureP) {
+
+    struct xmlrpc_signature * p;
+    struct xmlrpc_signature * nextP;
+
+    for (p = firstSignatureP; p; p = nextP) {
+        nextP = p->nextP;
+        signatureDestroy(p);
+    }
+}
+
+
+
+static void
+listSignatures(xmlrpc_env *               const envP,
+               const char *               const sigListString,
+               struct xmlrpc_signature ** const firstSignaturePP) {
+    
+    struct xmlrpc_signature ** p;
+    const char * cursorP;
+
+    *firstSignaturePP = NULL;  /* Start with empty list */
+    
+    p = firstSignaturePP;
+    cursorP = &sigListString[0];
+    
+    while (!envP->fault_occurred && *cursorP != '\0') {
+        struct xmlrpc_signature * signatureP;
+        
+        parseOneSignature(envP, cursorP, &signatureP, &cursorP);
+        
+        /* cursorP now points at next signature in the list or the
+           terminating NUL.
+        */
+        
+        if (!envP->fault_occurred) {
+            signatureP->nextP = NULL;
+            *p = signatureP;
+            p = &signatureP->nextP;
+        }
+    }
+    if (envP->fault_occurred)
+        destroySignatures(*firstSignaturePP);
+}
+
+
+
+static void
+signatureListCreate(xmlrpc_env *            const envP,
+                    const char *            const sigListString,
+                    xmlrpc_signatureList ** const signatureListPP) {
+
+    xmlrpc_signatureList * signatureListP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    
+    MALLOCVAR(signatureListP);
+
+    if (signatureListP == NULL)
+        xmlrpc_faultf(envP, "Could not allocate memory for signature list");
+    else {
+        signatureListP->firstSignatureP = NULL;
+
+        if (sigListString == NULL || xmlrpc_streq(sigListString, "?")) {
+            /* No signatures -- leave the list empty */
+        } else {
+            listSignatures(envP, sigListString,
+                           &signatureListP->firstSignatureP);
+
+            if (!envP->fault_occurred) {
+                if (!signatureListP->firstSignatureP)
+                    xmlrpc_faultf(envP, "Signature string is empty.");
+
+                if (envP->fault_occurred)
+                    destroySignatures(signatureListP->firstSignatureP);
+            }
+        }
+        if (envP->fault_occurred)
+            free(signatureListP);
+
+        *signatureListPP = signatureListP;
+    }
+}
+
+
+
+static void
+signatureListDestroy(xmlrpc_signatureList * const signatureListP) {
+
+    destroySignatures(signatureListP->firstSignatureP);
+
+    free(signatureListP);
+}
+
+
+
+static void
+makeSignatureList(xmlrpc_env *            const envP,
+                  const char *            const signatureString,
+                  xmlrpc_signatureList ** const signatureListPP) {
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    signatureListCreate(&env, signatureString, signatureListPP);
+
+    if (env.fault_occurred)
+        xmlrpc_faultf(envP, "Can't interpret signature string '%s'.  %s",
+                      signatureString, env.fault_string);
+}
+
+
+
 void
 xmlrpc_methodCreate(xmlrpc_env *           const envP,
                     xmlrpc_method1               methodFnType1,
                     xmlrpc_method2               methodFnType2,
                     void *                 const userData,
-                    xmlrpc_signatureList * const signatureListP,
+                    const char *           const signatureString,
                     const char *           const helpText,
                     xmlrpc_methodInfo **   const methodPP) {
 
@@ -48,9 +307,13 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
         methodP->methodFnType1  = methodFnType1;
         methodP->methodFnType2  = methodFnType2;
         methodP->userData       = userData;
-        methodP->signatureListP = signatureListP;
         methodP->helpText       = strdup(helpText);
-    
+
+        makeSignatureList(envP, signatureString, &methodP->signatureListP);
+
+        if (envP->fault_occurred)
+            free(methodP);
+
         *methodPP = methodP;
     }
 }
@@ -60,6 +323,8 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
 void
 xmlrpc_methodDestroy(xmlrpc_methodInfo * const methodP) {
     
+    signatureListDestroy(methodP->signatureListP);
+
     xmlrpc_strfree(methodP->helpText);
 
     free(methodP);
