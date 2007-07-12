@@ -32,6 +32,8 @@ using girerr::throwf;
 
 #include "xmlrpc-c/client_transport.hpp"
 
+using namespace std;
+
 namespace xmlrpc_c {
 
 

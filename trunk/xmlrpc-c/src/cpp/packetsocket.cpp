@@ -44,6 +44,7 @@
 
 #define _BSD_SOURCE        // gets uint defined
 
+#include <cassert>
 #include <string>
 #include <queue>
 #include <iostream>

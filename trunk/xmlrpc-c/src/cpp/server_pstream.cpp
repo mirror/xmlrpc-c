@@ -30,6 +30,8 @@ using girerr::throwf;
 
 #include "xmlrpc-c/server_pstream.hpp"
 
+using namespace std;
+
 namespace xmlrpc_c {
 
 

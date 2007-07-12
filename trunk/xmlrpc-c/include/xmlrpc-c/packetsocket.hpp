@@ -24,22 +24,22 @@ class packet : public girmem::autoObject {
 public:
     packet();
 
-    packet::packet(const unsigned char * const data,
+    packet(const unsigned char * const data,
                    size_t                const dataLength);
 
-    packet::packet(const char * const data,
+    packet(const char * const data,
                    size_t       const dataLength);
 
     ~packet();
 
     unsigned char *
-    packet::getBytes() const { return this->bytes; }
+    getBytes() const { return this->bytes; }
 
     size_t
-    packet::getLength() const { return this->length; }
+    getLength() const { return this->length; }
 
     void
-    packet::addData(const unsigned char * const data,
+    addData(const unsigned char * const data,
                     size_t                const dataLength);
 
 private:
@@ -59,7 +59,7 @@ class packetPtr: public girmem::autoObjectPtr {
 public:
     packetPtr();
 
-    explicit packetPtr::packetPtr(packet * const packetP);
+    explicit packetPtr(packet * const packetP);
 
     packet *
     operator->() const;
@@ -117,23 +117,23 @@ private:
     } escAccum;
 
     void
-    packetSocket::bufferFinishedPacket();
+    bufferFinishedPacket();
 
     void
-    packetSocket::takeSomeEscapeSeq(const unsigned char * const buffer,
+    takeSomeEscapeSeq(const unsigned char * const buffer,
                                     size_t                const length,
                                     size_t *              const bytesTakenP);
 
     void
-    packetSocket::takeSomePacket(const unsigned char * const buffer,
+    takeSomePacket(const unsigned char * const buffer,
                                  size_t                const length,
                                  size_t *              const bytesTakenP);
 
     void
-    packetSocket::verifyNothingAccumulated();
+    verifyNothingAccumulated();
 
     void
-    packetSocket::readFromFile();
+    readFromFile();
 
 };
 

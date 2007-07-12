@@ -17,6 +17,7 @@
 #include <unistd.h>
 #endif
 #include <cassert>
+#include <iostream>
 #include <sys/signal.h>
 
 #include <xmlrpc-c/base.hpp>

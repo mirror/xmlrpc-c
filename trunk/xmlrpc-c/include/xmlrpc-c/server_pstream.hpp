@@ -30,12 +30,12 @@ public:
         } present;
     };
 
-    serverPstreamConn::serverPstreamConn(constrOpt const& opt);
+    serverPstreamConn(constrOpt const& opt);
 
-    serverPstreamConn::~serverPstreamConn();
+    ~serverPstreamConn();
 
     void
-    serverPstreamConn::runOnce(bool * const eofP);
+    runOnce(bool * const eofP);
 
 private:
 
@@ -54,10 +54,10 @@ private:
         // This is permanently connected to our fixed client.
 
     void
-    serverPstreamConn::establishRegistry(constrOpt const& opt);
+    establishRegistry(constrOpt const& opt);
 
     void
-    serverPstreamConn::establishPacketSocket(constrOpt const& opt);
+    establishPacketSocket(constrOpt const& opt);
 };
 
 
