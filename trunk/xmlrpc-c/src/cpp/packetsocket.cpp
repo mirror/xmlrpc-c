@@ -25,6 +25,7 @@
 
        <ESC>PKT : marks the end of a packet.
        <ESC>ESC : represents an <ESC> character in the packet
+       <ESC>NOP : no meaning
 
      Any other bytes after <ESC> is a protocol error.  End of
      stream anywhere but after <ESC>PKT or beginning of stream is
@@ -35,6 +36,10 @@
   You can create a pstream transport from any file descriptor from which
   you can read and write a bidirectional character stream.  Typically,
   it's a TCP socket.
+
+  One use of the NOP control word is to validate that the connection
+  is still working.  You might send one periodically to detect, for
+  example, an unplugged TCP/IP network cable.
 ============================================================================*/
 
 #define _BSD_SOURCE        // gets uint defined
@@ -267,7 +272,10 @@ packetSocket::takeSomeEscapeSeq(const unsigned char * const buffer,
     assert(this->escAccum.len <= 3);
 
     if (this->escAccum.len == 3) {
-        if (xmlrpc_memeq(this->escAccum.bytes, "PKT", 3)) {
+        if (0) {
+        } else if (xmlrpc_memeq(this->escAccum.bytes, "NOP", 3)) {
+            // Nothing to do
+        } else if (xmlrpc_memeq(this->escAccum.bytes, "PKT", 3)) {
             bufferFinishedPacket();
         } else if (xmlrpc_memeq(this->escAccum.bytes, "ESC", 3)) {
             this->packetAccumP->addData((const unsigned char *)ESC_STR, 1);
@@ -405,7 +413,7 @@ packetSocket::read(bool *      const eofP,
    return *gotPacketP true.  Otherwise, return *gotPacketP false.
 
    Iff the socket has no more data coming (it is shut down) and there
-   is no complete line in the line buffer, return *eofP.
+   is no complete packet in the packet buffer, return *eofP.
 
    This leaves one other possibility: there is no full packet immediately
    available, but there may be in the future because the socket is still
