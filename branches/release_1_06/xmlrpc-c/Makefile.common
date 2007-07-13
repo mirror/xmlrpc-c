@@ -72,7 +72,7 @@ MIN = 06
 # only when we make a non-backward-compatible change to the library.  So
 # e.g. libxmlrpc for Xmlrpc-c 1.06.01 is named libxmlrpc.so.3.6.1.
 
-LDFLAGS_VERSINFO = -version-info 9:14:6  # 3.6.14
+LDFLAGS_VERSINFO = -version-info 9:15:6  # 3.6.15
 
 # CURDIR was introduced in GNU Make 3.77.
 ifeq ($(CURDIR)x,x)

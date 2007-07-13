@@ -102,6 +102,23 @@ Because the link options say to search /usr/lib _before_ the local
 build directory.  And it does that because curl-config erroneously
 says that you need a -L /usr/lib link option to find the Curl library.
 
+64 Bit Linux -fPIC 
+------------------
+
+The GNU link-editor produces this error message when building the C++
+libraries for certain 64 bit machines:
+
+  relocation R_X86_64_32 against `a local symbol' can not be used when
+  making a shared object; recompile with -fPIC
+
+Xmlrpc-c 1.06 C++ libraries are not designed for these platforms.
+(Releases starting with 1.07 are).
+
+You can work around this by adding a setting of the CADD make variable
+to your make command:
+
+  make CADD=-fPIC
+
 
 WINDOWS
 -------
