@@ -4,7 +4,7 @@
   Test the client C++ facilities of XML-RPC for C/C++.
   
   Contrary to what you might expect, we use the server facilities too
-  because we test of the client using a simulated server, via the
+  because we test much of the client using a simulated server, via the
   "direct" client XML transport we define herein.
 =============================================================================*/
 #include <string>
@@ -135,6 +135,10 @@ public:
         rpcSampleAdd1P->start(&clientDirect, &carriageParmDirect);
         rpcPtr const rpcSampleAdd2P("sample.add", paramListSampleAdd2);
         rpcSampleAdd2P->start(&clientDirect, &carriageParmDirect);
+
+        // Note that for clientXmlTransport_direct, start() and call() are
+        // the same thing.  I.e. the RPC is guaranteed finished as soon
+        // as it is started.
 
         TEST(rpcSampleAdd1P->isFinished());
         TEST(rpcSampleAdd1P->isSuccessful());
@@ -279,6 +283,12 @@ public:
         clientXmlTransportPtr transport1P(new clientXmlTransport_curl);
         clientXmlTransportPtr transport2P;
         transport2P = transport1P;
+
+        time_t nowtime = time(NULL);
+        transport2P->finishAsync(timeout());
+        transport2P->finishAsync(timeout(2000));
+        transport2P->finishAsync(2000);
+        TEST(time(NULL) <= nowtime + 1);
 #else
         EXPECT_ERROR(clientXmlTransport_curl transport0;);
         EXPECT_ERROR(clientXmlTransport_curl transport1("eth0"););
