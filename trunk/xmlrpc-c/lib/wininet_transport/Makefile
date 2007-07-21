@@ -11,7 +11,7 @@ include $(BLDDIR)/Makefile.config
 default: all
 
 .PHONY: all
-all: xmlrpc_wininet_transport.lo
+all: xmlrpc_wininet_transport.o xmlrpc_wininet_transport.osh
 
 # Rules for the above dependencies are in Makefile.common,
 # courtesy of TARGET_MODS.
@@ -24,7 +24,11 @@ include $(SRCDIR)/Makefile.common
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/include
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(BLDDIR)/include \
+  -I$(SRCDIR)/include \
+  -I$(SRCDIR)/lib/util/include \
 
 .PHONY: clean
 clean: clean-common
