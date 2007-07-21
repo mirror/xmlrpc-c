@@ -425,7 +425,8 @@ collect(void *  const ptr,
         FILE  * const stream) {
 /*----------------------------------------------------------------------------
    This is a Curl output function.  Curl calls this to deliver the
-   HTTP response body.  Curl thinks it's writing to a POSIX stream.
+   HTTP response body to the Curl client.  Curl thinks it's writing to
+   a POSIX stream.
 -----------------------------------------------------------------------------*/
     xmlrpc_mem_block * const responseXmlP = (xmlrpc_mem_block *) stream;
     char * const buffer = ptr;
@@ -495,6 +496,10 @@ setupCurlSession(xmlrpc_env *             const envP,
    Set up the Curl session for the transaction *curlTransactionP so that
    a subsequent curl_easy_perform() would perform said transaction.
 
+   The data curl_easy_perform() would send for that transaction would 
+   be the contents of *callXmlP; the data curl_easy_perform() gets back
+   would go into *responseXmlP.
+
    'interruptP' is a pointer to an interrupt flag -- a flag that becomes
    nonzero when the user wants to abandon this Curl session.  NULL means
    there is no interrupt flag; user will never want to abandon the session.
@@ -510,7 +515,6 @@ setupCurlSession(xmlrpc_env *             const envP,
     if (!envP->fault_occurred) {
         curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS, 
                          XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP));
-        
         curl_easy_setopt(curlSessionP, CURLOPT_WRITEFUNCTION, collect);
         curl_easy_setopt(curlSessionP, CURLOPT_FILE, responseXmlP);
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
@@ -1002,7 +1006,7 @@ waitForWork(xmlrpc_env *       const envP,
    Thus, if a signal of that class arrived any time after Caller
    checked, we will return immediately or when the signal arrives,
    whichever is sooner.  Note that we can provide this service only
-   only because pselect() has the same atomic unblock/wait feature.
+   because pselect() has the same atomic unblock/wait feature.
    
    If sigmaskP is NULL, wait under whatever the current signal mask
    is.
@@ -2005,7 +2009,7 @@ finishAsynch(
        problem back up the user, but for now we just do this Hail Mary
        response.
 
-       Note that a failure of finishCurlSessions() does not mean that
+       Note that a failure of curlMult_finish() does not mean that
        a session completed with an error or an RPC completed with an
        error.  Those things are reported up through the user's 
        xmlrpc_transport_asynch_complete routine.  A failure here is
