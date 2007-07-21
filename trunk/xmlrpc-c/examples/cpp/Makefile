@@ -35,6 +35,7 @@ LEGACY_CLIENTPROGS = \
 CLIENTPROGS = \
   xmlrpc_sample_add_client \
   sample_add_client_complex \
+  asynch_client \
 
 # Build up PROGS:
 PROGS = 
@@ -47,7 +48,11 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
   PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)
 endif
 
-PROGS += pstream_client pstream_inetd_server
+PROGS += pstream_inetd_server
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += pstream_client
+endif
 
 INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 
