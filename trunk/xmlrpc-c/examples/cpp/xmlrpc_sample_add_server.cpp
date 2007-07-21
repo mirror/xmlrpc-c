@@ -1,4 +1,5 @@
 #include <cassert>
+#include <unistd.h>
 #include <stdexcept>
 #include <iostream>
 
@@ -28,6 +29,11 @@ public:
         paramList.verifyEnd(2);
         
         *retvalP = xmlrpc_c::value_int(addend + adder);
+
+        // Sometimes, make it look hard (so client can see what it's like
+        // to do an RPC that takes a while).
+        if (y == 1)
+            sleep(2);
     }
 };
 
