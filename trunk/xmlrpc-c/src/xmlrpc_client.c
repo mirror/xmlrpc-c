@@ -43,21 +43,33 @@ struct xmlrpc_client {
 
 
 
-typedef struct xmlrpc_call_info {
-    /* These fields are used when performing asynchronous calls.
-    ** The _asynch_data_holder contains server_url, method_name and
-    ** param_array, so it's the only thing we need to free. */
-    xmlrpc_value *_asynch_data_holder;
-    char *server_url;
-    char *method_name;
-    xmlrpc_value *param_array;
-    xmlrpc_response_handler callback;
-    void *user_data;
+struct xmlrpc_call_info {
+    /* This is all the information needed to finish executing a started
+       RPC.
 
+       You don't need this for an RPC the user executes synchronously,
+       because then you can just use the storage in which the user passed
+       his arguments.  But for asynchronous, the user will take back his
+       storage, and we need to keep this info in our own.
+    */
+
+    struct {
+        /* This are arguments to pass to the completion function.  It
+           doesn't make sense to use them for anything else.  In fact, it
+           really doesn't make sense for them to be arguments to the
+           completion function, but they are historically.  */
+        const char *   serverUrl;
+        const char *   methodName;
+        xmlrpc_value * paramArrayP;
+        void *         userData;
+    } completionArgs;
+    xmlrpc_response_handler completionFn;
+
+    
     /* The serialized XML data passed to this call. We keep this around
     ** for use by our source_anchor field. */
     xmlrpc_mem_block *serialized_xml;
-} xmlrpc_call_info;
+};
 
 
 
@@ -191,9 +203,8 @@ getTransportOps(
         *opsPP = &xmlrpc_libwww_transport_ops;
 #endif
     else
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Unrecognized XML transport name '%s'", transportName);
+        xmlrpc_faultf(envP, "Unrecognized XML transport name '%s'",
+                      transportName);
 }
 
 
@@ -457,9 +468,7 @@ makeCallXml(xmlrpc_env *               const envP,
     XMLRPC_ASSERT_PTR_OK(callXmlPP);
 
     if (methodName == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "method name argument is NULL pointer");
+        xmlrpc_faultf(envP, "method name argument is NULL pointer");
     else {
         xmlrpc_mem_block * callXmlP;
 
@@ -730,93 +739,52 @@ xmlrpc_client_call2f(xmlrpc_env *    const envP,
 =========================================================================*/
 
 static void 
-call_info_set_asynch_data(xmlrpc_env *       const env,
-                          xmlrpc_call_info * const info,
-                          const char *       const server_url,
-                          const char *       const method_name,
-                          xmlrpc_value *     const argP,
-                          xmlrpc_response_handler responseHandler,
-                          void *             const user_data) {
+callInfoSetCompletion(xmlrpc_env *              const envP,
+                      struct xmlrpc_call_info * const callInfoP,
+                      const char *              const serverUrl,
+                      const char *              const methodName,
+                      xmlrpc_value *            const paramArrayP,
+                      xmlrpc_response_handler         completionFn,
+                      void *                    const userData) {
 
-    xmlrpc_value *holder;
-
-    /* Error-handling preconditions. */
-    holder = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(info);
-    XMLRPC_ASSERT(info->_asynch_data_holder == NULL);
-    XMLRPC_ASSERT_PTR_OK(server_url);
-    XMLRPC_ASSERT_PTR_OK(method_name);
-    XMLRPC_ASSERT_VALUE_OK(argP);
-
-    /* Install our callback and user_data.
-    ** (We're not responsible for destroying the user_data.) */
-    info->callback  = responseHandler;
-    info->user_data = user_data;
-
-    /* Build an XML-RPC data structure to hold our other data. This makes
-    ** copies of server_url and method_name, and increments the reference
-    ** to the argument *argP. */
-    holder = xmlrpc_build_value(env, "(ssV)",
-                                server_url, method_name, argP);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Parse the newly-allocated structure into our public member variables.
-    ** This doesn't make any new references, so we can dispose of the whole
-    ** thing by DECREF'ing the one master reference. Nifty, huh? */
-    xmlrpc_parse_value(env, holder, "(ssV)",
-                       &info->server_url,
-                       &info->method_name,
-                       &info->param_array);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Hand over ownership of the holder to the call_info struct. */
-    info->_asynch_data_holder = holder;
-    holder = NULL;
-
- cleanup:
-    if (env->fault_occurred) {
-        if (holder)
-            xmlrpc_DECREF(holder);
+    callInfoP->completionFn = completionFn;
+    callInfoP->completionArgs.userData = userData;
+    callInfoP->completionArgs.serverUrl = strdup(serverUrl);
+    if (callInfoP->completionArgs.serverUrl == NULL)
+        xmlrpc_faultf(envP, "Couldn't get memory to store server URL");
+    else {
+        callInfoP->completionArgs.methodName = strdup(methodName);
+        if (callInfoP->completionArgs.methodName == NULL)
+            xmlrpc_faultf(envP, "Couldn't get memory to store method name");
+        else {
+            callInfoP->completionArgs.paramArrayP = paramArrayP;
+            xmlrpc_INCREF(paramArrayP);
+        }
+        if (envP->fault_occurred)
+            xmlrpc_strfree(callInfoP->completionArgs.serverUrl);
     }
 }
 
 
 
-static void 
-call_info_free(xmlrpc_call_info * const callInfoP) {
-
-    /* Assume the worst.. That only parts of the call_info are valid. */
-
-    XMLRPC_ASSERT_PTR_OK(callInfoP);
-
-    /* If this has been allocated, we're responsible for destroying it. */
-    if (callInfoP->_asynch_data_holder)
-        xmlrpc_DECREF(callInfoP->_asynch_data_holder);
-
-    /* Now we can blow away the XML data. */
-    if (callInfoP->serialized_xml)
-         xmlrpc_mem_block_free(callInfoP->serialized_xml);
-
-    free(callInfoP);
-}
-
-
-
 static void
-callInfoNew(xmlrpc_env *        const envP,
-            const char *        const methodName,
-            xmlrpc_value *      const paramArrayP,
-            xmlrpc_dialect      const dialect,
-            xmlrpc_call_info ** const callInfoPP) {
+callInfoCreate(xmlrpc_env *               const envP,
+               const char *               const methodName,
+               xmlrpc_value *             const paramArrayP,
+               xmlrpc_dialect             const dialect,
+               const char *               const serverUrl,
+               xmlrpc_response_handler          completionFn,
+               void *                     const userData,
+               struct xmlrpc_call_info ** const callInfoPP) {
 /*----------------------------------------------------------------------------
    Create a call_info object.  A call_info object represents an XML-RPC
    call.
 -----------------------------------------------------------------------------*/
     struct xmlrpc_call_info * callInfoP;
 
-    XMLRPC_ASSERT_PTR_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(serverUrl);
+    XMLRPC_ASSERT_PTR_OK(methodName);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
     XMLRPC_ASSERT_PTR_OK(callInfoPP);
 
     MALLOCVAR(callInfoP);
@@ -825,9 +793,6 @@ callInfoNew(xmlrpc_env *        const envP,
     else {
         xmlrpc_mem_block * callXmlP;
 
-        /* Clear contents. */
-        memset(callInfoP, 0, sizeof(*callInfoP));
-        
         makeCallXml(envP, methodName, paramArrayP, dialect, &callXmlP);
 
         if (!envP->fault_occurred) {
@@ -839,10 +804,31 @@ callInfoNew(xmlrpc_env *        const envP,
             
             *callInfoPP = callInfoP;
 
+            callInfoSetCompletion(envP, callInfoP, serverUrl, methodName,
+                                  paramArrayP, completionFn, userData);
+
             if (envP->fault_occurred)
                 free(callInfoP);
         }
     }
+}
+
+
+
+static void 
+callInfoDestroy(struct xmlrpc_call_info * const callInfoP) {
+
+    XMLRPC_ASSERT_PTR_OK(callInfoP);
+
+    if (callInfoP->completionFn) {
+        xmlrpc_DECREF(callInfoP->completionArgs.paramArrayP);
+        xmlrpc_strfree(callInfoP->completionArgs.methodName);
+        xmlrpc_strfree(callInfoP->completionArgs.serverUrl);
+    }
+    if (callInfoP->serialized_xml)
+         xmlrpc_mem_block_free(callInfoP->serialized_xml);
+
+    free(callInfoP);
 }
 
 
@@ -917,16 +903,17 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
             }
         }
     }
-    /* Call the user's callback function with the result */
-    (*callInfoP->callback)(callInfoP->server_url, 
-                           callInfoP->method_name, 
-                           callInfoP->param_array,
-                           callInfoP->user_data, &env, resultP);
+    /* Call the user's completion function with the RPC result */
+    (*callInfoP->completionFn)(callInfoP->completionArgs.serverUrl, 
+                               callInfoP->completionArgs.methodName, 
+                               callInfoP->completionArgs.paramArrayP,
+                               callInfoP->completionArgs.userData,
+                               &env, resultP);
 
     if (!env.fault_occurred)
         xmlrpc_DECREF(resultP);
 
-    call_info_free(callInfoP);
+    callInfoDestroy(callInfoP);
 
     xmlrpc_env_clean(&env);
 }
@@ -939,34 +926,31 @@ xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
                         xmlrpc_server_info *     const serverInfoP,
                         const char *             const methodName,
                         xmlrpc_value *           const argP,
-                        xmlrpc_response_handler        responseHandler,
+                        xmlrpc_response_handler        completionFn,
                         void *                   const userData) {
     
-    xmlrpc_call_info * callInfoP;
+    struct xmlrpc_call_info * callInfoP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(clientP);
     XMLRPC_ASSERT_PTR_OK(serverInfoP);
     XMLRPC_ASSERT_PTR_OK(methodName);
-    XMLRPC_ASSERT_PTR_OK(responseHandler);
     XMLRPC_ASSERT_VALUE_OK(argP);
 
-    callInfoNew(envP, methodName, argP, clientP->dialect, &callInfoP);
-    if (!envP->fault_occurred) {
-        call_info_set_asynch_data(envP, callInfoP, 
-                                  serverInfoP->_server_url, methodName,
-                                  argP, responseHandler, userData);
-        if (!envP->fault_occurred)
-            clientP->transportOps.send_request(
-                envP, clientP->transportP, serverInfoP,
-                callInfoP->serialized_xml,
-                &asynchComplete, callInfoP);
+    callInfoCreate(envP, methodName, argP, clientP->dialect,
+                   serverInfoP->_server_url, completionFn, userData,
+                   &callInfoP);
 
-        if (envP->fault_occurred)
-            call_info_free(callInfoP);
-        else {
-            /* asynchComplete() will free *callInfoP */
-        }
+    if (!envP->fault_occurred)
+        clientP->transportOps.send_request(
+            envP, clientP->transportP, serverInfoP,
+            callInfoP->serialized_xml,
+            &asynchComplete, callInfoP);
+    
+    if (envP->fault_occurred)
+        callInfoDestroy(callInfoP);
+    else {
+        /* asynchComplete() will destroy *callInfoP */
     }
 }
 
