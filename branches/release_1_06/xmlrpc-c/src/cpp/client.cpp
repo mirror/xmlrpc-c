@@ -215,6 +215,51 @@ xmlTransactionPtr::operator->() const {
 
 
 
+struct xmlTranCtl {
+/*----------------------------------------------------------------------------
+   This contains information needed to conduct a transaction.  You
+   construct it as you start the transaction and destroy it after the
+   work is done.  You need this only for an asynchronous one, because
+   where the user starts and finishes the RPC in the same
+   libxmlrpc_client call, you can just keep this information in
+   various stack variables, and it's faster and easier to understand
+   that way.
+
+   The C transport is designed to take a xmlrpc_call_info argument for
+   similar stuff needed by the the C client object.  But it's really
+   opaque to the transport, so we just let xmlTranCtl masquerade as
+   xmlprc_call_info in our call to the C transport.
+-----------------------------------------------------------------------------*/
+    xmlTranCtl(xmlTransactionPtr const& xmlTranP,
+               string            const& callXml) :
+
+        xmlTranP(xmlTranP) {
+
+        env_wrap env;
+
+        this->callXmlP = XMLRPC_MEMBLOCK_NEW(char, &env.env_c, 0);
+        throwIfError(env);
+
+        XMLRPC_MEMBLOCK_APPEND(char, &env.env_c, this->callXmlP,
+                               callXml.c_str(), callXml.size());
+        throwIfError(env);
+    }
+    
+    ~xmlTranCtl() {
+        XMLRPC_MEMBLOCK_FREE(char, this->callXmlP);
+    }
+
+    xmlTransactionPtr const xmlTranP;
+        // The transaction we're controlling.  Most notable use of this is
+        // that this object we inform when the transaction is done.  This
+        // is where the response XML and other transaction results go.
+
+    xmlrpc_mem_block * callXmlP;
+        // The XML of the call.  This is what the transport transports.
+};
+
+
+
 clientXmlTransport::~clientXmlTransport() {}
 
 
@@ -247,17 +292,16 @@ clientXmlTransport::asyncComplete(
     xmlrpc_mem_block *        const responseXmlMP,
     xmlrpc_env                const transportEnv) {
 
-    xmlTransactionPtr * const xmlTranPP =
-        reinterpret_cast<xmlTransactionPtr *>(callInfoP);
+    xmlTranCtl * const xmlTranCtlP = reinterpret_cast<xmlTranCtl *>(callInfoP);
 
     try {
         if (transportEnv.fault_occurred) {
-            (*xmlTranPP)->finishErr(error(transportEnv.fault_string));
+            xmlTranCtlP->xmlTranP->finishErr(error(transportEnv.fault_string));
         } else {
             string const responseXml(
                 XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlMP),
                 XMLRPC_MEMBLOCK_SIZE(char, responseXmlMP));
-            (*xmlTranPP)->finish(responseXml);
+            xmlTranCtlP->xmlTranP->finish(responseXml);
         }
     } catch(error) {
         /* We can't throw an error back to C code, and the async_complete
@@ -266,12 +310,12 @@ clientXmlTransport::asyncComplete(
         */
         assert(false);
     }
-    delete(xmlTranPP);
+    delete(xmlTranCtlP);
 
-    /* Ordinarily, *xmlTranPP is the last reference to **xmlTranPP
-       (The xmlTransaction), so it will get destroyed too.  But
+    /* Ordinarily, *xmlTranCtlP is the last reference to
+       xmlTranCtlP->xmlTranP, so that will get destroyed too.  But
        ->finish() could conceivably create a new reference to
-       **xmlTranPP, and then it would keep living.
+       xmlTranCtlP->xmlTranP, and then it would keep living.
     */
 }
 
@@ -361,26 +405,20 @@ clientXmlTransport_http::start(
         throw(error("HTTP client XML transport called with carriage "
                     "parameter object not of type carriageParm_http"));
 
-    memblockStringWrapper callXmlM(callXml);
-
-    /* xmlTranP2 is the reference to the XML transaction that is held by
-       the running transaction, in C code.  It lives in dynamically allocated
-       storage and xmlTranP2P points to it.
-    */
-    xmlTransactionPtr * const xmlTranP2P(new xmlTransactionPtr(xmlTranP));
+    xmlTranCtl * const tranCtlP(new xmlTranCtl(xmlTranP, callXml));
 
     try {
         this->c_transportOpsP->send_request(
             &env.env_c,
             this->c_transportP,
             carriageParmHttpP->c_serverInfoP,
-            callXmlM.memblockP,
+            tranCtlP->callXmlP,
             &this->asyncComplete,
-            reinterpret_cast<xmlrpc_call_info *>(xmlTranP2P));
+            reinterpret_cast<xmlrpc_call_info *>(tranCtlP));
 
         throwIfError(env);
     } catch (...) {
-        delete xmlTranP2P;
+        delete tranCtlP;
         throw;
     }
 }
