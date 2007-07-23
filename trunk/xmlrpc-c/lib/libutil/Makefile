@@ -64,11 +64,11 @@ $(SRCDIR)/Makefile.common: srcdir blddir
 .PHONY: all
 all: libxmlrpc_util.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in Makefile.common, courtesy of TARGET_LIBRARY_NAMES:
 $(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
 $(UTIL_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
+# Rule for this is in Makefile.common, courtesy of TARGET_LIBRARY_NAMES:
 
 libxmlrpc_util.a: $(TARGET_MODS:%=%.o)
 libxmlrpc_util.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
