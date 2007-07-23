@@ -69,6 +69,9 @@ public:
           std::string                    const& methodName,
           xmlrpc_c::paramList            const& paramList,
           xmlrpc_c::clientTransactionPtr const& tranP);
+
+    void
+    finishAsync(xmlrpc_c::timeout const timeout);
 };
 
 class clientPtr : public girmem::autoObjectPtr {
