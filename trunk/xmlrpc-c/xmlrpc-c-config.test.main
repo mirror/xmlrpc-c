@@ -20,7 +20,7 @@ sopath=
 packetsocket_lib=
 
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
-  LIBXML=$(xml2-config --libs)
+  LIBXML=`xml2-config --libs`
 else
   LIBXML="${BLDDIR}/lib/expat/xmlparse/libxmlrpc_xmlparse.a"
   sopath="${BLDDIR}/lib/expat/xmlparse:$sopath"

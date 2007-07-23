@@ -27,7 +27,7 @@ if test $# -eq 0; then
 fi
 
 if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
-  LIBXML=$(xml2-config --libs)
+  LIBXML=`xml2-config --libs`
 else
   LIBXML="-lxmlrpc_xmlparse -lxmlrpc_xmltok"
 fi
