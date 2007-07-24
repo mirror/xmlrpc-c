@@ -278,6 +278,13 @@ struct curlTransaction {
            an RPC is, but since we use it only for that, we might as well
            use the specific type here).
         */
+    CURLcode result;
+        /* Result of the transaction (succeeded, TCP connect failed, etc.).
+           A properly executed HTTP transaction (request & response) counts
+           as a successful transaction.  When 'result' show success,
+           curl_easy_get_info() tells you whether the transaction succeeded
+           at the HTTP level.
+        */
     char curlError[CURL_ERROR_SIZE];
         /* Error message from Curl */
     struct curl_slist * headerList;
@@ -975,6 +982,8 @@ processCurlMessages(xmlrpc_env * const envP,
 
                 curlMulti_removeHandle(curlMultiP, curlTransactionP);
 
+                curlTransactionP->result = curlMsg.data.result;
+
                 if (curlTransactionP->finish)
                     curlTransactionP->finish(envP, curlTransactionP);
             }
@@ -1208,25 +1217,31 @@ static void
 getCurlTransactionError(curlTransaction * const curlTransactionP,
                         xmlrpc_env *      const envP) {
 
-    CURLcode res;
-    long http_result;
-
-    res = curl_easy_getinfo(curlTransactionP->curlSessionP,
-                            CURLINFO_HTTP_CODE, &http_result);
-    
-    if (res != CURLE_OK)
+    if (curlTransactionP->result != CURLE_OK)
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Curl performed the HTTP POST request, but was "
-            "unable to say what the HTTP result code was.  "
-            "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
-            curlTransactionP->curlError);
+            envP, XMLRPC_NETWORK_ERROR, "libcurl failed to execute the "
+            "HTTP POST transaction.  %s", curlTransactionP->curlError);
     else {
-        if (http_result != 200)
+        CURLcode res;
+        long http_result;
+        
+        res = curl_easy_getinfo(curlTransactionP->curlSessionP,
+                                CURLINFO_HTTP_CODE, &http_result);
+    
+        if (res != CURLE_OK)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_NETWORK_ERROR,
-                "HTTP response code is %ld, not 200",
-                http_result);
+                envP, XMLRPC_INTERNAL_ERROR, 
+                "Curl performed the HTTP POST request, but was "
+                "unable to say what the HTTP result code was.  "
+                "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
+                curlTransactionP->curlError);
+        else {
+            if (http_result != 200)
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_NETWORK_ERROR,
+                    "HTTP response code is %ld, not 200",
+                    http_result);
+        }
     }
 }
 
