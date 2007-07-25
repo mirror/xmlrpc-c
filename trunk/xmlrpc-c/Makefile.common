@@ -390,43 +390,32 @@ $(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.osh \
 	    $(notdir $@)
 endif
 
-$(LIBXMLRPC_ABYSS): FORCE
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
-	    $(notdir $@)
-
-$(LIBXMLRPC_XMLPARSE): FORCE
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
-	    $(notdir $@)
-
-$(LIBXMLRPC_XMLTOK): FORCE
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
-	    $(notdir $@)
-
-$(LIBXMLRPC_UTIL): FORCE
-	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libutil/Makefile \
-	    $(notdir $@)
-
 $(LIBXMLRPC) \
 $(LIBXMLRPC_CLIENT) \
 $(LIBXMLRPC_SERVER) \
 $(LIBXMLRPC_SERVER_ABYSS) \
-$(LIBXMLRPC_SERVER_CGI): FORCE
+$(LIBXMLRPC_SERVER_CGI) \
+$(LIBXMLRPC_A) \
+$(LIBXMLRPC_CLIENT_A) \
+$(LIBXMLRPC_SERVER_A) \
+$(LIBXMLRPC_SERVER_ABYSS_A) \
+$(LIBXMLRPC_SERVER_CGI_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPC_UTIL_A) : FORCE
+$(LIBXMLRPC_UTIL) $(LIBXMLRPC_UTIL_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libutil/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPC_XMLPARSE_A) : FORCE
+$(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLPARSE_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPC_XMLTOK_A) : FORCE
+$(LIBXMLRPC_XMLTOK) $(LIBXMLRPC_XMLTOK_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
 	    $(notdir $@)
 
-$(LIBXMLRPC_ABYSS_A): FORCE
+$(LIBXMLRPC_ABYSS) $(LIBXMLRPC_ABYSS_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
 	    $(notdir $@)
 
@@ -438,12 +427,6 @@ $(LIBXMLRPC_SERVER_ABYSSPP) $(LIBXMLRPC_SERVER_ABYSSPP_A) \
 $(LIBXMLRPC_CPP) $(LIBXMLRPC_CPP_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
-
-$(LIBXMLRPC_A):              $(LIBXMLRPC)
-$(LIBXMLRPC_CLIENT_A):       $(LIBXMLRPC_CLIENT)
-$(LIBXMLRPC_SERVER_A):       $(LIBXMLRPC_SERVER)
-$(LIBXMLRPC_SERVER_ABYSS_A): $(LIBXMLRPC_SERVER_ABYSS)
-$(LIBXMLRPC_SERVER_CGI_A):   $(LIBXMLRPC_SERVER_CGI)
 
 ifneq ($(OMIT_UTILS_RULE),Y)
 $(UTILS): FORCE
