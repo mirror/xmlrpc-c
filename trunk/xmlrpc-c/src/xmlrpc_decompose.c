@@ -63,7 +63,11 @@ struct doubleDecomp {
     double * valueP;
 };
 
-struct dateTime8Decomp {
+struct datetimeTDecomp {
+    time_t * valueP;
+};
+
+struct datetime8Decomp {
     const char ** valueP;
 };
 
@@ -140,7 +144,8 @@ struct decompTreeNode {
         struct integerDecomp    Tinteger;
         struct boolDecomp       Tbool;
         struct doubleDecomp     Tdouble;
-        struct dateTime8Decomp  TdateTime8;
+        struct datetimeTDecomp  TdatetimeT;
+        struct datetime8Decomp  Tdatetime8;
         struct stringDecomp     Tstring;
         struct wideStringDecomp TwideString;
         struct bitStringDecomp  TbitString;
@@ -204,11 +209,12 @@ releaseDecomposition(const struct decompTreeNode * const decompRootP,
     case 'd':
     case 'n':
     case 'I':
+    case 't':
     case 'p':
         /* Nothing was allocated; nothing to release */
         break;
     case '8':
-        xmlrpc_strfree(*decompRootP->store.TdateTime8.valueP);
+        xmlrpc_strfree(*decompRootP->store.Tdatetime8.valueP);
         break;
     case 's':
         xmlrpc_strfree(*decompRootP->store.Tstring.valueP);
@@ -413,10 +419,10 @@ readStringWLp(xmlrpc_env *     const envP,
 
 
 static void
-readDatetimeStr(xmlrpc_env *         const envP,
-                const xmlrpc_value * const valueP,
-                const char **        const stringValueP,
-                bool                 const oldstyleMemMgmt) {
+readDatetime8Str(xmlrpc_env *         const envP,
+                 const xmlrpc_value * const valueP,
+                 const char **        const stringValueP,
+                 bool                 const oldstyleMemMgmt) {
 
     if (oldstyleMemMgmt)
         xmlrpc_read_datetime_str_old(envP, valueP, stringValueP);
@@ -462,9 +468,14 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
         xmlrpc_read_double(envP, valueP, decompRootP->store.Tdouble.valueP);
         break;
 
+    case 't':
+        xmlrpc_read_datetime_sec(envP, valueP,
+                                 decompRootP->store.TdatetimeT.valueP);
+        break;
+
     case '8':
-        readDatetimeStr(envP, valueP, decompRootP->store.TdateTime8.valueP,
-                        oldstyleMemMgmt);
+        readDatetime8Str(envP, valueP, decompRootP->store.Tdatetime8.valueP,
+                         oldstyleMemMgmt);
         break;
 
     case 's':
@@ -935,11 +946,13 @@ createDecompTreeNext(xmlrpc_env *             const envP,
                 (double*) va_arg(*argsP, double*);
             break;
             
+        case 't':
+            decompNodeP->store.TdatetimeT.valueP =
+                va_arg(*argsP, time_t*);
+            break;
+
         case '8':
-            /* The code 't' is reserved for a better, time_t based
-               implementation of dateTime conversion. 
-            */
-            decompNodeP->store.TdateTime8.valueP =
+            decompNodeP->store.Tdatetime8.valueP =
                 (const char**) va_arg(*argsP, char**);
             break;
 

@@ -283,12 +283,12 @@ getValue(xmlrpc_env *    const envP,
         getWideString(envP, formatP, argsP, valPP);
         break;
 
-    /* The code 't' is reserved for a better, time_t based
-       implementation of dateTime conversion.  
-    */
+    case 't':
+        *valPP = xmlrpc_datetime_new_sec(envP, va_arg(*argsP, time_t));
+        break;
+
     case '8':
-        *valPP = 
-            xmlrpc_datetime_new_str(envP, (char*) va_arg(*argsP, char*));
+        *valPP = xmlrpc_datetime_new_str(envP, va_arg(*argsP, char*));
         break;
 
     case '6':
@@ -306,9 +306,6 @@ getValue(xmlrpc_env *    const envP,
         break;
 
     case 'p':
-        /* We might someday want to use the code 'p!' to read in a
-           cleanup function for this pointer. 
-        */
         *valPP = 
             xmlrpc_cptr_new(envP, (void*) va_arg(*argsP, void*));
         break;      

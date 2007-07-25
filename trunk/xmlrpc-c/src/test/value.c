@@ -250,14 +250,67 @@ test_value_datetime_invalid(const char * const datestring) {
 
 
 static void
+test_build_decomp_datetime(void) {
+
+    const char * datestring = "19980717T14:08:55";
+    time_t const datetime = 900684535;
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    time_t dt;
+    const char * ds;
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_build_value(&env, "t", datetime);
+    TEST_NO_FAULT(&env);
+    TEST(v != NULL);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_DATETIME);
+
+    dt = 0;
+    xmlrpc_read_datetime_sec(&env, v, &dt);
+    TEST(dt == datetime);
+
+    dt = 0;
+    xmlrpc_decompose_value(&env, v, "t", &dt);
+    xmlrpc_DECREF(v);
+    TEST_NO_FAULT(&env);
+    TEST(dt == datetime);
+
+    v = xmlrpc_int_new(&env, 9);
+    TEST_NO_FAULT(&env);
+    xmlrpc_decompose_value(&env, v, "t", &dt);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+    xmlrpc_decompose_value(&env, v, "8", &ds);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+    xmlrpc_env_clean(&env);
+    xmlrpc_env_init(&env);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_build_value(&env, "8", datestring);
+    TEST_NO_FAULT(&env);
+    TEST(v != NULL);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_DATETIME);
+    xmlrpc_decompose_value(&env, v, "8", &ds);
+    xmlrpc_DECREF(v);
+    TEST_NO_FAULT(&env);
+    TEST(streq(ds, datestring));
+    strfree(ds);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 test_value_datetime(void) {
 
     const char * datestring = "19980717T14:08:55";
     time_t const datetime = 900684535;
 
-    xmlrpc_value * v;
     xmlrpc_env env;
-    const char * ds;
 
     xmlrpc_env_init(&env);
 
@@ -289,17 +342,7 @@ test_value_datetime(void) {
     test_value_datetime_invalid("19701301T10:00:00");
     test_value_datetime_invalid("19700132T10:00:00");
 
-    /* xmlrpc_build_value() */
-
-    v = xmlrpc_build_value(&env, "8", datestring);
-    TEST_NO_FAULT(&env);
-    TEST(v != NULL);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-    xmlrpc_decompose_value(&env, v, "8", &ds);
-    xmlrpc_DECREF(v);
-    TEST_NO_FAULT(&env);
-    TEST(streq(ds, datestring));
-    strfree(ds);
+    test_build_decomp_datetime();
 
     xmlrpc_env_clean(&env);
 }
