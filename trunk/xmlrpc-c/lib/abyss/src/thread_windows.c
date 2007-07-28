@@ -24,12 +24,28 @@
 
 struct abyss_thread {
     HANDLE handle;
+    TThreadProc *   func;
+    TThreadDoneFn * threadDone;
 };
 
 #define  THREAD_STACK_SIZE (16*1024L)
 
 
 typedef uint32_t (WINAPI WinThreadProc)(void *);
+
+
+static WinThreadProc threadRun;
+
+static uint32_t
+threadRun(void * const arg) {
+
+    struct abyss_thread * const threadP = arg;
+
+    threadP->func(threadP->userHandle);
+
+    threadP->threadDone(threadP->userHandle);
+}
+
 
 
 void
@@ -49,8 +65,12 @@ ThreadCreate(TThread **      const threadPP,
         xmlrpc_asprintf(errorP,
                         "Can't allocate memory for thread descriptor.");
     else {
+        threadP->userHandle = userHandle;
+        threadP->func       = func;
+        threadP->threadDone = threadDone;
+
         threadP->handle = _beginthreadex(NULL, THREAD_STACK_SIZE, func, 
-                                         (WinThreadProc)arg,
+                                         threadP,
                                          CREATE_SUSPENDED, &z);
         if (threadP->handle == NULL)
             xmlrpc_asprintf(errorP, "_beginthreadex() failed.");
@@ -119,12 +139,21 @@ ThreadForks(void) {
 
 
 
+/*********************************************************************
+** Mutex
+*********************************************************************/
+
+struct abyss_mutex {
+    HANDLE winMutex;
+};
+
+
 abyss_bool
 MutexCreate(TMutex * const mutexP) {
     
-    *mutexP = CreateMutex(NULL, FALSE, NULL);
+    mutexP->winMutex = CreateMutex(NULL, FALSE, NULL);
 
-    return (*mutexP != NULL);
+    return (mutexP->winMutex != NULL);
 }
 
 
@@ -132,26 +161,26 @@ MutexCreate(TMutex * const mutexP) {
 abyss_bool
 MutexLock(TMutex * const mutexP) {
 
-    return (WaitForSingleObject(*mutexP, INFINITE) != WAIT_TIMEOUT);
+    return (WaitForSingleObject(mutexP->HANDLE, INFINITE) != WAIT_TIMEOUT);
 }
 
 
 
 abyss_bool
 MutexUnlock(TMutex * const mutexP) {
-    return ReleaseMutex(*mutexP);
+    return ReleaseMutex(mutexP->HANDLE);
 }
 
 
 
 abyss_bool
 MutexTryLock(TMutex * const mutexP) {
-    return (WaitForSingleObject(*mutexP, 0) != WAIT_TIMEOUT);
+    return (WaitForSingleObject(mutexP->HANDLE, 0) != WAIT_TIMEOUT);
 }
 
 
 
 void
 MutexFree(TMutex * const mutexP) {
-    CloseHandle(*mutexP);
+    CloseHandle(mutexP->HANDLE);
 }
