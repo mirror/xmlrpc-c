@@ -41,7 +41,7 @@ LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 XMLRPC_OBJS = xmlrpc.o dumpvalue.o
 
 xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(CLIENT_LDLIBS) $(UTILS)
+	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
 
 %.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS) $<
@@ -58,7 +58,7 @@ dep: dep-common
 
 .PHONY: clean
 clean: clean-common
-	rm -f xmlrpc config.h
+	rm -f xmlrpc
 
 .PHONY: distclean
 distclean: clean distclean-common
