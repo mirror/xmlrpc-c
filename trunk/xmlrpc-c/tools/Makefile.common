@@ -9,7 +9,7 @@
 # Note that in a properly configured system, curl-config, etc. do not
 # generate -L options for general directories.
 
-CLIENT_LDLIBS = -L$(BLDDIR)/src/.libs -L$(BLDDIR)/lib/libutil
+CLIENT_LDLIBS = -L$(BLDDIR)/src -L$(BLDDIR)/lib/libutil
 
 CLIENT_LDLIBS += -lxmlrpc_client -lxmlrpc -lxmlrpc_util
 
