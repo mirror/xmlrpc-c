@@ -56,6 +56,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#include <sys/time.h>
 
 #include "xmlrpc_config.h"
 
@@ -1489,7 +1490,8 @@ sendRequest(xmlrpc_env *                     const envP,
 
 static void
 finishCurlTransaction(xmlrpc_env * const envP ATTR_UNUSED,
-                      CURL *       const curlSessionP) {
+                      CURL *       const curlSessionP,
+                      CURLcode     const result) {
 /*----------------------------------------------------------------------------
   Handle the event that a Curl transaction has completed on the Curl
   session identified by 'curlSessionP'.
@@ -1514,7 +1516,12 @@ finishCurlTransaction(xmlrpc_env * const envP ATTR_UNUSED,
 
         xmlrpc_env_init(&env);
 
-        getCurlTransactionError(curlTransactionP, &env);
+        if (result != CURLE_OK) {
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_NETWORK_ERROR, "libcurl failed to execute the "
+                "HTTP POST transaction.  %s", curlTransactionP->curlError);
+        } else
+            getCurlTransactionError(curlTransactionP, &env);
 
         rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
 
@@ -1585,7 +1592,8 @@ processCurlMessages(xmlrpc_env *       const envP,
 
         if (!endOfMessages) {
             if (curlMsg.msg == CURLMSG_DONE)
-                finishCurlTransaction(envP, curlMsg.easy_handle);
+                finishCurlTransaction(envP, curlMsg.easy_handle,
+                                      curlMsg.data.result);
         }
     }
 }
