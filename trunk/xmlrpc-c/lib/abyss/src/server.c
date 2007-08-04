@@ -601,6 +601,20 @@ serverFunc(void * const userHandle) {
 
 
 static void
+createSwitchFromPortNum(uint16_t       const portNumber,
+                        TChanSwitch ** const chanSwitchPP,
+                        const char **  const errorP) {
+
+#ifdef WIN32
+    ChanSwitchWinCreate(portNumber, chanSwitchPP, errorP);
+#else
+    ChanSwitchUnixCreate(portNumber, chanSwitchPP, errorP);
+#endif
+}    
+
+
+
+static void
 createChanSwitch(struct _TServer * const srvP,
                  const char **     const errorP) {
 
@@ -610,8 +624,8 @@ createChanSwitch(struct _TServer * const srvP,
     /* Not valid to call this when channel switch already exists: */
     assert(srvP->chanSwitchP == NULL);
 
-    ChanSwitchUnixCreate(srvP->port, &chanSwitchP, &error);
-    
+    createSwitchFromPortNum(srvP->port, &chanSwitchP, &error);
+
     if (error) {
         xmlrpc_asprintf(errorP,
                         "Can't create channel switch.  %s", error);
