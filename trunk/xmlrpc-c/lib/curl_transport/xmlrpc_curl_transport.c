@@ -58,6 +58,8 @@
 #include <assert.h>
 #include <sys/select.h>
 #include <signal.h>
+#include <time.h>  /* For timespec */
+#include <sys/time.h>  /* For timeval */
 
 #include "xmlrpc_config.h"
 
