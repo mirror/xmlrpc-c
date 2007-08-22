@@ -130,7 +130,7 @@ SOURCE=..\src\registry.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\libutil\resource.c
+SOURCE=..\src\resource.c
 # End Source File
 # Begin Source File
 
