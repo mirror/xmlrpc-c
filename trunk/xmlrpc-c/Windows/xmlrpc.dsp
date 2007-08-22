@@ -191,7 +191,11 @@ SOURCE=..\src\xmlrpc_base64.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc_builddecomp.c
+SOURCE=..\src\xmlrpc_build.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\xmlrpc_decompose.c
 # End Source File
 # Begin Source File
 
