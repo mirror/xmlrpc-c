@@ -289,6 +289,30 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
 **
 */
 
+static void
+serializeFault(xmlrpc_env *       const envP,
+               xmlrpc_env         const fault,
+               xmlrpc_mem_block * const responseXmlP) {
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_serialize_fault(&env, responseXmlP, &fault);
+
+    if (env.fault_occurred)
+        xmlrpc_faultf(envP,
+                      "Executed XML-RPC method completely and it "
+                      "generated a fault response, but we failed "
+                      "to encode that fault response as XML-RPC "
+                      "so we could send it to the client.  %s",
+                      env.fault_string);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 void
 xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
                               xmlrpc_registry *   const registryP,
@@ -340,7 +364,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
             xmlrpc_DECREF(paramArrayP);
         }
         if (!envP->fault_occurred && fault.fault_occurred)
-            xmlrpc_serialize_fault(envP, responseXmlP, &fault);
+            serializeFault(envP, fault, responseXmlP);
 
         xmlrpc_env_clean(&parseEnv);
         xmlrpc_env_clean(&fault);
