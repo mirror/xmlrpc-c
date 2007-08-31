@@ -560,7 +560,7 @@ xmlrpc_serialize_response(xmlrpc_env *       const envP,
 void
 xmlrpc_serialize_fault(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
-                       xmlrpc_env *       const faultP);
+                       const xmlrpc_env * const faultP);
 
 
 /*=========================================================================
