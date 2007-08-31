@@ -321,7 +321,7 @@ serverAbyss::run() {
        get his death of a child signal and Caller never knows.
 
        We really expect to be the only thing in the process, at least
-       for the time we're running.  If you want want the Abyss Server
+       for the time we're running.  If you want the Abyss Server
        to behave more like an object and own the signals yourself,
        use runOnce() in a loop instead of run().
     */

@@ -114,38 +114,37 @@ static wchar_t utf8_min_char_for_length[4] = {
 /* Is the character 'c' a UTF-8 continuation character? */
 #define IS_CONTINUATION(c) (((c) & 0xC0) == 0x80)
 
-/* Maximum number of bytes needed to encode a supported character. */
 #define MAX_ENCODED_BYTES (3)
+    /* Maximum number of bytes needed to encode in UTF-8 a character
+       in the Basic Multilingual Plane.
+    */
 
 
-/*=========================================================================
-**  decode_utf8
-**=========================================================================
-**  Internal routine which decodes (or validates) a UTF-8 string.
-**  To validate, set io_buff and out_buff_len to NULL.  To decode, allocate
-**  a sufficiently large buffer, pass it as io_buff, and pass a pointer as
-**  as out_buff_len.  The data will be written to the buffer, and the
-**  length to out_buff_len.
-**
-**  We assume that wchar_t holds a single UCS-2 character in native-endian
-**  byte ordering.
-*/
 
 static void 
-decode_utf8(xmlrpc_env * const env,
+decode_utf8(xmlrpc_env * const envP,
             const char * const utf8_data,
             size_t       const utf8_len,
-            wchar_t *    const io_buff,
-            size_t *     const out_buff_len) {
+            wchar_t *    const ioBuff,
+            size_t *     const outBuffLenP) {
+/*----------------------------------------------------------------------------
+  Decode to UCS-2 (or validates as UTF-8 that can be decoded to UCS-2)
+  a UTF-8 string.  To validate, set ioBuff and outBuffLenP to NULL.
+  To decode, allocate a sufficiently large buffer, pass it as ioBuff,
+  and pass a pointer as as outBuffLenP.  The data will be written to
+  the buffer, and the length to outBuffLenP.
 
+  We assume that wchar_t holds a single UCS-2 character in native-endian
+  byte ordering.
+-----------------------------------------------------------------------------*/
     size_t i, length, out_pos;
     char init, con1, con2;
     wchar_t wc;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(utf8_data);
-    XMLRPC_ASSERT((!io_buff && !out_buff_len) ||
-                  (io_buff && out_buff_len));
+    XMLRPC_ASSERT((!ioBuff && !outBuffLenP) ||
+                  (ioBuff && outBuffLenP));
 
     /* Suppress GCC warning about possibly undefined variable. */
     wc = 0;
@@ -164,20 +163,20 @@ decode_utf8(xmlrpc_env * const env,
             
             /* Check to make sure we have enough bytes to convert. */
             if (i + length > utf8_len)
-                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
                             "Truncated UTF-8 sequence");
             
             /* Decode a multibyte UTF-8 sequence. */
             switch (length) {
             case 0:
-                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
                             "Invalid UTF-8 initial byte");
                 
             case 2:
                 /* 110xxxxx 10xxxxxx */
                 con1 = utf8_data[i+1];
                 if (!IS_CONTINUATION(con1))
-                    XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                    XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
                                 "UTF-8 sequence too short");
                 wc = ((((wchar_t) (init & 0x1F)) <<  6) |
                       (((wchar_t) (con1 & 0x3F))));
@@ -188,7 +187,7 @@ decode_utf8(xmlrpc_env * const env,
                 con1 = utf8_data[i+1];
                 con2 = utf8_data[i+2];
                 if (!IS_CONTINUATION(con1) || !IS_CONTINUATION(con2))
-                    XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                    XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
                                 "UTF-8 sequence too short");
                 wc = ((((wchar_t) (init & 0x0F)) << 12) |
                       (((wchar_t) (con1 & 0x3F)) <<  6) |
@@ -201,8 +200,17 @@ decode_utf8(xmlrpc_env * const env,
                 /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
             case 6:
                 /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
-                            "UCS-4 characters not supported");
+                /* This would require more than 16 bits in UTF-16, so
+                   it can't be represented in UCS-2, so it's beyond
+                   our capability.  Characters in the BMP fit in 16
+                   bits.
+                */
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_INVALID_UTF8_ERROR,
+                    "UTF-8 string contains a character not in the "
+                    "Basic Multilingual Plane (first byte %08x)",
+                    init);
+                goto cleanup;
                 
             default:
                 XMLRPC_ASSERT("Error in UTF-8 decoder tables");
@@ -213,34 +221,34 @@ decode_utf8(xmlrpc_env * const env,
             
             /* Check for illegal UCS-2 characters. */
             if (wc > UCS2_MAX_LEGAL_CHARACTER)
-                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
                             "UCS-2 characters > U+FFFD are illegal");
             
             /* Check for UTF-16 surrogates. */
             if (UTF16_FIRST_SURROGATE <= wc && wc <= UTF16_LAST_SURROGATE)
-                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
                             "UTF-16 surrogates may not appear in UTF-8 data");
             
             /* Check for overlong sequences. */
             if (wc < utf8_min_char_for_length[length])
-                XMLRPC_FAIL(env, XMLRPC_INVALID_UTF8_ERROR,
+                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
                             "Overlong UTF-8 sequence not allowed");
         }
         
         /* If we have a buffer, write our character to it. */
-        if (io_buff) {
-            io_buff[out_pos++] = wc;
+        if (ioBuff) {
+            ioBuff[out_pos++] = wc;
         }
     }
     
     /* Record the number of characters we found. */
-    if (out_buff_len)
-        *out_buff_len = out_pos;
+    if (outBuffLenP)
+        *outBuffLenP = out_pos;
     
             cleanup:
-    if (env->fault_occurred) {
-        if (out_buff_len)
-            *out_buff_len = 0;
+    if (envP->fault_occurred) {
+        if (outBuffLenP)
+            *outBuffLenP = 0;
     }
 }
 

@@ -118,7 +118,7 @@ serverPstreamConn::~serverPstreamConn() {
 
 
 void
-processCall(const registry * const registryP,
+processCall(const registry * const  registryP,
             packetPtr        const& callPacketP,
             packetPtr *      const  responsePacketPP) {
 
