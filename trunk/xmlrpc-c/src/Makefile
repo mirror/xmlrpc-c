@@ -283,6 +283,9 @@ distclean: clean-common clean-local distclean-common $(SUBDIRS:%=%/distclean)
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BLDDIR)/transport_config.h dep-common
 
+dep-common:
+  INCLUDES = $(BASIC_INCLUDES) $(TRANSPORT_INCLUDES) $(LIBXML_INCLUDES)
+
 xmlrpc_client.o xmlrpc_client.osh: $(BLDDIR)/transport_config.h
 
 include Makefile.depend
