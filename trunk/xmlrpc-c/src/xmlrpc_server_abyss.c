@@ -2,6 +2,7 @@
 
 #include "xmlrpc_config.h"
 
+#include <inttypes.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -451,7 +451,13 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
                        xmlrpc_value *                const valueP,
                        bool                          const oldstyleMemMgmt,
                        const struct decompTreeNode * const decompRootP) {
-
+/*----------------------------------------------------------------------------
+   Decompose XML-RPC value *valueP, given the decomposition tree
+   *decompRootP.  The decomposition tree tells what structure *valueP
+   is expected to have and where to put the various components of it
+   (e.g. it says "it's an array of 3 integers.  Put their values at
+   locations x, y, and z")
+-----------------------------------------------------------------------------*/
     switch (decompRootP->formatSpecChar) {
     case '-':
         /* There's nothing to validate or return */
