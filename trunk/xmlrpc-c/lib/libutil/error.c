@@ -58,6 +58,8 @@ xmlrpc_env_set_fault(xmlrpc_env * const envP,
                      int          const faultCode, 
                      const char * const faultDescription) {
 
+    char * buffer;
+
     XMLRPC_ASSERT(envP != NULL); 
     XMLRPC_ASSERT(faultDescription != NULL);
 
@@ -68,9 +70,14 @@ xmlrpc_env_set_fault(xmlrpc_env * const envP,
     envP->fault_code     = faultCode;
 
     /* Try to copy the fault string. If this fails, use a default. */
-    envP->fault_string = strdup(faultDescription);
-    if (envP->fault_string == NULL)
+    buffer = strdup(faultDescription);
+    if (buffer == NULL)
         envP->fault_string = (char *)default_fault_string;
+    else {
+        xmlrpc_force_to_utf8(buffer);
+        xmlrpc_force_to_xml_chars(buffer);
+        envP->fault_string = buffer;
+    }
 }
 
 
