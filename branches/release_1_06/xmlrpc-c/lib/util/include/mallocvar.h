@@ -58,6 +58,9 @@ reallocProduct(void **      const blockP,
 }
 
 
+/* IMPLEMENTATION NOTE:  There are huge strict aliasing pitfalls here
+   if you cast pointers, e.g. (void **)
+*/
 
 #define MALLOCARRAY(arrayName, nElements) do { \
     void * array; \
@@ -65,8 +68,11 @@ reallocProduct(void **      const blockP,
     arrayName = array; \
 } while (0)
 
-#define REALLOCARRAY(arrayName, nElements) \
-    reallocProduct((void **)&arrayName, nElements, sizeof(arrayName[0]))
+#define REALLOCARRAY(arrayName, nElements) { \
+    void * array = arrayName; \
+    reallocProduct(&array, nElements, sizeof(arrayName[0])); \
+    arrayName = array; \
+} while (0)
 
 
 #define MALLOCARRAY_NOFAIL(arrayName, nElements) \
