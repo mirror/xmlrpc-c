@@ -41,7 +41,11 @@ include $(SRCDIR)/Makefile.common
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-INCLUDES = -I$(BLDDIR) -I$(UTILDIR)/include -I$(XMLTOKDIR)
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(XMLTOKDIR) \
+  -I$(UTILDIR)/include \
+  -I$(SRCDIR)/include \
 
 # LIBDEP is the shared libraries on which libxmlrpc_abyss depends.
 # The runtime loader should load these libraries when it loads libxmlrpc_abyss.

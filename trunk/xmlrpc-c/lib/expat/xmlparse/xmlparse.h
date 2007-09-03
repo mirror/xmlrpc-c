@@ -504,11 +504,15 @@ enum XML_Error {
 };
 
 /* If xmlrpc_XML_Parse or xmlrpc_XML_ParseBuffer have returned 0, then
-   xmlrpc_XML_GetErrorCode returns information about the error.
+   xmlrpc_XML_GetErrorString and xmlrpc_XML_GetErrorCode return
+   information about the error.
 */
 
 enum XML_Error XMLPARSEAPI
-xmlrpc_XML_GetErrorCode(XML_Parser parser);
+xmlrpc_XML_GetErrorCode(XML_Parser const parser);
+
+const char * XMLPARSEAPI
+xmlrpc_XML_GetErrorString(XML_Parser const parser);
 
 /* These functions return information about the current parse location.
    They may be called when XML_Parse or XML_ParseBuffer return 0;
