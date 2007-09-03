@@ -624,42 +624,6 @@ xmlrpc_base64_decode(xmlrpc_env * const envP,
 
 
 /*=========================================================================
-**  UTF-8 Encoding and Decoding
-**=========================================================================
-**  We need a correct, reliable and secure UTF-8 decoder. This decoder
-**  raises a fault if it encounters invalid UTF-8.
-**
-**  Note that ANSI C does not precisely define the representation used
-**  by wchar_t--it may be UCS-2, UTF-16, UCS-4, or something from outer
-**  space. If your platform does something especially bizarre, you may
-**  need to reimplement these routines.
-*/
-
-/* Ensure that a string contains valid, legally-encoded UTF-8 data.
-   (Incorrectly-encoded UTF-8 strings are often used to bypass security
-   checks.)
-*/
-void 
-xmlrpc_validate_utf8 (xmlrpc_env * const env,
-                      const char * const utf8_data,
-                      size_t       const utf8_len);
-
-/* Decode a UTF-8 string. */
-xmlrpc_mem_block *
-xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
-                   const char * const utf8_data,
-                   size_t       const utf8_len);
-
-/* Encode a UTF-8 string. */
-
-#if XMLRPC_HAVE_WCHAR
-xmlrpc_mem_block *
-xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
-                   const wchar_t * const wcs_data,
-                   size_t          const wcs_len);
-#endif
-
-/*=========================================================================
 **  Authorization Cookie Handling
 **=========================================================================
 **  Routines to get and set values for authorizing via authorization

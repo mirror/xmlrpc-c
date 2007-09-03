@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
+#include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
 #include <xmlrpc-c/c_util.h>  /* for GNU_PRINTF_ATTR */
 
 #ifdef __cplusplus
@@ -289,6 +290,37 @@ void xmlrpc_mem_block_append
     XMLRPC_MEMBLOCK_RESIZE(type,env,block,size)
 #define XMLRPC_TYPED_MEM_BLOCK_APPEND(type,env,block,data,size) \
     XMLRPC_MEMBLOCK_APPEND(type,env,block,data,size)
+
+
+/*=========================================================================
+**  UTF-8 Encoding and Decoding
+**=======================================================================*/
+
+void 
+xmlrpc_validate_utf8(xmlrpc_env * const envP,
+                     const char * const utf8Data,
+                     size_t       const utf8Len);
+
+/* Decode a UTF-8 string. */
+xmlrpc_mem_block *
+xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
+                   const char * const utf8_data,
+                   size_t       const utf8_len);
+
+/* Encode a UTF-8 string. */
+
+#if XMLRPC_HAVE_WCHAR
+xmlrpc_mem_block *
+xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
+                   const wchar_t * const wcsData,
+                   size_t          const wcsLen);
+#endif
+
+void
+xmlrpc_force_to_utf8(char * const buffer);
+
+void
+xmlrpc_force_to_xml_chars(char * const buffer);
 
 #ifdef __cplusplus
 }

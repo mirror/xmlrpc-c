@@ -35,6 +35,7 @@ TARGET_MODS = \
   select \
   sleep \
   time \
+  utf8 \
 
 OMIT_LIBXMLRPC_UTIL_RULE=Y
 MAJ=3
