@@ -988,8 +988,16 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
             "We got %u characters",
             xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID), xmlDataLen);
     else {
-        xml_parse(envP, xmlData, xmlDataLen, &response);
-        if (!envP->fault_occurred) {
+        xmlrpc_env env;
+        xmlrpc_env_init(&env);
+
+        xml_parse(&env, xmlData, xmlDataLen, &response);
+
+        if (env.fault_occurred)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_PARSE_ERROR,
+                "Not valid XML.  %s", env.fault_string);
+        else {
             /* Pick apart and verify our structure. */
             if (xmlrpc_streq(xml_element_name(response), "methodResponse")) {
                 parseMethodResponseElt(envP, response,
@@ -1003,6 +1011,7 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
             
             xml_element_free(response);
         }
+        xmlrpc_env_clean(&env);
     }
 }
 
