@@ -131,6 +131,12 @@ escapeForXml(xmlrpc_env *        const envP,
    character.
 
    &#x0d; is known in XML as a "character reference."
+
+   We assume chars[] is is ASCII.  That isn't right -- we should
+   handle all valid UTF-8.  Someday, we must do something more complex
+   and copy over multibyte characters verbatim.  (The code here could
+   erroneously find that e.g. the 2nd byte of a UTF-8 character is a
+   CR).
 -----------------------------------------------------------------------------*/
     xmlrpc_mem_block * outputP;
     size_t outputSize;
