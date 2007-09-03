@@ -432,7 +432,7 @@ xml_parse(xmlrpc_env *   const envP,
             */
             xmlrpc_env_set_fault(
                 envP, XMLRPC_PARSE_ERROR,
-                xmlrpc_XML_ErrorString(xmlrpc_XML_GetErrorCode(parser)));
+                xmlrpc_XML_GetErrorString(parser));
             if (!context.env.fault_occurred) {
                 /* Have to clean up what our handlers built before Expat
                    barfed.
