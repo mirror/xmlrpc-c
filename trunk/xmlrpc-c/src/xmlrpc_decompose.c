@@ -13,6 +13,7 @@
 #include "bool.h"
 #include "c_util.h"
 #include "mallocvar.h"
+#include "stdargx.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
@@ -1096,7 +1097,9 @@ xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
                           va_list              args) {
 
     bool const oldstyleMemMgtFalse = false;
-    va_listx const argsx = {args};
+    va_listx argsx;
+
+    init_va_listx(&argsx, args);
 
     decomposeValue(envP, valueP, oldstyleMemMgtFalse, format, argsx);
 }
@@ -1125,7 +1128,9 @@ xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       va_list              args) {
 
     bool const oldstyleMemMgmtTrue = true;
-    va_listx const argsx = {args};
+    va_listx argsx;
+
+    init_va_listx(&argsx, args);
 
     decomposeValue(envP, valueP, oldstyleMemMgmtTrue, format, argsx);
 }

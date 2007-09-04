@@ -10,6 +10,7 @@
 #include "bool.h"
 #include "c_util.h"
 #include "mallocvar.h"
+#include "stdargx.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
@@ -370,7 +371,7 @@ xmlrpc_build_value_va(xmlrpc_env *    const envP,
         va_listx currentArgs;
         const char * formatCursor;
 
-        currentArgs.v = args;
+        init_va_listx(&currentArgs, args);
         formatCursor = &format[0];
         getValue(envP, &formatCursor, &currentArgs, valPP);
         
