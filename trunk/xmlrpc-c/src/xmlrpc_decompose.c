@@ -597,7 +597,7 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
 static void 
 createDecompTreeNext(xmlrpc_env *             const envP,
                      const char **            const formatP,
-                     va_list *                      argsP,
+                     va_listx *               const argsP,
                      struct decompTreeNode ** const decompNodePP);
 
 
@@ -605,15 +605,15 @@ createDecompTreeNext(xmlrpc_env *             const envP,
 static void
 buildWideStringNode(xmlrpc_env *            const envP ATTR_UNUSED,
                     const char **           const formatP,
-                    va_list *                     argsP,
+                    va_listx *              const argsP,
                     struct decompTreeNode * const decompNodeP) {
 
 #if HAVE_UNICODE_WCHAR
     decompNodeP->store.TwideString.valueP =
-        (const wchar_t**) va_arg(*argsP, wchar_t**);
+        (const wchar_t**) va_arg(argsP->v, wchar_t**);
     if (**formatP == '#') {
         decompNodeP->store.TwideString.sizeP =
-            (size_t*) va_arg(*argsP, size_t**);
+            (size_t*) va_arg(argsP->v, size_t**);
         (*formatP)++;
     } else
         decompNodeP->store.TwideString.sizeP = NULL;
@@ -681,7 +681,7 @@ static void
 buildArrayDecompBranch(xmlrpc_env *            const envP,
                        const char **           const formatP,
                        char                    const delim,
-                       va_list *                     argsP,
+                       va_listx *              const argsP,
                        struct decompTreeNode * const decompNodeP) {
 /*----------------------------------------------------------------------------
    Fill in the decomposition tree node *decompNodeP to cover an array
@@ -740,12 +740,12 @@ buildArrayDecompBranch(xmlrpc_env *            const envP,
 static void
 doStructValue(xmlrpc_env *       const envP,
               const char **      const formatP,
-              va_list *                argsP,
+              va_listx *         const argsP,
               struct mbrDecomp * const mbrP) {
 
     struct decompTreeNode * valueNodeP;
 
-    mbrP->key = (const char*) va_arg(*argsP, char*);
+    mbrP->key = (const char*) va_arg(argsP->v, char*);
         
     createDecompTreeNext(envP, formatP, argsP,  &valueNodeP);
         
@@ -819,7 +819,7 @@ static void
 buildStructDecompBranch(xmlrpc_env *            const envP,
                         const char **           const formatP,
                         char                    const delim,
-                        va_list *                     argsP,
+                        va_listx *              const argsP,
                         struct decompTreeNode * const decompNodeP) {
 /*----------------------------------------------------------------------------
    Fill in the decomposition tree node *decompNodeP to cover a struct
@@ -898,7 +898,7 @@ buildStructDecompBranch(xmlrpc_env *            const envP,
 static void 
 createDecompTreeNext(xmlrpc_env *             const envP,
                      const char **            const formatP,
-                     va_list *                      argsP,
+                     va_listx *               const argsP,
                      struct decompTreeNode ** const decompNodePP) {
 /*----------------------------------------------------------------------------
    Create a branch of a decomposition tree that applies to the first
@@ -939,35 +939,35 @@ createDecompTreeNext(xmlrpc_env *             const envP,
             break;
         case 'i':
             decompNodeP->store.Tinteger.valueP =
-                (xmlrpc_int32*) va_arg(*argsP, xmlrpc_int32*);
+                (xmlrpc_int32*) va_arg(argsP->v, xmlrpc_int32*);
             break;
             
         case 'b':
             decompNodeP->store.Tbool.valueP =
-                (xmlrpc_bool*) va_arg(*argsP, xmlrpc_bool*);
+                (xmlrpc_bool*) va_arg(argsP->v, xmlrpc_bool*);
             break;
             
         case 'd':
             decompNodeP->store.Tdouble.valueP =
-                (double*) va_arg(*argsP, double*);
+                (double*) va_arg(argsP->v, double*);
             break;
             
         case 't':
             decompNodeP->store.TdatetimeT.valueP =
-                va_arg(*argsP, time_t*);
+                va_arg(argsP->v, time_t*);
             break;
 
         case '8':
             decompNodeP->store.Tdatetime8.valueP =
-                (const char**) va_arg(*argsP, char**);
+                (const char**) va_arg(argsP->v, char**);
             break;
 
         case 's':
             decompNodeP->store.Tstring.valueP = 
-                (const char**) va_arg(*argsP, char**);
+                (const char**) va_arg(argsP->v, char**);
             if (**formatP == '#') {
                 decompNodeP->store.Tstring.sizeP = 
-                    (size_t*) va_arg(*argsP, size_t**);
+                    (size_t*) va_arg(argsP->v, size_t**);
                 ++*formatP;
             } else
                 decompNodeP->store.Tstring.sizeP = NULL;
@@ -979,9 +979,9 @@ createDecompTreeNext(xmlrpc_env *             const envP,
         
         case '6':
             decompNodeP->store.TbitString.valueP =
-                (const unsigned char**) va_arg(*argsP, unsigned char**);
+                (const unsigned char**) va_arg(argsP->v, unsigned char**);
             decompNodeP->store.TbitString.sizeP =
-                (size_t*) va_arg(*argsP, size_t**);        
+                (size_t*) va_arg(argsP->v, size_t**);        
             break;
 
         case 'n':
@@ -990,27 +990,27 @@ createDecompTreeNext(xmlrpc_env *             const envP,
 
         case 'I':
             decompNodeP->store.Ti8.valueP =
-                (long long *) va_arg(*argsP, long long *);
+                (long long *) va_arg(argsP->v, long long *);
             break;
             
         case 'p':
             decompNodeP->store.Tcptr.valueP =
-                (void**) va_arg(*argsP, void**);
+                (void**) va_arg(argsP->v, void**);
             break;
 
         case 'V':
             decompNodeP->store.Tvalue.valueP =
-                (xmlrpc_value**) va_arg(*argsP, xmlrpc_value**);
+                (xmlrpc_value**) va_arg(argsP->v, xmlrpc_value**);
             break;
 
         case 'A':
             decompNodeP->store.TarrayVal.valueP =
-                (xmlrpc_value**) va_arg(*argsP, xmlrpc_value**);
+                (xmlrpc_value**) va_arg(argsP->v, xmlrpc_value**);
             break;
 
         case 'S':
             decompNodeP->store.TstructVal.valueP =
-                (xmlrpc_value**) va_arg(*argsP, xmlrpc_value**);
+                (xmlrpc_value**) va_arg(argsP->v, xmlrpc_value**);
             break;
 
         case '(':
@@ -1039,14 +1039,16 @@ createDecompTreeNext(xmlrpc_env *             const envP,
 static void
 createDecompTree(xmlrpc_env *             const envP,
                  const char *             const format,
-                 va_list                        args,
+                 va_listx                 const args,
                  struct decompTreeNode ** const decompRootPP) {
 
     const char * formatCursor;
     struct decompTreeNode * decompRootP;
+    va_listx currentArgs;
 
+    currentArgs = args;
     formatCursor = &format[0];
-    createDecompTreeNext(envP, &formatCursor, &args, &decompRootP);
+    createDecompTreeNext(envP, &formatCursor, &currentArgs, &decompRootP);
     if (!envP->fault_occurred) {
         if (*formatCursor != '\0')
             xmlrpc_faultf(envP, "format string '%s' has garbage at the end: "
@@ -1068,7 +1070,7 @@ decomposeValue(xmlrpc_env *   const envP,
                xmlrpc_value * const valueP,
                bool           const oldstyleMemMgmt,
                const char *   const format,
-               va_list              args) {
+               va_listx       const args) {
 
     struct decompTreeNode * decompRootP;
 
@@ -1094,8 +1096,9 @@ xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
                           va_list              args) {
 
     bool const oldstyleMemMgtFalse = false;
+    va_listx const argsx = {args};
 
-    decomposeValue(envP, valueP, oldstyleMemMgtFalse, format, args);
+    decomposeValue(envP, valueP, oldstyleMemMgtFalse, format, argsx);
 }
 
 
@@ -1122,8 +1125,9 @@ xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       va_list              args) {
 
     bool const oldstyleMemMgmtTrue = true;
+    va_listx const argsx = {args};
 
-    decomposeValue(envP, valueP, oldstyleMemMgmtTrue, format, args);
+    decomposeValue(envP, valueP, oldstyleMemMgmtTrue, format, argsx);
 }
 
 

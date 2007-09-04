@@ -30,16 +30,16 @@
 static void
 getString(xmlrpc_env *    const envP,
           const char **   const formatP,
-          va_list *       const argsP,
+          va_listx *      const argsP,
           xmlrpc_value ** const valPP) {
 
     const char * str;
     unsigned int len;
     
-    str = (const char*) va_arg(*argsP, char*);
+    str = (const char*) va_arg(argsP->v, char*);
     if (**formatP == '#') {
         (*formatP)++;
-        len = (size_t) va_arg(*argsP, size_t);
+        len = (size_t) va_arg(argsP->v, size_t);
     } else
         len = strlen(str);
 
@@ -51,17 +51,17 @@ getString(xmlrpc_env *    const envP,
 static void
 getWideString(xmlrpc_env *    const envP ATTR_UNUSED,
               const char **   const formatP ATTR_UNUSED,
-              va_list *       const argsP ATTR_UNUSED,
+              va_listx *      const argsP ATTR_UNUSED,
               xmlrpc_value ** const valPP ATTR_UNUSED) {
 
 #if HAVE_UNICODE_WCHAR
     wchar_t *wcs;
     size_t len;
     
-    wcs = (wchar_t*) va_arg(*argsP, wchar_t*);
+    wcs = (wchar_t*) va_arg(argsP->v, wchar_t*);
     if (**formatP == '#') {
         (*formatP)++;
-        len = (size_t) va_arg(*argsP, size_t);
+        len = (size_t) va_arg(argsP->v, size_t);
     } else
         len = wcslen(wcs);
 
@@ -74,14 +74,14 @@ getWideString(xmlrpc_env *    const envP ATTR_UNUSED,
 
 static void
 getBase64(xmlrpc_env *    const envP,
-          va_list *       const argsP,
+          va_listx *      const argsP,
           xmlrpc_value ** const valPP) {
 
     unsigned char * value;
     size_t          length;
     
-    value  = (unsigned char*) va_arg(*argsP, unsigned char*);
-    length = (size_t)         va_arg(*argsP, size_t);
+    value  = (unsigned char*) va_arg(argsP->v, unsigned char*);
+    length = (size_t)         va_arg(argsP->v, size_t);
 
     *valPP = xmlrpc_base64_new(envP, length, value);
 }
@@ -91,7 +91,7 @@ getBase64(xmlrpc_env *    const envP,
 static void
 getValue(xmlrpc_env *    const envP, 
          const char**    const format, 
-         va_list *             argsP,
+         va_listx *      const argsP,
          xmlrpc_value ** const valPP);
 
 
@@ -100,7 +100,7 @@ static void
 getArray(xmlrpc_env *    const envP,
          const char **   const formatP,
          char            const delimiter,
-         va_list *       const argsP,
+         va_listx *      const argsP,
          xmlrpc_value ** const arrayPP) {
 
     xmlrpc_value * arrayP;
@@ -136,7 +136,7 @@ getArray(xmlrpc_env *    const envP,
 static void
 getStructMember(xmlrpc_env *    const envP,
                 const char **   const formatP,
-                va_list *       const argsP,
+                va_listx *      const argsP,
                 xmlrpc_value ** const keyPP,
                 xmlrpc_value ** const valuePP) {
 
@@ -167,7 +167,7 @@ static void
 getStruct(xmlrpc_env *    const envP,
           const char **   const formatP,
           char            const delimiter,
-          va_list *       const argsP,
+          va_listx *      const argsP,
           xmlrpc_value ** const structPP) {
 
     xmlrpc_value * structP;
@@ -242,7 +242,7 @@ mkStructFromVal(xmlrpc_env *    const envP,
 static void
 getValue(xmlrpc_env *    const envP, 
          const char**    const formatP,
-         va_list *       const argsP,
+         va_listx *      const argsP,
          xmlrpc_value ** const valPP) {
 /*----------------------------------------------------------------------------
    Get the next value from the list.  *formatP points to the specifier
@@ -262,17 +262,18 @@ getValue(xmlrpc_env *    const envP,
     switch (formatChar) {
     case 'i':
         *valPP = 
-            xmlrpc_int_new(envP, (xmlrpc_int32) va_arg(*argsP, xmlrpc_int32));
+            xmlrpc_int_new(envP, (xmlrpc_int32) va_arg(argsP->v,
+                                                       xmlrpc_int32));
         break;
 
     case 'b':
         *valPP = 
-            xmlrpc_bool_new(envP, (xmlrpc_bool) va_arg(*argsP, xmlrpc_bool));
+            xmlrpc_bool_new(envP, (xmlrpc_bool) va_arg(argsP->v, xmlrpc_bool));
         break;
 
     case 'd':
         *valPP =
-            xmlrpc_double_new(envP, (double) va_arg(*argsP, double));
+            xmlrpc_double_new(envP, (double) va_arg(argsP->v, double));
         break;
 
     case 's':
@@ -284,11 +285,11 @@ getValue(xmlrpc_env *    const envP,
         break;
 
     case 't':
-        *valPP = xmlrpc_datetime_new_sec(envP, va_arg(*argsP, time_t));
+        *valPP = xmlrpc_datetime_new_sec(envP, va_arg(argsP->v, time_t));
         break;
 
     case '8':
-        *valPP = xmlrpc_datetime_new_str(envP, va_arg(*argsP, char*));
+        *valPP = xmlrpc_datetime_new_str(envP, va_arg(argsP->v, char*));
         break;
 
     case '6':
@@ -302,26 +303,26 @@ getValue(xmlrpc_env *    const envP,
 
     case 'I':
         *valPP =
-            xmlrpc_i8_new(envP, (long long) va_arg(*argsP, long long));
+            xmlrpc_i8_new(envP, (long long) va_arg(argsP->v, long long));
         break;
 
     case 'p':
         *valPP = 
-            xmlrpc_cptr_new(envP, (void*) va_arg(*argsP, void*));
+            xmlrpc_cptr_new(envP, (void*) va_arg(argsP->v, void*));
         break;      
 
     case 'A':
-        mkArrayFromVal(envP, (xmlrpc_value*) va_arg(*argsP, xmlrpc_value*),
+        mkArrayFromVal(envP, (xmlrpc_value*) va_arg(argsP->v, xmlrpc_value*),
                        valPP);
         break;
 
     case 'S':
-        mkStructFromVal(envP, (xmlrpc_value*) va_arg(*argsP, xmlrpc_value*),
+        mkStructFromVal(envP, (xmlrpc_value*) va_arg(argsP->v, xmlrpc_value*),
                         valPP);
         break;
 
     case 'V':
-        *valPP = (xmlrpc_value*) va_arg(*argsP, xmlrpc_value*);
+        *valPP = (xmlrpc_value*) va_arg(argsP->v, xmlrpc_value*);
         xmlrpc_INCREF(*valPP);
         break;
 
@@ -356,7 +357,7 @@ getValue(xmlrpc_env *    const envP,
 void
 xmlrpc_build_value_va(xmlrpc_env *    const envP,
                       const char *    const format,
-                      va_list               args,
+                      va_list         const args,
                       xmlrpc_value ** const valPP,
                       const char **   const tailP) {
 
@@ -366,10 +367,12 @@ xmlrpc_build_value_va(xmlrpc_env *    const envP,
     if (strlen(format) == 0)
         xmlrpc_faultf(envP, "Format string is empty.");
     else {
+        va_listx currentArgs;
         const char * formatCursor;
 
+        currentArgs.v = args;
         formatCursor = &format[0];
-        getValue(envP, &formatCursor, &args, valPP);
+        getValue(envP, &formatCursor, &currentArgs, valPP);
         
         if (!envP->fault_occurred)
             XMLRPC_ASSERT_VALUE_OK(*valPP);
