@@ -20,6 +20,10 @@
 #include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
 #include <xmlrpc-c/c_util.h>  /* for GNU_PRINTF_ATTR */
 
+#if XMLRPC_HAVE_WCHAR
+#include <wchar.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
