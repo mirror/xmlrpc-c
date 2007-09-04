@@ -466,7 +466,7 @@ xmlrpc_build_value(xmlrpc_env * const env,
 void
 xmlrpc_build_value_va(xmlrpc_env *    const env,
                       const char *    const format,
-                      va_list               args,
+                      va_list         const args,
                       xmlrpc_value ** const valPP,
                       const char **   const tailP);
 
@@ -480,7 +480,7 @@ void
 xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
                           xmlrpc_value * const value,
                           const char *   const format,
-                          va_list              args);
+                          va_list        const args);
 
 /* xmlrpc_parse_value... is the same as xmlrpc_decompose_value... except
    that it doesn't do proper memory management -- it returns xmlrpc_value's
@@ -500,7 +500,7 @@ void
 xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       xmlrpc_value * const value,
                       const char *   const format,
-                      va_list              args);
+                      va_list        const args);
 
 /*=========================================================================
 **  Encoding XML

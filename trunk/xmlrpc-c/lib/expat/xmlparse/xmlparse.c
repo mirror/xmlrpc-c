@@ -2693,8 +2693,8 @@ processContentToken(XML_Parser       const xmlParserP,
     case XML_TOK_INVALID:
         *eventPP = *nextP;
         *errorCodeP = XML_ERROR_INVALID_TOKEN;
-        xmlrpc_asprintf(errorP, "Invalid token, starting %u bytes in",
-                        *nextP - s);
+        xmlrpc_asprintf(errorP, "Invalid token, starting %ld bytes in",
+                        (long)(*nextP - s));
         break;
     case XML_TOK_PARTIAL:
         if (nextPtr) {
