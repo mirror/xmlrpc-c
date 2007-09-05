@@ -1094,7 +1094,7 @@ void
 xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
                           xmlrpc_value * const valueP,
                           const char *   const format,
-                          va_list              args) {
+                          va_list        const args) {
 
     bool const oldstyleMemMgtFalse = false;
     va_listx argsx;
@@ -1125,7 +1125,7 @@ void
 xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       xmlrpc_value * const valueP,
                       const char *   const format,
-                      va_list              args) {
+                      va_list        const args) {
 
     bool const oldstyleMemMgmtTrue = true;
     va_listx argsx;
