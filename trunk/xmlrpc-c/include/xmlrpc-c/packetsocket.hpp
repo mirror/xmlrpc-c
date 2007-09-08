@@ -72,7 +72,7 @@ class packetSocket {
    This is an Internet communication vehicle that transmits individual
    variable-length packets of text.
 
-   It is based on a TCP socket.
+   It is based on a stream socket.
 
    It would be much better to use a kernel SOCK_SEQPACKET socket, but
    Linux 2.4 does not have them.
@@ -105,12 +105,18 @@ private:
     packetPtr packetAccumP;
         // The packet we're currently accumulating; it will join
         // 'readBuffer' when we've received the whole packet (and we've
-        // seen the PKT escape sequence so we know we've received it all).
+        // seen the END escape sequence so we know we've received it all).
+        // If we're not currently accumulating a packet (haven't seen a
+        // PKT escape sequence), this points to nothing.
     bool inEscapeSeq;
         // In our trek through the data read from the underlying stream
         // socket, we are after an ESC character and before the end of the
         // escape sequence.  'escAccum' shows what of the escape sequence
         // we've seen so far.
+    bool inPacket;
+        // We're now receiving packet data from the underlying stream
+        // socket.  We've seen a complete PKT escape sequence, but have not
+        // seen a complete END escape sequence since.
     struct {
         unsigned char bytes[3];
         size_t len;
@@ -126,11 +132,15 @@ private:
 
     void
     takeSomePacket(const unsigned char * const buffer,
-                                 size_t                const length,
-                                 size_t *              const bytesTakenP);
+                   size_t                const length,
+                   size_t *              const bytesTakenP);
 
     void
     verifyNothingAccumulated();
+
+    void
+    processBytesRead(const unsigned char * const buffer,
+                     size_t                const bytesRead);
 
     void
     readFromFile();

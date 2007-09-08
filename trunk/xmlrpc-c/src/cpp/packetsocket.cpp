@@ -17,29 +17,34 @@
 /*============================================================================
   The protocol for carrying packets on a character stream:
 
-  The protocol consists of the XML text to be transported with a bare
+  The protocol consists of the actual bytes to be transported with a bare
   minimum of framing information added:
 
      An ASCII Escape (<ESC> == 0x1B) character marks the start of a
      4-ASCII-character control word.  These are defined:
 
-       <ESC>PKT : marks the end of a packet.
+       <ESC>PKT : marks the beginning of a packet.
+       <ESC>END : marks the end of a packet.
        <ESC>ESC : represents an <ESC> character in the packet
        <ESC>NOP : no meaning
 
-     Any other bytes after <ESC> is a protocol error.  End of
-     stream anywhere but after <ESC>PKT or beginning of stream is
-     a protocol error.  
+     Any other bytes after <ESC> is a protocol error.
+
+     A stream is all the data transmitted during a single socket
+     connection.
+
+     End of stream in the middle of a packet is a protocol error.  
 
      All bytes not part of a control word are literal bytes of a packet.
 
-  You can create a pstream transport from any file descriptor from which
+  You can create a packet socket from any file descriptor from which
   you can read and write a bidirectional character stream.  Typically,
   it's a TCP socket.
 
   One use of the NOP control word is to validate that the connection
   is still working.  You might send one periodically to detect, for
-  example, an unplugged TCP/IP network cable.
+  example, an unplugged TCP/IP network cable.  It's probably better
+  to use the TCP keepalive facility for that.
 ============================================================================*/
 
 #define _BSD_SOURCE        // gets uint defined
@@ -174,11 +179,10 @@ packetSocket::packetSocket(int const sockFd) {
         this->sockFd = dupRc;
 
         this->inEscapeSeq = false;
+        this->inPacket    = false;
 
         this->escAccum.len = 0;
         
-        this->packetAccumP = packetPtr(new packet);
-
         fcntl(this->sockFd, F_SETFL, O_NONBLOCK);
 
         this->eof = false;
@@ -225,12 +229,16 @@ writeFd(int                   const fd,
 void
 packetSocket::writeWait(packetPtr const& packetP) const {
 
-    const unsigned char * const packetMarker(
+    const unsigned char * const packetStart(
         reinterpret_cast<const unsigned char *>(ESC_STR "PKT"));
+    const unsigned char * const packetEnd(
+        reinterpret_cast<const unsigned char *>(ESC_STR "END"));
+
+    writeFd(this->sockFd, packetStart, 4);
 
     writeFd(this->sockFd, packetP->getBytes(), packetP->getLength());
 
-    writeFd(this->sockFd, packetMarker, 4);
+    writeFd(this->sockFd, packetEnd, 4);
 }
 
 
@@ -246,23 +254,14 @@ libc_read(int    const fd,
 
 
 void
-packetSocket::bufferFinishedPacket() {
-/*----------------------------------------------------------------------------
-   Assume the packet currently being accumulated (in *this->packetAccumP)
-   is complete and move it to the packet buffer (this->readBuffer).
------------------------------------------------------------------------------*/
-    this->readBuffer.push(this->packetAccumP);
-
-    this->packetAccumP = packetPtr(new packet);
-}
-
-
-
-void
 packetSocket::takeSomeEscapeSeq(const unsigned char * const buffer,
                                 size_t                const length,
                                 size_t *              const bytesTakenP) {
-
+/*----------------------------------------------------------------------------
+   Take and process some bytes from the incoming stream 'buffer',
+   which contains 'length' bytes, assuming they are within an escape
+   sequence.
+-----------------------------------------------------------------------------*/
     size_t bytesTaken;
 
     bytesTaken = 0;
@@ -277,9 +276,20 @@ packetSocket::takeSomeEscapeSeq(const unsigned char * const buffer,
         } else if (xmlrpc_memeq(this->escAccum.bytes, "NOP", 3)) {
             // Nothing to do
         } else if (xmlrpc_memeq(this->escAccum.bytes, "PKT", 3)) {
-            bufferFinishedPacket();
+            this->packetAccumP = packetPtr(new packet);
+            this->inPacket = true;
+        } else if (xmlrpc_memeq(this->escAccum.bytes, "END", 3)) {
+            if (this->inPacket) {
+                this->readBuffer.push(this->packetAccumP);
+                this->inPacket = false;
+                this->packetAccumP = packetPtr();
+            } else
+                throwf("END control word received without preceding PKT");
         } else if (xmlrpc_memeq(this->escAccum.bytes, "ESC", 3)) {
-            this->packetAccumP->addData((const unsigned char *)ESC_STR, 1);
+            if (this->inPacket)
+                this->packetAccumP->addData((const unsigned char *)ESC_STR, 1);
+            else
+                throwf("ESC control work received outside of a packet");
         } else
             throwf("Invalid escape sequence 0x%02x%02x%02x read from "
                    "stream socket under packet socket",
@@ -311,14 +321,10 @@ packetSocket::takeSomePacket(const unsigned char * const buffer,
         // packet accumulator.
         this->packetAccumP->addData(buffer, escOffset);
 
-        this->inEscapeSeq = true;
-
         // Caller can pick up from here; we don't know nothin' 'bout
         // no escape sequences.
 
-        // +1 below reflects the fact that we're taking the ESC character
-        // too.
-        *bytesTakenP = escOffset + 1;
+        *bytesTakenP = escOffset;
     } else {
         // No complete packet yet and no substitution to do;
         // just throw the whole thing into the accumulator.
@@ -338,10 +344,41 @@ packetSocket::verifyNothingAccumulated() {
         throwf("Streams socket closed in the middle of an "
                "escape sequence");
     
-    if (this->packetAccumP->getLength() > 0)
+    if (this->inPacket)
         throwf("Stream socket closed in the middle of a packet "
-               "(%u bytes of packet received; no PKT marker to mark "
+               "(%u bytes of packet received; no END marker to mark "
                "end of packet)", this->packetAccumP->getLength());
+}
+
+
+
+void
+packetSocket::processBytesRead(const unsigned char * const buffer,
+                               size_t                const bytesRead) {
+
+    uint cursor;  // Cursor into buffer[]
+    cursor = 0;
+    while (cursor < bytesRead) {
+        size_t bytesTaken;
+
+        if (this->inEscapeSeq)
+            this->takeSomeEscapeSeq(&buffer[cursor],
+                                    bytesRead - cursor,
+                                    &bytesTaken);
+        else if (buffer[cursor] == ESC) {
+            this->inEscapeSeq = true;
+            bytesTaken = 1;
+        } else if (this->inPacket)
+            this->takeSomePacket(&buffer[cursor],
+                                 bytesRead - cursor,
+                                 &bytesTaken);
+        else
+            throwf("Byte 0x%02x is not in a packet or escape sequence.  "
+                   "Sender is probably not using packet socket protocol",
+                   buffer[cursor]);
+        
+        cursor += bytesTaken;
+    }
 }
 
 
@@ -379,24 +416,9 @@ packetSocket::readFromFile() {
 
             if (bytesRead == 0) {
                 this->eof = true;
-                verifyNothingAccumulated();
-            } else {
-                uint cursor;  // Cursor into buffer[]
-                cursor = 0;
-                while (cursor < bytesRead) {
-                    size_t bytesTaken;
-
-                    if (this->inEscapeSeq)
-                        this->takeSomeEscapeSeq(&buffer[cursor],
-                                                bytesRead - cursor,
-                                                &bytesTaken);
-                    else
-                        this->takeSomePacket(&buffer[cursor],
-                                             bytesRead - cursor,
-                                             &bytesTaken);
-                    cursor += bytesTaken;
-                }
-            }
+                this->verifyNothingAccumulated();
+            } else
+                this->processBytesRead(buffer, bytesRead);
         }
     }
 }
