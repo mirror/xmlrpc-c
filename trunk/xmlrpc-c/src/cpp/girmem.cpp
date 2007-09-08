@@ -120,8 +120,10 @@ autoObjectPtr::unpoint() {
     if (this->objectP) {
         bool dead;
         this->objectP->decref(&dead);
-        if (dead)
+        if (dead) {
             delete(this->objectP);
+            this->objectP = NULL;
+        }
     }
 }
 
@@ -140,7 +142,8 @@ autoObjectPtr::operator=(autoObjectPtr const& source) {
     } else {
         this->unpoint();
         this->objectP = source.objectP;
-        this->objectP->incref();
+        if (this->objectP)
+            this->objectP->incref();
     }
     return *this;
 }
@@ -149,6 +152,9 @@ autoObjectPtr::operator=(autoObjectPtr const& source) {
 
 autoObject *
 autoObjectPtr::operator->() const {
+    if (this->objectP == NULL)
+        throw(error("attempt to dereference autoObjectPtr "
+                    "which does not point to anything"));
     return this->objectP;
 }
 
