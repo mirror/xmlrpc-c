@@ -4,7 +4,6 @@ The features are:
   c++            legacy C++ wrapper API
   c++2           modern C++ API
   client         client functions
-  pstream-client pstream-based client functions
   cgi-server     CGI-based server functions
   abyss-server   ABYSS-based server functions
   pstream-server pstream-based server functions
@@ -73,14 +72,6 @@ while test $# -gt 0; do
       needCpp=yes
       the_libs="-lxmlrpc++ $the_libs"
       ;;
-    pstream-client)
-      if test "${needCpp}" = "no"; then
-        echo "You must specify the 'c++2' feature before 'pstream-client'."
-        echo "Pstream client facilities are available only in a C++ version."
-        exit 10
-        fi
-      packetsocket_lib="-lxmlrpc_packetsocket"
-      ;;
     server-util)
       the_libs="-lxmlrpc_server $the_libs"
       ;;
@@ -135,6 +126,7 @@ while test $# -gt 0; do
       fi
       if test "${needCpp}" = "yes"; then
         the_libs="-lxmlrpc_client++ $the_libs"
+        packetsocket_lib="-lxmlrpc_packetsocket"
         fi
       ;;
     --version)

@@ -54,9 +54,6 @@ while test $# -gt 0; do
       needCpp=yes
       the_libs="${BLDDIR}/src/cpp/libxmlrpc++.a $the_libs"
       ;;
-    pstream-client)
-      packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
-      ;;
     server-util)
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       ;;
@@ -105,6 +102,7 @@ while test $# -gt 0; do
         fi
       if test "${needCpp}" = "yes"; then
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_client++.a $the_libs"
+        packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
         fi
       ;;
     --version)
