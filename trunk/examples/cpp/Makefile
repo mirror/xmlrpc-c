@@ -81,7 +81,7 @@ $(CLIENTPROGS):%:%.o
 
 
 LDADD_PSTREAM_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 client pstream-client --ldadd)
+  $(shell $(XMLRPC_C_CONFIG) c++2 client --ldadd)
 
 pstream_client:%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_PSTREAM_CLIENT)
