@@ -261,7 +261,7 @@ formatLibwwwError(HTRequest *   const requestP,
            XXX - The documentation for this API is terrible, so we may
            be using it incorrectly.  
         */
-        const char * msg =
+        const char * const msg =
             HTDialog_errorMessage(requestP, HT_A_MESSAGE, HT_MSG_NULL,
                                   "An error occurred", errStack);
         
