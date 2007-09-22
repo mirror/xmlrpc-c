@@ -106,6 +106,9 @@ shell_config: $(BLDDIR)/Makefile.config
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
 	@echo '#######################################################' >>$@
 
+# We don't want Makefile.config's xmlrpc-c-config.test rule:
+OMIT_XMLRPC_C_CONFIG_TEST = Y
+
 xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."

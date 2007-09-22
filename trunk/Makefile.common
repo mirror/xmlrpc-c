@@ -465,6 +465,11 @@ $(BLDDIR)/transport_config.h:
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/GNUmakefile $(notdir $@)
 endif
 
+ifneq ($(OMIT_XMLRPC_C_CONFIG_TEST),Y)
+$(BLDDIR)/xmlrpc-c-config.test:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/GNUmakefile $(notdir $@)
+endif
+
 $(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh): \
   $(BLDDIR)/include/xmlrpc-c/config.h
 
@@ -472,6 +477,7 @@ $(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh): \
 # before you can make anything in it.  Here's the rule to do that.
 $(SUBDIRS:%=$(CURDIR)/%):
 	mkdir $@
+
 
 ##############################################################################
 #                           INSTALL RULES                                    #
