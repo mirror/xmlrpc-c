@@ -576,16 +576,17 @@ distclean-common:
 # own Makefile.depend, because 'make dep' creates Makefile.depend with 
 # absolute pathnames, specific to the developer's system.
 #
-# So we empty out Makefile.depend here.  The developer must do 'make dep' if
-# he wants to edit and rebuild.
+# So we obliterate Makefile.depend here.  The build will automatically
+# create an empty Makefile.depend when it is needed for the user.  The
+# developer must do 'make dep' if he wants to edit and rebuild.
 #
-# Other projects have 'make distclean' _remove_ Makefile.depend and then
-# have 'make' automatically build Makefile.depend.  We have
-# found that to be an utter disaster -- it's way too complicated and prone
-# to failure, especially with built .h files.  Better not to burden the user,
-# who gains nothing from it, with that.
+# Other projects have the build automatically build a true
+# Makefile.depend, suitable for a developer.  We have found that to be
+# an utter disaster -- it's way too complicated and prone to failure,
+# especially with built .h files.  Better not to burden the user, who
+# gains nothing from it, with that.
 #
-	cat /dev/null >Makefile.depend
+	rm -f Makefile.depend
 	rm -f TAGS
 	rm -f srcdir blddir
 
