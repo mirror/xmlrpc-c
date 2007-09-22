@@ -32,7 +32,7 @@ public:
 
         // Sometimes, make it look hard (so client can see what it's like
         // to do an RPC that takes a while).
-        if (y == 1)
+        if (adder == 1)
             sleep(2);
     }
 };
