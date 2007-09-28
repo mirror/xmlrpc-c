@@ -25,6 +25,8 @@
 
 
 #include <string>
+#include <cstring>
+
 #include "xmlrpc-c/oldcppwrapper.hpp"
 
 using std::string;

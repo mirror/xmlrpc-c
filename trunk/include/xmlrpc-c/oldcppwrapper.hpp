@@ -25,6 +25,7 @@
 // -Bryan 2005.03.12.
 
 
+#include <cstdlib>
 #include <string>
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
