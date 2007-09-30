@@ -28,6 +28,7 @@
 
 *****************************************************************************/
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 #include <time.h>
