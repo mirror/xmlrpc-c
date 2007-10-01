@@ -25,7 +25,6 @@ XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 CLIENTPROGS = \
   auth_client \
-  query-meerkat \
   synch_client \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
