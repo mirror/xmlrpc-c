@@ -568,7 +568,7 @@ ChanSwitchUnixCreateFd(int            const fd,
 
     if (connected(fd))
         xmlrpc_asprintf(errorP,
-                        "Socket (file descriptor %d) is not in connected "
+                        "Socket (file descriptor %d) is in connected "
                         "state.", fd);
     else {
         MALLOCVAR(socketUnixP);
