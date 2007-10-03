@@ -2,7 +2,6 @@
 
 #include "xmlrpc_config.h"
 
-#include <inttypes.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +17,7 @@
 #  include <grp.h>
 #endif
 
+#include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"
 

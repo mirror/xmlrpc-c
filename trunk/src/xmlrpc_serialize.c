@@ -4,8 +4,9 @@
 
    The printf format specifiers we use appear to be entirely standard,
    except for the "long long" one, which is %I64 on Windows and %lld
-   everywhere else.  So for that, we use the C99 standard macro I64d,
-   which is defined by inttypes.h.
+   everywhere else.  So for that, we use the C99 standard macro PRId64,
+   which is defined by inttypes.h.  Ironically, Windows doesn't have
+   inttypes.h either, but we have int.h instead.
 */
 
 #include "xmlrpc_config.h"
@@ -15,8 +16,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
 
+#include "int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 

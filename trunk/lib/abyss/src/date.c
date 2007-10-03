@@ -2,10 +2,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include <inttypes.h>
 
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/time_int.h"
+#include "int.h"
 
 #include "date.h"
 
