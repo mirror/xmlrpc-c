@@ -6,11 +6,21 @@
    long long mynumber = 5;
    printf("My number is %" PRId64 ".\n", mynumber
 
-   Xmlrpc-c uses uint32_t; in Windows compilers we've seen, that is built-in.
 */
 
 #ifdef _MSC_VER
 #  define PRId64 "I64"
+
+#ifndef uint32_t
+typedef unsigned int      uint32_t;
+#endif
+#ifndef uint64_t
+typedef unsigned __int64  uint64_t;
+#endif
+#ifndef  uint
+typedef  unsigned int   uint;
+#endif
+
 #else
 #  include <inttypes.h>
 #endif
