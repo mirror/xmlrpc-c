@@ -9,8 +9,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
+#ifdef WIN32
+#  include <windows.h>
+#else
+#  include <unistd.h>
 #endif
 
 #include <xmlrpc-c/base.h>
@@ -18,6 +20,13 @@
 #include <xmlrpc-c/server_abyss.h>
 
 #include "config.h"  /* information about this build environment */
+
+#ifdef WIN32
+  #define SLEEP(seconds) SleepEx(seconds * 1000);
+#else
+  #define SLEEP(seconds) sleep(seconds);
+#endif
+
 
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP,
@@ -38,7 +47,7 @@ sample_add(xmlrpc_env *   const envP,
        to do an RPC that takes a while).
     */
     if (y == 1)
-        sleep(2);
+        SLEEP(2);
 
     /* Return our result. */
     return xmlrpc_build_value(envP, "i", z);
