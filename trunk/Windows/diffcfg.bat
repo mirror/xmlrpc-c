@@ -4,5 +4,3 @@ diff -us transport_config_win32.h ..\transport_config.h >> tempcfg.diff
 diff -us win32_version.h ..\version.h >> tempcfg.diff
 np tempcfg.diff
 
-
-

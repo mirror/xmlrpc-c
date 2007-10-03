@@ -38,5 +38,3 @@ Alternatively, the USER can add the libraries to LINK wiht as NEEDED!
 #endif   /* #if MUST_BUILD_CURL_CLIENT > 0 */
 
 #endif   /* #ifndef  _transport_config_h_ */
-/* eof - transport_config.h */
-
