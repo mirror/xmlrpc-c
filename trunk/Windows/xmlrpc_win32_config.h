@@ -1,3 +1,8 @@
+
+// xmlrpc_config.h
+#ifndef  _xmlrpc_config_h_
+#define  _xmlrpc_config_h_
+
 #pragma once
 
 /* From xmlrpc_amconfig.h */
@@ -54,7 +59,8 @@
 
 
 /* Windows-specific includes. */
-
+#define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
+#include <http.h>    /* this is all about HTTP and SOCKET */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,7 +76,7 @@
 
 
 #include <time.h>
-#include <WINSOCK.h>
+// #include <WINSOCK.h>
 #include <direct.h>  /* for _chdir() */
 
 /* We are linking against the multithreaded versions
@@ -89,9 +95,9 @@ static struct tm* gmtime_r(const time_t *timep, struct tm* result)
 
 #endif
 
-#ifndef socklen_t
-typedef unsigned int socklen_t;
-#endif
+//#ifndef socklen_t
+//typedef unsigned int socklen_t;
+//#endif
 
 /* inttypes.h */
 #ifndef int8_t
@@ -118,11 +124,13 @@ typedef __int64           int64_t;
 #ifndef uint64_t
 typedef unsigned __int64  uint64_t;
 #endif
-
+#ifndef  uint
+typedef  unsigned int   uint;
+#endif
 #define __inline__ __inline
 
 #define HAVE_SETENV 1
-__inline BOOL setenv(const char* name, const char* value, int i)
+static BOOL setenv(const char* name, const char* value, int i)
 {
 	return (SetEnvironmentVariable(name, value) != 0) ? TRUE : FALSE;
 }
@@ -130,7 +138,9 @@ __inline BOOL setenv(const char* name, const char* value, int i)
 #define strcasecmp(a,b) stricmp((a),(b))
 
 #if defined(HAVE_WCHAR_H) && (HAVE_WCHAR_H)
+#ifndef XMLRPC_HAVE_WCHAR
 #define XMLRPC_HAVE_WCHAR 1
+#endif   // #ifndef XMLRPC_HAVE_WCHAR
 #endif
 
 #ifdef  _MSC_VER
@@ -138,11 +148,20 @@ __inline BOOL setenv(const char* name, const char* value, int i)
 // #pragma warning(default:4028)        // use this to reenable, if necessary
 #endif  // _MSC_VER
 
+#ifndef  strtoll
+#define  strtoll  strtol
+#endif
+#ifndef  strfree
+#define  strfree  xmlrpc_strfree
+#endif
+
+/* ==================================================================
 #error This code needs work by someone with Windows development facilities.  \
 The Xmlrpc-c code for Windows is incomplete.  \
 The file xml_rpc_alloc.h, referred to below, has never existed.  \
 To get Xmlrpc-c to work on Windows, you must either create an \
 xml_rpc_alloc.h or change other code so it doesn't need one.
+   ================================================================== */
 
 /* The reason for the partially done code is that someone wrote a full
 set of changes to an Xmlrpc-c stable release to allow it to build on
@@ -157,5 +176,9 @@ concern.
 See http://xmlrpc-c.sourceforge.net/windows.php for the complete story
 on using Xmlrpc-c on Windows.
 */
-
+#include "transport_config.h"
 #include "xml_rpc_alloc.h"
+
+#endif // #ifndef  _xmlrpc_config_h_
+// eof - xmlrpc_config.h
+

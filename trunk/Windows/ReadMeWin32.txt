@@ -1,12 +1,45 @@
 Build Instructions For XML-RPC For C/C++ On Windows
 ---------------------------------------------------
 
+Version: circa 1.13, October, 2007.
+
+The original information by Markus Hoffrogge and Stephen Bone are left appended below,
+and contains many points still valid.
+
+This is a build of the xmlrpc static libary, and the examples, using Microsoft Visual
+Studio 2003 (MSVC7) in Windows XP SP2. The shared libraries (DLL) were NOT built. Also,
+although included, the all.vcproj, configwin32.vcproj and cpptest.vcproj were exclude
+from the solution.
+
+1. Run the batch file ConfigureWin32.bat, found in the Windows directory. This
+will copy four(4) headers to the appropriate folders.
+
+2. Load xmlrpc.sln in MSVC7, or later, and build the Release or Debug configurations.
+The DLL configurations may not compile.
+
+This build requires that you have a Microsoft SDK, or Plaform SDK installed, since
+among other things, it uses <http.h>, and httpapi.lib, from the SDK.
+
+As the opposite of what is mentioned below, MUST_BUILD_HTTP_SYS_SERVER has been set
+to 1 in the transport_config_win32.h, which gets copied to the transport_config.h file,
+although no testing of the authentication server and client was done. This requiries
+IIS to be installed, and the installation of a certificate.
+
+Regretably, the meerkat remote site is no longer available for testing, but once
+built, the xmlrpc_sample_add_server.exe, using 8080, and
+xmlrpc_sample_add_sync_client.exe in the bin folder, ran fine. 
+
+Have fun.
+
+Geoff McLane
+3 October, 2007
+home: http://geoffair.net
+
 Markus Hoffrogge:
 Compilation for WIN32 is possible now again for version 1.6.10 - non CPP parts only.
 Project files have been tested under VicualStudio 6.0.
 Build project all - this will build all other projects.
 CPP code is not compiled and adopted right now.
-
 
 This release excludes the option to compile an "http.sys" version of an
 XML-RPC server. If you do wish to build in the http.sys server,

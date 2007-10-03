@@ -6,4 +6,15 @@
 
    Those header files #include this one.
 */
-#define XMLRPC_HAVE_WCHAR 0
+
+#ifndef XMLRPC_HAVE_WCHAR
+#define XMLRPC_HAVE_WCHAR 1
+#endif   // #ifndef XMLRPC_HAVE_WCHAR
+
+#define  ATTR_UNUSED
+
+#ifdef   _MSC_VER
+#define  snprintf _snprintf
+#endif /* _MSC_VER */
+
+// eof - config.h
