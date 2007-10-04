@@ -393,9 +393,10 @@ lineDelimCountW(const wchar_t * const start,
     count = 0;
     p = start;
 
-    while (p) {
-        p = wmemchr(p, '\n', end-p);
-        if (p) {
+    while (p && p < end) {
+        /* We used to use memchr(), but Windows doesn't have it */
+        p = wcsstr(p, L"\n");
+        if (p && p < end) {
             ++count; /* count the newline */
             ++p;  /* skip the newline */
         }
