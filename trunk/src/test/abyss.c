@@ -5,8 +5,10 @@
 
 #include "unistdx.h"
 #include <stdio.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 #include <errno.h>
 #include <string.h>
 
@@ -44,6 +46,61 @@ bindSocketToPort(int      const fd,
 
 
 static void
+chanSwitchCreateFd(int            const fd,
+                   TChanSwitch ** const chanSwitchPP,
+                   const char **  const errorP) {
+
+#ifdef WIN32
+    ChanSwitchWinCreateWinsock(fd, chanSwitchPP, errorP);
+#else
+    ChanSwitchUnixCreateFd(fd, chanSwitchPP, errorP);
+#endif
+}    
+
+
+
+static void
+closesock(int const fd) {
+#ifdef WIN32
+    closesocket(fd);
+#else
+    close(fd);
+#endif
+}
+
+
+
+static void
+chanSwitchCreate(uint16_t       const portNumber,
+                 TChanSwitch ** const chanSwitchPP,
+                 const char **  const errorP) {
+
+#ifdef WIN32
+    ChanSwitchWinCreate(portNumber, chanSwitchPP, errorP);
+#else
+    ChanSwitchUnixCreate(portNumber, chanSwitchPP, errorP);
+#endif
+}    
+
+
+
+static void
+channelCreateFd(int const fd,
+                TChannel ** const channelPP,
+                const char ** const errorP) {
+
+#ifdef WIN32
+    void * channelInfoP;
+    ChannelWinCreateWinsock(fd, channelPP, &channelInfoP, errorP);
+#else
+    struct abyss_unix_chaninfo * channelInfoP;
+    ChannelUnixCreateFd(fd, channelPP, &channelInfoP, errorP);
+#endif
+}
+
+
+
+static void
 testChanSwitchOsSocket(void) {
 
     int rc;
@@ -62,8 +119,8 @@ testChanSwitchOsSocket(void) {
 
         bindSocketToPort(fd, 8080);
 
-        ChanSwitchUnixCreateFd(fd, &chanSwitchP, &error);
-        
+        chanSwitchCreateFd(fd, &chanSwitchP, &error);
+
         TEST_NULL_STRING(error);
         
         ServerCreateSwitch(&server, chanSwitchP, &error);
@@ -74,7 +131,7 @@ testChanSwitchOsSocket(void) {
         
         ChanSwitchDestroy(chanSwitchP);
 
-        close(fd);
+        closesock(fd);
     }
 }
 
@@ -87,7 +144,7 @@ testChanSwitch(void) {
     TChanSwitch * chanSwitchP;
     const char * error;
 
-    ChanSwitchUnixCreate(8080, &chanSwitchP, &error);
+    chanSwitchCreate(8080, &chanSwitchP, &error);
 
     TEST_NULL_STRING(error);
 
@@ -118,10 +175,11 @@ testChannel(void) {
         int const fd = rc;
 
         TChannel * channelP;
-        struct abyss_unix_chaninfo * channelInfoP;
         const char * error;
 
-        ChannelUnixCreateFd(fd, &channelP, &channelInfoP, &error);
+        channelCreateFd(fd, &channelP, &error);
+
+        TEST(error);
 
         TEST(strstr(error, "not in connected"));
     }
@@ -153,7 +211,7 @@ testOsSocket(void) {
 
         ServerFree(&server);
 
-        close(fd);
+        closesock(fd);
     }
 }
 
@@ -162,6 +220,7 @@ testOsSocket(void) {
 static void
 testSocket(void) {
 
+#ifndef WIN32
     int rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
@@ -190,6 +249,7 @@ testSocket(void) {
 
         close(fd);
     }
+#endif
 }
 
 
@@ -219,8 +279,8 @@ testServerCreate(void) {
         TChanSwitch * chanSwitchP;
         const char * error;
 
-        ChanSwitchUnixCreate(8080, &chanSwitchP, &error);
-
+        chanSwitchCreate(8080, &chanSwitchP, &error);
+        
         TEST_NULL_STRING(error);
 
         ServerCreateSwitch(&server, chanSwitchP, &error);
@@ -248,7 +308,13 @@ testServerCreate(void) {
 void
 test_abyss(void) {
 
+    const char * error;
+
     printf("Running Abyss server tests...\n");
+    
+    ChanSwitchInit(&error);
+
+    TEST_NULL_STRING(error);
 
     testChanSwitch();
 
@@ -260,6 +326,9 @@ test_abyss(void) {
 
     testServerCreate();
 
+    ChanSwitchTerm();
+
     printf("\n");
     printf("Abyss server tests done.\n");
 }
+
