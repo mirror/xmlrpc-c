@@ -527,7 +527,7 @@ PoolCreate(TPool *  const poolP,
         } else
             success = FALSE;
         if (!success)
-            MutexFree(poolP->mutexP);
+            MutexDestroy(poolP->mutexP);
     } else
         success = FALSE;
 
@@ -619,7 +619,7 @@ PoolFree(TPool * const poolP) {
         nextPoolZoneP = poolZoneP->next;
         free(poolZoneP);
     }
-    MutexFree(poolP->mutexP);
+    MutexDestroy(poolP->mutexP);
 }
 
 

@@ -237,6 +237,8 @@ MutexTryLock(TMutex * const mutexP) {
 
 
 void
-MutexFree(TMutex * const mutexP) {
+MutexDestroy(TMutex * const mutexP) {
     pthread_mutex_destroy(&mutexP->pthreadMutex);
+
+    free(mutexP);
 }

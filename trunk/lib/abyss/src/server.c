@@ -92,7 +92,7 @@ logClose(struct _TServer * const srvP) {
 
     if (srvP->logfileisopen) {
         FileClose(&srvP->logfile);
-        MutexFree(srvP->logmutexP);
+        MutexDestroy(srvP->logmutexP);
         srvP->logfileisopen = FALSE;
     }
 }

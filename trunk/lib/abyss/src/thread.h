@@ -69,6 +69,6 @@ abyss_bool
 MutexTryLock(TMutex * const mutexP);
 
 void
-MutexFree(TMutex * const mutexP);
+MutexDestroy(TMutex * const mutexP);
 
 #endif

@@ -318,6 +318,6 @@ MutexTryLock(TMutex * const mutexP ATTR_UNUSED) {
 
 
 void
-MutexFree(TMutex * const mutexP ATTR_UNUSED) {
+MutexDestroy(TMutex * const mutexP ATTR_UNUSED) {
 
 }
