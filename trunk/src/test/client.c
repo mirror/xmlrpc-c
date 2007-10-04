@@ -4,6 +4,7 @@
 #include <errno.h>
 
 #include "xmlrpc_config.h"
+#include "transport_config.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
@@ -84,6 +85,7 @@ testCreateCurlParms(void) {
 static void
 testCreateSeparateXport(void) {
 
+#ifdef MUST_BUILD_CURL_CLIENT
     xmlrpc_env env;
     xmlrpc_client * clientP;
     struct xmlrpc_clientparms clientParms1;
@@ -151,6 +153,8 @@ testCreateSeparateXport(void) {
     xmlrpc_curl_transport_ops.destroy(transportP);
 
     xmlrpc_env_clean(&env);
+
+#endif  /* MUST_BUILD_CURL_CLIENT */
 }
 
 
