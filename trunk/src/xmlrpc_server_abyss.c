@@ -901,6 +901,21 @@ extractServerCreateParms(
 
 
 static void
+chanSwitchCreateOsSocket(TOsSocket      const socketFd,
+                         TChanSwitch ** const chanSwitchPP,
+                         const char **  const errorP) {
+
+#ifdef WIN32
+    ChanSwitchWinCreateWinsock(socketFd, chanSwitchPP, errorP);
+#else
+    ChanSwitchUnixCreateFd(socketFd, chanSwitchPP, errorP);
+#endif
+
+}
+
+
+
+static void
 createServerBoundSocket(xmlrpc_env *   const envP,
                         TOsSocket      const socketFd,
                         const char *   const logFileName,
@@ -910,7 +925,7 @@ createServerBoundSocket(xmlrpc_env *   const envP,
     TChanSwitch * chanSwitchP;
     const char * error;
     
-    ChanSwitchUnixCreateFd(socketFd, &chanSwitchP, &error);
+    chanSwitchCreateOsSocket(socketFd, &chanSwitchP, &error);
     if (error) {
         xmlrpc_faultf(envP, "Unable to create Abyss socket out of "
                       "file descriptor %d.  %s", socketFd, error);
