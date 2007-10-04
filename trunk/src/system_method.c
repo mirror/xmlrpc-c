@@ -486,6 +486,8 @@ system_methodSignature(xmlrpc_env *   const envP,
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
     XMLRPC_ASSERT_PTR_OK(serverInfo);
 
+    retvalP = NULL;  /* quiet compiler unset variable warning */
+
     xmlrpc_env_init(&env);
 
     /* Turn our arguments into something more useful. */
