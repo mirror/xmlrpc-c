@@ -1,24 +1,18 @@
 /*=============================================================================
                                  socket_win.c
 ===============================================================================
-  This is the implementation of TSocket for a Windows Winsock socket.
-
-  As of August 2006, this is just a framework, adapted from the POSIX
-  socket version (socket_unix.c) and past versions of Abyss Windows
-  socket code.  It doesn't compile and is just here as a starting
-  point in case a Windows programmer wants to make Abyss work on
-  Windows.
-
+  This is the implementation of TChanSwitch and TChannel
+  for a Winsock socket.
 =============================================================================*/
-
-#include "xmlrpc_config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <winsock.h>
+#include <errno.h>
 
+#include "xmlrpc_config.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "mallocvar.h"
@@ -31,6 +25,221 @@
 #include "socket_win.h"
 
 
+
+/* =============================================================
+   Provided nice error strings, NOT available in system errors.
+   ============================================================= */
+
+typedef struct tagSOCKERRS {
+   int err;       // WSAGetLastError() value
+   char * desc;   // description of error
+} SOCKERR;
+
+/* could/should perhaps be by the actual call,
+   but for now, just one big list, with some repeats
+*/
+
+SOCKERR sSockErr[] = {
+   { WSANOTINITIALISED,
+     "WSANOTINITIALISED - "
+     "WSAStartup must be called before using this function." },
+   { WSAENETDOWN,
+     "WSAENETDOWN - "
+     "The network subsystem has failed." },
+   { WSAEACCES,
+     "WSAEACCES - "
+     "Attempt to connect datagram socket to broadcast address failed "
+     "because setsockopt option SO_BROADCAST is not enabled." },
+   { WSAEADDRINUSE,
+     "WSAEADDRINUSE - "
+     "A process on the computer is already bound to the same fully-qualified "
+     "address and the socket has not been marked to allow address reuse with "
+     "SO_REUSEADDR. For example, the IP address and port are bound in the "
+     "af_inet case). (See the SO_REUSEADDR socket option under setsockopt.)" },
+   { WSAEADDRNOTAVAIL,
+     "WSAEADDRNOTAVAIL - "
+     "The specified address is not a valid address for this computer." },
+   { WSAEFAULT,
+     "WSAEFAULT - "
+     "The name or namelen parameter is not a valid part of the user "
+     "address space, the namelen parameter is too small, the name parameter "
+     "contains an incorrect address format for the associated "
+     "address family, or the first two bytes of the memory block "
+     "specified by name does not match the address family associated with "
+     "the socket descriptor s." },
+   { WSAEINPROGRESS,
+     "WSAEINPROGRESS - "
+     "A blocking Windows Sockets 1.1 call is in progress, or the "
+     "service provider is still processing a callback function." },
+   { WSAEINVAL,
+     "WSAEINVAL - "
+     "The socket is already bound to an address." },
+   { WSAENOBUFS,
+     "WSAENOBUFS - "
+     "Not enough buffers available, too many connections." },
+   { WSAENOTSOCK,
+     "WSAENOTSOCK - "
+     "The descriptor is not a socket." },
+
+   // setsocketopt
+   { WSAENETRESET,
+     "WSAENETRESET - "
+     "Connection has timed out when SO_KEEPALIVE is set." },
+   { WSAENOPROTOOPT,
+     "WSAENOPROTOOPT - "
+     "The option is unknown or the specified provider "
+     "or socket is not capable of implementing it "
+     "(see SO_GROUP_PRIORITY limitations)." },
+   { WSAENOTCONN,
+     "WSAENOTCONN - "
+     "Connection has been reset when SO_KEEPALIVE is set." },
+
+   // WSAStartup
+   { WSASYSNOTREADY,
+     "WSASYSNOTREADY - "
+     "The underlying network subsystem is not ready for "
+     "network communication." },
+   { WSAVERNOTSUPPORTED,
+     "WSAVERNOTSUPPORTED - "
+     "The version of Windows Sockets function requested is not provided "
+     "by this particular Windows Sockets implementation." },
+   { WSAEINPROGRESS,
+     "WSAEINPROGRESS - "
+     "A blocking Windows Sockets 1.1 operation is in progress." },
+   { WSAEPROCLIM,
+     "WSAEPROCLIM - "
+     "Limit on the number of tasks allowed by the Windows Sockets "
+     "implementation has been reached." },
+   { WSAEFAULT,
+     "WSAEFAULT - "
+     "The lpWSAData is not a valid pointer." },
+   // listen
+   { WSANOTINITIALISED,
+     "WSANOTINITIALISED - "
+     "A successful WSAStartup call must occur before using this function." },
+   { WSAENETDOWN,
+     "WSAENETDOWN - "
+     "The network subsystem has failed." },
+   { WSAEADDRINUSE,
+     "WSAEADDRINUSE - "
+     "The socket's local address is already in use and the socket "
+     "was not marked to allow address reuse with SO_REUSEADDR.  "
+     "This error usually occurs during execution of the bind function, "
+     "but could be delayed until this function if the bind was to "
+     "a partially wildcard address (involving ADDR_ANY) "
+     "and if a specific address needs to be committed at the time "
+     "of this function call." },
+   { WSAEINPROGRESS,
+     "WSAEINPROGRESS - "
+     "A blocking Windows Sockets 1.1 call is in progress, "
+     "or the service provider is still processing a callback function." },
+   { WSAEINVAL,
+     "WSAEINVAL - "
+     "The socket has not been bound with bind." },
+   { WSAEISCONN,
+     "WSAEISCONN - "
+     "The socket is already connected." },
+   { WSAEMFILE,
+     "WSAEMFILE - "
+     "No more socket descriptors are available." },
+   { WSAENOBUFS,
+     "WSAENOBUFS - "
+     "No buffer space is available." },
+   { WSAENOTSOCK,
+     "WSAENOTSOCK - "
+     "The descriptor is not a socket." },
+   { WSAEOPNOTSUPP,
+     "WSAEOPNOTSUPP - "
+     "The referenced socket is not of a type that has a listen operation." },
+
+   // getpeername
+   { WSANOTINITIALISED,
+     "WSANOTINITIALISED - "
+     "A successful WSAStartup call must occur before using this function." },
+   { WSAENETDOWN,
+     "WSAENETDOWN - "
+     "The network subsystem has failed." },
+   { WSAEFAULT,
+     "WSAEFAULT - "
+     "The name or the namelen parameter is not a valid part of the "
+     "user address space, or the namelen parameter is too small." },
+   { WSAEINPROGRESS,
+     "WSAEINPROGRESS - "
+     "A blocking Windows Sockets 1.1 call is in progress, "
+     "or the service provider is still processing a callback function." },
+   { WSAENOTCONN,
+     "WSAENOTCONN - "
+     "The socket is not connected." },
+   { WSAENOTSOCK,
+     "WSAENOTSOCK - "
+     "The descriptor is not a socket." },
+
+   // accept
+   { WSANOTINITIALISED,
+     "WSANOTINITIALISED - "
+     "A successful WSAStartup call must occur before using this function." },
+   { WSAENETDOWN,
+     "WSAENETDOWN - "
+     "The network subsystem has failed." },
+   { WSAEFAULT,
+     "WSAEFAULT - "
+     "The addrlen parameter is too small or addr is not a valid part "
+     "of the user address space." },
+   { WSAEINTR,
+     "WSAEINTR - "
+     "A blocking Windows Sockets 1.1 call was canceled through "
+     "WSACancelBlockingCall." },
+   { WSAEINPROGRESS,
+     "WSAEINPROGRESS - "
+     "A blocking Windows Sockets 1.1 call is in progress, "
+     "or the service provider is still processing a callback function." },
+   { WSAEINVAL,
+     "WSAEINVAL - "
+     "The listen function was not invoked prior to accept." },
+   { WSAEMFILE,
+     "WSAEMFILE - "
+     "The queue is nonempty upon entry to accept and "
+     "there are no descriptors available." },
+   { WSAENOBUFS,
+     "WSAENOBUFS - "
+     "No buffer space is available." },
+   { WSAENOTSOCK,
+     "WSAENOTSOCK - "
+     "The descriptor is not a socket." },
+   { WSAEOPNOTSUPP,
+     "WSAEOPNOTSUPP - "
+     "The referenced socket is not a type that offers connection-oriented "
+     "service." },
+   { WSAEWOULDBLOCK,
+     "WSAEWOULDBLOCK - "
+     "The socket is marked as nonblocking and no connections are present "
+     "to be accepted." },
+
+   /* must be last entry */
+   { 0,            0 }
+};
+
+
+
+static const char *
+getWSAError(int const wsaErrno) {
+
+    SOCKERR * pseP;
+  
+    pseP = &sSockErr[0];  // initial value
+   
+    while (pseP->desc) {
+        if (pseP->err == wsaErrno)
+            return pseP->desc;
+        
+        ++pse;
+    }
+
+    return "(no description available)";
+}
+
+
+
 struct socketWin {
 /*----------------------------------------------------------------------------
    The properties/state of a TSocket unique to a Unix TSocket.
@@ -40,12 +249,51 @@ struct socketWin {
         /* 'socket' was supplied by the user; it belongs to him */
 };
 
+static
+abyss_bool
+connected(SOCKET const fd) {
+/*----------------------------------------------------------------------------
+   Return TRUE iff the socket on file descriptor 'fd' is in the connected
+   state.
+   If 'fd' does not identify a stream socket or we are unable to determine
+   the state of the stream socket, the answer is "false".
+-----------------------------------------------------------------------------*/
+    abyss_bool connected;
+    struct sockaddr sockaddr;
+    socklen_t nameLen;
+    int rc;
 
+    nameLen = sizeof(sockaddr);
+
+    rc = getpeername(fd, &sockaddr, &nameLen);
+
+    if (rc == 0)
+        connected = TRUE;
+    else
+        connected = FALSE;
+
+    return connected;
+}
+
+
+
+// forward reference
+void
+bindSocketToPort(SOCKET           const winsock,
+                 struct in_addr * const addrP,
+                 uint16_t         const portNumber,
+                 const char **    const errorP);
+
+void 
+setSocketOptions(SOCKET        const fd,
+                 const char ** const errorP);
+
+char *
+GetWSAError(int const i);
 
 void
 SocketWinInit(const char ** const errorP) {
 
-    abyss_bool retval;
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
@@ -54,9 +302,11 @@ SocketWinInit(const char ** const errorP) {
  
     err = WSAStartup(wVersionRequested, &wsaData);
 
-    if (err != 0)
-        xmlrpc_asprintf(errorP, "WSAStartup() faild with rc %d", err);
-    else
+    if (err != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(errorP, "WSAStartup() faild with error %d (%s)",
+                        lastError, GetWSAError(lastError));
+    } else
         *errorP = NULL;
 }
 
@@ -88,7 +338,7 @@ channelDestroy(TChannel * const channelP) {
     struct socketWin * const socketWinP = channelP->implP;
 
     if (!socketWinP->userSuppliedWinsock)
-        close(socketWinP->winsock);
+        closesocket(socketWinP->winsock);
 
     free(socketWinP);
 }
@@ -113,7 +363,7 @@ channelWrite(TChannel *            const channelP,
         ) {
         size_t const maxSend = (size_t)(-1) >> 1;
 
-        ssize_t rc;
+        size_t rc;
         
         rc = send(socketWinP->winsock, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
@@ -137,7 +387,9 @@ channelRead(TChannel * const channelP,
     struct socketWin * const socketWinP = channelP->implP;
 
     int rc;
+
     rc = recv(socketWinP->winsock, buffer, len, 0);
+
     return rc;
 }
 
@@ -169,7 +421,7 @@ channelWait(TChannel *  const channelP,
     for (;;) {
         int rc;
 
-        rc = select(socketWinP->fd + 1, &rfds, &wfds, NULL,
+        rc = select(socketWinP->winsock, &rfds, &wfds, NULL,
                     (timems == TIME_INFINITE ? NULL : &tv));
 
         switch(rc) {   
@@ -225,10 +477,11 @@ ChannelWinGetPeerName(TChannel *           const channelP,
     
     rc = getpeername(socketWinP->winsock, &sockAddr, &addrlen);
 
-    if (rc < 0)
-        xmlrpc_asprintf(errorP, "getpeername() failed.  errno=%d (%s)",
-                        errno, strerror(errno));
-    else {
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(errorP, "getpeername() failed.  WSAERROR = %d (%s)",
+                        lastError, GetWSAError(lastError));
+    } else {
         if (addrlen != sizeof(sockAddr))
             xmlrpc_asprintf(errorP, "getpeername() returned a socket address "
                             "of the wrong size: %u.  Expected %u",
@@ -258,72 +511,6 @@ static struct TChannelVtbl const channelVtbl = {
     &channelAvailableReadBytes,
     &channelFormatPeerInfo,
 };
-
-
-
-static SocketDestroyImpl            socketDestroy;
-static SocketWriteImpl              socketWrite;
-static SocketReadImpl               socketRead;
-static SocketConnectImpl            socketConnect;
-static SocketBindImpl               socketBind;
-static SocketListenImpl             socketListen;
-static SocketAcceptImpl             socketAccept;
-static SocketErrorImpl              socketError;
-static SocketWaitImpl               socketWait;
-static SocketAvailableReadBytesImpl socketAvailableReadBytes;
-static SocketGetPeerNameImpl        socketGetPeerName;
-
-
-static struct TSocketVtbl const vtbl = {
-    &socketDestroy,
-    &socketWrite,
-    &socketRead,
-    &socketConnect,
-    &socketBind,
-    &socketListen,
-    &socketAccept,
-    &socketError,
-    &socketWait,
-    &socketAvailableReadBytes,
-    &socketGetPeerName
-};
-
-
-
-void
-SocketWinCreate(TSocket ** const socketPP) {
-
-    struct socketWin * socketWinP;
-
-    MALLOCVAR(socketWinP);
-
-    if (socketWinP) {
-        SOCKET rc;
-        rc = socket(AF_INET, SOCK_STREAM, 0);
-        if (rc < 0)
-            *socketPP = NULL;
-        else {
-            socketUnixP->winsock = rc;
-            socketUnixP->userSuppliedWinsock = FALSE;
-            
-            {
-                int32_t n = 1;
-                int rc;
-                rc = setsockopt(socketUnixP->fd, SOL_SOCKET, SO_REUSEADDR,
-                                (char*)&n, sizeof(n));
-                if (rc < 0)
-                    *socketPP = NULL;
-                else
-                    SocketCreate(&vtbl, socketWinP, socketPP);
-            }
-            if (!*socketPP)
-                closesocket(socketWinP->winsock);
-        }
-        if (!*socketPP)
-            free(socketWinP);
-    } else
-        *socketPP = NULL;
-}
 
 
 
@@ -362,12 +549,12 @@ makeChannelFromWinsock(SOCKET        const winsock,
 
 
 void
-ChannelWinCreateWinsock(SOCKET                       const winsock,
-                        TChannel **                  const channelPP,
-                        struct abyss_win_chaninfo ** const channelInfoPP,
-                        const char **                const errorP) {
+ChannelWinCreateWinsock(SOCKET        const winsock,
+                        TChannel **   const channelPP,
+                        void **       const channelInfoPP,
+                        const char ** const errorP) {
 
-    *channelInfoP = NULL;
+    *channelInfoPP = NULL;
 
     makeChannelFromWinsock(winsock, channelPP, errorP);
 }
@@ -400,7 +587,7 @@ ChanSwitchWinCreate(uint16_t       const portNumber,
    Set the socket's local address so that a subsequent "listen" will listen
    on all IP addresses, port number 'portNumber'.
 -----------------------------------------------------------------------------*/
-    struct socketUnix * socketWinP;
+    struct socketWin * socketWinP;
 
     MALLOCVAR(socketWinP);
 
@@ -410,18 +597,27 @@ ChanSwitchWinCreate(uint16_t       const portNumber,
     else {
         SOCKET winsock;
 
-        todo("Create winsock");
-        int rc;
+        winsock = socket(AF_INET, SOCK_STREAM, 0);
 
-        if (rc < 0)
-            xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
-                            errno, strerror(errno));
-        else {
+        if (winsock == 0 || winsock == INVALID_SOCKET) {
+            int const lastError = WSAGetLastError();
+            xmlrpc_asprintf(errorP, "socket() failed with WSAERROR %d (%s)",
+                            lastError, GetWSAError(lastError));
+        } else {
             socketWinP->winsock = winsock;
-            socketWinP->userSuppliedFd = FALSE;
+            socketWinP->userSuppliedWinsock = FALSE;
+            
+            setSocketOptions(socketWinP->winsock, errorP);
+            if (!*errorP) {
+                bindSocketToPort(socketWinP->winsock, NULL, portNumber,
+                                 errorP);
+                if (!*errorP)
+                    ChanSwitchCreate(&chanSwitchVtbl, socketWinP,
+                                     chanSwitchPP);
+            }
 
             if (*errorP)
-                todo("destroy winsock");
+                closesocket(winsock);
         }
         if (*errorP)
             free(socketWinP);
@@ -430,29 +626,29 @@ ChanSwitchWinCreate(uint16_t       const portNumber,
 
 
 
-
-static void
-bindSocketToPort(SOCKETK          const winsock,
+void
+bindSocketToPort(SOCKET           const winsock,
                  struct in_addr * const addrP,
                  uint16_t         const portNumber,
                  const char **    const errorP) {
     
-    struct socketWin * const socketWinP = socketP->implP;
-
     struct sockaddr_in name;
     int rc;
 
+    ZeroMemory(&name, sizeof(name));
     name.sin_family = AF_INET;
     name.sin_port   = htons(portNumber);
-    name.sin_addr   = *addrP;
+    if (addrP)
+        name.sin_addr = *addrP;
 
-    rc = bind(socketWinP->fd, (struct sockaddr *)&name, sizeof(name));
+    rc = bind(winsock, (struct sockaddr *)&name, sizeof(name));
 
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %hu.  "
-                        "bind() failed with errno %d (%s)",
-                        portNumber, errno, strerror(errno));
-    else
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %u.  "
+                        "bind() failed with WSAERROR %i (%s)",
+                        portNumber, lastError, GetWSAError(lastError));
+    } else
         *errorP = NULL;
 }
 
@@ -466,7 +662,7 @@ ChanSwitchWinCreateWinsock(SOCKET         const winsock,
     struct socketWin * socketWinP;
 
     if (connected(winsock))
-        xmlrpc_asprintf(errorP, "Socket is not in connected state.");
+        xmlrpc_asprintf(errorP, "Socket is in connected state.");
     else {
         MALLOCVAR(socketWinP);
 
@@ -514,7 +710,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
                  uint32_t      const backlog,
                  const char ** const errorP) {
 
-    struct socketUnix * const socketUnixP = chanSwitchP->implP;
+    struct socketWin * const socketWinP = chanSwitchP->implP;
 
     int32_t const minus1 = -1;
 
@@ -522,25 +718,26 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 
     /* Disable the Nagle algorithm to make persistant connections faster */
 
-    setsockopt(socketUnixP->fd, IPPROTO_TCP, TCP_NODELAY,
+    setsockopt(socketWinP->winsock, IPPROTO_TCP, TCP_NODELAY,
                &minus1, sizeof(minus1));
 
-    rc = listen(socketUnixP->fd, backlog);
+    rc = listen(socketWinP->winsock, backlog);
 
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "setsockopt() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(errorP, "setsockopt() failed with WSAERROR %d (%s)",
+                        lastError, GetWSAError(lastError));
+    } else
         *errorP = NULL;
 }
 
 
 
 static void
-chanSwitchAccept(TChanSwitch *    const chanSwitchP,
-                 TChannel **      const channelP,
-                 void **          const channelInfoPP,
-                 const char **    const errorP) {
+chanSwitchAccept(TChanSwitch * const chanSwitchP,
+                 TChannel **   const channelPP,
+                 void **       const channelInfoPP,
+                 const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Accept a connection via the channel switch *chanSwitchP.  Return as
    *channelPP the channel for the accepted connection.
@@ -550,7 +747,7 @@ chanSwitchAccept(TChanSwitch *    const chanSwitchP,
    If we receive a signal while waiting, return immediately with
    *channelPP == NULL.
 -----------------------------------------------------------------------------*/
-    struct socketWin * const listenSocketWinP = listenSocketP->implP;
+    struct socketWin * const listenSocketP = chanSwitchP->implP;
 
     abyss_bool interrupted;
     TChannel * channelP;
@@ -564,7 +761,7 @@ chanSwitchAccept(TChanSwitch *    const chanSwitchP,
         socklen_t size = sizeof(peerAddr);
         int rc;
 
-        rc = accept(listenSocketP->fd, &peerAddr, &size);
+        rc = accept(listenSocketP->winsock, &peerAddr, &size);
 
         if (rc >= 0) {
             int const acceptedWinsock = rc;
@@ -576,7 +773,7 @@ chanSwitchAccept(TChanSwitch *    const chanSwitchP,
                 xmlrpc_asprintf(errorP, "Unable to allocate memory");
             else {
                 acceptedSocketP->winsock = acceptedWinsock;
-                acceptedSocketP->userSuppliedFd = FALSE;
+                acceptedSocketP->userSuppliedWinsock = FALSE;
                 
                 *channelInfoPP = NULL;
 
@@ -591,7 +788,7 @@ chanSwitchAccept(TChanSwitch *    const chanSwitchP,
                     free(acceptedSocketP);
             }
             if (*errorP)
-                close(acceptedFd);
+                closesocket(acceptedWinsock);
         } else if (errno == EINTR)
             interrupted = TRUE;
         else
@@ -603,33 +800,63 @@ chanSwitchAccept(TChanSwitch *    const chanSwitchP,
 
 
 
-/*=============================================================================
-      obsolete TSocket interface
-=============================================================================*/
+static void
+channelFormatPeerInfo(TChannel *    const channelP,
+                      const char ** const peerStringP) {
+
+    struct socketWin * const socketWinP = channelP->implP;
+    struct sockaddr sockaddr;
+    socklen_t sockaddrLen;
+    int rc;
+
+    sockaddrLen = sizeof(sockaddr);
+    
+    rc = getpeername(socketWinP->winsock, &sockaddr, &sockaddrLen);
+    
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  "
+                        "WSAERROR %d (%s)",
+                        lastError, GetWSAError(lastError));
+    } else {
+        switch (sockaddr.sa_family) {
+        case AF_INET: {
+            struct sockaddr_in * const sockaddrInP =
+                (struct sockaddr_in *) &sockaddr;
+            if (sockaddrLen < sizeof(*sockaddrInP))
+                xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
+                                "the wrong size");
+            else {
+                unsigned char * const ipaddr = (unsigned char *)
+                    &sockaddrInP->sin_addr.s_addr;
+                xmlrpc_asprintf(peerStringP, "%u.%u.%u.%u:%hu",
+                                ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
+                                sockaddrInP->sin_port);
+            }
+        } break;
+        default:
+            xmlrpc_asprintf(peerStringP, "??? AF=%u", sockaddr.sa_family);
+        }
+    }
+}
+
 
 
 void
-SocketWinCreateWinsock(SOCKET     const winsock,
-                       TSocket ** const socketPP) {
+setSocketOptions(SOCKET        const fd,
+                 const char ** const errorP) {
 
-    TSocket * socketP;
-    const char * error;
+    int32_t const n = 1;
 
-    if (connected(winsock)) {
-        TChannel * channelP;
-        void * channelInfoP;
-        ChannelWinCreateWinsock(winsock, &channelP, &channelInfoP, &error);
-        if (!error)
-            SocketCreateChannel(channelP, channelInfoP, &socketP);
-    } else {
-        TChanSwitch * chanSwitchP;
-        ChanSwitchWinCreateWinsock(winsock, &chanSwitchP, &error);
-        if (!error)
-            SocketCreateChanSwitch(chanSwitchP, &socketP);
-    }
-    if (error) {
-        *socketPP = NULL;
-        xmlrpc_strfree(error);
+    int rc;
+
+    rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n));
+
+    if (rc != 0) {
+        int const i = WSAGetLastError();
+        xmlrpc_asprintf(errorP, "Failed to set socket options.  "
+                        "setsockopt() failed with WSAERROR %d (%s)",
+                        lastError, GetWSAError(lastError));
     } else
-        *socketPP = socketP;
+        *errorP = NULL;
 }
