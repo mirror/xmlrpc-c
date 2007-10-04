@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
 
 extern int total_tests;
@@ -42,13 +43,14 @@ do { \
         } \
        } while (0)
 
-static inline void
+static __inline__ void
 test_fault(xmlrpc_env * const envP,
            int          const expectedCode,
            const char * const fileName,
            unsigned int const lineNumber) {
 
     ++total_tests;
+
     if (!envP->fault_occurred)
         test_failure(fileName, lineNumber, "no fault occurred", "");
     else if (envP->fault_code != expectedCode)
@@ -68,12 +70,13 @@ test_fault(xmlrpc_env * const envP,
 ;
 
 
-static inline void
+static __inline__ void
 test_null_string(const char * const string,
                  const char * const fileName,
                  unsigned int const lineNumber) {
 
     ++total_tests;
+
     if (string != NULL)
         test_failure(fileName, lineNumber, "string not null", string);
     else
