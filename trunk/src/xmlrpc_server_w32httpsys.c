@@ -43,21 +43,22 @@
 #define _UNICODE
 #endif
 
-#include "xmlrpc_config.h"
-#include "xmlrpc-c/base.h"
-#include "xmlrpc-c/server.h"
-#include "xmlrpc-c/server_w32httpsys.h"
-#include "version.h"
-
 #if MUST_BUILD_HTTP_SYS_SERVER > 0
 
 /* See compilation note above if this header is not found! */
 #include <http.h>
 #include <windows.h>
 #include <strsafe.h>
+#include <wininet.h>
+
+#include "xmlrpc_config.h"
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/server.h"
+#include "xmlrpc-c/server_w32httpsys.h"
+#include "version.h"
 
 #pragma comment( lib, "httpapi" )
-
+#pragma message( "Compiling HTTPS server ..." )
 
 /* XXX - This variable is *not* currently threadsafe. Once the server has
 ** been started, it must be treated as read-only. */
