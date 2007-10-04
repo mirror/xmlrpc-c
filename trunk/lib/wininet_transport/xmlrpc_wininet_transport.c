@@ -314,9 +314,9 @@ get_wininet_response(xmlrpc_env *         const envP,
         }
         
         if (inetBuffer.dwBufferLength) {
-            TCHAR * bufptr;
-            bufptr = inetBuffer.lpvBuffer + inetBuffer.dwBufferLength;
-            inetBuffer.lpvBuffer = bufptr;
+            TCHAR * const oldBufptr = inetBuffer.lpvBuffer;
+
+            inetBuffer.lpvBuffer = oldBufptr + inetBuffer.dwBufferLength;
             nExpected -= inetBuffer.dwBufferLength;
             /* Adjust inetBuffer.dwBufferLength when it is greater than the */
             /* expected end of file */
@@ -401,6 +401,8 @@ Again:
                                 winInetTransactionP->pSendData, 
                                 strlen(winInetTransactionP->pSendData));
     if (!succeeded) {
+        LPTSTR pMsg;
+
         lastErr = GetLastError();
 
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
@@ -413,8 +415,6 @@ Again:
                       0, NULL);
 
         if (pMsgMem == NULL) {
-            LPTSTR pMsg = NULL;
-
             switch (lastErr) {
             case ERROR_INTERNET_CANNOT_CONNECT:
                 pMsg = "Sync HttpSendRequest failed: Connection refused.";
@@ -509,6 +509,8 @@ Again:
                               &winInetTransactionP->http_status,
                               &queryLen, NULL);
     if (!succeeded) {
+        LPTSTR pMsg;
+
         lastErr = GetLastError();
         FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                       FORMAT_MESSAGE_FROM_SYSTEM, 
