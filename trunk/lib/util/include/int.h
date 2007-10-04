@@ -11,6 +11,9 @@
 #ifdef _MSC_VER
 #  define PRId64 "I64"
 
+#ifndef int32_t
+typedef int               int32_t;
+#endif
 #ifndef uint32_t
 typedef unsigned int      uint32_t;
 #endif

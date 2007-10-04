@@ -31,7 +31,7 @@ DateToString(time_t        const datetime,
 
     struct tm brokenTime;
 
-    gmtime_r(&datetime, &brokenTime);
+    xmlrpc_gmtime(datetime, &brokenTime);
 
     if (mktime(&brokenTime) == (time_t)-1)
         *dateStringP = NULL;
@@ -72,28 +72,6 @@ tzOffsetStr(struct tm const tm,
 
 
 
-static void
-localtimex(time_t const datetime,
-           struct tm * const tmP) {
-/*----------------------------------------------------------------------------
-   Convert datetime from standard to broken-down format in the local
-   time zone.
-
-   For Windows, this is not thread-safe.  If you run a version of Abyss
-   with multiple threads, you can theoretically get arbitrary results here.
-   In practice, there is probably never any detectable difference from
-   what is expected.
------------------------------------------------------------------------------*/
-#ifdef WIN32
-  /* localtime_r() doesn't exist */
-  *tmP = localtime(&datetime);
-#else
-  localtime_r(&datetime, tmP);
-#endif
-}
-
-
-
 void
 DateToLogString(time_t        const datetime,
                 const char ** const dateStringP) {
@@ -101,7 +79,7 @@ DateToLogString(time_t        const datetime,
     const char * tzo;
     struct tm tm;
 
-    localtimex(datetime, &tm);
+    xmlrpc_localtime(datetime, &tm);
 
     tzo = tzOffsetStr(tm, datetime);
 

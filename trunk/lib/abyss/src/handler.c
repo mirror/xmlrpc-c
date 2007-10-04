@@ -22,6 +22,7 @@
 #include "girmath.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/time_int.h"
 
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
@@ -300,7 +301,7 @@ sendDirectoryDocument(TList *      const listP,
             z1[25] = '\0';
         }
 
-        ftm = *gmtime(&fi->time_write);
+        xmlrpc_gmtime(fi->time_write, &ftm);
         sprintf(z2, "%02u/%02u/%04u %02u:%02u:%02u",ftm.tm_mday,ftm.tm_mon+1,
                 ftm.tm_year+1900,ftm.tm_hour,ftm.tm_min,ftm.tm_sec);
 

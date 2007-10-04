@@ -62,3 +62,41 @@ xmlrpc_timegm(const struct tm  * const tmP,
                         tmP->tm_sec;
     }
 }
+
+
+
+void
+xmlrpc_localtime(time_t      const datetime,
+                 struct tm * const tmP) {
+/*----------------------------------------------------------------------------
+   Convert datetime from standard to broken-down format in the local
+   time zone.
+
+   For Windows, this is not thread-safe.  If you run a version of Abyss
+   with multiple threads, you can get arbitrary results here.
+-----------------------------------------------------------------------------*/
+#ifdef HAVE_LOCALTIME_R
+  localtime_r(&datetime, tmP);
+#else
+  *tmP = localtime(&datetime);
+#endif
+}
+
+
+
+void
+xmlrpc_gmtime(time_t      const datetime,
+              struct tm * const resultP) {
+/*----------------------------------------------------------------------------
+   Convert datetime from standard to broken-down UTC format.
+
+   For Windows, this is not thread-safe.  If you run a version of Abyss
+   with multiple threads, you can get arbitrary results here.
+-----------------------------------------------------------------------------*/
+
+#ifdef HAVE_GMTIME_R
+    gmtime_r(&datetime, resultP);
+#else
+    *resultP = gmtime(&datetime);
+#endif
+}
