@@ -17,6 +17,7 @@
 #include "xmlrpc-c/string_int.h"
 
 #include "xmlrpc-c/abyss.h"
+#include "trace.h"
 
 #include "thread.h"
 
@@ -24,6 +25,7 @@
 
 struct abyss_thread {
     HANDLE handle;
+    void * userHandle;
     TThreadProc *   func;
     TThreadDoneFn * threadDone;
 };
@@ -41,9 +43,9 @@ threadRun(void * const arg) {
 
     struct abyss_thread * const threadP = arg;
 
-    threadP->func(threadP->userHandle);
+    threadP->func(threadP->handle);
 
-    threadP->threadDone(threadP->userHandle);
+    threadP->threadDone(threadP->handle);
 }
 
 
@@ -56,7 +58,6 @@ ThreadCreate(TThread **      const threadPP,
              abyss_bool      const useSigchld,
              const char **   const errorP) {
 
-    DWORD z;
     TThread * threadP;
 
     MALLOCVAR(threadP);
@@ -65,13 +66,19 @@ ThreadCreate(TThread **      const threadPP,
         xmlrpc_asprintf(errorP,
                         "Can't allocate memory for thread descriptor.");
     else {
+        DWORD z;
+
         threadP->userHandle = userHandle;
         threadP->func       = func;
         threadP->threadDone = threadDone;
 
-        threadP->handle = _beginthreadex(NULL, THREAD_STACK_SIZE, func, 
-                                         threadP,
-                                         CREATE_SUSPENDED, &z);
+        threadP->handle = (HANDLE)_beginthreadex(NULL,
+                                                 THREAD_STACK_SIZE,
+                                                 func,
+                                                 userHandle,
+                                                 CREATE_SUSPENDED,
+                                                 &z);
+
         if (threadP->handle == NULL)
             xmlrpc_asprintf(errorP, "_beginthreadex() failed.");
         else {
@@ -139,6 +146,16 @@ ThreadForks(void) {
 
 
 
+void
+ThreadUpdateStatus(TThread * const threadP ATTR_UNUSED) {
+
+    /* Threads keep their own statuses up to date, so there's nothing
+       to do here.
+    */
+}
+ 
+ 
+
 /*********************************************************************
 ** Mutex
 *********************************************************************/
@@ -149,38 +166,62 @@ struct abyss_mutex {
 
 
 abyss_bool
-MutexCreate(TMutex * const mutexP) {
-    
-    mutexP->winMutex = CreateMutex(NULL, FALSE, NULL);
+MutexCreate(TMutex ** const mutexPP) {
 
-    return (mutexP->winMutex != NULL);
+    TMutex * mutexP;
+    abyss_bool succeeded;
+
+    MALLOCVAR(mutexP);
+
+    if (mutexP) {
+
+        mutexP->winMutex = CreateMutex(NULL, FALSE, NULL);
+
+        succeeded = (mutexP->winMutex != NULL);
+    } else
+        succeeded = FALSE;
+
+    if (!succeeded)
+        free(mutexP);
+
+    *mutexPP = mutexP;
+
+    TraceMsg( "Created Mutex %s\n", (succeeded ? "ok" : "FAILED") );
+
+    return succeeded;
 }
-
+ 
 
 
 abyss_bool
 MutexLock(TMutex * const mutexP) {
 
-    return (WaitForSingleObject(mutexP->HANDLE, INFINITE) != WAIT_TIMEOUT);
+    return (WaitForSingleObject(mutexP->winMutex, INFINITE) != WAIT_TIMEOUT);
 }
 
 
 
 abyss_bool
 MutexUnlock(TMutex * const mutexP) {
-    return ReleaseMutex(mutexP->HANDLE);
-}
 
+    return ReleaseMutex(mutexP->winMutex);
+}
 
 
 abyss_bool
 MutexTryLock(TMutex * const mutexP) {
-    return (WaitForSingleObject(mutexP->HANDLE, 0) != WAIT_TIMEOUT);
+
+    return (WaitForSingleObject(mutexP->winMutex, 0) != WAIT_TIMEOUT);
 }
 
 
 
 void
-MutexFree(TMutex * const mutexP) {
-    CloseHandle(mutexP->HANDLE);
+MutexDestroy(TMutex * const mutexP) {
+
+    CloseHandle(mutexP->winMutex);
+
+    free(mutexP);
 }
+
+
