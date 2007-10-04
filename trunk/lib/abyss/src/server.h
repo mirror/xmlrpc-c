@@ -80,8 +80,4 @@ struct _TServer {
 #endif
 };
 
-
-void
-ServerBackgroundProcessComplete(pid_t const pid);
-
 #endif
