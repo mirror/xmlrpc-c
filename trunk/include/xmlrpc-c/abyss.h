@@ -85,6 +85,12 @@ typedef struct _TSocket TSocket;
   #include <xmlrpc-c/abyss_unixsock.h>
 #endif
 
+void
+ChanSwitchInit(const char ** const errorP);
+
+void
+ChanSwitchTerm(void);
+
 /* If you're wondering where the constructors for TChanSwitch,
    TChannel, and TSocket are: They're implementation-specific, so look
    in abyss_unixsock.h, etc.
