@@ -9,4 +9,12 @@ xmlrpc_timegm(const struct tm  * const brokenTime,
               time_t *           const timeValueP,
               const char **      const errorP);
 
+void
+xmlrpc_localtime(time_t      const datetime,
+                 struct tm * const tmP);
+
+void
+xmlrpc_gmtime(time_t      const datetime,
+              struct tm * const resultP);
+
 #endif
