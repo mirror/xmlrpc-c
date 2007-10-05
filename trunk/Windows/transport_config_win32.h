@@ -15,12 +15,12 @@ based XMLRPC-C Server
 #define MUST_BUILD_HTTP_SYS_SERVER 1
 
 /*
-We use pragma statements to tell the linker what we need to link with.
-Since Curl requires Winsock, Winmm, and libcurl, and no other
-project does, if we are building curl support we tell the linker
-what libs we need to add.
+We use pragma statements to tell the linker what we need to link
+with.  Since Curl requires Winsock, Winmm, and libcurl, and no other
+project does, if we are building with a curl client XML transport we
+tell the linker what libs we need to add.
 
-Alternatively, the USER can add the libraries to LINK wiht as NEEDED!
+Alternatively, the USER can add the libraries to LINK with as NEEDED!
 
 */
 
