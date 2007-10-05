@@ -13,6 +13,8 @@ all: xmlrpc-c/config.h
 
 xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	>$@
+	echo '#ifndef XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
+	echo '#define XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
 	echo '/* This file, part of XML-RPC For C/C++, is meant to '     >>$@
 	echo '   define characteristics of this particular installation '>>$@ 
 	echo '   that the other <xmlrpc-c/...> header files need in '	 >>$@
@@ -22,6 +24,7 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	echo '   Those header files #include this one.'			 >>$@
 	echo '*/'							 >>$@
 	echo '#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)'          >>$@
+	echo '#endif'                                                    >>$@
 
 $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 	mkdir $@
