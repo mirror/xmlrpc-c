@@ -16,6 +16,8 @@
 #undef HAVE_SETENV
 #undef HAVE_PSELECT
 #undef HAVE_WCSNCMP
+#undef HAVE_LOCALTIME_R
+#undef HAVE_GMTIME_R
 
 /* Define if you have the socket library (-lsocket).  */
 #undef HAVE_LIBSOCKET

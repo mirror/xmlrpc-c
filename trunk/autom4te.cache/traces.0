@@ -220,69 +220,75 @@ m4trace:configure.in:340: -1- AH_OUTPUT([HAVE_SETENV], [/* Define to 1 if you ha
 m4trace:configure.in:343: -1- AC_CHECK_FUNCS([pselect])
 m4trace:configure.in:343: -1- AH_OUTPUT([HAVE_PSELECT], [/* Define to 1 if you have the `pselect\' function. */
 #undef HAVE_PSELECT])
-m4trace:configure.in:352: -1- AC_SUBST([DIRECTORY_SEPARATOR])
-m4trace:configure.in:366: -1- AC_SUBST([ENABLE_ABYSS_THREADS])
-m4trace:configure.in:382: -1- AC_SUBST([WININET_CONFIG], [$ac_cv_path_WININET_CONFIG])
-m4trace:configure.in:419: -1- AC_SUBST([WININET_CFLAGS])
-m4trace:configure.in:424: -1- AC_SUBST([WININET_LDADD])
-m4trace:configure.in:438: -1- AC_SUBST([WININET_LIBDIR])
-m4trace:configure.in:440: -1- AC_SUBST([WININET_RPATH])
-m4trace:configure.in:442: -1- AC_SUBST([WININET_WL_RPATH])
-m4trace:configure.in:458: -1- AC_SUBST([LIBWWW_CONFIG], [$ac_cv_path_LIBWWW_CONFIG])
-m4trace:configure.in:495: -1- AC_SUBST([LIBWWW_LDADD])
-m4trace:configure.in:509: -1- AC_SUBST([LIBWWW_LIBDIR])
-m4trace:configure.in:517: -1- AC_SUBST([LIBWWW_RPATH])
-m4trace:configure.in:520: -1- AC_SUBST([LIBWWW_WL_RPATH])
-m4trace:configure.in:533: -1- AC_SUBST([CURL_CONFIG], [$ac_cv_path_CURL_CONFIG])
-m4trace:configure.in:551: -1- AC_SUBST([CURL_LDADD])
-m4trace:configure.in:561: -1- AC_SUBST([CURL_LIBDIR])
-m4trace:configure.in:563: -1- AC_SUBST([CURL_RPATH])
-m4trace:configure.in:565: -1- AC_SUBST([CURL_WL_RPATH])
-m4trace:configure.in:588: -1- AC_SUBST([HAVE_LIBWWW_SSL_DEFINE])
-m4trace:configure.in:598: -1- AC_SUBST([have_xml2_config])
-m4trace:configure.in:604: -1- AC_SUBST([ENABLE_LIBXML2_BACKEND])
-m4trace:configure.in:610: -1- AC_SUBST([C_COMPILER_GNU])
-m4trace:configure.in:612: -1- AC_SUBST([CXX_COMPILER_GNU])
-m4trace:configure.in:616: -1- AC_SUBST([CC_WARN_FLAGS])
-m4trace:configure.in:618: -1- AC_SUBST([CPP_WARN_FLAGS])
-m4trace:configure.in:622: -1- AC_SUBST([BUILDDIR])
-m4trace:configure.in:628: -1- AC_PROG_RANLIB
-m4trace:configure.in:628: -1- AC_SUBST([RANLIB])
-m4trace:configure.in:628: -1- AC_SUBST([ac_ct_RANLIB])
-m4trace:configure.in:628: -1- _m4_warn([obsolete], [The macro `ac_cv_prog_gcc' is obsolete.
+m4trace:configure.in:346: -1- AC_CHECK_FUNCS([localtime_r])
+m4trace:configure.in:346: -1- AH_OUTPUT([HAVE_LOCALTIME_R], [/* Define to 1 if you have the `localtime_r\' function. */
+#undef HAVE_LOCALTIME_R])
+m4trace:configure.in:347: -1- AC_CHECK_FUNCS([gmtime_r])
+m4trace:configure.in:347: -1- AH_OUTPUT([HAVE_GMTIME_R], [/* Define to 1 if you have the `gmtime_r\' function. */
+#undef HAVE_GMTIME_R])
+m4trace:configure.in:358: -1- AC_SUBST([DIRECTORY_SEPARATOR])
+m4trace:configure.in:372: -1- AC_SUBST([ENABLE_ABYSS_THREADS])
+m4trace:configure.in:388: -1- AC_SUBST([WININET_CONFIG], [$ac_cv_path_WININET_CONFIG])
+m4trace:configure.in:425: -1- AC_SUBST([WININET_CFLAGS])
+m4trace:configure.in:430: -1- AC_SUBST([WININET_LDADD])
+m4trace:configure.in:444: -1- AC_SUBST([WININET_LIBDIR])
+m4trace:configure.in:446: -1- AC_SUBST([WININET_RPATH])
+m4trace:configure.in:448: -1- AC_SUBST([WININET_WL_RPATH])
+m4trace:configure.in:464: -1- AC_SUBST([LIBWWW_CONFIG], [$ac_cv_path_LIBWWW_CONFIG])
+m4trace:configure.in:501: -1- AC_SUBST([LIBWWW_LDADD])
+m4trace:configure.in:515: -1- AC_SUBST([LIBWWW_LIBDIR])
+m4trace:configure.in:523: -1- AC_SUBST([LIBWWW_RPATH])
+m4trace:configure.in:526: -1- AC_SUBST([LIBWWW_WL_RPATH])
+m4trace:configure.in:539: -1- AC_SUBST([CURL_CONFIG], [$ac_cv_path_CURL_CONFIG])
+m4trace:configure.in:557: -1- AC_SUBST([CURL_LDADD])
+m4trace:configure.in:567: -1- AC_SUBST([CURL_LIBDIR])
+m4trace:configure.in:569: -1- AC_SUBST([CURL_RPATH])
+m4trace:configure.in:571: -1- AC_SUBST([CURL_WL_RPATH])
+m4trace:configure.in:594: -1- AC_SUBST([HAVE_LIBWWW_SSL_DEFINE])
+m4trace:configure.in:604: -1- AC_SUBST([have_xml2_config])
+m4trace:configure.in:610: -1- AC_SUBST([ENABLE_LIBXML2_BACKEND])
+m4trace:configure.in:616: -1- AC_SUBST([C_COMPILER_GNU])
+m4trace:configure.in:618: -1- AC_SUBST([CXX_COMPILER_GNU])
+m4trace:configure.in:622: -1- AC_SUBST([CC_WARN_FLAGS])
+m4trace:configure.in:624: -1- AC_SUBST([CPP_WARN_FLAGS])
+m4trace:configure.in:628: -1- AC_SUBST([BUILDDIR])
+m4trace:configure.in:634: -1- AC_PROG_RANLIB
+m4trace:configure.in:634: -1- AC_SUBST([RANLIB])
+m4trace:configure.in:634: -1- AC_SUBST([ac_ct_RANLIB])
+m4trace:configure.in:634: -1- _m4_warn([obsolete], [The macro `ac_cv_prog_gcc' is obsolete.
 You should run autoupdate.], [autoconf/c.m4:440: ac_cv_prog_gcc is expanded from...
 aclocal.m4:419: AC_PROG_LD is expanded from...
-configure.in:628: AC_PROG_LD is required by...
+configure.in:634: AC_PROG_LD is required by...
 aclocal.m4:242: AC_LIBTOOL_SETUP is expanded from...
-configure.in:628: AC_LIBTOOL_SETUP is required by...
+configure.in:634: AC_LIBTOOL_SETUP is required by...
 aclocal.m4:158: AC_PROG_LIBTOOL is expanded from...
 aclocal.m4:535: AM_PROG_LIBTOOL is expanded from...
-configure.in:628: the top level])
-m4trace:configure.in:628: -1- AC_PROG_LN_S
-m4trace:configure.in:628: -1- AC_SUBST([LN_S], [$as_ln_s])
-m4trace:configure.in:628: -1- _m4_warn([obsolete], [The macro `ac_cv_prog_gcc' is obsolete.
+configure.in:634: the top level])
+m4trace:configure.in:634: -1- AC_PROG_LN_S
+m4trace:configure.in:634: -1- AC_SUBST([LN_S], [$as_ln_s])
+m4trace:configure.in:634: -1- _m4_warn([obsolete], [The macro `ac_cv_prog_gcc' is obsolete.
 You should run autoupdate.], [autoconf/c.m4:440: ac_cv_prog_gcc is expanded from...
 aclocal.m4:242: AC_LIBTOOL_SETUP is expanded from...
-configure.in:628: AC_LIBTOOL_SETUP is required by...
+configure.in:634: AC_LIBTOOL_SETUP is required by...
 aclocal.m4:158: AC_PROG_LIBTOOL is expanded from...
 aclocal.m4:535: AM_PROG_LIBTOOL is expanded from...
-configure.in:628: the top level])
-m4trace:configure.in:628: -1- _m4_warn([obsolete], [The macro `AC_TRY_LINK' is obsolete.
+configure.in:634: the top level])
+m4trace:configure.in:634: -1- _m4_warn([obsolete], [The macro `AC_TRY_LINK' is obsolete.
 You should run autoupdate.], [autoconf/general.m4:2223: AC_TRY_LINK is expanded from...
 autoconf/general.m4:1799: AC_CACHE_VAL is expanded from...
 autoconf/general.m4:1808: AC_CACHE_CHECK is expanded from...
 aclocal.m4:242: AC_LIBTOOL_SETUP is expanded from...
-configure.in:628: AC_LIBTOOL_SETUP is required by...
+configure.in:634: AC_LIBTOOL_SETUP is required by...
 aclocal.m4:158: AC_PROG_LIBTOOL is expanded from...
 aclocal.m4:535: AM_PROG_LIBTOOL is expanded from...
-configure.in:628: the top level])
-m4trace:configure.in:628: -1- AC_SUBST([LIBTOOL])
-m4trace:configure.in:642: -1- AC_CONFIG_FILES([\
+configure.in:634: the top level])
+m4trace:configure.in:634: -1- AC_SUBST([LIBTOOL])
+m4trace:configure.in:648: -1- AC_CONFIG_FILES([\
           Makefile.srcdir \
           Makefile.config \
           xmlrpc_config.h \
           ])
-m4trace:configure.in:642: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
+m4trace:configure.in:648: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
 You should run autoupdate.], [])
-m4trace:configure.in:642: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
-m4trace:configure.in:642: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
+m4trace:configure.in:648: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
+m4trace:configure.in:648: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
