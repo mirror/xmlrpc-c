@@ -74,8 +74,8 @@ ThreadCreate(TThread **      const threadPP,
 
         threadP->handle = (HANDLE)_beginthreadex(NULL,
                                                  THREAD_STACK_SIZE,
-                                                 func,
-                                                 userHandle,
+                                                 threadRun,
+                                                 threadP,
                                                  CREATE_SUSPENDED,
                                                  &z);
 
