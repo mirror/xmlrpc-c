@@ -53,8 +53,8 @@ CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
 AR = ar
-RANLIB = @RANLIB@
-LN_S = @LN_S@
+RANLIB = ranlib
+LN_S = ln -s
 INSTALL = $(SRCDIR)/install-sh
 
 C_COMPILER_GNU = @C_COMPILER_GNU@
