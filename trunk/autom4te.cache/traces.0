@@ -90,205 +90,174 @@ m4trace:configure.in:19: -1- AC_SUBST([host], [$ac_cv_host])
 m4trace:configure.in:19: -1- AC_SUBST([host_cpu], [`echo $ac_cv_host | sed 's/^\([[^-]]*\)-\([[^-]]*\)-\(.*\)$/\1/'`])
 m4trace:configure.in:19: -1- AC_SUBST([host_vendor], [`echo $ac_cv_host | sed 's/^\([[^-]]*\)-\([[^-]]*\)-\(.*\)$/\2/'`])
 m4trace:configure.in:19: -1- AC_SUBST([host_os], [`echo $ac_cv_host | sed 's/^\([[^-]]*\)-\([[^-]]*\)-\(.*\)$/\3/'`])
-m4trace:configure.in:37: -1- AC_SUBST([have_wininet_config])
-m4trace:configure.in:50: -1- AC_SUBST([MUST_BUILD_WININET_CLIENT])
-m4trace:configure.in:58: -1- AC_SUBST([have_curl_config])
-m4trace:configure.in:71: -1- AC_SUBST([MUST_BUILD_CURL_CLIENT])
-m4trace:configure.in:79: -1- AC_SUBST([have_libwww_config])
-m4trace:configure.in:92: -1- AC_SUBST([MUST_BUILD_LIBWWW_CLIENT])
-m4trace:configure.in:98: -1- AC_SUBST([LIBXMLRPC_CLIENT_LA])
-m4trace:configure.in:100: -1- AC_SUBST([CLIENTTEST])
-m4trace:configure.in:102: -1- AC_SUBST([XMLRPC_CLIENT_H])
-m4trace:configure.in:104: -1- AC_SUBST([XMLRPC_TRANSPORT_H])
-m4trace:configure.in:106: -1- AC_SUBST([SYNCH_CLIENT])
-m4trace:configure.in:108: -1- AC_SUBST([ASYNCH_CLIENT])
-m4trace:configure.in:110: -1- AC_SUBST([AUTH_CLIENT])
-m4trace:configure.in:112: -1- AC_SUBST([QUERY_MEERKAT])
-m4trace:configure.in:131: -1- AC_SUBST([ENABLE_ABYSS_SERVER])
-m4trace:configure.in:149: -1- AC_SUBST([ABYSS_SUBDIR])
-m4trace:configure.in:150: -1- AC_SUBST([LIBXMLRPC_ABYSS_SERVER_LA])
-m4trace:configure.in:151: -1- AC_SUBST([SERVERTEST])
-m4trace:configure.in:152: -1- AC_SUBST([VALIDATEE])
-m4trace:configure.in:153: -1- AC_SUBST([XMLRPC_ABYSS_H])
-m4trace:configure.in:154: -1- AC_SUBST([SERVER])
-m4trace:configure.in:163: -1- AC_SUBST([ENABLE_CGI_SERVER])
-m4trace:configure.in:172: -1- AC_SUBST([ENABLE_CPLUSPLUS])
-m4trace:configure.in:193: -1- AC_SUBST([LIBXMLRPC_CPP_A])
-m4trace:configure.in:194: -1- AC_SUBST([CPPTEST])
-m4trace:configure.in:195: -1- AC_SUBST([XMLRPCCPP_H])
-m4trace:configure.in:196: -1- AC_SUBST([XML_RPC_API2CPP_SUBDIR])
-m4trace:configure.in:199: -1- AC_SUBST([FEATURE_LIST])
-m4trace:configure.in:206: -1- AC_PROG_CC
-m4trace:configure.in:206: -1- AC_SUBST([CC])
-m4trace:configure.in:206: -1- AC_SUBST([CFLAGS])
-m4trace:configure.in:206: -1- AC_SUBST([LDFLAGS])
-m4trace:configure.in:206: -1- AC_SUBST([CPPFLAGS])
-m4trace:configure.in:206: -1- AC_SUBST([CC])
-m4trace:configure.in:206: -1- AC_SUBST([ac_ct_CC])
-m4trace:configure.in:206: -1- AC_SUBST([CC])
-m4trace:configure.in:206: -1- AC_SUBST([ac_ct_CC])
-m4trace:configure.in:206: -1- AC_SUBST([CC])
-m4trace:configure.in:206: -1- AC_SUBST([CC])
-m4trace:configure.in:206: -1- AC_SUBST([ac_ct_CC])
-m4trace:configure.in:206: -1- AC_SUBST([EXEEXT], [$ac_cv_exeext])
-m4trace:configure.in:206: -1- AC_SUBST([OBJEXT], [$ac_cv_objext])
-m4trace:configure.in:208: -1- AC_PROG_CXX
-m4trace:configure.in:208: -1- AC_SUBST([CXX])
-m4trace:configure.in:208: -1- AC_SUBST([CXXFLAGS])
-m4trace:configure.in:208: -1- AC_SUBST([LDFLAGS])
-m4trace:configure.in:208: -1- AC_SUBST([CPPFLAGS])
-m4trace:configure.in:208: -1- AC_SUBST([CXX])
-m4trace:configure.in:208: -1- AC_SUBST([ac_ct_CXX])
-m4trace:configure.in:221: -2- AC_CHECK_LIB([socket], [socket])
-m4trace:configure.in:221: -2- AH_OUTPUT([HAVE_LIBSOCKET], [/* Define to 1 if you have the `socket\' library (-lsocket). */
+m4trace:configure.in:32: -1- AC_SUBST([have_wininet_config])
+m4trace:configure.in:45: -1- AC_SUBST([MUST_BUILD_WININET_CLIENT])
+m4trace:configure.in:53: -1- AC_SUBST([have_curl_config])
+m4trace:configure.in:66: -1- AC_SUBST([MUST_BUILD_CURL_CLIENT])
+m4trace:configure.in:74: -1- AC_SUBST([have_libwww_config])
+m4trace:configure.in:87: -1- AC_SUBST([MUST_BUILD_LIBWWW_CLIENT])
+m4trace:configure.in:93: -1- AC_SUBST([LIBXMLRPC_CLIENT_LA])
+m4trace:configure.in:95: -1- AC_SUBST([CLIENTTEST])
+m4trace:configure.in:97: -1- AC_SUBST([XMLRPC_CLIENT_H])
+m4trace:configure.in:99: -1- AC_SUBST([XMLRPC_TRANSPORT_H])
+m4trace:configure.in:101: -1- AC_SUBST([SYNCH_CLIENT])
+m4trace:configure.in:103: -1- AC_SUBST([ASYNCH_CLIENT])
+m4trace:configure.in:105: -1- AC_SUBST([AUTH_CLIENT])
+m4trace:configure.in:107: -1- AC_SUBST([QUERY_MEERKAT])
+m4trace:configure.in:126: -1- AC_SUBST([ENABLE_ABYSS_SERVER])
+m4trace:configure.in:144: -1- AC_SUBST([ABYSS_SUBDIR])
+m4trace:configure.in:145: -1- AC_SUBST([LIBXMLRPC_ABYSS_SERVER_LA])
+m4trace:configure.in:146: -1- AC_SUBST([SERVERTEST])
+m4trace:configure.in:147: -1- AC_SUBST([VALIDATEE])
+m4trace:configure.in:148: -1- AC_SUBST([XMLRPC_ABYSS_H])
+m4trace:configure.in:149: -1- AC_SUBST([SERVER])
+m4trace:configure.in:158: -1- AC_SUBST([ENABLE_CGI_SERVER])
+m4trace:configure.in:167: -1- AC_SUBST([ENABLE_CPLUSPLUS])
+m4trace:configure.in:188: -1- AC_SUBST([LIBXMLRPC_CPP_A])
+m4trace:configure.in:189: -1- AC_SUBST([CPPTEST])
+m4trace:configure.in:190: -1- AC_SUBST([XMLRPCCPP_H])
+m4trace:configure.in:191: -1- AC_SUBST([XML_RPC_API2CPP_SUBDIR])
+m4trace:configure.in:194: -1- AC_SUBST([FEATURE_LIST])
+m4trace:configure.in:201: -1- AC_PROG_CC
+m4trace:configure.in:201: -1- AC_SUBST([CC])
+m4trace:configure.in:201: -1- AC_SUBST([CFLAGS])
+m4trace:configure.in:201: -1- AC_SUBST([LDFLAGS])
+m4trace:configure.in:201: -1- AC_SUBST([CPPFLAGS])
+m4trace:configure.in:201: -1- AC_SUBST([CC])
+m4trace:configure.in:201: -1- AC_SUBST([ac_ct_CC])
+m4trace:configure.in:201: -1- AC_SUBST([CC])
+m4trace:configure.in:201: -1- AC_SUBST([ac_ct_CC])
+m4trace:configure.in:201: -1- AC_SUBST([CC])
+m4trace:configure.in:201: -1- AC_SUBST([CC])
+m4trace:configure.in:201: -1- AC_SUBST([ac_ct_CC])
+m4trace:configure.in:201: -1- AC_SUBST([EXEEXT], [$ac_cv_exeext])
+m4trace:configure.in:201: -1- AC_SUBST([OBJEXT], [$ac_cv_objext])
+m4trace:configure.in:203: -1- AC_PROG_CXX
+m4trace:configure.in:203: -1- AC_SUBST([CXX])
+m4trace:configure.in:203: -1- AC_SUBST([CXXFLAGS])
+m4trace:configure.in:203: -1- AC_SUBST([LDFLAGS])
+m4trace:configure.in:203: -1- AC_SUBST([CPPFLAGS])
+m4trace:configure.in:203: -1- AC_SUBST([CXX])
+m4trace:configure.in:203: -1- AC_SUBST([ac_ct_CXX])
+m4trace:configure.in:216: -2- AC_CHECK_LIB([socket], [socket])
+m4trace:configure.in:216: -2- AH_OUTPUT([HAVE_LIBSOCKET], [/* Define to 1 if you have the `socket\' library (-lsocket). */
 #undef HAVE_LIBSOCKET])
-m4trace:configure.in:221: -2- AC_DEFINE_TRACE_LITERAL([HAVE_LIBSOCKET])
-m4trace:configure.in:233: -1- AC_SUBST([LSOCKET])
-m4trace:configure.in:244: -1- _m4_warn([obsolete], [The macro `AC_STDC_HEADERS' is obsolete.
+m4trace:configure.in:216: -2- AC_DEFINE_TRACE_LITERAL([HAVE_LIBSOCKET])
+m4trace:configure.in:228: -1- AC_SUBST([LSOCKET])
+m4trace:configure.in:239: -1- _m4_warn([obsolete], [The macro `AC_STDC_HEADERS' is obsolete.
 You should run autoupdate.], [autoconf/oldnames.m4:96: AC_STDC_HEADERS is expanded from...
-configure.in:244: the top level])
-m4trace:configure.in:244: -1- AC_HEADER_STDC([])
-m4trace:configure.in:244: -1- AC_PROG_CPP
-m4trace:configure.in:244: -1- AC_SUBST([CPP])
-m4trace:configure.in:244: -1- AC_SUBST([CPPFLAGS])
-m4trace:configure.in:244: -1- AC_SUBST([CPP])
-m4trace:configure.in:244: -1- AC_SUBST([EGREP])
-m4trace:configure.in:244: -1- AC_DEFINE_TRACE_LITERAL([STDC_HEADERS])
-m4trace:configure.in:244: -1- AH_OUTPUT([STDC_HEADERS], [/* Define to 1 if you have the ANSI C header files. */
+configure.in:239: the top level])
+m4trace:configure.in:239: -1- AC_HEADER_STDC([])
+m4trace:configure.in:239: -1- AC_PROG_CPP
+m4trace:configure.in:239: -1- AC_SUBST([CPP])
+m4trace:configure.in:239: -1- AC_SUBST([CPPFLAGS])
+m4trace:configure.in:239: -1- AC_SUBST([CPP])
+m4trace:configure.in:239: -1- AC_SUBST([EGREP])
+m4trace:configure.in:239: -1- AC_DEFINE_TRACE_LITERAL([STDC_HEADERS])
+m4trace:configure.in:239: -1- AH_OUTPUT([STDC_HEADERS], [/* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS])
-m4trace:configure.in:254: -1- AC_CHECK_HEADERS([wchar.h])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_WCHAR_H], [/* Define to 1 if you have the <wchar.h> header file. */
+m4trace:configure.in:249: -1- AC_CHECK_HEADERS([wchar.h])
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_WCHAR_H], [/* Define to 1 if you have the <wchar.h> header file. */
 #undef HAVE_WCHAR_H])
-m4trace:configure.in:254: -1- AC_CHECK_HEADERS([sys/types.h sys/stat.h stdlib.h string.h memory.h strings.h \
+m4trace:configure.in:249: -1- AC_CHECK_HEADERS([sys/types.h sys/stat.h stdlib.h string.h memory.h strings.h \
 		  inttypes.h stdint.h unistd.h], [], [], [$ac_includes_default])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_SYS_TYPES_H], [/* Define to 1 if you have the <sys/types.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_SYS_TYPES_H], [/* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_SYS_STAT_H], [/* Define to 1 if you have the <sys/stat.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_SYS_STAT_H], [/* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_STDLIB_H], [/* Define to 1 if you have the <stdlib.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_STDLIB_H], [/* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_STRING_H], [/* Define to 1 if you have the <string.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_STRING_H], [/* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_MEMORY_H], [/* Define to 1 if you have the <memory.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_MEMORY_H], [/* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_STRINGS_H], [/* Define to 1 if you have the <strings.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_STRINGS_H], [/* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_INTTYPES_H], [/* Define to 1 if you have the <inttypes.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_INTTYPES_H], [/* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_STDINT_H], [/* Define to 1 if you have the <stdint.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_STDINT_H], [/* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H])
-m4trace:configure.in:254: -1- AH_OUTPUT([HAVE_UNISTD_H], [/* Define to 1 if you have the <unistd.h> header file. */
+m4trace:configure.in:249: -1- AH_OUTPUT([HAVE_UNISTD_H], [/* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H])
-m4trace:configure.in:261: -1- AC_SUBST([HAVE_WCHAR_H_DEFINE])
-m4trace:configure.in:265: -1- AC_CHECK_HEADERS([sys/filio.h])
-m4trace:configure.in:265: -1- AH_OUTPUT([HAVE_SYS_FILIO_H], [/* Define to 1 if you have the <sys/filio.h> header file. */
+m4trace:configure.in:256: -1- AC_SUBST([HAVE_WCHAR_H_DEFINE])
+m4trace:configure.in:260: -1- AC_CHECK_HEADERS([sys/filio.h])
+m4trace:configure.in:260: -1- AH_OUTPUT([HAVE_SYS_FILIO_H], [/* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H])
-m4trace:configure.in:271: -1- AC_SUBST([HAVE_SYS_FILIO_H_DEFINE])
-m4trace:configure.in:275: -1- AC_CHECK_HEADERS([sys/ioctl.h])
-m4trace:configure.in:275: -1- AH_OUTPUT([HAVE_SYS_IOCTL_H], [/* Define to 1 if you have the <sys/ioctl.h> header file. */
+m4trace:configure.in:266: -1- AC_SUBST([HAVE_SYS_FILIO_H_DEFINE])
+m4trace:configure.in:270: -1- AC_CHECK_HEADERS([sys/ioctl.h])
+m4trace:configure.in:270: -1- AH_OUTPUT([HAVE_SYS_IOCTL_H], [/* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H])
-m4trace:configure.in:281: -1- AC_SUBST([HAVE_SYS_IOCTL_H_DEFINE])
-m4trace:configure.in:286: -1- AC_CHECK_HEADERS([stdarg.h], [], [
+m4trace:configure.in:276: -1- AC_SUBST([HAVE_SYS_IOCTL_H_DEFINE])
+m4trace:configure.in:281: -1- AC_CHECK_HEADERS([stdarg.h], [], [
 AC_MSG_ERROR(stdarg.h is required to build this library)
 ])
-m4trace:configure.in:286: -1- AH_OUTPUT([HAVE_STDARG_H], [/* Define to 1 if you have the <stdarg.h> header file. */
+m4trace:configure.in:281: -1- AH_OUTPUT([HAVE_STDARG_H], [/* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H])
-m4trace:configure.in:294: -1- AC_TYPE_SIZE_T
-m4trace:configure.in:294: -1- AC_DEFINE_TRACE_LITERAL([size_t])
-m4trace:configure.in:294: -1- AH_OUTPUT([size_t], [/* Define to `unsigned\' if <sys/types.h> does not define. */
+m4trace:configure.in:289: -1- AC_TYPE_SIZE_T
+m4trace:configure.in:289: -1- AC_DEFINE_TRACE_LITERAL([size_t])
+m4trace:configure.in:289: -1- AH_OUTPUT([size_t], [/* Define to `unsigned\' if <sys/types.h> does not define. */
 #undef size_t])
-m4trace:configure.in:302: -1- _m4_warn([obsolete], [The macro `AC_TRY_COMPILE' is obsolete.
+m4trace:configure.in:297: -1- _m4_warn([obsolete], [The macro `AC_TRY_COMPILE' is obsolete.
 You should run autoupdate.], [autoconf/general.m4:2180: AC_TRY_COMPILE is expanded from...
-configure.in:302: the top level])
-m4trace:configure.in:309: -1- AC_SUBST([VA_LIST_IS_ARRAY_DEFINE])
-m4trace:configure.in:314: -1- _m4_warn([obsolete], [The macro `AC_TRY_COMPILE' is obsolete.
+configure.in:297: the top level])
+m4trace:configure.in:304: -1- AC_SUBST([VA_LIST_IS_ARRAY_DEFINE])
+m4trace:configure.in:309: -1- _m4_warn([obsolete], [The macro `AC_TRY_COMPILE' is obsolete.
 You should run autoupdate.], [autoconf/general.m4:2180: AC_TRY_COMPILE is expanded from...
-configure.in:314: the top level])
-m4trace:configure.in:321: -1- AC_SUBST([ATTR_UNUSED])
-m4trace:configure.in:333: -1- AC_CHECK_FUNCS([wcsncmp])
-m4trace:configure.in:333: -1- AH_OUTPUT([HAVE_WCSNCMP], [/* Define to 1 if you have the `wcsncmp\' function. */
+configure.in:309: the top level])
+m4trace:configure.in:316: -1- AC_SUBST([ATTR_UNUSED])
+m4trace:configure.in:328: -1- AC_CHECK_FUNCS([wcsncmp])
+m4trace:configure.in:328: -1- AH_OUTPUT([HAVE_WCSNCMP], [/* Define to 1 if you have the `wcsncmp\' function. */
 #undef HAVE_WCSNCMP])
-m4trace:configure.in:336: -1- AC_CHECK_FUNCS([setgroups])
-m4trace:configure.in:336: -1- AH_OUTPUT([HAVE_SETGROUPS], [/* Define to 1 if you have the `setgroups\' function. */
+m4trace:configure.in:331: -1- AC_CHECK_FUNCS([setgroups])
+m4trace:configure.in:331: -1- AH_OUTPUT([HAVE_SETGROUPS], [/* Define to 1 if you have the `setgroups\' function. */
 #undef HAVE_SETGROUPS])
-m4trace:configure.in:338: -1- AC_CHECK_FUNCS([asprintf])
-m4trace:configure.in:338: -1- AH_OUTPUT([HAVE_ASPRINTF], [/* Define to 1 if you have the `asprintf\' function. */
+m4trace:configure.in:333: -1- AC_CHECK_FUNCS([asprintf])
+m4trace:configure.in:333: -1- AH_OUTPUT([HAVE_ASPRINTF], [/* Define to 1 if you have the `asprintf\' function. */
 #undef HAVE_ASPRINTF])
-m4trace:configure.in:340: -1- AC_CHECK_FUNCS([setenv])
-m4trace:configure.in:340: -1- AH_OUTPUT([HAVE_SETENV], [/* Define to 1 if you have the `setenv\' function. */
+m4trace:configure.in:335: -1- AC_CHECK_FUNCS([setenv])
+m4trace:configure.in:335: -1- AH_OUTPUT([HAVE_SETENV], [/* Define to 1 if you have the `setenv\' function. */
 #undef HAVE_SETENV])
-m4trace:configure.in:343: -1- AC_CHECK_FUNCS([pselect])
-m4trace:configure.in:343: -1- AH_OUTPUT([HAVE_PSELECT], [/* Define to 1 if you have the `pselect\' function. */
+m4trace:configure.in:338: -1- AC_CHECK_FUNCS([pselect])
+m4trace:configure.in:338: -1- AH_OUTPUT([HAVE_PSELECT], [/* Define to 1 if you have the `pselect\' function. */
 #undef HAVE_PSELECT])
-m4trace:configure.in:346: -1- AC_CHECK_FUNCS([localtime_r])
-m4trace:configure.in:346: -1- AH_OUTPUT([HAVE_LOCALTIME_R], [/* Define to 1 if you have the `localtime_r\' function. */
+m4trace:configure.in:341: -1- AC_CHECK_FUNCS([localtime_r])
+m4trace:configure.in:341: -1- AH_OUTPUT([HAVE_LOCALTIME_R], [/* Define to 1 if you have the `localtime_r\' function. */
 #undef HAVE_LOCALTIME_R])
-m4trace:configure.in:347: -1- AC_CHECK_FUNCS([gmtime_r])
-m4trace:configure.in:347: -1- AH_OUTPUT([HAVE_GMTIME_R], [/* Define to 1 if you have the `gmtime_r\' function. */
+m4trace:configure.in:342: -1- AC_CHECK_FUNCS([gmtime_r])
+m4trace:configure.in:342: -1- AH_OUTPUT([HAVE_GMTIME_R], [/* Define to 1 if you have the `gmtime_r\' function. */
 #undef HAVE_GMTIME_R])
-m4trace:configure.in:358: -1- AC_SUBST([DIRECTORY_SEPARATOR])
-m4trace:configure.in:372: -1- AC_SUBST([ENABLE_ABYSS_THREADS])
-m4trace:configure.in:388: -1- AC_SUBST([WININET_CONFIG], [$ac_cv_path_WININET_CONFIG])
-m4trace:configure.in:425: -1- AC_SUBST([WININET_CFLAGS])
-m4trace:configure.in:430: -1- AC_SUBST([WININET_LDADD])
-m4trace:configure.in:444: -1- AC_SUBST([WININET_LIBDIR])
-m4trace:configure.in:446: -1- AC_SUBST([WININET_RPATH])
-m4trace:configure.in:448: -1- AC_SUBST([WININET_WL_RPATH])
-m4trace:configure.in:464: -1- AC_SUBST([LIBWWW_CONFIG], [$ac_cv_path_LIBWWW_CONFIG])
-m4trace:configure.in:501: -1- AC_SUBST([LIBWWW_LDADD])
-m4trace:configure.in:515: -1- AC_SUBST([LIBWWW_LIBDIR])
-m4trace:configure.in:523: -1- AC_SUBST([LIBWWW_RPATH])
-m4trace:configure.in:526: -1- AC_SUBST([LIBWWW_WL_RPATH])
-m4trace:configure.in:539: -1- AC_SUBST([CURL_CONFIG], [$ac_cv_path_CURL_CONFIG])
-m4trace:configure.in:557: -1- AC_SUBST([CURL_LDADD])
-m4trace:configure.in:567: -1- AC_SUBST([CURL_LIBDIR])
-m4trace:configure.in:569: -1- AC_SUBST([CURL_RPATH])
-m4trace:configure.in:571: -1- AC_SUBST([CURL_WL_RPATH])
-m4trace:configure.in:594: -1- AC_SUBST([HAVE_LIBWWW_SSL_DEFINE])
-m4trace:configure.in:604: -1- AC_SUBST([have_xml2_config])
-m4trace:configure.in:610: -1- AC_SUBST([ENABLE_LIBXML2_BACKEND])
-m4trace:configure.in:616: -1- AC_SUBST([C_COMPILER_GNU])
-m4trace:configure.in:618: -1- AC_SUBST([CXX_COMPILER_GNU])
-m4trace:configure.in:622: -1- AC_SUBST([CC_WARN_FLAGS])
-m4trace:configure.in:624: -1- AC_SUBST([CPP_WARN_FLAGS])
-m4trace:configure.in:628: -1- AC_SUBST([BUILDDIR])
-m4trace:configure.in:634: -1- AC_PROG_RANLIB
-m4trace:configure.in:634: -1- AC_SUBST([RANLIB])
-m4trace:configure.in:634: -1- AC_SUBST([ac_ct_RANLIB])
-m4trace:configure.in:634: -1- _m4_warn([obsolete], [The macro `ac_cv_prog_gcc' is obsolete.
-You should run autoupdate.], [autoconf/c.m4:440: ac_cv_prog_gcc is expanded from...
-aclocal.m4:419: AC_PROG_LD is expanded from...
-configure.in:634: AC_PROG_LD is required by...
-aclocal.m4:242: AC_LIBTOOL_SETUP is expanded from...
-configure.in:634: AC_LIBTOOL_SETUP is required by...
-aclocal.m4:158: AC_PROG_LIBTOOL is expanded from...
-aclocal.m4:535: AM_PROG_LIBTOOL is expanded from...
-configure.in:634: the top level])
-m4trace:configure.in:634: -1- AC_PROG_LN_S
-m4trace:configure.in:634: -1- AC_SUBST([LN_S], [$as_ln_s])
-m4trace:configure.in:634: -1- _m4_warn([obsolete], [The macro `ac_cv_prog_gcc' is obsolete.
-You should run autoupdate.], [autoconf/c.m4:440: ac_cv_prog_gcc is expanded from...
-aclocal.m4:242: AC_LIBTOOL_SETUP is expanded from...
-configure.in:634: AC_LIBTOOL_SETUP is required by...
-aclocal.m4:158: AC_PROG_LIBTOOL is expanded from...
-aclocal.m4:535: AM_PROG_LIBTOOL is expanded from...
-configure.in:634: the top level])
-m4trace:configure.in:634: -1- _m4_warn([obsolete], [The macro `AC_TRY_LINK' is obsolete.
-You should run autoupdate.], [autoconf/general.m4:2223: AC_TRY_LINK is expanded from...
-autoconf/general.m4:1799: AC_CACHE_VAL is expanded from...
-autoconf/general.m4:1808: AC_CACHE_CHECK is expanded from...
-aclocal.m4:242: AC_LIBTOOL_SETUP is expanded from...
-configure.in:634: AC_LIBTOOL_SETUP is required by...
-aclocal.m4:158: AC_PROG_LIBTOOL is expanded from...
-aclocal.m4:535: AM_PROG_LIBTOOL is expanded from...
-configure.in:634: the top level])
-m4trace:configure.in:634: -1- AC_SUBST([LIBTOOL])
-m4trace:configure.in:648: -1- AC_CONFIG_FILES([\
+m4trace:configure.in:353: -1- AC_SUBST([DIRECTORY_SEPARATOR])
+m4trace:configure.in:367: -1- AC_SUBST([ENABLE_ABYSS_THREADS])
+m4trace:configure.in:383: -1- AC_SUBST([WININET_CONFIG], [$ac_cv_path_WININET_CONFIG])
+m4trace:configure.in:420: -1- AC_SUBST([WININET_CFLAGS])
+m4trace:configure.in:425: -1- AC_SUBST([WININET_LDADD])
+m4trace:configure.in:439: -1- AC_SUBST([WININET_LIBDIR])
+m4trace:configure.in:441: -1- AC_SUBST([WININET_RPATH])
+m4trace:configure.in:443: -1- AC_SUBST([WININET_WL_RPATH])
+m4trace:configure.in:459: -1- AC_SUBST([LIBWWW_CONFIG], [$ac_cv_path_LIBWWW_CONFIG])
+m4trace:configure.in:496: -1- AC_SUBST([LIBWWW_LDADD])
+m4trace:configure.in:510: -1- AC_SUBST([LIBWWW_LIBDIR])
+m4trace:configure.in:518: -1- AC_SUBST([LIBWWW_RPATH])
+m4trace:configure.in:521: -1- AC_SUBST([LIBWWW_WL_RPATH])
+m4trace:configure.in:534: -1- AC_SUBST([CURL_CONFIG], [$ac_cv_path_CURL_CONFIG])
+m4trace:configure.in:552: -1- AC_SUBST([CURL_LDADD])
+m4trace:configure.in:562: -1- AC_SUBST([CURL_LIBDIR])
+m4trace:configure.in:564: -1- AC_SUBST([CURL_RPATH])
+m4trace:configure.in:566: -1- AC_SUBST([CURL_WL_RPATH])
+m4trace:configure.in:589: -1- AC_SUBST([HAVE_LIBWWW_SSL_DEFINE])
+m4trace:configure.in:599: -1- AC_SUBST([have_xml2_config])
+m4trace:configure.in:605: -1- AC_SUBST([ENABLE_LIBXML2_BACKEND])
+m4trace:configure.in:611: -1- AC_SUBST([C_COMPILER_GNU])
+m4trace:configure.in:613: -1- AC_SUBST([CXX_COMPILER_GNU])
+m4trace:configure.in:617: -1- AC_SUBST([CC_WARN_FLAGS])
+m4trace:configure.in:619: -1- AC_SUBST([CPP_WARN_FLAGS])
+m4trace:configure.in:623: -1- AC_SUBST([BUILDDIR])
+m4trace:configure.in:637: -1- AC_CONFIG_FILES([\
           Makefile.srcdir \
           Makefile.config \
           xmlrpc_config.h \
           ])
-m4trace:configure.in:648: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
+m4trace:configure.in:637: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
 You should run autoupdate.], [])
-m4trace:configure.in:648: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
-m4trace:configure.in:648: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
+m4trace:configure.in:637: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
+m4trace:configure.in:637: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])

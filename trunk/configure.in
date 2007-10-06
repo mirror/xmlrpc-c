@@ -18,11 +18,6 @@ dnl "host" means the target system -- the one for which we are building.
 dnl "build" means the system that will do the building.
 AC_CANONICAL_HOST
 
-dnl We need this to compensate for an incompatibility between autoconf
-dnl and our libtool.  autoconf generates an invalid ltconfig command
-dnl otherwise.
-test -z "$target" && target=NONE
-
 dnl =======================================================================
 dnl Decide What To Build
 dnl =======================================================================
@@ -626,12 +621,6 @@ AC_SUBST(CPP_WARN_FLAGS)
 
 BUILDDIR=`pwd`
 AC_SUBST(BUILDDIR)
-
-
-dnl =======================================================================
-dnl Libtool
-dnl =======================================================================
-AM_PROG_LIBTOOL
 
 
 dnl =======================================================================
