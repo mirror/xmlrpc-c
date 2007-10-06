@@ -11,10 +11,6 @@
    oblivious to HTTP -- it just transports a byte stream in each direction.
 ============================================================================*/
 
-#ifndef WIN32
-#include <netinet/in.h>
-#endif
-
 #include "xmlrpc-c/abyss.h"
 
 struct TChannelVtbl;

@@ -9,10 +9,6 @@
 
 #include <sys/types.h>
 #include <assert.h>
-#ifndef WIN32
-#  include <netinet/in.h>
-#  include <arpa/inet.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 
