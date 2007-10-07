@@ -37,9 +37,9 @@ typedef xmlrpc_value *
                          xmlrpc_value * const paramArrayP,
                          void *         const serverInfo);
 
-extern int const xmlrpc_server_version_major;
-extern int const xmlrpc_server_version_minor;
-extern int const xmlrpc_server_version_point;
+extern unsigned int const xmlrpc_server_version_major;
+extern unsigned int const xmlrpc_server_version_minor;
+extern unsigned int const xmlrpc_server_version_point;
 
 xmlrpc_registry *
 xmlrpc_registry_new(xmlrpc_env * const envP);

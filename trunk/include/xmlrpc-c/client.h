@@ -164,9 +164,9 @@ xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   const char *         const username,
                                   const char *         const password);
 
-extern int const xmlrpc_client_version_major;
-extern int const xmlrpc_client_version_minor;
-extern int const xmlrpc_client_version_point;
+extern unsigned int const xmlrpc_client_version_major;
+extern unsigned int const xmlrpc_client_version_minor;
+extern unsigned int const xmlrpc_client_version_point;
 
 void
 xmlrpc_client_setup_global_const(xmlrpc_env * const envP);

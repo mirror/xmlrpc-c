@@ -21,9 +21,9 @@ extern "C" {
 /*=========================================================================
 **  Version of libxmlrpc
 **=======================================================================*/
-extern int const xmlrpc_version_major;
-extern int const xmlrpc_version_minor;
-extern int const xmlrpc_version_point;
+extern unsigned int const xmlrpc_version_major;
+extern unsigned int const xmlrpc_version_minor;
+extern unsigned int const xmlrpc_version_point;
 
 /*=========================================================================
 **  C types equivalent to XML-RPC types

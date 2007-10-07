@@ -183,9 +183,9 @@ xmlrpc_client_teardown_global_const(void) {
 
 
 
-int const xmlrpc_client_version_major = XMLRPC_VERSION_MAJOR;
-int const xmlrpc_client_version_minor = XMLRPC_VERSION_MINOR;
-int const xmlrpc_client_version_point = XMLRPC_VERSION_POINT;
+unsigned int const xmlrpc_client_version_major = XMLRPC_VERSION_MAJOR;
+unsigned int const xmlrpc_client_version_minor = XMLRPC_VERSION_MINOR;
+unsigned int const xmlrpc_client_version_point = XMLRPC_VERSION_POINT;
 
 
 /*=========================================================================
