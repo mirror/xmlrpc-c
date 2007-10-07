@@ -19,10 +19,18 @@ extern "C" {
 
 
 /*=========================================================================
-**  Typedefs
-**=========================================================================
-**  We define names for these types, because they may change from platform
-**  to platform.
+**  Version of libxmlrpc
+**=======================================================================*/
+extern int const xmlrpc_version_major;
+extern int const xmlrpc_version_minor;
+extern int const xmlrpc_version_point;
+
+/*=========================================================================
+**  C types equivalent to XML-RPC types
+**=======================================================================*/
+
+/*  We define names for these types, because they may change from platform
+    to platform.
 */
 
 typedef signed int xmlrpc_int;  
