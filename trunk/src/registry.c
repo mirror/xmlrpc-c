@@ -13,12 +13,11 @@
 
 =========================================================================*/
 
-#include "xmlrpc_config.h"
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "xmlrpc_config.h"
 #include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/base_int.h"
@@ -27,8 +26,14 @@
 #include "xmlrpc-c/server.h"
 #include "method.h"
 #include "system_method.h"
+#include "version.h"
 
 #include "registry.h"
+
+
+int const xmlrpc_server_version_major = XMLRPC_VERSION_MAJOR;
+int const xmlrpc_server_version_minor = XMLRPC_VERSION_MINOR;
+int const xmlrpc_server_version_point = XMLRPC_VERSION_POINT;
 
 
 xmlrpc_registry *

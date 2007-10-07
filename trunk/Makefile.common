@@ -11,6 +11,8 @@
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
 # BLDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
 
+include $(SRCDIR)/Makefile.version
+
 # .DELETE_ON_ERROR is a special predefined Make target that says to delete
 # the target if a command in the rule for it fails.  That's important,
 # because we don't want a half-made target sitting around looking like it's
@@ -48,7 +50,7 @@ DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 # MAJ is the major version number, but is set separately by
 # individual make files so that the major number of one library can change
 # from one release to another while the major number of another does not.
-MIN = 12
+MIN = $(XMLRPC_MINOR_RELEASE)
 
 # CURDIR was introduced in GNU Make 3.77.
 ifeq ($(CURDIR)x,x)

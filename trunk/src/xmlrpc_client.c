@@ -26,6 +26,7 @@
     MUST_BUILD_LIBWWW_CLIENT 
 */
 #include "transport_config.h"
+#include "version.h"
 
 struct xmlrpc_client {
 /*----------------------------------------------------------------------------
@@ -137,6 +138,10 @@ teardownTransportGlobalConst(void) {
 
 
 
+/*=========================================================================
+   Global stuff (except the global client)
+=========================================================================*/
+
 static unsigned int constSetupCount = 0;
 
 
@@ -176,6 +181,11 @@ xmlrpc_client_teardown_global_const(void) {
         teardownTransportGlobalConst();
 }
 
+
+
+int const xmlrpc_client_version_major = XMLRPC_VERSION_MAJOR;
+int const xmlrpc_client_version_minor = XMLRPC_VERSION_MINOR;
+int const xmlrpc_client_version_point = XMLRPC_VERSION_POINT;
 
 
 /*=========================================================================

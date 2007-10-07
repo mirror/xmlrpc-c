@@ -106,7 +106,7 @@ while test $# -gt 0; do
         fi
       ;;
     --version)
-      echo "$VERSION"
+      echo "$XMLRPC_MAJOR_RELEASE.$XMLRPC_MINOR_RELEASE.$XMLRPC_POINT_RELEASE"
       ;;
     --modules)
       echo "$FEATURE_LIST"
