@@ -11,6 +11,7 @@
    oblivious to HTTP -- it just transports a byte stream in each direction.
 ============================================================================*/
 
+#include "int.h"
 #include "xmlrpc-c/abyss.h"
 
 struct TChannelVtbl;

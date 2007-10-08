@@ -1,5 +1,7 @@
 /* This is just a sub-file for abyss.h */
 
+#include <winsock.h>
+
 void
 ChanSwitchWinCreate(TChanSwitch ** const chanSwitchPP);
 

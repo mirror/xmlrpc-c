@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 
+#include "int.h"
 #include "xmlrpc-c/abyss.h"
 
 #ifndef NAME_MAX

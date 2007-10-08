@@ -13,24 +13,39 @@ all: xmlrpc-c/config.h
 
 xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	>$@
-	echo '#ifndef XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
-	echo '#define XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
-	echo '/* This file, part of XML-RPC For C/C++, is meant to '     >>$@
-	echo '   define characteristics of this particular installation '>>$@ 
-	echo '   that the other <xmlrpc-c/...> header files need in '	 >>$@
-	echo '   order to compile correctly when #included in a Xmlrpc-c'>>$@
-	echo '   user code.'						 >>$@
-	echo ''								 >>$@
-	echo '   Those header files #include this one.'			 >>$@
-	echo '*/'							 >>$@
-	echo '#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)'          >>$@
-	echo '#endif'                                                    >>$@
+	@echo "Lots of echoes to '$@' suppressed here ..."
+	@echo '#ifndef XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
+	@echo '#define XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
+	@echo ''                                                          >>$@
+	@echo '/* This file, part of XML-RPC For C/C++, is meant to '     >>$@
+	@echo '   define characteristics of this particular installation '>>$@ 
+	@echo '   that the other <xmlrpc-c/...> header files need in '    >>$@
+	@echo '   order to compile correctly when #included in Xmlrpc-c'  >>$@
+	@echo '   user code.'						  >>$@
+	@echo ''                                                          >>$@
+	@echo '   Those header files #include this one.'                  >>$@
+	@echo ''                                                          >>$@
+	@echo '   This file was created by a make rule.'                  >>$@
+	@echo '*/'                                                        >>$@
+	@echo '#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)'          >>$@
+	@echo '#ifdef WIN32'                                              >>$@
+	@echo '  /* SOCKET is a type defined by <winsock.h>.  Anyone who' >>$@
+	@echo '     uses XMLRPC_SOCKET on a WIN32 system must #include'   >>$@
+	@echo '     <winsock.h>'                                          >>$@
+	@echo '  */'                                                      >>$@
+	@echo '  #define XMLRPC_SOCKET SOCKET'                            >>$@
+	@echo '#else'                                                     >>$@
+	@echo '  #define XMLRPC_SOCKET int'                               >>$@
+	@echo '#endif'                                                    >>$@
+	@echo ''                                                          >>$@
+	@echo '#endif'                                                    >>$@
 
 $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 	mkdir $@
 
 HEADERS_TO_INSTALL = \
   xmlrpc-c/config.h \
+  xmrpc-c/inttypes.h \
   xmlrpc-c/c_util.h \
   xmlrpc-c/util.h \
   xmlrpc-c/base.h \

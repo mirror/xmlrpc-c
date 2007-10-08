@@ -50,8 +50,11 @@ typedef double xmlrpc_double;
        for mathematical completeness.
     */
 
-/* For Windows, type xmlrpc_socket used to be (Xmlrpc-c 1.08) SOCKET.
-   But now we use the Winsock2 interface.
+/* xmlrpc_socket is just for backward compatibility, in case someone decided
+   to use this in user code.  New code should use the native type for a
+   socket (e.g. int or SOCKET).  (We stopped using this because for winsock
+   users, we would have to #include <winsock.h> in every file that
+   #includes <xmlrpc-c/base.h> and we don't want that).
 */
 typedef int xmlrpc_socket;
 

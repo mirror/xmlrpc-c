@@ -790,9 +790,16 @@ RequestAuth(TSession *   const sessionP,
 ** Range
 *********************************************************************/
 
-abyss_bool RangeDecode(char *str,uint64_t filesize,uint64_t *start,uint64_t *end)
-{
+abyss_bool
+RangeDecode(char *            const strArg,
+            xmlrpc_uint64_t   const filesize,
+            xmlrpc_uint64_t * const start,
+            xmlrpc_uint64_t * const end) {
+
+    char *str;
     char *ss;
+
+    str = strArg;  /* initial value */
 
     *start=0;
     *end=filesize-1;

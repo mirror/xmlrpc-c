@@ -8,8 +8,18 @@
    user code.
 
    Those header files #include this one.
-*/
 
+   This file was created by a make rule.
+*/
 #define XMLRPC_HAVE_WCHAR 1
+#ifdef WIN32
+  /* SOCKET is a type defined by <winsock.h>.  Anyone who
+     uses XMLRPC_SOCKET on a WIN32 system must #include
+     <winsock.h>
+  */
+  #define XMLRPC_SOCKET SOCKET
+#else
+  #define XMLRPC_SOCKET int
+#endif
 
 #endif

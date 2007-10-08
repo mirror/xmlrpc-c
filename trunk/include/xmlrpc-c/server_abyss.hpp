@@ -1,6 +1,11 @@
 #ifndef SERVER_ABYSS_HPP_INCLUDED
 #define SERVER_ABYSS_HPP_INCLUDED
 
+#ifdef WIN32
+#include <winsock.h>   // For XMLRPC_SOCKET (= SOCKET)
+#endif
+
+#include "xmlrpc-c/config.h"  // For XMLRPC_SOCKET
 #include "xmlrpc-c/base.hpp"
 #include "abyss.h"
 
@@ -15,7 +20,7 @@ public:
 
         constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
-        constrOpt & socketFd          (xmlrpc_socket  const& arg);
+        constrOpt & socketFd          (XMLRPC_SOCKET  const& arg);
         constrOpt & portNumber        (uint           const& arg);
         constrOpt & logFileName       (std::string    const& arg);
         constrOpt & keepaliveTimeout  (uint           const& arg);
@@ -28,7 +33,7 @@ public:
         struct value {
             xmlrpc_c::registryPtr      registryPtr;
             const xmlrpc_c::registry * registryP;
-            xmlrpc_socket  socketFd;
+            XMLRPC_SOCKET  socketFd;
             uint           portNumber;
             std::string    logFileName;
             uint           keepaliveTimeout;
@@ -64,7 +69,7 @@ public:
         unsigned int       const  timeout = 0,
         bool               const  dontAdvertise = false,
         bool               const  socketBound = false,
-        xmlrpc_socket      const  socketFd = 0
+        XMLRPC_SOCKET      const  socketFd = 0
         );
     ~serverAbyss();
     

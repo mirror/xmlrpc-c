@@ -165,7 +165,7 @@ serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
 
 DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
 DEFINE_OPTION_SETTER(registryP,        const registry *);
-DEFINE_OPTION_SETTER(socketFd,         xmlrpc_socket);
+DEFINE_OPTION_SETTER(socketFd,         XMLRPC_SOCKET);
 DEFINE_OPTION_SETTER(portNumber,       uint);
 DEFINE_OPTION_SETTER(logFileName,      string);
 DEFINE_OPTION_SETTER(keepaliveTimeout, uint);
@@ -277,7 +277,7 @@ serverAbyss::serverAbyss(
     unsigned int       const  timeout,
     bool               const  dontAdvertise,
     bool               const  socketBound,
-    xmlrpc_socket      const  socketFd) {
+    XMLRPC_SOCKET      const  socketFd) {
 /*----------------------------------------------------------------------------
   This is a backward compatibility interface.  This used to be the only
   constructor.

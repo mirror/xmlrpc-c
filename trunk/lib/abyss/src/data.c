@@ -217,8 +217,10 @@ ListFindString(TList *      const sl,
 ** Buffer
 *********************************************************************/
 
-abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
-{
+abyss_bool
+BufferAlloc(TBuffer *       const buf,
+            xmlrpc_uint32_t const memsize) {
+
     /* ************** Implement the static buffers ***/
     buf->staticid=0;
     buf->data=(void *)malloc(memsize);
@@ -234,8 +236,11 @@ abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
     };
 }
 
-void BufferFree(TBuffer *buf)
-{
+
+
+void
+BufferFree(TBuffer * const buf) {
+
     if (buf->staticid)
     {
         /* ************** Implement the static buffers ***/
@@ -247,8 +252,12 @@ void BufferFree(TBuffer *buf)
     buf->staticid=0;
 }
 
-abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize)
-{
+
+
+abyss_bool
+BufferRealloc(TBuffer *       const buf,
+              xmlrpc_uint32_t const memsize) {
+
     if (buf->staticid)
     {
         TBuffer b;
