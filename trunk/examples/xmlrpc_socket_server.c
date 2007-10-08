@@ -22,7 +22,7 @@
 #include "config.h"  /* information about this build environment */
 
 #ifdef WIN32
-  #define SLEEP(seconds) SleepEx(seconds * 1000);
+  #define SLEEP(seconds) SleepEx(seconds * 1000, 1);
 #else
   #define SLEEP(seconds) sleep(seconds);
 #endif

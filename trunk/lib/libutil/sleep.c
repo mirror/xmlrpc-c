@@ -1,3 +1,5 @@
+#include "bool.h"
+
 #include "xmlrpc-c/sleep_int.h"
 
 #ifdef WIN32
@@ -12,7 +14,7 @@ void
 xmlrpc_millisecond_sleep(unsigned int const milliseconds) {
 
 #ifdef WIN32
-    SleepEx(milliseconds);
+    SleepEx(milliseconds, true);
 #else
     usleep(milliseconds * 1000);
 #endif
