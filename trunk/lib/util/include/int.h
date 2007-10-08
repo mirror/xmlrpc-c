@@ -9,7 +9,7 @@
 */
 
 #ifdef _MSC_VER
-#  define PRId64 "I64"
+#  define PRId64 "I64d"
 
 #ifndef uint16_t
 typedef unsigned short    uint16_t;
