@@ -46,6 +46,8 @@ threadRun(void * const arg) {
     threadP->func(threadP->userHandle);
 
     threadP->threadDone(threadP->userHandle);
+
+    return 0;
 }
 
 
