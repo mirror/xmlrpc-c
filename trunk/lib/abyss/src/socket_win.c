@@ -232,7 +232,7 @@ getWSAError(int const wsaErrno) {
         if (pseP->err == wsaErrno)
             return pseP->desc;
         
-        ++pse;
+        ++pseP;
     }
 
     return "(no description available)";
@@ -288,9 +288,6 @@ void
 setSocketOptions(SOCKET        const fd,
                  const char ** const errorP);
 
-char *
-GetWSAError(int const i);
-
 void
 SocketWinInit(const char ** const errorP) {
 
@@ -305,7 +302,7 @@ SocketWinInit(const char ** const errorP) {
     if (err != 0) {
         int const lastError = WSAGetLastError();
         xmlrpc_asprintf(errorP, "WSAStartup() faild with error %d (%s)",
-                        lastError, GetWSAError(lastError));
+                        lastError, getWSAError(lastError));
     } else
         *errorP = NULL;
 }
@@ -480,7 +477,7 @@ ChannelWinGetPeerName(TChannel *           const channelP,
     if (rc != 0) {
         int const lastError = WSAGetLastError();
         xmlrpc_asprintf(errorP, "getpeername() failed.  WSAERROR = %d (%s)",
-                        lastError, GetWSAError(lastError));
+                        lastError, getWSAError(lastError));
     } else {
         if (addrlen != sizeof(sockAddr))
             xmlrpc_asprintf(errorP, "getpeername() returned a socket address "
@@ -602,7 +599,7 @@ ChanSwitchWinCreate(uint16_t       const portNumber,
         if (winsock == 0 || winsock == INVALID_SOCKET) {
             int const lastError = WSAGetLastError();
             xmlrpc_asprintf(errorP, "socket() failed with WSAERROR %d (%s)",
-                            lastError, GetWSAError(lastError));
+                            lastError, getWSAError(lastError));
         } else {
             socketWinP->winsock = winsock;
             socketWinP->userSuppliedWinsock = FALSE;
@@ -647,7 +644,7 @@ bindSocketToPort(SOCKET           const winsock,
         int const lastError = WSAGetLastError();
         xmlrpc_asprintf(errorP, "Unable to bind socket to port number %u.  "
                         "bind() failed with WSAERROR %i (%s)",
-                        portNumber, lastError, GetWSAError(lastError));
+                        portNumber, lastError, getWSAError(lastError));
     } else
         *errorP = NULL;
 }
@@ -726,7 +723,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
     if (rc != 0) {
         int const lastError = WSAGetLastError();
         xmlrpc_asprintf(errorP, "setsockopt() failed with WSAERROR %d (%s)",
-                        lastError, GetWSAError(lastError));
+                        lastError, getWSAError(lastError));
     } else
         *errorP = NULL;
 }
@@ -817,7 +814,7 @@ channelFormatPeerInfo(TChannel *    const channelP,
         int const lastError = WSAGetLastError();
         xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  "
                         "WSAERROR %d (%s)",
-                        lastError, GetWSAError(lastError));
+                        lastError, getWSAError(lastError));
     } else {
         switch (sockaddr.sa_family) {
         case AF_INET: {
@@ -856,7 +853,7 @@ setSocketOptions(SOCKET        const fd,
         int const i = WSAGetLastError();
         xmlrpc_asprintf(errorP, "Failed to set socket options.  "
                         "setsockopt() failed with WSAERROR %d (%s)",
-                        lastError, GetWSAError(lastError));
+                        lastError, getWSAError(lastError));
     } else
         *errorP = NULL;
 }
