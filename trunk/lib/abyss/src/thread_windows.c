@@ -43,9 +43,9 @@ threadRun(void * const arg) {
 
     struct abyss_thread * const threadP = arg;
 
-    threadP->func(threadP->handle);
+    threadP->func(threadP->userHandle);
 
-    threadP->threadDone(threadP->handle);
+    threadP->threadDone(threadP->userHandle);
 }
 
 
