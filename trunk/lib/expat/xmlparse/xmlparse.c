@@ -26,11 +26,6 @@ See the file copying.txt for copying permission.
 #include "xmldef.h"
 #include "xmlparse.h"
 
-/* Something in a Windows compile defines an ELEMENT_TYPE macro, which
-   interferes with our use of the identifier
-*/
-#undef ELEMENT_TYPE
-
 static const char *
 extractXmlSample(const char * const start,
                  const char * const end,
