@@ -41,6 +41,8 @@ testGlobalConst(void) {
 static void
 testCreateCurlParms(void) {
     
+#if MUST_BUILD_CURL_CLIENT
+
     xmlrpc_env env;
     xmlrpc_client * clientP;
     struct xmlrpc_clientparms clientParms1;
@@ -78,6 +80,7 @@ testCreateCurlParms(void) {
     xmlrpc_client_destroy(clientP);
 
     xmlrpc_env_clean(&env);
+#endif  /* MUST_BUILD_CURL_CLIENT */
 }
 
 
@@ -85,7 +88,7 @@ testCreateCurlParms(void) {
 static void
 testCreateSeparateXport(void) {
 
-#ifdef MUST_BUILD_CURL_CLIENT
+#if MUST_BUILD_CURL_CLIENT
     xmlrpc_env env;
     xmlrpc_client * clientP;
     struct xmlrpc_clientparms clientParms1;
