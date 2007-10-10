@@ -290,7 +290,7 @@ ThreadForks(void) {
 */
 
 abyss_bool
-MutexCreate(TMutex ** const mutexP ATTR_UNUSED) {
+MutexCreate(TMutex * const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
