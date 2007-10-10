@@ -3077,63 +3077,71 @@ externalEntityInitProcessor(XML_Parser       const parser,
 
 
 
-/* startPtr gets set to non-null is the section is closed, and to null if
-the section is not yet closed. */
-
 static enum XML_Error
 doIgnoreSection(XML_Parser       const xmlParserP,
                 const ENCODING * const enc,
                 const char **    const startPtr,
                 const char *     const end,
                 const char **    const nextPtr) {
+/*----------------------------------------------------------------------------
 
-  Parser * const parser = (Parser *) xmlParserP;
+  We set *startPtr to non-null is the section is closed, and to null if
+  the section is not yet closed.
+-----------------------------------------------------------------------------*/
+    Parser * const parser = (Parser *) xmlParserP;
+    const char * const s = *startPtr;
 
-  const char *next;
-  int tok;
-  const char *s = *startPtr;
-  const char **eventPP;
-  const char **eventEndPP;
-  if (enc == parser->m_encoding) {
-    eventPP = &eventPtr;
+    enum XML_Error retval;
+    const char * next;
+    int tok;
+    const char ** eventPP;
+    const char ** eventEndPP;
+
+    if (enc == parser->m_encoding) {
+        eventPP = &eventPtr;
+        eventEndPP = &eventEndPtr;
+    } else {
+        eventPP = &(openInternalEntities->internalEventPtr);
+        eventEndPP = &(openInternalEntities->internalEventEndPtr);
+    }
     *eventPP = s;
-    eventEndPP = &eventEndPtr;
-  }
-  else {
-    eventPP = &(openInternalEntities->internalEventPtr);
-    eventEndPP = &(openInternalEntities->internalEventEndPtr);
-  }
-  *eventPP = s;
-  *startPtr = 0;
-  tok = XmlIgnoreSectionTok(enc, s, end, &next);
-  *eventEndPP = next;
-  switch (tok) {
-  case XML_TOK_IGNORE_SECT:
-    if (defaultHandler)
-      reportDefault(xmlParserP, enc, s, next);
-    *startPtr = next;
-    return XML_ERROR_NONE;
-  case XML_TOK_INVALID:
-    *eventPP = next;
-    return XML_ERROR_INVALID_TOKEN;
-  case XML_TOK_PARTIAL_CHAR:
-    if (nextPtr) {
-      *nextPtr = s;
-      return XML_ERROR_NONE;
+    *startPtr = '\0';
+    tok = XmlIgnoreSectionTok(enc, s, end, &next);
+    *eventEndPP = next;
+
+    switch (tok) {
+    case XML_TOK_IGNORE_SECT:
+        if (defaultHandler)
+            reportDefault(xmlParserP, enc, s, next);
+        *startPtr = next;
+        retval = XML_ERROR_NONE;
+        break;
+    case XML_TOK_INVALID:
+        *eventPP = next;
+        retval = XML_ERROR_INVALID_TOKEN;
+        break;
+    case XML_TOK_PARTIAL_CHAR:
+        if (nextPtr) {
+            *nextPtr = s;
+            retval = XML_ERROR_NONE;
+        } else
+            retval = XML_ERROR_PARTIAL_CHAR;
+        break;
+    case XML_TOK_PARTIAL:
+    case XML_TOK_NONE:
+        if (nextPtr) {
+            *nextPtr = s;
+            retval = XML_ERROR_NONE;
+        } else
+            retval = XML_ERROR_SYNTAX; /* XML_ERROR_UNCLOSED_IGNORE_SECTION */
+        break;
+    default:
+        assert(false);  /* All possibilities are handled above */
     }
-    return XML_ERROR_PARTIAL_CHAR;
-  case XML_TOK_PARTIAL:
-  case XML_TOK_NONE:
-    if (nextPtr) {
-      *nextPtr = s;
-      return XML_ERROR_NONE;
-    }
-    return XML_ERROR_SYNTAX; /* XML_ERROR_UNCLOSED_IGNORE_SECTION */
-  default:
-    abort();
-  }
-  /* not reached */
+
+    return retval;
 }
+
 
 
 static Processor prologProcessor;
