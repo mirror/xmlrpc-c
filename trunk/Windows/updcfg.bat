@@ -6,4 +6,5 @@ copy ..\include\xmlrpc-c\config.h win32_config.h
 copy ..\xmlrpc_config.h xmlrpc_win32_config.h
 copy ..\transport_config.h transport_config_win32.h
 copy ..\version.h win32_version.h
+@echo all done ...
 

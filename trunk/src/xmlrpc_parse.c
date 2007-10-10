@@ -394,7 +394,7 @@ parseI8(xmlrpc_env *    const envP,
     else if (isspace(str[0]))
         parseFault(envP, "<int> content '%s' starts with white space.", str);
     else {
-        long long i;
+        xmlrpc_int64 i;
         char * tail;
 
         errno = 0;

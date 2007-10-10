@@ -105,7 +105,7 @@ uint64_t
 FileSize(const TFile * const fileP) {
 
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_filelength(fileP));
+    return (_filelength(*fileP));
 #else
     struct stat fs;
 

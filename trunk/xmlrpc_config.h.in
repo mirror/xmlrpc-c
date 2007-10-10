@@ -41,6 +41,7 @@
 
 #define HAVE_LIBWWW_SSL @HAVE_LIBWWW_SSL_DEFINE@
 
+/* Used to mark an unused function parameter */
 #define ATTR_UNUSED @ATTR_UNUSED@
 
 #define DIRECTORY_SEPARATOR "@DIRECTORY_SEPARATOR@"
@@ -57,12 +58,22 @@
 */
 #if (!defined(__GNUC__))
   #if (!defined(__inline__))
-    #if (defined(__sgi) || defined(_AIX))
+    #if (defined(__sgi) || defined(_AIX) || defined(_MSC_VER))
       #define __inline__ __inline
     #else   
       #define __inline__
     #endif
   #endif
 #endif
+
+/* MSVCRT means we're using the Microsoft Visual C++ runtime library */
+
+#ifdef _MSC_VER
+/* The compiler is Microsoft Visual C++.
+  #define MSVCRT 1
+#else
+  #define MSVCRT 0
+#endif
+
 
 #endif

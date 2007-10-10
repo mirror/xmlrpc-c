@@ -564,18 +564,6 @@ XML_Char *poolStoreString(STRING_POOL *pool, const ENCODING *enc,
   return pool->start;
 }
 
-#ifdef _MSC_VER
-#ifdef _DEBUG
-Parser *asParser(XML_Parser parser)
-{
-  return parser;
-}
-#endif
-#endif
-
-
-
-
 #define INIT_SIZE 64
 
 static

@@ -13,9 +13,9 @@
   context to be local to invidual objects.
 =============================================================================*/
 
-#include <stdbool.h>
 #include <assert.h>
 
+#include "bool.h"
 #include "xmlrpc-c/string_int.h"
 
 #include "chanswitch.h"

@@ -289,7 +289,7 @@ xmlrpc_read_nil(xmlrpc_env *   const envP,
 void 
 xmlrpc_read_i8(xmlrpc_env *         const envP,
                const xmlrpc_value * const valueP,
-               long long *          const intValueP) {
+               xmlrpc_int64 *       const intValueP) {
 
     validateType(envP, valueP, XMLRPC_TYPE_I8);
     if (!envP->fault_occurred)
@@ -347,7 +347,7 @@ xmlrpc_int_new(xmlrpc_env * const envP,
 
 xmlrpc_value *
 xmlrpc_i8_new(xmlrpc_env * const envP, 
-              long long    const value) {
+              xmlrpc_int64 const value) {
 
     xmlrpc_value * valP;
 

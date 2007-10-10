@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stddef.h>
+#include <wininet.h>
 
 #include "xmlrpc_config.h"
 
@@ -25,17 +26,13 @@
 #include "xmlrpc-c/transport.h"
 #include "pthreadx.h"
 
-#if defined (WIN32)
-#   include <wininet.h>
-#endif /*WIN32*/
-
-#if defined (WIN32) && defined(_DEBUG)
+#if defined(_DEBUG)
 #   include <crtdbg.h>
 #   define new DEBUG_NEW
 #   define malloc(size) _malloc_dbg( size, _NORMAL_BLOCK, __FILE__, __LINE__)
 #   undef THIS_FILE
     static char THIS_FILE[] = __FILE__;
-#endif /*WIN32 && _DEBUG*/
+#endif
 
 
 static HINTERNET hSyncInternetSession = NULL;

@@ -38,7 +38,7 @@ typedef uint32_t (WINAPI WinThreadProc)(void *);
 
 static WinThreadProc threadRun;
 
-static uint32_t
+static uint32_t WINAPI
 threadRun(void * const arg) {
 
     struct abyss_thread * const threadP = arg;

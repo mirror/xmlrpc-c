@@ -4,23 +4,24 @@
 @echo creating Win32 header files...once only
 @set TEMP1=
 @if EXIST ..\include\xmlrpc-c\config.h goto DN1
-@copy .\win32_config.h ..\include\xmlrpc-c\config.h
+copy .\win32_config.h ..\include\xmlrpc-c\config.h > nul
 @set TEMP1=%TEMP1% ..\include\xmlrpc-c\config.h
 :DN1
 @if EXIST ..\xmlrpc_config.h goto DN2
-@copy .\xmlrpc_win32_config.h ..\xmlrpc_config.h
+copy .\xmlrpc_win32_config.h ..\xmlrpc_config.h > nul
 @set TEMP1=%TEMP1% ..\xmlrpc_config.h
 :DN2
 @if EXIST ..\transport_config.h goto DN3
-copy .\transport_config_win32.h ..\transport_config.h
+copy .\transport_config_win32.h ..\transport_config.h > nul
 @set TEMP1=%TEMP1% ..\transport_config.h
 :DN3
 @if EXIST ..\version.h goto DN4
-copy .\win32_version.h ..\version.h
+copy .\win32_version.h ..\version.h > nul
 @set TEMP1=%TEMP1% ..\version.h
 :DN4
 @if "%TEMP1%." == "." goto ALLDN
-@echo completed win32 header files. %TEMP1%
+@echo Copied the following win32 header files ...
+@echo %TEMP1%
 @goto END
 
 :ALLDN

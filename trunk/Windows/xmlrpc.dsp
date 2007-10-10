@@ -93,11 +93,27 @@ SOURCE=..\lib\libutil\casprintf.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\abyss\src\channel.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\chanswitch.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\abyss\src\date.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\lib\libutil\error.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\handler.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\init.c
 # End Source File
 # Begin Source File
 
@@ -109,16 +125,7 @@ SOURCE=..\lib\libutil\memblock.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\libutil\MemLeakCheck.c
-
-!IF  "$(CFG)" == "xmlrpc - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
-
-!ENDIF 
-
+SOURCE=..\src\method.c
 # End Source File
 # Begin Source File
 
@@ -158,6 +165,10 @@ SOURCE=..\lib\abyss\src\thread_windows.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\libutil\time.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\abyss\src\token.c
 # End Source File
 # Begin Source File
@@ -166,16 +177,7 @@ SOURCE=..\src\trace.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\libutil\xml_rpc_alloc.c
-
-!IF  "$(CFG)" == "xmlrpc - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "xmlrpc - Win32 Debug"
-
-!ENDIF 
-
+SOURCE=..\lib\libutil\utf8.c
 # End Source File
 # Begin Source File
 
@@ -192,10 +194,6 @@ SOURCE=..\src\xmlrpc_base64.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_build.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_decompose.c
 # End Source File
 # Begin Source File
 
@@ -217,6 +215,10 @@ SOURCE=..\src\xmlrpc_data.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_datetime.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\xmlrpc_decompose.c
 # End Source File
 # Begin Source File
 
@@ -247,7 +249,10 @@ SOURCE=..\src\xmlrpc_server_abyss.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_server_w32httpsys.c
-# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\xmlrpc_string.c
 # End Source File
 # Begin Source File
 
@@ -265,10 +270,6 @@ SOURCE=..\src\xmlrpc_support.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc_utf8.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.c
 # End Source File
 # End Group
@@ -277,7 +278,19 @@ SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=..\lib\abyss\src\ab_http.h
+# End Source File
+# Begin Source File
+
 SOURCE="..\include\xmlrpc-c\abyss.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\abyss_info.h
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\abyss_winsock.h"
 # End Source File
 # Begin Source File
 
@@ -285,7 +298,31 @@ SOURCE="..\include\xmlrpc-c\base.h"
 # End Source File
 # Begin Source File
 
+SOURCE="..\include\xmlrpc-c\base_int.h"
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\util\include\bool.h
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\c_util.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\util\include\c_util.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\util\include\casprintf.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\channel.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\chanswitch.h
 # End Source File
 # Begin Source File
 
@@ -293,7 +330,43 @@ SOURCE="..\include\xmlrpc-c\client.h"
 # End Source File
 # Begin Source File
 
+SOURCE="..\include\xmlrpc-c\client_global.h"
+# End Source File
+# Begin Source File
+
 SOURCE="..\include\xmlrpc-c\client_int.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\config.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\conn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\date.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\file.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\util\include\girmath.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\handler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\util\include\inline.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\util\include\linklist.h
 # End Source File
 # Begin Source File
 
@@ -301,11 +374,23 @@ SOURCE=..\lib\util\include\mallocvar.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\method.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\util\include\pthreadx.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\registry.h
+# End Source File
+# Begin Source File
+
 SOURCE="..\include\xmlrpc-c\server.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\server.h
 # End Source File
 # Begin Source File
 
@@ -321,6 +406,42 @@ SOURCE="..\include\xmlrpc-c\server_w32httpsys.h"
 # End Source File
 # Begin Source File
 
+SOURCE="..\include\xmlrpc-c\sleep_int.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\socket.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\socket_win.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\util\include\stdargx.h
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\string_int.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\system_method.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\thread.h
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\time_int.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\token.h
+# End Source File
+# Begin Source File
+
 SOURCE="..\include\xmlrpc-c\transport.h"
 # End Source File
 # Begin Source File
@@ -330,6 +451,18 @@ SOURCE=..\transport_config.h
 # Begin Source File
 
 SOURCE="..\include\xmlrpc-c\transport_int.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\include\xmlrpc-c\util_int.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\xml_rpc_alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\expat\xmlparse\xmlparse.h
 # End Source File
 # Begin Source File
 
@@ -348,5 +481,9 @@ SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.h
 SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\README.VC6.txt
+# End Source File
 # End Target
 # End Project

@@ -401,7 +401,7 @@ test_xml_size_limit(void) {
 **  We use these files to test strange-but-legal encodings, illegal-but-
 **  allowed-by-Xmlrpc-c encodings, etc.
 */
-#ifdef _MSC_VER
+#ifdef WIN32
 /* usually compiled in 'Windows' folder */
 #define TESTDATA_DIR ".." DIRECTORY_SEPARATOR "bin" DIRECTORY_SEPARATOR "data"
 #else

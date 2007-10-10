@@ -34,14 +34,19 @@ static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
 static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
 
 
-void UnixTimeToFileTime(const time_t t, LPFILETIME pft)
-{
-    // Note that LONGLONG is a 64-bit value
-    LONGLONG ll;
-    ll = Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
-    pft->dwLowDateTime = (DWORD)ll;
-    pft->dwHighDateTime = ll >> 32;
+void
+UnixTimeToFileTime(time_t     const t,
+                   LPFILETIME const pft) {
+
+    /* Note that LONGLONG is a 64-bit value */
+    LONGLONG const ll =
+        Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
+
+    pft->dwLowDateTime  = (DWORD)ll;
+    pft->dwHighDateTime = (DWORD)(ll >> 32);
 }
+
+
 
 void UnixTimeToSystemTime(const time_t t, LPSYSTEMTIME pst)
 {
@@ -336,7 +341,7 @@ xmlrpc_datetime_new_sec(xmlrpc_env * const envP,
         
         valP->_type = XMLRPC_TYPE_DATETIME;
 
-        gmtime_r(&value, &brokenTime);
+        xmlrpc_gmtime(value, &brokenTime);
         
         /* Note that this format is NOT ISO 8601 -- it's a bizarre
            hybrid of two ISO 8601 formats.

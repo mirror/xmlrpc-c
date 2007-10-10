@@ -295,7 +295,7 @@ SocketWinInit(const char ** const errorP) {
     WSADATA wsaData;
     int err;
  
-    wVersionRequested = MAKEWORD(2, 0);
+    wVersionRequested = MAKEWORD(1, 0);
  
     err = WSAStartup(wVersionRequested, &wsaData);
 
@@ -716,7 +716,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
     /* Disable the Nagle algorithm to make persistant connections faster */
 
     setsockopt(socketWinP->winsock, IPPROTO_TCP, TCP_NODELAY,
-               &minus1, sizeof(minus1));
+               (const char *)&minus1, sizeof(minus1));
 
     rc = listen(socketWinP->winsock, backlog);
 
@@ -850,7 +850,7 @@ setSocketOptions(SOCKET        const fd,
     rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n));
 
     if (rc != 0) {
-        int const i = WSAGetLastError();
+        int const lastError = WSAGetLastError();
         xmlrpc_asprintf(errorP, "Failed to set socket options.  "
                         "setsockopt() failed with WSAERROR %d (%s)",
                         lastError, getWSAError(lastError));

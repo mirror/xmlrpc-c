@@ -43,8 +43,6 @@
 #define _UNICODE
 #endif
 
-#if MUST_BUILD_HTTP_SYS_SERVER > 0
-
 /* See compilation note above if this header is not found! */
 #include <http.h>
 #include <windows.h>
@@ -594,7 +592,6 @@ DoReceiveRequests(
         }
 
     } // for(;;)
-Cleanup:
 
     if(pRequestBuffer)
     {
@@ -925,5 +922,3 @@ Done:
 
     return;
 }
-
-#endif /* #if MUST_BUILD_HTTP_SYS_SERVER <> 0 */

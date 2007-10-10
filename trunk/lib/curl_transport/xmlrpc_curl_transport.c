@@ -61,6 +61,10 @@
 #include <time.h>  /* For timespec */
 #include <sys/time.h>  /* For timeval */
 
+#ifdef WIN32
+#include "curllink.h"
+#endif
+
 #include "xmlrpc_config.h"
 
 #include "bool.h"
@@ -81,13 +85,15 @@
 #include <curl/easy.h>
 #include <curl/multi.h>
 
-#if defined (WIN32) && defined(_DEBUG)
+#if MSVCRT
+#if defined(_DEBUG)
 #  include <crtdbg.h>
 #  define new DEBUG_NEW
 #  define malloc(size) _malloc_dbg( size, _NORMAL_BLOCK, __FILE__, __LINE__)
 #  undef THIS_FILE
    static char THIS_FILE[] = __FILE__;
-#endif /*WIN32 && _DEBUG*/
+#endif
+#endif
 
 
 
