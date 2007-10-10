@@ -78,7 +78,7 @@ xmlrpc_localtime(time_t      const datetime,
 #ifdef HAVE_LOCALTIME_R
   localtime_r(&datetime, tmP);
 #else
-  *tmP = localtime(&datetime);
+  *tmP = *localtime(&datetime);
 #endif
 }
 
