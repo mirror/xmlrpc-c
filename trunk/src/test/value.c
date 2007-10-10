@@ -401,7 +401,7 @@ test_value_string_no_null(void) {
     xmlrpc_DECREF(v);
     strfree(str);
 
-    test_string_new_va(&env, "String %s, number %d", "xyz", 7);
+    v = test_string_new_va(&env, "String %s, number %d", "xyz", 7);
     TEST_NO_FAULT(&env);
     TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
     xmlrpc_read_string(&env, v, &str);
