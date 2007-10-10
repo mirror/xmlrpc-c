@@ -61,7 +61,8 @@ main(int           const argc,
     if (argc-1 != 1) {
         fprintf(stderr, "You must specify 1 argument:  The TCP port "
                 "number on which the server will accept connections "
-                "for RPCs.  You specified %d arguments.\n",  argc-1);
+                "for RPCs (8080 is a common choice).  "
+                "You specified %d arguments.\n",  argc-1);
         exit(1);
     }
     
