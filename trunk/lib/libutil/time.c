@@ -97,6 +97,6 @@ xmlrpc_gmtime(time_t      const datetime,
 #ifdef HAVE_GMTIME_R
     gmtime_r(&datetime, resultP);
 #else
-    *resultP = gmtime(&datetime);
+    *resultP = *gmtime(&datetime);
 #endif
 }
