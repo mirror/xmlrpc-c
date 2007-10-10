@@ -1,4 +1,5 @@
 #include <string>
+#include <cstring>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
