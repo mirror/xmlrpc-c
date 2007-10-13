@@ -28,7 +28,7 @@ SHARED_LIBS_TO_BUILD := libxmlrpc_util
 SHARED_LIBS_TO_INSTALL := libxmlrpc_util
 
 TARGET_MODS = \
-  casprintf \
+  asprintf \
   error \
   make_printable \
   memblock \
