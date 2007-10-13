@@ -24,7 +24,9 @@
 
 #include "socket_win.h"
 
-
+#ifndef socklen_t
+typedef int socklen_t;
+#endif
 
 /* =============================================================
    Provided nice error strings, NOT available in system errors.

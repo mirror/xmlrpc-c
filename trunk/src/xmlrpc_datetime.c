@@ -29,7 +29,7 @@
 
 #ifdef WIN32
 
-static const bool win32 = TRUE;
+static const bool win32 = true;
 static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
 static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
 

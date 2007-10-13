@@ -3,7 +3,7 @@
 #include <winsock.h>
 
 void
-ChanSwitchWinCreate(uint16_t       const portNumber,
+ChanSwitchWinCreate(unsigned short const portNumber,
                     TChanSwitch ** const chanSwitchPP,
                     const char **  const errorP);
 

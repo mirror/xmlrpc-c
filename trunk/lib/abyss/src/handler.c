@@ -19,6 +19,7 @@
 #include <fcntl.h>
 
 #include "xmlrpc_config.h"
+#include "int.h"
 #include "girmath.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"

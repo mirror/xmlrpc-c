@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stddef.h>
+#include <windows.h>
 #include <wininet.h>
 
 #include "xmlrpc_config.h"
@@ -354,10 +355,10 @@ performWinInetTransaction(
     LPVOID pMsgMem;
     BOOL succeeded;
 
-    pMsgMem = NULL;  /* initial value */
-
     unsigned long lastErr;
     unsigned long reqFlags;
+
+    pMsgMem = NULL;  /* initial value */
 
     reqFlags = INTERNET_FLAG_NO_UI;  /* initial value */
     

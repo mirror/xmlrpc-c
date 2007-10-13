@@ -3,6 +3,7 @@
 
 #include "xmlrpc-c/abyss.h"
 #include "file.h"
+#include "thread.h"
 
 #define BUFFER_SIZE 4096 
 

@@ -30,6 +30,7 @@
 #  define _REENTRANT
 #  include <pthread.h>
 #elif defined (WIN32)
+#include <windows.h>
 
 typedef HANDLE pthread_t;
 typedef CRITICAL_SECTION pthread_mutex_t;

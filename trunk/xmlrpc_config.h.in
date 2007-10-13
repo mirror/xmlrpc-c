@@ -69,7 +69,7 @@
 /* MSVCRT means we're using the Microsoft Visual C++ runtime library */
 
 #ifdef _MSC_VER
-/* The compiler is Microsoft Visual C++.
+/* The compiler is Microsoft Visual C++. */
   #define MSVCRT 1
 #else
   #define MSVCRT 0

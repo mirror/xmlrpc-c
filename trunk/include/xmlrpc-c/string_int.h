@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "xmlrpc_config.h"
 #include "c_util.h"
 #include "bool.h"
 

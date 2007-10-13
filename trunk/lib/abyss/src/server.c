@@ -1151,7 +1151,7 @@ ServerRunOnce2(TServer *           const serverP,
 static void
 setGroups(void) {
 
-#ifdef HAVE_SETGROUPS   
+#if HAVE_SETGROUPS   
     if (setgroups(0, NULL) == (-1))
         TraceExit("Failed to setup the group.");
 #endif

@@ -75,7 +75,7 @@ xmlrpc_localtime(time_t      const datetime,
    For Windows, this is not thread-safe.  If you run a version of Abyss
    with multiple threads, you can get arbitrary results here.
 -----------------------------------------------------------------------------*/
-#ifdef HAVE_LOCALTIME_R
+#if HAVE_LOCALTIME_R
   localtime_r(&datetime, tmP);
 #else
   *tmP = *localtime(&datetime);
@@ -94,7 +94,7 @@ xmlrpc_gmtime(time_t      const datetime,
    with multiple threads, you can get arbitrary results here.
 -----------------------------------------------------------------------------*/
 
-#ifdef HAVE_GMTIME_R
+#if HAVE_GMTIME_R
     gmtime_r(&datetime, resultP);
 #else
     *resultP = *gmtime(&datetime);

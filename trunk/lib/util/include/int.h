@@ -4,7 +4,7 @@
 
 /* PRId64 is the printf-style format specifier for a long long type, as in
    long long mynumber = 5;
-   printf("My number is %" PRId64 ".\n", mynumber
+   printf("My number is %" PRId64 ".\n", mynumber);
 
 */
 
@@ -26,7 +26,12 @@ typedef unsigned __int64  uint64_t;
 #ifndef  uint
 typedef  unsigned int   uint;
 #endif
-
+#ifndef uint8_t
+typedef unsigned char uint8_t;
+#endif
+#ifndef int16_t
+typedef short int16_t;
+#endif
 #else
 #  include <inttypes.h>
 #endif
