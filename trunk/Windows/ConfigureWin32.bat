@@ -15,12 +15,9 @@ copy .\xmlrpc_win32_config.h ..\xmlrpc_config.h > nul
 copy .\transport_config_win32.h ..\transport_config.h > nul
 @set TEMP1=%TEMP1% ..\transport_config.h
 :DN3
-@if EXIST ..\version.h goto DN4
-copy .\win32_version.h ..\version.h > nul
-@set TEMP1=%TEMP1% ..\version.h
-:DN4
+@call mkvers > nul
 @if "%TEMP1%." == "." goto ALLDN
-@echo Copied the following win32 header files ...
+@echo Generated the following win32 header files ...
 @echo %TEMP1%
 @goto END
 

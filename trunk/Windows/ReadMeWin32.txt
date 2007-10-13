@@ -44,7 +44,8 @@ delsln.bat - to delete all the MSVC7 and 8 solution file.
 diffcfg.bat - compare the headers in windows with the version used in
 the compile. Requires diff.exe to be in the path.
 
-updcfg.bat - copy the 4 configuration files back to the Windows folder.
+updcfg.bat - copy the 3 manually maintained configuration files back
+to the Windows folder (for distribution).
 
 cleawin32.bat - deletes the headers used in the compile. That is does the
 opposite of ConfigureWin32.bat.
