@@ -14,6 +14,7 @@
 
 #include "xmlrpc_config.h"
 
+#include "int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/abyss.h"
