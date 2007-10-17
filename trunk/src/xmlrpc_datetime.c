@@ -5,6 +5,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#if MSVCRT
+#include <windows.h>
+#endif
 
 #include "bool.h"
 
@@ -27,7 +30,7 @@
 */
 
 
-#ifdef WIN32
+#if MSVCRT
 
 static const bool win32 = true;
 static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
