@@ -30,7 +30,7 @@ static void
 signatureDestroy(struct xmlrpc_signature * const signatureP) {
 
     if (signatureP->argList)
-        free(signatureP->argList);
+        free((void*)signatureP->argList);
 
     free(signatureP);
 }
@@ -108,7 +108,7 @@ parseArgumentTypeSpecifiers(xmlrpc_env *              const envP,
         }
     }
     if (envP->fault_occurred) 
-        free(signatureP->argList);
+        free((void*)signatureP->argList);
 
     *nextPP = cursorP;
 }
