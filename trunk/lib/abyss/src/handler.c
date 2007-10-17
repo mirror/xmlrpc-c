@@ -115,14 +115,27 @@ cmpfilenames(const TFileInfo **f1,const TFileInfo **f2) {
     return strcmp((*f1)->name,(*f2)->name);
 }
 
-static int
-cmpfiledates(const TFileInfo **f1,const TFileInfo **f2) {
-    if (((*f1)->attrib & A_SUBDIR) && !((*f2)->attrib & A_SUBDIR))
-        return (-1);
-    if (!((*f1)->attrib & A_SUBDIR) && ((*f2)->attrib & A_SUBDIR))
-        return 1;
 
-    return ((*f1)->time_write-(*f2)->time_write);
+
+static int
+cmpfiledates(const TFileInfo ** const f1PP,
+             const TFileInfo ** const f2PP) {
+
+    const TFileInfo * const f1P = *f1PP;
+    const TFileInfo * const f2P = *f2PP;
+
+    int retval;
+
+    if ((f1P->attrib & A_SUBDIR) && !(f2P->attrib & A_SUBDIR))
+        retval = -1;
+    else if (!(f1P->attrib & A_SUBDIR) && (f2P->attrib & A_SUBDIR))
+        retval = 1;
+    else {
+        assert((int)(f1P->time_write - f2P->time_write) == 
+               (f1P->time_write - f2P->time_write));
+        retval = (int)(f1P->time_write - f2P->time_write);
+    }
+    return retval;
 }
 
 
