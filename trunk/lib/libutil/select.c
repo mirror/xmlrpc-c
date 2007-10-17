@@ -18,7 +18,7 @@ xmlrpc_pselect(int                     const n,
 
     int retval;
 
-#ifdef HAVE_PSELECT
+#if HAVE_PSELECT
     retval = pselect(n, readfdsP, writefdsP, exceptfdsP, timeoutP, sigmaskP);
 #else
     sigset_t origmask;

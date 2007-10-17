@@ -18,6 +18,10 @@
 #undef HAVE_WCSNCMP
 #undef HAVE_LOCALTIME_R
 #undef HAVE_GMTIME_R
+#undef HAVE_STRCASECMP
+#undef HAVE_STRICMP
+#undef HAVE__STRICMP
+
 
 /* Define if you have the socket library (-lsocket).  */
 #undef HAVE_LIBSOCKET

@@ -30,16 +30,41 @@
 
 /* From xmlrpc_amconfig.h */
 
-#define HAVE_SETGROUPS 0
-#define HAVE_ASPRINTF 0
-#define HAVE_SETENV 0
-#define HAVE_PSELECT 0
-#define HAVE_WCSNCMP 1
-#define HAVE_LOCALTIME_R 0
-#define HAVE_GMTIME_R 0
+#define HAVE__STRICMP 1
 /* Name of package */
 #define PACKAGE "xmlrpc-c"
 /*----------------------------------*/
+
+#ifndef HAVE_SETGROUPS
+#define HAVE_SETGROUPS 0
+#endif
+#ifndef HAVE_ASPRINTF
+#define HAVE_ASPRINTF 0
+#endif
+#ifndef HAVE_SETENV
+#define HAVE_SETENV 0
+#endif
+#ifndef HAVE_PSELECT
+#define HAVE_PSELECT 0
+#endif
+#ifndef HAVE_WCSNCMP
+#define HAVE_WCSNCMP 1
+#endif
+#ifndef HAVE_LOCALTIME_R
+#define HAVE_LOCALTIME_R 0
+#endif
+#ifndef HAVE_GMTIME_R
+#define HAVE_GMTIME_R 0
+#endif
+#ifndef HAVE_STRCASECMP
+#define HAVE_STRCASECMP 0
+#endif
+#ifndef HAVE_STRICMP
+#define HAVE_STRICMP 0
+#endif
+#ifndef HAVE__STRICMP
+#define HAVE__STRICMP 0
+#endif
 
 #define HAVE_WCHAR_H 1
 #define HAVE_SYS_FILIO_H 0
@@ -86,6 +111,9 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 
+#if !defined (sprintf)
+  #define sprintf _sprintf
+#endif
 #if !defined (vsnprintf)
   #define vsnprintf _vsnprintf
 #endif
@@ -95,11 +123,11 @@
 #if !defined (popen)
   #define popen _popen
 #endif
+#if !defined (popen)
+  #define getcwd _getcwd
+#endif
 #if !defined (strtoll)
   #define strtoll strtol
-#endif
-#if !defined (strcasecmp)
-  #define strcasecmp(a,b) stricmp((a),(b))
 #endif
 
 #endif

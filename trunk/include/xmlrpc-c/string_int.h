@@ -49,7 +49,15 @@ xmlrpc_memeq(const void * const a,
 static __inline__ bool
 xmlrpc_strcaseeq(const char * const a,
                  const char * const b) {
+#if HAVE_STRCASECMP
     return (strcasecmp(a, b) == 0);
+#elif HAVE__STRICMP
+    return (_stricmp(a, b) == 0);
+#elif HAVE_STRICMP
+    return (stricmp(a, b) == 0);
+#else
+    #error "This platform has no known case-independent string compare fn"
+#endif
 }
 
 static __inline__ bool
