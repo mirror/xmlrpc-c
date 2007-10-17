@@ -35,6 +35,7 @@
 #include <string.h>
 
 #ifdef WIN32
+#define _CRT_SECURE_NO_WARNINGS /* Don't warn about _open() */
 #include <io.h>
 #endif
 
@@ -50,8 +51,10 @@
 ** File
 *********************************************************************/
 
-abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib)
-{
+abyss_bool
+FileOpen(TFile *      const f,
+         const char * const name,
+         uint32_t     const attrib) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
     return ((*f=_open(name,attrib))!=(-1));
 #else
@@ -59,14 +62,20 @@ abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib)
 #endif
 }
 
-abyss_bool FileOpenCreate(TFile *f, const char *name, uint32_t attrib)
-{
+
+
+abyss_bool
+FileOpenCreate(TFile *      const f,
+               const char * const name,
+               uint32_t     const attrib) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
     return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
 #else
     return ((*f=open(name,attrib | O_CREAT,S_IWRITE | S_IREAD))!=(-1));
 #endif
 }
+
+
 
 abyss_bool
 FileWrite(TFile *      const f,
@@ -79,6 +88,8 @@ FileWrite(TFile *      const f,
 #endif
 }
 
+
+
 int32_t
 FileRead(const TFile * const fileP,
          void *        const buffer,
@@ -90,6 +101,8 @@ FileRead(const TFile * const fileP,
 #endif
 }
 
+
+
 abyss_bool
 FileSeek(const TFile * const fileP,
          uint64_t      const pos,
@@ -100,6 +113,8 @@ FileSeek(const TFile * const fileP,
     return (lseek(*fileP, pos, attrib)!=(-1));
 #endif
 }
+
+
 
 uint64_t
 FileSize(const TFile * const fileP) {
@@ -114,8 +129,10 @@ FileSize(const TFile * const fileP) {
 #endif  
 }
 
-abyss_bool FileClose(TFile *f)
-{
+
+
+abyss_bool
+FileClose(TFile * const f) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_close(*f)!=(-1));
 #else
@@ -179,8 +196,9 @@ FileFindFirst(TFileFind *  const filefind,
 
 
 
-abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
-{
+abyss_bool
+FileFindNext(TFileFind * const filefind,
+             TFileInfo * const fileinfo) {
 #ifdef WIN32
 
 #ifndef __BORLANDC__
@@ -233,8 +251,8 @@ abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
 #endif /* WIN32 */
 }
 
-void FileFindClose(TFileFind *filefind)
-{
+void
+FileFindClose(TFileFind * const filefind) {
 #ifdef WIN32
 
 #ifndef __BORLANDC__
