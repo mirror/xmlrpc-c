@@ -13,6 +13,7 @@
 
 #include "xmlrpc_config.h"
 
+#include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 
