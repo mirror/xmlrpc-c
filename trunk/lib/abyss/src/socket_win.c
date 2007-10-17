@@ -547,17 +547,68 @@ makeChannelFromWinsock(SOCKET        const winsock,
 
 
 
-void
-ChannelWinCreateWinsock(SOCKET        const winsock,
-                        TChannel **   const channelPP,
-                        void **       const channelInfoPP,
-                        const char ** const errorP) {
+static void
+makeChannelInfo(struct abyss_win_chaninfo ** const channelInfoPP,
+                struct sockaddr              const peerAddr,
+                socklen_t                    const peerAddrLen,
+                const char **                const errorP) {
 
-    *channelInfoPP = NULL;
+    struct abyss_win_chaninfo * channelInfoP;
 
-    makeChannelFromWinsock(winsock, channelPP, errorP);
+    MALLOCVAR(channelInfoP);
+    
+    if (channelInfoP == NULL)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory");
+    else {
+        channelInfoP->peerAddrLen = peerAddrLen;
+        channelInfoP->peerAddr    = peerAddr;
+        
+        *channelInfoPP = channelInfoP;
+
+        *errorP = NULL;
+    }
 }
 
+
+
+void
+ChannelWinCreateWinsock(SOCKET                       const fd,
+                        TChannel **                  const channelPP,
+                        struct abyss_win_chaninfo ** const channelInfoPP,
+                        const char **                const errorP) {
+
+    struct sockaddr peerAddr;
+    socklen_t peerAddrLen;
+    int rc;
+
+    peerAddrLen = sizeof(peerAddrLen);
+
+    rc = getpeername(fd, &peerAddr, &peerAddrLen);
+
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        if (lastError == WSAENOTCONN) {
+            /* NOTE: This specific string 'not in connected' is
+               required by one of the rpctest suite items, in abyss.c
+               (line 186), hence the separation of the error messages
+               in this case ...
+            */
+            xmlrpc_asprintf(errorP, "Socket on file descriptor %d "
+                            "is not in connected state. WSAERROR = %d (%s)",
+                            fd, lastError, getWSAError(lastError));
+        } else
+            xmlrpc_asprintf(errorP, "getpeername() failed. WSAERROR = %d (%s)",
+                        lastError, getWSAError(lastError));
+    } else {
+        makeChannelInfo(channelInfoPP, peerAddr, peerAddrLen, errorP);
+        if (!*errorP) {
+            makeChannelFromWinsock(fd, channelPP, errorP);
+
+            if (*errorP)
+                free(*channelInfoPP);
+        }
+    }
+}
 
 
 /*=============================================================================

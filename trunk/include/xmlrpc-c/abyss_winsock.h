@@ -2,6 +2,12 @@
 
 #include <winsock.h>
 
+struct abyss_win_chaninfo {
+    size_t peerAddrLen;
+    struct sockaddr peerAddr;
+};
+
+
 void
 ChanSwitchWinCreate(unsigned short const portNumber,
                     TChanSwitch ** const chanSwitchPP,
@@ -16,10 +22,10 @@ void
 ChannelWinCreate(TChanSwitch ** const chanSwitchPP);
 
 void
-ChannelWinCreateWinsock(SOCKET        const winsock,
-                        TChannel **   const channelPP,
-                        void **       const channelInfoPP,
-                        const char ** const errorP);
+ChannelWinCreateWinsock(SOCKET                       const fd,
+                        TChannel **                  const channelPP,
+                        struct abyss_win_chaninfo ** const channelInfoPP,
+                        const char **                const errorP);
 
 void
 SocketWinCreate(TSocket ** const socketPP);
