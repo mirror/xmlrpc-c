@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
@@ -62,7 +63,9 @@ tzOffsetStr(struct tm const tm,
         xmlrpc_strfree(error);
         xmlrpc_asprintf(&retval, "%s", "+????");
     } else {
-        int const tzOffset = datetime - timeIfUtc;
+        int const tzOffset = (int)(datetime - timeIfUtc);
+
+        assert(tzOffset == datetime - timeIfUtc);
 
         xmlrpc_asprintf(&retval, "%+03d%02d",
                         tzOffset/3600, abs(tzOffset % 3600)/60);
