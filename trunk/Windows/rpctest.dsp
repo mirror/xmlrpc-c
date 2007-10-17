@@ -129,6 +129,10 @@ SOURCE=..\lib\abyss\src\http.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\util\casprintf.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\test\method_registry.c
 # End Source File
 # Begin Source File

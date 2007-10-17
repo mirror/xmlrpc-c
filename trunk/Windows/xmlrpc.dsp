@@ -89,7 +89,7 @@ LIB32=link.exe -lib
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;cc"
 # Begin Source File
 
-SOURCE=..\lib\libutil\casprintf.c
+SOURCE=..\lib\libutil\asprintf.c
 # End Source File
 # Begin Source File
 
@@ -249,6 +249,7 @@ SOURCE=..\src\xmlrpc_server_abyss.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_server_w32httpsys.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -278,7 +279,7 @@ SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\ab_http.h
+SOURCE=..\lib\abyss\src\http.h
 # End Source File
 # Begin Source File
 

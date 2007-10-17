@@ -30,6 +30,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "xmlhttpsys"=".\xmlhttpsys.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "xmlparse"=".\xmlparse.dsp" - Package Owner=<4>
 
 Package=<5>
@@ -98,6 +110,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name xmlhttpsys
+    End Project Dependency
     Begin Project Dependency
     Project_Dep_Name xmlrpc
     End Project Dependency

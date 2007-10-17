@@ -3,7 +3,7 @@
 @if NOT EXIST mkvers1.bat goto ERR2
 @echo undating version ...
 @set TEMP1=1
-@for /F "skip=8 tokens=3" %%i in (..\Makefile.version) do call mkvers1 %%i
+@for /F "skip=8 tokens=3" %%i in (..\Makefile.version) do @call mkvers1 %%i
 @if "%TEMPX1%." == "." goto NOX1
 @if "%TEMPX2%." == "." goto NOX1
 @if "%TEMPX3%." == "." goto NOX1
