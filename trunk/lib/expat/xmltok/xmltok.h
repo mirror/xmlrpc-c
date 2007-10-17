@@ -243,15 +243,15 @@ typedef struct {
 } INIT_ENCODING;
 
 XMLTOKAPI int
-xmlrpc_XmlParseXmlDecl(int isGeneralTextEntity,
-                       const ENCODING *enc,
-                       const char *ptr,
-                       const char *end,
-                       const char **badPtr,
-                       const char **versionPtr,
-                       const char **encodingNamePtr,
-                       const ENCODING **namedEncodingPtr,
-                       int *standalonePtr);
+xmlrpc_XmlParseXmlDecl(int               const isGeneralTextEntity,
+                       const ENCODING *  const enc,
+                       const char *      const ptr,
+                       const char *      const end,
+                       const char **     const badPtr,
+                       const char **     const versionPtr,
+                       const char **     const encodingNamePtr,
+                       const ENCODING ** const namedEncodingPtr,
+                       int *             const standalonePtr);
 
 XMLTOKAPI const ENCODING *
 xmlrpc_XmlGetUtf8InternalEncoding(void);
@@ -282,15 +282,15 @@ xmlrpc_XmlInitUnknownEncoding(void * const mem,
                               void * const userData);
 
 int
-xmlrpc_XmlParseXmlDeclNS(int isGeneralTextEntity,
-                         const ENCODING *enc,
-                         const char *ptr,
-                         const char *end,
-                         const char **badPtr,
-                         const char **versionPtr,
-                         const char **encodingNamePtr,
-                         const ENCODING **namedEncodingPtr,
-                         int *standalonePtr);
+xmlrpc_XmlParseXmlDeclNS(int               const isGeneralTextEntity,
+                         const ENCODING *  const enc,
+                         const char *      const ptr,
+                         const char *      const end,
+                         const char **     const badPtr,
+                         const char **     const versionPtr,
+                         const char **     const encodingNamePtr,
+                         const ENCODING ** const namedEncodingPtr,
+                         int *             const standalonePtr);
 
 int
 xmlrpc_XmlInitEncodingNS(INIT_ENCODING *   const p,
