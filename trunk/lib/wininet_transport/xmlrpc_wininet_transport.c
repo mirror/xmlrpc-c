@@ -106,11 +106,11 @@ createWinInetHeaderList(xmlrpc_env *               const envP,
     char * szHeaderList;
 
     /* Send an authorization header if we need one. */
-    if (serverP->_http_basic_auth) {
+    if (serverP->allowedAuth.basic) {
         /* Make the header with content type and authorization   */
         /* NOTE: A newline is required between each added header */
         szHeaderList = malloc(strlen(szContentType) + 17 +
-                              strlen(serverP->_http_basic_auth) + 1);
+                              strlen(serverP->basicAuthHdrValue) + 1);
         
         if (szHeaderList == NULL)
             xmlrpc_faultf(envP,
@@ -120,8 +120,8 @@ createWinInetHeaderList(xmlrpc_env *               const envP,
             memcpy(szHeaderList + strlen(szContentType),"\r\nAuthorization: ",
                    17);
             memcpy(szHeaderList + strlen(szContentType) + 17,
-                   serverP->_http_basic_auth,
-                   strlen(serverP->_http_basic_auth) + 1);
+                   serverP->basicAuthHdrValue,
+                   strlen(serverP->basicAuthHdrValue) + 1);
         }
     } else {
         /* Just the content type header is needed */
@@ -176,8 +176,8 @@ createWinInetTransaction(xmlrpc_env *               const envP,
         uc.dwUrlPathLength   = 255;
         uc.lpszExtraInfo     = szExtraInfo;
         uc.dwExtraInfoLength = 255;
-        succeeded = InternetCrackUrl(serverP->_server_url,
-                                     strlen (serverP->_server_url),
+        succeeded = InternetCrackUrl(serverP->serverUrl,
+                                     strlen(serverP->serverUrl),
                                      ICU_ESCAPE, &uc);
         if (!succeeded)
             xmlrpc_faultf(envP, "Unable to parse the server URL.");

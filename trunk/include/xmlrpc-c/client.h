@@ -147,22 +147,61 @@ typedef struct _xmlrpc_server_info xmlrpc_server_info;
 
 /* Create a new server info record, pointing to the specified server. */
 xmlrpc_server_info *
-xmlrpc_server_info_new(xmlrpc_env * const env,
-                       const char * const server_url);
+xmlrpc_server_info_new(xmlrpc_env * const envP,
+                       const char * const serverUrl);
 
 /* Create a new server info record, with a copy of the old server. */
 extern xmlrpc_server_info * 
-xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *src_server);
+xmlrpc_server_info_copy(xmlrpc_env *         const envP,
+                        xmlrpc_server_info * const srcP);
 
-/* Delete a server info record. */
-extern void
-xmlrpc_server_info_free (xmlrpc_server_info *server);
+void
+xmlrpc_server_info_free(xmlrpc_server_info * const serverP);
+
+
+void 
+xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
+                            xmlrpc_server_info * const serverInfoP,
+                            const char *         const username,
+                            const char *         const password);
 
 void 
 xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   xmlrpc_server_info * const serverP,
                                   const char *         const username,
                                   const char *         const password);
+
+void
+xmlrpc_server_info_allow_auth_basic(xmlrpc_env *         const envP,
+                                    xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_basic(xmlrpc_env *         const envP,
+                                       xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_digest(xmlrpc_env *         const envP,
+                                     xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_digest(xmlrpc_env *         const envP,
+                                        xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_negotiate(xmlrpc_env *         const envP,
+                                        xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_negotiate(xmlrpc_env *         const envP,
+                                           xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_ntlm(xmlrpc_env *         const envP,
+                                   xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_ntlm(xmlrpc_env *         const envP,
+                                      xmlrpc_server_info * const sP);
 
 extern unsigned int const xmlrpc_client_version_major;
 extern unsigned int const xmlrpc_client_version_minor;

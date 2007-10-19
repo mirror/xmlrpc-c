@@ -276,7 +276,7 @@ xmlrpc_client_call_server_asynch_params(
            of the original asynch design, but now we have to be as
            backward compatible as possible, so we do this:
         */
-        (*responseHandler)(serverInfoP->_server_url,
+        (*responseHandler)(serverInfoP->serverUrl,
                            methodName, paramArrayP, userData,
                            &env, NULL);
     }
@@ -388,7 +388,7 @@ xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverInfoP,
         xmlrpc_DECREF(paramArrayP);
     }
     if (env.fault_occurred)
-        (*responseHandler)(serverInfoP->_server_url, methodName, NULL,
+        (*responseHandler)(serverInfoP->serverUrl, methodName, NULL,
                            userData, &env, NULL);
 
     xmlrpc_env_clean(&env);

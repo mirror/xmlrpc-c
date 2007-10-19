@@ -89,7 +89,7 @@ LIBXMLRPC_MODS = \
 	xmlrpc_base64 \
 	xmlrpc_authcookie \
 
-LIBXMLRPC_CLIENT_MODS = xmlrpc_client xmlrpc_client_global
+LIBXMLRPC_CLIENT_MODS = xmlrpc_client xmlrpc_client_global xmlrpc_server_info
 
 LIBXMLRPC_SERVER_MODS = registry method system_method
 

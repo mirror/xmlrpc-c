@@ -370,22 +370,19 @@ addUserAgentHeader(xmlrpc_env *         const envP,
 static void
 addAuthorizationHeader(xmlrpc_env *         const envP,
                        struct curl_slist ** const headerListP,
-                       const char *         const basicAuthInfo) {
+                       const char *         const hdrValue) {
 
-    if (basicAuthInfo) {
-        const char * authorizationHeader;
+    const char * authorizationHeader;
             
-        xmlrpc_asprintf(&authorizationHeader, "Authorization: %s",
-                        basicAuthInfo);
-            
-        if (authorizationHeader == xmlrpc_strsol)
-            xmlrpc_faultf(envP, "Couldn't allocate memory for "
-                          "Authorization header");
-        else {
-            addHeader(envP, headerListP, authorizationHeader);
-
-            xmlrpc_strfree(authorizationHeader);
-        }
+    xmlrpc_asprintf(&authorizationHeader, "Authorization: %s", hdrValue);
+    
+    if (authorizationHeader == xmlrpc_strsol)
+        xmlrpc_faultf(envP, "Couldn't allocate memory for "
+                      "Authorization header");
+    else {
+        addHeader(envP, headerListP, authorizationHeader);
+        
+        xmlrpc_strfree(authorizationHeader);
     }
 }
 
@@ -393,7 +390,7 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
 
 static void
 createCurlHeaderList(xmlrpc_env *               const envP,
-                     const xmlrpc_server_info * const serverP,
+                     const char *               const authHdrValue,
                      const char *               const userAgent,
                      struct curl_slist **       const headerListP) {
 
@@ -405,8 +402,8 @@ createCurlHeaderList(xmlrpc_env *               const envP,
     if (!envP->fault_occurred) {
         addUserAgentHeader(envP, &headerList, userAgent);
         if (!envP->fault_occurred) {
-            addAuthorizationHeader(envP, &headerList, 
-                                   serverP->_http_basic_auth);
+            if (authHdrValue)
+                addAuthorizationHeader(envP, &headerList, authHdrValue);
         }
     }
     if (envP->fault_occurred)
@@ -501,12 +498,75 @@ curlProgress(void * const contextP,
 
 
 static void
-setupCurlSession(xmlrpc_env *             const envP,
-                 curlTransaction *        const curlTransactionP,
-                 xmlrpc_mem_block *       const callXmlP,
-                 xmlrpc_mem_block *       const responseXmlP,
-                 unsigned int *           const interruptP,
-                 const struct curlSetup * const curlSetupP) {
+setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
+          CURL *                     const curlSessionP,
+          const xmlrpc_server_info * const serverInfoP,
+          const char **              const authHdrValueP) {
+/*----------------------------------------------------------------------------
+   Set the options in the Curl session 'curlSessionP' to set up the HTTP
+   authentication described by *serverInfoP.
+
+   But we have an odd special function for backward compatibility, because
+   this code dates to a time when libcurl did not have the ability to
+   handle authentication, but we provided such function nonetheless by
+   building our own Authorization: header.  But we did this only for
+   HPTT basic authentication.
+
+   So the special function is this: if libcurl is too old to have
+   authorization options and *serverInfoP allows basic authentication,
+   return as *basicAuthHdrParamP an appropriate parameter for the
+   Authorization: Basic: HTTP header.  Otherwise, return
+   *basicAuthHdrParamP == NULL.
+-----------------------------------------------------------------------------*/
+    if (serverInfoP->allowedAuth.basic) {
+        CURLcode rc;
+        rc = curl_easy_setopt(curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+
+        if (rc == CURLE_OK)
+            *authHdrValueP = NULL;
+        else {
+            *authHdrValueP = strdup(serverInfoP->basicAuthHdrValue);
+            if (*authHdrValueP == NULL)
+                xmlrpc_faultf(envP, "Unable to allocate memory for basic "
+                              "authentication header");
+        }
+    } else
+        *authHdrValueP = NULL;
+
+    /* We don't worry if libcurl is too old for these other kinds of
+       authentication; they're only defined as _allowed_
+       authentication methods, for when client and server are capable
+       of using it, and unlike with basic authentication, we have no
+       historical commitment to consider an old libcurl as capable of
+       doing these.
+    */
+    
+    if (serverInfoP->userNamePw)
+        curl_easy_setopt(curlSessionP, CURLOPT_USERPWD,
+                         serverInfoP->userNamePw);
+
+    if (serverInfoP->allowedAuth.digest)
+        curl_easy_setopt(
+            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
+    if (serverInfoP->allowedAuth.gssnegotiate)
+        curl_easy_setopt(
+            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_GSSNEGOTIATE);
+    if (serverInfoP->allowedAuth.ntlm)
+        curl_easy_setopt(
+            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
+}
+
+
+
+static void
+setupCurlSession(xmlrpc_env *               const envP,
+                 curlTransaction *          const curlTransactionP,
+                 xmlrpc_mem_block *         const callXmlP,
+                 xmlrpc_mem_block *         const responseXmlP,
+                 const xmlrpc_server_info * const serverInfoP,
+                 const char *               const userAgent,
+                 unsigned int *             const interruptP,
+                 const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
    Set up the Curl session for the transaction *curlTransactionP so that
    a subsequent curl_easy_perform() would perform said transaction.
@@ -543,9 +603,6 @@ setupCurlSession(xmlrpc_env *             const envP,
         } else
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
         
-        curl_easy_setopt(curlSessionP, CURLOPT_HTTPHEADER, 
-                         curlTransactionP->headerList);
-
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
                          curlSetupP->sslVerifyPeer);
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYHOST,
@@ -595,6 +652,28 @@ setupCurlSession(xmlrpc_env *             const envP,
         if (curlSetupP->sslCipherList)
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);
+
+        {
+            const char * authHdrValue;
+                /* NULL means we don't have to construct an explicit
+                   Authorization: header.  non-null means we have to
+                   construct one with this as its value.
+                */
+
+            setupAuth(envP, curlSessionP, serverInfoP, &authHdrValue);
+            if (!envP->fault_occurred) {
+                struct curl_slist * headerList;
+                createCurlHeaderList(envP, authHdrValue, userAgent,
+                                     &headerList);
+                if (!envP->fault_occurred) {
+                    curl_easy_setopt(
+                        curlSessionP, CURLOPT_HTTPHEADER, headerList);
+                    curlTransactionP->headerList = headerList;
+                }
+                if (authHdrValue)
+                    xmlrpc_strfree(authHdrValue);
+            }
+        }
     }
 }
 
@@ -622,19 +701,15 @@ curlTransaction_create(xmlrpc_env *               const envP,
         curlTransactionP->curlSessionP = curlSessionP;
         curlTransactionP->rpcP         = rpcP;
 
-        curlTransactionP->serverUrl = strdup(serverP->_server_url);
+        curlTransactionP->serverUrl = strdup(serverP->serverUrl);
         if (curlTransactionP->serverUrl == NULL)
             xmlrpc_faultf(envP, "Out of memory to store server URL.");
         else {
-            createCurlHeaderList(envP, serverP, userAgent,
-                                 &curlTransactionP->headerList);
+            setupCurlSession(envP, curlTransactionP,
+                             callXmlP, responseXmlP,
+                             serverP, userAgent, interruptP,
+                             curlSetupStuffP);
             
-            if (!envP->fault_occurred)
-                setupCurlSession(envP, curlTransactionP,
-                                 callXmlP, responseXmlP,
-                                 interruptP,
-                                 curlSetupStuffP);
-
             if (envP->fault_occurred)
                 xmlrpc_strfree(curlTransactionP->serverUrl);
         }

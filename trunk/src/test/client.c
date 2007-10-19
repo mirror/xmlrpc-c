@@ -359,6 +359,66 @@ testInitCleanup(void) {
 
 
 
+static void
+testServerInfo(void) {
+
+    xmlrpc_env env;
+    xmlrpc_server_info * serverInfoP;
+    xmlrpc_server_info * serverInfo2P;
+
+    printf("  Running serverInfo tests...\n");
+
+    xmlrpc_env_init(&env);
+
+    serverInfoP = xmlrpc_server_info_new(&env, "testurl");
+    TEST_NO_FAULT(&env);
+
+    serverInfo2P = xmlrpc_server_info_copy(&env, serverInfoP);
+
+    xmlrpc_server_info_free(serverInfo2P);
+
+    /* Fails because we haven't set user/password yet: */
+    xmlrpc_server_info_allow_auth_basic(&env, serverInfoP);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+    
+    xmlrpc_server_info_set_basic_auth(&env, serverInfoP,
+                                      "username", "password");
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_set_user(&env, serverInfoP, "username", "password");
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_allow_auth_basic(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_basic(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_allow_auth_digest(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_digest(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_allow_auth_negotiate(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_negotiate(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_allow_auth_ntlm(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_ntlm(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_free(serverInfoP);
+    
+    xmlrpc_env_clean(&env);
+}
+
+
+
 void 
 test_client(void) {
 
@@ -367,6 +427,7 @@ test_client(void) {
     testGlobalConst();
     testCreateDestroy();
     testInitCleanup();
+    testServerInfo();
     testSynchCall();
 
     printf("\n");

@@ -205,6 +205,10 @@ SOURCE=..\src\xmlrpc_client_global.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\xmlrpc_server_info.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.c
 # PROP Exclude_From_Build 1
 # End Source File
