@@ -1,8 +1,9 @@
 #ifndef GIRSTRING_H_INCLUDED
 #define GIRSTRING_H_INCLUDED
 
-#include "xmlrpc_config.h"
 #include <string.h>
+
+#include "xmlrpc_config.h"
 #include "bool.h"
 
 char
@@ -52,5 +53,13 @@ sdup(const char * const input) {
 /* Concatenate string B onto string in array A with size checking */
 #define STRSCAT(A,B) \
     (strncat((A), (B), sizeof(A)-strlen(A)), *((A)+sizeof(A)-1) = '\0')
+
+#define MEMEQ(a,b,c) (memcmp(a, b, c) == 0)
+
+#define MEMSSET(a,b) (memset(a, b, sizeof(*a)))
+
+#define MEMSCPY(a,b) (memcpy(a, b, sizeof(*a)))
+
+#define MEMSZERO(a) (MEMSSET(a, 0))
 
 #endif
