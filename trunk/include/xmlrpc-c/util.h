@@ -130,7 +130,7 @@ typedef struct _xmlrpc_env {
 /* Initialize and destroy the contents of the provided xmlrpc_env object.
 ** These functions will never fail. */
 void xmlrpc_env_init (xmlrpc_env* env);
-void xmlrpc_env_clean (xmlrpc_env* env);
+void xmlrpc_env_clean (xmlrpc_env* const env);
 
 /* Fill out an xmlrpc_fault with the specified values, and set the
 ** fault_occurred flag. This function will make a private copy of 'string',
@@ -228,18 +228,18 @@ typedef struct _xmlrpc_mem_block {
 } xmlrpc_mem_block;
 
 /* Allocate a new xmlrpc_mem_block. */
-xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* env, size_t size);
+xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* const env, size_t const size);
 
 /* Destroy an existing xmlrpc_mem_block, and everything it contains. */
-void xmlrpc_mem_block_free (xmlrpc_mem_block* block);
+void xmlrpc_mem_block_free (xmlrpc_mem_block* const block);
 
 /* Initialize the contents of the provided xmlrpc_mem_block. */
 void xmlrpc_mem_block_init
-    (xmlrpc_env* env, xmlrpc_mem_block* block, size_t size);
+    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Deallocate the contents of the provided xmlrpc_mem_block, but not the
 ** block itself. */
-void xmlrpc_mem_block_clean (xmlrpc_mem_block* block);
+void xmlrpc_mem_block_clean (xmlrpc_mem_block* const block);
 
 /* Get the size and contents of the xmlrpc_mem_block. */
 size_t 
@@ -251,11 +251,11 @@ xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block);
 /* Resize an xmlrpc_mem_block, preserving as much of the contents as
 ** possible. */
 void xmlrpc_mem_block_resize
-    (xmlrpc_env* env, xmlrpc_mem_block* block, size_t size);
+    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Append data to an existing xmlrpc_mem_block. */
 void xmlrpc_mem_block_append
-    (xmlrpc_env* env, xmlrpc_mem_block* block, const void *data, size_t len);
+    (xmlrpc_env* const env, xmlrpc_mem_block* const block, const void * const data, size_t const len);
 
 #define XMLRPC_MEMBLOCK_NEW(type,env,size) \
     xmlrpc_mem_block_new((env), sizeof(type) * (size))

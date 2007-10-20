@@ -28,7 +28,7 @@ abyss_bool
 ThreadStop(TThread * const threadP);
 
 abyss_bool
-ThreadKill(TThread * threadP);
+ThreadKill(TThread * const threadP);
 
 void
 ThreadWaitAndRelease(TThread * const threadP);

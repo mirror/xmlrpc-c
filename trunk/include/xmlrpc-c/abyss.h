@@ -536,7 +536,7 @@ Base64Encode(const char * const chars,
 ** Session
 *********************************************************************/
 
-abyss_bool SessionLog(TSession *s);
+abyss_bool SessionLog(TSession * const s);
 
 
 #ifdef __cplusplus

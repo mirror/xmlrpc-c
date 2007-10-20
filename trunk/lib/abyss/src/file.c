@@ -32,20 +32,35 @@
 **
 ******************************************************************************/
 
+#include "xmlrpc_config.h"
+
+#define _CRT_SECURE_NO_WARNINGS
+    /* Tell msvcrt not to warn about functions that are often misused and
+       cause security exposures.
+    */
+
 #include <string.h>
 
-#ifdef WIN32
-#define _CRT_SECURE_NO_WARNINGS /* Don't warn about _open() */
+#if MSVCRT
 #include <io.h>
 #endif
 
-#ifndef WIN32
+#if !MSVCRT
 #include <dirent.h>
 #include <sys/stat.h>
 #endif
 
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "file.h"
+
+abyss_bool const win32 =
+#ifdef WIN32
+TRUE;
+#else
+FALSE;
+#endif
+
 
 /*********************************************************************
 ** File
@@ -108,7 +123,7 @@ FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_lseek(*fileP, pos, attrib)!=(-1));
+    return (_lseek(*fileP, (long)pos, attrib)!=(-1));
 #else
     return (lseek(*fileP, pos, attrib)!=(-1));
 #endif
@@ -154,44 +169,69 @@ FileStat(const char * const filename,
 
 
 
+static void
+fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
+                 const char * const path,
+                 TFileInfo *  const fileinfo ATTR_UNUSED,
+                 abyss_bool * const retP     ATTR_UNUSED) {
+    const char * search;
+
+    xmlrpc_asprintf(&search, "%s\\*", path);
+
+#ifdef WIN32
+#ifndef __BORLANDC__
+    *retP = (((*filefind) = _findfirst(search, fileinfo)) != -1);
+#else
+    *filefind = FindFirstFile(search, &fileinfo->data);
+    *retP = *filefind != NULL;
+    if (*retP) {
+        LARGE_INTEGER li;
+        li.LowPart = fileinfo->data.nFileSizeLow;
+        li.HighPart = fileinfo->data.nFileSizeHigh;
+        strcpy( fileinfo->name, fileinfo->data.cFileName );
+        fileinfo->attrib = fileinfo->data.dwFileAttributes;
+        fileinfo->size   = li.QuadPart;
+        fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
+    }
+#endif
+#endif /* WIN32 */
+    xmlrpc_strfree(search);
+}
+
+
+
+static void
+fileFindFirstPosix(TFileFind *  const filefind,
+                   const char * const path,
+                   TFileInfo *  const fileinfo,
+                   abyss_bool * const retP) {
+    
+#ifndef WIN32
+    strncpy(filefind->path, path, NAME_MAX);
+    filefind->path[NAME_MAX] = '\0';
+    filefind->handle = opendir(path);
+    if (filefind->handle)
+        *retP = FileFindNext(filefind, fileinfo);
+    else
+        *retP = FALSE;
+#endif
+}
+    
+
+
 abyss_bool
 FileFindFirst(TFileFind *  const filefind,
               const char * const path,
               TFileInfo *  const fileinfo) {
-#ifdef WIN32
+
     abyss_bool ret;
-    char *p=path+strlen(path);
 
-    *p='\\';
-    *(p+1)='*';
-    *(p+2)='\0';
-#ifndef __BORLANDC__
-    ret=(((*filefind)=_findfirst(path,fileinfo))!=(-1));
-#else
-    *filefind = FindFirstFile( path, &fileinfo->data );
-   ret = *filefind != NULL;
-   if( ret )
-   {
-      LARGE_INTEGER li;
-      li.LowPart = fileinfo->data.nFileSizeLow;
-      li.HighPart = fileinfo->data.nFileSizeHigh;
-      strcpy( fileinfo->name, fileinfo->data.cFileName );
-       fileinfo->attrib = fileinfo->data.dwFileAttributes;
-       fileinfo->size   = li.QuadPart;
-      fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
-   }
-#endif
-    *p='\0';
+    if (win32)
+        fileFindFirstWin(filefind, path, fileinfo, &ret);
+    else
+        fileFindFirstPosix(filefind, path, fileinfo, &ret);
+
     return ret;
-#else  /* WIN32 */
-    strncpy(filefind->path,path,NAME_MAX);
-    filefind->path[NAME_MAX]='\0';
-    filefind->handle=opendir(path);
-    if (filefind->handle)
-        return FileFindNext(filefind,fileinfo);
-
-    return FALSE;
-#endif /* WIN32 */
 }
 
 

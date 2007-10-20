@@ -255,7 +255,7 @@ createChannelFromOsSocket(TOsSocket     const osSocket,
 
 #ifdef WIN32
     ChannelWinCreateWinsock(osSocket, channelPP,
-                            channelInfoPP,
+                            (struct abyss_win_chaninfo**)channelInfoPP,
                             errorP);
 #else
     ChannelUnixCreateFd(osSocket, channelPP,

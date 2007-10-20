@@ -6,26 +6,27 @@
    
 =============================================================================*/
 
+#include "xmlrpc_config.h"
+
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 #include <stddef.h>
 #include <windows.h>
 #include <wininet.h>
 
-#include "xmlrpc_config.h"
-
 #include "bool.h"
 #include "mallocvar.h"
 #include "linklist.h"
 #include "casprintf.h"
+#include "pthreadx.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
-#include "pthreadx.h"
 
 #if defined(_DEBUG)
 #   include <crtdbg.h>
@@ -40,11 +41,11 @@ static HINTERNET hSyncInternetSession = NULL;
 
 /* Declare WinInet status callback. */
 void CALLBACK
-statusCallback(HINTERNET     hInternet,
-               unsigned long dwContext,
-               unsigned long dwInternetStatus,
-               void *        lpvStatusInformation,
-               unsigned long dwStatusInformationLength);
+statusCallback(HINTERNET     const hInternet,
+               unsigned long const dwContext,
+               unsigned long const dwInternetStatus,
+               void *        const lpvStatusInformation,
+               unsigned long const dwStatusInformationLength);
 
 
 struct xmlrpc_client_transport {
@@ -229,7 +230,7 @@ static void
 get_wininet_response(xmlrpc_env *         const envP,
                      winInetTransaction * const winInetTransactionP) {
 
-    unsigned long const dwLen = sizeof(unsigned long);
+    unsigned long dwLen = sizeof(unsigned long);
 
     INTERNET_BUFFERS inetBuffer;
     unsigned long dwFlags;
@@ -350,7 +351,7 @@ performWinInetTransaction(
     struct xmlrpc_client_transport * const clientTransportP) {
 
     const char * const acceptTypes[] = {"text/xml", NULL};
-    unsigned long const queryLen = sizeof(unsigned long);
+    unsigned long queryLen = sizeof(unsigned long);
 
     LPVOID pMsgMem;
     BOOL succeeded;
@@ -524,7 +525,7 @@ Again:
 
     /* Make sure we got a "200 OK" message from the remote server. */
     if (winInetTransactionP->http_status != 200) {
-        unsigned long const msgLen = 1024;
+        unsigned long msgLen = 1024;
         char errMsg[1024];
         errMsg[0] = '\0';
 

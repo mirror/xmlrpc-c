@@ -206,7 +206,7 @@ ConnWaitAndRelease(TConn * const connectionP) {
 
 
 abyss_bool
-ConnKill(TConn * connectionP) {
+ConnKill(TConn * const connectionP) {
     connectionP->finished = TRUE;
     return ThreadKill(connectionP->threadP);
 }

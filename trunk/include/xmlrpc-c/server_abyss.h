@@ -122,8 +122,8 @@ xmlrpc_server_abyss_run(void);
 ** function.
 **/
 void 
-xmlrpc_server_abyss_run_first(void (runfirst(void *)),
-                              void * const runfirstArg);
+xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
+                              void *     const runfirstArg);
 
 /*=========================================================================
 **  Method Registry
@@ -158,18 +158,18 @@ xmlrpc_server_abyss_registry (void);
 /* A quick & easy shorthand for adding a method. Depending on
 ** how you've configured your copy of Abyss, it's probably not safe to
 ** call this method after calling xmlrpc_server_abyss_run. */
-void xmlrpc_server_abyss_add_method (char *method_name,
-                                     xmlrpc_method method,
-                                     void *user_data);
+void xmlrpc_server_abyss_add_method (char *        const method_name,
+                                     xmlrpc_method const method,
+                                     void *        const user_data);
     
 /* As above, but provide documentation (see xmlrpc_registry_add_method_w_doc
 ** for more information). You should really use this one. */
 extern void
-xmlrpc_server_abyss_add_method_w_doc (char *method_name,
-                                      xmlrpc_method method,
-                                      void *user_data,
-                                      char *signature,
-                                      char *help);
+xmlrpc_server_abyss_add_method_w_doc (char *        const method_name,
+                                      xmlrpc_method const method,
+                                      void *        const user_data,
+                                      char *        const signature,
+                                      char *        const help);
 
 /*=========================================================================
 **  Content Handlers

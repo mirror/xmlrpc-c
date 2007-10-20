@@ -91,7 +91,7 @@ channelCreateFd(int const fd,
                 const char ** const errorP) {
 
 #ifdef WIN32
-    void * channelInfoP;
+    struct abyss_win_chaninfo * channelInfoP;
     ChannelWinCreateWinsock(fd, channelPP, &channelInfoP, errorP);
 #else
     struct abyss_unix_chaninfo * channelInfoP;

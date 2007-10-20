@@ -2,7 +2,7 @@
 @echo This batch file deletes the copied header files,
 @echo Deleting Win32 header files...
 @echo #####################################################
-@echo IF YOU HAVE MADE CHANGES IN ..\xmlrpc_config.h, ..\include\xmlrpc-c\config.h .etc
+@echo IF YOU HAVE MADE CHANGES IN ..\xmlrpc_config.h, ..\include\xmlrpc-c\config.h etc ...
 @echo THESE CHANGES WILL BE LOST!
 @echo You should run diffcfg.bat first to check for changes,
 @echo and updcfg.bat if you have made changes ...
@@ -27,6 +27,10 @@ del ..\transport_config.h > nul
 del ..\version.h > nul
 @set TEMP1=%TEMP1% ..\version.h
 :DN4
+@if NOT EXIST ..\examples\config.h goto DN5
+del ..\examples\config.h > nul
+@set TEMP1=%TEMP1% ..\examples\config.h
+:DN5
 @if "%TEMP1%." == "." goto ALLDN
 @echo DELETED win32 header files.
 @echo %TEMP1%

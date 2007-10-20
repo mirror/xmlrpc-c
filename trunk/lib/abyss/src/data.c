@@ -50,14 +50,14 @@
 ** List
 *********************************************************************/
 
-void ListInit(TList *sl)
+void ListInit(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
     sl->autofree=FALSE;
 }
 
-void ListInitAutoFree(TList *sl)
+void ListInitAutoFree(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
@@ -368,13 +368,13 @@ Hash16(const char * const start) {
 ** Table
 *********************************************************************/
 
-void TableInit(TTable *t)
+void TableInit(TTable * const t)
 {
     t->item=NULL;
     t->size=t->maxsize=0;
 }
 
-void TableFree(TTable *t)
+void TableFree(TTable * const t)
 {
     uint16_t i;
 

@@ -35,7 +35,7 @@ nextLineSize(const char * const string,
 
 void
 xmlrpc_traceXml(const char * const label, 
-                char         const xml[],
+                const char * const xml,
                 unsigned int const xmlLength) {
 
     if (getenv("XMLRPC_TRACE_XML")) {

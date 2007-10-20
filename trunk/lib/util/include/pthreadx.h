@@ -53,18 +53,19 @@ struct {
 // functions directly.
 typedef unsigned (WINAPI pthread_func)(void *);
 
-extern int pthread_create(pthread_t *new_thread_ID,
-                          const pthread_attr_t *attr,
-                          pthread_func * start_func, void *arg);
+extern int pthread_create(pthread_t *            const new_thread_ID,
+                          const pthread_attr_t * const attr,
+                          pthread_func * start_func,
+                          void *                 const arg);
 extern int pthread_cancel(pthread_t target_thread);
 extern int pthread_join(pthread_t target_thread, void **status);
 extern int pthread_detach(pthread_t target_thread);
 
-extern int pthread_mutex_init(pthread_mutex_t *mp,
-                              const pthread_mutexattr_t *attr);
-extern int pthread_mutex_lock(pthread_mutex_t *mp);
-extern int pthread_mutex_unlock(pthread_mutex_t *mp);
-extern int pthread_mutex_destroy(pthread_mutex_t *mp);
+extern int pthread_mutex_init(pthread_mutex_t *           const mp,
+                              const pthread_mutexattr_t * const attr);
+extern int pthread_mutex_lock(pthread_mutex_t * const mp);
+extern int pthread_mutex_unlock(pthread_mutex_t * const mp);
+extern int pthread_mutex_destroy(pthread_mutex_t * const mp);
 
 #endif  /* WIN32 */
 

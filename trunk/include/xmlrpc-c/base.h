@@ -101,14 +101,14 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
     xmlrpc_abort_if_array_bad(val)
 
 /* Increment the reference count of an xmlrpc_value. */
-extern void xmlrpc_INCREF (xmlrpc_value* value);
+extern void xmlrpc_INCREF (xmlrpc_value* const value);
 
 /* Decrement the reference count of an xmlrpc_value. If there
 ** are no more references, free it. */
-extern void xmlrpc_DECREF (xmlrpc_value* value);
+extern void xmlrpc_DECREF (xmlrpc_value* const value);
 
 /* Get the type of an XML-RPC value. */
-extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* value);
+extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* const value);
 
 xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP,
@@ -281,9 +281,9 @@ xmlrpc_array_size(xmlrpc_env *         const env,
 /* Append an item to an XML-RPC array.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
 extern void
-xmlrpc_array_append_item (xmlrpc_env   * envP,
-                          xmlrpc_value * arrayP,
-                          xmlrpc_value * valueP);
+xmlrpc_array_append_item (xmlrpc_env   * const envP,
+                          xmlrpc_value * const arrayP,
+                          xmlrpc_value * const valueP);
 
 void
 xmlrpc_array_read_item(xmlrpc_env *         const envP,
@@ -312,7 +312,7 @@ int index,
 */
 
 xmlrpc_value *
-xmlrpc_struct_new(xmlrpc_env * env);
+xmlrpc_struct_new(xmlrpc_env * const env);
 
 /* Return the number of key/value pairs in a struct.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
@@ -436,11 +436,11 @@ xmlrpc_struct_read_member(xmlrpc_env *    const envP,
    Deprecated.  Use xmlrpc_struct_read_member() instead.
 */
 void
-xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
-                                xmlrpc_value *  strct,
-                                int             index,
-                                xmlrpc_value ** out_keyval,
-                                xmlrpc_value ** out_value);
+xmlrpc_struct_get_key_and_value(xmlrpc_env *    const env,
+                                xmlrpc_value *  const strct,
+                                int             const index,
+                                xmlrpc_value ** const out_keyval,
+                                xmlrpc_value ** const out_value);
 
 void
 xmlrpc_read_cptr(xmlrpc_env *         const envP,
@@ -644,9 +644,9 @@ xmlrpc_base64_decode(xmlrpc_env * const envP,
 **  a cookie replacement of basic authentication.)
 **/
 
-extern void xmlrpc_authcookie_set(xmlrpc_env * env,
-                                  const char * username,
-                                  const char * password);
+extern void xmlrpc_authcookie_set(xmlrpc_env * const env,
+                                  const char * const username,
+                                  const char * const password);
 
 char *xmlrpc_authcookie(void);
 
@@ -676,10 +676,10 @@ char *xmlrpc_authcookie(void);
 #define XMLRPC_XML_SIZE_LIMIT_DEFAULT (512*1024)
 
 /* Set a specific limit to the specified value. */
-extern void xmlrpc_limit_set (int limit_id, size_t value);
+extern void xmlrpc_limit_set (int const limit_id, size_t const value);
 
 /* Get the value of a specified limit. */
-extern size_t xmlrpc_limit_get (int limit_id);
+extern size_t xmlrpc_limit_get (int const limit_id);
 
 
 #ifdef __cplusplus

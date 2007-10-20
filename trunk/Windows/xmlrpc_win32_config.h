@@ -103,17 +103,27 @@
 
 #ifdef _MSC_VER
 /* The compiler is Microsoft Visual C++. */
-  #define MSVCRT 1
+  #define MSVCRT _MSC_VER
 #else
   #define MSVCRT 0
 #endif
 
+#if defined(_MSC_VER)
+/* Starting with MSVC 8, the runtime library defines various POSIX functions
+   such as strdup() whose names violate the ISO C standard (the standard
+   says the strXXX names are reserved for the standard), but warns you of
+   the standards violation.  That warning is 4996.
 
-#define _CRT_SECURE_NO_DEPRECATE
+   Well, POSIX is more important than that element of ISO C, so we disable
+   that warning.
 
-#if !defined (sprintf)
-  #define sprintf _sprintf
+   FYI, msvcrt also defines _strdup(), etc, which doesn't violate the
+   naming standard.  But since other environments don't define _strdup(),
+   we can't use it in portable code.
+*/
+#pragma warning(disable:4996)
 #endif
+
 #if !defined (vsnprintf)
   #define vsnprintf _vsnprintf
 #endif
@@ -123,7 +133,7 @@
 #if !defined (popen)
   #define popen _popen
 #endif
-#if !defined (popen)
+#if !defined (getcwd)
   #define getcwd _getcwd
 #endif
 #if !defined (strtoll)
