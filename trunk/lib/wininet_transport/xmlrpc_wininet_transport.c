@@ -230,8 +230,7 @@ static void
 get_wininet_response(xmlrpc_env *         const envP,
                      winInetTransaction * const winInetTransactionP) {
 
-    unsigned long dwLen = sizeof(unsigned long);
-
+    unsigned long dwLen;
     INTERNET_BUFFERS inetBuffer;
     unsigned long dwFlags;
     unsigned long dwErr; 
@@ -243,6 +242,7 @@ get_wininet_response(xmlrpc_env *         const envP,
     pMsgMem = NULL; /* initial value */
     dwErr = 0; /* initial value */
     body = NULL;  /* initial value */
+    dwLen = sizeof(unsigned long);  /* initial value */
 
     inetBuffer.dwStructSize    = sizeof (INTERNET_BUFFERS);
     inetBuffer.Next            = NULL;
@@ -351,8 +351,8 @@ performWinInetTransaction(
     struct xmlrpc_client_transport * const clientTransportP) {
 
     const char * const acceptTypes[] = {"text/xml", NULL};
-    unsigned long queryLen = sizeof(unsigned long);
 
+    unsigned long queryLen;
     LPVOID pMsgMem;
     BOOL succeeded;
 
@@ -503,6 +503,8 @@ Again:
         XMLRPC_FAIL(envP, XMLRPC_NETWORK_ERROR, pMsg);
     }
 
+    queryLen = sizeof(unsigned long);  /* initial value */
+
     succeeded = HttpQueryInfo(winInetTransactionP->hHttpRequest, 
                               HTTP_QUERY_FLAG_NUMBER | HTTP_QUERY_STATUS_CODE,
                               &winInetTransactionP->http_status,
@@ -525,9 +527,10 @@ Again:
 
     /* Make sure we got a "200 OK" message from the remote server. */
     if (winInetTransactionP->http_status != 200) {
-        unsigned long msgLen = 1024;
+        unsigned long msgLen;
         char errMsg[1024];
         errMsg[0] = '\0';
+        msgLen = 1024;  /* initial value */
 
         HttpQueryInfo(winInetTransactionP->hHttpRequest,
                       HTTP_QUERY_STATUS_TEXT, errMsg, &msgLen, NULL);
