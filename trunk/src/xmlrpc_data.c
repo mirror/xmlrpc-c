@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "bool.h"
 #include "mallocvar.h"
@@ -298,7 +299,7 @@ xmlrpc_read_i8(xmlrpc_env *         const envP,
 
 
 
-xmlrpc_type xmlrpc_value_type (xmlrpc_value* value)
+xmlrpc_type xmlrpc_value_type (xmlrpc_value* const value)
 {
     XMLRPC_ASSERT_VALUE_OK(value);
     return value->_type;
