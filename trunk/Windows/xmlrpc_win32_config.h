@@ -112,7 +112,9 @@
 /* Starting with MSVC 8, the runtime library defines various POSIX functions
    such as strdup() whose names violate the ISO C standard (the standard
    says the strXXX names are reserved for the standard), but warns you of
-   the standards violation.  That warning is 4996.
+   the standards violation.  That warning is 4996, along with other warnings
+   that tell you you're using a function that Microsoft thinks you
+   shouldn't.
 
    Well, POSIX is more important than that element of ISO C, so we disable
    that warning.
