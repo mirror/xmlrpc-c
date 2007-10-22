@@ -148,13 +148,12 @@ xmlrpc_server_httpsys(
 
     if (parm_size < XMLRPC_HSSIZE(authfn))
     {
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "You must specify members at least up through "
-            "'authfn' in the server parameters argument.  "
-            "That would mean the parameter size would be >= %u "
-            "but you specified a size of %u",
-            XMLRPC_HSSIZE(authfn), parm_size);
+        xmlrpc_faultf(envP,
+                      "You must specify members at least up through "
+                      "'authfn' in the server parameters argument.  "
+                      "That would mean the parameter size would be >= %u "
+                      "but you specified a size of %u",
+                      XMLRPC_HSSIZE(authfn), parm_size);
         return;
     }
 
@@ -189,10 +188,8 @@ xmlrpc_server_httpsys(
         );
     if (retCode != NO_ERROR)
     {
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "HttpInitialize failed with %lu \n ",
-            retCode);
+        xmlrpc_faultf(envP, "HttpInitialize failed with %lu",
+                      retCode);
         return;
     }
 
@@ -202,10 +199,7 @@ xmlrpc_server_httpsys(
         );
     if (retCode != NO_ERROR)
     { 
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "HttpCreateHttpHandle failed with %lu \n ",
-            retCode);
+        xmlrpc_faultf(envP, "HttpCreateHttpHandle failed with %lu", retCode);
         goto CleanUp;
     }
 
@@ -216,10 +210,7 @@ xmlrpc_server_httpsys(
 
     if (retCode != NO_ERROR)
     {
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "HttpAddUrl failed with %lu \n ",
-            retCode);
+        xmlrpc_faultf(envP, "HttpAddUrl failed with %lu", retCode);
         goto CleanUp;
     }
 
@@ -825,9 +816,7 @@ processRPCCall(
     pEntityBuffer      = (PUCHAR) ALLOC_MEM( EntityBufferLength );
     if (pEntityBuffer == NULL)
     {
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "Out of Memory");
+        xmlrpc_faultf(envP, "Out of Memory");
         goto Done;
     }
 
