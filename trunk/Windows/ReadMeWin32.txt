@@ -6,13 +6,8 @@ Xmlrpc-c release 1.13, December, 2007.
 Latest Windows work was done by
 
   Geoff McLane
-  6 October, 2007
+  19 October, 2007
   home: http://geoffair.net
-
-The actual Xmlrpc-c release is a little different from what Geoff
-tested, and does not actually build on Windows.  But it should take
-only a small amount of programming effort to get it to do so.
-07.10.10
 
 This is a build of the xmlrpc static libary, and the examples, using
 Microsoft Visual C++ 1994-98 (MSVC6), 2003 (MSVC7), and 2005 Express
