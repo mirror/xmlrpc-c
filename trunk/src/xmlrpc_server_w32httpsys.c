@@ -852,9 +852,8 @@ processRPCCall(
                 case NO_ERROR:
                     if(BytesRead != 0)
                     {
-                        XMLRPC_TYPED_MEM_BLOCK_APPEND(
-                            char, envP, body, 
-                            pEntityBuffer, BytesRead);
+                        XMLRPC_MEMBLOCK_APPEND(char, envP, body, 
+                                               pEntityBuffer, BytesRead);
                         if(envP->fault_occurred)
                             goto Done;                      
                     }
@@ -865,9 +864,8 @@ processRPCCall(
                     // process the suppossed XMLRPC data.
                     if(BytesRead != 0)
                     {
-                        XMLRPC_TYPED_MEM_BLOCK_APPEND(
-                            char, envP, body, 
-                            pEntityBuffer, BytesRead);
+                        XMLRPC_MEMBLOCK_APPEND(char, envP, body, 
+                                               pEntityBuffer, BytesRead);
                         if(envP->fault_occurred)
                             goto Done;
                     }
