@@ -223,24 +223,24 @@ xmlrpc_server_httpsys(
         goto CleanUp;
     }
 
-    TraceW( L"we are listening for requests on the following url: %ws\n",
-            wszURL);
+    TraceW(L"we are listening for requests on the following url: %ws",
+           wszURL);
 
     // Loop while receiving requests
     for(;;)
     {
-        TraceW( L"Calling DoReceiveRequests()\n");
+        TraceW(L"Calling DoReceiveRequests()");
         retCode = DoReceiveRequests(hReqQueue, parmsP);
         if(NO_ERROR == retCode)
         {
-            TraceW( L"DoReceiveRequests() returned NO_ERROR, breaking");
+            TraceW(L"DoReceiveRequests() returned NO_ERROR, breaking");
             break;
         }
     }
 
 CleanUp:
 
-    TraceW( L"Tearing down the server.\n", wszURL);
+    TraceW(L"Tearing down the server.", wszURL);
 
     // Call HttpRemoveUrl for the URL that we added.
     HttpRemoveUrl( hReqQueue, wszURL );
@@ -274,12 +274,14 @@ __inline void TraceA(const char *format, ...)
                 if (fout)
                 {
                     vfprintf(fout, format, arglist);
+                    fprintf(fout, "\n");
                     fclose(fout);
                 }
             }
 
             StringCchVPrintfA(str,4096, format, arglist);
             printf(str);
+            printf("\n");
 
             if (g_bDebugString)
             {
@@ -308,12 +310,14 @@ __inline void TraceW(const wchar_t *format, ...)
                 if (fout)
                 {
                     vfwprintf(fout, format, arglist);
+                    fwprintf(fout, "\n");
                     fclose(fout);
                 }
             }
             
             StringCchVPrintfW(str, 4096, format, arglist);
             wprintf(str);
+            wprintf("\n");
             
             if (g_bDebugString)
             {               
@@ -384,7 +388,7 @@ DoReceiveRequests(
             {
                 case HttpVerbPOST:
 
-                    TraceW(L"Got a POST request for %ws\n",
+                    TraceW(L"Got a POST request for %ws",
                            pRequest->CookedUrl.pFullUrl);              
                     
                     //Check if we need use authorization.
@@ -424,7 +428,7 @@ DoReceiveRequests(
                                     pTmp[pRequest->Headers.KnownHeaders[
                                         HttpHeaderAuthorization
                                         ].RawValueLength] = 0;
-                                    TraceA("Got HEADER [%s] \n",pTmp);
+                                    TraceA("Got HEADER [%s]",pTmp);
                                     FREE_MEM(pTmp);
                                 }
 #endif   /* #ifndef NDEBUG */
@@ -514,7 +518,7 @@ DoReceiveRequests(
                         //We only handle text/xml data.  Anything else
                         //is not valid.
                         TraceW(L"POST request had an unsupported "
-                               "content-type: %s \n", szHeaderBuf);
+                               "content-type: %s", szHeaderBuf);
                         result = SendHttpResponse(
                             hReqQueue, 
                             pRequest,
@@ -542,7 +546,7 @@ DoReceiveRequests(
                     {
                         //Make sure a content length was supplied.
                         TraceW(L"POST request did not include a "
-                               "content-length \n", szHeaderBuf);
+                               "content-length", szHeaderBuf);
                         result = SendHttpResponse(
                             hReqQueue, 
                             pRequest,
@@ -557,7 +561,7 @@ DoReceiveRequests(
                     {
                         //Content-length is too big for us to handle
                         TraceW(L"POST request content-length is too big "
-                               "for us to handle: %d bytes \n",
+                               "for us to handle: %d bytes",
                                lContentLength);
                         result = SendHttpResponse(
                             hReqQueue, 
@@ -606,7 +610,7 @@ DoReceiveRequests(
 
                 default:
                     //We only handle POST data.  Anything else is not valid.
-                    TraceW(L"Got an unsupported Verb request for URI %ws \n",
+                    TraceW(L"Got an unsupported Verb request for URI %ws",
                            pRequest->CookedUrl.pFullUrl);
             
                     result = SendHttpResponse(
@@ -729,7 +733,7 @@ SendHttpResponse(
 
     if(result != NO_ERROR)
     {
-        TraceW(L"HttpSendHttpResponse failed with %lu \n", result);
+        TraceW(L"HttpSendHttpResponse failed with %lu", result);
     }
 
     return result;
@@ -777,7 +781,7 @@ SendHttpResponseAuthRequired(
 
     if(result != NO_ERROR)
     {
-        TraceW(L"SendHttpResponseAuthRequired failed with %lu \n", result);
+        TraceW(L"SendHttpResponseAuthRequired failed with %lu", result);
     }
 
     return result;
@@ -888,7 +892,7 @@ processRPCCall(
                     //       are larger than 4 GB. For supporting large entity
                     //       bodies, we would have to use a ULONGLONG.
                     TraceA("xmlrpc_server RPC2 handler processing "
-                           "RPC request.\n");
+                           "RPC request.");
                                         
                     // Process the RPC.
                     xmlrpc_registry_process_call2(
@@ -935,7 +939,7 @@ processRPCCall(
                         );
                     if(result != NO_ERROR)
                     {
-                        TraceW(L"HttpSendHttpResponse failed with %lu \n",
+                        TraceW(L"HttpSendHttpResponse failed with %lu",
                                result);
                         xmlrpc_env_set_fault_formatted(
                             envP, XMLRPC_NETWORK_ERROR,
@@ -965,7 +969,7 @@ processRPCCall(
                     if(result != NO_ERROR)
                     {
                         TraceW(L"HttpSendResponseEntityBody failed "
-                               "with %lu \n", result);
+                               "with %lu", result);
                         xmlrpc_env_set_fault_formatted(
                                 envP, XMLRPC_NETWORK_ERROR,
                                 "HttpSendResponseEntityBody failed with %lu",
@@ -975,7 +979,7 @@ processRPCCall(
                     goto Done;
                     break;
                 default:
-                    TraceW(L"HttpReceiveRequestEntityBody failed with %lu \n",
+                    TraceW(L"HttpReceiveRequestEntityBody failed with %lu",
                            result);
                     xmlrpc_env_set_fault_formatted(
                                 envP, XMLRPC_NETWORK_ERROR,
@@ -988,7 +992,7 @@ processRPCCall(
     else
     {
         // This request does not have an entity body. 
-        TraceA("Received a bad request (no body in HTTP post).\n");
+        TraceA("Received a bad request (no body in HTTP post).");
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_PARSE_ERROR,
             "Bad POST request (no body)");
