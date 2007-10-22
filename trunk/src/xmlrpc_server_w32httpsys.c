@@ -400,10 +400,20 @@ DoReceiveRequests(
 						else
 						{
 							//unencode the headers
-							if(_strnicmp("basic ",pRequest->Headers.KnownHeaders[HttpHeaderAuthorization].pRawValue,6)!=0)
+							if(_strnicmp("basic",pRequest->Headers.KnownHeaders[HttpHeaderAuthorization].pRawValue,5)!=0)
 							{
+#ifndef  NDEBUG
+                        PCHAR pTmp = (PCHAR) ALLOC_MEM( pRequest->Headers.KnownHeaders[HttpHeaderAuthorization].RawValueLength + 1 );
+                        if( pTmp ) {
+                           strncpy(pTmp, pRequest->Headers.KnownHeaders[HttpHeaderAuthorization].pRawValue,
+                              pRequest->Headers.KnownHeaders[HttpHeaderAuthorization].RawValueLength );
+                           pTmp[pRequest->Headers.KnownHeaders[HttpHeaderAuthorization].RawValueLength] = 0;
+                           TraceA("Got HEADER [%s] \n",pTmp);
+                           FREE_MEM(pTmp);
+                        }
+#endif   /* #ifndef NDEBUG */
 								xmlrpc_env_set_fault( &env, XMLRPC_REQUEST_REFUSED_ERROR, 
-									"Authorization header is not of type basic.");
+									"Authorization header does not start with type 'basic'!");
 							}
 							else
 							{
