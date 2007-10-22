@@ -517,7 +517,7 @@ DoReceiveRequests(
                     {
                         //We only handle text/xml data.  Anything else
                         //is not valid.
-                        TraceW(L"POST request had an unsupported "
+                        TraceW(L"POST request had an unrecognized "
                                "content-type: %s", szHeaderBuf);
                         result = SendHttpResponse(
                             hReqQueue, 
@@ -610,7 +610,7 @@ DoReceiveRequests(
 
                 default:
                     //We only handle POST data.  Anything else is not valid.
-                    TraceW(L"Got an unsupported Verb request for URI %ws",
+                    TraceW(L"Got an unrecognized Verb request for URI %ws",
                            pRequest->CookedUrl.pFullUrl);
             
                     result = SendHttpResponse(
@@ -889,7 +889,7 @@ processRPCCall(
                     
                     // NOTE: Since we are accumulating the TotalBytesRead in 
                     //       a ULONG, this will not work for entity bodies that
-                    //       are larger than 4 GB. For supporting large entity
+                    //       are larger than 4 GB. To work with large entity
                     //       bodies, we would have to use a ULONGLONG.
                     TraceA("xmlrpc_server RPC2 handler processing "
                            "RPC request.");
