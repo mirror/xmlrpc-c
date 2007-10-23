@@ -10,6 +10,7 @@
 
 #ifdef _MSC_VER
 #  define PRId64 "I64d"
+#  define PRIu64 "I64u"
 
 #ifndef uint16_t
 typedef unsigned short    uint16_t;
