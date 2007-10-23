@@ -277,14 +277,14 @@ __inline void TraceW(const wchar_t *format, ...)
                 if (fout)
                 {
                     vfwprintf(fout, format, arglist);
-                    fwprintf(fout, "\n");
+                    fwprintf(fout, L"\n");
                     fclose(fout);
                 }
             }
             
             StringCchVPrintfW(str, 4096, format, arglist);
             wprintf(str);
-            wprintf("\n");
+            wprintf(L"\n");
             
             if (g_bDebugString)
             {               
@@ -460,7 +460,7 @@ DoReceiveRequests(
                             //did not provide it.
                             xmlrpc_env_clean(&env);
                             TraceW(L"POST request did not provide valid "
-                                   "authorization header.");
+                                   L"authorization header.");
                             result =
                                 SendHttpResponseAuthRequired( hReqQueue,
                                                               pRequest);
@@ -485,7 +485,7 @@ DoReceiveRequests(
                         //We handle only text/xml data.  Anything else
                         //is not valid.
                         TraceW(L"POST request had an unrecognized "
-                               "content-type: %s", szHeaderBuf);
+                               L"content-type: %s", szHeaderBuf);
                         result = SendHttpResponse(
                             hReqQueue, 
                             pRequest,
@@ -513,7 +513,7 @@ DoReceiveRequests(
                     {
                         //Make sure a content length was supplied.
                         TraceW(L"POST request did not include a "
-                               "content-length", szHeaderBuf);
+                               L"content-length", szHeaderBuf);
                         result = SendHttpResponse(
                             hReqQueue, 
                             pRequest,
@@ -528,7 +528,7 @@ DoReceiveRequests(
                     {
                         //Content-length is too big for us to handle
                         TraceW(L"POST request content-length is too big "
-                               "for us to handle: %d bytes",
+                               L"for us to handle: %d bytes",
                                lContentLength);
                         result = SendHttpResponse(
                             hReqQueue, 
@@ -932,7 +932,7 @@ processRPCCall(
                     if(result != NO_ERROR)
                     {
                         TraceW(L"HttpSendResponseEntityBody failed "
-                               "with %lu", result);
+                               L"with %lu", result);
                         xmlrpc_env_set_fault_formatted(
                                 envP, XMLRPC_NETWORK_ERROR,
                                 "HttpSendResponseEntityBody failed with %lu",
