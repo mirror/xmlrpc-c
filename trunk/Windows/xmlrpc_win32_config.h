@@ -108,7 +108,7 @@
   #define MSVCRT 0
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
 /* Starting with MSVC 8, the runtime library defines various POSIX functions
    such as strdup() whose names violate the ISO C standard (the standard
    says the strXXX names are reserved for the standard), but warns you of
@@ -126,20 +126,8 @@
 #pragma warning(disable:4996)
 #endif
 
-#if !defined (vsnprintf)
-  #define vsnprintf _vsnprintf
-#endif
-#if !defined (snprintf)
-  #define snprintf _snprintf
-#endif
-#if !defined (popen)
-  #define popen _popen
-#endif
-#if !defined (getcwd)
-  #define getcwd _getcwd
-#endif
-#if !defined (strtoll)
-  #define strtoll strtol
-#endif
+#define snprintf _snprintf
+#define popen _popen
+#define strtoll _strtoui64
 
 #endif
