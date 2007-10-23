@@ -1,7 +1,7 @@
 @if EXIST ..\version.h goto SHOW
 @if NOT EXIST ..\Makefile.version goto ERR1
 @if NOT EXIST mkvers1.bat goto ERR2
-@echo undating version ...
+@echo updating/creating ..\version.h ...
 @set TEMP1=1
 @for /F "skip=8 tokens=3" %%i in (..\Makefile.version) do @call mkvers1 %%i
 @if "%TEMPX1%." == "." goto NOX1
@@ -17,7 +17,7 @@
 @echo #define XMLRPC_VERSION_POINT %TEMPX3% >> %TEMP1%
 @echo #endif >> %TEMP1%
 type %TEMP1%
-@echo Version set to the above ...
+@echo ..\version.h set to the above ...
 @set TEMP1=
 @set TEMPX1=
 @set TEMPX2=
@@ -36,6 +36,7 @@ type %TEMP1%
 
 :ERR1
 @echo Can not locate ..\Makefile.version ... check name, location ...
+@pause
 @goto END
 :ERR2
 @echo Can not locate mkvers1.bat ... check name, location ...
