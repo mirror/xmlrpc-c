@@ -265,7 +265,7 @@ ResponseContentLength(TSession *      const sessionP,
 
     char contentLengthValue[32];
     
-    sprintf(contentLengthValue, "%llu", len);
+    sprintf(contentLengthValue, "%" PRIu64, len);
 
     return ResponseAddField(sessionP, "Content-length", contentLengthValue);
 }

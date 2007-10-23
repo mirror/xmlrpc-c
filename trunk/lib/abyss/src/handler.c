@@ -338,7 +338,7 @@ sendDirectoryDocument(TList *      const listP,
                 }
             }
                 
-            sprintf(z3, "%5llu %c", fi->size, u);
+            sprintf(z3, "%5" PRIu64 " %c", fi->size, u);
             
             if (xmlrpc_streq(fi->name, ".."))
                 z4 = "";
@@ -474,6 +474,22 @@ handleDirectory(TSession *   const sessionP,
 
 
 
+static void
+composeEntityHeader(const char ** const entityHeaderP,
+                    const char *  const mediatype,
+                    uint64_t      const start,
+                    uint64_t      const end,
+                    uint64_t      const filesize) {
+                         
+    xmlrpc_asprintf(entityHeaderP, "Content-type: %s" CRLF
+                    "Content-range: "
+                    "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64 CRLF
+                    "Content-length: %" PRIu64 CRLF CRLF,
+                    mediatype, start, end, filesize, end-start+1);
+}
+
+
+
 #define BOUNDARY    "##123456789###BOUNDARY"
 
 static void
@@ -513,11 +529,8 @@ sendBody(TSession *      const sessionP,
                     /* Entity header, not response header */
                     const char * entityHeader;
                     
-                    xmlrpc_asprintf(&entityHeader, "Content-type: %s" CRLF
-                                    "Content-range: bytes %llu-%llu/%llu" CRLF
-                                    "Content-length: %llu" CRLF
-                                    CRLF, mediatype, start, end,
-                                    filesize, end-start+1);
+                    composeEntityHeader(&entityHeader, mediatype,
+                                        start, end, filesize);
 
                     ConnWrite(sessionP->conn,
                               entityHeader, strlen(entityHeader));
@@ -561,7 +574,8 @@ sendFileAsResponse(TSession *   const sessionP,
             ResponseStatus(sessionP, 200);
         } else {
             const char * contentRange;
-            xmlrpc_asprintf(&contentRange, "bytes %llu-%llu/%llu",
+            xmlrpc_asprintf(&contentRange,
+                            "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64,
                             start, end, filesize);
             ResponseAddField(sessionP, "Content-range", contentRange);
             xmlrpc_strfree(contentRange);
@@ -731,7 +745,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
 
 
-/*******************************************************************************
+/******************************************************************************
 **
 ** server.c
 **
