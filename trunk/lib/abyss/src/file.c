@@ -180,7 +180,7 @@ fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
 
 #ifdef WIN32
 #ifndef __BORLANDC__
-    *retP = (((*filefind) = _findfirst(search, fileinfo)) != -1);
+    *retP = (((*filefind) = _findfirst64(search, fileinfo)) != -1);
 #else
     *filefind = FindFirstFile(search, &fileinfo->data);
     *retP = *filefind != NULL;
@@ -242,7 +242,7 @@ FileFindNext(TFileFind * const filefind,
 #ifdef WIN32
 
 #ifndef __BORLANDC__
-    return (_findnext(*filefind,fileinfo)!=(-1));
+    return (_findnext64(*filefind,fileinfo)!=(-1));
 #else
    abyss_bool ret = FindNextFile( *filefind, &fileinfo->data );
    if( ret )
