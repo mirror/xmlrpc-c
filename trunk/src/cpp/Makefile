@@ -237,6 +237,7 @@ clean-local:
 distclean: clean distclean-local distclean-common
 
 distclean-local:
+	$(MAKE) -C test distclean
 
 .PHONY: dep
 dep: dep-common $(BLDDIR)/transport_config.h
