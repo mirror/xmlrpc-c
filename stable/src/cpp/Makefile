@@ -182,6 +182,7 @@ clean-local:
 distclean: clean distclean-local distclean-common
 
 distclean-local:
+	$(MAKE) -C test distclean
 
 .PHONY: dep
 dep: dep-common $(BUILDDIR)/transport_config.h
