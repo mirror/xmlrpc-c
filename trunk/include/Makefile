@@ -45,7 +45,7 @@ $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 
 HEADERS_TO_INSTALL = \
   xmlrpc-c/config.h \
-  xmrpc-c/inttypes.h \
+  xmlrpc-c/inttypes.h \
   xmlrpc-c/c_util.h \
   xmlrpc-c/util.h \
   xmlrpc-c/base.h \
