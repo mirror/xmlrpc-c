@@ -235,20 +235,19 @@ __inline void TraceA(const char *format, ...)
             char str[4096];
 
             va_start(arglist, format);
+            StringCchVPrintfA(str,4096, format, arglist);
+            strcat_s(str, 4096, "\n");
             if (g_fLogFile)
             {
                 FILE *fout = fopen(g_fLogFile, "a+t");
                 if (fout)
                 {
-                    vfprintf(fout, format, arglist);
-                    fprintf(fout, "\n");
+                    fprintf(fout, str);
                     fclose(fout);
                 }
             }
 
-            StringCchVPrintfA(str,4096, format, arglist);
             printf(str);
-            printf("\n");
 
             if (g_bDebugString)
             {
@@ -271,20 +270,19 @@ __inline void TraceW(const wchar_t *format, ...)
             wchar_t str[4096];
 
             va_start(arglist, format);
+            StringCchVPrintfW(str, 4096, format, arglist);
+            wcscat_s(str, 4096, L"\n");
             if (g_fLogFile)
             {
                 FILE *fout = fopen(g_fLogFile, "a+t");
                 if (fout)
                 {
-                    vfwprintf(fout, format, arglist);
-                    fwprintf(fout, L"\n");
+                    fwprintf(fout, str);
                     fclose(fout);
                 }
             }
             
-            StringCchVPrintfW(str, 4096, format, arglist);
             wprintf(str);
-            wprintf(L"\n");
             
             if (g_bDebugString)
             {               
