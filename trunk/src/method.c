@@ -67,7 +67,7 @@ translateTypeSpecifierToName(xmlrpc_env *  const envP,
    REALLOCARRAY.  It's not.
 */
 #pragma warning(push)
-#pragma warning(disable:4090);
+#pragma warning(disable:4090)
 #endif
 
 static void
