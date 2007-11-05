@@ -143,6 +143,7 @@ distclean-local: clean-local
 	rm -f config.log config.status Makefile.config Makefile.srcdir
 	rm -f xmlrpc_config.h xmlrpc_amconfig.h stamp-h 
 	rm -f shell_config xmlrpc-c-config xmlrpc-c-config.test
+	rm -f TAGS
 
 check: $(SUBDIRS:%=%/check)
 
