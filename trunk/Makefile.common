@@ -544,7 +544,6 @@ distclean-common:
 # gains nothing from it, with that.
 #
 	rm -f Makefile.depend
-	rm -f TAGS
 	rm -f srcdir blddir
 
 .PHONY: distdir-common
@@ -559,21 +558,6 @@ distdir-common:
 	    || cp -p $$d/$$file $(DISTDIR)/$$file || :; \
 	  fi; \
 	done
-
-TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
-	tags=; \
-	here=`pwd`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-   if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
-   fi; \
-	done; \
-	list='$(SOURCES) $(HEADERS)'; \
-	unique=`for i in $$list; do echo $$i; done | \
-	  awk '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 DEP_SOURCES = $(wildcard *.c *.cpp)
 

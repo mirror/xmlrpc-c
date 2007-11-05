@@ -146,9 +146,6 @@ distclean-local: clean-local
 
 check: $(SUBDIRS:%=%/check)
 
-.PHONY: tags
-tags: $(SUBDIRS:%=%/tags) TAGS
-
 DISTFILES = 
 
 .PHONY: distdir
@@ -175,3 +172,11 @@ include $(SRCDIR)/Makefile.common
 	@echo = You must run Configure before Make. =
 	@echo =======================================
 	false
+
+# 'tags' generates/updates an Emacs tags file, anmed TAGS, in the current
+# directory.  Use with Emacs command 'find-tag'.
+
+.PHONY: tags
+tags:
+	find . -name "*.c" -o -name "*.h" -o -name "*.cpp" -o -name "*.hpp" | \
+	  etags -
