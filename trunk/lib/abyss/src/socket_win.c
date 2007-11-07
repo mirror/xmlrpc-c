@@ -279,17 +279,6 @@ connected(SOCKET const fd) {
 
 
 
-// forward reference
-void
-bindSocketToPort(SOCKET           const winsock,
-                 struct in_addr * const addrP,
-                 uint16_t         const portNumber,
-                 const char **    const errorP);
-
-void 
-setSocketOptions(SOCKET        const fd,
-                 const char ** const errorP);
-
 void
 SocketWinInit(const char ** const errorP) {
 
@@ -488,6 +477,51 @@ ChannelWinGetPeerName(TChannel *           const channelP,
 
 
 
+static ChannelFormatPeerInfoImpl channelFormatPeerInfo;
+
+static void
+channelFormatPeerInfo(TChannel *    const channelP,
+                      const char ** const peerStringP) {
+
+    struct socketWin * const socketWinP = channelP->implP;
+
+    struct sockaddr sockaddr;
+    socklen_t sockaddrLen;
+    int rc;
+
+    sockaddrLen = sizeof(sockaddr);
+    
+    rc = getpeername(socketWinP->winsock, &sockaddr, &sockaddrLen);
+    
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  "
+                        "WSAERROR %d (%s)",
+                        lastError, getWSAError(lastError));
+    } else {
+        switch (sockaddr.sa_family) {
+        case AF_INET: {
+            struct sockaddr_in * const sockaddrInP =
+                (struct sockaddr_in *) &sockaddr;
+            if (sockaddrLen < sizeof(*sockaddrInP))
+                xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
+                                "the wrong size");
+            else {
+                unsigned char * const ipaddr = (unsigned char *)
+                    &sockaddrInP->sin_addr.s_addr;
+                xmlrpc_asprintf(peerStringP, "%u.%u.%u.%u:%hu",
+                                ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
+                                sockaddrInP->sin_port);
+            }
+        } break;
+        default:
+            xmlrpc_asprintf(peerStringP, "??? AF=%u", sockaddr.sa_family);
+        }
+    }
+}
+
+
+
 static struct TChannelVtbl const channelVtbl = {
     &channelDestroy,
     &channelWrite,
@@ -602,131 +636,6 @@ ChannelWinCreateWinsock(SOCKET                       const fd,
 =============================================================================*/
 
 static SwitchDestroyImpl chanSwitchDestroy;
-static SwitchListenImpl  chanSwitchListen;
-static SwitchAcceptImpl  chanSwitchAccept;
-
-static struct TChanSwitchVtbl const chanSwitchVtbl = {
-    &chanSwitchDestroy,
-    &chanSwitchListen,
-    &chanSwitchAccept,
-};
-
-
-
-void
-ChanSwitchWinCreate(uint16_t       const portNumber,
-                    TChanSwitch ** const chanSwitchPP,
-                    const char **  const errorP) {
-/*----------------------------------------------------------------------------
-   Create a Winsock-based channel switch.
-
-   Set the socket's local address so that a subsequent "listen" will listen
-   on all IP addresses, port number 'portNumber'.
------------------------------------------------------------------------------*/
-    struct socketWin * socketWinP;
-
-    MALLOCVAR(socketWinP);
-
-    if (!socketWinP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory for Windows socket "
-                        "descriptor structure.");
-    else {
-        SOCKET winsock;
-
-        winsock = socket(AF_INET, SOCK_STREAM, 0);
-
-        if (winsock == 0 || winsock == INVALID_SOCKET) {
-            int const lastError = WSAGetLastError();
-            xmlrpc_asprintf(errorP, "socket() failed with WSAERROR %d (%s)",
-                            lastError, getWSAError(lastError));
-        } else {
-            socketWinP->winsock = winsock;
-            socketWinP->userSuppliedWinsock = FALSE;
-            
-            setSocketOptions(socketWinP->winsock, errorP);
-            if (!*errorP) {
-                bindSocketToPort(socketWinP->winsock, NULL, portNumber,
-                                 errorP);
-                if (!*errorP)
-                    ChanSwitchCreate(&chanSwitchVtbl, socketWinP,
-                                     chanSwitchPP);
-            }
-
-            if (*errorP)
-                closesocket(winsock);
-        }
-        if (*errorP)
-            free(socketWinP);
-    }
-}
-
-
-
-void
-bindSocketToPort(SOCKET           const winsock,
-                 struct in_addr * const addrP,
-                 uint16_t         const portNumber,
-                 const char **    const errorP) {
-    
-    struct sockaddr_in name;
-    int rc;
-
-    ZeroMemory(&name, sizeof(name));
-    name.sin_family = AF_INET;
-    name.sin_port   = htons(portNumber);
-    if (addrP)
-        name.sin_addr = *addrP;
-
-    rc = bind(winsock, (struct sockaddr *)&name, sizeof(name));
-
-    if (rc != 0) {
-        int const lastError = WSAGetLastError();
-        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %u.  "
-                        "bind() failed with WSAERROR %i (%s)",
-                        portNumber, lastError, getWSAError(lastError));
-    } else
-        *errorP = NULL;
-}
-
-
-
-void
-ChanSwitchWinCreateWinsock(SOCKET         const winsock,
-                           TChanSwitch ** const chanSwitchPP,
-                           const char **  const errorP) {
-
-    struct socketWin * socketWinP;
-
-    if (connected(winsock))
-        xmlrpc_asprintf(errorP, "Socket is in connected state.");
-    else {
-        MALLOCVAR(socketWinP);
-
-        if (socketWinP == NULL)
-            xmlrpc_asprintf(errorP, "unable to allocate memory for Windows "
-                            "socket descriptor.");
-        else {
-            TChanSwitch * chanSwitchP;
-
-            socketWinP->winsock = winsock;
-            socketWinP->userSuppliedWinsock = TRUE;
-            
-            ChanSwitchCreate(&chanSwitchVtbl, socketWinP, &chanSwitchP);
-
-            if (chanSwitchP == NULL)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
-                                "channel switch descriptor");
-            else {
-                *chanSwitchPP = chanSwitchP;
-                *errorP = NULL;
-            }
-            if (*errorP)
-                free(socketWinP);
-        }
-    }
-}
-
-
 
 void
 chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
@@ -740,6 +649,8 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
 }
 
 
+
+static SwitchListenImpl chanSwitchListen;
 
 static void
 chanSwitchListen(TChanSwitch * const chanSwitchP,
@@ -768,6 +679,8 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 }
 
 
+
+static SwitchAcceptImpl  chanSwitchAccept;
 
 static void
 chanSwitchAccept(TChanSwitch * const chanSwitchP,
@@ -836,51 +749,15 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
 
 
-static ChannelFormatPeerInfoImpl channelFormatPeerInfo;
+static struct TChanSwitchVtbl const chanSwitchVtbl = {
+    &chanSwitchDestroy,
+    &chanSwitchListen,
+    &chanSwitchAccept,
+};
+
+
 
 static void
-channelFormatPeerInfo(TChannel *    const channelP,
-                      const char ** const peerStringP) {
-
-    struct socketWin * const socketWinP = channelP->implP;
-    struct sockaddr sockaddr;
-    socklen_t sockaddrLen;
-    int rc;
-
-    sockaddrLen = sizeof(sockaddr);
-    
-    rc = getpeername(socketWinP->winsock, &sockaddr, &sockaddrLen);
-    
-    if (rc != 0) {
-        int const lastError = WSAGetLastError();
-        xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  "
-                        "WSAERROR %d (%s)",
-                        lastError, getWSAError(lastError));
-    } else {
-        switch (sockaddr.sa_family) {
-        case AF_INET: {
-            struct sockaddr_in * const sockaddrInP =
-                (struct sockaddr_in *) &sockaddr;
-            if (sockaddrLen < sizeof(*sockaddrInP))
-                xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
-                                "the wrong size");
-            else {
-                unsigned char * const ipaddr = (unsigned char *)
-                    &sockaddrInP->sin_addr.s_addr;
-                xmlrpc_asprintf(peerStringP, "%u.%u.%u.%u:%hu",
-                                ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
-                                sockaddrInP->sin_port);
-            }
-        } break;
-        default:
-            xmlrpc_asprintf(peerStringP, "??? AF=%u", sockaddr.sa_family);
-        }
-    }
-}
-
-
-
-void
 setSocketOptions(SOCKET        const fd,
                  const char ** const errorP) {
 
@@ -897,4 +774,119 @@ setSocketOptions(SOCKET        const fd,
                         lastError, getWSAError(lastError));
     } else
         *errorP = NULL;
+}
+
+
+
+void
+bindSocketToPort(SOCKET           const winsock,
+                 struct in_addr * const addrP,
+                 uint16_t         const portNumber,
+                 const char **    const errorP) {
+    
+    struct sockaddr_in name;
+    int rc;
+
+    ZeroMemory(&name, sizeof(name));
+    name.sin_family = AF_INET;
+    name.sin_port   = htons(portNumber);
+    if (addrP)
+        name.sin_addr = *addrP;
+
+    rc = bind(winsock, (struct sockaddr *)&name, sizeof(name));
+
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %u.  "
+                        "bind() failed with WSAERROR %i (%s)",
+                        portNumber, lastError, getWSAError(lastError));
+    } else
+        *errorP = NULL;
+}
+
+
+
+void
+ChanSwitchWinCreate(uint16_t       const portNumber,
+                    TChanSwitch ** const chanSwitchPP,
+                    const char **  const errorP) {
+/*----------------------------------------------------------------------------
+   Create a Winsock-based channel switch.
+
+   Set the socket's local address so that a subsequent "listen" will listen
+   on all IP addresses, port number 'portNumber'.
+-----------------------------------------------------------------------------*/
+    struct socketWin * socketWinP;
+
+    MALLOCVAR(socketWinP);
+
+    if (!socketWinP)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for Windows socket "
+                        "descriptor structure.");
+    else {
+        SOCKET winsock;
+
+        winsock = socket(AF_INET, SOCK_STREAM, 0);
+
+        if (winsock == 0 || winsock == INVALID_SOCKET) {
+            int const lastError = WSAGetLastError();
+            xmlrpc_asprintf(errorP, "socket() failed with WSAERROR %d (%s)",
+                            lastError, getWSAError(lastError));
+        } else {
+            socketWinP->winsock = winsock;
+            socketWinP->userSuppliedWinsock = FALSE;
+            
+            setSocketOptions(socketWinP->winsock, errorP);
+            if (!*errorP) {
+                bindSocketToPort(socketWinP->winsock, NULL, portNumber,
+                                 errorP);
+                if (!*errorP)
+                    ChanSwitchCreate(&chanSwitchVtbl, socketWinP,
+                                     chanSwitchPP);
+            }
+
+            if (*errorP)
+                closesocket(winsock);
+        }
+        if (*errorP)
+            free(socketWinP);
+    }
+}
+
+
+
+void
+ChanSwitchWinCreateWinsock(SOCKET         const winsock,
+                           TChanSwitch ** const chanSwitchPP,
+                           const char **  const errorP) {
+
+    struct socketWin * socketWinP;
+
+    if (connected(winsock))
+        xmlrpc_asprintf(errorP, "Socket is in connected state.");
+    else {
+        MALLOCVAR(socketWinP);
+
+        if (socketWinP == NULL)
+            xmlrpc_asprintf(errorP, "unable to allocate memory for Windows "
+                            "socket descriptor.");
+        else {
+            TChanSwitch * chanSwitchP;
+
+            socketWinP->winsock = winsock;
+            socketWinP->userSuppliedWinsock = TRUE;
+            
+            ChanSwitchCreate(&chanSwitchVtbl, socketWinP, &chanSwitchP);
+
+            if (chanSwitchP == NULL)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                                "channel switch descriptor");
+            else {
+                *chanSwitchPP = chanSwitchP;
+                *errorP = NULL;
+            }
+            if (*errorP)
+                free(socketWinP);
+        }
+    }
 }

@@ -442,8 +442,123 @@ ChannelUnixCreateFd(int                           const fd,
 =============================================================================*/
 
 static SwitchDestroyImpl chanSwitchDestroy;
+
+static void
+chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
+
+    struct socketUnix * const socketUnixP = chanSwitchP->implP;
+
+    if (!socketUnixP->userSuppliedFd)
+        close(socketUnixP->fd);
+
+    free(socketUnixP);
+}
+
+
+
 static SwitchListenImpl  chanSwitchListen;
-static SwitchAcceptImpl  chanSwitchAccept;
+
+static void
+chanSwitchListen(TChanSwitch * const chanSwitchP,
+                 uint32_t      const backlog,
+                 const char ** const errorP) {
+
+    struct socketUnix * const socketUnixP = chanSwitchP->implP;
+
+    int32_t const minus1 = -1;
+
+    int rc;
+
+    /* Disable the Nagle algorithm to make persistant connections faster */
+
+    setsockopt(socketUnixP->fd, IPPROTO_TCP, TCP_NODELAY,
+               &minus1, sizeof(minus1));
+
+    rc = listen(socketUnixP->fd, backlog);
+
+    if (rc == -1)
+        xmlrpc_asprintf(errorP, "setsockopt() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else
+        *errorP = NULL;
+}
+
+
+
+static SwitchAcceptImpl chanSwitchAccept;
+
+static void
+chanSwitchAccept(TChanSwitch * const chanSwitchP,
+                 TChannel **   const channelPP,
+                 void **       const channelInfoPP,
+                 const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Accept a connection via the channel switch *chanSwitchP.  Return as
+   *channelPP the channel for the accepted connection.
+
+   If no connection is waiting at *chanSwitchP, wait until one is.
+
+   If we receive a signal while waiting, return immediately with
+   *channelPP == NULL.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * const listenSocketP = chanSwitchP->implP;
+
+    abyss_bool interrupted;
+    TChannel * channelP;
+
+    interrupted = FALSE; /* Haven't been interrupted yet */
+    channelP    = NULL;  /* No connection yet */
+    *errorP     = NULL;  /* No error yet */
+
+    while (!channelP && !*errorP && !interrupted) {
+        struct sockaddr peerAddr;
+        socklen_t size = sizeof(peerAddr);
+        int rc;
+
+        rc = accept(listenSocketP->fd, &peerAddr, &size);
+
+        if (rc >= 0) {
+            int const acceptedFd = rc;
+            struct socketUnix * acceptedSocketP;
+
+            MALLOCVAR(acceptedSocketP);
+
+            if (!acceptedSocketP)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory");
+            else {
+                struct abyss_unix_chaninfo * channelInfoP;
+                acceptedSocketP->fd = acceptedFd;
+                acceptedSocketP->userSuppliedFd = FALSE;
+                
+                makeChannelInfo(&channelInfoP, peerAddr, size, errorP);
+                if (!*errorP) {
+                    *channelInfoPP = channelInfoP;
+
+                    ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
+                    if (!channelP)
+                        xmlrpc_asprintf(errorP,
+                                        "Failed to create TChannel object.");
+                    else
+                        *errorP = NULL;
+
+                    if (*errorP)
+                        free(channelInfoP);
+                }
+                if (*errorP)
+                    free(acceptedSocketP);
+            }
+            if (*errorP)
+                close(acceptedFd);
+        } else if (errno == EINTR)
+            interrupted = TRUE;
+        else
+            xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
+                            errno, strerror(errno));
+    }
+    *channelPP = channelP;
+}
+
+
 
 static struct TChanSwitchVtbl const chanSwitchVtbl = {
     &chanSwitchDestroy,
@@ -584,120 +699,6 @@ ChanSwitchUnixCreateFd(int            const fd,
         }
     }
 }
-
-
-
-static void
-chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
-
-    struct socketUnix * const socketUnixP = chanSwitchP->implP;
-
-    if (!socketUnixP->userSuppliedFd)
-        close(socketUnixP->fd);
-
-    free(socketUnixP);
-}
-
-
-
-static void
-chanSwitchListen(TChanSwitch * const chanSwitchP,
-                 uint32_t      const backlog,
-                 const char ** const errorP) {
-
-    struct socketUnix * const socketUnixP = chanSwitchP->implP;
-
-    int32_t const minus1 = -1;
-
-    int rc;
-
-    /* Disable the Nagle algorithm to make persistant connections faster */
-
-    setsockopt(socketUnixP->fd, IPPROTO_TCP, TCP_NODELAY,
-               &minus1, sizeof(minus1));
-
-    rc = listen(socketUnixP->fd, backlog);
-
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "setsockopt() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
-
-
-
-static void
-chanSwitchAccept(TChanSwitch * const chanSwitchP,
-                 TChannel **   const channelPP,
-                 void **       const channelInfoPP,
-                 const char ** const errorP) {
-/*----------------------------------------------------------------------------
-   Accept a connection via the channel switch *chanSwitchP.  Return as
-   *channelPP the channel for the accepted connection.
-
-   If no connection is waiting at *chanSwitchP, wait until one is.
-
-   If we receive a signal while waiting, return immediately with
-   *channelPP == NULL.
------------------------------------------------------------------------------*/
-    struct socketUnix * const listenSocketP = chanSwitchP->implP;
-
-    abyss_bool interrupted;
-    TChannel * channelP;
-
-    interrupted = FALSE; /* Haven't been interrupted yet */
-    channelP    = NULL;  /* No connection yet */
-    *errorP     = NULL;  /* No error yet */
-
-    while (!channelP && !*errorP && !interrupted) {
-        struct sockaddr peerAddr;
-        socklen_t size = sizeof(peerAddr);
-        int rc;
-
-        rc = accept(listenSocketP->fd, &peerAddr, &size);
-
-        if (rc >= 0) {
-            int const acceptedFd = rc;
-            struct socketUnix * acceptedSocketP;
-
-            MALLOCVAR(acceptedSocketP);
-
-            if (!acceptedSocketP)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory");
-            else {
-                struct abyss_unix_chaninfo * channelInfoP;
-                acceptedSocketP->fd = acceptedFd;
-                acceptedSocketP->userSuppliedFd = FALSE;
-                
-                makeChannelInfo(&channelInfoP, peerAddr, size, errorP);
-                if (!*errorP) {
-                    *channelInfoPP = channelInfoP;
-
-                    ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
-                    if (!channelP)
-                        xmlrpc_asprintf(errorP,
-                                        "Failed to create TChannel object.");
-                    else
-                        *errorP = NULL;
-
-                    if (*errorP)
-                        free(channelInfoP);
-                }
-                if (*errorP)
-                    free(acceptedSocketP);
-            }
-            if (*errorP)
-                close(acceptedFd);
-        } else if (errno == EINTR)
-            interrupted = TRUE;
-        else
-            xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
-                            errno, strerror(errno));
-    }
-    *channelPP = channelP;
-}
-
 
 
 
