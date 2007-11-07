@@ -355,20 +355,26 @@ ConnRead(TConn *  const connectionP,
                 cantGetData = TRUE;
             else {
                 uint32_t bytesRead;
+                abyss_bool readFailed;
 
-                bytesRead = ChannelRead(
-                    connectionP->channelP,
-                    connectionP->buffer + connectionP->buffersize,
-                    bufferSpace(connectionP)-1);
-                if (bytesRead > 0) {
-                    traceChannelRead(connectionP, bytesRead);
-                    connectionP->inbytes += bytesRead;
-                    connectionP->buffersize += bytesRead;
-                    connectionP->buffer[connectionP->buffersize] = '\0';
-                    gotData = TRUE;
-                } else
-                    /* Other end has disconnected */
+                ChannelRead(connectionP->channelP,
+                            connectionP->buffer + connectionP->buffersize,
+                            bufferSpace(connectionP) - 1,
+                            &bytesRead, &readFailed);
+
+                if (readFailed)
                     cantGetData = TRUE;
+                else {
+                    if (bytesRead > 0) {
+                        traceChannelRead(connectionP, bytesRead);
+                        connectionP->inbytes += bytesRead;
+                        connectionP->buffersize += bytesRead;
+                        connectionP->buffer[connectionP->buffersize] = '\0';
+                        gotData = TRUE;
+                    } else
+                        /* Other end has disconnected */
+                        cantGetData = TRUE;
+                }
             }
         }
     }

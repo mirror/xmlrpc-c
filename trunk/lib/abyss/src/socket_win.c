@@ -365,22 +365,24 @@ channelWrite(TChannel *            const channelP,
 
 static ChannelReadImpl channelRead;
 
-static uint32_t
-channelRead(TChannel * const channelP, 
-            char *     const buffer, 
-            uint32_t   const len) {
-
-    /* TODO - change interface so it can return failure */
+static void
+channelRead(TChannel *   const channelP, 
+            char *       const buffer, 
+            uint32_t     const len,
+            uint32_t *   const bytesReceivedP,
+            abyss_bool * const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
 
-    uint32_t bytesReceived;
-
     int rc;
-    rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
-    bytesReceived = rc;
+    rc = recv(socketWinP->winsock, buffer, bufferSize, 0);
 
-    return bytesReceived;
+    if (rc < 0) {
+        *failedP = TRUE;
+    } else {
+        *failedP = FALSE;
+        *bytesReceivedP = rc;
+    }
 }
 
 

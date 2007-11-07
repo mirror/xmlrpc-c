@@ -164,30 +164,32 @@ channelWrite(TChannel *            const channelP,
 
 static ChannelReadImpl channelRead;
 
-static uint32_t
-channelRead(TChannel * const channelP, 
-            char *     const buffer, 
-            uint32_t   const bufferSize) {
-
-    /* TODO - change interface so it can return failure */
+static void
+channelRead(TChannel *      const channelP, 
+            unsigned char * const buffer, 
+            uint32_t        const bufferSize,
+            uint32_t *      const bytesReceivedP,
+            abyss_bool *    const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
-    uint32_t bytesReceived;
-
     int rc;
     rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
-    bytesReceived = rc;
-    if (ChannelTraceIsActive) {
-        if (rc < 0)
-            fprintf(stderr, "Abyss socket: recv() failed.  errno=%d (%s)",
-                    errno, strerror(errno));
-        else 
-            fprintf(stderr, "Abyss socket: read %u bytes: '%.*s'\n",
-                    bytesReceived, (int)bytesReceived, buffer);
-    }
 
-    return bytesReceived;
+    if (rc < 0) {
+        *failedP = TRUE;
+        if (ChannelTraceIsActive)
+            fprintf(stderr, "Failed to receive data from socket.  "
+                    "recv() failed with errno %d (%s)\n",
+                    errno, strerror(errno));
+    } else {
+        *failedP = FALSE;
+        *bytesReceivedP = rc;
+
+        if (ChannelTraceIsActive)
+            fprintf(stderr, "Abyss socket: read %u bytes: '%.*s'\n",
+                    *bytesReceivedP, (int)(*bytesReceivedP), buffer);
+    }
 }
 
 

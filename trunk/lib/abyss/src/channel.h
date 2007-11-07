@@ -28,9 +28,11 @@ typedef void ChannelWriteImpl(TChannel *             const channelP,
                               uint32_t               const len,
                               abyss_bool *           const failedP);
 
-typedef uint32_t ChannelReadImpl(TChannel * const channelP,
-                                 char *    const buffer,
-                                 uint32_t  const len);
+typedef void ChannelReadImpl(TChannel *      const channelP,
+                             unsigned char * const buffer,
+                             uint32_t        const len,
+                             uint32_t *      const bytesReceivedP,
+                             abyss_bool *    const failedP);
 
 typedef uint32_t ChannelErrorImpl(TChannel * const channelP);
 
@@ -77,10 +79,12 @@ ChannelWrite(TChannel *            const channelP,
              uint32_t              const len,
              abyss_bool *          const failedP);
 
-uint32_t
+void
 ChannelRead(TChannel *      const channelP, 
             unsigned char * const buffer, 
-            uint32_t        const len);
+            uint32_t        const len,
+            uint32_t *      const bytesReceivedP,
+            abyss_bool *    const failedP);
 
 uint32_t
 ChannelWait(TChannel * const channelP,
