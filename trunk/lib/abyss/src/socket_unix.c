@@ -384,7 +384,7 @@ makeChannelFromFd(int const fd,
     
     if (socketUnixP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
-                        "socket descriptor");
+                        "channel descriptor");
     else {
         TChannel * channelP;
         
@@ -636,8 +636,8 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
     MALLOCVAR(socketUnixP);
 
     if (!socketUnixP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix socket "
-                        "descriptor structure.");
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
+                        "channel descriptor structure.");
     else {
         int rc;
         rc = socket(AF_INET, SOCK_STREAM, 0);
@@ -682,7 +682,7 @@ ChanSwitchUnixCreateFd(int            const fd,
 
         if (socketUnixP == NULL)
             xmlrpc_asprintf(errorP, "unable to allocate memory for Unix "
-                            "socket descriptor.");
+                            "channel switch descriptor.");
         else {
             TChanSwitch * chanSwitchP;
 
