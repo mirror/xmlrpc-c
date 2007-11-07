@@ -25,9 +25,6 @@
 #if HAVE_SYS_FILIO_H
   #include <sys/filio.h>
 #endif
-#if HAVE_SYS_IOCTL_H
-  #include <sys/ioctl.h>
-#endif
 
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
@@ -105,13 +102,6 @@ SocketUnixTerm(void) {
       TChannel
 =============================================================================*/
 
-static ChannelWriteImpl              channelWrite;
-static ChannelReadImpl               channelRead;
-static ChannelWaitImpl               channelWait;
-static ChannelAvailableReadBytesImpl channelAvailableReadBytes;
-static ChannelFormatPeerInfoImpl     channelFormatPeerInfo;
-
-
 static void
 channelDestroy(TChannel * const channelP) {
 
@@ -177,21 +167,27 @@ static ChannelReadImpl channelRead;
 static uint32_t
 channelRead(TChannel * const channelP, 
             char *     const buffer, 
-            uint32_t   const len) {
+            uint32_t   const bufferSize) {
+
+    /* TODO - change interface so it can return failure */
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
+    uint32_t bytesReceived;
+
     int rc;
-    rc = recv(socketUnixP->fd, buffer, len, 0);
+    rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
+    bytesReceived = rc;
     if (ChannelTraceIsActive) {
         if (rc < 0)
             fprintf(stderr, "Abyss socket: recv() failed.  errno=%d (%s)",
                     errno, strerror(errno));
         else 
             fprintf(stderr, "Abyss socket: read %u bytes: '%.*s'\n",
-                    len, (int)len, buffer);
+                    bytesReceived, (int)bytesReceived, buffer);
     }
-    return rc;
+
+    return bytesReceived;
 }
 
 
@@ -245,23 +241,6 @@ channelWait(TChannel * const channelP,
             return 0;
         }
     }
-}
-
-
-
-static ChannelAvailableReadBytesImpl channelAvailableReadBytes;
-
-static uint32_t
-channelAvailableReadBytes(TChannel * const channelP) {
-
-    struct socketUnix * const socketUnixP = channelP->implP;
-
-    uint32_t x;
-    int rc;
-
-    rc = ioctl(socketUnixP->fd, FIONREAD, &x);
-
-    return rc == 0 ? x : 0;
 }
 
 
@@ -361,7 +340,6 @@ static struct TChannelVtbl const channelVtbl = {
     &channelWrite,
     &channelRead,
     &channelWait,
-    &channelAvailableReadBytes,
     &channelFormatPeerInfo,
 };
 

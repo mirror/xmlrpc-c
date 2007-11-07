@@ -169,14 +169,6 @@ ChannelWait(TChannel * const channelP,
 
 
 
-uint32_t
-ChannelAvailableReadBytes(TChannel * const channelP) {
-
-    return (*channelP->vtbl.availableReadBytes)(channelP);
-}
-
-
-
 void
 ChannelFormatPeerInfo(TChannel *    const channelP,
                       const char ** const peerStringP) {

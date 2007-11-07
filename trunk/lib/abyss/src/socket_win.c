@@ -323,14 +323,6 @@ SocketWinTerm(void) {
       TChannel
 =============================================================================*/
 
-static ChannelWriteImpl              channelWrite;
-static ChannelReadImpl               channelRead;
-static ChannelWaitImpl               channelWait;
-static ChannelAvailableReadBytesImpl channelAvailableReadBytes;
-static ChannelFormatPeerInfoImpl     channelFormatPeerInfo;
-
-
-
 static void
 channelDestroy(TChannel * const channelP) {
 
@@ -343,6 +335,8 @@ channelDestroy(TChannel * const channelP) {
 }
 
 
+
+static ChannelWriteImpl channelWrite;
 
 static void
 channelWrite(TChannel *            const channelP,
@@ -378,21 +372,29 @@ channelWrite(TChannel *            const channelP,
 
 
 
+static ChannelReadImpl channelRead;
+
 static uint32_t
 channelRead(TChannel * const channelP, 
             char *     const buffer, 
             uint32_t   const len) {
 
+    /* TODO - change interface so it can return failure */
+
     struct socketWin * const socketWinP = channelP->implP;
 
+    uint32_t bytesReceived;
+
     int rc;
+    rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
+    bytesReceived = rc;
 
-    rc = recv(socketWinP->winsock, buffer, len, 0);
-
-    return rc;
+    return bytesReceived;
 }
 
 
+
+static ChannelWaitImpl channelWait;
 
 static uint32_t
 channelWait(TChannel *  const channelP,
@@ -442,22 +444,6 @@ channelWait(TChannel *  const channelP,
         }
     }
 }
-
-
-
-static uint32_t
-channelAvailableReadBytes(TChannel * const channelP) {
-
-    struct socketWin * const socketWinP = channelP->implP;
-
-    uint32_t x;
-    int rc;
-
-    rc = ioctlsocket(socketWinP->winsock, FIONREAD, &x);
-
-    return rc == 0 ? x : 0;
-}
-
 
 
 
@@ -849,6 +835,8 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 }
 
 
+
+static ChannelFormatPeerInfoImpl channelFormatPeerInfo;
 
 static void
 channelFormatPeerInfo(TChannel *    const channelP,

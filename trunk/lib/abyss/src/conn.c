@@ -354,30 +354,21 @@ ConnRead(TConn *  const connectionP,
             if (rc != 1)
                 cantGetData = TRUE;
             else {
-                uint32_t bytesAvail;
-            
-                bytesAvail = ChannelAvailableReadBytes(connectionP->channelP);
-                
-                if (bytesAvail <= 0)
+                uint32_t bytesRead;
+
+                bytesRead = ChannelRead(
+                    connectionP->channelP,
+                    connectionP->buffer + connectionP->buffersize,
+                    bufferSpace(connectionP)-1);
+                if (bytesRead > 0) {
+                    traceChannelRead(connectionP, bytesRead);
+                    connectionP->inbytes += bytesRead;
+                    connectionP->buffersize += bytesRead;
+                    connectionP->buffer[connectionP->buffersize] = '\0';
+                    gotData = TRUE;
+                } else
+                    /* Other end has disconnected */
                     cantGetData = TRUE;
-                else {
-                    uint32_t const bytesToRead =
-                        MIN(bytesAvail, bufferSpace(connectionP)-1);
-
-                    uint32_t bytesRead;
-
-                    bytesRead = ChannelRead(
-                        connectionP->channelP,
-                        connectionP->buffer + connectionP->buffersize,
-                        bytesToRead);
-                    if (bytesRead > 0) {
-                        traceChannelRead(connectionP, bytesRead);
-                        connectionP->inbytes += bytesRead;
-                        connectionP->buffersize += bytesRead;
-                        connectionP->buffer[connectionP->buffersize] = '\0';
-                        gotData = TRUE;
-                    }
-                }
             }
         }
     }
