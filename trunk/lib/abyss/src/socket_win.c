@@ -312,6 +312,8 @@ SocketWinTerm(void) {
       TChannel
 =============================================================================*/
 
+static ChannelDestroyImpl channelDestroy;
+
 static void
 channelDestroy(TChannel * const channelP) {
 
@@ -527,7 +529,6 @@ static struct TChannelVtbl const channelVtbl = {
     &channelWrite,
     &channelRead,
     &channelWait,
-    &channelAvailableReadBytes,
     &channelFormatPeerInfo,
 };
 
