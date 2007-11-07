@@ -125,6 +125,8 @@ channelDestroy(TChannel * const channelP) {
 
 
 
+static ChannelWriteImpl channelWrite;
+
 static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
@@ -170,6 +172,8 @@ channelWrite(TChannel *            const channelP,
 
 
 
+static ChannelReadImpl channelRead;
+
 static uint32_t
 channelRead(TChannel * const channelP, 
             char *     const buffer, 
@@ -191,6 +195,8 @@ channelRead(TChannel * const channelP,
 }
 
 
+
+static ChannelWaitImpl channelWait;
 
 static uint32_t
 channelWait(TChannel * const channelP,
@@ -242,6 +248,8 @@ channelWait(TChannel * const channelP,
 }
 
 
+
+static ChannelAvailableReadBytesImpl channelAvailableReadBytes;
 
 static uint32_t
 channelAvailableReadBytes(TChannel * const channelP) {
@@ -304,6 +312,8 @@ ChannelUnixGetPeerName(TChannel *         const channelP,
 }
 
 
+
+static ChannelFormatPeerInfoImpl channelFormatPeerInfo;
 
 static void
 channelFormatPeerInfo(TChannel *    const channelP,
