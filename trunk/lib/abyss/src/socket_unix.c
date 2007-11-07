@@ -46,13 +46,14 @@ struct socketUnix {
 -----------------------------------------------------------------------------*/
     int fd;
         /* File descriptor of the POSIX socket (such as is created by
-           socket() in the C library) on which the TSocket is based.
+           socket() in the C library) for the socket.
         */
     abyss_bool userSuppliedFd;
         /* The file descriptor and associated POSIX socket belong to the
            user; we did not create it.
         */
 };
+
 
 
 static abyss_bool
@@ -142,13 +143,13 @@ channelWrite(TChannel *            const channelP,
 
         if (ChannelTraceIsActive) {
             if (rc < 0)
-                fprintf(stderr, "Abyss socket: send() failed.  errno=%d (%s)",
+                fprintf(stderr, "Abyss channel: send() failed.  errno=%d (%s)",
                         errno, strerror(errno));
             else if (rc == 0)
-                fprintf(stderr, "Abyss socket: send() failed.  "
+                fprintf(stderr, "Abyss channel: send() failed.  "
                         "Socket closed.\n");
             else
-                fprintf(stderr, "Abyss socket: sent %u bytes: '%.*s'\n",
+                fprintf(stderr, "Abyss channel: sent %u bytes: '%.*s'\n",
                         rc, rc, &buffer[len-bytesLeft]);
         }
         if (rc <= 0)
@@ -179,7 +180,8 @@ channelRead(TChannel *      const channelP,
     if (rc < 0) {
         *failedP = TRUE;
         if (ChannelTraceIsActive)
-            fprintf(stderr, "Failed to receive data from socket.  "
+            fprintf(stderr, "Abyss channel: "
+                    "Failed to receive data from socket.  "
                     "recv() failed with errno %d (%s)\n",
                     errno, strerror(errno));
     } else {
@@ -187,7 +189,7 @@ channelRead(TChannel *      const channelP,
         *bytesReceivedP = rc;
 
         if (ChannelTraceIsActive)
-            fprintf(stderr, "Abyss socket: read %u bytes: '%.*s'\n",
+            fprintf(stderr, "Abyss channel: read %u bytes: '%.*s'\n",
                     *bytesReceivedP, (int)(*bytesReceivedP), buffer);
     }
 }
@@ -479,7 +481,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
     rc = listen(socketUnixP->fd, backlog);
 
     if (rc == -1)
-        xmlrpc_asprintf(errorP, "setsockopt() failed with errno %d (%s)",
+        xmlrpc_asprintf(errorP, "listen() failed with errno %d (%s)",
                         errno, strerror(errno));
     else
         *errorP = NULL;
