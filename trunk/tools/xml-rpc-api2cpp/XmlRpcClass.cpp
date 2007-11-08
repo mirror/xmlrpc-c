@@ -11,39 +11,40 @@ using namespace std;
 #include "XmlRpcClass.hpp"
 
 
-//=========================================================================
-//  XmlRpcClass
-//=========================================================================
-//  This class stores information about a proxy class, and knows how to
-//  generate code.
+XmlRpcClass::XmlRpcClass(string const& className) :
+    mClassName(className) {}
 
-XmlRpcClass::XmlRpcClass (string class_name)
-    : mClassName(class_name)
-{
-}
 
-XmlRpcClass::XmlRpcClass (const XmlRpcClass& c)
-    : mClassName(c.mClassName),
-      mFunctions(c.mFunctions)
-{
-}
 
-XmlRpcClass& XmlRpcClass::operator= (const XmlRpcClass& c)
-{
-    if (this == &c)
-        return *this;
-    mClassName = c.mClassName;
-    mFunctions = c.mFunctions;
+XmlRpcClass::XmlRpcClass(XmlRpcClass const& c) :
+    mClassName(c.mClassName),
+    mFunctions(c.mFunctions) {}
+
+
+
+XmlRpcClass&
+XmlRpcClass::operator= (XmlRpcClass const& c) {
+
+    if (this != &c) {
+        this->mClassName = c.mClassName;
+        this->mFunctions = c.mFunctions;
+    }
     return *this;
 }
 
-void XmlRpcClass::addFunction (const XmlRpcFunction& function)
-{
+
+
+void
+XmlRpcClass::addFunction(XmlRpcFunction const& function) {
+
     mFunctions.push_back(function);
 }
 
-void XmlRpcClass::printDeclaration (ostream&)
-{
+
+
+void
+XmlRpcClass::printDeclaration(ostream &) const {
+
     cout << "class " << mClassName << " {" << endl;
     cout << "    XmlRpcClient mClient;" << endl;
     cout << endl;
@@ -61,7 +62,7 @@ void XmlRpcClass::printDeclaration (ostream&)
     cout << "        return *this;" << endl;
     cout << "    }" << endl;
 
-    vector<XmlRpcFunction>::iterator f;
+    vector<XmlRpcFunction>::const_iterator f;
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
         f->printDeclarations(cout);
     }
@@ -69,10 +70,15 @@ void XmlRpcClass::printDeclaration (ostream&)
     cout << "};" << endl;    
 }
 
-void XmlRpcClass::printDefinition (ostream&)
-{
-    vector<XmlRpcFunction>::iterator f;
+
+
+void
+XmlRpcClass::printDefinition(ostream &) const {
+
+    vector<XmlRpcFunction>::const_iterator f;
+
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
         f->printDefinitions(cout, mClassName);
     }
 }
+
