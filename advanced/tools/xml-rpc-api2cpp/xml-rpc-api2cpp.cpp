@@ -54,9 +54,18 @@ XmlRpcClass get_class_info (string server_url,
 	    string help = system.methodHelp(method_name);
 	    XmlRpcValue signature = system.methodSignature(method_name);
 
-	    // Add this function to our class information.
-	    XmlRpcFunction func(function_name, method_name, help, signature);
-	    info.addFunction(func);
+        if (signature.getType() != XMLRPC_TYPE_ARRAY) {
+            // It must be the string "undef", meaning the server
+            // won't tell us any signatures.
+            cerr << "Skipping method " << method_name << " "
+                 << "because server does not report any signatures "
+                 << "for it (via system.methodSignature method)"
+                 << endl;
+        } else {
+            // Add this function to our class information.
+            XmlRpcFunction func(function_name, method_name, help, signature);
+            info.addFunction(func);
+        }
 	}
     }
 
