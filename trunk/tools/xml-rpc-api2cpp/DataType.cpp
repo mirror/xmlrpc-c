@@ -67,9 +67,9 @@ class SimpleDataType : public DataType {
 
 public:
     SimpleDataType (const string& type_name,
-		    const string& native_type,
-		    const string& maker_func,
-		    const string& getter_func);
+                    const string& native_type,
+                    const string& maker_func,
+                    const string& getter_func);
 
     virtual string parameterFragment (const string& base_name) const;
     virtual string inputConversionFragment (const string& base_name) const;
@@ -78,9 +78,9 @@ public:
 };
 
 SimpleDataType::SimpleDataType (const string& type_name,
-				const string& native_type,
-				const string& maker_func,
-				const string& getter_func)
+                                const string& native_type,
+                                const string& maker_func,
+                                const string& getter_func)
     : DataType(type_name),
       mNativeType(native_type),
       mMakerFunc(maker_func),
@@ -148,17 +148,17 @@ string VoidDataType::outputConversionFragment (const string&) const {
 //  DataType object.
 
 SimpleDataType intType    ("int", "XmlRpcValue::int32",
-			   "XmlRpcValue::makeInt",
-			   "getInt");
+                           "XmlRpcValue::makeInt",
+                           "getInt");
 SimpleDataType boolType   ("bool", "bool",
-			   "XmlRpcValue::makeBool",
-			   "getBool");
+                           "XmlRpcValue::makeBool",
+                           "getBool");
 SimpleDataType doubleType ("double", "double",
-			   "XmlRpcValue::makeDouble",
-			   "getDouble");
+                           "XmlRpcValue::makeDouble",
+                           "getDouble");
 SimpleDataType stringType ("string", "string",
-			   "XmlRpcValue::makeString",
-			   "getString");
+                           "XmlRpcValue::makeString",
+                           "getString");
 
 RawDataType dateTimeType  ("dateTime");
 RawDataType base64Type    ("base64");
@@ -169,25 +169,25 @@ VoidDataType voidType;
 
 const DataType& findDataType (const string& name) {
     if (name == "int" || name == "i4")
-	return intType;
+        return intType;
     else if (name == "boolean")
-	return boolType;
+        return boolType;
     else if (name == "double")
-	return doubleType;
+        return doubleType;
     else if (name == "string")
-	return stringType;
+        return stringType;
     else if (name == "dateTime.iso8601")
-	return dateTimeType;
+        return dateTimeType;
     else if (name == "base64")
-	return base64Type;
+        return base64Type;
     else if (name == "struct")
-	return structType;
+        return structType;
     else if (name == "array")
-	return arrayType;
+        return arrayType;
     else if (name == "void")
-	return voidType;
+        return voidType;
     else
-	throw domain_error("Unknown XML-RPC type " + name);
+        throw domain_error("Unknown XML-RPC type " + name);
     
     // This code should never be executed.
     XMLRPC_ASSERT(0);

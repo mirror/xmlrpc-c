@@ -16,9 +16,9 @@ using std::endl;
 //  how to print local bindings.
 
 XmlRpcFunction::XmlRpcFunction(const string& function_name,
-			       const string& method_name,
-			       const string& help,
-			       XmlRpcValue synopsis)
+                               const string& method_name,
+                               const string& help,
+                               XmlRpcValue synopsis)
     : mFunctionName(function_name), mMethodName(method_name),
       mHelp(help), mSynopsis(synopsis)
 {
@@ -32,7 +32,7 @@ XmlRpcFunction::XmlRpcFunction (const XmlRpcFunction& f)
 
 XmlRpcFunction& XmlRpcFunction::operator= (const XmlRpcFunction& f) {
     if (this == &f)
-	return *this;
+        return *this;
     mFunctionName = f.mFunctionName;
     mMethodName = f.mMethodName;
     mHelp = f.mHelp;
@@ -48,14 +48,14 @@ void XmlRpcFunction::printDeclarations (ostream& out) {
     // Print each declaration.
     size_t end = mSynopsis.arraySize();
     for (size_t i = 0; i < end; i++)
-	printDeclaration(out, i);
+        printDeclaration(out, i);
 }
 
 void XmlRpcFunction::printDefinitions (ostream& out, const string& className) {
     size_t end = mSynopsis.arraySize();
     for (size_t i = 0; i < end; i++) {
-	out << endl;
-	printDefinition(out, className, i);
+        out << endl;
+        printDefinition(out, className, i);
     }
 }
 
@@ -64,32 +64,32 @@ void XmlRpcFunction::printParameters (ostream& out, size_t synopsis_index) {
     size_t end = parameterCount(synopsis_index);
     bool first = true;
     for (size_t i = 0; i < end; i++) {
-	if (first)
-	    first = false;
-	else
-	    out << ", ";
+        if (first)
+            first = false;
+        else
+            out << ", ";
 
-	const DataType& ptype (parameterType(synopsis_index, i));
-	string basename = ptype.defaultParameterBaseName(i + 1);
-	out << ptype.parameterFragment(basename);
+        const DataType& ptype (parameterType(synopsis_index, i));
+        string basename = ptype.defaultParameterBaseName(i + 1);
+        out << ptype.parameterFragment(basename);
     }
 }
 
 void XmlRpcFunction::printDeclaration (ostream& out, size_t synopsis_index) {
     const DataType& rtype (returnType(synopsis_index));
     out << "    " << rtype.returnTypeFragment() << " "
-	<< mFunctionName << " (";
+        << mFunctionName << " (";
     printParameters(out, synopsis_index);
     out << ");" << endl;
 }
 
 void XmlRpcFunction::printDefinition (ostream& out,
-				      const string& className,
-				      size_t synopsis_index)
+                                      const string& className,
+                                      size_t synopsis_index)
 {
     const DataType& rtype (returnType(synopsis_index));
     out << rtype.returnTypeFragment() << " "
-	<< className << "::" << mFunctionName << " (";
+        << className << "::" << mFunctionName << " (";
     printParameters(out, synopsis_index);
     out << ") {" << endl;    
     out << "    XmlRpcValue params = XmlRpcValue::makeArray();" << endl;
@@ -97,19 +97,19 @@ void XmlRpcFunction::printDefinition (ostream& out,
     /* Emit code to convert the parameters into an array of XML-RPC objects. */
     size_t end = parameterCount(synopsis_index);
     for (size_t i = 0; i < end; i++) {
-	const DataType& ptype (parameterType(synopsis_index, i));
-	string basename = ptype.defaultParameterBaseName(i + 1);
-	out << "    params.arrayAppendItem("
-	    << ptype.inputConversionFragment(basename) << ");" << endl;
+        const DataType& ptype (parameterType(synopsis_index, i));
+        string basename = ptype.defaultParameterBaseName(i + 1);
+        out << "    params.arrayAppendItem("
+            << ptype.inputConversionFragment(basename) << ");" << endl;
     }
 
     /* Emit the function call.*/
     out << "    XmlRpcValue result = this->mClient.call(\""
-	<< mMethodName << "\", params);" << endl;    
+        << mMethodName << "\", params);" << endl;    
 
     /* Emit the return statement. */
     out << "    return " << rtype.outputConversionFragment("result")
-	<< ";" << endl;
+        << ";" << endl;
     out << "}" << endl;
 }
 
@@ -122,16 +122,14 @@ size_t XmlRpcFunction::parameterCount (size_t synopsis_index) {
     XmlRpcValue func_synop = mSynopsis.arrayGetItem(synopsis_index);
     size_t size = func_synop.arraySize();
     if (size < 1)
-	throw domain_error("Synopsis contained no items");
+        throw domain_error("Synopsis contained no items");
     return size - 1;
 }
 
 const DataType& XmlRpcFunction::parameterType (size_t synopsis_index,
-					       size_t parameter_index)
+                                               size_t parameter_index)
 {
     XmlRpcValue func_synop = mSynopsis.arrayGetItem(synopsis_index);
     XmlRpcValue param = func_synop.arrayGetItem(parameter_index + 1);
     return findDataType(param.getString());
 }
-
-

@@ -31,7 +31,7 @@ XmlRpcClass::XmlRpcClass (const XmlRpcClass& c)
 XmlRpcClass& XmlRpcClass::operator= (const XmlRpcClass& c)
 {
     if (this == &c)
-	return *this;
+        return *this;
     mClassName = c.mClassName;
     mFunctions = c.mFunctions;
     return *this;
@@ -56,14 +56,14 @@ void XmlRpcClass::printDeclaration (ostream&)
     cout << "        : mClient(o.mClient) {}" << endl;
     cout << endl;
     cout << "    " << mClassName << "& operator= (const "
-	 << mClassName << "& o) {" << endl;
+         << mClassName << "& o) {" << endl;
     cout << "        if (this != &o) mClient = o.mClient;" << endl;
     cout << "        return *this;" << endl;
     cout << "    }" << endl;
 
     vector<XmlRpcFunction>::iterator f;
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
-	f->printDeclarations(cout);
+        f->printDeclarations(cout);
     }
 
     cout << "};" << endl;    
@@ -73,6 +73,6 @@ void XmlRpcClass::printDefinition (ostream&)
 {
     vector<XmlRpcFunction>::iterator f;
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
-	f->printDefinitions(cout, mClassName);
+        f->printDefinitions(cout, mClassName);
     }
 }
