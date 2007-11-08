@@ -54,16 +54,16 @@ cmdlineInfo::cmdlineInfo(int           const argc,
 
 
 static XmlRpcClass
-getClassInfo(string const& server_url,
-             string const& class_prefix,
-             string const& class_name) {
+getClassInfo(string const& serverUrl,
+             string const& classPrefix,
+             string const& className) {
 /*----------------------------------------------------------------------------
   Connect to a remote server and extract the information we'll need to
   build a proxy class.
 -----------------------------------------------------------------------------*/
-    XmlRpcClass info(class_name);
+    XmlRpcClass info(className);
 
-    SystemProxy system(server_url);
+    SystemProxy system(serverUrl);
 
     XmlRpcValue const methods(system.listMethods());
 
@@ -72,33 +72,42 @@ getClassInfo(string const& server_url,
     for (size_t i = 0; i < end; ++i) {
 
         // Break the method name into two pieces.
-        string const method_name(methods.arrayGetItem(i).getString());
-        size_t const last_dot(method_name.rfind('.'));
+        string const methodName(methods.arrayGetItem(i).getString());
+        size_t const lastDot(methodName.rfind('.'));
 
-        string method_prefix;
-        string function_name;
+        string methodPrefix;
+        string functionName;
 
-        if (last_dot == string::npos) {
-            method_prefix = "";
-            function_name = method_name;
+        if (lastDot == string::npos) {
+            methodPrefix = "";
+            functionName = methodName;
         } else {
-            method_prefix = string(method_name, 0, last_dot);
-            function_name = string(method_name, last_dot + 1);
+            methodPrefix = string(methodName, 0, lastDot);
+            functionName = string(methodName, lastDot + 1);
         }
 
-        if (method_prefix == class_prefix) {
+        if (methodPrefix == classPrefix) {
             // It's a method User cares about
 
-            string const help(system.methodHelp(method_name));
+            string const help(system.methodHelp(methodName));
             XmlRpcValue const signatureList(
-                system.methodSignature(method_name));
+                system.methodSignature(methodName));
 
-            // Add this function to our class information.
-            XmlRpcFunction const method(function_name,
-                                        method_name,
-                                        help,
-                                        signatureList);
-            info.addFunction(method);
+            if (signatureList.getType() != XMLRPC_TYPE_ARRAY) {
+                // It must be the string "undef", meaning the server
+                // won't tell us any signatures.
+                cerr << "Skipping method " << methodName << " "
+                     << "because server does not report any signatures "
+                     << "for it (via system.methodSignature method)"
+                     << endl;
+            } else {
+                // Add this function to our class information.
+                XmlRpcFunction const method(functionName,
+                                            methodName,
+                                            help,
+                                            signatureList);
+                info.addFunction(method);
+            }
         }
     }
     return info;
