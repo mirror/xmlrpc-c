@@ -72,6 +72,9 @@ public:
 
     void
     finishAsync(xmlrpc_c::timeout const timeout);
+    
+    void
+    setInterrupt(int *);
 };
 
 class clientPtr : public girmem::autoObjectPtr {
@@ -169,6 +172,9 @@ public:
 
     void
     finishAsync(xmlrpc_c::timeout const timeout);
+
+    void
+    setInterrupt(int * interruptP);
 
 private:
     struct client_xml_impl * implP;
