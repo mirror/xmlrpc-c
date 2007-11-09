@@ -131,17 +131,17 @@ typedef void (*xmlrpc_response_handler) (const char *server_url,
 
 
 /*=========================================================================
-**  xmlrpc_server_info
-**=========================================================================
-**  We normally refer to servers by URL. But sometimes we need to do extra
-**  setup for particular servers. In that case, we can create an
-**  xmlrpc_server_info object, configure it in various ways, and call the
-**  remote server.
-**
-**  (This interface is also designed to discourage further multiplication
-**  of xmlrpc_client_call APIs. We have enough of those already. Please
-**  add future options and flags using xmlrpc_server_info.)
-*/
+   xmlrpc_server_info
+===========================================================================
+  We normally refer to servers by URL. But sometimes we need to do extra
+  setup for particular servers. In that case, we can create an
+  xmlrpc_server_info object, configure it in various ways, and call the
+  remote server.
+
+  (This interface is also designed to discourage further multiplication
+  of xmlrpc_client_call APIs. We have enough of those already. Please
+  add future options and flags using xmlrpc_server_info.)
+=========================================================================*/
 
 typedef struct _xmlrpc_server_info xmlrpc_server_info;
 
