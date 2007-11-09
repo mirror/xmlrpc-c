@@ -156,7 +156,7 @@ SimpleDataType boolType   ("bool", "bool",
 SimpleDataType doubleType ("double", "double",
                            "XmlRpcValue::makeDouble",
                            "getDouble");
-SimpleDataType stringType ("string", "string",
+SimpleDataType stringType ("string", "std::string",
                            "XmlRpcValue::makeString",
                            "getString");
 
