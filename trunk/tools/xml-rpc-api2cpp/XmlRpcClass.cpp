@@ -51,7 +51,7 @@ XmlRpcClass::printDeclaration(ostream &) const {
     cout << "public:" << endl;
     cout << "    " << mClassName << " (const XmlRpcClient& client)" << endl;
     cout << "        : mClient(client) {}" << endl;
-    cout << "    " << mClassName << " (const string& server_url)" << endl;
+    cout << "    " << mClassName << " (const std::string& server_url)" << endl;
     cout << "        : mClient(XmlRpcClient(server_url)) {}" << endl;
     cout << "    " << mClassName << " (const " << mClassName << "& o)" << endl;
     cout << "        : mClient(o.mClient) {}" << endl;
