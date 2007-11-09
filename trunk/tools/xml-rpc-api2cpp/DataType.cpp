@@ -119,7 +119,7 @@ SimpleDataType::SimpleDataType(string const& typeName,
 string
 SimpleDataType::parameterFragment(string const& baseName) const {
 
-    return mNativeType + " " + baseName;
+    return mNativeType + " const " + baseName;
 }
 
 
