@@ -6,6 +6,14 @@
   By Bryan Henderson, San Jose CA 2007.10.17.
 
   Contributed to the public domain by its author
+
+  The xmlrpc_server_info class was originally just supposed to be
+  information about an HTTP server, hence the name.  But we think of it
+  now as a generic carriage parameter, as in the C++ library.  In
+  the future, it should be a union or maybe contain an opaque pointer
+  to the carriage parameter for a particular kind of transport.  That
+  way, the client XML transports can be more than just HTTP XML
+  transports.
 =============================================================================*/
 
 #include "bool.h"
