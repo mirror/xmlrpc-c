@@ -159,7 +159,7 @@ XmlRpcFunction::printDefinition(ostream     & out,
     printParameters(out, synopsisIndex);
 
     out << ") {" << endl;    
-    out << "    XmlRpcValue params = XmlRpcValue::makeArray();" << endl;
+    out << "    XmlRpcValue params(XmlRpcValue::makeArray());" << endl;
 
     /* Emit code to convert the parameters into an array of XML-RPC objects. */
     size_t const end(parameterCount(synopsisIndex));
@@ -171,8 +171,8 @@ XmlRpcFunction::printDefinition(ostream     & out,
     }
 
     /* Emit the function call.*/
-    out << "    XmlRpcValue result = this->mClient.call(\""
-        << mMethodName << "\", params);" << endl;    
+    out << "    XmlRpcValue result(this->mClient.call(\""
+        << mMethodName << "\", params));" << endl;    
 
     /* Emit the return statement. */
     out << "    return " << rtype.outputConversionFragment("result")
