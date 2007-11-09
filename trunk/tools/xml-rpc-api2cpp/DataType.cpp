@@ -17,7 +17,7 @@ using namespace std;
 
 string DataType::defaultParameterBaseName (int position) const {
     ostringstream name_stream;
-    name_stream << typeName() << position << ends;
+    name_stream << typeName() << position;
     string name(name_stream.str());
     return name;
 }
