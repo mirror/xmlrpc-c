@@ -15,50 +15,66 @@ using namespace std;
 //  Instances of DataType know how generate code fragments for manipulating
 //  a specific XML-RPC data type.
 
-string DataType::defaultParameterBaseName (int position) const {
-    ostringstream name_stream;
-    name_stream << typeName() << position;
-    string name(name_stream.str());
-    return name;
+string
+DataType::defaultParameterBaseName(unsigned int const position) const {
+
+    ostringstream nameStream;
+
+    nameStream << typeName() << position;
+
+    return nameStream.str();
 }
 
 
-//=========================================================================
-//  class RawDataType
-//=========================================================================
-//  We want to manipulate some XML-RPC data types as XmlRpcValue objects.
 
 class RawDataType : public DataType {
 public:
-    RawDataType (const string& type_name) : DataType(type_name) {}
+    RawDataType(string const& typeName) : DataType(typeName) {}
     
-    virtual string parameterFragment (const string& base_name) const;
-    virtual string inputConversionFragment (const string& base_name) const;
-    virtual string returnTypeFragment () const;
-    virtual string outputConversionFragment (const string& var_name) const;
+    virtual string
+    parameterFragment(string const& baseName) const;
+
+    virtual string
+    inputConversionFragment(string const& baseName) const;
+
+    virtual string
+    returnTypeFragment() const;
+
+    virtual string
+    outputConversionFragment(string const& varName) const;
 };
 
-string RawDataType::parameterFragment (const string& base_name) const {
-    return "XmlRpcValue /*" + typeName() + "*/ " + base_name;
+
+
+string
+RawDataType::parameterFragment(string const& baseName) const {
+    return "XmlRpcValue /*" + typeName() + "*/ " + baseName;
 }
 
-string RawDataType::inputConversionFragment (const string& base_name) const {
-    return base_name;
+
+
+string
+RawDataType::inputConversionFragment(string const& baseName) const {
+
+    return baseName;
 }
 
-string RawDataType::returnTypeFragment () const {
+
+
+string
+RawDataType::returnTypeFragment() const {
     return "XmlRpcValue /*" + typeName() + "*/";
 }
 
-string RawDataType::outputConversionFragment (const string& var_name) const {
-    return var_name;
+
+
+string
+RawDataType::outputConversionFragment(string const& varName) const {
+
+    return varName;
 }
 
 
-//=========================================================================
-//  class SimpleDataType
-//=========================================================================
-//  Other types can be easily converted to and from a single native type.
 
 class SimpleDataType : public DataType {
     string mNativeType;
@@ -66,108 +82,147 @@ class SimpleDataType : public DataType {
     string mGetterFunc;
 
 public:
-    SimpleDataType (const string& type_name,
-                    const string& native_type,
-                    const string& maker_func,
-                    const string& getter_func);
+    SimpleDataType(string const& typeName,
+                   string const& nativeType,
+                   string const& makerFunc,
+                   string const& getterFunc);
 
-    virtual string parameterFragment (const string& base_name) const;
-    virtual string inputConversionFragment (const string& base_name) const;
-    virtual string returnTypeFragment () const;
-    virtual string outputConversionFragment (const string& var_name) const;
+    virtual string
+    parameterFragment(string const& baseName) const;
+
+    virtual string
+    inputConversionFragment(string const& baseName) const;
+
+    virtual string
+    returnTypeFragment() const;
+
+    virtual string
+    outputConversionFragment(string const& varName) const;
 };
 
-SimpleDataType::SimpleDataType (const string& type_name,
-                                const string& native_type,
-                                const string& maker_func,
-                                const string& getter_func)
-    : DataType(type_name),
-      mNativeType(native_type),
-      mMakerFunc(maker_func),
-      mGetterFunc(getter_func)
-{
+
+
+SimpleDataType::SimpleDataType(string const& typeName,
+                               string const& nativeType,
+                               string const& makerFunc,
+                               string const& getterFunc)
+    : DataType(typeName),
+      mNativeType(nativeType),
+      mMakerFunc(makerFunc),
+      mGetterFunc(getterFunc) {
 }
 
-string SimpleDataType::parameterFragment (const string& base_name) const {
-    return mNativeType + " " + base_name;
+
+
+string
+SimpleDataType::parameterFragment(string const& baseName) const {
+
+    return mNativeType + " " + baseName;
 }
 
-string SimpleDataType::inputConversionFragment (const string& base_name) const
-{
-    return mMakerFunc + "(" + base_name + ")";
+
+
+string
+SimpleDataType::inputConversionFragment(string const& baseName) const {
+
+    return mMakerFunc + "(" + baseName + ")";
 }
 
-string SimpleDataType::returnTypeFragment () const {
+
+
+string
+SimpleDataType::returnTypeFragment() const {
+
     return mNativeType; 
 }
 
-string SimpleDataType::outputConversionFragment (const string& var_name) const
-{
-    return var_name + "." + mGetterFunc + "()";
+
+
+string
+SimpleDataType::outputConversionFragment(string const& varName) const {
+    return varName + "." + mGetterFunc + "()";
 }
 
 
-//=========================================================================
-//  class VoidDataType
-//=========================================================================
-//  Some XML-RPC servers declare functions as void.  Such functions have
-//  an arbitrary return value which we should ignore.
 
 class VoidDataType : public DataType {
 public:
-    VoidDataType () : DataType("void") {}
+    VoidDataType() : DataType("void") {}
     
-    virtual string parameterFragment (const string& base_name) const;
-    virtual string inputConversionFragment (const string& base_name) const;
-    virtual string returnTypeFragment () const;
-    virtual string outputConversionFragment (const string& var_name) const;
+    virtual string
+    parameterFragment(string const& baseName) const;
+
+    virtual string
+    inputConversionFragment(string const& baseName) const;
+
+    virtual string
+    returnTypeFragment() const;
+
+    virtual string
+    outputConversionFragment(string const& varName) const;
 };
 
-string VoidDataType::parameterFragment (const string&) const {
+
+
+string
+VoidDataType::parameterFragment(string const&) const {
+
     throw domain_error("Can't handle functions with 'void' arguments'");
-    
 }
 
-string VoidDataType::inputConversionFragment (const string&) const {
+
+
+string
+VoidDataType::inputConversionFragment(string const&) const {
+
     throw domain_error("Can't handle functions with 'void' arguments'");
 }
 
-string VoidDataType::returnTypeFragment () const {
+
+
+string
+VoidDataType::returnTypeFragment () const {
+
     return "void";
 }
 
-string VoidDataType::outputConversionFragment (const string&) const {
+
+
+string
+VoidDataType::outputConversionFragment(string const&) const {
     return "/* Return value ignored. */";
 }
 
 
-//=========================================================================
-//  function findDataType
-//=========================================================================
-//  Given the name of an XML-RPC data type, try to find a corresponding
-//  DataType object.
 
-SimpleDataType intType    ("int", "XmlRpcValue::int32",
-                           "XmlRpcValue::makeInt",
-                           "getInt");
-SimpleDataType boolType   ("bool", "bool",
-                           "XmlRpcValue::makeBool",
-                           "getBool");
-SimpleDataType doubleType ("double", "double",
-                           "XmlRpcValue::makeDouble",
-                           "getDouble");
-SimpleDataType stringType ("string", "std::string",
-                           "XmlRpcValue::makeString",
-                           "getString");
+static SimpleDataType const intType    ("int", "XmlRpcValue::int32",
+                                        "XmlRpcValue::makeInt",
+                                        "getInt");
+static SimpleDataType const boolType   ("bool", "bool",
+                                        "XmlRpcValue::makeBool",
+                                        "getBool");
+static SimpleDataType const doubleType ("double", "double",
+                                        "XmlRpcValue::makeDouble",
+                                        "getDouble");
+static SimpleDataType const stringType ("string", "std::string",
+                                        "XmlRpcValue::makeString",
+                                        "getString");
 
-RawDataType dateTimeType  ("dateTime");
-RawDataType base64Type    ("base64");
-RawDataType structType    ("struct");
-RawDataType arrayType     ("array");
+static RawDataType const dateTimeType  ("dateTime");
+static RawDataType const base64Type    ("base64");
+static RawDataType const structType    ("struct");
+static RawDataType const arrayType     ("array");
 
-VoidDataType voidType;
+static VoidDataType const voidType;
 
-const DataType& findDataType (const string& name) {
+
+
+const DataType&
+findDataType(string const& name) {
+/*----------------------------------------------------------------------------
+  Given the name of an XML-RPC data type, try to find a corresponding
+  DataType object.
+-----------------------------------------------------------------------------*/
     if (name == "int" || name == "i4")
         return intType;
     else if (name == "boolean")
