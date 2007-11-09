@@ -43,42 +43,42 @@ XmlRpcClass::addFunction(XmlRpcFunction const& function) {
 
 
 void
-XmlRpcClass::printDeclaration(ostream &) const {
+XmlRpcClass::printDeclaration(ostream & out) const {
 
-    cout << "class " << mClassName << " {" << endl;
-    cout << "    XmlRpcClient mClient;" << endl;
-    cout << endl;
-    cout << "public:" << endl;
-    cout << "    " << mClassName << " (const XmlRpcClient& client)" << endl;
-    cout << "        : mClient(client) {}" << endl;
-    cout << "    " << mClassName << " (const std::string& server_url)" << endl;
-    cout << "        : mClient(XmlRpcClient(server_url)) {}" << endl;
-    cout << "    " << mClassName << " (const " << mClassName << "& o)" << endl;
-    cout << "        : mClient(o.mClient) {}" << endl;
-    cout << endl;
-    cout << "    " << mClassName << "& operator= (const "
+    out << "class " << mClassName << " {" << endl;
+    out << "    XmlRpcClient mClient;" << endl;
+    out << endl;
+    out << "public:" << endl;
+    out << "    " << mClassName << " (const XmlRpcClient& client)" << endl;
+    out << "        : mClient(client) {}" << endl;
+    out << "    " << mClassName << " (const std::string& server_url)" << endl;
+    out << "        : mClient(XmlRpcClient(server_url)) {}" << endl;
+    out << "    " << mClassName << " (const " << mClassName << "& o)" << endl;
+    out << "        : mClient(o.mClient) {}" << endl;
+    out << endl;
+    out << "    " << mClassName << "& operator= (const "
          << mClassName << "& o) {" << endl;
-    cout << "        if (this != &o) mClient = o.mClient;" << endl;
-    cout << "        return *this;" << endl;
-    cout << "    }" << endl;
+    out << "        if (this != &o) mClient = o.mClient;" << endl;
+    out << "        return *this;" << endl;
+    out << "    }" << endl;
 
     vector<XmlRpcFunction>::const_iterator f;
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
-        f->printDeclarations(cout);
+        f->printDeclarations(out);
     }
 
-    cout << "};" << endl;    
+    out << "};" << endl;    
 }
 
 
 
 void
-XmlRpcClass::printDefinition(ostream &) const {
+XmlRpcClass::printDefinition(ostream & out) const {
 
     vector<XmlRpcFunction>::const_iterator f;
 
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
-        f->printDefinitions(cout, mClassName);
+        f->printDefinitions(out, mClassName);
     }
 }
 
