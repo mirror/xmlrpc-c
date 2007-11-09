@@ -94,8 +94,8 @@ XmlRpcFunction::printDefinitions(ostream      & out,
 
 
 void
-XmlRpcFunction::printParameters(ostream       & out,
-                                size_t  const synopsisIndex) const {
+XmlRpcFunction::printParameters(ostream      & out,
+                                size_t  const  synopsisIndex) const {
 /*----------------------------------------------------------------------------
   Print the parameter declarations.
 -----------------------------------------------------------------------------*/
