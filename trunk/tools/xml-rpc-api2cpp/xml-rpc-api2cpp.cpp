@@ -149,8 +149,8 @@ printHeader(ostream          & out,
 
 
 static void
-printCcFile(ostream          & out,
-            XmlRpcClass const& classInfo) {
+printCppFile(ostream          & out,
+             XmlRpcClass const& classInfo) {
 /*----------------------------------------------------------------------------
   Print a complete definition for the specified class.
 -----------------------------------------------------------------------------*/
@@ -191,7 +191,7 @@ main(int           const argc,
                                           cmdline.localClass);
         printHeader(cout, system);
         cout << endl;
-        printCcFile(cout, system);
+        printCppFile(cout, system);
         retval = 0;
     } catch (XmlRpcFault& fault) {
         cerr << progName << ": XML-RPC fault #" << fault.getFaultCode()
