@@ -1,6 +1,8 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <map>
+#include <vector>
 
 #include "xmlrpc-c/oldcppwrapper.hpp"
 #include "DataType.hpp"
@@ -241,10 +243,26 @@ findDataType(string const& name) {
         return arrayType;
     else if (name == "void")
         return voidType;
+    else if (name == "INT")
+        return intType;
+    else if (name == "BOOLEAN")
+        return boolType;
+    else if (name == "DOUBLE")
+        return doubleType;
+    else if (name == "STRING")
+        return stringType;
+    else if (name == "DATETIME.ISO8601")
+        return dateTimeType;
+    else if (name == "BASE64")
+        return base64Type;
+    else if (name == "STRUCT")
+        return structType;
+    else if (name == "ARRAY")
+        return arrayType;
+    else if (name == "VOID")
+        return voidType;
+    else if (name == "NIL")
+        return voidType;
     else
-        throw domain_error("Unknown XML-RPC type " + name);
-    
-    // This code should never be executed.
-    XMLRPC_ASSERT(0);
-    return intType;
+        throw domain_error("Unknown XML-RPC type name '" + name + "'");
 }
