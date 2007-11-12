@@ -367,8 +367,8 @@ static ChannelReadImpl channelRead;
 
 static void
 channelRead(TChannel *   const channelP, 
-            char *       const buffer, 
-            uint32_t     const len,
+            unsigned char * const buffer, 
+            uint32_t     const bufferSize,
             uint32_t *   const bytesReceivedP,
             abyss_bool * const failedP) {
 
