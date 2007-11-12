@@ -79,7 +79,7 @@ reallocProduct(void **      const blockP,
     arrayName = array; \
 } while (0)
 
-#define REALLOCARRAY(arrayName, nElements) { \
+#define REALLOCARRAY(arrayName, nElements) do { \
     void * array = arrayName; \
     reallocProduct(&array, nElements, sizeof(arrayName[0])); \
     arrayName = array; \
