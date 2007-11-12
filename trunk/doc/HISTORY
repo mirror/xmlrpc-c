@@ -22,7 +22,7 @@ marginalized by more sophisticated alternatives such as SOAP.  XML-RPC
 consequently became rather stable and interest in Xmlrpc-c levelled
 off.
 
-This dark age of Xmlrpc-c lasted until November 2004, when Bryan Henderson
+This dark age of Xmlrpc-c lasted until October 2004, when Bryan Henderson
 set out to find an RPC mechanism to use in one of his projects.  Bryan
 found XML-RPC and then Xmlrpc-c.  He decided that the two were almost right
 for his needs, but he needed some small extensions.
