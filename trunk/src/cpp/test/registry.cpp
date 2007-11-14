@@ -219,7 +219,7 @@ public:
     virtual string suiteName() {
         return "registryRegMethodTestSuite";
     }
-    virtual void runtests(unsigned int) {
+    virtual void runtests(unsigned int const) {
 
         xmlrpc_c::registry myRegistry;
         
@@ -253,7 +253,7 @@ public:
     virtual string suiteName() {
         return "registryDefaultMethodTestSuite";
     }
-    virtual void runtests(unsigned int) {
+    virtual void runtests(unsigned int const) {
 
         xmlrpc_c::registry myRegistry;
         
