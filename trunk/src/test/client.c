@@ -51,8 +51,7 @@ testCreateCurlParms(void) {
     xmlrpc_env_init(&env);
 
     clientParms1.transport = "curl";
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
 
     curlTransportParms1.network_interface = "eth0";
     clientParms1.transportparm_size = XMLRPC_CXPSIZE(network_interface);
@@ -98,8 +97,7 @@ testCreateSeparateXport(void) {
     xmlrpc_env_init(&env);
 
     xmlrpc_curl_transport_ops.create(
-        &env, 0, "", "",
-        (struct xmlrpc_xportparms *)&curlTransportParms1, 0,
+        &env, 0, "", "", &curlTransportParms1, 0,
         &transportP);
 
     TEST_NO_FAULT(&env);
@@ -116,8 +114,7 @@ testCreateSeparateXport(void) {
     TEST_NO_FAULT(&env);
 
     clientParms1.transport = "curl";
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
     clientParms1.transportparm_size = 0;
     clientParms1.transportOpsP = NULL;
     clientParms1.transportP = NULL;
@@ -211,8 +208,7 @@ testCreateDestroy(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
 
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
 
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
                          &clientParms1, XMLRPC_CPSIZE(transportparmsP),
@@ -314,8 +310,7 @@ testInitCleanup(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_cleanup();
 
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
 
     /* Fails because we didn't include transportparm_size: */
     xmlrpc_client_init2(&env, 0, "testprog", "1.0",

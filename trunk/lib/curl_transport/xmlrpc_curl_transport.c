@@ -1784,14 +1784,14 @@ create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
        const char *                      const appname ATTR_UNUSED,
        const char *                      const appversion ATTR_UNUSED,
-       const struct xmlrpc_xportparms *  const transportparmsP,
+       const void *                      const transportparmsP,
        size_t                            const parm_size,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
-    struct xmlrpc_curl_xportparms * const curlXportParmsP = 
-        (struct xmlrpc_curl_xportparms *) transportparmsP;
+    const struct xmlrpc_curl_xportparms * const curlXportParmsP = 
+        transportparmsP;
 
     struct xmlrpc_client_transport * transportP;
 

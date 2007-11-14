@@ -219,27 +219,33 @@ getTransportOps(
 
 
 
+struct xportParms {
+    const void * parmsP;
+    size_t size;
+};
+
+
+
 static void
 getTransportParmsFromClientParms(
     xmlrpc_env *                      const envP,
     const struct xmlrpc_clientparms * const clientparmsP,
     unsigned int                      const parmSize,
-    const struct xmlrpc_xportparms ** const transportparmsPP,
-    size_t *                          const transportparmSizeP) {
+    struct xportParms *               const xportParmsP) {
 
     if (parmSize < XMLRPC_CPSIZE(transportparmsP) ||
         clientparmsP->transportparmsP == NULL) {
 
-        *transportparmsPP = NULL;
-        *transportparmSizeP = 0;
+        xportParmsP->parmsP = NULL;
+        xportParmsP->size   = 0;
     } else {
-        *transportparmsPP = clientparmsP->transportparmsP;
+        xportParmsP->parmsP = clientparmsP->transportparmsP;
         if (parmSize < XMLRPC_CPSIZE(transportparm_size))
             xmlrpc_faultf(envP, "Your 'clientparms' argument contains the "
                           "transportparmsP member, "
                           "but no transportparms_size member");
         else
-            *transportparmSizeP = clientparmsP->transportparm_size;
+            xportParmsP->size = clientparmsP->transportparm_size;
     }
 }
 
@@ -251,8 +257,7 @@ getTransportInfo(
     const struct xmlrpc_clientparms *           const clientparmsP,
     unsigned int                                const parmSize,
     const char **                               const transportNameP,
-    const struct xmlrpc_xportparms **           const transportparmsPP,
-    size_t *                                    const transportparmSizeP,
+    struct xportParms *                         const transportParmsP,
     const struct xmlrpc_client_transport_ops ** const transportOpsPP,
     xmlrpc_client_transport **                  const transportPP) {
 
@@ -293,11 +298,10 @@ getTransportInfo(
 
     if (!envP->fault_occurred) {
         getTransportParmsFromClientParms(
-            envP, clientparmsP, parmSize, 
-            transportparmsPP, transportparmSizeP);
+            envP, clientparmsP, parmSize, transportParmsP);
         
         if (!envP->fault_occurred) {
-            if (*transportparmsPP && !transportNameParm)
+            if (transportParmsP->parmsP && !transportNameParm)
                 xmlrpc_faultf(
                     envP,
                     "You specified transport parameters, but did not "
@@ -366,15 +370,15 @@ clientCreate(
 
 static void
 createTransportAndClient(
-    xmlrpc_env * const envP,
-    const char * const transportName,
-    const struct xmlrpc_xportparms * const transportparmsP,
-    size_t                           const transportparmSize,
-    int                              const flags,
-    const char *                     const appname,
-    const char *                     const appversion,
-    xmlrpc_dialect                   const dialect,
-    xmlrpc_client **                 const clientPP) {
+    xmlrpc_env *     const envP,
+    const char *     const transportName,
+    const void *     const transportparmsP,
+    size_t           const transportparmSize,
+    int              const flags,
+    const char *     const appname,
+    const char *     const appversion,
+    xmlrpc_dialect   const dialect,
+    xmlrpc_client ** const clientPP) {
 
     const struct xmlrpc_client_transport_ops * transportOpsP;
 
@@ -421,22 +425,21 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
         */
     } else {
         const char * transportName;
-        const struct xmlrpc_xportparms * transportparmsP;
-        size_t transportparmSize;
+        struct xportParms transportparms;
         const struct xmlrpc_client_transport_ops * transportOpsP;
         xmlrpc_client_transport * transportP;
         xmlrpc_dialect dialect;
         
         getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
-                         &transportparmsP, &transportparmSize,
-                         &transportOpsP, &transportP);
+                         &transportparms, &transportOpsP, &transportP);
         
         getDialectFromClientParms(clientparmsP, parmSize, &dialect);
             
         if (!envP->fault_occurred) {
             if (transportName)
                 createTransportAndClient(envP, transportName,
-                                         transportparmsP, transportparmSize,
+                                         transportparms.parmsP,
+                                         transportparms.size,
                                          flags, appname, appversion, dialect,
                                          clientPP);
             else {

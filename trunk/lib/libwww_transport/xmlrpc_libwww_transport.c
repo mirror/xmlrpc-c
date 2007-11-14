@@ -169,7 +169,7 @@ create(xmlrpc_env *                      const envP,
        int                               const flags,
        const char *                      const appname,
        const char *                      const appversion,
-       const struct xmlrpc_xportparms *  const transportParmsP ATTR_UNUSED,
+       const void *                      const transportParmsP ATTR_UNUSED,
        size_t                            const parm_size ATTR_UNUSED,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------

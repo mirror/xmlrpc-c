@@ -31,16 +31,16 @@ typedef struct xmlrpc_client_transport_ops xmlrpc_client_transport_ops;
    Use 'xmlrpc-c-config --features' to determine which features are
    installed.
 */
+
+/* Before Xmlrpc-c 1.13 (December 2007), we declared struct
+   xmlrpc_xportparms, as a sort of "base class."  The struct was never
+   complete -- you just cast pointer to it it to pointers to other
+   types.  It turned out not to be really helpful and casts are ugly,
+   so now we just use void * as a base class pointer.
+*/
+
 extern struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops;
 extern struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops;
-
-
-struct xmlrpc_xportparms;
-    /* This is a "base class".  The struct is never complete; you're
-       supposed to cast between struct xmlrpc_xportparms * and 
-       "struct xmlrpc_..._xportparms *" in order to use it.  
-    */
-
 extern struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops;
 
 enum xmlrpc_sslversion {
@@ -92,8 +92,8 @@ struct xmlrpc_clientparms {
        (transportOpsP, transportP) are mutually exclusive.
     */
     const char *               transport;
-    struct xmlrpc_xportparms * transportparmsP;
-        /* Cast a "struct ..._xportparms *" to fit here */
+    const void *               transportparmsP;
+        /* This should be type "const struct ..._xportparms *" */
     size_t                     transportparm_size;
 
     const struct xmlrpc_client_transport_ops * transportOpsP;

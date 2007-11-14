@@ -228,8 +228,8 @@ clientXmlTransport_curl::initialize(constrOpt const& opt) {
     env_wrap env;
 
     xmlrpc_curl_transport_ops.create(
-        &env.env_c, 0, "", "", (xmlrpc_xportparms *)&transportParms,
-        XMLRPC_CXPSIZE(ssl_cipher_list),
+        &env.env_c, 0, "", "",
+        &transportParms, XMLRPC_CXPSIZE(ssl_cipher_list),
         &this->c_transportP);
 
     if (env.env_c.fault_occurred)

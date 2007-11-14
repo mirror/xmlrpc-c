@@ -770,16 +770,16 @@ create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
        const char *                      const appname ATTR_UNUSED,
        const char *                      const appversion ATTR_UNUSED,
-       const struct xmlrpc_xportparms *  const transportparmsP,
+       const void *                      const transportparmsP,
        size_t                            const parm_size,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a WinInet client transport.
 -----------------------------------------------------------------------------*/
-    struct xmlrpc_client_transport * transportP;
+    const struct xmlrpc_wininet_xportparms * const wininetXportParmsP = 
+        transportparmsP;
 
-    struct xmlrpc_wininet_xportparms * const wininetXportParmsP = 
-        (struct xmlrpc_wininet_xportparms *) transportparmsP;
+    struct xmlrpc_client_transport * transportP;
 
     MALLOCVAR(transportP);
     if (transportP == NULL)
