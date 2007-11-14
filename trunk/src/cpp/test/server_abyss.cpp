@@ -4,9 +4,6 @@
   Test the Abyss server C++ facilities of XML-RPC for C/C++.
   
 =============================================================================*/
-#include <sys/unistd.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <errno.h>
 #include <string>
 #include <iostream>
@@ -14,6 +11,13 @@
 #include <sstream>
 #include <memory>
 #include <time.h>
+#ifdef WIN32
+  #include <winsock.h>
+#else
+  #include <sys/unistd.h>
+  #include <sys/socket.h>
+  #include <arpa/inet.h>
+#endif
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -27,6 +31,16 @@ using girerr::throwf;
 
 using namespace xmlrpc_c;
 using namespace std;
+
+
+static void
+closesock(int const fd) {
+#ifdef WIN32
+  closesocket(fd);
+#else
+  close(fd);
+#endif
+}
 
 
 
@@ -50,14 +64,14 @@ public:
         rc = bind(this->fd, (struct sockaddr *)&sockAddr, sizeof(sockAddr));
         
         if (rc != 0) {
-            close(this->fd);
+            closesock(this->fd);
             throwf("Couldn't bind.  bind() failed with errno=%d (%s)",
                    errno, strerror(errno));
         }
     }
 
     ~boundSocket() {
-        close(this->fd);
+        closesock(this->fd);
     }
 
     int fd;
@@ -92,7 +106,7 @@ public:
     virtual string suiteName() {
         return "addHandlerTestSuite";
     }
-    virtual void runtests(unsigned int) {
+    virtual void runtests(unsigned int const) {
         TServer abyssServer;
 
         ServerCreate(&abyssServer, "testserver", 8080, NULL, NULL);
