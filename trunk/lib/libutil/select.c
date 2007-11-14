@@ -22,9 +22,13 @@ xmlrpc_pselect(int                     const n,
     retval = pselect(n, readfdsP, writefdsP, exceptfdsP, timeoutP, sigmaskP);
 #else
     sigset_t origmask;
+    struct timeval timeout;
+    
+    timeout.tv_sec  = timeoutP->tv_sec;
+    timeout.tv_usec = timeoutP->tv_nsec/1000;
 
     sigprocmask(SIG_SETMASK, sigmaskP, &origmask);
-    retval = select(n, readfdsP, writefdsP, exceptfdsP, timeoutP);
+    retval = select(n, readfdsP, writefdsP, exceptfdsP, &timeout);
     sigprocmask(SIG_SETMASK, &origmask, NULL);
 #endif
 
