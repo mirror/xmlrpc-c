@@ -25,7 +25,7 @@
 
 #include "xmlrpc_config.h"
 
-#if WIN32
+#ifdef WIN32
 
 #include "pthreadx.h"
 
