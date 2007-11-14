@@ -71,7 +71,7 @@ ChanSwitchTerm(void) {
 
 
 
-/* SwitchCreate() is not exported to the Abyss user.  It is meant to
+/* ChanSwitchCreate() is not exported to the Abyss user.  It is meant to
    be used by an implementation-specific TChanSwitch generator which is
    exported to the Abyss user, e.g. SwitchCreateUnix() in
    socket_unix.c
