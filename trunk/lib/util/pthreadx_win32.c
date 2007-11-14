@@ -38,8 +38,8 @@ int
 pthread_create(pthread_t *            const new_thread_ID,
                const pthread_attr_t * const attr,
                pthread_func *               func,
-               void *                 const arg)
-{
+               void *                 const arg) {
+
     HANDLE hThread;
     DWORD dwThreadID;
 
