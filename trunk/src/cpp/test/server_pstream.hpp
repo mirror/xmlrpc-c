@@ -4,5 +4,5 @@ class serverPstreamTestSuite : public testSuite {
 
 public:
     virtual std::string suiteName();
-    virtual void runtests(unsigned int);
+    virtual void runtests(unsigned int const);
 };
