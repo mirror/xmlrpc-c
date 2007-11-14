@@ -380,21 +380,25 @@ value_datetime::value_datetime(time_t const cppvalue) {
 
 
 
+#if XMLRPC_HAVE_TIMEVAL
 value_datetime::value_datetime(struct timeval const& cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 
+#if XMLRPC_HAVE_TIMESPEC
 value_datetime::value_datetime(struct timespec const& cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 

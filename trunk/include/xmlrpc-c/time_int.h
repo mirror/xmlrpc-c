@@ -3,11 +3,11 @@
 
 #include <time.h>
 
-#include "xmlrpc-c/config.h"
+#include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/inttypes.h"
 
-#if XMLRPC_HAVE_TIMESPEC
+#if HAVE_TIMESPEC
   typedef struct timespec xmlrpc_timespec;
 #else
   typedef struct {

@@ -13,14 +13,18 @@ xmlrpc_pselect(int                     const n,
                fd_set *                const readfdsP,
                fd_set *                const writefdsP,
                fd_set *                const exceptfdsP,
-               const struct timespec * const timeoutP,
+               const xmlrpc_timespec * const timeoutP,
                sigset_t *              const sigmaskP) {
 
     int retval;
 
 #if HAVE_PSELECT
-    retval = pselect(n, readfdsP, writefdsP, exceptfdsP, timeoutP, sigmaskP);
+#if !HAVE_TIMESPEC
+  #error "Impossible configuration -- has pselect(), but not struct timespec"
 #else
+    retval = pselect(n, readfdsP, writefdsP, exceptfdsP, timeoutP, sigmaskP);
+#endif
+#else /* HAVE_PSELECT */
     sigset_t origmask;
     struct timeval timeout;
     

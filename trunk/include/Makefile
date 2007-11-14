@@ -34,9 +34,11 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	@echo '     <winsock.h>'                                          >>$@
 	@echo '  */'                                                      >>$@
 	@echo '  #define XMLRPC_SOCKET SOCKET'                            >>$@
+	@echo '  #define XMLRPC_HAVE_TIMEVAL 0'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 0'                          >>$@
 	@echo '#else'                                                     >>$@
 	@echo '  #define XMLRPC_SOCKET int'                               >>$@
+	@echo '  #define XMLRPC_HAVE_TIMEVAL 1'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 1'                          >>$@
 	@echo '#endif'                                                    >>$@
 	@echo ''                                                          >>$@

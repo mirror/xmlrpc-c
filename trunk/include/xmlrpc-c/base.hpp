@@ -129,7 +129,9 @@ class value_datetime : public value {
 public:
     value_datetime(std::string const cvalue);
     value_datetime(time_t const cvalue);
+#if XMLRPC_HAVE_TIMEVAL
     value_datetime(struct timeval const& cvalue);
+#endif
 #if XMLRPC_HAVE_TIMESPEC
     value_datetime(struct timespec const& cvalue);
 #endif

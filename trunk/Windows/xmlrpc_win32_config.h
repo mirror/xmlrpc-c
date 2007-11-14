@@ -108,6 +108,21 @@
   #define MSVCRT 0
 #endif
 
+#if MSVCRT
+  /* The MSVC runtime library _does_ have a 'struct timeval', but it is
+     part of the Winsock interface (along with select(), which is probably
+     its intended use), so isn't intended for use for general timekeeping.
+  */
+  #define HAVE_TIMEVAL 0
+  #define HAVE_TIMESPEC 0
+#else
+  #define HAVE_TIMEVAL 1
+  /* timespec is Posix.1b.  If we need to work on a non-Posix.1b non-Windows
+     system, we'll have to figure out how to make Configure determine this.
+  */
+  #define HAVE_TIMESPEC 1
+#endif
+
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 /* Starting with MSVC 8, the runtime library defines various POSIX functions
    such as strdup() whose names violate the ISO C standard (the standard

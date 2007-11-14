@@ -106,8 +106,14 @@
 #endif
 
 #if MSVCRT
+  /* The MSVC runtime library _does_ have a 'struct timeval', but it is
+     part of the Winsock interface (along with select(), which is probably
+     its intended use), so isn't intended for use for general timekeeping.
+  */
+  #define HAVE_TIMEVAL 0
   #define HAVE_TIMESPEC 0
 #else
+  #define HAVE_TIMEVAL 1
   /* timespec is Posix.1b.  If we need to work on a non-Posix.1b non-Windows
      system, we'll have to figure out how to make Configure determine this.
   */
