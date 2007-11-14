@@ -58,7 +58,6 @@
 #include <assert.h>
 #include <sys/select.h>
 #include <signal.h>
-#include <time.h>  /* For timespec */
 #include <sys/time.h>  /* For timeval */
 
 #ifdef WIN32
@@ -78,6 +77,7 @@
 #include "xmlrpc-c/select_int.h"
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
+#include "xmlrpc-c/time_int.h"
 #include "version.h"
 
 #include <curl/curl.h>
@@ -1003,7 +1003,7 @@ curlMulti_updateFdSet(curlMulti * const curlMultiP,
 
                       
 
-static struct timespec
+static xmlrpc_timespec
 pselectTimeout(xmlrpc_timeoutType const timeoutType,
                struct timeval     const timeoutDt) {
 /*----------------------------------------------------------------------------
@@ -1012,7 +1012,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
    wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
     unsigned int selectTimeoutMillisec;
-    struct timespec retval;
+    xmlrpc_timespec retval;
 
     selectTimeoutMillisec = 0; // quiet compiler warning
 
@@ -1117,7 +1117,7 @@ waitForWork(xmlrpc_env *       const envP,
                are already complete.
             */
         } else {
-            struct timespec const pselectTimeoutArg =
+            xmlrpc_timespec const pselectTimeoutArg =
                 pselectTimeout(timeoutType, deadline);
 
             int rc;
