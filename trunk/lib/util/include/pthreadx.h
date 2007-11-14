@@ -32,6 +32,10 @@
 #elif defined (WIN32)
 #include <windows.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef HANDLE pthread_t;
 typedef CRITICAL_SECTION pthread_mutex_t;
 
@@ -67,6 +71,9 @@ extern int pthread_mutex_lock(pthread_mutex_t * const mp);
 extern int pthread_mutex_unlock(pthread_mutex_t * const mp);
 extern int pthread_mutex_destroy(pthread_mutex_t * const mp);
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* WIN32 */
 
 #endif
