@@ -2,7 +2,19 @@
 #define TIME_H_INCLUDED
 
 #include <time.h>
+
+#include "xmlrpc-c/config.h"
 #include "xmlrpc-c/util.h"
+#include "xmlrpc-c/inttypes.h"
+
+#if XMLRPC_HAVE_TIMESPEC
+  typedef struct timespec xmlrpc_timespec;
+#else
+  typedef struct {
+      uint32_t tv_sec;
+      uint32_t tv_nsec;
+  } xmlrpc_timespec;
+#endif
 
 void
 xmlrpc_timegm(const struct tm  * const brokenTime,

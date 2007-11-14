@@ -130,7 +130,9 @@ public:
     value_datetime(std::string const cvalue);
     value_datetime(time_t const cvalue);
     value_datetime(struct timeval const& cvalue);
+#if XMLRPC_HAVE_TIMESPEC
     value_datetime(struct timespec const& cvalue);
+#endif
 
     value_datetime(xmlrpc_c::value const baseValue);
 
