@@ -5,7 +5,9 @@
 #include <signal.h>
 #include <errno.h>
 #include <iostream>
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
