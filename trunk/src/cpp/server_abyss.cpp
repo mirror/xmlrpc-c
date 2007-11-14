@@ -166,11 +166,11 @@ serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
 DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
 DEFINE_OPTION_SETTER(registryP,        const registry *);
 DEFINE_OPTION_SETTER(socketFd,         XMLRPC_SOCKET);
-DEFINE_OPTION_SETTER(portNumber,       uint);
+DEFINE_OPTION_SETTER(portNumber,       unsigned int);
 DEFINE_OPTION_SETTER(logFileName,      string);
-DEFINE_OPTION_SETTER(keepaliveTimeout, uint);
-DEFINE_OPTION_SETTER(keepaliveMaxConn, uint);
-DEFINE_OPTION_SETTER(timeout,          uint);
+DEFINE_OPTION_SETTER(keepaliveTimeout, unsigned int);
+DEFINE_OPTION_SETTER(keepaliveMaxConn, unsigned int);
+DEFINE_OPTION_SETTER(timeout,          unsigned int);
 DEFINE_OPTION_SETTER(dontAdvertise,    bool);
 DEFINE_OPTION_SETTER(uriPath,          string);
 DEFINE_OPTION_SETTER(chunkResponse,    bool);
