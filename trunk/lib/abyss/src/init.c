@@ -31,6 +31,9 @@ initAbyss(const char ** const errorP) {
 
     const char * error;
 
+    DateInit();
+    MIMETypeInit();
+
     ChanSwitchInit(&error);
 
     if (error) {
@@ -82,6 +85,7 @@ termAbyss(void) {
 
     ChannelTerm();
     ChanSwitchTerm();
+    MIMETypeTerm();
 }
 
 
@@ -96,8 +100,3 @@ AbyssTerm(void) {
     if (AbyssInitCount == 0)
         termAbyss();
 }
-
-
-
-
-

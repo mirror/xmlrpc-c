@@ -801,8 +801,6 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
     runfirstFn runfirst;
     void * runfirstArg;
     
-    DateInit();
-    
     ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
 
     assert(parmSize >= XMLRPC_APSIZE(config_file_name));
@@ -1062,8 +1060,6 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
     TServer server;
     TChanSwitch * chanSwitchP;
 
-    DateInit();
-
     createServer(envP, parmsP, parmSize, &server, &chanSwitchP);
 
     if (!envP->fault_occurred) {
@@ -1234,9 +1230,6 @@ xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
 void 
 xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED, 
                          const char * const config_file) {
-
-    DateInit();
-    MIMETypeInit();
 
     ServerCreate(&globalSrv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
     
