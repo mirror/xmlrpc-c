@@ -96,6 +96,12 @@ void
 ChanSwitchDestroy(TChanSwitch * const chanSwitchP);
 
 void
+ChannelInit(const char ** const errorP);
+
+void
+ChannelTerm(void);
+
+void
 ChannelDestroy(TChannel * const channelP);
 
 void
