@@ -608,7 +608,9 @@ main(int argc, char**) {
         paramListTestSuite().run(0);
         registryTestSuite().run(0);
         serverAbyssTestSuite().run(0);
+#ifndef  WIN32
         serverPstreamTestSuite().run(0);
+#endif
         clientTestSuite().run(0);
 
         testXmlRpcCpp();
