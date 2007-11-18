@@ -55,7 +55,7 @@ public:
 
     void
     addToCStruct(xmlrpc_value * const structP,
-                    std::string const key) const;
+                 std::string    const key) const;
 
     xmlrpc_value *
     cValue() const;
