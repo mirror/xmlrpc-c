@@ -25,6 +25,7 @@ using girerr::throwf;
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/registry.hpp"
 #include "xmlrpc-c/server_abyss.hpp"
+#include "xmlrpc-c/abyss.h"
 
 #include "tools.hpp"
 #include "server_abyss.hpp"
@@ -97,6 +98,29 @@ public:
         *retvalP = value_int(addend + adder);
     }
 };
+
+
+
+// We need 'global' because methods of class addHandlerTestSuite call
+// functions in the Abyss C library.  By virtue of global's static
+// storage class, the program loader will call its constructor and
+// destructor and thus initialize and terminate the Abyss C library.
+
+static class abyssGlobalState {
+public:
+    abyssGlobalState() {
+        const char * error;
+        AbyssInit(&error);
+        if (error) {
+            string const e(error);
+            free(const_cast<char *>(error));
+            throwf("AbyssInit() failed.  %s", e.c_str());
+        }
+    }
+    ~abyssGlobalState() {
+        AbyssTerm();
+    }
+} const global;
 
 
 

@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #endif
 
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
@@ -131,6 +132,29 @@ restoreSignalHandlers(struct signalHandlers const& oldHandlers) {
     sigaction(SIGTERM, &oldHandlers.term, NULL);
 #endif
 }
+
+
+
+// We need 'global' because methods of class serverAbyss call
+// functions in the Abyss C library.  By virtue of global's static
+// storage class, the program loader will call its constructor and
+// destructor and thus initialize and terminate the Abyss C library.
+
+class abyssGlobalState {
+public:
+    abyssGlobalState() {
+        const char * error;
+        AbyssInit(&error);
+        if (error) {
+            string const e(error);
+            xmlrpc_strfree(error);
+            throwf("AbyssInit() failed.  %s", e.c_str());
+        }
+    }
+    ~abyssGlobalState() {
+        AbyssTerm();
+    }
+} const global;
 
 } // namespace
 

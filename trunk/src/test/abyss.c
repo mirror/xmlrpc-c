@@ -313,8 +313,13 @@ test_abyss(void) {
 
     printf("Running Abyss server tests...\n");
     
-    ChanSwitchInit(&error);
+    AbyssInit(&error);
+    TEST_NULL_STRING(error);
 
+    ChanSwitchInit(&error);
+    TEST_NULL_STRING(error);
+
+    ChannelInit(&error);
     TEST_NULL_STRING(error);
 
     testChanSwitch();
@@ -327,7 +332,9 @@ test_abyss(void) {
 
     testServerCreate();
 
+    ChannelTerm();
     ChanSwitchTerm();
+    AbyssTerm();
 
     printf("\n");
     printf("Abyss server tests done.\n");
