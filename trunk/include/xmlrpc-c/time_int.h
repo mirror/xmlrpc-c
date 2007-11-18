@@ -5,7 +5,7 @@
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
-#include "xmlrpc-c/int.h"
+#include "int.h"
 
 #if HAVE_TIMESPEC
   typedef struct timespec xmlrpc_timespec;
