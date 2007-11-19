@@ -330,7 +330,7 @@ value_boolean::operator bool() const {
     xmlrpc_read_bool(&env.env_c, this->cValueP, &retval);
     throwIfError(env);
 
-    return (bool)retval;
+    return (retval != false);
 }
 
 

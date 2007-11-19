@@ -117,7 +117,7 @@ void test_env (void) {
     try {
         env2.throwIfFaultOccurred();
         TEST_PASSED();
-    } catch (XmlRpcFault const& fault) {
+    } catch (XmlRpcFault const&) {
         TEST_FAILED("We threw a fault when one hadn't occurred");
     } 
     xmlrpc_env_set_fault(env2, 9, "Fault 9");
