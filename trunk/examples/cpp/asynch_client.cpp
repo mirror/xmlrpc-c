@@ -5,7 +5,7 @@
   (Xmlrpc-c).
 
   In particular, it does multiple RPCs asynchronously, running
-  simultanously.
+  simultaneously.
 =============================================================================*/
 
 #include <cassert>
