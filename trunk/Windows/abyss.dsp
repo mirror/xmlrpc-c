@@ -89,6 +89,14 @@ LIB32=link.exe -lib
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\lib\abyss\src\channel.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\chanswitch.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\abyss\src\conf.c
 # End Source File
 # Begin Source File
@@ -101,7 +109,15 @@ SOURCE=..\lib\abyss\src\data.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\abyss\src\date.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\abyss\src\file.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\handler.c
 # End Source File
 # Begin Source File
 
@@ -109,7 +125,19 @@ SOURCE=..\lib\abyss\src\http.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\abyss\src\init.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\response.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\abyss\src\server.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\session.c
 # End Source File
 # Begin Source File
 
@@ -117,7 +145,31 @@ SOURCE=..\lib\abyss\src\socket.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\thread.c
+SOURCE=..\lib\abyss\src\socket_openssl.c
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\socket_unix.c
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\socket_win.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\thread_fork.c
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\thread_pthread.c
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\thread_windows.c
 # End Source File
 # Begin Source File
 
@@ -133,7 +185,67 @@ SOURCE=..\lib\abyss\src\trace.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=..\lib\abyss\src\abyss_info.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\channel.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\chanswitch.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\conn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\data.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\date.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\file.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\handler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\http.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\server.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\session.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\socket.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\socket_win.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\thread.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\abyss\src\token.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\abyss\src\trace.h
 # End Source File
 # End Group
 # End Target

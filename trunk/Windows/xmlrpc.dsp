@@ -93,27 +93,7 @@ SOURCE=..\lib\libutil\asprintf.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\channel.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\chanswitch.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\date.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\libutil\error.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\handler.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\init.c
 # End Source File
 # Begin Source File
 
@@ -141,19 +121,7 @@ SOURCE=..\src\resource.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\response.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\session.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\libutil\sleep.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\socket_win.c
 # End Source File
 # Begin Source File
 
@@ -161,15 +129,7 @@ SOURCE=..\src\system_method.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\thread_windows.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\libutil\time.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\token.c
 # End Source File
 # Begin Source File
 
@@ -239,11 +199,6 @@ SOURCE=..\src\xmlrpc_parse.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\xmlrpc_registry.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\xmlrpc_serialize.c
 # End Source File
 # Begin Source File
@@ -262,16 +217,6 @@ SOURCE=..\src\xmlrpc_string.c
 # Begin Source File
 
 SOURCE=..\src\xmlrpc_struct.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_strutil.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_support.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 

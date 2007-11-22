@@ -109,26 +109,6 @@ SOURCE=..\src\test\client.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\conf.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\conn.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\data.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\file.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\http.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\util\casprintf.c
 # End Source File
 # Begin Source File
@@ -145,15 +125,7 @@ SOURCE=..\src\test\serialize.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\server.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\test\server_abyss.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\socket.c
 # End Source File
 # Begin Source File
 
@@ -161,15 +133,7 @@ SOURCE=..\src\test\test.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\token.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\abyss\src\token.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\trace.c
 # End Source File
 # Begin Source File
 
@@ -178,10 +142,6 @@ SOURCE=..\src\test\value.c
 # Begin Source File
 
 SOURCE=..\src\test\xml_data.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_server_abyss.c
 # End Source File
 # End Group
 # Begin Group "Header Files"

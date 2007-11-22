@@ -91,16 +91,6 @@ LIB32=link.exe -lib
 
 SOURCE=..\lib\expat\xmlparse\xmlparse.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\lib\expat\xmltok\xmlrole.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\expat\xmltok\xmltok.c
-# PROP Exclude_From_Build 1
-# End Source File
 # End Group
 # Begin Group "Header Files"
 

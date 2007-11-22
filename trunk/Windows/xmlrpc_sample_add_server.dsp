@@ -90,38 +90,6 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\conf.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\conn.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\data.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\file.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\http.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\server.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\socket.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\trace.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\examples\xmlrpc_sample_add_server.c
 # End Source File
 # End Group
