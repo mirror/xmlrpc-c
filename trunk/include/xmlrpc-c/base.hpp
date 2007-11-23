@@ -45,6 +45,9 @@ public:
     xmlrpc_c::value&
     operator=(xmlrpc_c::value const&);
 
+    bool
+    value::isInstantiated() const;
+
     // The following are not meant to be public to users, but just to
     // other Xmlrpc-c library modules.  If we ever go to a pure C++
     // implementation, not based on C xmlrpc_value objects, this shouldn't
@@ -64,7 +67,7 @@ public:
 
     void
     instantiate(xmlrpc_value * const valueP);
-        // Work only on a placeholder object created by the no-argument
+        // Works only on a placeholder object created by the no-argument
         // constructor.
 
     xmlrpc_value * cValueP;

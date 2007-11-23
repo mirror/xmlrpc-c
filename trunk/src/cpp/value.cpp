@@ -133,6 +133,17 @@ value::~value() {
 
 
 
+bool
+value::isInstantiated() const {
+/*----------------------------------------------------------------------------
+   Return whether the value is actually a value, as opposed to a placeholder
+   variable waiting to be assigned a value.
+-----------------------------------------------------------------------------*/
+    return (this->cValueP != NULL);
+}
+
+
+
 void
 value::instantiate(xmlrpc_value * const valueP) {
 
