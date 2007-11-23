@@ -17,7 +17,7 @@ using namespace std;
 
 string DataType::defaultParameterBaseName (int position) const {
     ostringstream name_stream;
-    name_stream << typeName() << position << ends;
+    name_stream << typeName() << position;
     string name(name_stream.str());
     return name;
 }
@@ -165,30 +165,35 @@ RawDataType base64Type    ("base64");
 RawDataType structType    ("struct");
 RawDataType arrayType     ("array");
 
-VoidDataType voidType;
+  VoidDataType voidType;
+  
+  const DataType& findDataType (const string& name) {
+    string lowercase_name = name;
+    const int length = lowercase_name.length();
+    for(int i=0; i!=length; ++i)
+        lowercase_name[i] = std::tolower(lowercase_name[i]);
 
-const DataType& findDataType (const string& name) {
-    if (name == "int" || name == "i4")
-	return intType;
-    else if (name == "boolean")
-	return boolType;
-    else if (name == "double")
-	return doubleType;
-    else if (name == "string")
-	return stringType;
-    else if (name == "dateTime.iso8601")
-	return dateTimeType;
-    else if (name == "base64")
-	return base64Type;
-    else if (name == "struct")
-	return structType;
-    else if (name == "array")
-	return arrayType;
-    else if (name == "void")
-	return voidType;
+    if (lowercase_name == "int" || name == "i4")
+       return intType;
+    else if (lowercase_name == "boolean")
+       return boolType;
+    else if (lowercase_name == "double")
+       return doubleType;
+    else if (lowercase_name == "string")
+       return stringType;
+    else if (lowercase_name == "dateTime.iso8601")
+       return dateTimeType;
+    else if (lowercase_name == "base64")
+       return base64Type;
+    else if (lowercase_name == "struct")
+       return structType;
+    else if (lowercase_name == "array")
+       return arrayType;
+    else if (lowercase_name == "void")
+       return voidType;
     else
-	throw domain_error("Unknown XML-RPC type " + name);
-    
+       throw domain_error("Unknown XML-RPC type " + name);
+   
     // This code should never be executed.
     XMLRPC_ASSERT(0);
     return intType;

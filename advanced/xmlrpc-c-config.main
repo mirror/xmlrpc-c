@@ -99,7 +99,6 @@ while test $# -gt 0; do
         exit 10
         fi
       the_libs="${LSOCKET} $the_libs"
-      the_libs="-lxmlrpc_abyss $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server++ $the_libs"
       the_libs="-lxmlrpc_server_pstream++ $the_libs"

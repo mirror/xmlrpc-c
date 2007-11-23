@@ -90,6 +90,8 @@ void print_header (ostream& out, XmlRpcClass& class_info) {
     out << endl;
     out << "#include <XmlRpcCpp.h>" << endl;
     out << endl;
+    out << "using std::string;" << endl;
+    out << endl;
 
     class_info.printDeclaration(cout);
 
