@@ -280,6 +280,7 @@ ServerCreateSocket(TServer *    const serverP,
     createSwitchFromOsSocket(socketFd, &chanSwitchP, &error);
 
     if (error) {
+        TraceMsg(error);
         success = FALSE;
         xmlrpc_strfree(error);
     } else {
