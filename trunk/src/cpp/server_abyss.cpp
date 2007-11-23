@@ -222,6 +222,46 @@ serverAbyss::setAdditionalServerParms(constrOpt const& opt) {
 
 
 
+static void
+createServer(bool         const  logFileNameGiven,
+             string       const& logFileName,
+             bool         const  socketFdGiven,
+             int          const  socketFd,
+             bool         const  portNumberGiven,
+             unsigned int const  portNumber,
+             TServer *    const  srvPP) {
+             
+    const char * const logfileArg(logFileNameGiven ? 
+                                  logFileName.c_str() : NULL);
+
+    const char * const serverName("XmlRpcServer");
+
+    bool created;
+        
+    if (socketFdGiven)
+        created =
+            ServerCreateSocket(srvPP, serverName, socketFd,
+                               DEFAULT_DOCS, logfileArg);
+    else if (portNumberGiven) {
+        if (portNumber > 0xffff)
+            throwf("Port number %u exceeds the maximum possible port number "
+                   "(65535)", portNumber);
+
+        created =
+            ServerCreate(srvPP, serverName, portNumber,
+                         DEFAULT_DOCS, logfileArg);
+    } else
+        created = 
+            ServerCreateNoAccept(srvPP, serverName,
+                                 DEFAULT_DOCS, logfileArg);
+
+    if (!created)
+        throw(error("Failed to create Abyss server.  See Abyss error log for "
+                    "reason."));
+}
+
+
+
 void
 serverAbyss::initialize(constrOpt const& opt) {
 
@@ -245,24 +285,10 @@ serverAbyss::initialize(constrOpt const& opt) {
 
     DateInit();
     
-    const char * const logfileArg(opt.present.logFileName ?
-                                  opt.value.logFileName.c_str() : NULL);
-
-    const char * const serverName("XmlRpcServer");
-        
-    if (opt.present.socketFd)
-        ServerCreateSocket(&this->cServer, serverName, opt.value.socketFd,
-                           DEFAULT_DOCS, logfileArg);
-    else if (opt.present.portNumber) {
-        if (opt.value.portNumber > 0xffff)
-            throw(error("Port number exceeds the maximum possible port number "
-                        "(65535)"));
-
-        ServerCreate(&this->cServer, serverName, opt.value.portNumber,
-                     DEFAULT_DOCS, logfileArg);
-    } else
-        ServerCreateNoAccept(&this->cServer, serverName,
-                             DEFAULT_DOCS, logfileArg);
+    createServer(opt.present.logFileName, opt.value.logFileName,
+                 opt.present.socketFd,    opt.value.socketFd,
+                 opt.present.portNumber,  opt.value.portNumber,
+                 &this->cServer);
 
     try {
         setAdditionalServerParms(opt);
