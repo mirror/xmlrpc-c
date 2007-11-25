@@ -236,7 +236,7 @@ createServer(bool         const  logFileNameGiven,
 
     const char * const serverName("XmlRpcServer");
 
-    bool created;
+    abyss_bool created;
         
     if (socketFdGiven)
         created =
