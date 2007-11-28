@@ -72,8 +72,8 @@ int
 main(int           const argc, 
      const char ** const argv ATTR_UNUSED) {
 
-    char * const serverUrl = "http://localhost:8080/RPC2";
-    char * const methodName = "sample.add";
+    const char * const serverUrl = "http://localhost:8080/RPC2";
+    const char * const methodName = "sample.add";
 
     xmlrpc_env env;
     xmlrpc_client * clientP;
@@ -117,6 +117,7 @@ main(int           const argc,
     printf("All RPCs finished.\n");
 
     xmlrpc_client_destroy(clientP);
+    xmlrpc_client_teardown_global_const();
 
     return 0;
 }
