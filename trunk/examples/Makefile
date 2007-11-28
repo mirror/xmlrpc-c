@@ -29,6 +29,10 @@ CLIENTPROGS = \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
 
+ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
+  CLIENTPROGS += interrupted_client
+endif
+
 SERVERPROGS_CGI = \
   xmlrpc_sample_add_server.cgi
 
