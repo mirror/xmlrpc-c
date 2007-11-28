@@ -121,6 +121,10 @@ SOURCE=..\src\resource.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\libutil\select.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\libutil\sleep.c
 # End Source File
 # Begin Source File
@@ -431,9 +435,5 @@ SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.h
 SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.h
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=.\README.VC6.txt
-# End Source File
 # End Target
 # End Project

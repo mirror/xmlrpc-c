@@ -262,7 +262,7 @@ createLock_pthread(void) {
     curlTransaction
 =============================================================================*/
 
-typedef void finishCurlTransactionFn(xmlrpc_env *, curlTransaction *);
+typedef void finishCurlTransactionFn(xmlrpc_env * const, curlTransaction * const);
 
 struct curlTransaction {
     /* This is all stuff that really ought to be in a Curl object, but
@@ -1037,7 +1037,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     break;
     }
     retval.tv_sec = selectTimeoutMillisec / 1000;
-    retval.tv_nsec = (selectTimeoutMillisec % 1000) * 1E6;
+    retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * 1E6);
 
     return retval;
 }        
@@ -1158,6 +1158,9 @@ waitForWorkInt(xmlrpc_env *       const envP,
    a multithreaded program.  Therefore, don't call this if
    waitForWork() will suffice.
 -----------------------------------------------------------------------------*/
+#ifdef WIN32
+    waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
+#else
     sigset_t allSignals;
     sigset_t callerBlockSet;
 
@@ -1171,6 +1174,7 @@ waitForWorkInt(xmlrpc_env *       const envP,
         waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
 
     sigprocmask(SIG_SETMASK, &callerBlockSet, NULL);
+#endif
 }
 
 
@@ -1350,7 +1354,7 @@ performCurlTransaction(xmlrpc_env *      const envP,
     */
 
     if (!envP->fault_occurred) {
-        struct timeval dummy;
+        struct timeval dummy = {0,0};
 
         curlMulti_finish(envP, curlMultiP, timeout_no, dummy, interruptP);
 

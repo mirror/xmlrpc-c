@@ -1,6 +1,10 @@
 #define _XOPEN_SOURCE 600  /* Get pselect() in <sys/select.h> */
 
+#ifdef WIN32
+#include <winsock.h>
+#else
 #include <sys/select.h>
+#endif 
 #include <signal.h>
 #include <time.h>
 
@@ -25,15 +29,20 @@ xmlrpc_pselect(int                     const n,
     retval = pselect(n, readfdsP, writefdsP, exceptfdsP, timeoutP, sigmaskP);
 #endif
 #else /* HAVE_PSELECT */
-    sigset_t origmask;
     struct timeval timeout;
     
     timeout.tv_sec  = timeoutP->tv_sec;
     timeout.tv_usec = timeoutP->tv_nsec/1000;
-
-    sigprocmask(SIG_SETMASK, sigmaskP, &origmask);
+#ifdef WIN32
     retval = select(n, readfdsP, writefdsP, exceptfdsP, &timeout);
-    sigprocmask(SIG_SETMASK, &origmask, NULL);
+#else
+    {
+       sigset_t origmask;
+       sigprocmask(SIG_SETMASK, sigmaskP, &origmask);
+       retval = select(n, readfdsP, writefdsP, exceptfdsP, &timeout);
+       sigprocmask(SIG_SETMASK, &origmask, NULL);
+    }
+#endif
 #endif
 
     return retval;
