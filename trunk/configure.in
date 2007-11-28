@@ -336,7 +336,8 @@ AC_CHECK_FUNCS(setenv)
 dnl uclib doesn't have pselect
 AC_CHECK_FUNCS(pselect)
 
-dnl Windows doesn't have localtime_r or gmtime_r
+dnl Windows doesn't have gettimeofday, localtime_r, or gmtime_r
+AC_CHECK_FUNCS(gettimeofday)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
 

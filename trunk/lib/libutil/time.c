@@ -1,8 +1,51 @@
+#include <assert.h>
 #include <time.h>
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/time_int.h"
+
+
+
+#if MSVCRT
+static void
+gettimeofdayWindows(struct timeval * const tvP) {
+#define EPOCH_FILETIME 11644473600000000Ui64
+    /* Number of micro-seconds between the beginning of the Windows epoch
+       (Jan. 1, 1601) and the Unix epoch (Jan. 1, 1970).
+    */
+
+    FILETIME        ft;
+    LARGE_INTEGER   li;
+    __int64         t;
+
+    GetSystemTimeAsFileTime(&ft);
+    li.LowPart  = ft.dwLowDateTime;
+    li.HighPart = ft.dwHighDateTime;
+    t  = li.QuadPart / 10   /* In micro-second intervals */
+        - EPOCH_FILETIME;     /* Offset to the Epoch time */
+    tvP->tv_sec  = (long)(t / 1000000);
+    tvP->tv_usec = (long)(t % 1000000);
+}
+#endif
+
+
+
+void
+xmlrpc_gettimeofday(struct timeval * const tvP) {
+
+    assert(tvP);
+
+#if HAVE_GETTIMEOFDAY
+    gettimeofday(tvP, NULL);
+#else
+#if MSVCRT
+    gettimeofdayWindows(tvP);
+#else
+  #error "We don't know how to get the time of day on this system"
+#endif
+#endif /* HAVE_GETTIMEOFDAY */
+}
 
 
 

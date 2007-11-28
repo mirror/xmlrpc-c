@@ -47,6 +47,9 @@
 #ifndef HAVE_WCSNCMP
 #define HAVE_WCSNCMP 1
 #endif
+#ifndef HAVE_GETTIMEOFDAY
+#define HAVE_GETTIMEOFDAY 0
+#endif
 #ifndef HAVE_LOCALTIME_R
 #define HAVE_LOCALTIME_R 0
 #endif

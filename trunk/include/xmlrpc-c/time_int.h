@@ -2,6 +2,9 @@
 #define TIME_H_INCLUDED
 
 #include <time.h>
+#if !MSVCRT
+  #include <sys/time.h>  /* For struct timeval */
+#endif
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
@@ -15,6 +18,9 @@
       uint32_t tv_nsec;
   } xmlrpc_timespec;
 #endif
+
+void
+xmlrpc_gettimeofday(struct timeval * const tvP);
 
 void
 xmlrpc_timegm(const struct tm  * const brokenTime,

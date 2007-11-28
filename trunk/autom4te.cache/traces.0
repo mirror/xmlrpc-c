@@ -220,53 +220,56 @@ m4trace:configure.in:334: -1- AH_OUTPUT([HAVE_SETENV], [/* Define to 1 if you ha
 m4trace:configure.in:337: -1- AC_CHECK_FUNCS([pselect])
 m4trace:configure.in:337: -1- AH_OUTPUT([HAVE_PSELECT], [/* Define to 1 if you have the `pselect\' function. */
 #undef HAVE_PSELECT])
-m4trace:configure.in:340: -1- AC_CHECK_FUNCS([localtime_r])
-m4trace:configure.in:340: -1- AH_OUTPUT([HAVE_LOCALTIME_R], [/* Define to 1 if you have the `localtime_r\' function. */
+m4trace:configure.in:340: -1- AC_CHECK_FUNCS([gettimeofday])
+m4trace:configure.in:340: -1- AH_OUTPUT([HAVE_GETTIMEOFDAY], [/* Define to 1 if you have the `gettimeofday\' function. */
+#undef HAVE_GETTIMEOFDAY])
+m4trace:configure.in:341: -1- AC_CHECK_FUNCS([localtime_r])
+m4trace:configure.in:341: -1- AH_OUTPUT([HAVE_LOCALTIME_R], [/* Define to 1 if you have the `localtime_r\' function. */
 #undef HAVE_LOCALTIME_R])
-m4trace:configure.in:341: -1- AC_CHECK_FUNCS([gmtime_r])
-m4trace:configure.in:341: -1- AH_OUTPUT([HAVE_GMTIME_R], [/* Define to 1 if you have the `gmtime_r\' function. */
+m4trace:configure.in:342: -1- AC_CHECK_FUNCS([gmtime_r])
+m4trace:configure.in:342: -1- AH_OUTPUT([HAVE_GMTIME_R], [/* Define to 1 if you have the `gmtime_r\' function. */
 #undef HAVE_GMTIME_R])
-m4trace:configure.in:344: -1- AC_CHECK_FUNCS([strcasecmp])
-m4trace:configure.in:344: -1- AH_OUTPUT([HAVE_STRCASECMP], [/* Define to 1 if you have the `strcasecmp\' function. */
+m4trace:configure.in:345: -1- AC_CHECK_FUNCS([strcasecmp])
+m4trace:configure.in:345: -1- AH_OUTPUT([HAVE_STRCASECMP], [/* Define to 1 if you have the `strcasecmp\' function. */
 #undef HAVE_STRCASECMP])
-m4trace:configure.in:345: -1- AC_CHECK_FUNCS([stricmp])
-m4trace:configure.in:345: -1- AH_OUTPUT([HAVE_STRICMP], [/* Define to 1 if you have the `stricmp\' function. */
+m4trace:configure.in:346: -1- AC_CHECK_FUNCS([stricmp])
+m4trace:configure.in:346: -1- AH_OUTPUT([HAVE_STRICMP], [/* Define to 1 if you have the `stricmp\' function. */
 #undef HAVE_STRICMP])
-m4trace:configure.in:346: -1- AC_CHECK_FUNCS([_stricmp])
-m4trace:configure.in:346: -1- AH_OUTPUT([HAVE__STRICMP], [/* Define to 1 if you have the `_stricmp\' function. */
+m4trace:configure.in:347: -1- AC_CHECK_FUNCS([_stricmp])
+m4trace:configure.in:347: -1- AH_OUTPUT([HAVE__STRICMP], [/* Define to 1 if you have the `_stricmp\' function. */
 #undef HAVE__STRICMP])
-m4trace:configure.in:355: -1- AC_SUBST([DIRECTORY_SEPARATOR])
-m4trace:configure.in:369: -1- AC_SUBST([ENABLE_ABYSS_THREADS])
-m4trace:configure.in:385: -1- AC_SUBST([WININET_CONFIG], [$ac_cv_path_WININET_CONFIG])
-m4trace:configure.in:422: -1- AC_SUBST([WININET_CFLAGS])
-m4trace:configure.in:427: -1- AC_SUBST([WININET_LDADD])
-m4trace:configure.in:441: -1- AC_SUBST([WININET_LIBDIR])
-m4trace:configure.in:443: -1- AC_SUBST([WININET_RPATH])
-m4trace:configure.in:445: -1- AC_SUBST([WININET_WL_RPATH])
-m4trace:configure.in:461: -1- AC_SUBST([LIBWWW_CONFIG], [$ac_cv_path_LIBWWW_CONFIG])
-m4trace:configure.in:498: -1- AC_SUBST([LIBWWW_LDADD])
-m4trace:configure.in:512: -1- AC_SUBST([LIBWWW_LIBDIR])
-m4trace:configure.in:520: -1- AC_SUBST([LIBWWW_RPATH])
-m4trace:configure.in:523: -1- AC_SUBST([LIBWWW_WL_RPATH])
-m4trace:configure.in:536: -1- AC_SUBST([CURL_CONFIG], [$ac_cv_path_CURL_CONFIG])
-m4trace:configure.in:554: -1- AC_SUBST([CURL_LDADD])
-m4trace:configure.in:564: -1- AC_SUBST([CURL_LIBDIR])
-m4trace:configure.in:566: -1- AC_SUBST([CURL_RPATH])
-m4trace:configure.in:568: -1- AC_SUBST([CURL_WL_RPATH])
-m4trace:configure.in:591: -1- AC_SUBST([HAVE_LIBWWW_SSL_DEFINE])
-m4trace:configure.in:601: -1- AC_SUBST([have_xml2_config])
-m4trace:configure.in:607: -1- AC_SUBST([ENABLE_LIBXML2_BACKEND])
-m4trace:configure.in:613: -1- AC_SUBST([C_COMPILER_GNU])
-m4trace:configure.in:615: -1- AC_SUBST([CXX_COMPILER_GNU])
-m4trace:configure.in:619: -1- AC_SUBST([CC_WARN_FLAGS])
-m4trace:configure.in:621: -1- AC_SUBST([CPP_WARN_FLAGS])
-m4trace:configure.in:625: -1- AC_SUBST([BUILDDIR])
-m4trace:configure.in:639: -1- AC_CONFIG_FILES([\
+m4trace:configure.in:356: -1- AC_SUBST([DIRECTORY_SEPARATOR])
+m4trace:configure.in:370: -1- AC_SUBST([ENABLE_ABYSS_THREADS])
+m4trace:configure.in:386: -1- AC_SUBST([WININET_CONFIG], [$ac_cv_path_WININET_CONFIG])
+m4trace:configure.in:423: -1- AC_SUBST([WININET_CFLAGS])
+m4trace:configure.in:428: -1- AC_SUBST([WININET_LDADD])
+m4trace:configure.in:442: -1- AC_SUBST([WININET_LIBDIR])
+m4trace:configure.in:444: -1- AC_SUBST([WININET_RPATH])
+m4trace:configure.in:446: -1- AC_SUBST([WININET_WL_RPATH])
+m4trace:configure.in:462: -1- AC_SUBST([LIBWWW_CONFIG], [$ac_cv_path_LIBWWW_CONFIG])
+m4trace:configure.in:499: -1- AC_SUBST([LIBWWW_LDADD])
+m4trace:configure.in:513: -1- AC_SUBST([LIBWWW_LIBDIR])
+m4trace:configure.in:521: -1- AC_SUBST([LIBWWW_RPATH])
+m4trace:configure.in:524: -1- AC_SUBST([LIBWWW_WL_RPATH])
+m4trace:configure.in:537: -1- AC_SUBST([CURL_CONFIG], [$ac_cv_path_CURL_CONFIG])
+m4trace:configure.in:555: -1- AC_SUBST([CURL_LDADD])
+m4trace:configure.in:565: -1- AC_SUBST([CURL_LIBDIR])
+m4trace:configure.in:567: -1- AC_SUBST([CURL_RPATH])
+m4trace:configure.in:569: -1- AC_SUBST([CURL_WL_RPATH])
+m4trace:configure.in:592: -1- AC_SUBST([HAVE_LIBWWW_SSL_DEFINE])
+m4trace:configure.in:602: -1- AC_SUBST([have_xml2_config])
+m4trace:configure.in:608: -1- AC_SUBST([ENABLE_LIBXML2_BACKEND])
+m4trace:configure.in:614: -1- AC_SUBST([C_COMPILER_GNU])
+m4trace:configure.in:616: -1- AC_SUBST([CXX_COMPILER_GNU])
+m4trace:configure.in:620: -1- AC_SUBST([CC_WARN_FLAGS])
+m4trace:configure.in:622: -1- AC_SUBST([CPP_WARN_FLAGS])
+m4trace:configure.in:626: -1- AC_SUBST([BUILDDIR])
+m4trace:configure.in:640: -1- AC_CONFIG_FILES([\
           Makefile.srcdir \
           Makefile.config \
           xmlrpc_config.h \
           ])
-m4trace:configure.in:639: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
+m4trace:configure.in:640: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
 You should run autoupdate.], [])
-m4trace:configure.in:639: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
-m4trace:configure.in:639: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
+m4trace:configure.in:640: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
+m4trace:configure.in:640: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])

@@ -52,19 +52,20 @@
    such subordinate libraries as OpenSSL and Winsock.
 -----------------------------------------------------------------------------*/
 
+#include "xmlrpc_config.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#if !MSVCRT
 #include <sys/select.h>
+#endif
 #include <signal.h>
-#include <sys/time.h>  /* For timeval */
 
 #ifdef WIN32
 #include "curllink.h"
 #endif
-
-#include "xmlrpc_config.h"
 
 #include "bool.h"
 #include "girmath.h"
@@ -1028,7 +1029,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
         struct timeval nowTime;
         int timeLeft;
 
-        gettimeofday(&nowTime, NULL);
+        xmlrpc_gettimeofday(&nowTime);
         timeLeft = timeDiffMillisec(timeoutDt, nowTime);
 
         selectTimeoutMillisec = MIN(3000, MAX(0, timeLeft));
@@ -1246,7 +1247,7 @@ curlMulti_finish(xmlrpc_env *       const envP,
 
             doCurlWork(envP, curlMultiP, &rpcStillRunning);
             
-            gettimeofday(&nowTime, NULL);
+            xmlrpc_gettimeofday(&nowTime);
             
             timedOut = (timeoutType == timeout_yes &&
                         timeIsAfter(nowTime, deadline));
@@ -2091,7 +2092,7 @@ finishAsynch(
     
     if (timeoutType == timeout_yes) {
         struct timeval waitStartTime;
-        gettimeofday(&waitStartTime, NULL);
+        xmlrpc_gettimeofday(&waitStartTime);
         addMilliseconds(waitStartTime, timeout, &waitTimeoutTime);
     }
 
