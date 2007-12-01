@@ -1,5 +1,10 @@
+#include "xmlrpc_config.h"
 #include <assert.h>
 #include <time.h>
+
+#if MSVCRT
+#include <winbase.h>
+#endif
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/string_int.h"
