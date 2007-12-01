@@ -25,7 +25,6 @@
   class members had to be declared public so that other components of
   the library could see them, but the user is not supposed to access
   those members.
-
 *****************************************************************************/
 
 #include <cstdlib>
