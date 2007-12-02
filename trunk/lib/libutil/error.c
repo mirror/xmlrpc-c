@@ -8,10 +8,10 @@
 #include <stdarg.h>
 
 #include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/util.h"
 
 
-#define ERROR_BUFFER_SZ (256)
 
 void
 xmlrpc_assertion_failed(const char * const fileName,
@@ -88,15 +88,13 @@ xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
                              const char * const format,
                              va_list      const args) {
 
-    char buffer[ERROR_BUFFER_SZ];
+    const char * faultDescription;
 
-    vsnprintf(buffer, ERROR_BUFFER_SZ, format, args);
+    xmlrpc_vasprintf(&faultDescription, format, args);
 
-    /* vsnprintf is guaranteed to terminate the buffer, but we're paranoid. */
-    buffer[ERROR_BUFFER_SZ - 1] = '\0';
+    xmlrpc_env_set_fault(envP, code, faultDescription);
 
-    /* Set the fault. */
-    xmlrpc_env_set_fault(envP, code, buffer);
+    xmlrpc_strfree(faultDescription);
 }
 
 

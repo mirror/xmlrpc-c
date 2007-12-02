@@ -79,7 +79,6 @@ static int test_int_array_3[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 static void test_env(void)
 {
     xmlrpc_env env, env2;
-    char *s;
 
     /* Test xmlrpc_env_init. */
     xmlrpc_env_init(&env);
@@ -105,13 +104,6 @@ static void test_env(void)
     TEST(env.fault_occurred);
     TEST(env.fault_code == 3);
     TEST(strcmp(env.fault_string, "abar9") == 0);
-
-    /* Set a fault with an oversized string. */
-    s = "12345678901234567890123456789012345678901234567890";
-    xmlrpc_env_set_fault_formatted(&env, 4, "%s%s%s%s%s%s", s, s, s, s, s, s);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == 4);
-    TEST(strlen(env.fault_string) == 255);
 
     /* Test cleanup code (with help from memprof). */
     xmlrpc_env_clean(&env);
