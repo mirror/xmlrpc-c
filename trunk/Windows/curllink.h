@@ -15,3 +15,4 @@
 
 #pragma comment( lib, "Winmm.lib" )
 #pragma comment( lib, "Ws2_32.lib" )
+#pragma comment( lib, "Wldap32.lib" )
