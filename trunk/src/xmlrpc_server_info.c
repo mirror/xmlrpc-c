@@ -62,6 +62,48 @@ xmlrpc_server_info_new(xmlrpc_env * const envP,
 
 
 static void
+copyUserNamePw(xmlrpc_env *  const envP,
+               const char *  const src,
+               const char ** const dstP) { 
+    
+    if (src == NULL)
+        *dstP = NULL;
+    else {
+        *dstP = strdup(src);
+        if (*dstP == NULL)
+            xmlrpc_faultf(envP, "Couldn't allocate memory for user name/pw");
+    }
+}
+
+
+
+static void
+freeIfNonNull(const char * const arg) {
+
+    if (arg)
+        xmlrpc_strfree(arg);
+}
+
+
+
+static void
+copyBasicAuthHdrValue(xmlrpc_env *  const envP,
+                      const char *  const src,
+                      const char ** const dstP) { 
+    
+    if (src == NULL)
+        *dstP = NULL;
+    else {
+        *dstP = strdup(src);
+        if (*dstP == NULL)
+            xmlrpc_faultf(envP, "Couldn't allocate memory "
+                          "for authentication header value");
+    }
+}
+
+
+
+static void
 copyServerInfoContent(xmlrpc_env *               const envP,
                       xmlrpc_server_info *       const dstP,
                       const xmlrpc_server_info * const srcP) {
@@ -70,24 +112,13 @@ copyServerInfoContent(xmlrpc_env *               const envP,
     if (dstP->serverUrl == NULL)
         xmlrpc_faultf(envP, "Couldn't allocate memory for server URL");
     else {
-        if (srcP->userNamePw == NULL)
-            dstP->userNamePw = NULL;
-        else {
-            dstP->userNamePw =
-                strdup(srcP->userNamePw);
-            if (dstP->userNamePw == NULL)
-                xmlrpc_faultf(envP, "Couldn't allocate memory "
-                              "for authentication info");
+        copyUserNamePw(envP, srcP->userNamePw, &dstP->userNamePw);
 
-            if (srcP->basicAuthHdrValue == NULL)
-                dstP->basicAuthHdrValue = NULL;
-            else {
-                dstP->basicAuthHdrValue =
-                    strdup(srcP->basicAuthHdrValue);
-                if (dstP->basicAuthHdrValue == NULL)
-                    xmlrpc_faultf(envP, "Couldn't allocate memory "
-                                  "for authentication info");
+        if (!envP->fault_occurred) {
+            copyBasicAuthHdrValue(envP, srcP->basicAuthHdrValue,
+                                  &dstP->basicAuthHdrValue);
 
+            if (!envP->fault_occurred) {
                 dstP->allowedAuth.basic        =
                     srcP->allowedAuth.basic;
                 dstP->allowedAuth.digest       =
@@ -96,10 +127,15 @@ copyServerInfoContent(xmlrpc_env *               const envP,
                     srcP->allowedAuth.gssnegotiate;
                 dstP->allowedAuth.ntlm         =
                     srcP->allowedAuth.ntlm;
+                
+                if (envP->fault_occurred)
+                    freeIfNonNull(dstP->basicAuthHdrValue);
             }
             if (envP->fault_occurred)
-                xmlrpc_strfree(dstP->serverUrl);
+                freeIfNonNull(dstP->userNamePw);
         }
+        if (envP->fault_occurred)
+            xmlrpc_strfree(dstP->serverUrl);
     }
 }
 
