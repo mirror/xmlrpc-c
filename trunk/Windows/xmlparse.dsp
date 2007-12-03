@@ -68,7 +68,7 @@ LIB32=link.exe -lib
 LINK32=link.exe -lib
 MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\lib\expat\xmltok" /I "..\lib\expat\xmlwf" /I ".." /I "..\lib\util\include" /I "..\include" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\lib\expat\xmltok" /I "..\lib\expat\xmlwf" /I ".." /I "..\lib\util\include" /I "..\include" /D "WIN32" /D "_WINDOWS" /D "XML_DTD" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe

@@ -34,9 +34,7 @@ CCNODBG    = cl.exe /MT /O2 /DNDEBUG
 
 The /MT option links with the Multithreaded non-dll version of the c
 runtime.  If this change is not made, the project will not link, as
-this is the default setting for the Xmlrpc-c projects.  In debug mode,
-we use the dll version of the c runtime as it makes memory leak
-checking tools work better.
+this is the default setting for the Xmlrpc-c projects.
 
 3. Open a command prompt window and run the vcvars32.bat file in your
 Visual C++ distribution.  If you are using Studio 2002 or 2003, use

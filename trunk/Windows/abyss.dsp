@@ -68,7 +68,7 @@ LIB32=link.exe -lib
 MTL=midl.exe
 LINK32=link.exe -lib
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\\" /I "..\include" /I "..\lib\util\include" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "_THREAD" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\\" /I "..\include" /I "..\lib\util\include" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "_THREAD" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
