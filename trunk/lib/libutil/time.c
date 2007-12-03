@@ -3,10 +3,9 @@
 #include <time.h>
 
 #if MSVCRT
-#include <winbase.h>
+#include <windows.h>
 #endif
 
-#include "xmlrpc_config.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/time_int.h"
 
