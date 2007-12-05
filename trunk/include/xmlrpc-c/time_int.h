@@ -2,9 +2,6 @@
 #define TIME_H_INCLUDED
 
 #include <time.h>
-#if !MSVCRT
-  #include <sys/time.h>  /* For struct timeval */
-#endif
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
