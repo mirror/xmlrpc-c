@@ -1,6 +1,7 @@
 #include "xmlrpc_config.h"
 #include <assert.h>
 #include <time.h>
+#include <sys/time.h>
 
 #if MSVCRT
 #include <windows.h>
