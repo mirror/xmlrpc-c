@@ -335,6 +335,40 @@ registry::disableIntrospection() {
 
 
 
+static xmlrpc_server_shutdown_fn shutdownServer;
+
+static void
+shutdownServer(xmlrpc_env * const envP,
+               void *       const context,
+               const char * const comment,
+               void *       const callInfo) {
+
+    registry::shutdown * const shutdownP(
+        static_cast<registry::shutdown *>(context));
+
+    assert(shutdownP != NULL);
+
+    try {
+        shutdownP->doit(string(comment), callInfo);
+    } catch (exception const& e) {
+        xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR, e.what());
+    }
+}
+
+
+
+void
+registry::setShutdown(const registry::shutdown * const shutdownP) {
+
+    void * const context(const_cast<registry::shutdown *>(shutdownP));
+
+    xmlrpc_registry_set_shutdown(this->c_registryP,
+                                 &shutdownServer,
+                                 context);
+}
+
+
+
 void
 registry::setDialect(xmlrpc_dialect const dialect) {
 

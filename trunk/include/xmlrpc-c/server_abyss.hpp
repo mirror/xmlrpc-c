@@ -85,6 +85,14 @@ public:
     void
     terminate();
     
+    class shutdown : public xmlrpc_c::registry::shutdown {
+    public:
+        shutdown(xmlrpc_c::serverAbyss * const severAbyssP);
+        void doit(string const& comment, void * const callInfo) const;
+    private:
+        xmlrpc_c::serverAbyss * const serverAbyssP;
+    };
+
 private:
     // The user has the choice of supplying the registry by plain pointer
     // (and managing the object's existence himself) or by autoObjectPtr

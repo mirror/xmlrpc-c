@@ -160,6 +160,20 @@ public:
 
 
 
+serverAbyss::shutdown::shutdown(serverAbyss * const serverAbyssP) :
+    serverAbyssP(serverAbyssP) {}
+
+
+
+void
+serverAbyss::shutdown::doit(string const&,
+                            void * const) const {
+
+    this->serverAbyssP->terminate();
+}
+
+
+
 serverAbyss::constrOpt::constrOpt() {
     present.registryPtr      = false;
     present.registryP        = false;
@@ -174,9 +188,9 @@ serverAbyss::constrOpt::constrOpt() {
     present.chunkResponse    = false;
     
     // Set default values
-    value.dontAdvertise = false;
-    value.uriPath       = string("/RPC2");
-    value.chunkResponse = false;
+    value.dontAdvertise  = false;
+    value.uriPath        = string("/RPC2");
+    value.chunkResponse  = false;
 }
 
 
@@ -292,7 +306,7 @@ serverAbyss::initialize(constrOpt const& opt) {
 
     try {
         setAdditionalServerParms(opt);
-        
+
         // chunked response implementation is incomplete.  We must
         // eventually get away from libxmlrpc_server_abyss and
         // register our own handler with the Abyss server.  At that

@@ -161,6 +161,119 @@ public:
 
 
 
+class setShutdownTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "setShutdownTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+
+        registry myRegistry;
+
+        serverAbyss myServer(serverAbyss::constrOpt()
+                             .registryP(&myRegistry)
+                             .portNumber(12345)
+            );
+
+        serverAbyss::shutdown shutdown(&myServer);
+
+        myRegistry.setShutdown(&shutdown);
+    }
+};
+
+
+
+class createTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "createTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        registryPtr myRegistryP(new registry);
+    
+        myRegistryP->addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        EXPECT_ERROR(  // No registry
+            serverAbyss::constrOpt opt;
+            serverAbyss abyssServer(opt);
+            );
+        EXPECT_ERROR(  // Both portNumber and socketFd
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .portNumber(8080)
+                                    .socketFd(3));
+            );
+    
+        // Due to the vagaries of Abyss, construction of the following
+        // objects may exit the program if it detects an error, such as
+        // port number already in use.  We need to fix Abyss some day.
+    
+        {
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
+                                    .portNumber(12345)
+                );
+        }
+        {
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryPtr(myRegistryP)
+                                    .portNumber(12345)
+                );
+    
+            EXPECT_ERROR(  // Both registryP and registryPtr
+                serverAbyss abyssServer(serverAbyss::constrOpt()
+                                        .registryPtr(myRegistryP)
+                                        .registryP(&myRegistry)
+                                        .portNumber(12345)
+                    );
+                );
+        }
+        {
+            boundSocket socket(12345);
+            
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
+                                    .socketFd(socket.fd)
+                );
+        }
+        {
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
+                );
+        }
+    
+        {
+            // Test all the options
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryPtr(myRegistryP)
+                                    .portNumber(12345)
+                                    .logFileName("/tmp/logfile")
+                                    .keepaliveTimeout(5)
+                                    .keepaliveMaxConn(4)
+                                    .timeout(20)
+                                    .dontAdvertise(true)
+                                    .uriPath("/xmlrpc")
+                );
+    
+        }
+        {
+            serverAbyss abyssServer(
+                myRegistry,
+                12345,              // TCP port on which to listen
+                "/tmp/xmlrpc_log"  // Log file
+                );
+        }
+    }
+};
+
+
+
 string
 serverAbyssTestSuite::suiteName() {
     return "serverAbyssTestSuite";
@@ -172,81 +285,8 @@ serverAbyssTestSuite::runtests(unsigned int const indentation) {
 
     addHandlerTestSuite().run(indentation+1);
 
-    registry myRegistry;
-        
-    myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+    setShutdownTestSuite().run(indentation+1);
 
-    registryPtr myRegistryP(new registry);
+    createTestSuite().run(indentation+1);
 
-    myRegistryP->addMethod("sample.add", methodPtr(new sampleAddMethod));
-
-    EXPECT_ERROR(  // No registry
-        serverAbyss::constrOpt opt;
-        serverAbyss abyssServer(opt);
-        );
-    EXPECT_ERROR(  // Both portNumber and socketFd
-        serverAbyss abyssServer(serverAbyss::constrOpt()
-                                .portNumber(8080)
-                                .socketFd(3));
-        );
-
-    // Due to the vagaries of Abyss, construction of the following
-    // objects may exit the program if it detects an error, such as
-    // port number already in use.  We need to fix Abyss some day.
-
-    {
-        serverAbyss abyssServer(serverAbyss::constrOpt()
-                                .registryP(&myRegistry)
-                                .portNumber(12345)
-            );
-    }
-    {
-        serverAbyss abyssServer(serverAbyss::constrOpt()
-                                .registryPtr(myRegistryP)
-                                .portNumber(12345)
-            );
-
-        EXPECT_ERROR(  // Both registryP and registryPtr
-            serverAbyss abyssServer(serverAbyss::constrOpt()
-                                    .registryPtr(myRegistryP)
-                                    .registryP(&myRegistry)
-                                    .portNumber(12345)
-                );
-            );
-    }
-    {
-        boundSocket socket(12345);
-        
-        serverAbyss abyssServer(serverAbyss::constrOpt()
-                                .registryP(&myRegistry)
-                                .socketFd(socket.fd)
-            );
-    }
-    {
-        serverAbyss abyssServer(serverAbyss::constrOpt()
-                                .registryP(&myRegistry)
-            );
-    }
-
-    {
-        // Test all the options
-        serverAbyss abyssServer(serverAbyss::constrOpt()
-                                .registryPtr(myRegistryP)
-                                .portNumber(12345)
-                                .logFileName("/tmp/logfile")
-                                .keepaliveTimeout(5)
-                                .keepaliveMaxConn(4)
-                                .timeout(20)
-                                .dontAdvertise(true)
-                                .uriPath("/xmlrpc")
-            );
-
-    }
-    {
-        serverAbyss abyssServer(
-            myRegistry,
-            12345,              // TCP port on which to listen
-            "/tmp/xmlrpc_log"  // Log file
-            );
-    }
 }

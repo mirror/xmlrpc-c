@@ -284,6 +284,32 @@ public:
 
 
 
+class registryShutdownTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "registryShutdownTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+
+        xmlrpc_c::registry myRegistry;
+
+        class myshutdown : public xmlrpc_c::registry::shutdown {
+        public:
+            void doit(string const&,
+                      void * const) const {
+                
+            }
+        };
+
+        myshutdown shutdown;
+        
+        myRegistry.setShutdown(&shutdown);
+    }
+};
+
+
+
 string
 registryTestSuite::suiteName() {
     return "registryTestSuite";
@@ -315,6 +341,8 @@ registryTestSuite::runtests(unsigned int const indentation) {
     myRegistry.setDialect(xmlrpc_dialect_i8);
 
     myRegistry.setDialect(xmlrpc_dialect_apache);
+
+    registryShutdownTestSuite().run(indentation+1);
 
     myRegistry.processCall(echoI8ApacheCall, &response);
 
