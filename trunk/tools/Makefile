@@ -11,10 +11,10 @@ SUBDIRS = binmode-rpc-kit turbocharger
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   SUBDIRS += xmlrpc xmlrpc_transport
-endif
 
-ifeq ($(ENABLE_CPLUSPLUS),yes)
-  SUBDIRS += xml-rpc-api2cpp
+  ifeq ($(ENABLE_CPLUSPLUS),yes)
+    SUBDIRS += xml-rpc-api2cpp xmlrpc_cpp_proxy
+  endif
 endif
 
 .PHONY: all clean distclean install check dep
