@@ -17,7 +17,7 @@
 #endif
 
 void
-xmlrpc_gettimeofday(struct timeval * const tvP);
+xmlrpc_gettimeofday(xmlrpc_timespec * const todP);
 
 void
 xmlrpc_timegm(const struct tm  * const brokenTime,

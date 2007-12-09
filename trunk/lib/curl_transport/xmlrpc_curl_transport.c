@@ -167,18 +167,18 @@ struct curlSetup {
 
 
 static int
-timeDiffMillisec(struct timeval const minuend,
-                 struct timeval const subtractor) {
+timeDiffMillisec(xmlrpc_timespec const minuend,
+                 xmlrpc_timespec const subtractor) {
 
     return (minuend.tv_sec - subtractor.tv_sec) * 1000 +
-        (minuend.tv_usec - subtractor.tv_usec + 500) / 1000;
+        (minuend.tv_nsec - subtractor.tv_nsec + 1E6/2) / 1E6;
 }
 
 
 
 static bool
-timeIsAfter(struct timeval const comparator,
-            struct timeval const comparand) {
+timeIsAfter(xmlrpc_timespec const comparator,
+            xmlrpc_timespec const comparand) {
 
     if (comparator.tv_sec > comparand.tv_sec)
         return true;
@@ -186,7 +186,7 @@ timeIsAfter(struct timeval const comparator,
         return false;
     else {
         /* Seconds are equal */
-        if (comparator.tv_usec > comparand.tv_usec)
+        if (comparator.tv_nsec > comparand.tv_nsec)
             return true;
         else
             return false;
@@ -196,16 +196,20 @@ timeIsAfter(struct timeval const comparator,
 
 
 static void
-addMilliseconds(struct timeval   const addend,
-                unsigned int     const adder,
-                struct timeval * const sumP) {
+addMilliseconds(xmlrpc_timespec   const addend,
+                unsigned int      const adder,
+                xmlrpc_timespec * const sumP) {
 
-    unsigned int newRawUsec;
+    xmlrpc_timespec sum;
 
-    newRawUsec = addend.tv_usec + adder * 1000;
+    sum.tv_sec  = addend.tv_sec + adder / 1000;
+    sum.tv_nsec = addend.tv_nsec + (adder % 1000) * 1E6;
 
-    sumP->tv_sec  = addend.tv_sec + newRawUsec / 1000000;
-    sumP->tv_usec = newRawUsec % 1000000;
+    if (sum.tv_nsec >= 1E9) {
+        sum.tv_sec += 1;
+        sum.tv_nsec -= 1E9;
+    }
+    *sumP = sum;
 }
 
 
@@ -1006,7 +1010,7 @@ curlMulti_updateFdSet(curlMulti * const curlMultiP,
 
 static xmlrpc_timespec
 pselectTimeout(xmlrpc_timeoutType const timeoutType,
-               struct timeval     const timeoutDt) {
+               xmlrpc_timespec    const timeoutDt) {
 /*----------------------------------------------------------------------------
    Return the value that should be used in the select() call to wait for
    there to be work for the Curl multi manager to do, given that the user
@@ -1026,7 +1030,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
         selectTimeoutMillisec = 3000;
         break;
     case timeout_yes: {
-        struct timeval nowTime;
+        xmlrpc_timespec nowTime;
         int timeLeft;
 
         xmlrpc_gettimeofday(&nowTime);
@@ -1081,7 +1085,7 @@ static void
 waitForWork(xmlrpc_env *       const envP,
             curlMulti *        const curlMultiP,
             xmlrpc_timeoutType const timeoutType,
-            struct timeval     const deadline,
+            xmlrpc_timespec    const deadline,
             sigset_t *         const sigmaskP) {
 /*----------------------------------------------------------------------------
    Wait for the Curl multi manager to have work to do, time to run out,
@@ -1147,7 +1151,7 @@ static void
 waitForWorkInt(xmlrpc_env *       const envP,
                curlMulti *        const curlMultiP,
                xmlrpc_timeoutType const timeoutType,
-               struct timeval     const deadline,
+               xmlrpc_timespec    const deadline,
                int *              const interruptP) {
 /*----------------------------------------------------------------------------
    Same as waitForWork(), except we guarantee to return if a signal handler
@@ -1226,7 +1230,7 @@ static void
 curlMulti_finish(xmlrpc_env *       const envP,
                  curlMulti *        const curlMultiP,
                  xmlrpc_timeoutType const timeoutType,
-                 struct timeval     const deadline,
+                 xmlrpc_timespec    const deadline,
                  int *              const interruptP) {
     
     bool rpcStillRunning;
@@ -1247,7 +1251,7 @@ curlMulti_finish(xmlrpc_env *       const envP,
             waitForWork(envP, curlMultiP, timeoutType, deadline, NULL);
 
         if (!envP->fault_occurred) {
-            struct timeval nowTime;
+            xmlrpc_timespec nowTime;
 
             doCurlWork(envP, curlMultiP, &rpcStillRunning);
             
@@ -1354,7 +1358,7 @@ performCurlTransaction(xmlrpc_env *      const envP,
     */
 
     if (!envP->fault_occurred) {
-        struct timeval dummy = {0,0};
+        xmlrpc_timespec dummy = {0,0};
 
         curlMulti_finish(envP, curlMultiP, timeout_no, dummy, interruptP);
 
@@ -2089,13 +2093,13 @@ finishAsynch(
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
 
-    struct timeval waitTimeoutTime;
+    xmlrpc_timespec waitTimeoutTime;
         /* The datetime after which we should quit waiting */
 
     xmlrpc_env_init(&env);
     
     if (timeoutType == timeout_yes) {
-        struct timeval waitStartTime;
+        xmlrpc_timespec waitStartTime;
         xmlrpc_gettimeofday(&waitStartTime);
         addMilliseconds(waitStartTime, timeout, &waitTimeoutTime);
     }

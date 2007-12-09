@@ -11,15 +11,36 @@
 #include "xmlrpc-c/time_int.h"
 
 
+/* A note about struct timeval and Windows: There is a 'struct
+   timeval' type in Windows, but it is just an argument to select(),
+   which is just part of the sockets interface.  It's defined
+   identically to the POSIX type of the same name, but not meant for
+   general timekeeping as the POSIX type is.
+*/
+
+#if HAVE_GETTIMEOFDAY
+static void
+gettimeofdayPosix(xmlrpc_timespec * const todP) {
+
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+
+    todP->tv_sec  = tv.tv_sec;
+    todP->tv_nsec = tv.tv_usec * 1000;
+}
+#endif
+
+
 
 #if MSVCRT
 static void
-gettimeofdayWindows(struct timeval * const tvP) {
-#define EPOCH_FILETIME 11644473600000000Ui64
-    /* Number of micro-seconds between the beginning of the Windows epoch
-       (Jan. 1, 1601) and the Unix epoch (Jan. 1, 1970).
-    */
+gettimeofdayWindows(xmlrpc_timespec * const todP) {
 
+    __int64 const epochOffset = 116444736000000000i64
+        /* Number of 100-nanosecond units between the beginning of the
+           Windows epoch (Jan. 1, 1601) and the Unix epoch (Jan. 1, 1970).
+        */
     FILETIME        ft;
     LARGE_INTEGER   li;
     __int64         t;
@@ -27,25 +48,24 @@ gettimeofdayWindows(struct timeval * const tvP) {
     GetSystemTimeAsFileTime(&ft);
     li.LowPart  = ft.dwLowDateTime;
     li.HighPart = ft.dwHighDateTime;
-    t  = li.QuadPart / 10   /* In micro-second intervals */
-        - EPOCH_FILETIME;     /* Offset to the Epoch time */
-    tvP->tv_sec  = (long)(t / 1000000);
-    tvP->tv_usec = (long)(t % 1000000);
+    t  = (li.QuadPart - EPOCH_OFFSET) * 100;  /* nanoseconds */
+    todP->tv_sec  = (long)(t / 1E9);
+    todP->tv_nsec = (long)(t % 1E9);
 }
 #endif
 
 
 
 void
-xmlrpc_gettimeofday(struct timeval * const tvP) {
+xmlrpc_gettimeofday(xmlrpc_timespec * const todP) {
 
-    assert(tvP);
+    assert(todP);
 
 #if HAVE_GETTIMEOFDAY
-    gettimeofday(tvP, NULL);
+    gettimeofdayPosix(todP);
 #else
 #if MSVCRT
-    gettimeofdayWindows(tvP);
+    gettimeofdayWindows(todP);
 #else
   #error "We don't know how to get the time of day on this system"
 #endif
