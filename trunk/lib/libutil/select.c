@@ -12,6 +12,12 @@
 
 #include "xmlrpc-c/select_int.h"
 
+
+/* xmlrpc_pselect() is just for use with sockets.  In a POSIX system,
+   it technically works for any file descriptor, but in Windows, select()
+   is part of the socket facility.
+*/
+
 int
 xmlrpc_pselect(int                     const n,
                fd_set *                const readfdsP,
