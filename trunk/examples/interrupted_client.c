@@ -81,7 +81,7 @@ addInterruptibly(xmlrpc_client * const clientP,
 
     printf("Making XMLRPC call to server url '%s' method '%s' "
            "to request the sum "
-           "of 5 and 7...\n", serverUrl, methodName);
+           "of %d and %d...\n", serverUrl, methodName, addend, adder);
 
     interrupt = 0;  /* Global variable */
 
