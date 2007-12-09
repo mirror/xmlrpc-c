@@ -226,44 +226,46 @@ public:
     public:
         constrOpt();
 
-        constrOpt & network_interface (std::string const& arg);
-        constrOpt & no_ssl_verifypeer (bool        const& arg);
-        constrOpt & no_ssl_verifyhost (bool        const& arg);
-        constrOpt & user_agent        (std::string const& arg);
-        constrOpt & ssl_cert          (std::string const& arg);
-        constrOpt & sslcerttype       (std::string const& arg);
-        constrOpt & sslcertpasswd     (std::string const& arg);
-        constrOpt & sslkey            (std::string const& arg);
-        constrOpt & sslkeytype        (std::string const& arg);
-        constrOpt & sslkeypasswd      (std::string const& arg);
-        constrOpt & sslengine         (std::string const& arg);
-        constrOpt & sslengine_default (bool        const& arg);
+        constrOpt & network_interface (std::string  const& arg);
+        constrOpt & no_ssl_verifypeer (bool         const& arg);
+        constrOpt & no_ssl_verifyhost (bool         const& arg);
+        constrOpt & user_agent        (std::string  const& arg);
+        constrOpt & ssl_cert          (std::string  const& arg);
+        constrOpt & sslcerttype       (std::string  const& arg);
+        constrOpt & sslcertpasswd     (std::string  const& arg);
+        constrOpt & sslkey            (std::string  const& arg);
+        constrOpt & sslkeytype        (std::string  const& arg);
+        constrOpt & sslkeypasswd      (std::string  const& arg);
+        constrOpt & sslengine         (std::string  const& arg);
+        constrOpt & sslengine_default (bool         const& arg);
         constrOpt & sslversion        (xmlrpc_sslversion const& arg);
-        constrOpt & cainfo            (std::string const& arg);
-        constrOpt & capath            (std::string const& arg);
-        constrOpt & randomfile        (std::string const& arg);
-        constrOpt & egdsocket         (std::string const& arg);
-        constrOpt & ssl_cipher_list   (std::string const& arg);
+        constrOpt & cainfo            (std::string  const& arg);
+        constrOpt & capath            (std::string  const& arg);
+        constrOpt & randomfile        (std::string  const& arg);
+        constrOpt & egdsocket         (std::string  const& arg);
+        constrOpt & ssl_cipher_list   (std::string  const& arg);
+        constrOpt & timeout           (unsigned int const& arg);
 
         struct {
-            std::string network_interface;
-            bool        no_ssl_verifypeer;
-            bool        no_ssl_verifyhost;
-            std::string user_agent;
-            std::string ssl_cert;
-            std::string sslcerttype;
-            std::string sslcertpasswd;
-            std::string sslkey;
-            std::string sslkeytype;
-            std::string sslkeypasswd;
-            std::string sslengine;
-            bool        sslengine_default;
+            std::string  network_interface;
+            bool         no_ssl_verifypeer;
+            bool         no_ssl_verifyhost;
+            std::string  user_agent;
+            std::string  ssl_cert;
+            std::string  sslcerttype;
+            std::string  sslcertpasswd;
+            std::string  sslkey;
+            std::string  sslkeytype;
+            std::string  sslkeypasswd;
+            std::string  sslengine;
+            bool         sslengine_default;
             xmlrpc_sslversion sslversion;
-            std::string cainfo;
-            std::string capath;
-            std::string randomfile;
-            std::string egdsocket;
-            std::string ssl_cipher_list;
+            std::string  cainfo;
+            std::string  capath;
+            std::string  randomfile;
+            std::string  egdsocket;
+            std::string  ssl_cipher_list;
+            unsigned int timeout;
         } value;
         struct {
             bool network_interface;
@@ -284,6 +286,7 @@ public:
             bool randomfile;
             bool egdsocket;
             bool ssl_cipher_list;
+            bool timeout;
         } present;
     };
 
