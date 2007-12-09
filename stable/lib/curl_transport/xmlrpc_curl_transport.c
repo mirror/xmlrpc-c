@@ -300,7 +300,7 @@ curlMulti_perform(xmlrpc_env *       const envP,
         if (rc != CURLM_OK) {
             xmlrpc_faultf(envP,
                           "Impossible failure of curl_multi_perform() "
-                          "with rc %d (%s)", rc, curl_multi_strerror(rc));
+                          "with rc %d", rc);
         }
     }
 }        
@@ -323,8 +323,7 @@ curlMulti_addHandle(xmlrpc_env *       const envP,
     if (rc != CURLM_OK)
         xmlrpc_faultf(envP, "Could not add Curl session to the "
                       "curl multi manager.  curl_multi_add_handle() "
-                      "returns error code %d (%s)",
-                      rc, curl_multi_strerror(rc));
+                      "returns error code %d", rc);
 }
 
 
@@ -425,7 +424,7 @@ curlMulti_fdset(xmlrpc_env *       const envP,
 
     if (rc != CURLM_OK)
         xmlrpc_faultf(envP, "Impossible failure of curl_multi_fdset() "
-                      "with rc %d (%s)", rc, curl_multi_strerror(rc));
+                      "with rc %d", rc);
 }
 
 
