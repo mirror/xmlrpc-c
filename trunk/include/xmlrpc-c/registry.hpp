@@ -128,8 +128,9 @@ public:
 
     class shutdown {
     public:
-        virtual void doit(string const& comment,
-                          void * const  callInfo) const = 0;
+        virtual void
+        doit(std::string const& comment,
+             void *      const  callInfo) const = 0;
     };
 
     void
