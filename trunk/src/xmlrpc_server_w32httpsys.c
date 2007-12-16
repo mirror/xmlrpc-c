@@ -21,9 +21,7 @@
 
 /* See compilation note above if this header is not found! */
 #include <http.h>
-#include <windows.h>
 #include <strsafe.h>
-#include <wininet.h>
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/base.h"
