@@ -1,7 +1,10 @@
 #include "xmlrpc_config.h"
 #include <assert.h>
 #include <time.h>
+
+#if !MSVCRT
 #include <sys/time.h>
+#endif
 
 #if MSVCRT
 #include <windows.h>
@@ -37,7 +40,7 @@ gettimeofdayPosix(xmlrpc_timespec * const todP) {
 static void
 gettimeofdayWindows(xmlrpc_timespec * const todP) {
 
-    __int64 const epochOffset = 116444736000000000i64
+    __int64 const epochOffset = 116444736000000000i64;
         /* Number of 100-nanosecond units between the beginning of the
            Windows epoch (Jan. 1, 1601) and the Unix epoch (Jan. 1, 1970).
         */
@@ -48,9 +51,9 @@ gettimeofdayWindows(xmlrpc_timespec * const todP) {
     GetSystemTimeAsFileTime(&ft);
     li.LowPart  = ft.dwLowDateTime;
     li.HighPart = ft.dwHighDateTime;
-    t  = (li.QuadPart - EPOCH_OFFSET) * 100;  /* nanoseconds */
+    t  = (li.QuadPart - epochOffset) * 100;  /* nanoseconds */
     todP->tv_sec  = (long)(t / 1E9);
-    todP->tv_nsec = (long)(t % 1E9);
+    todP->tv_nsec = (long)(t - (__int64)todP->tv_sec * 1E9);
 }
 #endif
 
