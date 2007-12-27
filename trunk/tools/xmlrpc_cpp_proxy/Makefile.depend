@@ -1,8 +1,0 @@
-proxyClass.o proxyClass.lo proxyClass.osh: proxyClass.cpp \
- /mp/hdc3/xmlrpc-c/trunk/include/xmlrpc-c/client_simple.hpp \
- xmlrpcType.hpp xmlrpcMethod.hpp proxyClass.hpp
-systemProxy.o systemProxy.lo systemProxy.osh: systemProxy.cpp systemProxy.hpp
-xmlrpcMethod.o xmlrpcMethod.lo xmlrpcMethod.osh: xmlrpcMethod.cpp xmlrpcType.hpp xmlrpcMethod.hpp
-xmlrpcType.o xmlrpcType.lo xmlrpcType.osh: xmlrpcType.cpp xmlrpcType.hpp
-xmlrpc_cpp_proxy.o xmlrpc_cpp_proxy.lo xmlrpc_cpp_proxy.osh: xmlrpc_cpp_proxy.cpp xmlrpcType.hpp \
- xmlrpcMethod.hpp proxyClass.hpp systemProxy.hpp
