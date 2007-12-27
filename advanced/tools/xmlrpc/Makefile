@@ -29,12 +29,7 @@ all: xmlrpc
 UTIL_OBJS = cmdline_parser.o getoptx.o casprintf.o
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-# These are the Libtool .la files.  We use them only for make dependencies.
-# We'd like to use these in the link rule, by using libtool --link, but
-# Libtool adds -l options to the link to cover the dependencies that are
-# recorded inside the shared libraries.  And it doesn't add the necessary
-# -L options (it can't), so we end up with a messy mixture of the two
-# forms of specifying libraries.
+# Can we just use $(LIBS) in the link?
 
 LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 

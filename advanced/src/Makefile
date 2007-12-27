@@ -75,6 +75,7 @@ endif
 LIBXMLRPC_MODS = \
         resource \
 	trace \
+	version \
 	xmlrpc_data \
 	xmlrpc_datetime \
 	xmlrpc_string \
@@ -88,7 +89,7 @@ LIBXMLRPC_MODS = \
 	xmlrpc_base64 \
 	xmlrpc_authcookie \
 
-LIBXMLRPC_CLIENT_MODS = xmlrpc_client xmlrpc_client_global
+LIBXMLRPC_CLIENT_MODS = xmlrpc_client xmlrpc_client_global xmlrpc_server_info
 
 LIBXMLRPC_SERVER_MODS = registry method system_method
 
@@ -286,5 +287,8 @@ dep-common:
   INCLUDES = $(BASIC_INCLUDES) $(TRANSPORT_INCLUDES) $(LIBXML_INCLUDES)
 
 xmlrpc_client.o xmlrpc_client.osh: $(BLDDIR)/transport_config.h
+xmlrpc_client.o xmlrpc_client.osh: $(BLDDIR)/version.h
+registry.o registry.osh: $(BLDDIR)/version.h
+version.o version.osh: $(BLDDIR)/version.h
 
 include Makefile.depend

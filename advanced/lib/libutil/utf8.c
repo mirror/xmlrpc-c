@@ -38,7 +38,7 @@
 **    http://www.cl.cam.ac.uk/~mgk25/unicode.html
 */
 
-#include <inttypes.h>
+#include "int.h"
 
 #include "xmlrpc_config.h"
 #include "bool.h"

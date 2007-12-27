@@ -32,26 +32,44 @@
 **
 ******************************************************************************/
 
+#include "xmlrpc_config.h"
+
+#define _CRT_SECURE_NO_WARNINGS
+    /* Tell msvcrt not to warn about functions that are often misused and
+       cause security exposures.
+    */
+
 #include <string.h>
 
-#ifdef WIN32
+#if MSVCRT
 #include <io.h>
 #endif
 
-#ifndef WIN32
+#if !MSVCRT
 #include <dirent.h>
 #include <sys/stat.h>
 #endif
 
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "file.h"
+
+abyss_bool const win32 =
+#ifdef WIN32
+TRUE;
+#else
+FALSE;
+#endif
+
 
 /*********************************************************************
 ** File
 *********************************************************************/
 
-abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib)
-{
+abyss_bool
+FileOpen(TFile *      const f,
+         const char * const name,
+         uint32_t     const attrib) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
     return ((*f=_open(name,attrib))!=(-1));
 #else
@@ -59,14 +77,20 @@ abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib)
 #endif
 }
 
-abyss_bool FileOpenCreate(TFile *f, const char *name, uint32_t attrib)
-{
+
+
+abyss_bool
+FileOpenCreate(TFile *      const f,
+               const char * const name,
+               uint32_t     const attrib) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
     return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
 #else
     return ((*f=open(name,attrib | O_CREAT,S_IWRITE | S_IREAD))!=(-1));
 #endif
 }
+
+
 
 abyss_bool
 FileWrite(TFile *      const f,
@@ -79,6 +103,8 @@ FileWrite(TFile *      const f,
 #endif
 }
 
+
+
 int32_t
 FileRead(const TFile * const fileP,
          void *        const buffer,
@@ -90,22 +116,26 @@ FileRead(const TFile * const fileP,
 #endif
 }
 
+
+
 abyss_bool
 FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_lseek(*fileP, pos, attrib)!=(-1));
+    return (_lseek(*fileP, (long)pos, attrib)!=(-1));
 #else
     return (lseek(*fileP, pos, attrib)!=(-1));
 #endif
 }
 
+
+
 uint64_t
 FileSize(const TFile * const fileP) {
 
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_filelength(fileP));
+    return (_filelength(*fileP));
 #else
     struct stat fs;
 
@@ -114,8 +144,10 @@ FileSize(const TFile * const fileP) {
 #endif  
 }
 
-abyss_bool FileClose(TFile *f)
-{
+
+
+abyss_bool
+FileClose(TFile * const f) {
 #if defined( WIN32 ) && !defined( __BORLANDC__ )
     return (_close(*f)!=(-1));
 #else
@@ -137,54 +169,80 @@ FileStat(const char * const filename,
 
 
 
-abyss_bool
-FileFindFirst(TFileFind *  const filefind,
-              const char * const path,
-              TFileInfo *  const fileinfo) {
+static void
+fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
+                 const char * const path,
+                 TFileInfo *  const fileinfo ATTR_UNUSED,
+                 abyss_bool * const retP     ATTR_UNUSED) {
+    const char * search;
+
+    xmlrpc_asprintf(&search, "%s\\*", path);
+
 #ifdef WIN32
-    abyss_bool ret;
-    char *p=path+strlen(path);
-
-    *p='\\';
-    *(p+1)='*';
-    *(p+2)='\0';
 #ifndef __BORLANDC__
-    ret=(((*filefind)=_findfirst(path,fileinfo))!=(-1));
+    *retP = (((*filefind) = _findfirst64(search, fileinfo)) != -1);
 #else
-    *filefind = FindFirstFile( path, &fileinfo->data );
-   ret = *filefind != NULL;
-   if( ret )
-   {
-      LARGE_INTEGER li;
-      li.LowPart = fileinfo->data.nFileSizeLow;
-      li.HighPart = fileinfo->data.nFileSizeHigh;
-      strcpy( fileinfo->name, fileinfo->data.cFileName );
-       fileinfo->attrib = fileinfo->data.dwFileAttributes;
-       fileinfo->size   = li.QuadPart;
-      fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
-   }
+    *filefind = FindFirstFile(search, &fileinfo->data);
+    *retP = *filefind != NULL;
+    if (*retP) {
+        LARGE_INTEGER li;
+        li.LowPart = fileinfo->data.nFileSizeLow;
+        li.HighPart = fileinfo->data.nFileSizeHigh;
+        strcpy( fileinfo->name, fileinfo->data.cFileName );
+        fileinfo->attrib = fileinfo->data.dwFileAttributes;
+        fileinfo->size   = li.QuadPart;
+        fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
+    }
 #endif
-    *p='\0';
-    return ret;
-#else  /* WIN32 */
-    strncpy(filefind->path,path,NAME_MAX);
-    filefind->path[NAME_MAX]='\0';
-    filefind->handle=opendir(path);
-    if (filefind->handle)
-        return FileFindNext(filefind,fileinfo);
-
-    return FALSE;
 #endif /* WIN32 */
+    xmlrpc_strfree(search);
 }
 
 
 
-abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
-{
+static void
+fileFindFirstPosix(TFileFind *  const filefind,
+                   const char * const path,
+                   TFileInfo *  const fileinfo,
+                   abyss_bool * const retP) {
+    
+#ifndef WIN32
+    strncpy(filefind->path, path, NAME_MAX);
+    filefind->path[NAME_MAX] = '\0';
+    filefind->handle = opendir(path);
+    if (filefind->handle)
+        *retP = FileFindNext(filefind, fileinfo);
+    else
+        *retP = FALSE;
+#endif
+}
+    
+
+
+abyss_bool
+FileFindFirst(TFileFind *  const filefind,
+              const char * const path,
+              TFileInfo *  const fileinfo) {
+
+    abyss_bool ret;
+
+    if (win32)
+        fileFindFirstWin(filefind, path, fileinfo, &ret);
+    else
+        fileFindFirstPosix(filefind, path, fileinfo, &ret);
+
+    return ret;
+}
+
+
+
+abyss_bool
+FileFindNext(TFileFind * const filefind,
+             TFileInfo * const fileinfo) {
 #ifdef WIN32
 
 #ifndef __BORLANDC__
-    return (_findnext(*filefind,fileinfo)!=(-1));
+    return (_findnext64(*filefind,fileinfo)!=(-1));
 #else
    abyss_bool ret = FindNextFile( *filefind, &fileinfo->data );
    if( ret )
@@ -233,8 +291,8 @@ abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo)
 #endif /* WIN32 */
 }
 
-void FileFindClose(TFileFind *filefind)
-{
+void
+FileFindClose(TFileFind * const filefind) {
 #ifdef WIN32
 
 #ifndef __BORLANDC__

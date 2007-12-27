@@ -28,7 +28,7 @@ abyss_bool
 ThreadStop(TThread * const threadP);
 
 abyss_bool
-ThreadKill(TThread * threadP);
+ThreadKill(TThread * const threadP);
 
 void
 ThreadWaitAndRelease(TThread * const threadP);
@@ -69,6 +69,6 @@ abyss_bool
 MutexTryLock(TMutex * const mutexP);
 
 void
-MutexFree(TMutex * const mutexP);
+MutexDestroy(TMutex * const mutexP);
 
 #endif

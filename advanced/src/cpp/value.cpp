@@ -25,7 +25,6 @@
   class members had to be declared public so that other components of
   the library could see them, but the user is not supposed to access
   those members.
-
 *****************************************************************************/
 
 #include <cstdlib>
@@ -129,6 +128,17 @@ value::~value() {
     if (this->cValueP) {
         xmlrpc_DECREF(this->cValueP);
     }
+}
+
+
+
+bool
+value::isInstantiated() const {
+/*----------------------------------------------------------------------------
+   Return whether the value is actually a value, as opposed to a placeholder
+   variable waiting to be assigned a value.
+-----------------------------------------------------------------------------*/
+    return (this->cValueP != NULL);
 }
 
 
@@ -330,7 +340,7 @@ value_boolean::operator bool() const {
     xmlrpc_read_bool(&env.env_c, this->cValueP, &retval);
     throwIfError(env);
 
-    return (bool)retval;
+    return (retval != false);
 }
 
 
@@ -380,21 +390,25 @@ value_datetime::value_datetime(time_t const cppvalue) {
 
 
 
+#if XMLRPC_HAVE_TIMEVAL
 value_datetime::value_datetime(struct timeval const& cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 
+#if XMLRPC_HAVE_TIMESPEC
 value_datetime::value_datetime(struct timespec const& cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 

@@ -11,8 +11,8 @@
   Copyright information is at the end of the file.
 ****************************************************************************/
 
-#ifndef _ABYSS_H_
-#define _ABYSS_H_
+#ifndef XMLRPC_ABYSS_H_INCLUDED
+#define XMLRPC_ABYSS_H_INCLUDED
 
 
 #ifdef __cplusplus
@@ -21,11 +21,7 @@ extern "C" {
 
 #include <sys/types.h>
 
-#ifdef WIN32
-#include "xmlrpc_config.h"
-#else
-#include <inttypes.h>
-#endif
+#include <xmlrpc-c/inttypes.h>
 
 /****************************************************************************
   STUFF FOR THE OUTER CONTROL PROGRAM TO USE
@@ -85,6 +81,12 @@ typedef struct _TSocket TSocket;
   #include <xmlrpc-c/abyss_unixsock.h>
 #endif
 
+void
+ChanSwitchInit(const char ** const errorP);
+
+void
+ChanSwitchTerm(void);
+
 /* If you're wondering where the constructors for TChanSwitch,
    TChannel, and TSocket are: They're implementation-specific, so look
    in abyss_unixsock.h, etc.
@@ -92,6 +94,12 @@ typedef struct _TSocket TSocket;
 
 void
 ChanSwitchDestroy(TChanSwitch * const chanSwitchP);
+
+void
+ChannelInit(const char ** const errorP);
+
+void
+ChannelTerm(void);
 
 void
 ChannelDestroy(TChannel * const channelP);
@@ -113,11 +121,11 @@ typedef struct {
 typedef struct _TSession TSession;
 
 abyss_bool
-ServerCreate(TServer *    const serverP,
-             const char * const name,
-             uint16_t     const port,
-             const char * const filespath,
-             const char * const logfilename);
+ServerCreate(TServer *       const serverP,
+             const char *    const name,
+             xmlrpc_uint16_t const port,
+             const char *    const filespath,
+             const char *    const logfilename);
 
 void
 ServerCreateSwitch(TServer *     const serverP,
@@ -160,18 +168,18 @@ ServerSetLogFileName(TServer *    const serverP,
 
 #define HAVE_SERVER_SET_KEEPALIVE_TIMEOUT 1
 void
-ServerSetKeepaliveTimeout(TServer * const serverP,
-                          uint32_t  const keepaliveTimeout);
+ServerSetKeepaliveTimeout(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveTimeout);
 
 #define HAVE_SERVER_SET_KEEPALIVE_MAX_CONN 1
 void
-ServerSetKeepaliveMaxConn(TServer * const serverP,
-                          uint32_t  const keepaliveMaxConn);
+ServerSetKeepaliveMaxConn(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveMaxConn);
 
 #define HAVE_SERVER_SET_TIMEOUT 1
 void
-ServerSetTimeout(TServer * const serverP,
-                 uint32_t  const timeout);
+ServerSetTimeout(TServer *       const serverP,
+                 xmlrpc_uint32_t const timeout);
 
 #define HAVE_SERVER_SET_ADVERTISE 1
 void
@@ -314,7 +322,7 @@ typedef struct {
         /* Requesting user (from authorization: header).  NULL if
            request doesn't specify or handler has not authenticated it.
         */
-    unsigned short port;
+    xmlrpc_uint16_t port;
         /* The port number from the URI, or default 80 if the URI doesn't
            specify a port.
         */
@@ -360,9 +368,9 @@ ResponseWriteStart(TSession * const sessionP);
 #define ResponseWrite ResponseWriteStart
 
 abyss_bool
-ResponseWriteBody(TSession *   const sessionP,
-                  const char * const data,
-                  uint32_t     const len);
+ResponseWriteBody(TSession *      const sessionP,
+                  const char *    const data,
+                  xmlrpc_uint32_t const len);
 
 abyss_bool
 ResponseWriteEnd(TSession * const sessionP);
@@ -370,12 +378,12 @@ ResponseWriteEnd(TSession * const sessionP);
 abyss_bool
 ResponseChunked(TSession * const sessionP);
 
-uint16_t
+xmlrpc_uint16_t
 ResponseStatusFromErrno(int const errnoArg);
 
 void
-ResponseStatus(TSession * const sessionP,
-               uint16_t   const code);
+ResponseStatus(TSession *      const sessionP,
+               xmlrpc_uint16_t const code);
 
 void
 ResponseStatusErrno(TSession * const sessionP);
@@ -385,8 +393,8 @@ ResponseContentType(TSession *   const serverP,
                     const char * const type);
 
 abyss_bool
-ResponseContentLength(TSession * const sessionP,
-                      uint64_t   const len);
+ResponseContentLength(TSession *      const sessionP,
+                      xmlrpc_uint64_t const len);
 
 void
 ResponseError2(TSession *   const sessionP,
@@ -477,13 +485,20 @@ MIMETypeGuessFromFile(const char * const filename);
 typedef struct
 {
     void *data;
-    uint32_t size;
-    uint32_t staticid;
+    xmlrpc_uint32_t size;
+    xmlrpc_uint32_t staticid;
 } TBuffer;
 
-abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize);
-abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize);
-void BufferFree(TBuffer *buf);
+abyss_bool
+BufferAlloc(TBuffer *       const buf,
+            xmlrpc_uint32_t const memsize);
+
+abyss_bool
+BufferRealloc(TBuffer *       const buf,
+              xmlrpc_uint32_t const memsize);
+
+void
+BufferFree(TBuffer * const buf);
 
 
 /*********************************************************************
@@ -493,7 +508,7 @@ void BufferFree(TBuffer *buf);
 typedef struct
 {
     TBuffer buffer;
-    uint32_t size;
+    xmlrpc_uint32_t size;
 } TString;
 
 abyss_bool StringAlloc(TString *s);
@@ -508,10 +523,10 @@ char *StringData(TString *s);
 *********************************************************************/
 
 abyss_bool
-RangeDecode(char *str,
-            uint64_t filesize,
-            uint64_t *start,
-            uint64_t *end);
+RangeDecode(char *            const str,
+            xmlrpc_uint64_t   const filesize,
+            xmlrpc_uint64_t * const start,
+            xmlrpc_uint64_t * const end);
 
 abyss_bool DateInit(void);
 
@@ -527,7 +542,7 @@ Base64Encode(const char * const chars,
 ** Session
 *********************************************************************/
 
-abyss_bool SessionLog(TSession *s);
+abyss_bool SessionLog(TSession * const s);
 
 
 #ifdef __cplusplus

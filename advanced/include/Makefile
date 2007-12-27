@@ -13,21 +13,49 @@ all: xmlrpc-c/config.h
 
 xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	>$@
-	echo '/* This file, part of XML-RPC For C/C++, is meant to '     >>$@
-	echo '   define characteristics of this particular installation '>>$@ 
-	echo '   that the other <xmlrpc-c/...> header files need in '	 >>$@
-	echo '   order to compile correctly when #included in a Xmlrpc-c'>>$@
-	echo '   user code.'						 >>$@
-	echo ''								 >>$@
-	echo '   Those header files #include this one.'			 >>$@
-	echo '*/'							 >>$@
-	echo '#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)'          >>$@
+	@echo "Lots of echoes to '$@' suppressed here ..."
+	@echo '#ifndef XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
+	@echo '#define XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
+	@echo ''                                                          >>$@
+	@echo '/* This file, part of XML-RPC For C/C++, is meant to '     >>$@
+	@echo '   define characteristics of this particular installation '>>$@ 
+	@echo '   that the other <xmlrpc-c/...> header files need in '    >>$@
+	@echo '   order to compile correctly when #included in Xmlrpc-c'  >>$@
+	@echo '   user code.'						  >>$@
+	@echo ''                                                          >>$@
+	@echo '   Those header files #include this one.'                  >>$@
+	@echo ''                                                          >>$@
+	@echo '   This file was created by a make rule.'                  >>$@
+	@echo '*/'                                                        >>$@
+	@echo '#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)'          >>$@
+	@echo '#ifdef WIN32'                                              >>$@
+	@echo '  /* SOCKET is a type defined by <winsock.h>.  Anyone who' >>$@
+	@echo '     uses XMLRPC_SOCKET on a WIN32 system must #include'   >>$@
+	@echo '     <winsock.h>'                                          >>$@
+	@echo '  */'                                                      >>$@
+	@echo '  #define XMLRPC_SOCKET SOCKET'                            >>$@
+	@echo '  #define XMLRPC_HAVE_TIMEVAL 0'                           >>$@
+	@echo '  #define XMLRPC_HAVE_TIMESPEC 0'                          >>$@
+	@echo '#else'                                                     >>$@
+	@echo '  #define XMLRPC_SOCKET int'                               >>$@
+	@echo '  #define XMLRPC_HAVE_TIMEVAL 1'                           >>$@
+	@echo '  #define XMLRPC_HAVE_TIMESPEC 1'                          >>$@
+	@echo '#endif'                                                    >>$@
+	@echo ''                                                          >>$@
+	@echo '#endif'                                                    >>$@
 
 $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 	mkdir $@
 
+COMPAT_LINK_CMDS = \
+  $(LN_S) xmlrpc-c/oldxmlrpc.h         xmlrpc.h; \
+  $(LN_S) xmlrpc-c/server.h            xmlrpc_server.h; \
+  $(LN_S) xmlrpc-c/server_abyss.h      xmlrpc_server_abyss.h; \
+  $(LN_S) xmlrpc-c/server_w32httpsys.h xmlrpc_server_w32httpsys.h; \
+
 HEADERS_TO_INSTALL = \
   xmlrpc-c/config.h \
+  xmlrpc-c/inttypes.h \
   xmlrpc-c/c_util.h \
   xmlrpc-c/util.h \
   xmlrpc-c/base.h \
@@ -50,6 +78,7 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
     xmlrpc-c/registry.hpp \
     xmlrpc-c/server_abyss.hpp \
 
+    COMPAT_LINK_CMDS += $(LN_S) xmlrpc-c/oldcppwrapper.hpp XmlRpcCpp.h;
 endif
 
 HEADERINST_PREFIX = /xmlrpc-c
@@ -59,6 +88,8 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
     xmlrpc-c/client.h \
     xmlrpc-c/transport.h \
     xmlrpc-c/client_global.h \
+
+  COMPAT_LINK_CMDS += $(LN_S) xmlrpc-c/client.h xmlrpc_client.h;
 
   ifeq ($(ENABLE_CPLUSPLUS),yes)
     HEADERS_TO_INSTALL += \
@@ -70,14 +101,24 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
 endif
 ifeq ($(ENABLE_CGI_SERVER),yes)
   HEADERS_TO_INSTALL += xmlrpc-c/server_cgi.h
+  COMPAT_LINK_CMDS += $(LN_S) xmlrpc-c/server_cgi.h xmlrpc_cgi.h;
 endif
 
 default: all
 
 all:
 
+.PHONY: install-compat-hdr
+install-compat-hdr:
+# Install old names of header files for backward compatibility
+	cd $(DESTDIR)$(HEADERINST_DIR); \
+	  rm -f xmlrpc.h xmlrpc_client.h xmlrpc_server.h xmlrpc_cgi.h \
+                xmlrpc_server_abyss.h xmlrpc_server_w32httpsys.h \
+	        XmlRpcCpp.h; \
+	  $(COMPAT_LINK_CMDS)
+
 .PHONY: install
-install: install-common
+install: install-common install-compat-hdr
 
 .PHONY: clean distclean dep
 clean:

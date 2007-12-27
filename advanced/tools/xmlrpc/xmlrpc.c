@@ -536,8 +536,7 @@ doCall(xmlrpc_env *               const envP,
         curlXportParmsP->no_ssl_verifyhost = curlnoverifyhost;
         curlXportParmsP->user_agent        = curluseragent;
         
-        clientparms.transportparmsP = (struct xmlrpc_xportparms *) 
-            curlXportParmsP;
+        clientparms.transportparmsP    = curlXportParmsP;
         clientparms.transportparm_size = XMLRPC_CXPSIZE(user_agent);
     } else {
         clientparms.transportparmsP = NULL;
@@ -551,7 +550,7 @@ doCall(xmlrpc_env *               const envP,
         xmlrpc_client_cleanup();
     }
     if (clientparms.transportparmsP)
-        free(clientparms.transportparmsP);
+        free((void*)clientparms.transportparmsP);
 }
 
 

@@ -8,7 +8,9 @@ See the file copying.txt for copying permission.
 #ifdef XML_WINLIB
 
 #define WIN32_LEAN_AND_MEAN
-#define STRICT
+#ifndef STRICT
+#define STRICT 1
+#endif
 #include <windows.h>
 
 #define malloc(x) HeapAlloc(GetProcessHeap(), 0, (x))

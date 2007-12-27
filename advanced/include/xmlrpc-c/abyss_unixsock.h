@@ -8,7 +8,7 @@ struct abyss_unix_chaninfo {
 };
 
 void
-ChanSwitchUnixCreate(uint16_t       const portNumber,
+ChanSwitchUnixCreate(unsigned short const portNumber,
                      TChanSwitch ** const chanSwitchPP,
                      const char **  const errorP);
 

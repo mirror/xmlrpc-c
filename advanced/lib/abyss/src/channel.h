@@ -11,8 +11,7 @@
    oblivious to HTTP -- it just transports a byte stream in each direction.
 ============================================================================*/
 
-#include <netinet/in.h>
-
+#include "int.h"
 #include "xmlrpc-c/abyss.h"
 
 struct TChannelVtbl;
@@ -29,9 +28,11 @@ typedef void ChannelWriteImpl(TChannel *             const channelP,
                               uint32_t               const len,
                               abyss_bool *           const failedP);
 
-typedef uint32_t ChannelReadImpl(TChannel * const channelP,
-                                 char *    const buffer,
-                                 uint32_t  const len);
+typedef void ChannelReadImpl(TChannel *      const channelP,
+                             unsigned char * const buffer,
+                             uint32_t        const len,
+                             uint32_t *      const bytesReceivedP,
+                             abyss_bool *    const failedP);
 
 typedef uint32_t ChannelErrorImpl(TChannel * const channelP);
 
@@ -39,8 +40,6 @@ typedef uint32_t ChannelWaitImpl(TChannel * const channelP,
                                  abyss_bool const rd,
                                  abyss_bool const wr,
                                  uint32_t   const timems);
-
-typedef uint32_t ChannelAvailableReadBytesImpl(TChannel * const channelP);
 
 typedef void ChannelFormatPeerInfoImpl(TChannel *    const channelP,
                                        const char ** const peerStringP);
@@ -50,7 +49,6 @@ struct TChannelVtbl {
     ChannelWriteImpl              * write;
     ChannelReadImpl               * read;
     ChannelWaitImpl               * wait;
-    ChannelAvailableReadBytesImpl * availableReadBytes;
     ChannelFormatPeerInfoImpl     * formatPeerInfo;
 };
 
@@ -81,19 +79,18 @@ ChannelWrite(TChannel *            const channelP,
              uint32_t              const len,
              abyss_bool *          const failedP);
 
-uint32_t
+void
 ChannelRead(TChannel *      const channelP, 
             unsigned char * const buffer, 
-            uint32_t        const len);
+            uint32_t        const len,
+            uint32_t *      const bytesReceivedP,
+            abyss_bool *    const failedP);
 
 uint32_t
 ChannelWait(TChannel * const channelP,
             abyss_bool const rd,
             abyss_bool const wr,
             uint32_t   const timems);
-
-uint32_t
-ChannelAvailableReadBytes(TChannel * const channelP);
 
 void
 ChannelFormatPeerInfo(TChannel *    const channelP,

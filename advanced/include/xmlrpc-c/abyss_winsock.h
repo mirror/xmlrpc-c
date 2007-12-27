@@ -1,18 +1,31 @@
 /* This is just a sub-file for abyss.h */
 
-void
-ChanSwitchWinCreate(TChanSwitch ** const chanSwitchPP);
+#include <winsock.h>
+
+struct abyss_win_chaninfo {
+    size_t peerAddrLen;
+    struct sockaddr peerAddr;
+};
+
 
 void
-ChanSwitchWinCreateWinsock(SOCKET      const winsock,
-                           TChannel ** const channelPP);
+ChanSwitchWinCreate(unsigned short const portNumber,
+                    TChanSwitch ** const chanSwitchPP,
+                    const char **  const errorP);
+
+void
+ChanSwitchWinCreateWinsock(SOCKET         const winsock,
+                           TChanSwitch ** const chanSwitchPP,
+                           const char **  const errorP);
 
 void
 ChannelWinCreate(TChanSwitch ** const chanSwitchPP);
 
 void
-ChannelWinCreateWinsock(SOCKET      const winsock,
-                        TChannel ** const channelPP);
+ChannelWinCreateWinsock(SOCKET                       const fd,
+                        TChannel **                  const channelPP,
+                        struct abyss_win_chaninfo ** const channelInfoPP,
+                        const char **                const errorP);
 
 void
 SocketWinCreate(TSocket ** const socketPP);

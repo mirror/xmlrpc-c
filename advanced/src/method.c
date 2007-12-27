@@ -30,7 +30,7 @@ static void
 signatureDestroy(struct xmlrpc_signature * const signatureP) {
 
     if (signatureP->argList)
-        free(signatureP->argList);
+        free((void*)signatureP->argList);
 
     free(signatureP);
 }
@@ -62,6 +62,14 @@ translateTypeSpecifierToName(xmlrpc_env *  const envP,
                 
 
 
+#if defined(_MSC_VER)
+/* MSVC 8 complains that const char ** is incompatible with void * in the
+   REALLOCARRAY.  It's not.
+*/
+#pragma warning(push)
+#pragma warning(disable:4090)
+#endif
+
 static void
 makeRoomInArgList(xmlrpc_env *              const envP,
                   struct xmlrpc_signature * const signatureP,
@@ -76,6 +84,10 @@ makeRoomInArgList(xmlrpc_env *              const envP,
         }
     }
 }
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 
 
@@ -108,7 +120,7 @@ parseArgumentTypeSpecifiers(xmlrpc_env *              const envP,
         }
     }
     if (envP->fault_occurred) 
-        free(signatureP->argList);
+        free((void*)signatureP->argList);
 
     *nextPP = cursorP;
 }

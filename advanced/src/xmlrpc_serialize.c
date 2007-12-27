@@ -1,5 +1,14 @@
 /* Copyright information is at end of file */
 
+/* Implementation note:
+
+   The printf format specifiers we use appear to be entirely standard,
+   except for the "long long" one, which is %I64 on Windows and %lld
+   everywhere else.  So for that, we use the C99 standard macro PRId64,
+   which is defined by inttypes.h.  Ironically, Windows doesn't have
+   inttypes.h either, but we have int.h instead.
+*/
+
 #include "xmlrpc_config.h"
 
 #include <assert.h>
@@ -8,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 
@@ -348,7 +358,7 @@ formatValueContent(xmlrpc_env *       const envP,
     case XMLRPC_TYPE_I8: {
         const char * const elemName =
             dialect == xmlrpc_dialect_apache ? "ex.i8" : "i8";
-        formatOut(envP, outputP, "<%s>%lld</%s>",
+        formatOut(envP, outputP, "<%s>%" PRId64 "</%s>",
                   elemName, valueP->_value.i8, elemName);
     } break;
 

@@ -11,6 +11,7 @@
    between an HTTP client and server.
 ============================================================================*/
 
+#include "int.h"
 #include "xmlrpc-c/abyss.h"
 
 typedef void SwitchDestroyImpl(TChanSwitch * const socketP);

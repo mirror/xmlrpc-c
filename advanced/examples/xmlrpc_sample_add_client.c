@@ -33,8 +33,8 @@ main(int           const argc,
     xmlrpc_env env;
     xmlrpc_value * resultP;
     xmlrpc_int32 sum;
-    char * const serverUrl = "http://localhost:8080/RPC2";
-    char * const methodName = "sample.add";
+    const char * const serverUrl = "http://localhost:8080/RPC2";
+    const char * const methodName = "sample.add";
 
     if (argc-1 > 0) {
         fprintf(stderr, "This program has no arguments\n");

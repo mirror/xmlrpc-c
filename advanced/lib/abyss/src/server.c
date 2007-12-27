@@ -92,7 +92,7 @@ logClose(struct _TServer * const srvP) {
 
     if (srvP->logfileisopen) {
         FileClose(&srvP->logfile);
-        MutexFree(srvP->logmutexP);
+        MutexDestroy(srvP->logmutexP);
         srvP->logfileisopen = FALSE;
     }
 }
@@ -103,7 +103,7 @@ static void
 initChanSwitchStuff(struct _TServer * const srvP,
                     abyss_bool        const noAccept,
                     TChanSwitch *     const userSwitchP,
-                    uint16_t          const port,
+                    unsigned short    const port,
                     const char **     const errorP) {
     
     if (userSwitchP) {
@@ -129,7 +129,7 @@ static void
 createServer(struct _TServer ** const srvPP,
              abyss_bool         const noAccept,
              TChanSwitch *      const userChanSwitchP,
-             uint16_t           const portNumber,             
+             unsigned short     const portNumber,             
              const char **      const errorP) {
 
     struct _TServer * srvP;
@@ -205,11 +205,11 @@ setNamePathLog(TServer *    const serverP,
 
 
 abyss_bool
-ServerCreate(TServer *    const serverP,
-             const char * const name,
-             uint16_t     const portNumber,
-             const char * const filesPath,
-             const char * const logFileName) {
+ServerCreate(TServer *       const serverP,
+             const char *    const name,
+             xmlrpc_uint16_t const portNumber,
+             const char *    const filesPath,
+             const char *    const logFileName) {
 
     abyss_bool const noAcceptFalse = FALSE;
 
@@ -255,7 +255,7 @@ createChannelFromOsSocket(TOsSocket     const osSocket,
 
 #ifdef WIN32
     ChannelWinCreateWinsock(osSocket, channelPP,
-                            channelInfoPP,
+                            (struct abyss_win_chaninfo**)channelInfoPP,
                             errorP);
 #else
     ChannelUnixCreateFd(osSocket, channelPP,
@@ -280,6 +280,7 @@ ServerCreateSocket(TServer *    const serverP,
     createSwitchFromOsSocket(socketFd, &chanSwitchP, &error);
 
     if (error) {
+        TraceMsg(error);
         success = FALSE;
         xmlrpc_strfree(error);
     } else {
@@ -446,8 +447,8 @@ ServerSetLogFileName(TServer *    const serverP,
 
 
 void
-ServerSetKeepaliveTimeout(TServer * const serverP,
-                          uint32_t  const keepaliveTimeout) {
+ServerSetKeepaliveTimeout(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveTimeout) {
 
     serverP->srvP->keepalivetimeout = keepaliveTimeout;
 }
@@ -455,8 +456,8 @@ ServerSetKeepaliveTimeout(TServer * const serverP,
 
 
 void
-ServerSetKeepaliveMaxConn(TServer * const serverP,
-                          uint32_t  const keepaliveMaxConn) {
+ServerSetKeepaliveMaxConn(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveMaxConn) {
 
     serverP->srvP->keepalivemaxconn = keepaliveMaxConn;
 }
@@ -464,8 +465,8 @@ ServerSetKeepaliveMaxConn(TServer * const serverP,
 
 
 void
-ServerSetTimeout(TServer * const serverP,
-                 uint32_t  const timeout) {
+ServerSetTimeout(TServer *       const serverP,
+                 xmlrpc_uint32_t const timeout) {
 
     serverP->srvP->timeout = timeout;
 }
@@ -601,7 +602,7 @@ serverFunc(void * const userHandle) {
 
 
 static void
-createSwitchFromPortNum(uint16_t       const portNumber,
+createSwitchFromPortNum(unsigned short const portNumber,
                         TChanSwitch ** const chanSwitchPP,
                         const char **  const errorP) {
 
@@ -1151,7 +1152,7 @@ ServerRunOnce2(TServer *           const serverP,
 static void
 setGroups(void) {
 
-#ifdef HAVE_SETGROUPS   
+#if HAVE_SETGROUPS   
     if (setgroups(0, NULL) == (-1))
         TraceExit("Failed to setup the group.");
 #endif

@@ -304,7 +304,7 @@ getValue(xmlrpc_env *    const envP,
 
     case 'I':
         *valPP =
-            xmlrpc_i8_new(envP, (long long) va_arg(argsP->v, long long));
+            xmlrpc_i8_new(envP, (xmlrpc_int64) va_arg(argsP->v, xmlrpc_int64));
         break;
 
     case 'p':

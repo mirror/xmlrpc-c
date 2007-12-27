@@ -169,7 +169,7 @@ create(xmlrpc_env *                      const envP,
        int                               const flags,
        const char *                      const appname,
        const char *                      const appversion,
-       const struct xmlrpc_xportparms *  const transportParmsP ATTR_UNUSED,
+       const void *                      const transportParmsP ATTR_UNUSED,
        size_t                            const parm_size ATTR_UNUSED,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
@@ -420,7 +420,7 @@ createDestAnchor(xmlrpc_env *               const envP,
                  HTAnchor **                const destAnchorPP,
                  const xmlrpc_server_info * const serverP) {
                  
-    *destAnchorPP = HTAnchor_findAddress(serverP->_server_url);
+    *destAnchorPP = HTAnchor_findAddress(serverP->serverUrl);
 
     if (*destAnchorPP == NULL)
         xmlrpc_env_set_fault_formatted(
@@ -480,9 +480,9 @@ rpcCreate(xmlrpc_env *                       const envP,
     HTRequest_setRqHd(rpcP->request, request_headers);
 
     /* Send an authorization header if we need one. */
-    if (serverP->_http_basic_auth)
+    if (serverP->allowedAuth.basic)
         HTRequest_addCredentials(rpcP->request, "Authorization",
-                                 serverP->_http_basic_auth);
+                                 (char *)serverP->basicAuthHdrValue);
     
     /* Make sure there is no XML conversion handler to steal our data.
     ** The 'override' parameter is currently ignored by libwww, so our

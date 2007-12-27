@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 
+#include "int.h"
 #include "xmlrpc-c/abyss.h"
 
 #ifndef NAME_MAX
@@ -39,8 +40,8 @@
 
 #ifndef __BORLANDC__
 typedef struct _stati64 TFileStat;
-typedef struct _finddata_t TFileInfo;
-typedef long TFileFind;
+typedef struct __finddata64_t TFileInfo;
+typedef intptr_t TFileFind;
 
 #else  /* WIN32 */
 

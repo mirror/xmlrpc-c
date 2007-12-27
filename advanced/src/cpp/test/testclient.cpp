@@ -140,6 +140,10 @@ public:
         // the same thing.  I.e. the RPC is guaranteed finished as soon
         // as it is started.
 
+
+        clientDirect.finishAsync(timeout());
+        clientDirect.finishAsync(timeout(50));
+
         TEST(rpcSampleAdd1P->isFinished());
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result1(rpcSampleAdd1P->getResult());
@@ -149,9 +153,6 @@ public:
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result2(rpcSampleAdd2P->getResult());
         TEST(static_cast<int>(result2) == 20);
-
-        EXPECT_ERROR(clientDirect.finishAsync(timeout()););
-        EXPECT_ERROR(clientDirect.finishAsync(timeout(50)););
     }
 };
 

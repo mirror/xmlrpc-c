@@ -54,7 +54,7 @@ typedef char XML_LChar;
 protocol or null if there is none specified. */
 
 XML_Parser XMLPARSEAPI
-xmlrpc_XML_ParserCreate(const XML_Char * encoding);
+xmlrpc_XML_ParserCreate(const XML_Char * const encoding);
 
 /* Constructs a new parser and namespace processor.  Element type names
 and attribute names that belong to a namespace will be expanded;
@@ -67,8 +67,8 @@ separator.  When a namespace is not declared, the name and prefix will be
 passed through without expansion. */
 
 XML_Parser XMLPARSEAPI
-xmlrpc_XML_ParserCreateNS(const XML_Char *encoding,
-                          XML_Char namespaceSeparator);
+xmlrpc_XML_ParserCreateNS(const XML_Char * const encoding,
+                          XML_Char const namespaceSeparator);
 
 
 /* atts is array of name/value pairs, terminated by 0;
@@ -419,13 +419,13 @@ xmlrpc_XML_GetIdAttributeIndex(XML_Parser parser);
    len may be zero for this call (or any other).
 */
 int XMLPARSEAPI
-xmlrpc_XML_Parse(XML_Parser parser, const char *s, int len, int isFinal);
+xmlrpc_XML_Parse(XML_Parser const parser, const char * const s, int const len, int const isFinal);
 
 void XMLPARSEAPI *
 xmlrpc_XML_GetBuffer(XML_Parser parser, int len);
 
 int XMLPARSEAPI
-xmlrpc_XML_ParseBuffer(XML_Parser parser, int len, int isFinal);
+xmlrpc_XML_ParseBuffer(XML_Parser const parser, int const len, int const isFinal);
 
 /* Creates an XML_Parser object that can parse an external general
    entity; context is a '\0'-terminated string specifying the parse
@@ -547,7 +547,7 @@ xmlrpc_XML_ParserFree(XML_Parser parser);
 
 /* Returns a string describing the error. */
 const XML_LChar XMLPARSEAPI *
-xmlrpc_XML_ErrorString(int code);
+xmlrpc_XML_ErrorString(int const code);
 
 #ifdef __cplusplus
 }

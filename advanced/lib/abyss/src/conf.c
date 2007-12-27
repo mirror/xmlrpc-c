@@ -160,20 +160,20 @@ ConfReadInt(const char * const p,
 
 
 static abyss_bool
-ConfReadBool(char *p, abyss_bool *b) {
-    if (strcasecmp(p,"yes")==0)
-    {
-        *b=TRUE;
-        return TRUE;
-    };
+ConfReadBool(const char * const token, abyss_bool * const bP) {
 
-    if (strcasecmp(p,"no")==0)
-    {
-        *b=FALSE;
-        return TRUE;
-    };
+    abyss_bool succeeded;
 
-    return FALSE;
+    if (xmlrpc_strcaseeq(token, "yes")) {
+        *bP = TRUE;
+        succeeded = TRUE;
+    } else if (xmlrpc_strcaseeq(token, "no")) {
+        *bP = FALSE;
+        succeeded = TRUE;
+    } else
+        succeeded = FALSE;
+
+    return succeeded;
 }
 
 /*********************************************************************
@@ -314,25 +314,25 @@ ConfReadServerFile(const char * const filename,
             if (option) {
                 ConfNextToken(&p);
 
-                if (strcasecmp(option, "port") == 0) {
+                if (xmlrpc_strcaseeq(option, "port")) {
                     int32_t n;
                     if (ConfReadInt(p, &n, 1, 65535))
                         srvP->port = n;
                     else
                         TraceExit("Invalid port '%s'", p);
-                } else if (strcasecmp(option, "serverroot") == 0) {
+                } else if (xmlrpc_strcaseeq(option, "serverroot")) {
                     abyss_bool success;
                     chdirx(p, &success);
                     if (!success)
                         TraceExit("Invalid server root '%s'",p);
-                } else if (strcasecmp(option, "path") == 0) {
+                } else if (xmlrpc_strcaseeq(option, "path")) {
                     if (FileStat(p, &fs))
                         if (fs.st_mode & S_IFDIR) {
                             HandlerSetFilesPath(handlerP, p);
                             continue;
                         }
                     TraceExit("Invalid path '%s'", p);
-                } else if (strcasecmp(option, "default") == 0) {
+                } else if (xmlrpc_strcaseeq(option, "default")) {
                     const char * filename;
                     
                     while ((filename = ConfGetToken(&p))) {
@@ -340,13 +340,13 @@ ConfReadServerFile(const char * const filename,
                         if (!ConfNextToken(&p))
                             break;
                     }
-                } else if (strcasecmp(option, "keepalive") == 0) {
+                } else if (xmlrpc_strcaseeq(option, "keepalive")) {
                     int32_t n;
                     if (ConfReadInt(p, &n, 1, 65535))
                         srvP->keepalivemaxconn = n;
                     else
                         TraceExit("Invalid KeepAlive value '%s'", p);
-                } else if (strcasecmp(option, "timeout") == 0) {
+                } else if (xmlrpc_strcaseeq(option, "timeout")) {
                     int32_t n;
                     if (ConfReadInt(p, &n, 1, 3600)) {
                         srvP->keepalivetimeout = n;
@@ -354,20 +354,20 @@ ConfReadServerFile(const char * const filename,
                         srvP->timeout = n;
                     } else
                         TraceExit("Invalid TimeOut value '%s'", p);
-                } else if (strcasecmp(option, "mimetypes") == 0) {
+                } else if (xmlrpc_strcaseeq(option, "mimetypes")) {
                     MIMEType * mimeTypeP;
                     readMIMETypesFile(p, &mimeTypeP);
                     if (!mimeTypeP)
                         TraceExit("Can't read MIME Types file '%s'", p);
                     else
                         HandlerSetMimeType(handlerP, mimeTypeP);
-                } else if (strcasecmp(option,"logfile") == 0) {
+                } else if (xmlrpc_strcaseeq(option,"logfile")) {
                     srvP->logfilename = strdup(p);
-                } else if (strcasecmp(option,"user") == 0) {
+                } else if (xmlrpc_strcaseeq(option,"user")) {
                     parseUser(p, srvP);
-                } else if (strcasecmp(option, "pidfile")==0) {
+                } else if (xmlrpc_strcaseeq(option, "pidfile")) {
                     parsePidfile(p, srvP);
-                } else if (strcasecmp(option, "advertiseserver") == 0) {
+                } else if (xmlrpc_strcaseeq(option, "advertiseserver")) {
                     if (!ConfReadBool(p, &srvP->advertise))
                         TraceExit("Invalid boolean value "
                                   "for AdvertiseServer option");

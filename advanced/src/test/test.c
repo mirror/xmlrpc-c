@@ -1,5 +1,10 @@
 /* Copyright information is at the end of the file. */
 
+#ifdef WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +18,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 
+#include "bool.h"
 #include "test.h"
 #include "value.h"
 #include "serialize.h"
@@ -44,6 +50,13 @@
 int total_tests = 0;
 int total_failures = 0;
 
+bool const runningUnderWindows =
+#ifdef WIN32
+    true;
+#else
+    false;
+#endif
+
 
 /*=========================================================================
 **  Test Data
@@ -66,7 +79,6 @@ static int test_int_array_3[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 static void test_env(void)
 {
     xmlrpc_env env, env2;
-    char *s;
 
     /* Test xmlrpc_env_init. */
     xmlrpc_env_init(&env);
@@ -92,13 +104,6 @@ static void test_env(void)
     TEST(env.fault_occurred);
     TEST(env.fault_code == 3);
     TEST(strcmp(env.fault_string, "abar9") == 0);
-
-    /* Set a fault with an oversized string. */
-    s = "12345678901234567890123456789012345678901234567890";
-    xmlrpc_env_set_fault_formatted(&env, 4, "%s%s%s%s%s%s", s, s, s, s, s, s);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == 4);
-    TEST(strlen(env.fault_string) == 255);
 
     /* Test cleanup code (with help from memprof). */
     xmlrpc_env_clean(&env);
@@ -388,12 +393,16 @@ test_xml_size_limit(void) {
 **  results.
 **
 **  We use these files to test strange-but-legal encodings, illegal-but-
-**  supported encodings, etc.
+**  allowed-by-Xmlrpc-c encodings, etc.
 */
-
+#ifdef WIN32
+/* usually compiled in 'Windows' folder */
+#define TESTDATA_DIR ".." DIRECTORY_SEPARATOR "bin" DIRECTORY_SEPARATOR "data"
+#else
 #define TESTDATA_DIR "data"
+#endif
 
-static char *good_requests[] = {
+static const char * goodRequests[] = {
     TESTDATA_DIR DIRECTORY_SEPARATOR "req_out_of_order.xml",
     TESTDATA_DIR DIRECTORY_SEPARATOR "req_no_params.xml",
     TESTDATA_DIR DIRECTORY_SEPARATOR "req_value_name.xml",
@@ -402,55 +411,87 @@ static char *good_requests[] = {
 
 #define MAX_SAMPLE_FILE_LEN (16 * 1024)
 
-static char file_buff [MAX_SAMPLE_FILE_LEN];
+
 
 static void
-read_file (char *path, char **out_data, size_t *out_size)
-{
-    FILE *f;
-    size_t bytes_read;
+reportFileOpenError(const char * const path,
+                    int          const openErrno) {
 
-    /* Open the file. */
-    f = fopen(path, "r");
-    if (f == NULL) {
+    if (runningUnderWindows) {
+        char cwdname[1024];
+        char * succeeded;
+
+        succeeded = getcwd(cwdname, sizeof(cwdname));
+        if (succeeded)
+            fprintf(stderr, "Running in current work directory '%s'\n",
+                    cwdname);
+    }
+    fprintf(stderr, "Could not open file '%s'.  errno=%d (%s)\n", 
+            path, openErrno, strerror(openErrno));
+}
+
+
+
+static void
+readFile(const char *  const path,
+         const char ** const outDataP,
+         size_t *      const outSizeP) {
+
+    static char fileBuff[MAX_SAMPLE_FILE_LEN];
+
+    FILE * fileP;
+    size_t bytesRead;
+
+    fileP = fopen(path, "r");
+
+    if (fileP == NULL) {
         /* Since this error is fairly likely to happen, give an
-        ** informative error message... */
-        fflush(stdout);
-        fprintf(stderr, "Could not open file '%s'.  errno=%d (%s)\n", 
-                path, errno, strerror(errno));
-        abort();
+           informative error message...
+        */
+        reportFileOpenError(path, errno);
+        exit(1);
     }
     
     /* Read in one buffer full of data, and make sure that everything
-    ** fit.  (We perform a lazy error/no-eof/zero-length-file test using
-    ** bytes_read.) */
-    bytes_read = fread(file_buff, sizeof(char), MAX_SAMPLE_FILE_LEN, f);
-    TEST(0 < bytes_read && bytes_read < MAX_SAMPLE_FILE_LEN);
+       fit.  (We perform a lazy error/no-eof/zero-length-file test using
+       'bytesRead'.)
+    */
+    bytesRead = fread(fileBuff, sizeof(char), MAX_SAMPLE_FILE_LEN, fileP);
+    TEST(0 < bytesRead && bytesRead < MAX_SAMPLE_FILE_LEN);
+    
+    fclose(fileP);
 
-    /* Close the file and return our data. */
-    fclose(f);
-    *out_data = file_buff;
-    *out_size = bytes_read;
+    *outDataP = fileBuff;
+    *outSizeP = bytesRead;
 }
 
-static void test_sample_files (void)
-{
+
+
+static void
+testSampleFiles(void) {
+
     xmlrpc_env env;
-    char **paths, *path;
-    char *data;
-    size_t data_len;
-    const char *method_name;
-    xmlrpc_value *params;
+    const char ** pathP;
 
     xmlrpc_env_init(&env);
 
     /* Test our good requests. */
-    for (paths = good_requests; *paths != NULL; paths++) {
-        path = *paths;
-        read_file(path, &data, &data_len);
-        xmlrpc_parse_call(&env, data, data_len, &method_name, &params);
+
+    for (pathP = goodRequests; *pathP != NULL; ++pathP) {
+        const char * const path = *pathP;
+
+        const char * data;
+        size_t dataLen;
+        const char * methodName;
+        xmlrpc_value * params;
+
+        readFile(path, &data, &dataLen);
+
+        xmlrpc_parse_call(&env, data, dataLen, &methodName, &params);
+
         TEST_NO_FAULT(&env);
-        strfree(method_name);
+
+        strfree(methodName);
         xmlrpc_DECREF(params);
     }
 
@@ -684,7 +725,7 @@ main(int     argc,
         test_method_registry();
         test_nesting_limit();
         test_xml_size_limit();
-        test_sample_files();
+        testSampleFiles();
         printf("\n");
         test_server_cgi_maybe();
         test_abyss();

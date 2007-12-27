@@ -5,8 +5,11 @@
 #include <signal.h>
 #include <errno.h>
 #include <iostream>
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
@@ -71,6 +74,7 @@ sigchld(int const signalClass) {
         }
     }
 #endif /* _WIN32 */
+    if (signalClass); // quiet compiler warning
 }
 
 
@@ -130,7 +134,44 @@ restoreSignalHandlers(struct signalHandlers const& oldHandlers) {
 #endif
 }
 
+
+
+// We need 'global' because methods of class serverAbyss call
+// functions in the Abyss C library.  By virtue of global's static
+// storage class, the program loader will call its constructor and
+// destructor and thus initialize and terminate the Abyss C library.
+
+class abyssGlobalState {
+public:
+    abyssGlobalState() {
+        const char * error;
+        AbyssInit(&error);
+        if (error) {
+            string const e(error);
+            xmlrpc_strfree(error);
+            throwf("AbyssInit() failed.  %s", e.c_str());
+        }
+    }
+    ~abyssGlobalState() {
+        AbyssTerm();
+    }
+} const global;
+
 } // namespace
+
+
+
+serverAbyss::shutdown::shutdown(serverAbyss * const serverAbyssP) :
+    serverAbyssP(serverAbyssP) {}
+
+
+
+void
+serverAbyss::shutdown::doit(string const&,
+                            void * const) const {
+
+    this->serverAbyssP->terminate();
+}
 
 
 
@@ -148,9 +189,9 @@ serverAbyss::constrOpt::constrOpt() {
     present.chunkResponse    = false;
     
     // Set default values
-    value.dontAdvertise = false;
-    value.uriPath       = string("/RPC2");
-    value.chunkResponse = false;
+    value.dontAdvertise  = false;
+    value.uriPath        = string("/RPC2");
+    value.chunkResponse  = false;
 }
 
 
@@ -165,12 +206,12 @@ serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
 
 DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
 DEFINE_OPTION_SETTER(registryP,        const registry *);
-DEFINE_OPTION_SETTER(socketFd,         xmlrpc_socket);
-DEFINE_OPTION_SETTER(portNumber,       uint);
+DEFINE_OPTION_SETTER(socketFd,         XMLRPC_SOCKET);
+DEFINE_OPTION_SETTER(portNumber,       unsigned int);
 DEFINE_OPTION_SETTER(logFileName,      string);
-DEFINE_OPTION_SETTER(keepaliveTimeout, uint);
-DEFINE_OPTION_SETTER(keepaliveMaxConn, uint);
-DEFINE_OPTION_SETTER(timeout,          uint);
+DEFINE_OPTION_SETTER(keepaliveTimeout, unsigned int);
+DEFINE_OPTION_SETTER(keepaliveMaxConn, unsigned int);
+DEFINE_OPTION_SETTER(timeout,          unsigned int);
 DEFINE_OPTION_SETTER(dontAdvertise,    bool);
 DEFINE_OPTION_SETTER(uriPath,          string);
 DEFINE_OPTION_SETTER(chunkResponse,    bool);
@@ -210,7 +251,7 @@ createServer(bool         const  logFileNameGiven,
 
     const char * const serverName("XmlRpcServer");
 
-    bool created;
+    abyss_bool created;
         
     if (socketFdGiven)
         created =
@@ -266,7 +307,7 @@ serverAbyss::initialize(constrOpt const& opt) {
 
     try {
         setAdditionalServerParms(opt);
-        
+
         // chunked response implementation is incomplete.  We must
         // eventually get away from libxmlrpc_server_abyss and
         // register our own handler with the Abyss server.  At that
@@ -303,7 +344,7 @@ serverAbyss::serverAbyss(
     unsigned int       const  timeout,
     bool               const  dontAdvertise,
     bool               const  socketBound,
-    xmlrpc_socket      const  socketFd) {
+    XMLRPC_SOCKET      const  socketFd) {
 /*----------------------------------------------------------------------------
   This is a backward compatibility interface.  This used to be the only
   constructor.

@@ -7,21 +7,15 @@ dnl =======================================================================
 dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
 dnl =======================================================================
 
-dnl This ultimately controls the make file variable XMLRPC_C_VERSION.
-dnl For a new release, update this and MIN, and LDFLAGS_VERSINFO in
-dnl Makefile.common.
-AM_INIT_AUTOMAKE(xmlrpc-c, 1.12)
+dnl "x.xx" is supposed to be a version number, but is meaningless here.
+dnl The real version number is in Makefile.version.
+AM_INIT_AUTOMAKE(xmlrpc-c, x.xx)
 
 dnl Define @build@, @build_cpu@, @build_vendor@, @build_os,
 dnl @host, @host_cpu@, @host_vender, and @host_os@ substitutions.
 dnl "host" means the target system -- the one for which we are building.
 dnl "build" means the system that will do the building.
 AC_CANONICAL_HOST
-
-dnl We need this to compensate for an incompatibility between autoconf
-dnl and our libtool.  autoconf generates an invalid ltconfig command
-dnl otherwise.
-test -z "$target" && target=NONE
 
 dnl =======================================================================
 dnl Decide What To Build
@@ -342,6 +336,16 @@ AC_CHECK_FUNCS(setenv)
 dnl uclib doesn't have pselect
 AC_CHECK_FUNCS(pselect)
 
+dnl Windows doesn't have gettimeofday, localtime_r, or gmtime_r
+AC_CHECK_FUNCS(gettimeofday)
+AC_CHECK_FUNCS(localtime_r)
+AC_CHECK_FUNCS(gmtime_r)
+
+dnl Windows doesn't have strcasecmp;
+AC_CHECK_FUNCS(strcasecmp)
+AC_CHECK_FUNCS(stricmp)
+AC_CHECK_FUNCS(_stricmp)
+
 dnl =======================================================================
 dnl Checks for operating system features.
 dnl =======================================================================
@@ -597,7 +601,7 @@ AC_MSG_RESULT($enable_libxml2_backend)
 if test $enable_libxml2_backend = yes; then
   AC_CHECK_PROG(have_xml2_config, xml2-config, yes, no)
   if test $have_xml2_config = no; then
-    AC_MSG_ERROR([You specified --enable-libxml2_backend, but don't appear to have libxml2 installed (no working xml2-config inyour command search path), so we cannot not build for libxml2])
+    AC_MSG_ERROR([You specified --enable-libxml2_backend, but don't appear to have libxml2 installed (no working xml2-config in your command search path), so we cannot not build for libxml2])
   fi
 fi
 ENABLE_LIBXML2_BACKEND=$enable_libxml2_backend
@@ -620,12 +624,6 @@ AC_SUBST(CPP_WARN_FLAGS)
 
 BUILDDIR=`pwd`
 AC_SUBST(BUILDDIR)
-
-
-dnl =======================================================================
-dnl Libtool
-dnl =======================================================================
-AM_PROG_LIBTOOL
 
 
 dnl =======================================================================

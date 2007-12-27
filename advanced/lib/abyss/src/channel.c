@@ -9,8 +9,6 @@
 
 #include <sys/types.h>
 #include <assert.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -134,20 +132,22 @@ ChannelWrite(TChannel *            const channelP,
     if (ChannelTraceIsActive)
         fprintf(stderr, "Writing %u bytes to channel %p\n", len, channelP);
 
-    (*channelP->vtbl.write)(channelP, buffer, len, failedP );
+    (*channelP->vtbl.write)(channelP, buffer, len, failedP);
 }
 
 
 
-uint32_t
+void
 ChannelRead(TChannel *      const channelP, 
             unsigned char * const buffer, 
-            uint32_t        const len) {
+            uint32_t        const len,
+            uint32_t *      const bytesReceivedP,
+            abyss_bool *    const failedP) {
     
     if (ChannelTraceIsActive)
         fprintf(stderr, "Reading %u bytes from channel %p\n", len, channelP);
 
-    return (*channelP->vtbl.read)(channelP, buffer, len);
+    (*channelP->vtbl.read)(channelP, buffer, len, bytesReceivedP, failedP);
 }
 
 
@@ -167,14 +167,6 @@ ChannelWait(TChannel * const channelP,
                     "to be writable\n", timems, channelP);
     }
     return (*channelP->vtbl.wait)(channelP, rd, wr, timems);
-}
-
-
-
-uint32_t
-ChannelAvailableReadBytes(TChannel * const channelP) {
-
-    return (*channelP->vtbl.availableReadBytes)(channelP);
 }
 
 

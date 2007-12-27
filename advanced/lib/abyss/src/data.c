@@ -50,14 +50,14 @@
 ** List
 *********************************************************************/
 
-void ListInit(TList *sl)
+void ListInit(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
     sl->autofree=FALSE;
 }
 
-void ListInitAutoFree(TList *sl)
+void ListInitAutoFree(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
@@ -217,8 +217,10 @@ ListFindString(TList *      const sl,
 ** Buffer
 *********************************************************************/
 
-abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
-{
+abyss_bool
+BufferAlloc(TBuffer *       const buf,
+            xmlrpc_uint32_t const memsize) {
+
     /* ************** Implement the static buffers ***/
     buf->staticid=0;
     buf->data=(void *)malloc(memsize);
@@ -234,8 +236,11 @@ abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
     };
 }
 
-void BufferFree(TBuffer *buf)
-{
+
+
+void
+BufferFree(TBuffer * const buf) {
+
     if (buf->staticid)
     {
         /* ************** Implement the static buffers ***/
@@ -247,8 +252,12 @@ void BufferFree(TBuffer *buf)
     buf->staticid=0;
 }
 
-abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize)
-{
+
+
+abyss_bool
+BufferRealloc(TBuffer *       const buf,
+              xmlrpc_uint32_t const memsize) {
+
     if (buf->staticid)
     {
         TBuffer b;
@@ -359,13 +368,13 @@ Hash16(const char * const start) {
 ** Table
 *********************************************************************/
 
-void TableInit(TTable *t)
+void TableInit(TTable * const t)
 {
     t->item=NULL;
     t->size=t->maxsize=0;
 }
 
-void TableFree(TTable *t)
+void TableFree(TTable * const t)
 {
     uint16_t i;
 
@@ -527,7 +536,7 @@ PoolCreate(TPool *  const poolP,
         } else
             success = FALSE;
         if (!success)
-            MutexFree(poolP->mutexP);
+            MutexDestroy(poolP->mutexP);
     } else
         success = FALSE;
 
@@ -619,7 +628,7 @@ PoolFree(TPool * const poolP) {
         nextPoolZoneP = poolZoneP->next;
         free(poolZoneP);
     }
-    MutexFree(poolP->mutexP);
+    MutexDestroy(poolP->mutexP);
 }
 
 

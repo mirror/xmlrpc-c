@@ -37,7 +37,6 @@ CURL_WL_RPATH = @CURL_WL_RPATH@
 LIBWWW_LDADD = @LIBWWW_LDADD@
 LIBWWW_RPATH = @LIBWWW_RPATH@
 LIBWWW_WL_RPATH = @LIBWWW_WL_RPATH@
-VERSION = @VERSION@
 FEATURE_LIST = @FEATURE_LIST@
 ABS_SRCDIR = @abs_srcdir@
 PREFIX = @prefix@
@@ -53,8 +52,8 @@ CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
 AR = ar
-RANLIB = @RANLIB@
-LN_S = @LN_S@
+RANLIB = ranlib
+LN_S = ln -s
 INSTALL = $(SRCDIR)/install-sh
 
 C_COMPILER_GNU = @C_COMPILER_GNU@
@@ -66,9 +65,6 @@ CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
 # HOST_OS names the operating system on which Xmlrpc-c is to run.
 # E.g. "linux-gnu".
 HOST_OS = @host_os@
-
-# Hardcoded in configure.in:
-XMLRPC_C_VERSION = @VERSION@
 
 ###############################################################################
 
@@ -89,18 +85,7 @@ endif
 ##############################################################################
 
 # Shared libraries are very difficult, because how you build and use
-# them varies greatly from one platform to the next.  # There are two
-# ways shared libraries get built in the Xmlrpc-c build: Libtool and
-# direct.  In the beginning, there was just Libtool.  Libtool is
-# supposed to solve the problem of the diversity of shared libraries,
-# but it does it by adding a layer of complexity and yet another build
-# tool a developer has to know.  The encapsulation of shared library
-# building reduced flexibility and makes diagnosing problems much
-# harder.  So we are phasing out Libtool.  New libraries (in
-# particular, the C++ ones) don't involve Libtool.  Some day, the
-# older ones won't either, but we aren't as good yet with the direct
-# method as with Libtool, and we don't want to break something that's
-# working.
+# them varies greatly from one platform to the next.  
 
 # First, we break down shared library schemes into a few major types,
 # and indicate the type by SHARED_LIB_TYPE.

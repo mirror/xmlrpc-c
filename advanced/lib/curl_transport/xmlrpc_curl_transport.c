@@ -52,16 +52,21 @@
    such subordinate libraries as OpenSSL and Winsock.
 -----------------------------------------------------------------------------*/
 
+#include "xmlrpc_config.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#include <limits.h>
+#if !MSVCRT
 #include <sys/select.h>
+#endif
 #include <signal.h>
-#include <time.h>  /* For timespec */
-#include <sys/time.h>  /* For timeval */
 
-#include "xmlrpc_config.h"
+#ifdef WIN32
+#include "curllink.h"
+#endif
 
 #include "bool.h"
 #include "girmath.h"
@@ -74,6 +79,7 @@
 #include "xmlrpc-c/select_int.h"
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
+#include "xmlrpc-c/time_int.h"
 #include "version.h"
 
 #include <curl/curl.h>
@@ -81,13 +87,32 @@
 #include <curl/easy.h>
 #include <curl/multi.h>
 
-#if defined (WIN32) && defined(_DEBUG)
+#if MSVCRT
+#if defined(_DEBUG)
 #  include <crtdbg.h>
 #  define new DEBUG_NEW
 #  define malloc(size) _malloc_dbg( size, _NORMAL_BLOCK, __FILE__, __LINE__)
 #  undef THIS_FILE
    static char THIS_FILE[] = __FILE__;
-#endif /*WIN32 && _DEBUG*/
+#endif
+#endif
+
+
+#define CMAJOR LIBCURL_VERSION_MAJOR
+#define CMINOR LIBCURL_VERSION_MINOR
+#if CMAJOR > 7 || (CMAJOR == 7 && CMINOR >= 10)
+  #define HAVE_CURL_NOSIGNAL 1
+#else
+  #define HAVE_CURL_NOSIGNAL 0
+#endif
+#if CMAJOR > 7 || (CMAJOR == 7 && CMINOR >= 12)
+  #define HAVE_CURL_STRERROR 1
+#else
+  #define HAVE_CURL_STRERROR 0
+#endif
+
+#undef CMAJOR
+#undef CMINOR
 
 
 
@@ -156,22 +181,24 @@ struct curlSetup {
     const char * randomFile;
     const char * egdSocket;
     const char * sslCipherList;
+    unsigned int timeout;
+        /* 0 = no Curl timeout.  This is in milliseconds. */
 };
 
 
 static int
-timeDiffMillisec(struct timeval const minuend,
-                 struct timeval const subtractor) {
+timeDiffMillisec(xmlrpc_timespec const minuend,
+                 xmlrpc_timespec const subtractor) {
 
     return (minuend.tv_sec - subtractor.tv_sec) * 1000 +
-        (minuend.tv_usec - subtractor.tv_usec + 500) / 1000;
+        (minuend.tv_nsec - subtractor.tv_nsec + 1E6/2) / 1E6;
 }
 
 
 
 static bool
-timeIsAfter(struct timeval const comparator,
-            struct timeval const comparand) {
+timeIsAfter(xmlrpc_timespec const comparator,
+            xmlrpc_timespec const comparand) {
 
     if (comparator.tv_sec > comparand.tv_sec)
         return true;
@@ -179,7 +206,7 @@ timeIsAfter(struct timeval const comparator,
         return false;
     else {
         /* Seconds are equal */
-        if (comparator.tv_usec > comparand.tv_usec)
+        if (comparator.tv_nsec > comparand.tv_nsec)
             return true;
         else
             return false;
@@ -189,16 +216,20 @@ timeIsAfter(struct timeval const comparator,
 
 
 static void
-addMilliseconds(struct timeval   const addend,
-                unsigned int     const adder,
-                struct timeval * const sumP) {
+addMilliseconds(xmlrpc_timespec   const addend,
+                unsigned int      const adder,
+                xmlrpc_timespec * const sumP) {
 
-    unsigned int newRawUsec;
+    xmlrpc_timespec sum;
 
-    newRawUsec = addend.tv_usec + adder * 1000;
+    sum.tv_sec  = addend.tv_sec + adder / 1000;
+    sum.tv_nsec = addend.tv_nsec + (adder % 1000) * 1E6;
 
-    sumP->tv_sec  = addend.tv_sec + newRawUsec / 1000000;
-    sumP->tv_usec = newRawUsec % 1000000;
+    if (sum.tv_nsec >= 1E9) {
+        sum.tv_sec += 1;
+        sum.tv_nsec -= 1E9;
+    }
+    *sumP = sum;
 }
 
 
@@ -255,7 +286,7 @@ createLock_pthread(void) {
     curlTransaction
 =============================================================================*/
 
-typedef void finishCurlTransactionFn(xmlrpc_env *, curlTransaction *);
+typedef void finishCurlTransactionFn(xmlrpc_env * const, curlTransaction * const);
 
 struct curlTransaction {
     /* This is all stuff that really ought to be in a Curl object, but
@@ -293,6 +324,32 @@ struct curlTransaction {
         /* The HTTP headers for the transaction */
     const char * serverUrl;  /* malloc'ed - belongs to this object */
 };
+
+
+
+static void
+interpretCurlEasyError(const char ** const descriptionP,
+                       CURLcode      const code) {
+
+#if HAVE_CURL_STRERROR
+    *descriptionP = strdup(curl_easy_strerror(code));
+#else
+    xmlrpc_asprintf(descriptionP, "Curl error code (CURLcode) %d", code);
+#endif
+}
+
+
+
+static void
+interpretCurlMultiError(const char ** const descriptionP,
+                        CURLMcode     const code) {
+
+#if HAVE_CURL_STRERROR
+    *descriptionP = strdup(curl_multi_strerror(code));
+#else
+    xmlrpc_asprintf(descriptionP, "Curl error code (CURLMcode) %d", code);
+#endif
+}
 
 
 
@@ -364,22 +421,19 @@ addUserAgentHeader(xmlrpc_env *         const envP,
 static void
 addAuthorizationHeader(xmlrpc_env *         const envP,
                        struct curl_slist ** const headerListP,
-                       const char *         const basicAuthInfo) {
+                       const char *         const hdrValue) {
 
-    if (basicAuthInfo) {
-        const char * authorizationHeader;
+    const char * authorizationHeader;
             
-        xmlrpc_asprintf(&authorizationHeader, "Authorization: %s",
-                        basicAuthInfo);
-            
-        if (authorizationHeader == xmlrpc_strsol)
-            xmlrpc_faultf(envP, "Couldn't allocate memory for "
-                          "Authorization header");
-        else {
-            addHeader(envP, headerListP, authorizationHeader);
-
-            xmlrpc_strfree(authorizationHeader);
-        }
+    xmlrpc_asprintf(&authorizationHeader, "Authorization: %s", hdrValue);
+    
+    if (authorizationHeader == xmlrpc_strsol)
+        xmlrpc_faultf(envP, "Couldn't allocate memory for "
+                      "Authorization header");
+    else {
+        addHeader(envP, headerListP, authorizationHeader);
+        
+        xmlrpc_strfree(authorizationHeader);
     }
 }
 
@@ -387,7 +441,7 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
 
 static void
 createCurlHeaderList(xmlrpc_env *               const envP,
-                     const xmlrpc_server_info * const serverP,
+                     const char *               const authHdrValue,
                      const char *               const userAgent,
                      struct curl_slist **       const headerListP) {
 
@@ -399,8 +453,8 @@ createCurlHeaderList(xmlrpc_env *               const envP,
     if (!envP->fault_occurred) {
         addUserAgentHeader(envP, &headerList, userAgent);
         if (!envP->fault_occurred) {
-            addAuthorizationHeader(envP, &headerList, 
-                                   serverP->_http_basic_auth);
+            if (authHdrValue)
+                addAuthorizationHeader(envP, &headerList, authHdrValue);
         }
     }
     if (envP->fault_occurred)
@@ -495,12 +549,90 @@ curlProgress(void * const contextP,
 
 
 static void
-setupCurlSession(xmlrpc_env *             const envP,
-                 curlTransaction *        const curlTransactionP,
-                 xmlrpc_mem_block *       const callXmlP,
-                 xmlrpc_mem_block *       const responseXmlP,
-                 unsigned int *           const interruptP,
-                 const struct curlSetup * const curlSetupP) {
+setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
+          CURL *                     const curlSessionP,
+          const xmlrpc_server_info * const serverInfoP,
+          const char **              const authHdrValueP) {
+/*----------------------------------------------------------------------------
+   Set the options in the Curl session 'curlSessionP' to set up the HTTP
+   authentication described by *serverInfoP.
+
+   But we have an odd special function for backward compatibility, because
+   this code dates to a time when libcurl did not have the ability to
+   handle authentication, but we provided such function nonetheless by
+   building our own Authorization: header.  But we did this only for
+   HPTT basic authentication.
+
+   So the special function is this: if libcurl is too old to have
+   authorization options and *serverInfoP allows basic authentication,
+   return as *basicAuthHdrParamP an appropriate parameter for the
+   Authorization: Basic: HTTP header.  Otherwise, return
+   *basicAuthHdrParamP == NULL.
+-----------------------------------------------------------------------------*/
+    if (serverInfoP->allowedAuth.basic) {
+        CURLcode rc;
+        rc = curl_easy_setopt(curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+
+        if (rc == CURLE_OK)
+            *authHdrValueP = NULL;
+        else {
+            *authHdrValueP = strdup(serverInfoP->basicAuthHdrValue);
+            if (*authHdrValueP == NULL)
+                xmlrpc_faultf(envP, "Unable to allocate memory for basic "
+                              "authentication header");
+        }
+    } else
+        *authHdrValueP = NULL;
+
+    /* We don't worry if libcurl is too old for these other kinds of
+       authentication; they're only defined as _allowed_
+       authentication methods, for when client and server are capable
+       of using it, and unlike with basic authentication, we have no
+       historical commitment to consider an old libcurl as capable of
+       doing these.
+    */
+    
+    if (serverInfoP->userNamePw)
+        curl_easy_setopt(curlSessionP, CURLOPT_USERPWD,
+                         serverInfoP->userNamePw);
+
+    if (serverInfoP->allowedAuth.digest)
+        curl_easy_setopt(
+            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
+    if (serverInfoP->allowedAuth.gssnegotiate)
+        curl_easy_setopt(
+            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_GSSNEGOTIATE);
+    if (serverInfoP->allowedAuth.ntlm)
+        curl_easy_setopt(
+            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
+}
+
+
+static void
+setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
+               unsigned int const timeout ATTR_UNUSED) {
+
+#if HAVE_CURL_NOSIGNAL
+    curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
+
+    assert(timeout <= LONG_MAX);
+    curl_easy_setopt(curlSessionP, (long)(timeout+999)/1000);
+#else
+    abort();
+#endif
+}
+
+
+
+static void
+setupCurlSession(xmlrpc_env *               const envP,
+                 curlTransaction *          const curlTransactionP,
+                 xmlrpc_mem_block *         const callXmlP,
+                 xmlrpc_mem_block *         const responseXmlP,
+                 const xmlrpc_server_info * const serverInfoP,
+                 const char *               const userAgent,
+                 unsigned int *             const interruptP,
+                 const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
    Set up the Curl session for the transaction *curlTransactionP so that
    a subsequent curl_easy_perform() would perform said transaction.
@@ -537,9 +669,6 @@ setupCurlSession(xmlrpc_env *             const envP,
         } else
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
         
-        curl_easy_setopt(curlSessionP, CURLOPT_HTTPHEADER, 
-                         curlTransactionP->headerList);
-
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
                          curlSetupP->sslVerifyPeer);
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYHOST,
@@ -589,6 +718,31 @@ setupCurlSession(xmlrpc_env *             const envP,
         if (curlSetupP->sslCipherList)
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);
+
+        if (curlSetupP->timeout)
+            setCurlTimeout(curlSessionP, curlSetupP->timeout);
+
+        {
+            const char * authHdrValue;
+                /* NULL means we don't have to construct an explicit
+                   Authorization: header.  non-null means we have to
+                   construct one with this as its value.
+                */
+
+            setupAuth(envP, curlSessionP, serverInfoP, &authHdrValue);
+            if (!envP->fault_occurred) {
+                struct curl_slist * headerList;
+                createCurlHeaderList(envP, authHdrValue, userAgent,
+                                     &headerList);
+                if (!envP->fault_occurred) {
+                    curl_easy_setopt(
+                        curlSessionP, CURLOPT_HTTPHEADER, headerList);
+                    curlTransactionP->headerList = headerList;
+                }
+                if (authHdrValue)
+                    xmlrpc_strfree(authHdrValue);
+            }
+        }
     }
 }
 
@@ -616,19 +770,15 @@ curlTransaction_create(xmlrpc_env *               const envP,
         curlTransactionP->curlSessionP = curlSessionP;
         curlTransactionP->rpcP         = rpcP;
 
-        curlTransactionP->serverUrl = strdup(serverP->_server_url);
+        curlTransactionP->serverUrl = strdup(serverP->serverUrl);
         if (curlTransactionP->serverUrl == NULL)
             xmlrpc_faultf(envP, "Out of memory to store server URL.");
         else {
-            createCurlHeaderList(envP, serverP, userAgent,
-                                 &curlTransactionP->headerList);
+            setupCurlSession(envP, curlTransactionP,
+                             callXmlP, responseXmlP,
+                             serverP, userAgent, interruptP,
+                             curlSetupStuffP);
             
-            if (!envP->fault_occurred)
-                setupCurlSession(envP, curlTransactionP,
-                                 callXmlP, responseXmlP,
-                                 interruptP,
-                                 curlSetupStuffP);
-
             if (envP->fault_occurred)
                 xmlrpc_strfree(curlTransactionP->serverUrl);
         }
@@ -762,9 +912,11 @@ curlMulti_perform(xmlrpc_env * const envP,
         *immediateWorkToDoP = false;
 
         if (rc != CURLM_OK) {
-            xmlrpc_faultf(envP,
-                          "Impossible failure of curl_multi_perform() "
-                          "with rc %d (%s)", rc, curl_multi_strerror(rc));
+            const char * reason;
+            interpretCurlMultiError(&reason, rc);
+            xmlrpc_faultf(envP, "Impossible failure of curl_multi_perform(): "
+                          "%s", reason);
+            xmlrpc_strfree(reason);
         }
     }
 }        
@@ -785,11 +937,14 @@ curlMulti_addHandle(xmlrpc_env *       const envP,
     
     curlMultiP->lockP->unlock(curlMultiP->lockP);
 
-    if (rc != CURLM_OK)
+    if (rc != CURLM_OK) {
+        const char * reason;
+        interpretCurlMultiError(&reason, rc);
         xmlrpc_faultf(envP, "Could not add Curl session to the "
                       "curl multi manager.  curl_multi_add_handle() "
-                      "returns error code %d (%s)",
-                      rc, curl_multi_strerror(rc));
+                      "failed: %s", reason);
+        xmlrpc_strfree(reason);
+    }
 }
 
 
@@ -898,9 +1053,13 @@ curlMulti_fdset(xmlrpc_env * const envP,
 
     curlMultiP->lockP->unlock(curlMultiP->lockP);
 
-    if (rc != CURLM_OK)
-        xmlrpc_faultf(envP, "Impossible failure of curl_multi_fdset() "
-                      "with rc %d (%s)", rc, curl_multi_strerror(rc));
+    if (rc != CURLM_OK) {
+        const char * reason;
+        interpretCurlMultiError(&reason, rc);
+        xmlrpc_faultf(envP, "Impossible failure of curl_multi_fdset(): %s",
+                      reason);
+        xmlrpc_strfree(reason);
+    }
 }
 
 
@@ -922,16 +1081,16 @@ curlMulti_updateFdSet(curlMulti * const curlMultiP,
 
                       
 
-static struct timespec
+static xmlrpc_timespec
 pselectTimeout(xmlrpc_timeoutType const timeoutType,
-               struct timeval     const timeoutDt) {
+               xmlrpc_timespec    const timeoutDt) {
 /*----------------------------------------------------------------------------
    Return the value that should be used in the select() call to wait for
    there to be work for the Curl multi manager to do, given that the user
    wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
     unsigned int selectTimeoutMillisec;
-    struct timespec retval;
+    xmlrpc_timespec retval;
 
     selectTimeoutMillisec = 0; // quiet compiler warning
 
@@ -944,10 +1103,10 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
         selectTimeoutMillisec = 3000;
         break;
     case timeout_yes: {
-        struct timeval nowTime;
+        xmlrpc_timespec nowTime;
         int timeLeft;
 
-        gettimeofday(&nowTime, NULL);
+        xmlrpc_gettimeofday(&nowTime);
         timeLeft = timeDiffMillisec(timeoutDt, nowTime);
 
         selectTimeoutMillisec = MIN(3000, MAX(0, timeLeft));
@@ -955,7 +1114,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     break;
     }
     retval.tv_sec = selectTimeoutMillisec / 1000;
-    retval.tv_nsec = (selectTimeoutMillisec % 1000) * 1E6;
+    retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * 1E6);
 
     return retval;
 }        
@@ -999,7 +1158,7 @@ static void
 waitForWork(xmlrpc_env *       const envP,
             curlMulti *        const curlMultiP,
             xmlrpc_timeoutType const timeoutType,
-            struct timeval     const deadline,
+            xmlrpc_timespec    const deadline,
             sigset_t *         const sigmaskP) {
 /*----------------------------------------------------------------------------
    Wait for the Curl multi manager to have work to do, time to run out,
@@ -1036,7 +1195,7 @@ waitForWork(xmlrpc_env *       const envP,
                are already complete.
             */
         } else {
-            struct timespec const pselectTimeoutArg =
+            xmlrpc_timespec const pselectTimeoutArg =
                 pselectTimeout(timeoutType, deadline);
 
             int rc;
@@ -1065,7 +1224,7 @@ static void
 waitForWorkInt(xmlrpc_env *       const envP,
                curlMulti *        const curlMultiP,
                xmlrpc_timeoutType const timeoutType,
-               struct timeval     const deadline,
+               xmlrpc_timespec    const deadline,
                int *              const interruptP) {
 /*----------------------------------------------------------------------------
    Same as waitForWork(), except we guarantee to return if a signal handler
@@ -1076,6 +1235,9 @@ waitForWorkInt(xmlrpc_env *       const envP,
    a multithreaded program.  Therefore, don't call this if
    waitForWork() will suffice.
 -----------------------------------------------------------------------------*/
+#ifdef WIN32
+    waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
+#else
     sigset_t allSignals;
     sigset_t callerBlockSet;
 
@@ -1089,6 +1251,7 @@ waitForWorkInt(xmlrpc_env *       const envP,
         waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
 
     sigprocmask(SIG_SETMASK, &callerBlockSet, NULL);
+#endif
 }
 
 
@@ -1140,7 +1303,7 @@ static void
 curlMulti_finish(xmlrpc_env *       const envP,
                  curlMulti *        const curlMultiP,
                  xmlrpc_timeoutType const timeoutType,
-                 struct timeval     const deadline,
+                 xmlrpc_timespec    const deadline,
                  int *              const interruptP) {
     
     bool rpcStillRunning;
@@ -1161,11 +1324,11 @@ curlMulti_finish(xmlrpc_env *       const envP,
             waitForWork(envP, curlMultiP, timeoutType, deadline, NULL);
 
         if (!envP->fault_occurred) {
-            struct timeval nowTime;
+            xmlrpc_timespec nowTime;
 
             doCurlWork(envP, curlMultiP, &rpcStillRunning);
             
-            gettimeofday(&nowTime, NULL);
+            xmlrpc_gettimeofday(&nowTime);
             
             timedOut = (timeoutType == timeout_yes &&
                         timeIsAfter(nowTime, deadline));
@@ -1219,11 +1382,23 @@ static void
 getCurlTransactionError(curlTransaction * const curlTransactionP,
                         xmlrpc_env *      const envP) {
 
-    if (curlTransactionP->result != CURLE_OK)
+    if (curlTransactionP->result != CURLE_OK) {
+        /* We've seen Curl just return a null string for an explanation
+           (e.g. when TCP connect() fails because IP address doesn't exist).
+        */
+        const char * explanation;
+
+        if (strlen(curlTransactionP->curlError) == 0)
+            interpretCurlEasyError(&explanation, curlTransactionP->result);
+        else
+            xmlrpc_asprintf(&explanation, "%s", curlTransactionP->curlError);
+
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_NETWORK_ERROR, "libcurl failed to execute the "
-            "HTTP POST transaction.  %s", curlTransactionP->curlError);
-    else {
+            "HTTP POST transaction.  %s", explanation);
+
+        xmlrpc_strfree(explanation);
+    } else {
         CURLcode res;
         long http_result;
         
@@ -1268,7 +1443,7 @@ performCurlTransaction(xmlrpc_env *      const envP,
     */
 
     if (!envP->fault_occurred) {
-        struct timeval dummy;
+        xmlrpc_timespec dummy = {0,0};
 
         curlMulti_finish(envP, curlMultiP, timeout_no, dummy, interruptP);
 
@@ -1413,11 +1588,55 @@ termWindowsStuff(void) {
 
 
 
+static bool
+curlHasNosignal(void) {
+
+    bool retval;
+
+#if HAVE_CURL_NOSIGNAL
+    curl_version_info_data * const curlInfoP =
+        curl_version_info(CURLVERSION_NOW);
+
+    retval = (curlInfoP->version_num >= 0x070A00);  /* 7.10.0 */
+#else
+    retval = false;
+#endif
+    return retval;
+}
+
+
+
 static void
-getXportParms(xmlrpc_env *  const envP ATTR_UNUSED,
+getTimeoutParm(xmlrpc_env *                          const envP,
+               const struct xmlrpc_curl_xportparms * const curlXportParmsP,
+               size_t                                const parmSize,
+               unsigned int *                        const timeoutP) {
+               
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(timeout))
+        *timeoutP = 0;
+    else {
+        if (curlHasNosignal()) {
+            /* libcurl takes a 'long' for the timeout value */
+            if (curlXportParmsP->timeout > LONG_MAX)
+                xmlrpc_faultf(envP, "Timeout value %u is too large.",
+                              curlXportParmsP->timeout);
+            else
+                *timeoutP = curlXportParmsP->timeout;
+        } else
+            xmlrpc_faultf(envP, "You cannot specify a 'timeout' parameter "
+                          "because the Curl library is too old and is not "
+                          "capable of doing timeouts except by using "
+                          "signals.  You need at least Curl 7.10");
+    }
+}
+
+
+
+static void
+getXportParms(xmlrpc_env *                          const envP,
               const struct xmlrpc_curl_xportparms * const curlXportParmsP,
-              size_t        const parmSize,
-              struct xmlrpc_client_transport * const transportP) {
+              size_t                                const parmSize,
+              struct xmlrpc_client_transport *      const transportP) {
 /*----------------------------------------------------------------------------
    Get the parameters out of *curlXportParmsP and update *transportP
    to reflect them.
@@ -1430,6 +1649,8 @@ getXportParms(xmlrpc_env *  const envP ATTR_UNUSED,
    lots of backward compatibility constraints.  In particular, the
    user may have coded and/or compiled it at a time that struct
    xmlrpc_curl_xportparms was smaller than it is now!
+
+   Also, the user might have specified something invalid.
 
    So that's why we don't simply attach a copy of *curlXportParmsP to
    *transportP.
@@ -1562,6 +1783,7 @@ getXportParms(xmlrpc_env *  const envP ATTR_UNUSED,
     else
         curlSetupP->sslCipherList = strdup(curlXportParmsP->ssl_cipher_list);
 
+    getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
 }
 
 
@@ -1703,14 +1925,14 @@ create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
        const char *                      const appname ATTR_UNUSED,
        const char *                      const appversion ATTR_UNUSED,
-       const struct xmlrpc_xportparms *  const transportparmsP,
+       const void *                      const transportparmsP,
        size_t                            const parm_size,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
-    struct xmlrpc_curl_xportparms * const curlXportParmsP = 
-        (struct xmlrpc_curl_xportparms *) transportparmsP;
+    const struct xmlrpc_curl_xportparms * const curlXportParmsP = 
+        transportparmsP;
 
     struct xmlrpc_client_transport * transportP;
 
@@ -2003,14 +2225,14 @@ finishAsynch(
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
 
-    struct timeval waitTimeoutTime;
+    xmlrpc_timespec waitTimeoutTime;
         /* The datetime after which we should quit waiting */
 
     xmlrpc_env_init(&env);
     
     if (timeoutType == timeout_yes) {
-        struct timeval waitStartTime;
-        gettimeofday(&waitStartTime, NULL);
+        xmlrpc_timespec waitStartTime;
+        xmlrpc_gettimeofday(&waitStartTime);
         addMilliseconds(waitStartTime, timeout, &waitTimeoutTime);
     }
 

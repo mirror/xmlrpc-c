@@ -1,11 +1,13 @@
+#include <stdlib.h>
+#include <assert.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include <inttypes.h>
 
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/time_int.h"
+#include "int.h"
 
 #include "date.h"
 
@@ -31,7 +33,7 @@ DateToString(time_t        const datetime,
 
     struct tm brokenTime;
 
-    gmtime_r(&datetime, &brokenTime);
+    xmlrpc_gmtime(datetime, &brokenTime);
 
     if (mktime(&brokenTime) == (time_t)-1)
         *dateStringP = NULL;
@@ -62,7 +64,9 @@ tzOffsetStr(struct tm const tm,
         xmlrpc_strfree(error);
         xmlrpc_asprintf(&retval, "%s", "+????");
     } else {
-        int const tzOffset = datetime - timeIfUtc;
+        int const tzOffset = (int)(datetime - timeIfUtc);
+
+        assert(tzOffset == datetime - timeIfUtc);
 
         xmlrpc_asprintf(&retval, "%+03d%02d",
                         tzOffset/3600, abs(tzOffset % 3600)/60);
@@ -79,7 +83,7 @@ DateToLogString(time_t        const datetime,
     const char * tzo;
     struct tm tm;
 
-    localtime_r(&datetime, &tm);
+    xmlrpc_localtime(datetime, &tm);
 
     tzo = tzOffsetStr(tm, datetime);
 

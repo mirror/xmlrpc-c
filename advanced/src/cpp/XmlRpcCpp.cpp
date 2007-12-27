@@ -189,7 +189,7 @@ bool XmlRpcValue::getBool (void) const {
     xmlrpc_bool result;
     xmlrpc_parse_value(env, mValue, "b", &result);
     env.throwIfFaultOccurred();
-    return result;
+    return (result != 0);
 }
 
 double XmlRpcValue::getDouble (void) const {
@@ -273,10 +273,10 @@ bool XmlRpcValue::structHasKey (const string& key) const {
     XmlRpcEnv env;
     const char *keystr = key.data();
     size_t keylen = key.size();
-    bool result = xmlrpc_struct_has_key_n(env, mValue,
-                                          const_cast<char*>(keystr), keylen);
+    int result = xmlrpc_struct_has_key_n(env, mValue,
+                                         const_cast<char*>(keystr), keylen);
     env.throwIfFaultOccurred();
-    return result;
+    return (result != 0);
 }
 
 XmlRpcValue XmlRpcValue::structGetValue (const string& key) const {

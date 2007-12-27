@@ -25,9 +25,6 @@
 #if HAVE_SYS_FILIO_H
   #include <sys/filio.h>
 #endif
-#if HAVE_SYS_IOCTL_H
-  #include <sys/ioctl.h>
-#endif
 
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
@@ -49,13 +46,14 @@ struct socketUnix {
 -----------------------------------------------------------------------------*/
     int fd;
         /* File descriptor of the POSIX socket (such as is created by
-           socket() in the C library) on which the TSocket is based.
+           socket() in the C library) for the socket.
         */
     abyss_bool userSuppliedFd;
         /* The file descriptor and associated POSIX socket belong to the
            user; we did not create it.
         */
 };
+
 
 
 static abyss_bool
@@ -105,13 +103,6 @@ SocketUnixTerm(void) {
       TChannel
 =============================================================================*/
 
-static ChannelWriteImpl              channelWrite;
-static ChannelReadImpl               channelRead;
-static ChannelWaitImpl               channelWait;
-static ChannelAvailableReadBytesImpl channelAvailableReadBytes;
-static ChannelFormatPeerInfoImpl     channelFormatPeerInfo;
-
-
 static void
 channelDestroy(TChannel * const channelP) {
 
@@ -124,6 +115,8 @@ channelDestroy(TChannel * const channelP) {
 }
 
 
+
+static ChannelWriteImpl channelWrite;
 
 static void
 channelWrite(TChannel *            const channelP,
@@ -150,13 +143,13 @@ channelWrite(TChannel *            const channelP,
 
         if (ChannelTraceIsActive) {
             if (rc < 0)
-                fprintf(stderr, "Abyss socket: send() failed.  errno=%d (%s)",
+                fprintf(stderr, "Abyss channel: send() failed.  errno=%d (%s)",
                         errno, strerror(errno));
             else if (rc == 0)
-                fprintf(stderr, "Abyss socket: send() failed.  "
+                fprintf(stderr, "Abyss channel: send() failed.  "
                         "Socket closed.\n");
             else
-                fprintf(stderr, "Abyss socket: sent %u bytes: '%.*s'\n",
+                fprintf(stderr, "Abyss channel: sent %u bytes: '%.*s'\n",
                         rc, rc, &buffer[len-bytesLeft]);
         }
         if (rc <= 0)
@@ -170,27 +163,40 @@ channelWrite(TChannel *            const channelP,
 
 
 
-static uint32_t
-channelRead(TChannel * const channelP, 
-            char *     const buffer, 
-            uint32_t   const len) {
+static ChannelReadImpl channelRead;
+
+static void
+channelRead(TChannel *      const channelP, 
+            unsigned char * const buffer, 
+            uint32_t        const bufferSize,
+            uint32_t *      const bytesReceivedP,
+            abyss_bool *    const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
     int rc;
-    rc = recv(socketUnixP->fd, buffer, len, 0);
-    if (ChannelTraceIsActive) {
-        if (rc < 0)
-            fprintf(stderr, "Abyss socket: recv() failed.  errno=%d (%s)",
+    rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
+
+    if (rc < 0) {
+        *failedP = TRUE;
+        if (ChannelTraceIsActive)
+            fprintf(stderr, "Abyss channel: "
+                    "Failed to receive data from socket.  "
+                    "recv() failed with errno %d (%s)\n",
                     errno, strerror(errno));
-        else 
-            fprintf(stderr, "Abyss socket: read %u bytes: '%.*s'\n",
-                    len, (int)len, buffer);
+    } else {
+        *failedP = FALSE;
+        *bytesReceivedP = rc;
+
+        if (ChannelTraceIsActive)
+            fprintf(stderr, "Abyss channel: read %u bytes: '%.*s'\n",
+                    *bytesReceivedP, (int)(*bytesReceivedP), buffer);
     }
-    return rc;
 }
 
 
+
+static ChannelWaitImpl channelWait;
 
 static uint32_t
 channelWait(TChannel * const channelP,
@@ -243,21 +249,6 @@ channelWait(TChannel * const channelP,
 
 
 
-static uint32_t
-channelAvailableReadBytes(TChannel * const channelP) {
-
-    struct socketUnix * const socketUnixP = channelP->implP;
-
-    uint32_t x;
-    int rc;
-
-    rc = ioctl(socketUnixP->fd, FIONREAD, &x);
-
-    return rc == 0 ? x : 0;
-}
-
-
-
 void
 ChannelUnixGetPeerName(TChannel *         const channelP,
                        struct sockaddr ** const sockaddrPP,
@@ -305,6 +296,8 @@ ChannelUnixGetPeerName(TChannel *         const channelP,
 
 
 
+static ChannelFormatPeerInfoImpl channelFormatPeerInfo;
+
 static void
 channelFormatPeerInfo(TChannel *    const channelP,
                       const char ** const peerStringP) {
@@ -351,7 +344,6 @@ static struct TChannelVtbl const channelVtbl = {
     &channelWrite,
     &channelRead,
     &channelWait,
-    &channelAvailableReadBytes,
     &channelFormatPeerInfo,
 };
 
@@ -392,7 +384,7 @@ makeChannelFromFd(int const fd,
     
     if (socketUnixP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
-                        "socket descriptor");
+                        "channel descriptor");
     else {
         TChannel * channelP;
         
@@ -454,150 +446,6 @@ ChannelUnixCreateFd(int                           const fd,
 =============================================================================*/
 
 static SwitchDestroyImpl chanSwitchDestroy;
-static SwitchListenImpl  chanSwitchListen;
-static SwitchAcceptImpl  chanSwitchAccept;
-
-static struct TChanSwitchVtbl const chanSwitchVtbl = {
-    &chanSwitchDestroy,
-    &chanSwitchListen,
-    &chanSwitchAccept,
-};
-
-
-
-static void
-setSocketOptions(int           const fd,
-                 const char ** const errorP) {
-
-    int32_t n = 1;
-    int rc;
-
-    rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n));
-
-    if (rc < 0)
-        xmlrpc_asprintf(errorP, "Failed to set socket options.  "
-                        "setsockopt() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
-
-
-
-static void
-bindSocketToPort(int              const fd,
-                 struct in_addr * const addrP,
-                 uint16_t         const portNumber,
-                 const char **    const errorP) {
-
-    struct sockaddr_in name;
-    int rc;
-
-    name.sin_family = AF_INET;
-    name.sin_port   = htons(portNumber);
-    if (addrP)
-        name.sin_addr = *addrP;
-    else
-        name.sin_addr.s_addr = INADDR_ANY;
-
-    rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
-
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %hu.  "
-                        "bind() failed with errno %d (%s)",
-                        portNumber, errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
-
-
-
-void
-ChanSwitchUnixCreate(uint16_t       const portNumber,
-                     TChanSwitch ** const chanSwitchPP,
-                     const char **  const errorP) {
-/*----------------------------------------------------------------------------
-   Create a POSIX-socket-based channel switch.
-
-   Use an IP socket.
-
-   Set the socket's local address so that a subsequent "listen" will listen
-   on all IP addresses, port number 'portNumber'.
------------------------------------------------------------------------------*/
-    struct socketUnix * socketUnixP;
-
-    MALLOCVAR(socketUnixP);
-
-    if (!socketUnixP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix socket "
-                        "descriptor structure.");
-    else {
-        int rc;
-        rc = socket(AF_INET, SOCK_STREAM, 0);
-        if (rc < 0)
-            xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
-                            errno, strerror(errno));
-        else {
-            socketUnixP->fd = rc;
-            socketUnixP->userSuppliedFd = FALSE;
-
-            setSocketOptions(socketUnixP->fd, errorP);
-            if (!*errorP) {
-                bindSocketToPort(socketUnixP->fd, NULL, portNumber, errorP);
-                
-                if (!*errorP)
-                    ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
-                                     chanSwitchPP);
-            }
-            if (*errorP)
-                close(socketUnixP->fd);
-        }
-        if (*errorP)
-            free(socketUnixP);
-    }
-}
-
-
-
-void
-ChanSwitchUnixCreateFd(int            const fd,
-                       TChanSwitch ** const chanSwitchPP,
-                       const char **  const errorP) {
-
-    struct socketUnix * socketUnixP;
-
-    if (connected(fd))
-        xmlrpc_asprintf(errorP,
-                        "Socket (file descriptor %d) is in connected "
-                        "state.", fd);
-    else {
-        MALLOCVAR(socketUnixP);
-
-        if (socketUnixP == NULL)
-            xmlrpc_asprintf(errorP, "unable to allocate memory for Unix "
-                            "socket descriptor.");
-        else {
-            TChanSwitch * chanSwitchP;
-
-            socketUnixP->fd = fd;
-            socketUnixP->userSuppliedFd = TRUE;
-            
-            ChanSwitchCreate(&chanSwitchVtbl, socketUnixP, &chanSwitchP);
-
-            if (chanSwitchP == NULL)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
-                                "channel switch descriptor");
-            else {
-                *chanSwitchPP = chanSwitchP;
-                *errorP = NULL;
-            }
-            if (*errorP)
-                free(socketUnixP);
-        }
-    }
-}
-
-
 
 static void
 chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
@@ -611,6 +459,8 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
 }
 
 
+
+static SwitchListenImpl  chanSwitchListen;
 
 static void
 chanSwitchListen(TChanSwitch * const chanSwitchP,
@@ -631,13 +481,15 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
     rc = listen(socketUnixP->fd, backlog);
 
     if (rc == -1)
-        xmlrpc_asprintf(errorP, "setsockopt() failed with errno %d (%s)",
+        xmlrpc_asprintf(errorP, "listen() failed with errno %d (%s)",
                         errno, strerror(errno));
     else
         *errorP = NULL;
 }
 
 
+
+static SwitchAcceptImpl chanSwitchAccept;
 
 static void
 chanSwitchAccept(TChanSwitch * const chanSwitchP,
@@ -710,6 +562,147 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
     *channelPP = channelP;
 }
 
+
+
+static struct TChanSwitchVtbl const chanSwitchVtbl = {
+    &chanSwitchDestroy,
+    &chanSwitchListen,
+    &chanSwitchAccept,
+};
+
+
+
+static void
+setSocketOptions(int           const fd,
+                 const char ** const errorP) {
+
+    int32_t n = 1;
+    int rc;
+
+    rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n));
+
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "Failed to set socket options.  "
+                        "setsockopt() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else
+        *errorP = NULL;
+}
+
+
+
+static void
+bindSocketToPort(int              const fd,
+                 struct in_addr * const addrP,
+                 uint16_t         const portNumber,
+                 const char **    const errorP) {
+
+    struct sockaddr_in name;
+    int rc;
+
+    name.sin_family = AF_INET;
+    name.sin_port   = htons(portNumber);
+    if (addrP)
+        name.sin_addr = *addrP;
+    else
+        name.sin_addr.s_addr = INADDR_ANY;
+
+    rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
+
+    if (rc == -1)
+        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %hu.  "
+                        "bind() failed with errno %d (%s)",
+                        portNumber, errno, strerror(errno));
+    else
+        *errorP = NULL;
+}
+
+
+
+void
+ChanSwitchUnixCreate(unsigned short const portNumber,
+                     TChanSwitch ** const chanSwitchPP,
+                     const char **  const errorP) {
+/*----------------------------------------------------------------------------
+   Create a POSIX-socket-based channel switch.
+
+   Use an IP socket.
+
+   Set the socket's local address so that a subsequent "listen" will listen
+   on all IP addresses, port number 'portNumber'.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * socketUnixP;
+
+    MALLOCVAR(socketUnixP);
+
+    if (!socketUnixP)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
+                        "channel descriptor structure.");
+    else {
+        int rc;
+        rc = socket(AF_INET, SOCK_STREAM, 0);
+        if (rc < 0)
+            xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                            errno, strerror(errno));
+        else {
+            socketUnixP->fd = rc;
+            socketUnixP->userSuppliedFd = FALSE;
+
+            setSocketOptions(socketUnixP->fd, errorP);
+            if (!*errorP) {
+                bindSocketToPort(socketUnixP->fd, NULL, portNumber, errorP);
+                
+                if (!*errorP)
+                    ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
+                                     chanSwitchPP);
+            }
+            if (*errorP)
+                close(socketUnixP->fd);
+        }
+        if (*errorP)
+            free(socketUnixP);
+    }
+}
+
+
+
+void
+ChanSwitchUnixCreateFd(int            const fd,
+                       TChanSwitch ** const chanSwitchPP,
+                       const char **  const errorP) {
+
+    struct socketUnix * socketUnixP;
+
+    if (connected(fd))
+        xmlrpc_asprintf(errorP,
+                        "Socket (file descriptor %d) is in connected "
+                        "state.", fd);
+    else {
+        MALLOCVAR(socketUnixP);
+
+        if (socketUnixP == NULL)
+            xmlrpc_asprintf(errorP, "unable to allocate memory for Unix "
+                            "channel switch descriptor.");
+        else {
+            TChanSwitch * chanSwitchP;
+
+            socketUnixP->fd = fd;
+            socketUnixP->userSuppliedFd = TRUE;
+            
+            ChanSwitchCreate(&chanSwitchVtbl, socketUnixP, &chanSwitchP);
+
+            if (chanSwitchP == NULL)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                                "channel switch descriptor");
+            else {
+                *chanSwitchPP = chanSwitchP;
+                *errorP = NULL;
+            }
+            if (*errorP)
+                free(socketUnixP);
+        }
+    }
+}
 
 
 

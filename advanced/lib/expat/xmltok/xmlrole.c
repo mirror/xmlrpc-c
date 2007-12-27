@@ -1147,11 +1147,11 @@ int condSect0(PROLOG_STATE *state,
 
 
 static int
-condSect1(PROLOG_STATE *   const state,
-	      int              const tok,
-	      const char *     const ptr ATTR_UNUSED,
-	      const char *     const end ATTR_UNUSED,
-	      const ENCODING * const enc ATTR_UNUSED) {
+condSect1(PROLOG_STATE *  state,
+	      int              tok,
+	      const char *     ptr ATTR_UNUSED,
+	      const char *     end ATTR_UNUSED,
+	      const ENCODING * enc ATTR_UNUSED) {
 
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1167,11 +1167,11 @@ condSect1(PROLOG_STATE *   const state,
 
 
 static int
-condSect2(PROLOG_STATE *   const state,
-	      int              const tok,
-	      const char *     const ptr ATTR_UNUSED,
-	      const char *     const end ATTR_UNUSED,
-	      const ENCODING * const enc ATTR_UNUSED) {
+condSect2(PROLOG_STATE *  state,
+	      int              tok,
+	      const char *     ptr ATTR_UNUSED,
+	      const char *     end ATTR_UNUSED,
+	      const ENCODING * enc ATTR_UNUSED) {
 
     switch (tok) {
     case XML_TOK_PROLOG_S:

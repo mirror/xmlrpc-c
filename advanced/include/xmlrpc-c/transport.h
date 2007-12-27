@@ -26,7 +26,7 @@ typedef void (*xmlrpc_transport_create)(
     int                               const flags,
     const char *                      const appname,
     const char *                      const appversion,
-    const struct xmlrpc_xportparms *  const transportparmsP,
+    const void *                      const transportparmsP,
     size_t                            const transportparm_size,
     struct xmlrpc_client_transport ** const handlePP);
     

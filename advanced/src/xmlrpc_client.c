@@ -26,6 +26,7 @@
     MUST_BUILD_LIBWWW_CLIENT 
 */
 #include "transport_config.h"
+#include "version.h"
 
 struct xmlrpc_client {
 /*----------------------------------------------------------------------------
@@ -137,6 +138,10 @@ teardownTransportGlobalConst(void) {
 
 
 
+/*=========================================================================
+   Global stuff (except the global client)
+=========================================================================*/
+
 static unsigned int constSetupCount = 0;
 
 
@@ -178,6 +183,11 @@ xmlrpc_client_teardown_global_const(void) {
 
 
 
+unsigned int const xmlrpc_client_version_major = XMLRPC_VERSION_MAJOR;
+unsigned int const xmlrpc_client_version_minor = XMLRPC_VERSION_MINOR;
+unsigned int const xmlrpc_client_version_point = XMLRPC_VERSION_POINT;
+
+
 /*=========================================================================
    Client Create/Destroy
 =========================================================================*/
@@ -209,27 +219,33 @@ getTransportOps(
 
 
 
+struct xportParms {
+    const void * parmsP;
+    size_t size;
+};
+
+
+
 static void
 getTransportParmsFromClientParms(
     xmlrpc_env *                      const envP,
     const struct xmlrpc_clientparms * const clientparmsP,
     unsigned int                      const parmSize,
-    const struct xmlrpc_xportparms ** const transportparmsPP,
-    size_t *                          const transportparmSizeP) {
+    struct xportParms *               const xportParmsP) {
 
     if (parmSize < XMLRPC_CPSIZE(transportparmsP) ||
         clientparmsP->transportparmsP == NULL) {
 
-        *transportparmsPP = NULL;
-        *transportparmSizeP = 0;
+        xportParmsP->parmsP = NULL;
+        xportParmsP->size   = 0;
     } else {
-        *transportparmsPP = clientparmsP->transportparmsP;
+        xportParmsP->parmsP = clientparmsP->transportparmsP;
         if (parmSize < XMLRPC_CPSIZE(transportparm_size))
             xmlrpc_faultf(envP, "Your 'clientparms' argument contains the "
                           "transportparmsP member, "
                           "but no transportparms_size member");
         else
-            *transportparmSizeP = clientparmsP->transportparm_size;
+            xportParmsP->size = clientparmsP->transportparm_size;
     }
 }
 
@@ -241,8 +257,7 @@ getTransportInfo(
     const struct xmlrpc_clientparms *           const clientparmsP,
     unsigned int                                const parmSize,
     const char **                               const transportNameP,
-    const struct xmlrpc_xportparms **           const transportparmsPP,
-    size_t *                                    const transportparmSizeP,
+    struct xportParms *                         const transportParmsP,
     const struct xmlrpc_client_transport_ops ** const transportOpsPP,
     xmlrpc_client_transport **                  const transportPP) {
 
@@ -283,11 +298,10 @@ getTransportInfo(
 
     if (!envP->fault_occurred) {
         getTransportParmsFromClientParms(
-            envP, clientparmsP, parmSize, 
-            transportparmsPP, transportparmSizeP);
+            envP, clientparmsP, parmSize, transportParmsP);
         
         if (!envP->fault_occurred) {
-            if (*transportparmsPP && !transportNameParm)
+            if (transportParmsP->parmsP && !transportNameParm)
                 xmlrpc_faultf(
                     envP,
                     "You specified transport parameters, but did not "
@@ -356,15 +370,15 @@ clientCreate(
 
 static void
 createTransportAndClient(
-    xmlrpc_env * const envP,
-    const char * const transportName,
-    const struct xmlrpc_xportparms * const transportparmsP,
-    size_t                           const transportparmSize,
-    int                              const flags,
-    const char *                     const appname,
-    const char *                     const appversion,
-    xmlrpc_dialect                   const dialect,
-    xmlrpc_client **                 const clientPP) {
+    xmlrpc_env *     const envP,
+    const char *     const transportName,
+    const void *     const transportparmsP,
+    size_t           const transportparmSize,
+    int              const flags,
+    const char *     const appname,
+    const char *     const appversion,
+    xmlrpc_dialect   const dialect,
+    xmlrpc_client ** const clientPP) {
 
     const struct xmlrpc_client_transport_ops * transportOpsP;
 
@@ -411,22 +425,21 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
         */
     } else {
         const char * transportName;
-        const struct xmlrpc_xportparms * transportparmsP;
-        size_t transportparmSize;
+        struct xportParms transportparms;
         const struct xmlrpc_client_transport_ops * transportOpsP;
         xmlrpc_client_transport * transportP;
         xmlrpc_dialect dialect;
         
         getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
-                         &transportparmsP, &transportparmSize,
-                         &transportOpsP, &transportP);
+                         &transportparms, &transportOpsP, &transportP);
         
         getDialectFromClientParms(clientparmsP, parmSize, &dialect);
             
         if (!envP->fault_occurred) {
             if (transportName)
                 createTransportAndClient(envP, transportName,
-                                         transportparmsP, transportparmSize,
+                                         transportparms.parmsP,
+                                         transportparms.size,
                                          flags, appname, appversion, dialect,
                                          clientPP);
             else {
@@ -483,96 +496,6 @@ makeCallXml(xmlrpc_env *               const envP,
                 XMLRPC_MEMBLOCK_FREE(char, callXmlP);
         }
     }    
-}
-
-
-
-/*=========================================================================
-    xmlrpc_server_info
-=========================================================================*/
-
-xmlrpc_server_info *
-xmlrpc_server_info_new(xmlrpc_env * const envP,
-                       const char * const serverUrl) {
-    
-    xmlrpc_server_info * serverInfoP;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(serverUrl);
-
-    /* Allocate our memory blocks. */
-    MALLOCVAR(serverInfoP);
-    if (serverInfoP == NULL)
-        xmlrpc_faultf(envP, "Couldn't allocate memory for xmlrpc_server_info");
-    else {
-        memset(serverInfoP, 0, sizeof(xmlrpc_server_info));
-
-        serverInfoP->_server_url = strdup(serverUrl);
-        if (serverInfoP->_server_url == NULL)
-            xmlrpc_faultf(envP, "Couldn't allocate memory for server URL");
-        else {
-            serverInfoP->_http_basic_auth = NULL;
-            if (envP->fault_occurred)
-                xmlrpc_strfree(serverInfoP->_server_url);
-        }
-        if (envP->fault_occurred)
-            free(serverInfoP);
-    }
-    return serverInfoP;
-}
-
-
-
-xmlrpc_server_info *
-xmlrpc_server_info_copy(xmlrpc_env *         const envP,
-                        xmlrpc_server_info * const aserverInfoP) {
-
-    xmlrpc_server_info * serverInfoP;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(aserverInfoP);
-
-    MALLOCVAR(serverInfoP);
-    if (serverInfoP == NULL)
-        xmlrpc_faultf(envP,
-                      "Couldn't allocate memory for xmlrpc_server_info");
-    else {
-        serverInfoP->_server_url = strdup(aserverInfoP->_server_url);
-        if (serverInfoP->_server_url == NULL)
-            xmlrpc_faultf(envP, "Couldn't allocate memory for server URL");
-        else {
-            if (aserverInfoP->_http_basic_auth == NULL)
-                serverInfoP->_http_basic_auth = NULL;
-            else {
-                serverInfoP->_http_basic_auth =
-                    strdup(aserverInfoP->_http_basic_auth);
-                if (serverInfoP->_http_basic_auth == NULL)
-                    xmlrpc_faultf(envP, "Couldn't allocate memory "
-                                  "for authentication info");
-            }
-            if (envP->fault_occurred)
-                xmlrpc_strfree(serverInfoP->_server_url);
-        }
-        if (envP->fault_occurred)
-            free(serverInfoP);
-    }
-    return serverInfoP;
-}
-
-
-
-void
-xmlrpc_server_info_free(xmlrpc_server_info * const serverInfoP) {
-
-    XMLRPC_ASSERT_PTR_OK(serverInfoP);
-    XMLRPC_ASSERT(serverInfoP->_server_url != XMLRPC_BAD_POINTER);
-
-    if (serverInfoP->_http_basic_auth)
-        free(serverInfoP->_http_basic_auth);
-    serverInfoP->_http_basic_auth = XMLRPC_BAD_POINTER;
-    free(serverInfoP->_server_url);
-    serverInfoP->_server_url = XMLRPC_BAD_POINTER;
-    free(serverInfoP);
 }
 
 
@@ -938,7 +861,7 @@ xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
     XMLRPC_ASSERT_VALUE_OK(argP);
 
     callInfoCreate(envP, methodName, argP, clientP->dialect,
-                   serverInfoP->_server_url, completionFn, userData,
+                   serverInfoP->serverUrl, completionFn, userData,
                    &callInfoP);
 
     if (!envP->fault_occurred)
@@ -1004,79 +927,6 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
 /*=========================================================================
    Miscellaneous
 =========================================================================*/
-
-void 
-xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
-                                  xmlrpc_server_info * const serverP,
-                                  const char *         const username,
-                                  const char *         const password) {
-
-    size_t username_len, password_len, raw_token_len;
-    char *raw_token;
-    xmlrpc_mem_block *token;
-    char *token_data, *auth_type, *auth_header;
-    size_t token_len, auth_type_len, auth_header_len;
-
-    /* Error-handling preconditions. */
-    raw_token = NULL;
-    token = NULL;
-    token_data = auth_type = auth_header = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(serverP);
-    XMLRPC_ASSERT_PTR_OK(username);
-    XMLRPC_ASSERT_PTR_OK(password);
-
-    /* Calculate some lengths. */
-    username_len = strlen(username);
-    password_len = strlen(password);
-    raw_token_len = username_len + password_len + 1;
-
-    /* Build a raw token of the form 'username:password'. */
-    raw_token = (char*) malloc(raw_token_len + 1);
-    XMLRPC_FAIL_IF_NULL(raw_token, envP, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for auth token");
-    strcpy(raw_token, username);
-    raw_token[username_len] = ':';
-    strcpy(&raw_token[username_len + 1], password);
-
-    /* Encode our raw token using Base64. */
-    token = xmlrpc_base64_encode_without_newlines(envP, 
-                                                  (unsigned char*) raw_token,
-                                                  raw_token_len);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    token_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, token);
-    token_len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, token);
-
-    /* Build our actual header value. (I hate string processing in C.) */
-    auth_type = "Basic ";
-    auth_type_len = strlen(auth_type);
-    auth_header_len = auth_type_len + token_len;
-    auth_header = (char*) malloc(auth_header_len + 1);
-    XMLRPC_FAIL_IF_NULL(auth_header, envP, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for auth header");
-    memcpy(auth_header, auth_type, auth_type_len);
-    memcpy(&auth_header[auth_type_len], token_data, token_len);
-    auth_header[auth_header_len] = '\0';
-
-    /* Clean up any pre-existing authentication information, and install
-    ** the new value. */
-    if (serverP->_http_basic_auth)
-        free(serverP->_http_basic_auth);
-    serverP->_http_basic_auth = auth_header;
-
- cleanup:
-    if (raw_token)
-        free(raw_token);
-    if (token)
-        xmlrpc_mem_block_free(token);
-    if (envP->fault_occurred) {
-        if (auth_header)
-            free(auth_header);
-    }
-}
-
-
 
 const char * 
 xmlrpc_client_get_default_transport(xmlrpc_env * const envP ATTR_UNUSED) {

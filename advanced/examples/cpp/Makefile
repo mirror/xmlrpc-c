@@ -29,9 +29,6 @@ SERVERPROGS_ABYSS = \
   xmlrpc_loop_server \
   xmlrpc_sample_add_server \
 
-LEGACY_CLIENTPROGS = \
-  meerkat-app-list
-
 CLIENTPROGS = \
   xmlrpc_sample_add_client \
   sample_add_client_complex \
@@ -45,7 +42,7 @@ ifeq ($(ENABLE_ABYSS_SERVER),yes)
 endif
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
-  PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)
+  PROGS += $(CLIENTPROGS)
 endif
 
 PROGS += pstream_inetd_server
@@ -65,16 +62,10 @@ LDADD_CLIENT = \
 LDADD_BASE = \
   $(shell $(XMLRPC_C_CONFIG) c++2 --ldadd)
 
-LDADD_LEGACY_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
-
 all: $(PROGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
-
-$(LEGACY_CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_LEGACY_CLIENT)
 
 $(CLIENTPROGS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)

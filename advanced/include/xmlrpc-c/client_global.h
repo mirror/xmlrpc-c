@@ -136,6 +136,6 @@ xmlrpc_client_event_loop_finish_asynch(void);
 
 /* Finish all outstanding asynchronous calls. */
 extern void
-xmlrpc_client_event_loop_finish_asynch_timeout(unsigned long milliseconds);
+xmlrpc_client_event_loop_finish_asynch_timeout(unsigned long const milliseconds);
 
 #endif

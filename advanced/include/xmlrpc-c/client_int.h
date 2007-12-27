@@ -18,23 +18,39 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
 struct _xmlrpc_server_info {
-    char *_server_url;
-    char *_http_basic_auth;
+    const char * serverUrl;
+    struct {
+        bool basic;
+        bool digest;
+        bool gssnegotiate;
+        bool ntlm;
+    } allowedAuth;
+    const char * userNamePw;
+        /* The username/password value for HTTP, i.e. in
+           "user:password" form
+
+           This can be NULL to indicate "none", but only if 'allowedAuth'
+           doesn't allow any form of authentication.
+        */
+    const char * basicAuthHdrValue;
+        /* A complete value for an HTTP Authorization: header that
+           requests HTTP basic authentication.  This exists whether
+           or not 'allowedAuth' allows basic authentication, and is
+           completely redundant with 'userNamePw'.  It exists mainly
+           for historical reasons, and may also save some computation
+           when the same xmrpc_server_info is used for multiple
+           HTTP connections.
+
+           This is NULL exactly when 'userNamePw' is NULL.
+        */
 };
-
-/* Create a new server info record, with a copy of the old server. */
-struct _xmlrpc_server_info * 
-xmlrpc_server_info_copy(xmlrpc_env *                 const envP,
-                        struct _xmlrpc_server_info * const serverInfoP);
-
 
 /*=========================================================================
 ** Transport Implementation functions.
-**=========================================================================
-*/
+**========================================================================= */
 #include "xmlrpc-c/transport.h"
 
 /* The generalized event loop. This uses the above flags. For more details,

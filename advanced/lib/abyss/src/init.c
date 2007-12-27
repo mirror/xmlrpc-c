@@ -13,9 +13,9 @@
   context to be local to invidual objects.
 =============================================================================*/
 
-#include <stdbool.h>
 #include <assert.h>
 
+#include "bool.h"
 #include "xmlrpc-c/string_int.h"
 
 #include "chanswitch.h"
@@ -30,6 +30,9 @@ static void
 initAbyss(const char ** const errorP) {
 
     const char * error;
+
+    DateInit();
+    MIMETypeInit();
 
     ChanSwitchInit(&error);
 
@@ -82,6 +85,7 @@ termAbyss(void) {
 
     ChannelTerm();
     ChanSwitchTerm();
+    MIMETypeTerm();
 }
 
 
@@ -96,8 +100,3 @@ AbyssTerm(void) {
     if (AbyssInitCount == 0)
         termAbyss();
 }
-
-
-
-
-

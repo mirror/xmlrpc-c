@@ -13,12 +13,11 @@
 
 =========================================================================*/
 
-#include "xmlrpc_config.h"
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "xmlrpc_config.h"
 #include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/base_int.h"
@@ -27,8 +26,14 @@
 #include "xmlrpc-c/server.h"
 #include "method.h"
 #include "system_method.h"
+#include "version.h"
 
 #include "registry.h"
+
+
+unsigned int const xmlrpc_server_version_major = XMLRPC_VERSION_MAJOR;
+unsigned int const xmlrpc_server_version_minor = XMLRPC_VERSION_MINOR;
+unsigned int const xmlrpc_server_version_point = XMLRPC_VERSION_POINT;
 
 
 xmlrpc_registry *
@@ -131,7 +136,7 @@ xmlrpc_registry_add_method(xmlrpc_env *      const envP,
                            xmlrpc_registry * const registryP,
                            const char *      const host,
                            const char *      const methodName,
-                           xmlrpc_method1          method,
+                           xmlrpc_method1    const method,
                            void *            const serverInfoP) {
 
     xmlrpc_registry_add_method_w_doc(
@@ -159,7 +164,7 @@ xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
 void 
 xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
                                    xmlrpc_registry *     const registryP,
-                                   xmlrpc_default_method       function,
+                                   xmlrpc_default_method const function,
                                    void *                const userData) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
@@ -178,10 +183,10 @@ xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
 
 
 void 
-xmlrpc_registry_set_preinvoke_method(xmlrpc_env *      const envP,
-                                     xmlrpc_registry * const registryP,
-                                     xmlrpc_preinvoke_method function,
-                                     void *            const userData) {
+xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            const envP,
+                                     xmlrpc_registry *       const registryP,
+                                     xmlrpc_preinvoke_method const function,
+                                     void *                  const userData) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(registryP);

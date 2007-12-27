@@ -11,14 +11,13 @@
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
 # BLDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
 
+include $(SRCDIR)/Makefile.version
+
 # .DELETE_ON_ERROR is a special predefined Make target that says to delete
 # the target if a command in the rule for it fails.  That's important,
 # because we don't want a half-made target sitting around looking like it's
 # fully made.
 .DELETE_ON_ERROR:
-
-LIBTOOL = $(BLDDIR)/libtool
-LINK = $(LIBTOOL) --mode=link $(CCLD)
 
 GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline -Wundef
   # We need -Wwrite-strings after we fix all the missing consts
@@ -51,36 +50,7 @@ DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 # MAJ is the major version number, but is set separately by
 # individual make files so that the major number of one library can change
 # from one release to another while the major number of another does not.
-# Libtool builds are controlled by LDFLAGS_VERSINFO instead.
-MIN = 12
-
-# LDFLAGS_VERSINFO is a libtool link option (--version-info) that
-# tells it what version numbers to put on the shared libraries (and
-# maybe in those special libtool link files).  Exactly how it works is
-# somewhat mysterious; it's designed to be part of a linking system
-# where you always use libtool to link the libraries, and libtool
-# figures out which if any version of a library meets the link's
-# requirements.  But we expect our libraries to be linked with the
-# regular (non-libtool) linker, so what we care about is the major,
-# minor, and revision numbers in the file names and sonames.  Libtool
-# has an option --version-number that supposedly lets us specify that,
-# but it doesn't seem to work.  All I get is 0.0.0.  So we manipulate
-# --version-info instead.
-#
-# This appears to work: in the option --version-info A.B.C:
-#
-#   C is the minor number
-#   B is the revision number
-#   A minus C is the major number.
-#
-# So you would get libxmlrpc.so.A-C.C.B .
-#
-# Our strategy is to make the library version numbers the same as the
-# Xmlrpc-c version numbers except that we update the major number when and
-# only when we make a non-backward-compatible change to the library.  So
-# e.g. libxmlrpc for Xmlrpc-c 1.06.01 is named libxmlrpc.so.3.6.1.
-
-LDFLAGS_VERSINFO = -version-info 15:0:12  # 3.12.0
+MIN = $(XMLRPC_MINOR_RELEASE)
 
 # CURDIR was introduced in GNU Make 3.77.
 ifeq ($(CURDIR)x,x)
@@ -245,8 +215,7 @@ UTILS = $(CASPRINTF)
 
 # LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
 # XML.  If we're using an external library to parse XML, this is null.
-# LDLIBS_XML is the corresponding -L/-l options, which may work only
-# for a Libtool link.
+# LDLIBS_XML is the corresponding -L/-l options
 
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
@@ -511,18 +480,6 @@ install-static-libraries: $(STATIC_LIBRARIES_TO_INSTALL)
 	  else :; fi; \
 	done
 
-LIBTOOL_INSTALL_CMD = $(LIBTOOL) --mode=install \
-  $(INSTALL_SHLIB) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
-
-install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
-	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
-	@list='$(LTLIBRARIES_TO_INSTALL)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    echo " $(LIBTOOL_INSTALL_CMD)"; \
-	    $(LIBTOOL_INSTALL_CMD); \
-	  else :; fi; \
-	done
-
 HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
 INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(HEADERDESTDIR)/$$p 
 
@@ -587,7 +544,6 @@ distclean-common:
 # gains nothing from it, with that.
 #
 	rm -f Makefile.depend
-	rm -f TAGS
 	rm -f srcdir blddir
 
 .PHONY: distdir-common
@@ -603,28 +559,13 @@ distdir-common:
 	  fi; \
 	done
 
-TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
-	tags=; \
-	here=`pwd`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-   if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
-   fi; \
-	done; \
-	list='$(SOURCES) $(HEADERS)'; \
-	unique=`for i in $$list; do echo $$i; done | \
-	  awk '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
-
 DEP_SOURCES = $(wildcard *.c *.cpp)
 
 # This is a filter to turn "foo.o:" rules into "foo.o foo.lo foo.osh:"
 # to make dependencies for all the various forms of object file out of
 # a file made by a depedency generator that knows only about .o.
 
-LIBTOOL_DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo $$1.osh:}'
+DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo $$1.osh:}'
 
 
 
@@ -632,7 +573,7 @@ LIBTOOL_DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo $$1.osh:}'
 dep-common: FORCE
 ifneq ($(DEP_SOURCES)x,x)
 	-$(CC) -MM -MG -I. $(INCLUDES) $(DEP_SOURCES) | \
-	  $(LIBTOOL_DEPEND_MASSAGER) \
+	  $(DEPEND_MASSAGER) \
 	  >Makefile.depend
 endif
 

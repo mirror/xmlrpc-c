@@ -7,13 +7,13 @@
 ** Request
 *********************************************************************/
 
-abyss_bool RequestValidURI(TSession *r);
-abyss_bool RequestValidURIPath(TSession *r);
+abyss_bool RequestValidURI(TSession * const r);
+abyss_bool RequestValidURIPath(TSession * const r);
 abyss_bool RequestUnescapeURI(TSession *r);
 
-void RequestRead(TSession *r);
-void RequestInit(TSession *r,TConn *c);
-void RequestFree(TSession *r);
+void RequestRead(TSession * const r);
+void RequestInit(TSession * const r,TConn * const c);
+void RequestFree(TSession * const r);
 
 abyss_bool
 RequestAuth(TSession *   const sessionP,

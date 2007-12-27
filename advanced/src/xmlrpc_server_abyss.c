@@ -2,7 +2,6 @@
 
 #include "xmlrpc_config.h"
 
-#include <inttypes.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +17,7 @@
 #  include <grp.h>
 #endif
 
+#include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"
 
@@ -801,8 +801,6 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
     runfirstFn runfirst;
     void * runfirstArg;
     
-    DateInit();
-    
     ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
 
     assert(parmSize >= XMLRPC_APSIZE(config_file_name));
@@ -901,6 +899,21 @@ extractServerCreateParms(
 
 
 static void
+chanSwitchCreateOsSocket(TOsSocket      const socketFd,
+                         TChanSwitch ** const chanSwitchPP,
+                         const char **  const errorP) {
+
+#ifdef WIN32
+    ChanSwitchWinCreateWinsock(socketFd, chanSwitchPP, errorP);
+#else
+    ChanSwitchUnixCreateFd(socketFd, chanSwitchPP, errorP);
+#endif
+
+}
+
+
+
+static void
 createServerBoundSocket(xmlrpc_env *   const envP,
                         TOsSocket      const socketFd,
                         const char *   const logFileName,
@@ -910,7 +923,7 @@ createServerBoundSocket(xmlrpc_env *   const envP,
     TChanSwitch * chanSwitchP;
     const char * error;
     
-    ChanSwitchUnixCreateFd(socketFd, &chanSwitchP, &error);
+    chanSwitchCreateOsSocket(socketFd, &chanSwitchP, &error);
     if (error) {
         xmlrpc_faultf(envP, "Unable to create Abyss socket out of "
                       "file descriptor %d.  %s", socketFd, error);
@@ -1046,8 +1059,6 @@ normalLevelAbyssRun(xmlrpc_env *                      const envP,
     
     TServer server;
     TChanSwitch * chanSwitchP;
-
-    DateInit();
 
     createServer(envP, parmsP, parmSize, &server, &chanSwitchP);
 
@@ -1219,9 +1230,6 @@ xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
 void 
 xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED, 
                          const char * const config_file) {
-
-    DateInit();
-    MIMETypeInit();
 
     ServerCreate(&globalSrv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
     

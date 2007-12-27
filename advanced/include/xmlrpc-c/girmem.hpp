@@ -19,6 +19,7 @@
 #  include <pthread.h>
    typedef pthread_mutex_t girmem_lock;
 #else
+#  include <windows.h>
    typedef CRITICAL_SECTION girmem_lock;
 #endif
 

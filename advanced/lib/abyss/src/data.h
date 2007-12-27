@@ -1,6 +1,7 @@
 #ifndef DATA_H_INCLUDED
 #define DATA_H_INCLUDED
 
+#include "int.h"
 #include "thread.h"
 
 /*********************************************************************

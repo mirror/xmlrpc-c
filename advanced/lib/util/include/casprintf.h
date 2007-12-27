@@ -5,6 +5,10 @@
 
 #include "c_util.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const char * const strsol;
 
 void
@@ -17,5 +21,9 @@ casprintf(const char ** const retvalP, const char * const fmt, ...);
 
 void
 strfree(const char * const string);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

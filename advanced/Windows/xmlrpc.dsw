@@ -3,34 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "all"=".\all.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name xmlrpc_sample_add_asynch_client
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name xmlrpc_sample_add_server
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name xmlrpc_sample_add_sync_client
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name xmlrpc_sample_auth_client
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name rpctest
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "configwin32"=".\configwin32.dsp" - Package Owner=<4>
+Project: "abyss"=".\abyss.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -53,11 +26,17 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name xmlrpc
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpccpp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "gennmtab"="..\lib\expat\gennmtab\gennmtab.dsp" - Package Owner=<4>
+Project: "gennmtab"=".\gennmtab.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -65,24 +44,6 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name configwin32
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "query_meerkat"=".\query_meerkat.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name xmlrpc
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -98,11 +59,26 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name xmlrpc
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "xmlparse"="..\lib\expat\xmlparse\xmlparse.dsp" - Package Owner=<4>
+Project: "xmlhttpsys"=".\xmlhttpsys.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "xmlparse"=".\xmlparse.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -127,6 +103,30 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name xmlparse
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpccpp"=".\xmlrpccpp.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlparse
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
     End Project Dependency
 }}}
 
@@ -159,7 +159,7 @@ Package=<4>
     Project_Dep_Name xmlrpc
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name _all_
+    Project_Dep_Name abyss
     End Project Dependency
 }}}
 
@@ -173,6 +173,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name xmlhttpsys
+    End Project Dependency
     Begin Project Dependency
     Project_Dep_Name xmlrpc
     End Project Dependency
@@ -210,7 +213,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "xmltok"="..\lib\expat\xmltok\xmltok.dsp" - Package Owner=<4>
+Project: "xmltok"=".\xmltok.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{

@@ -47,8 +47,6 @@
   to use the TCP keepalive facility for that.
 ============================================================================*/
 
-#define _BSD_SOURCE        // gets uint defined
-
 #include <cassert>
 #include <string>
 #include <queue>
@@ -356,7 +354,7 @@ void
 packetSocket::processBytesRead(const unsigned char * const buffer,
                                size_t                const bytesRead) {
 
-    uint cursor;  // Cursor into buffer[]
+    unsigned int cursor;  // Cursor into buffer[]
     cursor = 0;
     while (cursor < bytesRead) {
         size_t bytesTaken;

@@ -4,6 +4,7 @@
 #include <errno.h>
 
 #include "xmlrpc_config.h"
+#include "transport_config.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
@@ -40,6 +41,8 @@ testGlobalConst(void) {
 static void
 testCreateCurlParms(void) {
     
+#if MUST_BUILD_CURL_CLIENT
+
     xmlrpc_env env;
     xmlrpc_client * clientP;
     struct xmlrpc_clientparms clientParms1;
@@ -48,8 +51,7 @@ testCreateCurlParms(void) {
     xmlrpc_env_init(&env);
 
     clientParms1.transport = "curl";
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
 
     curlTransportParms1.network_interface = "eth0";
     clientParms1.transportparm_size = XMLRPC_CXPSIZE(network_interface);
@@ -77,6 +79,7 @@ testCreateCurlParms(void) {
     xmlrpc_client_destroy(clientP);
 
     xmlrpc_env_clean(&env);
+#endif  /* MUST_BUILD_CURL_CLIENT */
 }
 
 
@@ -84,6 +87,7 @@ testCreateCurlParms(void) {
 static void
 testCreateSeparateXport(void) {
 
+#if MUST_BUILD_CURL_CLIENT
     xmlrpc_env env;
     xmlrpc_client * clientP;
     struct xmlrpc_clientparms clientParms1;
@@ -93,8 +97,7 @@ testCreateSeparateXport(void) {
     xmlrpc_env_init(&env);
 
     xmlrpc_curl_transport_ops.create(
-        &env, 0, "", "",
-        (struct xmlrpc_xportparms *)&curlTransportParms1, 0,
+        &env, 0, "", "", &curlTransportParms1, 0,
         &transportP);
 
     TEST_NO_FAULT(&env);
@@ -111,8 +114,7 @@ testCreateSeparateXport(void) {
     TEST_NO_FAULT(&env);
 
     clientParms1.transport = "curl";
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
     clientParms1.transportparm_size = 0;
     clientParms1.transportOpsP = NULL;
     clientParms1.transportP = NULL;
@@ -151,6 +153,8 @@ testCreateSeparateXport(void) {
     xmlrpc_curl_transport_ops.destroy(transportP);
 
     xmlrpc_env_clean(&env);
+
+#endif  /* MUST_BUILD_CURL_CLIENT */
 }
 
 
@@ -204,8 +208,7 @@ testCreateDestroy(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
 
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
 
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
                          &clientParms1, XMLRPC_CPSIZE(transportparmsP),
@@ -307,8 +310,7 @@ testInitCleanup(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_cleanup();
 
-    clientParms1.transportparmsP = (struct xmlrpc_xportparms *)(void *)
-        &curlTransportParms1;
+    clientParms1.transportparmsP = &curlTransportParms1;
 
     /* Fails because we didn't include transportparm_size: */
     xmlrpc_client_init2(&env, 0, "testprog", "1.0",
@@ -352,6 +354,67 @@ testInitCleanup(void) {
 
 
 
+static void
+testServerInfo(void) {
+
+    xmlrpc_env env;
+    xmlrpc_server_info * serverInfoP;
+    xmlrpc_server_info * serverInfo2P;
+
+    printf("  Running serverInfo tests...\n");
+
+    xmlrpc_env_init(&env);
+
+    serverInfoP = xmlrpc_server_info_new(&env, "testurl");
+    TEST_NO_FAULT(&env);
+
+    serverInfo2P = xmlrpc_server_info_copy(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_free(serverInfo2P);
+
+    /* Fails because we haven't set user/password yet: */
+    xmlrpc_server_info_allow_auth_basic(&env, serverInfoP);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+    
+    xmlrpc_server_info_set_basic_auth(&env, serverInfoP,
+                                      "username", "password");
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_set_user(&env, serverInfoP, "username", "password");
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_allow_auth_basic(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_basic(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_allow_auth_digest(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_digest(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_allow_auth_negotiate(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_negotiate(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_allow_auth_ntlm(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+    
+    xmlrpc_server_info_disallow_auth_ntlm(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_free(serverInfoP);
+    
+    xmlrpc_env_clean(&env);
+}
+
+
+
 void 
 test_client(void) {
 
@@ -360,6 +423,7 @@ test_client(void) {
     testGlobalConst();
     testCreateDestroy();
     testInitCleanup();
+    testServerInfo();
     testSynchCall();
 
     printf("\n");

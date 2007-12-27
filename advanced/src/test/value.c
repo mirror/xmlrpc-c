@@ -401,7 +401,7 @@ test_value_string_no_null(void) {
     xmlrpc_DECREF(v);
     strfree(str);
 
-    test_string_new_va(&env, "String %s, number %d", "xyz", 7);
+    v = test_string_new_va(&env, "String %s, number %d", "xyz", 7);
     TEST_NO_FAULT(&env);
     TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
     xmlrpc_read_string(&env, v, &str);
@@ -1293,7 +1293,7 @@ test_value_i8(void) {
 
     xmlrpc_value * v;
     xmlrpc_env env;
-    long long i;
+    xmlrpc_int64 i;
 
     xmlrpc_env_init(&env);
 
@@ -1315,15 +1315,15 @@ test_value_i8(void) {
     TEST(i == -25);
     xmlrpc_DECREF(v);
 
-    v = xmlrpc_i8_new(&env, (xmlrpc_int64) (1ull << 40));
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64)1 << 40);
     TEST_NO_FAULT(&env);
     TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
     xmlrpc_read_i8(&env, v, &i);
     TEST_NO_FAULT(&env);
-    TEST(i == (1ull << 40));
+    TEST(i == (xmlrpc_int64)1 << 40);
     xmlrpc_DECREF(v);
 
-    v = xmlrpc_build_value(&env, "I", (long long) 10);
+    v = xmlrpc_build_value(&env, "I", (xmlrpc_int64) 10);
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
     TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);

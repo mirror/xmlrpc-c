@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "int.h"
 #include "casprintf.h"
 #include "girstring.h"
 

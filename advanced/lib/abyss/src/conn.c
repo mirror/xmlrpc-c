@@ -206,7 +206,7 @@ ConnWaitAndRelease(TConn * const connectionP) {
 
 
 abyss_bool
-ConnKill(TConn * connectionP) {
+ConnKill(TConn * const connectionP) {
     connectionP->finished = TRUE;
     return ThreadKill(connectionP->threadP);
 }
@@ -327,6 +327,8 @@ ConnRead(TConn *  const connectionP,
 
    Don't wait more than 'timeout' seconds for data to arrive.  Fail if
    nothing arrives within that time.
+
+   'timeout' must be before the end of time.
 -----------------------------------------------------------------------------*/
     time_t const deadline = time(NULL) + timeout;
 
@@ -337,7 +339,9 @@ ConnRead(TConn *  const connectionP,
     gotData = FALSE;
     
     while (!gotData && !cantGetData) {
-        int const timeLeft = deadline - time(NULL);
+        int const timeLeft = (int)(deadline - time(NULL));
+
+        assert (timeLeft == deadline - time(NULL));
 
         if (timeLeft <= 0)
             cantGetData = TRUE;
@@ -350,29 +354,26 @@ ConnRead(TConn *  const connectionP,
             if (rc != 1)
                 cantGetData = TRUE;
             else {
-                uint32_t bytesAvail;
-            
-                bytesAvail = ChannelAvailableReadBytes(connectionP->channelP);
-                
-                if (bytesAvail <= 0)
+                uint32_t bytesRead;
+                abyss_bool readFailed;
+
+                ChannelRead(connectionP->channelP,
+                            connectionP->buffer + connectionP->buffersize,
+                            bufferSpace(connectionP) - 1,
+                            &bytesRead, &readFailed);
+
+                if (readFailed)
                     cantGetData = TRUE;
                 else {
-                    uint32_t const bytesToRead =
-                        MIN(bytesAvail, bufferSpace(connectionP)-1);
-
-                    uint32_t bytesRead;
-
-                    bytesRead = ChannelRead(
-                        connectionP->channelP,
-                        connectionP->buffer + connectionP->buffersize,
-                        bytesToRead);
                     if (bytesRead > 0) {
                         traceChannelRead(connectionP, bytesRead);
                         connectionP->inbytes += bytesRead;
                         connectionP->buffersize += bytesRead;
                         connectionP->buffer[connectionP->buffersize] = '\0';
                         gotData = TRUE;
-                    }
+                    } else
+                        /* Other end has disconnected */
+                        cantGetData = TRUE;
                 }
             }
         }
@@ -443,10 +444,13 @@ ConnWriteFromFile(TConn *       const connectionP,
         bytesread = 0;  /* initial value */
 
         while (bytesread < totalBytesToRead) {
-            uint64_t const bytesLeft = totalBytesToRead - bytesread;
-            uint64_t const bytesToRead = MIN(readChunkSize, bytesLeft);
+            uint64_t const bytesLeft     = totalBytesToRead - bytesread;
+            uint64_t const bytesToRead64 = MIN(readChunkSize, bytesLeft);
+            uint32_t const bytesToRead   = (uint32_t)bytesToRead64;
+            
+            uint32_t bytesReadThisTime;
 
-            uint64_t bytesReadThisTime;
+            assert(bytesToRead == bytesToRead64); /* readChunkSize is uint32 */
 
             bytesReadThisTime = FileRead(fileP, buffer, bytesToRead);
             bytesread += bytesReadThisTime;
@@ -542,7 +546,7 @@ ConnReadHeader(TConn * const connectionP,
    Return as *headerP the header value.  This is in the connection's
    internal buffer.  This contains no line delimiters.
 -----------------------------------------------------------------------------*/
-    uint32_t const deadline = time(NULL) + connectionP->server->srvP->timeout;
+    time_t const deadline = time(NULL) + connectionP->server->srvP->timeout;
 
     abyss_bool retval;
     char * lineStart;
@@ -557,7 +561,9 @@ ConnReadHeader(TConn * const connectionP,
     error = FALSE;
 
     while (!gotHeader && !error) {
-        int const timeLeft = deadline - time(NULL);
+        int const timeLeft = (int)(deadline - time(NULL));
+
+        assert(timeLeft == deadline - time(NULL));
 
         if (timeLeft <= 0)
             error = TRUE;

@@ -355,6 +355,14 @@ clientXmlTransport::asyncComplete(
 
 
 
+void
+clientXmlTransport::setInterrupt(int *) {
+
+    throwf("The client XML transport is not interruptible");
+}
+
+
+
 clientXmlTransportPtr::clientXmlTransportPtr() {
     // Base class constructor will construct pointer that points to nothing
 }
@@ -467,6 +475,16 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
     this->c_transportOpsP->finish_asynch(
         this->c_transportP, c_timeoutType, c_timeout);
 }
+
+
+
+void
+clientXmlTransport_http::setInterrupt(int * const interruptP) {
+
+    if (this->c_transportOpsP->set_interrupt)
+        this->c_transportOpsP->set_interrupt(this->c_transportP, interruptP);
+}
+
 
 
 bool const haveCurl(
@@ -598,6 +616,14 @@ client::finishAsync(xmlrpc_c::timeout) {
 
 
 
+void
+client::setInterrupt(int *) {
+
+    throwf("Clients of this type are not interruptible");
+}
+
+
+
 clientPtr::clientPtr() {
     // Base class constructor will construct pointer that points to nothing
 }
@@ -717,6 +743,14 @@ void
 client_xml::finishAsync(xmlrpc_c::timeout const timeout) {
 
     this->implP->transportP->finishAsync(timeout);
+}
+
+
+
+void
+client_xml::setInterrupt(int * const interruptP) {
+
+    this->implP->transportP->setInterrupt(interruptP);
 }
 
 

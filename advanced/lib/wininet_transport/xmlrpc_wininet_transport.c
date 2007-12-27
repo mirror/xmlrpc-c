@@ -6,47 +6,46 @@
    
 =============================================================================*/
 
+#include "xmlrpc_config.h"
+
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 #include <stddef.h>
-
-#include "xmlrpc_config.h"
+#include <windows.h>
+#include <wininet.h>
 
 #include "bool.h"
 #include "mallocvar.h"
 #include "linklist.h"
 #include "casprintf.h"
+#include "pthreadx.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
-#include "pthreadx.h"
 
-#if defined (WIN32)
-#   include <wininet.h>
-#endif /*WIN32*/
-
-#if defined (WIN32) && defined(_DEBUG)
+#if defined(_DEBUG)
 #   include <crtdbg.h>
 #   define new DEBUG_NEW
 #   define malloc(size) _malloc_dbg( size, _NORMAL_BLOCK, __FILE__, __LINE__)
 #   undef THIS_FILE
     static char THIS_FILE[] = __FILE__;
-#endif /*WIN32 && _DEBUG*/
+#endif
 
 
 static HINTERNET hSyncInternetSession = NULL;
 
 /* Declare WinInet status callback. */
 void CALLBACK
-statusCallback(HINTERNET     hInternet,
-               unsigned long dwContext,
-               unsigned long dwInternetStatus,
-               void *        lpvStatusInformation,
-               unsigned long dwStatusInformationLength);
+statusCallback(HINTERNET     const hInternet,
+               unsigned long const dwContext,
+               unsigned long const dwInternetStatus,
+               void *        const lpvStatusInformation,
+               unsigned long const dwStatusInformationLength);
 
 
 struct xmlrpc_client_transport {
@@ -108,11 +107,11 @@ createWinInetHeaderList(xmlrpc_env *               const envP,
     char * szHeaderList;
 
     /* Send an authorization header if we need one. */
-    if (serverP->_http_basic_auth) {
+    if (serverP->allowedAuth.basic) {
         /* Make the header with content type and authorization   */
         /* NOTE: A newline is required between each added header */
         szHeaderList = malloc(strlen(szContentType) + 17 +
-                              strlen(serverP->_http_basic_auth) + 1);
+                              strlen(serverP->basicAuthHdrValue) + 1);
         
         if (szHeaderList == NULL)
             xmlrpc_faultf(envP,
@@ -122,8 +121,8 @@ createWinInetHeaderList(xmlrpc_env *               const envP,
             memcpy(szHeaderList + strlen(szContentType),"\r\nAuthorization: ",
                    17);
             memcpy(szHeaderList + strlen(szContentType) + 17,
-                   serverP->_http_basic_auth,
-                   strlen(serverP->_http_basic_auth) + 1);
+                   serverP->basicAuthHdrValue,
+                   strlen(serverP->basicAuthHdrValue) + 1);
         }
     } else {
         /* Just the content type header is needed */
@@ -178,8 +177,8 @@ createWinInetTransaction(xmlrpc_env *               const envP,
         uc.dwUrlPathLength   = 255;
         uc.lpszExtraInfo     = szExtraInfo;
         uc.dwExtraInfoLength = 255;
-        succeeded = InternetCrackUrl(serverP->_server_url,
-                                     strlen (serverP->_server_url),
+        succeeded = InternetCrackUrl(serverP->serverUrl,
+                                     strlen(serverP->serverUrl),
                                      ICU_ESCAPE, &uc);
         if (!succeeded)
             xmlrpc_faultf(envP, "Unable to parse the server URL.");
@@ -231,8 +230,7 @@ static void
 get_wininet_response(xmlrpc_env *         const envP,
                      winInetTransaction * const winInetTransactionP) {
 
-    unsigned long const dwLen = sizeof(unsigned long);
-
+    unsigned long dwLen;
     INTERNET_BUFFERS inetBuffer;
     unsigned long dwFlags;
     unsigned long dwErr; 
@@ -244,6 +242,7 @@ get_wininet_response(xmlrpc_env *         const envP,
     pMsgMem = NULL; /* initial value */
     dwErr = 0; /* initial value */
     body = NULL;  /* initial value */
+    dwLen = sizeof(unsigned long);  /* initial value */
 
     inetBuffer.dwStructSize    = sizeof (INTERNET_BUFFERS);
     inetBuffer.Next            = NULL;
@@ -314,9 +313,9 @@ get_wininet_response(xmlrpc_env *         const envP,
         }
         
         if (inetBuffer.dwBufferLength) {
-            TCHAR * bufptr;
-            bufptr = inetBuffer.lpvBuffer + inetBuffer.dwBufferLength;
-            inetBuffer.lpvBuffer = bufptr;
+            TCHAR * const oldBufptr = inetBuffer.lpvBuffer;
+
+            inetBuffer.lpvBuffer = oldBufptr + inetBuffer.dwBufferLength;
             nExpected -= inetBuffer.dwBufferLength;
             /* Adjust inetBuffer.dwBufferLength when it is greater than the */
             /* expected end of file */
@@ -352,15 +351,15 @@ performWinInetTransaction(
     struct xmlrpc_client_transport * const clientTransportP) {
 
     const char * const acceptTypes[] = {"text/xml", NULL};
-    unsigned long const queryLen = sizeof(unsigned long);
 
+    unsigned long queryLen;
     LPVOID pMsgMem;
     BOOL succeeded;
 
-    pMsgMem = NULL;  /* initial value */
-
     unsigned long lastErr;
     unsigned long reqFlags;
+
+    pMsgMem = NULL;  /* initial value */
 
     reqFlags = INTERNET_FLAG_NO_UI;  /* initial value */
     
@@ -401,6 +400,8 @@ Again:
                                 winInetTransactionP->pSendData, 
                                 strlen(winInetTransactionP->pSendData));
     if (!succeeded) {
+        LPTSTR pMsg;
+
         lastErr = GetLastError();
 
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
@@ -413,8 +414,6 @@ Again:
                       0, NULL);
 
         if (pMsgMem == NULL) {
-            LPTSTR pMsg = NULL;
-
             switch (lastErr) {
             case ERROR_INTERNET_CANNOT_CONNECT:
                 pMsg = "Sync HttpSendRequest failed: Connection refused.";
@@ -504,11 +503,15 @@ Again:
         XMLRPC_FAIL(envP, XMLRPC_NETWORK_ERROR, pMsg);
     }
 
+    queryLen = sizeof(unsigned long);  /* initial value */
+
     succeeded = HttpQueryInfo(winInetTransactionP->hHttpRequest, 
                               HTTP_QUERY_FLAG_NUMBER | HTTP_QUERY_STATUS_CODE,
                               &winInetTransactionP->http_status,
                               &queryLen, NULL);
     if (!succeeded) {
+        LPTSTR pMsg;
+
         lastErr = GetLastError();
         FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                       FORMAT_MESSAGE_FROM_SYSTEM, 
@@ -524,9 +527,10 @@ Again:
 
     /* Make sure we got a "200 OK" message from the remote server. */
     if (winInetTransactionP->http_status != 200) {
-        unsigned long const msgLen = 1024;
+        unsigned long msgLen;
         char errMsg[1024];
         errMsg[0] = '\0';
+        msgLen = 1024;  /* initial value */
 
         HttpQueryInfo(winInetTransactionP->hHttpRequest,
                       HTTP_QUERY_STATUS_TEXT, errMsg, &msgLen, NULL);
@@ -766,16 +770,16 @@ create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
        const char *                      const appname ATTR_UNUSED,
        const char *                      const appversion ATTR_UNUSED,
-       const struct xmlrpc_xportparms *  const transportparmsP,
+       const void *                      const transportparmsP,
        size_t                            const parm_size,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a WinInet client transport.
 -----------------------------------------------------------------------------*/
-    struct xmlrpc_client_transport * transportP;
+    const struct xmlrpc_wininet_xportparms * const wininetXportParmsP = 
+        transportparmsP;
 
-    struct xmlrpc_wininet_xportparms * const wininetXportParmsP = 
-        (struct xmlrpc_wininet_xportparms *) transportparmsP;
+    struct xmlrpc_client_transport * transportP;
 
     MALLOCVAR(transportP);
     if (transportP == NULL)

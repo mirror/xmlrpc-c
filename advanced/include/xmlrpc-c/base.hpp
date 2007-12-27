@@ -45,6 +45,9 @@ public:
     xmlrpc_c::value&
     operator=(xmlrpc_c::value const&);
 
+    bool
+    value::isInstantiated() const;
+
     // The following are not meant to be public to users, but just to
     // other Xmlrpc-c library modules.  If we ever go to a pure C++
     // implementation, not based on C xmlrpc_value objects, this shouldn't
@@ -55,7 +58,7 @@ public:
 
     void
     addToCStruct(xmlrpc_value * const structP,
-                    std::string const key) const;
+                 std::string    const key) const;
 
     xmlrpc_value *
     cValue() const;
@@ -64,7 +67,7 @@ public:
 
     void
     instantiate(xmlrpc_value * const valueP);
-        // Work only on a placeholder object created by the no-argument
+        // Works only on a placeholder object created by the no-argument
         // constructor.
 
     xmlrpc_value * cValueP;
@@ -129,8 +132,12 @@ class value_datetime : public value {
 public:
     value_datetime(std::string const cvalue);
     value_datetime(time_t const cvalue);
+#if XMLRPC_HAVE_TIMEVAL
     value_datetime(struct timeval const& cvalue);
+#endif
+#if XMLRPC_HAVE_TIMESPEC
     value_datetime(struct timespec const& cvalue);
+#endif
 
     value_datetime(xmlrpc_c::value const baseValue);
 

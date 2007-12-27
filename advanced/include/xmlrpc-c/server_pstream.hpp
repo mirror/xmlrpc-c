@@ -1,6 +1,11 @@
 #ifndef SERVER_PSTREAM_HPP_INCLUDED
 #define SERVER_PSTREAM_HPP_INCLUDED
 
+#ifdef WIN32
+#include <winsock.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+#endif
+
+#include <xmlrpc-c/config.h>  /* For XMLRPC_SOCKET */
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/packetsocket.hpp>
 
@@ -16,12 +21,12 @@ public:
 
         constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
-        constrOpt & socketFd          (xmlrpc_socket  const& arg);
+        constrOpt & socketFd          (XMLRPC_SOCKET  const& arg);
 
         struct value {
             xmlrpc_c::registryPtr      registryPtr;
             const xmlrpc_c::registry * registryP;
-            xmlrpc_socket              socketFd;
+            XMLRPC_SOCKET              socketFd;
         } value;
         struct {
             bool registryPtr;

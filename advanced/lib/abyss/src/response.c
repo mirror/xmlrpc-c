@@ -85,15 +85,15 @@ ResponseChunked(TSession * const sessionP) {
 
 
 void
-ResponseStatus(TSession * const sessionP,
-               uint16_t   const code) {
+ResponseStatus(TSession *     const sessionP,
+               unsigned short const code) {
 
     sessionP->status = code;
 }
 
 
 
-uint16_t
+xmlrpc_uint16_t
 ResponseStatusFromErrno(int const errnoArg) {
 
     uint16_t code;
@@ -233,9 +233,9 @@ ResponseWriteStart(TSession * const sessionP) {
 
 
 abyss_bool
-ResponseWriteBody(TSession *   const sessionP,
-                  const char * const data,
-                  uint32_t     const len) {
+ResponseWriteBody(TSession *      const sessionP,
+                  const char *    const data,
+                  xmlrpc_uint32_t const len) {
 
     return HTTPWriteBodyChunk(sessionP, data, len);
 }
@@ -260,11 +260,12 @@ ResponseContentType(TSession *   const serverP,
 
 
 abyss_bool
-ResponseContentLength(TSession * const sessionP,
-                      uint64_t   const len) {
+ResponseContentLength(TSession *      const sessionP,
+                      xmlrpc_uint64_t const len) {
+
     char contentLengthValue[32];
     
-    sprintf(contentLengthValue, "%llu", len);
+    sprintf(contentLengthValue, "%" PRIu64, len);
 
     return ResponseAddField(sessionP, "Content-length", contentLengthValue);
 }
