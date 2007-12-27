@@ -3125,6 +3125,7 @@ doIgnoreSection(XML_Parser       const xmlParserP,
         break;
     default:
         assert(false);  /* All possibilities are handled above */
+        retval = 99; /* quiet compiler warning */
     }
 
     return retval;
