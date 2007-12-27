@@ -74,6 +74,7 @@ sigchld(int const signalClass) {
         }
     }
 #endif /* _WIN32 */
+    if (signalClass); // quiet compiler warning
 }
 
 
