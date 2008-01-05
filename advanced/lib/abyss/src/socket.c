@@ -39,7 +39,8 @@ socketCreate(TSocket ** const socketPP) {
     if (socketP) {
         socketP->signature   = socketSignature;
         *socketPP = socketP;
-    }
+    } else
+        *socketPP = NULL;
 }
 
 
@@ -58,7 +59,8 @@ SocketCreateChannel(TChannel * const channelP,
         socketP->chanSwitchP  = NULL;
         socketP->channelInfoP = channelInfoP;
         *socketPP = socketP;
-    }
+    } else
+        *socketPP = NULL;
 }
 
 
@@ -75,7 +77,8 @@ SocketCreateChanSwitch(TChanSwitch * const chanSwitchP,
         socketP->channelP    = NULL;
         socketP->chanSwitchP = chanSwitchP;
         *socketPP = socketP;
-    }
+    } else
+        *socketPP = NULL;
 }
 
 
