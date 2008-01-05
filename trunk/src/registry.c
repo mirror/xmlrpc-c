@@ -162,10 +162,11 @@ xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
 
 
 void 
-xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
-                                   xmlrpc_registry *     const registryP,
-                                   xmlrpc_default_method const function,
-                                   void *                const userData) {
+xmlrpc_registry_set_default_method(
+    xmlrpc_env *          const envP ATTR_UNUSED,
+    xmlrpc_registry *     const registryP ATTR_UNUSED,
+    xmlrpc_default_method const function,
+    void *                const userData) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(registryP);
@@ -183,10 +184,11 @@ xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
 
 
 void 
-xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            const envP,
-                                     xmlrpc_registry *       const registryP,
-                                     xmlrpc_preinvoke_method const function,
-                                     void *                  const userData) {
+xmlrpc_registry_set_preinvoke_method(
+    xmlrpc_env *            const envP ATTR_UNUSED,
+    xmlrpc_registry *       const registryP ATTR_UNUSED,
+    xmlrpc_preinvoke_method const function,
+    void *                  const userData) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(registryP);
