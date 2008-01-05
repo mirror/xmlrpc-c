@@ -46,7 +46,7 @@ public:
     operator=(xmlrpc_c::value const&);
 
     bool
-    value::isInstantiated() const;
+    isInstantiated() const;
 
     // The following are not meant to be public to users, but just to
     // other Xmlrpc-c library modules.  If we ever go to a pure C++
