@@ -4,7 +4,7 @@
    someone generates it manually.  Nonetheless, we keep it looking as much
    as possible like the automatically generated one to make it easier to
    maintain (e.g. you can compare the two and see why something builds
-   differently for Windows that for some other platform).
+   differently for Windows than for some other platform).
 
    The purpose of this file is to define stuff particular to the build
    environment being used to build Xmlrpc-c.  Xmlrpc-c source files can
@@ -12,7 +12,7 @@
 
    A major goal of this file is to reduce conditional compilation in
    the other source files as much as possible.  Even more, we want to avoid
-   having to generate source code particular to to a build environment
+   having to generate source code particular to a build environment
    except in this file.   
 
    This file is NOT meant to be used by any code outside of the
