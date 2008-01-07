@@ -38,12 +38,12 @@
 
 #ifdef WIN32
 
-#ifndef __BORLANDC__
+#if MSVCRT
 typedef struct _stati64 TFileStat;
 typedef struct __finddata64_t TFileInfo;
 typedef intptr_t TFileFind;
 
-#else  /* WIN32 */
+#else  /* MSVCRT */
 
 typedef struct stat TFileStat;
 typedef struct finddata_t {
@@ -56,9 +56,9 @@ typedef struct finddata_t {
 
 typedef HANDLE TFileFind;
 
-#endif /* WIN32 */
+#endif /* MSVCRT */
 
-#else
+#else /* WIN32 */
 
 #include <unistd.h>
 #include <dirent.h>

@@ -70,7 +70,7 @@ abyss_bool
 FileOpen(TFile *      const f,
          const char * const name,
          uint32_t     const attrib) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return ((*f=_open(name,attrib))!=(-1));
 #else
     return ((*f=open(name,attrib))!=(-1));
@@ -83,7 +83,7 @@ abyss_bool
 FileOpenCreate(TFile *      const f,
                const char * const name,
                uint32_t     const attrib) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
 #else
     return ((*f=open(name,attrib | O_CREAT,S_IWRITE | S_IREAD))!=(-1));
@@ -96,7 +96,7 @@ abyss_bool
 FileWrite(TFile *      const f,
           const void * const buffer,
           uint32_t     const len) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return (_write(*f,buffer,len)==(int32_t)len);
 #else
     return (write(*f,buffer,len)==(int32_t)len);
@@ -109,7 +109,7 @@ int32_t
 FileRead(const TFile * const fileP,
          void *        const buffer,
          uint32_t      const len) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return (_read(*fileP, buffer, len));
 #else
     return (read(*fileP, buffer, len));
@@ -122,7 +122,7 @@ abyss_bool
 FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return (_lseek(*fileP, (long)pos, attrib)!=(-1));
 #else
     return (lseek(*fileP, pos, attrib)!=(-1));
@@ -134,7 +134,7 @@ FileSeek(const TFile * const fileP,
 uint64_t
 FileSize(const TFile * const fileP) {
 
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return (_filelength(*fileP));
 #else
     struct stat fs;
@@ -148,7 +148,7 @@ FileSize(const TFile * const fileP) {
 
 abyss_bool
 FileClose(TFile * const f) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return (_close(*f)!=(-1));
 #else
     return (close(*f)!=(-1));
@@ -160,7 +160,7 @@ FileClose(TFile * const f) {
 abyss_bool
 FileStat(const char * const filename,
          TFileStat *  const filestat) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
+#if MSVCRT
     return (_stati64(filename,filestat)!=(-1));
 #else
     return (stat(filename,filestat)!=(-1));
@@ -178,10 +178,10 @@ fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
 
     xmlrpc_asprintf(&search, "%s\\*", path);
 
-#ifdef WIN32
-#ifndef __BORLANDC__
+#if MSVCRT
     *retP = (((*filefind) = _findfirst64(search, fileinfo)) != -1);
 #else
+#ifdef WIN32
     *filefind = FindFirstFile(search, &fileinfo->data);
     *retP = *filefind != NULL;
     if (*retP) {
@@ -194,7 +194,7 @@ fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
         fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
     }
 #endif
-#endif /* WIN32 */
+#endif
     xmlrpc_strfree(search);
 }
 
@@ -206,7 +206,7 @@ fileFindFirstPosix(TFileFind *  const filefind,
                    TFileInfo *  const fileinfo,
                    abyss_bool * const retP) {
     
-#ifndef WIN32
+#if !MSVCRT
     strncpy(filefind->path, path, NAME_MAX);
     filefind->path[NAME_MAX] = '\0';
     filefind->handle = opendir(path);
@@ -236,72 +236,95 @@ FileFindFirst(TFileFind *  const filefind,
 
 
 
+static void
+fileFindNextWin(TFileFind *  const filefind ATTR_UNUSED,
+                TFileInfo *  const fileinfo ATTR_UNUSED,
+                abyss_bool * const retvalP  ATTR_UNUSED) {
+
+#if MSVCRT
+    *retvalP = _findnext64(*filefind,fileinfo) != -1;
+#else
+#ifdef WIN32
+    abyss_bool found;
+    found = FindNextFile(*filefind, &fileinfo->data);
+    if (found) {
+        LARGE_INTEGER li;
+        li.LowPart = fileinfo->data.nFileSizeLow;
+        li.HighPart = fileinfo->data.nFileSizeHigh;
+        strcpy(fileinfo->name, fileinfo->data.cFileName);
+        fileinfo->attrib = fileinfo->data.dwFileAttributes;
+        fileinfo->size   = li.QuadPart;
+        fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
+    }
+    *retvalP = found;
+#endif
+#endif
+}
+
+
+
+static void
+fileFindNextPosix(TFileFind *  const filefindP,
+                  TFileInfo *  const fileinfoP,
+                  abyss_bool * const retvalP) {
+
+#ifndef WIN32
+    struct dirent * deP;
+
+    deP = readdir(filefindP->handle);
+    if (deP) {
+        char z[NAME_MAX+1];
+        struct stat fs;
+
+        strcpy(fileinfoP->name, deP->d_name);
+        strcpy(z, filefindP->path);
+        strncat(z, "/",NAME_MAX);
+        strncat(z, fileinfoP->name, NAME_MAX);
+        z[NAME_MAX] = '\0';
+        
+        stat(z, &fs);
+
+        if (fs.st_mode & S_IFDIR)
+            fileinfoP->attrib = A_SUBDIR;
+        else
+            fileinfoP->attrib = 0;
+
+        fileinfoP->size       = fs.st_size;
+        fileinfoP->time_write = fs.st_mtime;
+        
+        *retvalP = TRUE;
+    } else
+        *retvalP = FALSE;
+#endif
+}
+
+
+
 abyss_bool
 FileFindNext(TFileFind * const filefind,
              TFileInfo * const fileinfo) {
-#ifdef WIN32
 
-#ifndef __BORLANDC__
-    return (_findnext64(*filefind,fileinfo)!=(-1));
-#else
-   abyss_bool ret = FindNextFile( *filefind, &fileinfo->data );
-   if( ret )
-   {
-      LARGE_INTEGER li;
-      li.LowPart = fileinfo->data.nFileSizeLow;
-      li.HighPart = fileinfo->data.nFileSizeHigh;
-      strcpy( fileinfo->name, fileinfo->data.cFileName );
-       fileinfo->attrib = fileinfo->data.dwFileAttributes;
-       fileinfo->size   = li.QuadPart;
-      fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
-   }
-    return ret;
-#endif
+    abyss_bool retval;
 
-#else  /* WIN32 */
-    struct dirent *de;
-    /****** Must be changed ***/
-    char z[NAME_MAX+1];
+    if (win32)
+        fileFindNextWin(filefind, fileinfo, &retval);
+    else
+        fileFindNextPosix(filefind, fileinfo, &retval);
 
-    de=readdir(filefind->handle);
-    if (de)
-    {
-        struct stat fs;
-
-        strcpy(fileinfo->name,de->d_name);
-        strcpy(z,filefind->path);
-        strncat(z,"/",NAME_MAX);
-        strncat(z,fileinfo->name,NAME_MAX);
-        z[NAME_MAX]='\0';
-        
-        stat(z,&fs);
-
-        if (fs.st_mode & S_IFDIR)
-            fileinfo->attrib=A_SUBDIR;
-        else
-            fileinfo->attrib=0;
-
-        fileinfo->size=fs.st_size;
-        fileinfo->time_write=fs.st_mtime;
-        
-        return TRUE;
-    };
-
-    return FALSE;
-#endif /* WIN32 */
+    return retval;
 }
 
+
+
 void
-FileFindClose(TFileFind * const filefind) {
+FileFindClose(TFileFind * const filefindP) {
 #ifdef WIN32
-
-#ifndef __BORLANDC__
-    _findclose(*filefind);
+#if MSVCRT
+    _findclose(*filefindP);
 #else
-   FindClose( *filefind );
+   FindClose(*filefindP);
 #endif
-
-#else  /* WIN32 */
-    closedir(filefind->handle);
-#endif /* WIN32 */
+#else
+    closedir(filefindP->handle);
+#endif
 }
