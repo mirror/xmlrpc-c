@@ -24,14 +24,14 @@ typedef unsigned int      uint32_t;
 #ifndef uint64_t
 typedef unsigned __int64  uint64_t;
 #endif
-#ifndef  uint
-typedef  unsigned int   uint;
+#ifndef uint
+typedef unsigned int      uint;
 #endif
 #ifndef uint8_t
-typedef unsigned char uint8_t;
+typedef unsigned char     uint8_t;
 #endif
 #ifndef int16_t
-typedef short int16_t;
+typedef short             int16_t;
 #endif
 #else
 #  include <inttypes.h>
