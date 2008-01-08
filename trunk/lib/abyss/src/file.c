@@ -80,27 +80,36 @@ FileOpen(TFile *      const f,
 
 
 abyss_bool
-FileOpenCreate(TFile *      const f,
+FileOpenCreate(TFile *      const fileP,
                const char * const name,
                uint32_t     const attrib) {
-#if MSVCRT
-    return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
-#else
-    return ((*f=open(name,attrib | O_CREAT,S_IWRITE | S_IREAD))!=(-1));
-#endif
+
+    abyss_bool succeeded;
+    int rc;
+
+    rc = open(name, attrib | O_CREAT,S_IWRITE | S_IREAD);
+
+    if (rc < 0)
+        succeeded = FALSE;
+    else {
+        *fileP = rc;
+        succeeded = TRUE;
+    }
+    return succeeded;
 }
 
 
 
 abyss_bool
-FileWrite(TFile *      const f,
+FileWrite(TFile *      const fileP,
           const void * const buffer,
           uint32_t     const len) {
-#if MSVCRT
-    return (_write(*f,buffer,len)==(int32_t)len);
-#else
-    return (write(*f,buffer,len)==(int32_t)len);
-#endif
+
+    ssize_t rc;
+
+    rc = write(*fileP, buffer, len);
+
+    return (rc > 0 && (uint32_t)rc == len);
 }
 
 
@@ -109,11 +118,8 @@ int32_t
 FileRead(const TFile * const fileP,
          void *        const buffer,
          uint32_t      const len) {
-#if MSVCRT
-    return (_read(*fileP, buffer, len));
-#else
-    return (read(*fileP, buffer, len));
-#endif
+
+    return read(*fileP, buffer, len);
 }
 
 
@@ -122,11 +128,12 @@ abyss_bool
 FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib) {
-#if MSVCRT
-    return (_lseek(*fileP, (long)pos, attrib)!=(-1));
-#else
-    return (lseek(*fileP, pos, attrib)!=(-1));
-#endif
+
+    off_t rc;
+
+    rc =  lseek(*fileP, pos, attrib);
+
+    return (rc >= 0);
 }
 
 
@@ -147,12 +154,13 @@ FileSize(const TFile * const fileP) {
 
 
 abyss_bool
-FileClose(TFile * const f) {
-#if MSVCRT
-    return (_close(*f)!=(-1));
-#else
-    return (close(*f)!=(-1));
-#endif
+FileClose(TFile * const fileP) {
+
+    int rc;
+
+    rc = close(*fileP);
+
+    return (rc >= 0);
 }
 
 
@@ -160,11 +168,12 @@ FileClose(TFile * const f) {
 abyss_bool
 FileStat(const char * const filename,
          TFileStat *  const filestat) {
-#if MSVCRT
-    return (_stati64(filename,filestat)!=(-1));
-#else
-    return (stat(filename,filestat)!=(-1));
-#endif
+
+    int rc;
+
+    rc = stat(filename,filestat);
+
+    return (rc >= 0);
 }
 
 
