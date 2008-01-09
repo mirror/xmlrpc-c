@@ -233,8 +233,8 @@ __inline void TraceA(const char *format, ...)
             char str[4096];
 
             va_start(arglist, format);
-            StringCchVPrintfA(str,4096, format, arglist);
-            strcat_s(str, 4096, "\n");
+            StringCchVPrintfA(str, sizeof(str), format, arglist);
+            StringCbCat(str, sizeof(str), "\n");
             if (g_fLogFile)
             {
                 FILE *fout = fopen(g_fLogFile, "a+t");
@@ -269,7 +269,7 @@ __inline void TraceW(const wchar_t *format, ...)
 
             va_start(arglist, format);
             StringCchVPrintfW(str, 4096, format, arglist);
-            wcscat_s(str, 4096, L"\n");
+            StringCbCatW(str, sizeof(str), L"\n");
             if (g_fLogFile)
             {
                 FILE *fout = fopen(g_fLogFile, "a+t");
