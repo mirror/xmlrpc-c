@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cstdlib>
 #include <string>
 #include <memory>
@@ -9,6 +8,7 @@
 #include <sys/wait.h>
 #endif
 
+#include "assertx.hpp"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -38,7 +38,7 @@ sigterm(int const signalClass) {
 
 
 static void 
-sigchld(int const signalClass) {
+sigchld(int const ASSERT_ONLY_ARG(signalClass)) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
    one of our child processes has terminated).
@@ -74,7 +74,6 @@ sigchld(int const signalClass) {
         }
     }
 #endif /* _WIN32 */
-    if (signalClass); // quiet compiler warning
 }
 
 
