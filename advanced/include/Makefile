@@ -77,6 +77,8 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
     xmlrpc-c/xml.hpp \
     xmlrpc-c/registry.hpp \
     xmlrpc-c/server_abyss.hpp \
+    xmlrpc-c/packetsocket.hpp \
+    xmlrpc-c/server_pstream.hpp \
 
     COMPAT_LINK_CMDS += $(LN_S) xmlrpc-c/oldcppwrapper.hpp XmlRpcCpp.h;
 endif
