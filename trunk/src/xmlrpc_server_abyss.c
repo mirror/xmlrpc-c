@@ -641,11 +641,13 @@ setupSignalHandlers(struct signalHandlers * const oldHandlersP) {
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
 
-    /* This signal indicates connection closed in the middle */
+    /* A signal of this class indicates connection closed in the middle. */
     mysigaction.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
     
-    /* This signal indicates a child process (request handler) has died */
+    /* A signal of this class indicates a child process (request
+       handler) has died.
+    */
     mysigaction.sa_handler = sigchld;
     sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
 #endif
