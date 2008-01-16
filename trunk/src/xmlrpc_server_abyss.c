@@ -46,6 +46,76 @@ static void die_if_fault_occurred(xmlrpc_env *env) {
 
 
 static void
+initAbyss(xmlrpc_env * const envP) {
+
+    const char * error;
+    AbyssInit(&error);
+    if (error) {
+        xmlrpc_faultf(envP, "Failed to initialize the Abyss library.  %s",
+                      error);
+        xmlrpc_strfree(error);
+    }
+}
+
+
+
+static void
+termAbyss(void) {
+
+    AbyssTerm();
+}
+
+
+
+static unsigned int globallyInitialized = 0;
+    /* Initialization count */
+
+
+void
+xmlrpc_server_abyss_global_init(xmlrpc_env * const envP) {
+    
+    /* Note that this is specified as not thread safe; user calls it at
+       the beginning of his program, when it is only one thread.
+    */
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    
+    if (globallyInitialized == 0)
+        initAbyss(envP);
+
+    ++globallyInitialized;
+}
+
+
+
+void
+xmlrpc_server_abyss_global_term(void) {
+
+    /* Note that this is specified as not thread safe; user calls it at
+       the end of his program, when it is only one thread.
+    */
+
+    XMLRPC_ASSERT(globallyInitialized > 0);
+
+    --globallyInitialized;
+
+    if (globallyInitialized == 0)
+        termAbyss();
+}
+
+
+
+static void
+validateGlobalInit(xmlrpc_env * const envP) {
+
+    if (!globallyInitialized)
+        xmlrpc_faultf(envP, "libxmlrpc_server_abyss has not been globally "
+                      "initialized.  See xmlrpc_server_abyss_init()");
+}
+
+
+
+static void
 addAuthCookie(xmlrpc_env * const envP,
               TSession *   const abyssSessionP,
               const char * const authCookie) {
@@ -582,117 +652,6 @@ xmlrpc_server_abyss_default_handler(TSession * const sessionP) {
 
 
 
-static void 
-sigchld(int const signalClass ATTR_UNUSED) {
-/*----------------------------------------------------------------------------
-   This is a signal handler for a SIGCHLD signal (which informs us that
-   one of our child processes has terminated).
-
-   The only child processes we have are those that belong to the Abyss
-   server (and then only if the Abyss server was configured to use
-   forking as a threading mechanism), so we respond by passing the
-   signal on to the Abyss server.
------------------------------------------------------------------------------*/
-#ifndef WIN32
-    bool childrenLeft;
-    bool error;
-
-    assert(signalClass == SIGCHLD);
-
-    error = false;
-    childrenLeft = true;  /* initial assumption */
-    
-    /* Reap defunct children until there aren't any more. */
-    while (childrenLeft && !error) {
-        int status;
-        pid_t pid;
-
-        pid = waitpid((pid_t) -1, &status, WNOHANG);
-    
-        if (pid == 0)
-            childrenLeft = false;
-        else if (pid < 0) {
-            /* because of ptrace */
-            if (errno != EINTR)   
-                error = true;
-        } else
-            ServerHandleSigchld(pid);
-    }
-#endif /* WIN32 */
-}
-
-
-struct signalHandlers {
-#ifndef WIN32
-    struct sigaction pipe;
-    struct sigaction chld;
-#else
-    int dummy;
-#endif
-};
-
-
-
-static void
-setupSignalHandlers(struct signalHandlers * const oldHandlersP) {
-#ifndef WIN32
-    struct sigaction mysigaction;
-    
-    sigemptyset(&mysigaction.sa_mask);
-    mysigaction.sa_flags = 0;
-
-    /* A signal of this class indicates connection closed in the middle. */
-    mysigaction.sa_handler = SIG_IGN;
-    sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
-    
-    /* A signal of this class indicates a child process (request
-       handler) has died.
-    */
-    mysigaction.sa_handler = sigchld;
-    sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
-#endif
-}    
-
-
-
-static void
-restoreSignalHandlers(struct signalHandlers const oldHandlers) {
-#ifndef WIN32
-
-    sigaction(SIGPIPE, &oldHandlers.pipe, NULL);
-    sigaction(SIGCHLD, &oldHandlers.chld, NULL);
-
-#endif
-}
-
-
-
-static void
-runServerDaemon(TServer *  const serverP,
-                runfirstFn const runfirst,
-                void *     const runfirstArg) {
-
-    struct signalHandlers oldHandlers;
-
-    setupSignalHandlers(&oldHandlers);
-
-    ServerUseSigchld(serverP);
-
-    ServerDaemonize(serverP);
-    
-    /* We run the user supplied runfirst after forking, but before accepting
-       connections (helpful when running with threads)
-    */
-    if (runfirst)
-        runfirst(runfirstArg);
-
-    ServerRun(serverP);
-
-    restoreSignalHandlers(oldHandlers);
-}
-
-
-
 static void
 setHandler(xmlrpc_env *      const envP,
            TServer *         const srvP,
@@ -784,50 +743,9 @@ xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
 
 
 
-static void
-oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
-                     const xmlrpc_server_abyss_parms * const parmsP,
-                     unsigned int                      const parmSize) {
-/*----------------------------------------------------------------------------
-   This is the old deprecated interface, where the caller of the 
-   xmlrpc_server_abyss API supplies an Abyss configuration file and
-   we use it to daemonize (fork into the background, chdir, set uid, etc.)
-   and run the Abyss server.
-
-   The new preferred interface, implemented by normalLevelAbyssRun(),
-   instead lets Caller set up the process environment himself and pass
-   Abyss parameters in memory.  That's a more conventional and
-   flexible API.
------------------------------------------------------------------------------*/
-    TServer server;
-    runfirstFn runfirst;
-    void * runfirstArg;
-    
-    ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
-
-    assert(parmSize >= XMLRPC_APSIZE(config_file_name));
-    
-    ConfReadServerFile(parmsP->config_file_name, &server);
-        
-    assert(parmSize >= XMLRPC_APSIZE(registryP));
-    
-    setHandlers(&server, "/RPC2", parmsP->registryP, false);
-        
-    ServerInit(&server);
-    
-    if (parmSize >= XMLRPC_APSIZE(runfirst_arg)) {
-        runfirst    = parmsP->runfirst;
-        runfirstArg = parmsP->runfirst_arg;
-    } else {
-        runfirst    = NULL;
-        runfirstArg = NULL;
-    }
-    runServerDaemon(&server, runfirst, runfirstArg);
-
-    ServerFree(&server);
-}
-
-
+/*============================================================================
+  createServer()
+============================================================================*/
 
 static void
 setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
@@ -951,11 +869,11 @@ createServerBoundSocket(xmlrpc_env *   const envP,
 
 
 static void
-createServer(xmlrpc_env *                      const envP,
-             const xmlrpc_server_abyss_parms * const parmsP,
-             unsigned int                      const parmSize,
-             TServer *                         const serverP,
-             TChanSwitch **                    const chanSwitchPP) {
+createServerBare(xmlrpc_env *                      const envP,
+                 const xmlrpc_server_abyss_parms * const parmsP,
+                 unsigned int                      const parmSize,
+                 TServer *                         const serverP,
+                 TChanSwitch **                    const chanSwitchPP) {
 /*----------------------------------------------------------------------------
    Create a bare server.  It will need further setup before it is ready
    to use.
@@ -1013,6 +931,28 @@ uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
 
 
 
+static void
+createServer(xmlrpc_env *                      const envP,
+             const xmlrpc_server_abyss_parms * const parmsP,
+             unsigned int                      const parmSize,
+             TServer *                         const abyssServerP,
+             TChanSwitch **                    const chanSwitchPP) {
+
+    createServerBare(envP, parmsP, parmSize, abyssServerP, chanSwitchPP);
+
+    if (!envP->fault_occurred) {
+        setAdditionalServerParms(parmsP, parmSize, abyssServerP);
+        
+        setHandlers(abyssServerP, uriPathParm(parmsP, parmSize),
+                    parmsP->registryP,
+                    chunkResponseParm(parmsP, parmSize));
+        
+        ServerInit(abyssServerP);
+    }
+}
+
+
+
 static bool
 enableShutdownParm(const xmlrpc_server_abyss_parms * const parmsP,
                    unsigned int                      const parmSize) {
@@ -1054,42 +994,339 @@ shutdownAbyss(xmlrpc_env * const envP,
 
 
 
+/*=============================================================================
+  xmlrpc_server_abyss object methods
+=============================================================================*/
+
+struct xmlrpc_server_abyss {
+    TServer       abyssServer;
+    TChanSwitch * chanSwitchP;
+};
+
+
+
+void
+xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
+                           const xmlrpc_server_abyss_parms * const parmsP,
+                           unsigned int                      const parmSize,
+                           xmlrpc_server_abyss_t **          const serverPP) {
+
+    xmlrpc_server_abyss_t * serverP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+
+    validateGlobalInit(envP);
+
+    if (!envP->fault_occurred) {
+        if (parmSize < XMLRPC_APSIZE(registryP))
+            xmlrpc_faultf(envP,
+                          "You must specify members at least up through "
+                          "'registryP' in the server parameters argument.  "
+                          "That would mean the parameter size would be >= %lu "
+                          "but you specified a size of %u",
+                          XMLRPC_APSIZE(registryP), parmSize);
+        else {
+            MALLOCVAR(serverP);
+
+            if (serverP == NULL)
+                xmlrpc_faultf(envP, "Unable to allocate memory for "
+                              "server descriptor.");
+            else {
+                createServer(envP, parmsP, parmSize,
+                             &serverP->abyssServer, &serverP->chanSwitchP);
+            
+                if (!envP->fault_occurred) {
+                    if (enableShutdownParm(parmsP, parmSize))
+                        xmlrpc_registry_set_shutdown(
+                            parmsP->registryP, &shutdownAbyss,
+                            &serverP->abyssServer);
+                
+                    if (envP->fault_occurred)
+                        free(serverP);
+                    else
+                        *serverPP = serverP;
+                }
+            }
+        }
+    }
+}
+
+
+
+void
+xmlrpc_server_abyss_destroy(xmlrpc_server_abyss_t * const serverP) {
+
+    XMLRPC_ASSERT(globallyInitialized);
+
+    ServerFree(&serverP->abyssServer);
+
+    if (serverP->chanSwitchP)
+        ChanSwitchDestroy(serverP->chanSwitchP);
+
+    free(serverP);
+}
+
+
+
+void
+xmlrpc_server_abyss_use_sigchld(xmlrpc_server_abyss_t * const serverP) {
+
+    ServerUseSigchld(&serverP->abyssServer);
+}
+
+
+
+void
+xmlrpc_server_abyss_run_server(xmlrpc_env *            const envP ATTR_UNUSED,
+                               xmlrpc_server_abyss_t * const serverP) {
+
+    ServerRun(&serverP->abyssServer);
+}
+
+
+
+void
+xmlrpc_server_abyss_terminate(
+    xmlrpc_env *            const envP ATTR_UNUSED,
+    xmlrpc_server_abyss_t * const serverP) {
+
+    ServerTerminate(&serverP->abyssServer);
+}
+
+
+
+void
+xmlrpc_server_abyss_reset_terminate(
+    xmlrpc_env *            const envP ATTR_UNUSED,
+    xmlrpc_server_abyss_t * const serverP) {
+
+    ServerResetTerminate(&serverP->abyssServer);
+}
+
+
+
+static void 
+sigchld(int const signalClass ATTR_UNUSED) {
+/*----------------------------------------------------------------------------
+   This is a signal handler for a SIGCHLD signal (which informs us that
+   one of our child processes has terminated).
+
+   The only child processes we have are those that belong to the Abyss
+   server (and then only if the Abyss server was configured to use
+   forking as a threading mechanism), so we respond by passing the
+   signal on to the Abyss server.
+-----------------------------------------------------------------------------*/
+#ifndef WIN32
+    bool childrenLeft;
+    bool error;
+
+    assert(signalClass == SIGCHLD);
+
+    error = false;
+    childrenLeft = true;  /* initial assumption */
+    
+    /* Reap defunct children until there aren't any more. */
+    while (childrenLeft && !error) {
+        int status;
+        pid_t pid;
+
+        pid = waitpid((pid_t) -1, &status, WNOHANG);
+    
+        if (pid == 0)
+            childrenLeft = false;
+        else if (pid < 0) {
+            /* because of ptrace */
+            if (errno != EINTR)   
+                error = true;
+        } else
+            ServerHandleSigchld(pid);
+    }
+#endif /* WIN32 */
+}
+
+
+struct xmlrpc_server_abyss_sig {
+
+    /* A description of the state of the process' signal handlers before
+       functions in this library messed with them; useful for restoring
+       them later.
+    */
+#ifndef WIN32
+    struct sigaction pipe;
+    struct sigaction chld;
+#else
+    int dummy;
+#endif
+};
+
+
+
+static void
+setupSignalHandlers(xmlrpc_server_abyss_sig * const oldHandlersP) {
+#ifndef WIN32
+    struct sigaction mysigaction;
+    
+    sigemptyset(&mysigaction.sa_mask);
+    mysigaction.sa_flags = 0;
+
+    /* This signal indicates connection closed in the middle */
+    mysigaction.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
+    
+    /* This signal indicates a child process (request handler) has died */
+    mysigaction.sa_handler = sigchld;
+    sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
+#endif
+}    
+
+
+
+static void
+restoreSignalHandlers(const xmlrpc_server_abyss_sig * const oldHandlersP) {
+#ifndef WIN32
+
+    sigaction(SIGPIPE, &oldHandlersP->pipe, NULL);
+    sigaction(SIGCHLD, &oldHandlersP->chld, NULL);
+
+#endif
+}
+
+
+
+void
+xmlrpc_server_abyss_setup_sig(
+    xmlrpc_env *               const envP,
+    xmlrpc_server_abyss_t *    const serverP,
+    xmlrpc_server_abyss_sig ** const oldHandlersPP) {
+
+    xmlrpc_server_abyss_sig * oldHandlersP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+
+    validateGlobalInit(envP);
+
+    if (!envP->fault_occurred) {
+        MALLOCVAR(oldHandlersP);
+
+        if (oldHandlersP == NULL)
+            xmlrpc_faultf(envP, "Unable to allocate memory to save signal "
+                          "handling state.");
+        else {
+            setupSignalHandlers(oldHandlersP);
+
+            xmlrpc_server_abyss_use_sigchld(serverP);
+        }
+        if (oldHandlersPP)
+            *oldHandlersPP = oldHandlersP;
+        else
+            free(oldHandlersP);
+    }
+}
+
+
+
+void
+xmlrpc_server_abyss_restore_sig(
+    const xmlrpc_server_abyss_sig * const oldHandlersP) {
+
+    restoreSignalHandlers(oldHandlersP);
+}
+                                 
+
+
+static void
+runServerDaemon(TServer *  const serverP,
+                runfirstFn const runfirst,
+                void *     const runfirstArg) {
+
+    xmlrpc_server_abyss_sig oldHandlers;
+
+    setupSignalHandlers(&oldHandlers);
+
+    ServerUseSigchld(serverP);
+
+    ServerDaemonize(serverP);
+    
+    /* We run the user supplied runfirst after forking, but before accepting
+       connections (helpful when running with threads)
+    */
+    if (runfirst)
+        runfirst(runfirstArg);
+
+    ServerRun(serverP);
+
+    restoreSignalHandlers(&oldHandlers);
+}
+
+
+
+static void
+oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
+                     const xmlrpc_server_abyss_parms * const parmsP,
+                     unsigned int                      const parmSize) {
+/*----------------------------------------------------------------------------
+   This is the old deprecated interface, where the caller of the 
+   xmlrpc_server_abyss API supplies an Abyss configuration file and
+   we use it to daemonize (fork into the background, chdir, set uid, etc.)
+   and run the Abyss server.
+
+   The new preferred interface, implemented by normalLevelAbyssRun(),
+   instead lets Caller set up the process environment himself and pass
+   Abyss parameters in memory.  That's a more conventional and
+   flexible API.
+-----------------------------------------------------------------------------*/
+    TServer server;
+    runfirstFn runfirst;
+    void * runfirstArg;
+    
+    ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+
+    assert(parmSize >= XMLRPC_APSIZE(config_file_name));
+    
+    ConfReadServerFile(parmsP->config_file_name, &server);
+        
+    assert(parmSize >= XMLRPC_APSIZE(registryP));
+    
+    setHandlers(&server, "/RPC2", parmsP->registryP, false);
+        
+    ServerInit(&server);
+    
+    if (parmSize >= XMLRPC_APSIZE(runfirst_arg)) {
+        runfirst    = parmsP->runfirst;
+        runfirstArg = parmsP->runfirst_arg;
+    } else {
+        runfirst    = NULL;
+        runfirstArg = NULL;
+    }
+    runServerDaemon(&server, runfirst, runfirstArg);
+
+    ServerFree(&server);
+}
+
+
+
 static void
 normalLevelAbyssRun(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
                     unsigned int                      const parmSize) {
     
-    TServer server;
-    TChanSwitch * chanSwitchP;
+    xmlrpc_server_abyss_t * serverP;
 
-    createServer(envP, parmsP, parmSize, &server, &chanSwitchP);
+    xmlrpc_server_abyss_create(envP, parmsP, parmSize, &serverP);
 
     if (!envP->fault_occurred) {
-        struct signalHandlers oldHandlers;
+        xmlrpc_server_abyss_sig * oldHandlersP;
 
-        setAdditionalServerParms(parmsP, parmSize, &server);
+        xmlrpc_server_abyss_setup_sig(envP, serverP, &oldHandlersP);
 
-        setHandlers(&server, uriPathParm(parmsP, parmSize), parmsP->registryP,
-                    chunkResponseParm(parmsP, parmSize));
+        if (!envP->fault_occurred) {
+            xmlrpc_server_abyss_run_server(envP, serverP);
 
-        ServerInit(&server);
-        
-        setupSignalHandlers(&oldHandlers);
+            xmlrpc_server_abyss_restore_sig(oldHandlersP);
 
-        ServerUseSigchld(&server);
-        
-        if (enableShutdownParm(parmsP, parmSize))
-            xmlrpc_registry_set_shutdown(parmsP->registryP,
-                                         &shutdownAbyss, &server);
-        
-        ServerRun(&server);
-
-        restoreSignalHandlers(oldHandlers);
-
-        ServerFree(&server);
-
-        if (chanSwitchP)
-            ChanSwitchDestroy(chanSwitchP);
+            free(oldHandlersP);
+        }
+        xmlrpc_server_abyss_destroy(serverP);
     }
 }
 
@@ -1102,37 +1339,32 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
 /*----------------------------------------------------------------------------
    Note that this is not re-entrant and not thread-safe, due to the
    global library initialization.  If you want to run a server inside
-   a thread of a multi-threaded program, create your own Abyss server
-   and attach the Xmlrpc-c facilities with
-   xmlrpc_server_abyss_add_handlers() instead of using
-   xmlrpc_server_abyss().  As a user of the Abyss library, your code
-   will contain a call to AbyssInit() early in your program, when it is
-   only one thread.
+   a thread of a multi-threaded program, use
+   xmlrpc_server_abyss_create() instead.  As required by that
+   subroutine, your program will contain a call to
+   xmlrpc_server_abyss_init() early in your program, when it is only
+   one thread.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
 
-    if (parmSize < XMLRPC_APSIZE(registryP))
-        xmlrpc_faultf(envP,
-                      "You must specify members at least up through "
-                      "'registryP' in the server parameters argument.  "
-                      "That would mean the parameter size would be >= %lu "
-                      "but you specified a size of %u",
-                      XMLRPC_APSIZE(registryP), parmSize);
-    else {
-        const char * error;
-        AbyssInit(&error);
-        if (error) {
-            xmlrpc_faultf(envP, "Failed to initialize the Abyss library.  %s",
-                          error);
-            xmlrpc_strfree(error);
-        } else {
+    xmlrpc_server_abyss_global_init(envP);
+
+    if (!envP->fault_occurred) {
+        if (parmSize < XMLRPC_APSIZE(registryP))
+            xmlrpc_faultf(envP,
+                          "You must specify members at least up through "
+                          "'registryP' in the server parameters argument.  "
+                          "That would mean the parameter size would be >= %lu "
+                          "but you specified a size of %u",
+                          XMLRPC_APSIZE(registryP), parmSize);
+        else {
             if (parmsP->config_file_name)
                 oldHighLevelAbyssRun(envP, parmsP, parmSize);
             else
                 normalLevelAbyssRun(envP, parmsP, parmSize);
             
-            AbyssTerm();
         }
+        xmlrpc_server_abyss_global_term();
     }
 }
 
