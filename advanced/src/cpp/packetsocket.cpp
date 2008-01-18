@@ -243,7 +243,7 @@ writeFd(int                   const fd,
     while (totalBytesWritten < size && !full) {
         ssize_t rc;
 
-        rc = write(fd, data, size);
+        rc = write(fd, &data[totalBytesWritten], size - totalBytesWritten);
 
         if (rc < 0) {
             if (errno == EAGAIN)
