@@ -13,6 +13,11 @@
   good way to arrange that.
 
   The sample program pstream_server.cpp is compatible with this client.
+
+  Example:
+
+    $ socketexec -connect -remote_host=localhost -remote_port=8080 \
+        ./pstream_client
 =============================================================================*/
 
 #include <cassert>
