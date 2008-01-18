@@ -196,29 +196,102 @@ packetSocket::~packetSocket() {
 
 
 
+/*----------------------------------------------------------------------------
+   To complete the job, we should provide writing services analogous
+   to the reading services.  That means a no-wait write method and
+   the ability to interrupt with a signal without corrupting the write
+   stream.
+
+   We're a little to lazy to do that now, since we don't need it yet,
+   but here's a design for that:
+
+   The packetSocket has a send queue of packets called the write
+   buffer.  It stores packetPtr pointers to packets created by the
+   user.
+
+   packetSocket::write() adds a packet to the write buffer, then calls
+   packetSocket::writeToFile().  If you give it a null packetPtr,
+   it just calls writeToFile().
+
+   packetSocket::writeToFile() writes from the write buffer to the
+   socket whatever the socket will take immediately.  It writes the
+   start sequence, writes the packet data, then writes the end
+   sequence.  The packetSocket keeps track of where it is in the
+   process of writing the current send packet (including start end
+   end sequences) it is.
+
+   packetSocket::write() returns a "flushed" flag indicating that there
+   is nothing left in the write buffer.
+
+   packetSocket::writeWait() just calls packetSocket::write(), then
+   packetSocket::flush() in a poll() loop.
+-----------------------------------------------------------------------------*/
+
+
 static void
 writeFd(int                   const fd,
         const unsigned char * const data,
-        size_t                const size) {
+        size_t                const size,
+        size_t *              const bytesWrittenP) {
 
     size_t totalBytesWritten;
+    bool full;  // File image is "full" for now - won't take any more data
 
+    full = false;
     totalBytesWritten = 0;
 
-    while (totalBytesWritten < size) {
+    while (totalBytesWritten < size && !full) {
         ssize_t rc;
 
         rc = write(fd, data, size);
 
-        if (rc < 0)
-            throwf("write() of socket failed with errno %d (%s)",
-                   errno, strerror(errno));
-        else if (rc == 0)
+        if (rc < 0) {
+            if (errno == EAGAIN)
+                full = true;
+            else
+                throwf("write() of socket failed with errno %d (%s)",
+                       errno, strerror(errno));
+        } else if (rc == 0)
             throwf("Zero byte short write.");
         else {
             size_t const bytesWritten(rc);
             totalBytesWritten += bytesWritten;
         }
+    }
+    *bytesWrittenP = totalBytesWritten;
+}
+
+
+
+static void
+writeFdWait(int                   const fd,
+            const unsigned char * const data,
+            size_t                const size) {
+/*----------------------------------------------------------------------------
+   Write the 'size' bytes at 'data' to the file image 'fd'.  Wait as long
+   as it takes for the file image to be able to take all the data.
+-----------------------------------------------------------------------------*/
+    size_t totalBytesWritten;
+
+    // We do the first one blind because it will probably just work
+    // and we don't want to waste the poll() call and buffer arithmetic.
+
+    writeFd(fd, data, size, &totalBytesWritten);
+
+    while (totalBytesWritten < size) {
+        struct pollfd pollfds[1];
+        
+        pollfds[0].fd = fd;
+        pollfds[0].events = POLLOUT;
+        
+        poll(pollfds, ARRAY_SIZE(pollfds), -1);
+
+        size_t bytesWritten;
+
+        writeFd(fd, &data[totalBytesWritten], size - totalBytesWritten,
+                &bytesWritten);
+
+        totalBytesWritten += bytesWritten;
     }
 }
 
@@ -232,11 +305,11 @@ packetSocket::writeWait(packetPtr const& packetP) const {
     const unsigned char * const packetEnd(
         reinterpret_cast<const unsigned char *>(ESC_STR "END"));
 
-    writeFd(this->sockFd, packetStart, 4);
+    writeFdWait(this->sockFd, packetStart, 4);
 
-    writeFd(this->sockFd, packetP->getBytes(), packetP->getLength());
+    writeFdWait(this->sockFd, packetP->getBytes(), packetP->getLength());
 
-    writeFd(this->sockFd, packetEnd, 4);
+    writeFdWait(this->sockFd, packetEnd, 4);
 }
 
 
