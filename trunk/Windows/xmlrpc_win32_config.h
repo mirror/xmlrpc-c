@@ -153,6 +153,6 @@
 #define write _write
 #define read _read
 #define lseek _lseek
-#define stat _stati64
+#define stat _stat
 
 #endif
