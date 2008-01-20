@@ -41,7 +41,6 @@
 #if MSVCRT
 typedef struct _stati64 TFileStat;
 typedef struct __finddata64_t TFileInfo;
-typedef intptr_t TFileFind;
 
 #else  /* MSVCRT */
 
@@ -53,8 +52,6 @@ typedef struct finddata_t {
     time_t time_write;
     WIN32_FIND_DATA data;
 } TFileInfo;
-
-typedef HANDLE TFileFind;
 
 #endif /* MSVCRT */
 
@@ -72,32 +69,31 @@ typedef struct finddata_t {
     time_t time_write;
 } TFileInfo;
 
-typedef struct {
-    char path[NAME_MAX+1];
-    DIR *handle;
-} TFileFind;
-
 #endif
 
-typedef int TFile;
+typedef struct TFileFind TFileFind;
+
+typedef struct TFile {
+    int fd;
+} TFile;
 
 abyss_bool
-FileOpen(TFile *      const f,
+FileOpen(TFile **     const filePP,
          const char * const name,
          uint32_t     const attrib);
 
 abyss_bool
-FileOpenCreate(TFile *      const f,
+FileOpenCreate(TFile **     const filePP,
                const char * const name,
                uint32_t     const attrib);
 
 abyss_bool
-FileClose(TFile * const f);
+FileClose(TFile * const fileP);
 
 abyss_bool
-FileWrite(TFile *      const f,
-          const void * const buffer,
-          uint32_t     const len);
+FileWrite(const TFile * const fileP,
+          const void *  const buffer,
+          uint32_t      const len);
 
 int32_t
 FileRead(const TFile * const fileP,
@@ -117,7 +113,7 @@ FileStat(const char * const filename,
          TFileStat *  const filestat);
 
 abyss_bool
-FileFindFirst(TFileFind *  const filefind,
+FileFindFirst(TFileFind ** const filefind,
               const char * const path,
               TFileInfo *  const fileinfo);
 

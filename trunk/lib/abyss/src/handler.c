@@ -28,6 +28,7 @@
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
 #include "session.h"
+#include "file.h"
 #include "conn.h"
 #include "http.h"
 #include "date.h"
@@ -184,11 +185,11 @@ generateListing(TList *       const listP,
                 uint16_t *    const responseStatusP) {
     
     TFileInfo fileinfo;
-    TFileFind findhandle;
+    TFileFind * findhandleP;
 
     *errorP = NULL;
 
-    if (!FileFindFirst(&findhandle, dirName, &fileinfo)) {
+    if (!FileFindFirst(&findhandleP, dirName, &fileinfo)) {
         *responseStatusP = ResponseStatusFromErrno(errno);
         xmlrpc_asprintf(errorP, "Can't read first entry in directory");
     } else {
@@ -214,13 +215,13 @@ generateListing(TList *       const listP,
                     xmlrpc_asprintf(errorP, "ListAdd() failed");
             } else
                 xmlrpc_asprintf(errorP, "PoolAlloc() failed.");
-        } while (!*errorP && FileFindNext(&findhandle, &fileinfo));
+        } while (!*errorP && FileFindNext(findhandleP, &fileinfo));
 
         if (*errorP) {
             *responseStatusP = 500;
             ListFree(listP);
         }            
-        FileFindClose(&findhandle);
+        FileFindClose(findhandleP);
     }
 }
 
@@ -549,12 +550,12 @@ sendBody(TSession *      const sessionP,
 
 static void
 sendFileAsResponse(TSession *   const sessionP,
-                   TFile        const file,
+                   TFile *      const fileP,
                    const char * const fileName,
                    time_t       const fileModTime,
                    MIMEType *   const mimeTypeP) {
 
-    uint64_t const filesize = FileSize(&file);
+    uint64_t const filesize = FileSize(fileP);
     const char * const mediatype = MIMETypeGuessFromFile2(mimeTypeP, fileName);
 
     uint64_t start;  /* Defined only if session has one range */
@@ -602,7 +603,7 @@ sendFileAsResponse(TSession *   const sessionP,
     ResponseWriteStart(sessionP);
 
     if (sessionP->requestInfo.method != m_head)
-        sendBody(sessionP, &file, filesize, mediatype, start, end);
+        sendBody(sessionP, fileP, filesize, mediatype, start, end);
 }        
 
 
@@ -616,10 +617,10 @@ handleFile(TSession *   const sessionP,
    This is an HTTP request handler for a GET.  It does the classic
    web server thing: send the file named in the URL to the client.
 -----------------------------------------------------------------------------*/
-    TFile file;
+    TFile * fileP;
     abyss_bool success;
     
-    success = FileOpen(&file, fileName, O_BINARY | O_RDONLY);
+    success = FileOpen(&fileP, fileName, O_BINARY | O_RDONLY);
     if (!success)
         ResponseStatusErrno(sessionP);
     else {
@@ -627,10 +628,10 @@ handleFile(TSession *   const sessionP,
             ResponseStatus(sessionP, 304);
             ResponseWriteStart(sessionP);
         } else
-            sendFileAsResponse(sessionP, file,
+            sendFileAsResponse(sessionP, fileP,
                                fileName, fileModTime, mimeTypeP);
 
-        FileClose(&file);
+        FileClose(fileP);
     }
 }
 

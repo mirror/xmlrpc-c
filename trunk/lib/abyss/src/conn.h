@@ -2,8 +2,9 @@
 #define CONN_H_INCLUDED
 
 #include "xmlrpc-c/abyss.h"
-#include "file.h"
 #include "thread.h"
+
+struct TFile;
 
 #define BUFFER_SIZE 4096 
 
@@ -92,13 +93,13 @@ ConnReadHeader(TConn * const connectionP,
                char ** const headerP);
 
 abyss_bool
-ConnWriteFromFile(TConn *       const connectionP,
-                  const TFile * const fileP,
-                  uint64_t      const start,
-                  uint64_t      const last,
-                  void *        const buffer,
-                  uint32_t      const buffersize,
-                  uint32_t      const rate);
+ConnWriteFromFile(TConn *              const connectionP,
+                  const struct TFile * const fileP,
+                  uint64_t             const start,
+                  uint64_t             const last,
+                  void *               const buffer,
+                  uint32_t             const buffersize,
+                  uint32_t             const rate);
 
 TServer *
 ConnServer(TConn * const connectionP);

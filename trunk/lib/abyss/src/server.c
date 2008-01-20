@@ -18,6 +18,7 @@
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
 #include "session.h"
+#include "file.h"
 #include "conn.h"
 #include "chanswitch.h"
 #include "channel.h"
@@ -56,7 +57,8 @@ ServerResetTerminate(TServer * const serverP) {
 static void
 initUnixStuff(struct _TServer * const srvP) {
 #ifndef WIN32
-    srvP->pidfile = srvP->uid = srvP->gid = -1;
+    srvP->pidfileP = NULL;
+    srvP->uid = srvP->gid = -1;
 #endif
 }
 
@@ -67,7 +69,7 @@ logOpen(struct _TServer * const srvP) {
 
     abyss_bool success;
 
-    success = FileOpenCreate(&srvP->logfile, srvP->logfilename,
+    success = FileOpenCreate(&srvP->logfileP, srvP->logfilename,
                              O_WRONLY | O_APPEND);
     if (success) {
         abyss_bool success;
@@ -78,7 +80,7 @@ logOpen(struct _TServer * const srvP) {
             TraceMsg("Can't create mutex for log file");
 
         if (!success)
-            FileClose(&srvP->logfile);
+            FileClose(srvP->logfileP);
     } else
         TraceMsg("Can't open log file '%s'", srvP->logfilename);
 
@@ -91,7 +93,7 @@ static void
 logClose(struct _TServer * const srvP) {
 
     if (srvP->logfileisopen) {
-        FileClose(&srvP->logfile);
+        FileClose(srvP->logfileP);
         MutexDestroy(srvP->logmutexP);
         srvP->logfileisopen = FALSE;
     }
@@ -1206,12 +1208,12 @@ ServerDaemonize(TServer * const serverP) {
             TraceExit("Failed to change the user.");
     }
     
-    if (srvP->pidfile != -1) {
+    if (srvP->pidfileP) {
         char z[16];
     
         sprintf(z, "%d", getpid());
-        FileWrite(&srvP->pidfile, z, strlen(z));
-        FileClose(&srvP->pidfile);
+        FileWrite(srvP->pidfileP, z, strlen(z));
+        FileClose(srvP->pidfileP);
     }
 #endif  /* _WIN32 */
 }
@@ -1316,8 +1318,8 @@ LogWrite(TServer *    const serverP,
         success = MutexLock(srvP->logmutexP);
         if (success) {
             const char * const lbr = "\n";
-            FileWrite(&srvP->logfile, msg, strlen(msg));
-            FileWrite(&srvP->logfile, lbr, strlen(lbr));
+            FileWrite(srvP->logfileP, msg, strlen(msg));
+            FileWrite(srvP->logfileP, lbr, strlen(lbr));
         
             MutexUnlock(srvP->logmutexP);
         }

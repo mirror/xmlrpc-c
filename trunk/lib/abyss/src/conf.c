@@ -48,6 +48,7 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
+#include "file.h"
 #include "server.h"
 #include "http.h"
 #include "handler.h"
@@ -189,13 +190,13 @@ readMIMETypesFile(const char * const filename,
 
     MIMETypeP = MIMETypeCreate();
     if (MIMETypeP) {
-        TFile file;
+        TFile * fileP;
         abyss_bool fileOpened;
 
-        fileOpened = FileOpen(&file, filename, O_RDONLY);
+        fileOpened = FileOpen(&fileP, filename, O_RDONLY);
         if (fileOpened) {
             char z[512];
-            while (ConfReadLine(&file, z, 512)) {
+            while (ConfReadLine(fileP, z, 512)) {
                 char * p;
                 p = &z[0];
             
@@ -212,7 +213,7 @@ readMIMETypesFile(const char * const filename,
                     }
                 }
             }
-            FileClose(&file);
+            FileClose(fileP);
             success = TRUE;
         } else
             success = FALSE;
@@ -276,8 +277,10 @@ static void
 parsePidfile(const char *      const p,
              struct _TServer * const srvP) {
 #ifdef _UNIX
-    if (!FileOpenCreate(&srvP->pidfile, p, O_TRUNC | O_WRONLY)) {
-        srvP->pidfile = -1;
+    abyss_bool succeeded;
+    succeeded = FileOpenCreate(&srvP->pidfileP, p, O_TRUNC | O_WRONLY);
+    if (!succeeded) {
+        srvP->pidfileP = NULL;
         TraceMsg("Bad PidFile value '%s'", p);
     };
 #else
@@ -294,18 +297,18 @@ ConfReadServerFile(const char * const filename,
     struct _TServer * const srvP     = serverP->srvP;
     BIHandler *       const handlerP = srvP->builtinHandlerP;
 
-    TFile f;
+    TFile * fileP;
     char z[512];
     char * p;
     unsigned int lineNum;
     TFileStat fs;
 
-    if (!FileOpen(&f, filename, O_RDONLY))
+    if (!FileOpen(&fileP, filename, O_RDONLY))
         return FALSE;
 
     lineNum = 0;
 
-    while (ConfReadLine(&f, z, 512)) {
+    while (ConfReadLine(fileP, z, 512)) {
         ++lineNum;
         p = z;
 
@@ -378,6 +381,6 @@ ConfReadServerFile(const char * const filename,
         }
     }
 
-    FileClose(&f);
+    FileClose(fileP);
     return TRUE;
 }

@@ -5,9 +5,10 @@
 
 #include "xmlrpc-c/abyss.h"
 
-#include "file.h"
 #include "data.h"
 
+struct TFile;
+struct abyss_mutex;
 
 struct _TServer {
     abyss_bool terminationRequested;
@@ -29,8 +30,8 @@ struct _TServer {
         */
     const char * logfilename;
     abyss_bool logfileisopen;
-    TFile logfile;
-    TMutex * logmutexP;
+    struct TFile * logfileP;
+    struct abyss_mutex * logmutexP;
     const char * name;
     abyss_bool serverAcceptsConnections;
         /* We listen for and accept TCP connections for HTTP transactions.
@@ -76,7 +77,7 @@ struct _TServer {
 #ifndef WIN32
     uid_t uid;
     gid_t gid;
-    TFile pidfile;
+    struct TFile * pidfileP;
 #endif
 };
 

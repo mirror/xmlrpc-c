@@ -43,6 +43,7 @@
 #include "xmlrpc-c/abyss.h"
 
 #include "token.h"
+#include "thread.h"
 
 #include "data.h"
 

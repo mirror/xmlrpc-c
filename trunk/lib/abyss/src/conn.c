@@ -15,6 +15,7 @@
 #include "channel.h"
 #include "server.h"
 #include "thread.h"
+#include "file.h"
 
 #include "conn.h"
 

@@ -2,7 +2,8 @@
 #define DATA_H_INCLUDED
 
 #include "int.h"
-#include "thread.h"
+
+struct abyss_mutex;
 
 /*********************************************************************
 ** List
@@ -99,7 +100,7 @@ typedef struct {
     TPoolZone * firstzone;
     TPoolZone * currentzone;
     uint32_t zonesize;
-    TMutex * mutexP;
+    struct abyss_mutex * mutexP;
 } TPool;
 
 abyss_bool

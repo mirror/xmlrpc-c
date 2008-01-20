@@ -22,6 +22,7 @@
 
 #include "server.h"
 #include "session.h"
+#include "file.h"
 #include "conn.h"
 #include "token.h"
 #include "date.h"
@@ -546,16 +547,16 @@ fileContainsText(const char * const fileName) {
 -----------------------------------------------------------------------------*/
     abyss_bool retval;
     abyss_bool fileOpened;
-    TFile file;
+    TFile * fileP;
 
-    fileOpened = FileOpen(&file, fileName, O_BINARY | O_RDONLY);
+    fileOpened = FileOpen(&fileP, fileName, O_BINARY | O_RDONLY);
     if (fileOpened) {
         char const ctlZ = 26;
         unsigned char buffer[80];
         int32_t readRc;
         unsigned int i;
 
-        readRc = FileRead(&file, buffer, sizeof(buffer));
+        readRc = FileRead(fileP, buffer, sizeof(buffer));
        
         if (readRc >= 0) {
             unsigned int bytesRead = readRc;
@@ -571,7 +572,7 @@ fileContainsText(const char * const fileName) {
             retval = !nonTextFound;
         } else
             retval = FALSE;
-        FileClose(&file);
+        FileClose(fileP);
     } else
         retval = FALSE;
 
