@@ -148,11 +148,5 @@
 #define vsnprintf _vsnprintf
 #define popen _popen
 #define strtoll _strtoui64
-#define open _open
-#define close _close
-#define write _write
-#define read _read
-#define lseek _lseek
-#define stat _stati64
 
 #endif
