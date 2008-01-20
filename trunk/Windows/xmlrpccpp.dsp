@@ -23,8 +23,6 @@ CFG=xmlrpccpp - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "xmlrpccpp"
-# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
@@ -101,6 +99,10 @@ SOURCE=..\src\cpp\client_simple.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\cpp\curl.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\cpp\env_wrap.cpp
 # End Source File
 # Begin Source File
@@ -114,6 +116,10 @@ SOURCE=..\src\cpp\girerr.cpp
 # Begin Source File
 
 SOURCE=..\src\cpp\girmem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\cpp\libwww.cpp
 # End Source File
 # Begin Source File
 
