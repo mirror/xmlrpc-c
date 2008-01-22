@@ -234,7 +234,7 @@ __inline void TraceA(const char *format, ...)
 
             va_start(arglist, format);
             StringCchVPrintfA(str, sizeof(str), format, arglist);
-            StringCbCat(str, sizeof(str), "\n");
+            StringCbCatA(str, sizeof(str), "\n");
             if (g_fLogFile)
             {
                 FILE *fout = fopen(g_fLogFile, "a+t");
