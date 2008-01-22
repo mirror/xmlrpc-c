@@ -217,7 +217,11 @@ FileStat(const char * const filename,
 
     int rc;
 
-    rc = stat(filename, filestat);
+#if MSVCRT
+    rc = _stati64(filename,filestat);
+#else
+    rc = stat(filename,filestat);
+#endif
 
     return (rc >= 0);
 }
