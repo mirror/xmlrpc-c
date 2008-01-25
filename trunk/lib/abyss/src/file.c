@@ -44,6 +44,7 @@
 
 #if MSVCRT
 #include <io.h>
+#define ssize_t SSIZE_T
 #endif
 
 #if !MSVCRT
@@ -174,7 +175,11 @@ FileSeek(const TFile * const fileP,
 
     off_t rc;
 
+#if MSVCRT
+    rc =  (off_t)_lseeki64(fileP->fd, pos, attrib);
+#else
     rc =  lseek(fileP->fd, pos, attrib);
+#endif
 
     return (rc >= 0);
 }
@@ -185,7 +190,7 @@ uint64_t
 FileSize(const TFile * const fileP) {
 
 #if MSVCRT
-    return (_filelength(*fileP));
+    return (_filelength(fileP->fd));
 #else
     struct stat fs;
 
@@ -243,7 +248,7 @@ fileFindFirstWin(TFileFind *  const filefindP ATTR_UNUSED,
 #else
 #ifdef WIN32
     filefindP->handle = FindFirstFile(search, &fileinfo->data);
-    *retP = filefindP->handle != NULL;
+    *retP = filefindP->handle != INVALID_HANDLE_VALUE;
     if (*retP) {
         LARGE_INTEGER li;
         li.LowPart = fileinfo->data.nFileSizeLow;
