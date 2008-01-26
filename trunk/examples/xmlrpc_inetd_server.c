@@ -6,7 +6,10 @@
 
    xmlrpc_sample_add_server.c is a server that does the same thing,
    but you give it a TCP port number and it listens for TCP connecitons
-   and processes RPCs ad infinitum.
+   and processes RPCs ad infinitum.  xmlrpc_socket_server.c is halfway
+   in between those -- you give it an already bound and listening
+   socket, and it lists for TCP connections and processes RPCs ad
+   infinitum.
 
    Here is an easy way to test this program:
 
