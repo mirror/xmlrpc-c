@@ -40,7 +40,7 @@
 
 #if MSVCRT
 typedef struct _stati64 TFileStat;
-typedef struct __finddata64_t TFileInfo;
+typedef struct _finddatai64_t TFileInfo;
 
 #else  /* MSVCRT */
 

@@ -40,11 +40,22 @@
        cause security exposures.
     */
 
+#define _FILE_OFFSET_BITS 64
+    /* Tell GNU libc to make off_t 64 bits and all the POSIX file functions
+       the versions that handle 64 bit file offsets.
+    */
+#define _LARGE_FILES
+    /* Same as above, but for AIX */
+
 #include <string.h>
 
 #if MSVCRT
 #include <io.h>
 #define ssize_t SSIZE_T
+#undef lseek
+#define lseek _lseeki64
+#undef stat
+#define stat _stati64
 #endif
 
 #if !MSVCRT
@@ -173,13 +184,8 @@ FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib) {
 
-    off_t rc;
-
-#if MSVCRT
-    rc =  (off_t)_lseeki64(fileP->fd, pos, attrib);
-#else
+    int64_t rc;
     rc =  lseek(fileP->fd, pos, attrib);
-#endif
 
     return (rc >= 0);
 }
@@ -222,11 +228,7 @@ FileStat(const char * const filename,
 
     int rc;
 
-#if MSVCRT
-    rc = _stati64(filename,filestat);
-#else
     rc = stat(filename,filestat);
-#endif
 
     return (rc >= 0);
 }
@@ -243,7 +245,7 @@ fileFindFirstWin(TFileFind *  const filefindP ATTR_UNUSED,
     xmlrpc_asprintf(&search, "%s\\*", path);
 
 #if MSVCRT
-    filefindP->handle = _findfirst64(search, fileinfo);
+    filefindP->handle = _findfirsti64(search, fileinfo);
     *retP = filefindP->handle != -1;
 #else
 #ifdef WIN32
@@ -318,7 +320,7 @@ fileFindNextWin(TFileFind *  const filefindP ATTR_UNUSED,
                 abyss_bool * const retvalP   ATTR_UNUSED) {
 
 #if MSVCRT
-    *retvalP = _findnext64(filefindP->handle, fileinfo) != -1;
+    *retvalP = _findnexti64(filefindP->handle, fileinfo) != -1;
 #else
 #ifdef WIN32
     abyss_bool found;

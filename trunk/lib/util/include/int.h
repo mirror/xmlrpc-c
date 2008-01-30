@@ -12,6 +12,9 @@
 #  define PRId64 "I64d"
 #  define PRIu64 "I64u"
 
+#ifndef int16_t
+typedef short             int16_t;
+#endif
 #ifndef uint16_t
 typedef unsigned short    uint16_t;
 #endif
@@ -21,6 +24,9 @@ typedef int               int32_t;
 #ifndef uint32_t
 typedef unsigned int      uint32_t;
 #endif
+#ifndef int64_t
+typedef __int64           int64_t;
+#endif
 #ifndef uint64_t
 typedef unsigned __int64  uint64_t;
 #endif
@@ -29,9 +35,6 @@ typedef unsigned int      uint;
 #endif
 #ifndef uint8_t
 typedef unsigned char     uint8_t;
-#endif
-#ifndef int16_t
-typedef short             int16_t;
 #endif
 #else
 #  include <inttypes.h>
