@@ -183,7 +183,7 @@ fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
     *retP = (((*filefind) = _findfirst64(search, fileinfo)) != -1);
 #else
     *filefind = FindFirstFile(search, &fileinfo->data);
-    *retP = *filefind != NULL;
+    *retP = *filefind != INVALID_HANDLE_VALUE;
     if (*retP) {
         LARGE_INTEGER li;
         li.LowPart = fileinfo->data.nFileSizeLow;

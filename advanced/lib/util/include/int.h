@@ -33,24 +33,7 @@ typedef unsigned char uint8_t;
 #ifndef int16_t
 typedef short int16_t;
 #endif
-
-/* Here we define intptr_t (another type that in C99 is defined in
-   <inttypes.h>).  The Windows runtime library _uses_ this type
-   (functions in <io.h>, for example), but does not provide a header file
-   like inttypes.h to define it.  Instead, individual header files that
-   use it (e.g. <io.h>) each define it with code like the following.
-*/
-
-#ifndef _INTPTR_T_DEFINED
-#define _INTPTR_T_DEFINED
-  #ifdef _WIN64
-    typedef __int64 intptr_t;
-  #else
-    typedef _W64 int intptr_t;
-  #endif
-#endif
-
-#else /* _MSC_VER */
-  #include <inttypes.h>
+#else
+#  include <inttypes.h>
 #endif
 

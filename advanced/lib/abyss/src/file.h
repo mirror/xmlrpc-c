@@ -39,6 +39,7 @@
 #ifdef WIN32
 
 #ifndef __BORLANDC__
+#include <io.h>  /* Defines intptr_t */
 typedef struct _stati64 TFileStat;
 typedef struct __finddata64_t TFileInfo;
 typedef intptr_t TFileFind;
