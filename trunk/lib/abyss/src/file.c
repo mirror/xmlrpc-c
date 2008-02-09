@@ -56,9 +56,9 @@
 #define lseek _lseeki64
 #undef stat
 #define stat _stati64
-#endif
-
-#if !MSVCRT
+#else
+#include <unistd.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #endif
