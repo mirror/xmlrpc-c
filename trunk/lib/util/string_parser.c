@@ -220,7 +220,7 @@ interpretBinUint(const char *  const string,
         if (!*errorP) {
             if (argNumber < 0)
                 casprintf(errorP, "Unsigned numeric value is "
-                          "negative: %lld", argNumber);
+                          "negative: %" PRId64, argNumber);
             else
                 *valueP = (uint64_t) argNumber;
         }
