@@ -136,19 +136,24 @@ processCall(const registry * const  registryP,
 
 
 void
-serverPstreamConn::runOnce(bool * const eofP) {
+serverPstreamConn::runOnce(volatile const int * const interruptP,
+                           bool *               const eofP) {
 /*----------------------------------------------------------------------------
    Get and execute one RPC from the client.
+
+   Unless *interruptP gets set nonzero first.
 -----------------------------------------------------------------------------*/
+    bool gotPacket;
     packetPtr callPacketP;
 
     try {
-        this->packetSocketP->readWait(eofP, &callPacketP);
+        this->packetSocketP->readWait(interruptP, eofP, &gotPacket,
+                                      &callPacketP);
     } catch (exception const& e) {
         throwf("Error reading a packet from the packet socket.  %s",
                e.what());
     }
-    if (!*eofP) {
+    if (gotPacket) {
         packetPtr responsePacketP;
         try {
             processCall(this->registryP, callPacketP, &responsePacketP);
@@ -164,5 +169,19 @@ serverPstreamConn::runOnce(bool * const eofP) {
         }
     }
 }
+
+
+
+void
+serverPstreamConn::runOnce(bool * const eofP) {
+/*----------------------------------------------------------------------------
+   Get and execute one RPC from the client.
+-----------------------------------------------------------------------------*/
+    int const interrupt(0);  // Never interrupt
+
+    this->runOnce(&interrupt, eofP);
+}
+
+
 
 } // namespace

@@ -91,6 +91,17 @@ public:
          packetPtr * const packetPP);
 
     void
+    readWait(volatile const int * const interruptP,
+             bool *               const eofP,
+             bool *               const gotPacketP,
+             packetPtr *          const packetPP);
+
+    void
+    readWait(volatile const int * const interruptP,
+             bool *               const eofP,
+             packetPtr *          const packetPP);
+
+    void
     readWait(bool *      const eofP,
              packetPtr * const packetPP);
 
