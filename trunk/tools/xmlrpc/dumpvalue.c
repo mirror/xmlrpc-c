@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "xmlrpc_config.h"  /* information about this build environment */
+#include "int.h"
 #include "casprintf.h"
 #include "mallocvar.h"
 
@@ -412,7 +413,7 @@ dumpI8(const char *   const prefix,
                "64-bit integer xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
-        printf("%s64-bit integer: %lld\n", prefix, value);
+        printf("%s64-bit integer: %" PRId64 "\n", prefix, value);
 
     xmlrpc_env_clean(&env);
 }
