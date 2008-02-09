@@ -33,8 +33,15 @@ OMIT_UTILS_RULE = Y
 
 include $(SRCDIR)/Makefile.common
 
+LIBOBJS = \
+  casprintf.o \
+  cmdline_parser.o \
+  getoptx.o \
+  string_parser.o \
+  stripcaseeq.o \
+
 .PHONY: all
-all: cmdline_parser.o getoptx.o casprintf.o
+all: $(LIBOBJS)
 
 INCLUDES = -I$(SRCDIR)/$(SUBDIR)/include -I$(BLDDIR)
 
