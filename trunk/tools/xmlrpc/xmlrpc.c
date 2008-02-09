@@ -45,9 +45,11 @@
 
 #include "xmlrpc_config.h"  /* information about this build environment */
 #include "bool.h"
+#include "int.h"
+#include "mallocvar.h"
 #include "girstring.h"
 #include "casprintf.h"
-#include "mallocvar.h"
+#include "string_parser.h"
 #include "cmdline_parser.h"
 #include "dumpvalue.h"
 
@@ -307,27 +309,17 @@ buildInt(xmlrpc_env *    const envP,
     if (strlen(valueString) < 1)
         setError(envP, "Integer argument has nothing after the 'i/'");
     else {
-        long value;
-        char * tailptr;
+        int value;
+        const char * error;
 
-        errno = 0;
-        
-        value = strtol(valueString, &tailptr, 10);
+        interpretInt(valueString, &value, &error);
 
-        if (errno == ERANGE)
-            setError(envP, "'%s' is out of range for a 32 bit integer",
-                     valueString);
-        else if (errno != 0)
-            setError(envP, "Mysterious failure of strtol(), errno=%d (%s)",
-                     errno, strerror(errno));
-        else {
-            if (*tailptr != '\0')
-                setError(envP, 
-                         "Integer argument has non-digit crap in it: '%s'",
-                         tailptr);
-            else
-                *paramPP = xmlrpc_int_new(envP, value);
-        }
+        if (error) {
+            setError(envP, "'%s' is not a valid 32-bit integer.  %s",
+                     valueString, error);
+            strfree(error);
+        } else
+            *paramPP = xmlrpc_int_new(envP, value);
     }
 }
 
@@ -396,27 +388,17 @@ buildI8(xmlrpc_env *    const envP,
     if (strlen(valueString) < 1)
         setError(envP, "Integer argument has nothing after the 'I/'");
     else {
-        long long value;
-        char * tailptr;
-        
-        errno = 0;
+        int64_t value;
+        const char * error;
 
-        value = strtoll(valueString, &tailptr, 10);
+        interpretLl(valueString, &value, &error);
 
-        if (errno == ERANGE)
-            setError(envP, "'%s' is out of range for a 64 bit integer",
-                     valueString);
-        else if (errno != 0)
-            setError(envP, "Mysterious failure of strtoll(), errno=%d (%s)",
-                     errno, strerror(errno));
-        else {
-            if (*tailptr != '\0')
-                setError(envP, "64 bit integer argument has non-digit crap "
-                         "in it: '%s'",
-                         tailptr);
-            else
-                *paramPP = xmlrpc_i8_new(envP, value);
-        }
+        if (error) {
+            setError(envP, "'%s' is not a valid 64-bit integer.  %s",
+                     valueString, error);
+            strfree(error);
+        } else
+            *paramPP = xmlrpc_i8_new(envP, value);
     }
 }
 
