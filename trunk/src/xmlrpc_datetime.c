@@ -50,7 +50,7 @@ UnixTimeToFileTime(time_t     const t,
 
 
 void
-UnixTimeToSystemTime(const time_t const t,
+UnixTimeToSystemTime(time_t const t,
                      LPSYSTEMTIME const pst) {
     FILETIME ft;
 
@@ -68,9 +68,9 @@ UnixTimeFromFileTime(xmlrpc_env *  const envP,
     int64_t const WinEpoch100Ns =
         ((int64_t)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
     int64_t const unixEpoch100Ns =
-        winEpoch100Ns - (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
+        WinEpoch100Ns - (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
     int64_t const unixEpochSeconds =
-        unixEpoch100Ns /= SECS_TO_100NS; 
+        unixEpoch100Ns / SECS_TO_100NS; 
 
     if ((time_t)unixEpochSeconds != unixEpochSeconds) {
         // Value is too big for a time_t; fail.

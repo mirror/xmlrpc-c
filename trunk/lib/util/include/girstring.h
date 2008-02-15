@@ -17,7 +17,7 @@ streq(const char * const comparator,
     return (strcmp(comparand, comparator) == 0);
 }
 
-static inline bool
+static __inline__ bool
 memeq(const void * const comparator,
       const void * const comparand,
       size_t       const size) {

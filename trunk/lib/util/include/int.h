@@ -6,6 +6,9 @@
    long long mynumber = 5;
    printf("My number is %" PRId64 ".\n", mynumber);
 
+   The LL/ULL macro is for 64 bit integer literals, like this:
+
+   long long mask= ULL(1) << 33;
 */
 
 #ifdef _MSC_VER
@@ -36,7 +39,15 @@ typedef unsigned int      uint;
 #ifndef uint8_t
 typedef unsigned char     uint8_t;
 #endif
+
+/* Older Microsoft compilers don't know the standard ll/ull suffixes */
+#define LL(x) x ## i64
+#define ULL(x) x ## u64
+
 #else
-#  include <inttypes.h>
+  /* Not Microsoft compiler */
+  #include <inttypes.h>
+  #define LL(x) x ## ll
+  #define ULL(x) x ## ull
 #endif
 

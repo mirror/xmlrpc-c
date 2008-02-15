@@ -50,17 +50,14 @@
 #include <string.h>
 
 #if MSVCRT
-#include <io.h>
-#define ssize_t SSIZE_T
-#undef lseek
-#define lseek _lseeki64
-#undef stat
-#define stat _stati64
+  #include <io.h>
+  typedef SSIZE_T readwriterc_t;
 #else
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <sys/stat.h>
+  #include <unistd.h>
+  #include <fcntl.h>
+  #include <dirent.h>
+  #include <sys/stat.h>
+  typedef ssize_t readwriterc_t;
 #endif
 
 #include "xmlrpc-c/string_int.h"
@@ -160,7 +157,7 @@ FileWrite(const TFile * const fileP,
           const void *  const buffer,
           uint32_t      const len) {
 
-    ssize_t rc;
+    readwriterc_t rc;
 
     rc = write(fileP->fd, buffer, len);
 
@@ -185,8 +182,11 @@ FileSeek(const TFile * const fileP,
          uint32_t      const attrib) {
 
     int64_t rc;
+#if MSVCRT
+    rc =  _lseeki64(fileP->fd, pos, attrib);
+#else
     rc =  lseek(fileP->fd, pos, attrib);
-
+#endif
     return (rc >= 0);
 }
 
@@ -228,8 +228,11 @@ FileStat(const char * const filename,
 
     int rc;
 
+#if MSVCRT
+    rc = _stati64(filename,filestat);
+#else
     rc = stat(filename,filestat);
-
+#endif
     return (rc >= 0);
 }
 
