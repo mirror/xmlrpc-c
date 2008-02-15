@@ -28,18 +28,6 @@ CLIENT_LDLIBS += $(LDLIBS_XML)
 CLIENTPP_LDLIBS = -L$(BLDDIR)/src/cpp
 CLIENTPP_LDLIBS += -lxmlrpc_client++ -lxmlrpc_packetsocket -lxmlrpc++
 
-UTIL_DIR = $(BLDDIR)/lib/util
-
-BUILDABLE_UTILS = \
-  casprintf.o \
-  cmdline_parser.o \
-  getoptx.o \
-  stripcaseeq.o \
-  string_parser.o \
-
-$(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
 include $(SRCDIR)/Makefile.common
 
 .PHONY: install

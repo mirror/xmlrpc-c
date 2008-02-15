@@ -208,11 +208,6 @@ LIBXMLRPC_SERVER_PSTREAMPP = \
 LIBXMLRPC_SERVER_PSTREAMPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_pstream++.a
 endif
 
-CASPRINTF                = $(BLDDIR)/lib/util/casprintf.o
-
-UTILS = $(CASPRINTF)
-
-
 # LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
 # XML.  If we're using an external library to parse XML, this is null.
 # LDLIBS_XML is the corresponding -L/-l options
@@ -398,8 +393,23 @@ $(LIBXMLRPC_CPP) $(LIBXMLRPC_CPP_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
 
+# For the following utilities, we don't bother with a library -- we
+# just explicitly link the object file we need.  This is to save
+# complexity.  If the list gets too big, we may need a library just to
+# keep link commands short.
+
+UTIL_DIR = $(BLDDIR)/lib/util
+
+UTILS = \
+  casprintf.o \
+  cmdline_parser.o \
+  getoptx.o \
+  stripcaseeq.o \
+  string_parser.o \
+
+
 ifneq ($(OMIT_UTILS_RULE),Y)
-$(UTILS): FORCE
+$(UTILS:%=$(UTIL_DIR)/%): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/util/Makefile \
 	    $(notdir $@)
 endif
