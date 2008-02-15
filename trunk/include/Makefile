@@ -44,13 +44,13 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	@echo ''                                                          >>$@
 	@echo '#if defined(_MSC_VER)'                                     >>$@
 	@echo '#if _MSC_VER < 1300'					  >>$@
-	@echo '	 /* This is MSVC 6. */'					  >>$@
-	@echo '	 #define XMLRPC_LONG_LONG __int64'			  >>$@
+	@echo '  /* This is MSVC 6. */'					  >>$@
+	@echo '  #define XMLRPC_LONG_LONG __int64'			  >>$@
 	@echo '#else'							  >>$@
-	@echo '	 #define XMLRPC_LONG_LONG long long'			  >>$@
+	@echo '  #define XMLRPC_LONG_LONG long long'			  >>$@
 	@echo '#endif'							  >>$@
 	@echo '#else'							  >>$@
-	@echo '	 #define XMLRPC_LONG_LONG long long'                      >>$@
+	@echo '  #define XMLRPC_LONG_LONG long long'                      >>$@
 	@echo '#endif'                                                    >>$@
 	@echo '#endif'                                                    >>$@
 
