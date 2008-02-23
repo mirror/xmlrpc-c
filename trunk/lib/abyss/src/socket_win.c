@@ -415,7 +415,7 @@ channelWait(TChannel *  const channelP,
     for (;;) {
         int rc;
 
-        rc = select(socketWinP->winsock, &rfds, &wfds, NULL,
+        rc = select(socketWinP->winsock + 1, &rfds, &wfds, NULL,
                     (timems == TIME_INFINITE ? NULL : &tv));
 
         switch(rc) {   
