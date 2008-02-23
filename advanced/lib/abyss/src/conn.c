@@ -497,6 +497,14 @@ isContinuationLine(const char * const line) {
 
 
 
+static abyss_bool
+isEmptyLine(const char * const line) {
+
+    return (line[0] == '\n' || (line[0] == '\r' && line[1] == '\n'));
+}
+
+
+
 static void
 convertLineEnd(char * const lineStart,
                char * const prevLineStart,
@@ -580,9 +588,19 @@ ConnReadHeader(TConn * const connectionP,
                         /* Join previous line to this one */
                         convertLineEnd(lineStart, headerStart, ' ');
                 } else {
-                    if (lineStart != headerStart) {
-                        /* It's a new header.  NUL-terminate previous one
-                           and declare it present
+                    if (lineStart == headerStart) {
+                        /* It's the first line of our header. */
+                        if (isEmptyLine(lineStart)) {
+                            /* It's also the last, because it's an EOH mark */
+                            convertLineEnd(lfPos+1, headerStart, '\0');
+                            gotHeader = true;
+                            connectionP->bufferpos =
+                                lfPos + 1 - connectionP->buffer;
+                        }
+                    } else {                        
+                        /* It's the first line of the following
+                           header.  NUL-terminate previous one and
+                           declare it present
                         */
                         convertLineEnd(lineStart, headerStart, '\0');
                         gotHeader = true;

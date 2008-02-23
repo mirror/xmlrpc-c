@@ -9,17 +9,11 @@ Latest Windows work was done by
   19 October, 2007
   home: http://geoffair.net
 
-This is a build of the xmlrpc static libary, and the examples, using
-Microsoft Visual C++ 1994-98 (MSVC6), 2003 (MSVC7), and 2005 Express
-(MSVC8) in Windows XP SP2. The shared libraries (DLL) are not included
-and were NOT built. Also, although the DSP files are included, the
-all.vcproj, configwin32.vcproj and cpptest.vcproj were exclude from
-the solution.
 
 1. Run the batch file ConfigureWin32.bat, found in the Windows
 directory. This will copy four(4) headers to the appropriate folders.
 
-2. Load xmlrpc.dsw in MSVC[6,7,8] or later, and build the Release or Debug
+2. Load xmlrpc.dsw in MSVC[7,8] or later, and build the Release or Debug
 configurations. DLL configurations are not included, and may not compile.
 
 This build requires that you have a Microsoft SDK, or Plaform SDK
