@@ -51,7 +51,7 @@
 
 #if MSVCRT
   #include <io.h>
-  typedef SSIZE_T readwriterc_t;
+  typedef __int64 readwriterc_t;
 #else
   #include <unistd.h>
   #include <fcntl.h>
