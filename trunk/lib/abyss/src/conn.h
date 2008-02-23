@@ -89,10 +89,6 @@ void
 ConnReadInit(TConn * const connectionP);
 
 abyss_bool
-ConnReadHeader(TConn * const connectionP,
-               char ** const headerP);
-
-abyss_bool
 ConnWriteFromFile(TConn *              const connectionP,
                   const struct TFile * const fileP,
                   uint64_t             const start,

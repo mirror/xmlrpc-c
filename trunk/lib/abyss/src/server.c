@@ -522,6 +522,7 @@ runUserHandler(TSession *        const sessionP,
 static void
 processDataFromClient(TConn *      const connectionP,
                       abyss_bool   const lastReqOnConn,
+                      uint32_t     const timeout,
                       abyss_bool * const keepAliveP) {
 
     TSession session;
@@ -530,7 +531,8 @@ processDataFromClient(TConn *      const connectionP,
 
     session.serverDeniesKeepalive = lastReqOnConn;
         
-    RequestRead(&session);
+    RequestRead(&session, timeout);
+
     if (session.status == 0) {
         if (session.version.major >= 2)
             ResponseStatus(&session, 505);
@@ -588,7 +590,8 @@ serverFunc(void * const userHandle) {
 
             abyss_bool keepalive;
             
-            processDataFromClient(connectionP, lastReqOnConn, &keepalive);
+            processDataFromClient(connectionP, lastReqOnConn, srvP->timeout,
+                                  &keepalive);
             
             ++requestCount;
 
