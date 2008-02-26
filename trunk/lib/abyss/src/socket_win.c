@@ -389,16 +389,20 @@ channelRead(TChannel *   const channelP,
 
 static ChannelWaitImpl channelWait;
 
-static uint32_t
-channelWait(TChannel *  const channelP,
-            abyss_bool  const rd,
-            abyss_bool  const wr,
-            uint32_t    const timems) {
+static void
+channelWait(TChannel *   const channelP,
+            abyss_bool   const waitForRead,
+            abyss_bool   const waitForWrite,
+            uint32_t     const timems,
+            abyss_bool * const readyToReadP,
+            abyss_bool * const readyToWriteP,
+            abyss_bool * const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
 
     fd_set rfds, wfds;
     TIMEVAL tv;
+    abyss_bool failed, readRdy, writeRdy, timedOut;
 
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
@@ -411,31 +415,38 @@ channelWait(TChannel *  const channelP,
 
     tv.tv_sec  = timems / 1000;
     tv.tv_usec = timems % 1000;
+ 
+    for (failed = FALSE, readRdy = FALSE, writeRdy = FALSE, timedOut = FALSE;
+         !failed && !readRdy && !writeRdy && !timedOut;
+        ) {
 
-    for (;;) {
         int rc;
 
         rc = select(socketWinP->winsock + 1, &rfds, &wfds, NULL,
                     (timems == TIME_INFINITE ? NULL : &tv));
 
         switch(rc) {   
-        case 0: /* time out */
-            return 0;
-
+        case 0:
+            timedOut = TRUE;
+            break;
         case -1:  /* socket error */
-            if (errno == EINTR)
-                break;
-            
-            return 0;
-            
+            if (errno != EINTR)
+                failed = TRUE;
+            break;
         default:
             if (FD_ISSET(socketWinP->winsock, &rfds))
-                return 1;
+                readRdy = TRUE;
             if (FD_ISSET(socketWinP->winsock, &wfds))
-                return 2;
-            return 0;
+                writeRdy = TRUE;
         }
     }
+
+    if (failedP)
+        *failedP       = failed;
+    if (readyToReadP)
+        *readyToReadP  = readRdy;
+    if (readyToWriteP)
+        *readyToWriteP = writeRdy;
 }
 
 

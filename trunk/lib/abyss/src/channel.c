@@ -152,21 +152,25 @@ ChannelRead(TChannel *      const channelP,
 
 
 
-uint32_t
-ChannelWait(TChannel * const channelP,
-            abyss_bool const rd,
-            abyss_bool const wr,
-            uint32_t   const timems) {
+void
+ChannelWait(TChannel *   const channelP,
+            abyss_bool   const waitForRead,
+            abyss_bool   const waitForWrite,
+            uint32_t     const timems,
+            abyss_bool * const readyToReadP,
+            abyss_bool * const readyToWriteP,
+            abyss_bool * const failedP) {
 
     if (ChannelTraceIsActive) {
-        if (rd)
+        if (waitForRead)
             fprintf(stderr, "Waiting %u milliseconds for data from "
                     "channel %p\n", timems, channelP);
-        if (wr)
+        if (waitForWrite)
             fprintf(stderr, "Waiting %u milliseconds for channel %p "
                     "to be writable\n", timems, channelP);
     }
-    return (*channelP->vtbl.wait)(channelP, rd, wr, timems);
+    return (*channelP->vtbl.wait)(channelP, waitForRead, waitForWrite, timems,
+                                  readyToReadP, readyToWriteP, failedP);
 }
 
 

@@ -347,12 +347,16 @@ ConnRead(TConn *  const connectionP,
         if (timeLeft <= 0)
             cantGetData = TRUE;
         else {
-            int rc;
+            abyss_bool const waitForRead  = TRUE;
+            abyss_bool const waitForWrite = FALSE;
             
-            rc = ChannelWait(connectionP->channelP, TRUE, FALSE,
-                             timeLeft * 1000);
+            abyss_bool readyForRead;
+            abyss_bool failed;
             
-            if (rc != 1)
+            ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
+                        timeLeft * 1000, &readyForRead, NULL, &failed);
+            
+            if (failed || !readyForRead)
                 cantGetData = TRUE;
             else {
                 uint32_t bytesRead;

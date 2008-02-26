@@ -36,10 +36,13 @@ typedef void ChannelReadImpl(TChannel *      const channelP,
 
 typedef uint32_t ChannelErrorImpl(TChannel * const channelP);
 
-typedef uint32_t ChannelWaitImpl(TChannel * const channelP,
-                                 abyss_bool const rd,
-                                 abyss_bool const wr,
-                                 uint32_t   const timems);
+typedef void ChannelWaitImpl(TChannel *   const channelP,
+                             abyss_bool   const waitForRead,
+                             abyss_bool   const waitForWrite,
+                             uint32_t     const timems,
+                             abyss_bool * const readyToReadP,
+                             abyss_bool * const readyToWriteP,
+                             abyss_bool * const failedP);
 
 typedef void ChannelFormatPeerInfoImpl(TChannel *    const channelP,
                                        const char ** const peerStringP);
@@ -86,11 +89,14 @@ ChannelRead(TChannel *      const channelP,
             uint32_t *      const bytesReceivedP,
             abyss_bool *    const failedP);
 
-uint32_t
-ChannelWait(TChannel * const channelP,
-            abyss_bool const rd,
-            abyss_bool const wr,
-            uint32_t   const timems);
+void
+ChannelWait(TChannel *   const channelP,
+            abyss_bool   const waitForRead,
+            abyss_bool   const waitForWrite,
+            uint32_t     const timems,
+            abyss_bool * const readyToReadP,
+            abyss_bool * const readyToWriteP,
+            abyss_bool * const failedP);
 
 void
 ChannelFormatPeerInfo(TChannel *    const channelP,
