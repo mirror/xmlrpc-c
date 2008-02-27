@@ -423,3 +423,6 @@ registry::c_registry() const {
 }
 
 }  // namespace
+
+
+registry::shutdown::~shutdown() {}

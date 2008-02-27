@@ -165,6 +165,10 @@ serverAbyss::shutdown::shutdown(serverAbyss * const serverAbyssP) :
 
 
 
+serverAbyss::shutdown::~shutdown() {}
+
+
+
 void
 serverAbyss::shutdown::doit(string const&,
                             void * const) const {
