@@ -53,6 +53,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>

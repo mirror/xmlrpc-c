@@ -9,6 +9,7 @@
 =============================================================================*/
 
 #include <cassert>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <xmlrpc-c/girerr.hpp>
