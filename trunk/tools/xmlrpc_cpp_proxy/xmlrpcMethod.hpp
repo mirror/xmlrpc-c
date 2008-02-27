@@ -20,7 +20,7 @@ public:
                  std::string           const& help,
                  xmlrpc_c::value_array const& signatureList);
 
-    xmlrpcMethod::xmlrpcMethod(xmlrpcMethod const& f);
+    xmlrpcMethod(xmlrpcMethod const& f);
 
     xmlrpcMethod& operator= (xmlrpcMethod const& f);
     
