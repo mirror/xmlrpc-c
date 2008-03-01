@@ -451,6 +451,22 @@ channelWait(TChannel *   const channelP,
 
 
 
+static ChannelInterruptImpl channelInterrupt;
+
+static void
+channelInterrupt(TChannel * const channelP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in channelWait()
+  now or in the future.
+
+  Actually, this is just a no-op because we don't yet know how to
+  accomplish that.
+-----------------------------------------------------------------------------*/
+
+}
+
+
+
 void
 ChannelWinGetPeerName(TChannel *           const channelP,
                       struct sockaddr_in * const inAddrP,
@@ -542,6 +558,7 @@ static struct TChannelVtbl const channelVtbl = {
     &channelWrite,
     &channelRead,
     &channelWait,
+    &channelInterrupt,
     &channelFormatPeerInfo,
 };
 
@@ -763,10 +780,27 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
 
 
+static SwitchInterruptImpl chanSwitchInterrupt;
+
+static void
+chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in chanSwitchAccept()
+  now or in the future.
+
+  Actually, this is just a no-op because we don't yet know how to
+  accomplish that.
+-----------------------------------------------------------------------------*/
+
+}
+
+
+
 static struct TChanSwitchVtbl const chanSwitchVtbl = {
     &chanSwitchDestroy,
     &chanSwitchListen,
     &chanSwitchAccept,
+    &chanSwitchInterrupt,
 };
 
 

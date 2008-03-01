@@ -25,10 +25,13 @@ typedef void SwitchAcceptImpl(TChanSwitch * const chanSwitchP,
                               void **       const channelInfoP,
                               const char ** const errorP);
 
+typedef void SwitchInterruptImpl(TChanSwitch * const chanSwitchP);
+
 struct TChanSwitchVtbl {
-    SwitchDestroyImpl * destroy;
-    SwitchListenImpl  * listen;
-    SwitchAcceptImpl  * accept;
+    SwitchDestroyImpl   * destroy;
+    SwitchListenImpl    * listen;
+    SwitchAcceptImpl    * accept;
+    SwitchInterruptImpl * interrupt;
 };
 
 struct _TChanSwitch {
@@ -65,6 +68,9 @@ ChanSwitchAccept(TChanSwitch * const chanSwitchP,
                  TChannel **   const channelPP,
                  void **       const channelInfoPP,
                  const char ** const errorP);
+
+void
+ChanSwitchInterrupt(TChanSwitch * const chanSwitchP);
 
 #endif
 

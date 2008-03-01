@@ -176,8 +176,20 @@ ChannelWait(TChannel *   const channelP,
 
 
 void
+ChannelInterrupt(TChannel * const channelP) {
+
+    if (ChannelTraceIsActive)
+        fprintf(stderr, "Interrupting channel waits");
+
+    return (*channelP->vtbl.interrupt)(channelP);
+}
+
+
+
+void
 ChannelFormatPeerInfo(TChannel *    const channelP,
                       const char ** const peerStringP) {
 
     (*channelP->vtbl.formatPeerInfo)(channelP, peerStringP);
 }
+

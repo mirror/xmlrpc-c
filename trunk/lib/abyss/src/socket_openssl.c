@@ -206,11 +206,49 @@ channelRead(TChannel *      const channelP,
 
 
 
+static ChannelWaitImpl channelWait;
+
+static void
+channelWait(TChannel *   const channelP,
+            abyss_bool   const waitForRead,
+            abyss_bool   const waitForWrite,
+            uint32_t     const timeoutMs,
+            abyss_bool * const readyToReadP,
+            abyss_bool * const readyToWriteP,
+            abyss_bool * const failedP) {
+/*----------------------------------------------------------------------------
+  See socket_unix.c for an explanation of the purpose of this
+  subroutine.
+
+  We don't actually fulfill that purpose, though, because we don't know
+  how yet.  Instead, we return immediately and hope that if Caller
+  subsequently does a read or write, it blocks until it can do its thing.
+-----------------------------------------------------------------------------*/
+
+}
+
+
+
+static ChannelInterruptImpl channelInterrupt;
+
+static void
+channelInterrupt(TChannel * const channelP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in channelWait()
+  now or in the future.
+-----------------------------------------------------------------------------*/
+
+    /* This is trivial, since channelWait() doesn't actually wait */
+}
+
+
+
 static struct TChannelVtbl const channelVtbl = {
     &channelDestroy,
     &channelWrite,
     &channelRead,
     &channelWait,
+    &channelInterrupt,
     &channelFormatPeerInfo,
 };
 
@@ -437,6 +475,22 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
                             errno, strerror(errno));
     }
     *channelPP = channelP;
+}
+
+
+
+static SwitchInterruptImpl chanSwitchInterrupt;
+
+static void
+chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in chanSwitchAccept()
+  now or in the future.
+
+  Actually, this is a no-op, since we don't yet know how to accomplish
+  that.
+-----------------------------------------------------------------------------*/
+
 }
 
 

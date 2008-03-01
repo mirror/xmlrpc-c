@@ -331,6 +331,25 @@ channelWait(TChannel *   const channelP,
 
 
 
+static ChannelInterruptImpl channelInterrupt;
+
+static void
+channelInterrupt(TChannel * const channelP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in channelWait()
+  now or in the future.
+
+  TODO: Make a way to reset this so that future channelWait()s can once
+  again wait.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * const socketUnixP = channelP->implP;
+    unsigned char const zero[1] = {0u};
+
+    write(socketUnixP->interruptPipe.interruptorFd, &zero, sizeof(zero));
+}
+
+
+
 void
 ChannelUnixGetPeerName(TChannel *         const channelP,
                        struct sockaddr ** const sockaddrPP,
@@ -426,6 +445,7 @@ static struct TChannelVtbl const channelVtbl = {
     &channelWrite,
     &channelRead,
     &channelWait,
+    &channelInterrupt,
     &channelFormatPeerInfo,
 };
 
@@ -726,10 +746,31 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
 
 
+static SwitchInterruptImpl chanSwitchInterrupt;
+
+static void
+chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in chanSwitchAccept()
+  now or in the future.
+
+  TODO: Make a way to reset this so that future chanSwitchAccept()s can once
+  again wait.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * const listenSocketP = chanSwitchP->implP;
+
+    unsigned char const zero[1] = {0u};
+
+    write(listenSocketP->interruptPipe.interruptorFd, &zero, sizeof(zero));
+}
+
+
+
 static struct TChanSwitchVtbl const chanSwitchVtbl = {
     &chanSwitchDestroy,
     &chanSwitchListen,
     &chanSwitchAccept,
+    &chanSwitchInterrupt,
 };
 
 

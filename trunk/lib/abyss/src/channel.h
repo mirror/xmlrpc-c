@@ -44,6 +44,8 @@ typedef void ChannelWaitImpl(TChannel *   const channelP,
                              abyss_bool * const readyToWriteP,
                              abyss_bool * const failedP);
 
+typedef void ChannelInterruptImpl(TChannel * const channelP);
+
 typedef void ChannelFormatPeerInfoImpl(TChannel *    const channelP,
                                        const char ** const peerStringP);
 
@@ -52,6 +54,7 @@ struct TChannelVtbl {
     ChannelWriteImpl              * write;
     ChannelReadImpl               * read;
     ChannelWaitImpl               * wait;
+    ChannelInterruptImpl          * interrupt;
     ChannelFormatPeerInfoImpl     * formatPeerInfo;
 };
 
@@ -97,6 +100,9 @@ ChannelWait(TChannel *   const channelP,
             abyss_bool * const readyToReadP,
             abyss_bool * const readyToWriteP,
             abyss_bool * const failedP);
+
+void
+ChannelInterrupt(TChannel * const channelP);
 
 void
 ChannelFormatPeerInfo(TChannel *    const channelP,

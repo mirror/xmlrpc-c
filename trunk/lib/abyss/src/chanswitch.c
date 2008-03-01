@@ -151,3 +151,16 @@ ChanSwitchAccept(TChanSwitch * const chanSwitchP,
         fprintf(stderr, "Got connection from channel switch.  "
                 "Channel = %p\n", *channelPP);
 }
+
+
+
+void
+ChanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
+
+    if (SwitchTraceIsActive)
+        fprintf(stderr, "Interrupting wait for a connection "
+                "by Channel switch %p...\n",
+                chanSwitchP);
+
+    (*chanSwitchP->vtbl.interrupt)(chanSwitchP);
+}
