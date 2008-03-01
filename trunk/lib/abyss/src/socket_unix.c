@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -26,6 +27,7 @@
   #include <sys/filio.h>
 #endif
 
+#include "c_util.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "mallocvar.h"
@@ -202,60 +204,85 @@ static void
 channelWait(TChannel *   const channelP,
             abyss_bool   const waitForRead,
             abyss_bool   const waitForWrite,
-            uint32_t     const timems,
+            uint32_t     const timeoutMs,
             abyss_bool * const readyToReadP,
             abyss_bool * const readyToWriteP,
             abyss_bool * const failedP) {
+/*----------------------------------------------------------------------------
+   Wait for the channel to be immediately readable or writable.
 
+   Readable means there is at least one byte of data to read or the
+   partner has disconnected.  Writable means the channel will take at
+   least one byte of data to send or the partner has disconnected.
+
+   'waitForRead' and 'waitForWrite' determine which of these
+   conditions for which to wait; if both are true, we wait for either
+   one.
+
+   We return before the requested condition holds if 'timeoutMs'
+   milliseconds pass.  timoutMs == TIME_INFINITE means infinity.
+
+   We return before the requested condition holds if the process receives
+   (and catches) a signal, but only if it receives that signal a certain
+   time after we start running.  (That means this function isn't useful
+   for most purposes).
+
+   Return *readyToReadP == true if the reason for returning is that
+   the channel is immediately readable.  *readyToWriteP is analogous
+   for writable.  Both may be true.
+
+   Return *failedP true iff we fail to wait for the requested
+   condition because of some unusual problem.  Being interrupted by a
+   signal is not a failure.
+
+   If one of these return value pointers is NULL, don't return that
+   value.
+-----------------------------------------------------------------------------*/
     struct socketUnix * const socketUnixP = channelP->implP;
 
-    fd_set rfds, wfds;
-    struct timeval tv;
-    abyss_bool failed, readRdy, writeRdy, timedOut;
+    /* Design note: some old systems may not have poll().  We're assuming
+       that we don't have to run on any such system.  select() is more
+       universal, but can't handle a file descriptor with a high number.
 
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
+       pselect() and ppoll() would allow us to be properly
+       interruptible by a signal -- we would add a signal mask to our
+       arguments.  But ppoll() is fairly rare.  pselect() is more
+       common, but in older Linux systems it doesn't actually work.
+    */
+    bool readyToRead, readyToWrite, failed;
+    struct pollfd pollfds[1];
+    int rc;
 
-    if (waitForRead)
-        FD_SET(socketUnixP->fd, &rfds);
+    pollfds[0].fd = socketUnixP->fd;
+    pollfds[0].events =
+        (waitForRead  ? POLLIN  : 0) |
+        (waitForWrite ? POLLOUT : 0);
+    
+    rc = poll(pollfds, ARRAY_SIZE(pollfds),
+              timeoutMs == TIME_INFINITE ? -1 : timeoutMs);
 
-    if (waitForWrite)
-        FD_SET(socketUnixP->fd, &wfds);
-
-    tv.tv_sec  = timems / 1000;
-    tv.tv_usec = timems % 1000;
-
-    for (failed = FALSE, readRdy = FALSE, writeRdy = FALSE, timedOut = FALSE;
-         !failed && !readRdy && !writeRdy && !timedOut;
-        ) {
-
-        int rc;
-
-        rc = select(socketUnixP->fd + 1, &rfds, &wfds, NULL,
-                    (timems == TIME_INFINITE ? NULL : &tv));
-
-        switch(rc) {   
-        case 0:
-            timedOut = TRUE;
-            break;
-        case -1:  /* socket error */
-            if (errno != EINTR)
-                failed = TRUE;
-            break;
-        default:
-            if (FD_ISSET(socketUnixP->fd, &rfds))
-                readRdy = TRUE;
-            if (FD_ISSET(socketUnixP->fd, &wfds))
-                writeRdy = TRUE;
+    if (rc < 0) {
+        if (errno == EINTR) {
+            failed       = FALSE;
+            readyToRead  = FALSE;
+            readyToWrite = FALSE;
+        } else {
+            failed       = TRUE;
+            readyToRead  = FALSE; /* quiet compiler warning */
+            readyToWrite = FALSE; /* quite compiler warning */
         }
+    } else {
+        failed       = FALSE;
+        readyToRead  = !!(pollfds[0].revents & POLLIN);
+        readyToWrite = !!(pollfds[0].revents & POLLOUT);
     }
 
     if (failedP)
         *failedP       = failed;
     if (readyToReadP)
-        *readyToReadP  = readRdy;
+        *readyToReadP  = readyToRead;
     if (readyToWriteP)
-        *readyToWriteP = writeRdy;
+        *readyToWriteP = readyToWrite;
 }
 
 

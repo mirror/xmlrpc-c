@@ -342,8 +342,6 @@ ConnRead(TConn *  const connectionP,
     while (!gotData && !cantGetData) {
         int const timeLeft = (int)(deadline - time(NULL));
 
-        assert (timeLeft == deadline - time(NULL));
-
         if (timeLeft <= 0)
             cantGetData = TRUE;
         else {
@@ -356,7 +354,7 @@ ConnRead(TConn *  const connectionP,
             ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
                         timeLeft * 1000, &readyForRead, NULL, &failed);
             
-            if (failed || !readyForRead)
+            if (failed)
                 cantGetData = TRUE;
             else {
                 uint32_t bytesRead;
