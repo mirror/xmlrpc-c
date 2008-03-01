@@ -904,7 +904,16 @@ readAndProcessHeaders(TSession * const sessionP,
 void
 RequestRead(TSession * const sessionP,
             uint32_t   const timeout) {
+/*----------------------------------------------------------------------------
+   Read the headers of a new HTTP request (assuming nothing has yet been
+   read on the session).
 
+   Update *sessionP with the information from the headers.
+
+   Leave the connection positioned to the body of the request, ready
+   to be read by an HTTP request handler (via SessionRefillBuffer() and
+   SessionGetReadData()).
+-----------------------------------------------------------------------------*/
     time_t const deadline = time(NULL) + timeout;
 
     uint16_t httpErrorCode;  /* zero for no error */
