@@ -95,6 +95,8 @@ RequestInit(TSession * const sessionP,
     sessionP->chunkedwrite = FALSE;
     sessionP->chunkedwritemode = FALSE;
 
+    sessionP->continueRequired = FALSE;
+
     ListInit(&sessionP->cookies);
     ListInit(&sessionP->ranges);
     TableInit(&sessionP->request_headers);
@@ -475,6 +477,9 @@ processHeader(const char * const fieldName,
         abyss_bool succeeded;
         succeeded = ListAddFromString(&sessionP->cookies, fieldValue);
         *httpErrorCodeP = succeeded ? 0 : 400;
+    } else if (xmlrpc_streq(fieldName, "expect")) {
+        if (xmlrpc_strcaseeq(fieldValue, "100-continue"))
+            sessionP->continueRequired = TRUE;
     }
 }
 
@@ -804,6 +809,17 @@ HTTPKeepalive(TSession * const sessionP) {
     return (sessionP->request_info.keepalive &&
             !sessionP->serverDeniesKeepalive &&
             sessionP->status < 400);
+}
+
+
+
+abyss_bool
+HTTPWriteContinue(TSession * const sessionP) {
+
+    char const continueStatus[] = "HTTP/1.1 100 continue\r\n\r\n";
+        /* This is a status line plus an end-of-headers empty line */
+
+    return ConnWrite(sessionP->conn, continueStatus, strlen(continueStatus));
 }
 
 

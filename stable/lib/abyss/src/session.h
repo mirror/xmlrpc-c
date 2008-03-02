@@ -49,6 +49,11 @@ struct _TSession {
 
     abyss_bool chunkedwrite;
     abyss_bool chunkedwritemode;
+
+    abyss_bool continueRequired;
+        /* This client must receive 100 (continue) status before it will
+           send more of the body of the request.
+        */
 };
 
 
