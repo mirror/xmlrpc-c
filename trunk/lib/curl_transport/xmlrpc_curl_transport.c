@@ -561,7 +561,7 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
    this code dates to a time when libcurl did not have the ability to
    handle authentication, but we provided such function nonetheless by
    building our own Authorization: header.  But we did this only for
-   HPTT basic authentication.
+   HTTP basic authentication.
 
    So the special function is this: if libcurl is too old to have
    authorization options and *serverInfoP allows basic authentication,
