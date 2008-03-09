@@ -16,6 +16,7 @@
 =============================================================================*/
 
 #include <cassert>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <unistd.h>

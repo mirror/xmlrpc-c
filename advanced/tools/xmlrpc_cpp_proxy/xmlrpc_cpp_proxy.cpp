@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+#include <cstdlib>
 
 #include "xmlrpcType.hpp"
 #include "xmlrpcMethod.hpp"

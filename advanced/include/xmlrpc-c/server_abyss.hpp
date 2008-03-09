@@ -88,6 +88,7 @@ public:
     class shutdown : public xmlrpc_c::registry::shutdown {
     public:
         shutdown(xmlrpc_c::serverAbyss * const severAbyssP);
+        virtual ~shutdown();
         void doit(std::string const& comment, void * const callInfo) const;
     private:
         xmlrpc_c::serverAbyss * const serverAbyssP;

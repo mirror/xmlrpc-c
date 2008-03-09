@@ -19,10 +19,6 @@
 
 #include "getoptx.h"
 
-#ifdef _AIX
-#pragma alloca
-#endif
-
 /* Note that on some systems, the header files above declare variables
    for use with their native getopt facilities, and those variables have
    the same names as we'd like to use.  So we use things like optargx
@@ -94,7 +90,10 @@ static void
 exchange(char ** const argv) {
     unsigned int const nonopts_size = 
         (last_nonopt - first_nonopt) * sizeof (char *);
-    char **temp = (char **) alloca (nonopts_size);
+    char **temp = (char **) malloc (nonopts_size);
+
+    if (temp == NULL)
+        abort();
 
     /* Interchange the two blocks of data in argv.  */
 
@@ -108,6 +107,8 @@ exchange(char ** const argv) {
 
     first_nonopt += (optindx - last_nonopt);
     last_nonopt = optindx;
+
+    free(temp);
 }
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters

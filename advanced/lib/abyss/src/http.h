@@ -44,4 +44,7 @@ HTTPWriteEndChunk(TSession * const sessionP);
 abyss_bool
 HTTPKeepalive(TSession * const sessionP);
 
+abyss_bool
+HTTPWriteContinue(TSession * const sessionP);
+
 #endif
