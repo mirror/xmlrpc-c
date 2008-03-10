@@ -40,6 +40,9 @@ ServerTerminate(TServer * const serverP) {
     struct _TServer * const srvP = serverP->srvP;
 
     srvP->terminationRequested = true;
+
+    if (srvP->chanSwitchP)
+        ChanSwitchInterrupt(srvP->chanSwitchP);
 }
 
 
