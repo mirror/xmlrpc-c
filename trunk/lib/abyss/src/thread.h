@@ -5,6 +5,8 @@
 ** Thread
 *********************************************************************/
 
+#include "xmlrpc-c/abyss.h"  /* for abyss_bool */
+
 typedef struct abyss_thread TThread;
 
 void
