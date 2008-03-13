@@ -407,10 +407,10 @@ channelWait(TChannel *   const channelP,
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
 
-    if (rd)
+    if (waitForRead)
         FD_SET(socketWinP->winsock, &rfds);
 
-    if (wr)
+    if (waitForWrite)
         FD_SET(socketWinP->winsock, &wfds);
 
     tv.tv_sec  = timems / 1000;
