@@ -169,8 +169,8 @@ ChannelWait(TChannel *   const channelP,
             fprintf(stderr, "Waiting %u milliseconds for channel %p "
                     "to be writable\n", timems, channelP);
     }
-    return (*channelP->vtbl.wait)(channelP, waitForRead, waitForWrite, timems,
-                                  readyToReadP, readyToWriteP, failedP);
+    (*channelP->vtbl.wait)(channelP, waitForRead, waitForWrite, timems,
+                           readyToReadP, readyToWriteP, failedP);
 }
 
 
@@ -181,7 +181,7 @@ ChannelInterrupt(TChannel * const channelP) {
     if (ChannelTraceIsActive)
         fprintf(stderr, "Interrupting channel waits");
 
-    return (*channelP->vtbl.interrupt)(channelP);
+    (*channelP->vtbl.interrupt)(channelP);
 }
 
 
