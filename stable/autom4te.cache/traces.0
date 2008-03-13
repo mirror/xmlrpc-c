@@ -61,7 +61,7 @@ You should run autoupdate.], [autoconf/status.m4:321: _AC_OUTPUT_COMMANDS_CNT is
 autoconf/status.m4:318: AC_OUTPUT_COMMANDS is expanded from...
 aclocal.m4:34: AM_CONFIG_HEADER is expanded from...
 configure.in:4: the top level])
-m4trace:configure.in:11: -1- AM_INIT_AUTOMAKE([xmlrpc-c], [1.06.24])
+m4trace:configure.in:11: -1- AM_INIT_AUTOMAKE([xmlrpc-c], [1.06.25])
 m4trace:configure.in:11: -1- AC_PROG_INSTALL
 m4trace:configure.in:11: -1- AC_SUBST([INSTALL_PROGRAM])
 m4trace:configure.in:11: -1- AC_SUBST([INSTALL_SCRIPT])

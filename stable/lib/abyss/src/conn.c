@@ -262,7 +262,7 @@ traceSocketRead(TConn *      const connectionP,
                 unsigned int const size) {
 
     if (connectionP->trace)
-        traceBuffer("READ FROM SOCKET:",
+        traceBuffer("READ FROM SOCKET",
                     connectionP->buffer + connectionP->buffersize, size);
 }
 
@@ -276,7 +276,7 @@ traceSocketWrite(TConn *      const connectionP,
 
     if (connectionP->trace) {
         const char * const label =
-            failed ? "FAILED TO WRITE TO SOCKET:" : "WROTE TO SOCKET";
+            failed ? "FAILED TO WRITE TO SOCKET" : "WROTE TO SOCKET";
         traceBuffer(label, buffer, size);
     }
 }
@@ -447,12 +447,15 @@ processHeaderLine(char *       const start,
                   char **      const nextP,
                   abyss_bool * const errorP) {
 /*----------------------------------------------------------------------------
-  If there's enough data in the buffer at *pP, process a line of HTTP
+  If there's enough data in the buffer, process a line of HTTP
   header.
 
   It is part of a header that starts at 'headerStart' and has been
-  previously processed up to 'start'.  The data in the buffer is
-  terminated by a NUL.
+  previously processed up to the line starting at 'start'.  The data
+  in the buffer is terminated by a NUL.
+
+  Return as *nextP the location of the next header line to process
+  (same as 'start' if we didn't find a line to process).
 
   WE MODIFY THE DATA.
 -----------------------------------------------------------------------------*/
@@ -562,8 +565,11 @@ ConnReadHeader(TConn * const connectionP,
         if (timeLeft <= 0)
             error = TRUE;
         else {
-            if (p >= connectionP->buffer + connectionP->buffersize)
-                /* Need more data from the socket to chew on */
+            if (p >= connectionP->buffer + connectionP->buffersize
+                || !strchr(p, LF))
+                /* There is no line yet in the buffer.
+                   Need more data from the socket to chew on
+                */
                 error = !ConnRead(connectionP, timeLeft);
 
             if (!error) {

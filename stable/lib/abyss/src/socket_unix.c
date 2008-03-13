@@ -201,7 +201,7 @@ socketWrite(TSocket *             const socketP,
                         "Socket closed.\n");
             else
                 fprintf(stderr, "Abyss socket: sent %u bytes: '%.*s'\n",
-                        -rc, -rc, &buffer[len-bytesLeft]);
+                        rc, rc, &buffer[len-bytesLeft]);
         }
         if (rc <= 0)
             /* 0 means connection closed; < 0 means severe error */
@@ -380,6 +380,10 @@ socketWait(TSocket *  const socketP,
     fd_set rfds, wfds;
     struct timeval tv;
 
+    if (SocketTraceIsActive)
+        fprintf(stderr, "Waiting %u milliseconds for %s %s of socket\n",
+                timems, rd ? "READ" : "", wr ? "WRITE" : "");
+
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
 
@@ -430,6 +434,13 @@ socketAvailableReadBytes(TSocket * const socketP) {
 
     rc = ioctl(socketUnixP->fd, FIONREAD, &x);
 
+    if (SocketTraceIsActive) {
+        if (rc == 0)
+            fprintf(stderr, "Socket has %u bytes available\n", x);
+        else
+            fprintf(stderr, "ioctl(FIONREAD) failed, errno=%d (%s)\n",
+                    errno, strerror(errno));
+    }
     return rc == 0 ? x : 0;
 }
 
