@@ -1,6 +1,7 @@
 #ifndef CONN_H_INCLUDED
 #define CONN_H_INCLUDED
 
+#include "bool.h"
 #include "xmlrpc-c/abyss.h"
 #include "thread.h"
 
@@ -32,9 +33,9 @@ struct _TConn {
 
            NULL means no channel info is available.
         */
-    abyss_bool hasOwnThread;
+    bool hasOwnThread;
     TThread * threadP;
-    abyss_bool finished;
+    bool finished;
         /* We have done all the processing there is to do on this
            connection, other than possibly notifying someone that we're
            done.  One thing this signifies is that any thread or process
@@ -64,31 +65,31 @@ ConnCreate(TConn **            const connectionPP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
-           abyss_bool          const useSigchld,
+           bool                const useSigchld,
            const char **       const errorP);
 
-abyss_bool
+bool
 ConnProcess(TConn * const connectionP);
 
-abyss_bool
+bool
 ConnKill(TConn * const connectionP);
 
 void
 ConnWaitAndRelease(TConn * const connectionP);
 
-abyss_bool
+bool
 ConnWrite(TConn *      const connectionP,
           const void * const buffer,
           uint32_t     const size);
 
-abyss_bool
+bool
 ConnRead(TConn *  const c,
          uint32_t const timems);
 
 void
 ConnReadInit(TConn * const connectionP);
 
-abyss_bool
+bool
 ConnWriteFromFile(TConn *              const connectionP,
                   const struct TFile * const fileP,
                   uint64_t             const start,

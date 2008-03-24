@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <assert.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
@@ -77,7 +78,7 @@ threadDone(void * const userHandle) {
 static void
 makeThread(TConn *             const connectionP,
            enum abyss_foreback const foregroundBackground,
-           abyss_bool          const useSigchld,
+           bool                const useSigchld,
            const char **       const errorP) {
            
     switch (foregroundBackground) {
@@ -111,7 +112,7 @@ ConnCreate(TConn **            const connectionPP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
-           abyss_bool          const useSigchld,
+           bool                const useSigchld,
            const char **       const errorP) {
 /*----------------------------------------------------------------------------
    Create an HTTP connection.
@@ -166,7 +167,7 @@ ConnCreate(TConn **            const connectionPP,
 
 
 
-abyss_bool
+bool
 ConnProcess(TConn * const connectionP) {
 /*----------------------------------------------------------------------------
    Drive the main processing of a connection -- run the connection's
@@ -178,7 +179,7 @@ ConnProcess(TConn * const connectionP) {
    we return or some time after.  If we fail, we guarantee the "done"
    function will not be called.
 -----------------------------------------------------------------------------*/
-    abyss_bool retval;
+    bool retval;
 
     if (connectionP->hasOwnThread) {
         /* There's a background thread to handle this connection.  Set
@@ -206,7 +207,7 @@ ConnWaitAndRelease(TConn * const connectionP) {
 
 
 
-abyss_bool
+bool
 ConnKill(TConn * const connectionP) {
     connectionP->finished = TRUE;
     return ThreadKill(connectionP->threadP);
@@ -301,7 +302,7 @@ static void
 traceChannelWrite(TConn *      const connectionP,
                   const char * const buffer,
                   unsigned int const size,
-                  abyss_bool   const failed) {
+                  bool         const failed) {
     
     if (connectionP->trace) {
         const char * const label =
@@ -320,7 +321,7 @@ bufferSpace(TConn * const connectionP) {
                     
 
 
-abyss_bool
+bool
 ConnRead(TConn *  const connectionP,
          uint32_t const timeout) {
 /*----------------------------------------------------------------------------
@@ -333,8 +334,8 @@ ConnRead(TConn *  const connectionP,
 -----------------------------------------------------------------------------*/
     time_t const deadline = time(NULL) + timeout;
 
-    abyss_bool cantGetData;
-    abyss_bool gotData;
+    bool cantGetData;
+    bool gotData;
 
     cantGetData = FALSE;
     gotData = FALSE;
@@ -345,11 +346,11 @@ ConnRead(TConn *  const connectionP,
         if (timeLeft <= 0)
             cantGetData = TRUE;
         else {
-            abyss_bool const waitForRead  = TRUE;
-            abyss_bool const waitForWrite = FALSE;
+            bool const waitForRead  = TRUE;
+            bool const waitForWrite = FALSE;
             
-            abyss_bool readyForRead;
-            abyss_bool failed;
+            bool readyForRead;
+            bool failed;
             
             ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
                         timeLeft * 1000, &readyForRead, NULL, &failed);
@@ -358,7 +359,7 @@ ConnRead(TConn *  const connectionP,
                 cantGetData = TRUE;
             else {
                 uint32_t bytesRead;
-                abyss_bool readFailed;
+                bool readFailed;
 
                 ChannelRead(connectionP->channelP,
                             connectionP->buffer + connectionP->buffersize,
@@ -389,12 +390,12 @@ ConnRead(TConn *  const connectionP,
 
 
             
-abyss_bool
+bool
 ConnWrite(TConn *      const connectionP,
           const void * const buffer,
           uint32_t     const size) {
 
-    abyss_bool failed;
+    bool failed;
 
     ChannelWrite(connectionP->channelP, buffer, size, &failed);
 
@@ -408,7 +409,7 @@ ConnWrite(TConn *      const connectionP,
 
 
 
-abyss_bool
+bool
 ConnWriteFromFile(TConn *       const connectionP,
                   const TFile * const fileP,
                   uint64_t      const start,
@@ -424,9 +425,9 @@ ConnWriteFromFile(TConn *       const connectionP,
 
    Use the 'bufferSize' bytes at 'buffer' as an internal buffer for this.
 -----------------------------------------------------------------------------*/
-    abyss_bool retval;
+    bool retval;
     uint32_t waittime;
-    abyss_bool success;
+    bool success;
     uint32_t readChunkSize;
 
     if (rate > 0) {

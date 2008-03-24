@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
@@ -151,11 +152,11 @@ firstLfPos(TConn * const connectionP,
 
 
 static void
-getLineInBuffer(TConn *      const connectionP,
-                char *       const lineStart,
-                time_t       const deadline,
-                char **      const lineEndP,
-                abyss_bool * const errorP) {
+getLineInBuffer(TConn * const connectionP,
+                char *  const lineStart,
+                time_t  const deadline,
+                char ** const lineEndP,
+                bool *  const errorP) {
 /*----------------------------------------------------------------------------
    Get a line into the connection's read buffer, starting at position
    'lineStart', if there isn't one already there.   'lineStart' is either
@@ -164,7 +165,7 @@ getLineInBuffer(TConn *      const connectionP,
    Read the channel until we get a full line, except fail if we don't get
    one by 'deadline'.
 -----------------------------------------------------------------------------*/
-    abyss_bool error;
+    bool error;
     char * lfPos;
 
     assert(lineStart <= connectionP->buffer + connectionP->buffersize);
@@ -189,7 +190,7 @@ getLineInBuffer(TConn *      const connectionP,
 
 
 
-static abyss_bool
+static bool
 isContinuationLine(const char * const line) {
 
     return (line[0] == ' ' || line[0] == '\t');
@@ -197,7 +198,7 @@ isContinuationLine(const char * const line) {
 
 
 
-static abyss_bool
+static bool
 isEmptyLine(const char * const line) {
 
     return (line[0] == '\n' || (line[0] == '\r' && line[1] == '\n'));
@@ -231,7 +232,7 @@ getRestOfHeader(TConn *       const connectionP,
                 char *        const lineEnd,
                 time_t        const deadline,
                 const char ** const headerEndP,
-                abyss_bool *  const errorP) {
+                bool *        const errorP) {
 /*----------------------------------------------------------------------------
    Given that the read buffer for connection *connectionP contains (at
    its current read position) the first line of an HTTP header, which
@@ -250,8 +251,8 @@ getRestOfHeader(TConn *       const connectionP,
 
     char * headerEnd;
         /* End of the header lines we've seen at so far */
-    abyss_bool gotWholeHeader;
-    abyss_bool error;
+    bool gotWholeHeader;
+    bool error;
 
     headerEnd = lineEnd;  /* initial value - end of 1st line */
         
@@ -287,11 +288,11 @@ getRestOfHeader(TConn *       const connectionP,
 
 
 static void
-readHeader(TConn *      const connectionP,
-           time_t       const deadline,
-           abyss_bool * const endOfHeadersP,
-           char **      const headerP,
-           abyss_bool * const errorP) {
+readHeader(TConn * const connectionP,
+           time_t  const deadline,
+           bool *  const endOfHeadersP,
+           char ** const headerP,
+           bool *  const errorP) {
 /*----------------------------------------------------------------------------
    Read an HTTP header, or the end of headers empty line, on connection
    *connectionP.
@@ -323,7 +324,7 @@ readHeader(TConn *      const connectionP,
 -----------------------------------------------------------------------------*/
     char * const bufferStart = connectionP->buffer + connectionP->bufferpos;
 
-    abyss_bool error;
+    bool error;
     char * lineEnd;
 
     getLineInBuffer(connectionP, bufferStart, deadline, &lineEnd, &error);
@@ -362,14 +363,14 @@ readHeader(TConn *      const connectionP,
 
 
 static void
-skipToNonemptyLine(TConn *      const connectionP,
-                   time_t       const deadline,
-                   abyss_bool * const errorP) {
+skipToNonemptyLine(TConn * const connectionP,
+                   time_t  const deadline,
+                   bool *  const errorP) {
 
     char * const bufferStart = connectionP->buffer + connectionP->bufferpos;
 
-    abyss_bool gotNonEmptyLine;
-    abyss_bool error;
+    bool gotNonEmptyLine;
+    bool error;
     char * lineStart;
     
     lineStart       = bufferStart;  /* initial value */
@@ -426,8 +427,8 @@ readRequestHeader(TSession * const sessionP,
    If we can't, *requestLineP is meaningless.
 -----------------------------------------------------------------------------*/
     char * line;
-    abyss_bool error;
-    abyss_bool endOfHeaders;
+    bool error;
+    bool endOfHeaders;
 
     skipToNonemptyLine(sessionP->conn, deadline, &error);
 
@@ -450,8 +451,8 @@ readRequestHeader(TSession * const sessionP,
 
 
 static void
-unescapeUri(char *       const uri,
-            abyss_bool * const errorP) {
+unescapeUri(char * const uri,
+            bool * const errorP) {
 
     char * x;
     char * y;
@@ -576,7 +577,7 @@ parseRequestUri(char *           const requestUri,
 
   This destroys 'requestUri'.  We should fix that.
 -----------------------------------------------------------------------------*/
-    abyss_bool error;
+    bool error;
 
     unescapeUri(requestUri, &error);
     
@@ -661,7 +662,7 @@ parseRequestLine(char *           const requestLine,
                  unsigned short * const portP,
                  const char **    const pathP,
                  const char **    const queryP,
-                 abyss_bool *     const moreLinesP,
+                 bool *           const moreLinesP,
                  uint16_t *       const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    Modifies *requestLine!
@@ -836,12 +837,12 @@ processHeader(const char * const fieldName,
         sessionP->requestInfo.referer = fieldValue;
     else if (xmlrpc_streq(fieldName, "range")) {
         if (xmlrpc_strneq(fieldValue, "bytes=", 6)) {
-            abyss_bool succeeded;
+            bool succeeded;
             succeeded = ListAddFromString(&sessionP->ranges, &fieldValue[6]);
             *httpErrorCodeP = succeeded ? 0 : 400;
         }
     } else if (xmlrpc_streq(fieldName, "cookies")) {
-        abyss_bool succeeded;
+        bool succeeded;
         succeeded = ListAddFromString(&sessionP->cookies, fieldValue);
         *httpErrorCodeP = succeeded ? 0 : 400;
     } else if (xmlrpc_streq(fieldName, "expect")) {
@@ -865,7 +866,7 @@ readAndProcessHeaders(TSession * const sessionP,
    return an appropriate HTTP error code as *httpErrorCodeP.  Otherwise,
    we return *httpErrorCodeP = 0.
 -----------------------------------------------------------------------------*/
-    abyss_bool endOfHeaders;
+    bool endOfHeaders;
 
     assert(!sessionP->validRequest);
         /* Calling us doesn't make sense if there is already a valid request */
@@ -875,7 +876,7 @@ readAndProcessHeaders(TSession * const sessionP,
 
     while (!endOfHeaders && !*httpErrorCodeP) {
         char * header;
-        abyss_bool error;
+        bool error;
         readHeader(sessionP->conn, deadline, &endOfHeaders, &header, &error);
         if (error)
             *httpErrorCodeP = 408;  /* Request Timeout */
@@ -931,7 +932,7 @@ RequestRead(TSession * const sessionP,
         const char * path;
         const char * query;
         unsigned short port;
-        abyss_bool moreHeaders;
+        bool moreHeaders;
 
         parseRequestLine(requestLine, &httpMethod, &sessionP->version,
                          &host, &port, &path, &query,
@@ -968,7 +969,7 @@ RequestHeaderValue(TSession *   const sessionP,
 
 
 
-abyss_bool
+bool
 RequestValidURI(TSession * const sessionP) {
 
     if (!sessionP->requestInfo.uri)
@@ -985,7 +986,7 @@ RequestValidURI(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 RequestValidURIPath(TSession * const sessionP) {
 
     uint32_t i;
@@ -1023,7 +1024,7 @@ RequestValidURIPath(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 RequestAuth(TSession *   const sessionP,
             const char * const credential,
             const char * const user,
@@ -1040,7 +1041,7 @@ RequestAuth(TSession *   const sessionP,
    When we return TRUE, we also set the username in the request info
    to 'user' so that a future SessionGetRequestInfo can get it.
 -----------------------------------------------------------------------------*/
-    abyss_bool authorized;
+    bool authorized;
     char * authHdrPtr;
 
     authHdrPtr = RequestHeaderValue(sessionP, "authorization");
@@ -1205,12 +1206,12 @@ HTTPRead(TSession *   const s ATTR_UNUSED,
 
 
 
-abyss_bool
+bool
 HTTPWriteBodyChunk(TSession *   const sessionP,
                    const char * const buffer,
                    uint32_t     const len) {
 
-    abyss_bool succeeded;
+    bool succeeded;
 
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
         char chunkHeader[16];
@@ -1232,10 +1233,10 @@ HTTPWriteBodyChunk(TSession *   const sessionP,
 
 
 
-abyss_bool
+bool
 HTTPWriteEndChunk(TSession * const sessionP) {
 
-    abyss_bool retval;
+    bool retval;
 
     if (sessionP->chunkedwritemode && sessionP->chunkedwrite) {
         /* May be one day trailer dumping will be added */
@@ -1249,7 +1250,7 @@ HTTPWriteEndChunk(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 HTTPKeepalive(TSession * const sessionP) {
 /*----------------------------------------------------------------------------
    Return value: the connection should be kept alive after the session
@@ -1262,7 +1263,7 @@ HTTPKeepalive(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 HTTPWriteContinue(TSession * const sessionP) {
 
     char const continueStatus[] = "HTTP/1.1 100 continue\r\n\r\n";

@@ -60,11 +60,12 @@
   typedef ssize_t readwriterc_t;
 #endif
 
+#include "bool.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "file.h"
 
-abyss_bool const win32 =
+bool const win32 =
 #ifdef WIN32
 TRUE;
 #else
@@ -91,11 +92,11 @@ struct TFileFind {
 *********************************************************************/
 
 static void
-createFileImage(TFile **      const filePP,
-                const char *  const name,
-                uint32_t      const attrib,
-                abyss_bool    const createFile,
-                abyss_bool *  const succeededP) {
+createFileImage(TFile **     const filePP,
+                const char * const name,
+                uint32_t     const attrib,
+                bool         const createFile,
+                bool *       const succeededP) {
 
     TFile * fileP;
 
@@ -124,12 +125,12 @@ createFileImage(TFile **      const filePP,
 
 
 
-abyss_bool
+bool
 FileOpen(TFile **     const filePP,
          const char * const name,
          uint32_t     const attrib) {
 
-    abyss_bool succeeded;
+    bool succeeded;
 
     createFileImage(filePP, name, attrib, FALSE, &succeeded);
 
@@ -138,12 +139,12 @@ FileOpen(TFile **     const filePP,
 
 
 
-abyss_bool
+bool
 FileOpenCreate(TFile **     const filePP,
                const char * const name,
                uint32_t     const attrib) {
 
-    abyss_bool succeeded;
+    bool succeeded;
 
     createFileImage(filePP, name, attrib, TRUE, &succeeded);
 
@@ -152,7 +153,7 @@ FileOpenCreate(TFile **     const filePP,
 
 
 
-abyss_bool
+bool
 FileWrite(const TFile * const fileP,
           const void *  const buffer,
           uint32_t      const len) {
@@ -176,7 +177,7 @@ FileRead(const TFile * const fileP,
 
 
 
-abyss_bool
+bool
 FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib) {
@@ -207,7 +208,7 @@ FileSize(const TFile * const fileP) {
 
 
 
-abyss_bool
+bool
 FileClose(TFile * const fileP) {
 
     int rc;
@@ -222,7 +223,7 @@ FileClose(TFile * const fileP) {
 
 
 
-abyss_bool
+bool
 FileStat(const char * const filename,
          TFileStat *  const filestat) {
 
@@ -242,7 +243,7 @@ static void
 fileFindFirstWin(TFileFind *  const filefindP ATTR_UNUSED,
                  const char * const path,
                  TFileInfo *  const fileinfo  ATTR_UNUSED,
-                 abyss_bool * const retP      ATTR_UNUSED) {
+                 bool *       const retP      ATTR_UNUSED) {
     const char * search;
 
     xmlrpc_asprintf(&search, "%s\\*", path);
@@ -274,7 +275,7 @@ static void
 fileFindFirstPosix(TFileFind *  const filefindP,
                    const char * const path,
                    TFileInfo *  const fileinfo,
-                   abyss_bool * const retP) {
+                   bool *       const retP) {
     
 #if !MSVCRT
     strncpy(filefindP->path, path, NAME_MAX);
@@ -289,12 +290,12 @@ fileFindFirstPosix(TFileFind *  const filefindP,
     
 
 
-abyss_bool
+bool
 FileFindFirst(TFileFind ** const filefindPP,
               const char * const path,
               TFileInfo *  const fileinfo) {
 
-    abyss_bool succeeded;
+    bool succeeded;
 
     TFileFind * filefindP;
 
@@ -318,15 +319,15 @@ FileFindFirst(TFileFind ** const filefindPP,
 
 
 static void
-fileFindNextWin(TFileFind *  const filefindP ATTR_UNUSED,
-                TFileInfo *  const fileinfo  ATTR_UNUSED,
-                abyss_bool * const retvalP   ATTR_UNUSED) {
+fileFindNextWin(TFileFind * const filefindP ATTR_UNUSED,
+                TFileInfo * const fileinfo  ATTR_UNUSED,
+                bool *      const retvalP   ATTR_UNUSED) {
 
 #if MSVCRT
     *retvalP = _findnexti64(filefindP->handle, fileinfo) != -1;
 #else
 #ifdef WIN32
-    abyss_bool found;
+    bool found;
     found = FindNextFile(filefindP->handle, &fileinfo->data);
     if (found) {
         LARGE_INTEGER li;
@@ -345,9 +346,9 @@ fileFindNextWin(TFileFind *  const filefindP ATTR_UNUSED,
 
 
 static void
-fileFindNextPosix(TFileFind *  const filefindP,
-                  TFileInfo *  const fileinfoP,
-                  abyss_bool * const retvalP) {
+fileFindNextPosix(TFileFind * const filefindP,
+                  TFileInfo * const fileinfoP,
+                  bool *      const retvalP) {
 
 #ifndef WIN32
     struct dirent * deP;
@@ -381,11 +382,11 @@ fileFindNextPosix(TFileFind *  const filefindP,
 
 
 
-abyss_bool
+bool
 FileFindNext(TFileFind * const filefindP,
              TFileInfo * const fileinfo) {
 
-    abyss_bool retval;
+    bool retval;
 
     if (win32)
         fileFindNextWin(filefindP, fileinfo, &retval);

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -45,7 +46,7 @@ socketOsTerm(void) {
     
 
 
-abyss_bool SwitchTraceIsActive;
+bool SwitchTraceIsActive;
 
 void
 ChanSwitchInit(const char ** const errorP) {

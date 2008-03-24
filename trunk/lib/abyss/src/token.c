@@ -1,11 +1,13 @@
 #include "xmlrpc-c/abyss.h"
 
+#include "bool.h"
+
 #include "token.h"
 
 void
 NextToken(const char ** const pP) {
 
-    abyss_bool gotToken;
+    bool gotToken;
 
     gotToken = FALSE;
 

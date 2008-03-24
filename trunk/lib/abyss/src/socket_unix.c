@@ -28,6 +28,7 @@
 #endif
 
 #include "c_util.h"
+#include "int.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "mallocvar.h"
@@ -88,7 +89,7 @@ struct socketUnix {
         /* File descriptor of the POSIX socket (such as is created by
            socket() in the C library) for the socket.
         */
-    abyss_bool userSuppliedFd;
+    bool userSuppliedFd;
         /* The file descriptor and associated POSIX socket belong to the
            user; we did not create it.
         */
@@ -97,7 +98,7 @@ struct socketUnix {
 
 
 
-static abyss_bool
+static bool
 connected(int const fd) {
 /*----------------------------------------------------------------------------
    Return TRUE iff the socket on file descriptor 'fd' is in the connected
@@ -106,7 +107,7 @@ connected(int const fd) {
    If 'fd' does not identify a stream socket or we are unable to determine
    the state of the stream socket, the answer is "false".
 -----------------------------------------------------------------------------*/
-    abyss_bool connected;
+    bool connected;
     struct sockaddr sockaddr;
     socklen_t nameLen;
     int rc;
@@ -165,12 +166,12 @@ static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             abyss_bool *          const failedP) {
+             bool *                const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
     size_t bytesLeft;
-    abyss_bool error;
+    bool error;
 
     assert(sizeof(size_t) >= sizeof(len));
 
@@ -213,7 +214,7 @@ channelRead(TChannel *      const channelP,
             unsigned char * const buffer, 
             uint32_t        const bufferSize,
             uint32_t *      const bytesReceivedP,
-            abyss_bool *    const failedP) {
+            bool *          const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
@@ -242,13 +243,13 @@ channelRead(TChannel *      const channelP,
 static ChannelWaitImpl channelWait;
 
 static void
-channelWait(TChannel *   const channelP,
-            abyss_bool   const waitForRead,
-            abyss_bool   const waitForWrite,
-            uint32_t     const timeoutMs,
-            abyss_bool * const readyToReadP,
-            abyss_bool * const readyToWriteP,
-            abyss_bool * const failedP) {
+channelWait(TChannel * const channelP,
+            bool       const waitForRead,
+            bool       const waitForWrite,
+            uint32_t   const timeoutMs,
+            bool *     const readyToReadP,
+            bool *     const readyToWriteP,
+            bool *     const failedP) {
 /*----------------------------------------------------------------------------
    Wait for the channel to be immediately readable or writable.
 
@@ -601,7 +602,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 
 static void
 waitForConnection(struct socketUnix * const listenSocketP,
-                  abyss_bool *        const interruptedP,
+                  bool *              const interruptedP,
                   const char **       const errorP) {
 /*----------------------------------------------------------------------------
    Wait for the listening socket to have a connection ready to accept.
@@ -708,7 +709,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 -----------------------------------------------------------------------------*/
     struct socketUnix * const listenSocketP = chanSwitchP->implP;
 
-    abyss_bool interrupted;
+    bool interrupted;
     TChannel * channelP;
 
     interrupted = FALSE; /* Haven't been interrupted yet */

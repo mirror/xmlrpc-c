@@ -11,6 +11,7 @@
    between an HTTP client and server.
 ============================================================================*/
 
+#include "bool.h"
 #include "int.h"
 #include "xmlrpc-c/abyss.h"
 
@@ -45,7 +46,7 @@ struct _TChanSwitch {
     struct TChanSwitchVtbl vtbl;
 };
 
-extern abyss_bool SwitchTraceIsActive;
+extern bool SwitchTraceIsActive;
 
 void
 ChanSwitchInit(const char ** const errorP);

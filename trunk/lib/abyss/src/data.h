@@ -1,9 +1,62 @@
 #ifndef DATA_H_INCLUDED
 #define DATA_H_INCLUDED
 
+#include "bool.h"
 #include "int.h"
 
 struct abyss_mutex;
+
+/*********************************************************************
+** Buffer
+*********************************************************************/
+
+typedef struct
+{
+    void *data;
+    xmlrpc_uint32_t size;
+    xmlrpc_uint32_t staticid;
+} TBuffer;
+
+bool
+BufferAlloc(TBuffer *       const buf,
+            xmlrpc_uint32_t const memsize);
+
+bool
+BufferRealloc(TBuffer *       const buf,
+              xmlrpc_uint32_t const memsize);
+
+void
+BufferFree(TBuffer * const buf);
+
+
+/*********************************************************************
+** String
+*********************************************************************/
+
+typedef struct
+{
+    TBuffer buffer;
+    xmlrpc_uint32_t size;
+} TString;
+
+bool
+StringAlloc(TString * const stringP);
+
+bool
+StringConcat(TString *    const stringP,
+             const char * const string2);
+
+bool
+StringBlockConcat(TString *    const stringP,
+                  const char * const string2,
+                  char **      const ref);
+
+void
+StringFree(TString * const stringP);
+
+char *
+StringData(TString * const stringP);
+
 
 /*********************************************************************
 ** List
@@ -13,7 +66,7 @@ typedef struct {
     void **item;
     uint16_t size;
     uint16_t maxsize;
-    abyss_bool autofree;
+    bool autofree;
 } TList;
 
 void
@@ -28,18 +81,18 @@ ListFree(TList * const listP);
 void
 ListFreeItems(TList * const listP);
 
-abyss_bool
+bool
 ListAdd(TList * const listP,
         void *  const str);
 
 void
 ListRemove(TList * const listP);
 
-abyss_bool
+bool
 ListAddFromString(TList *      const listP,
                   const char * const c);
 
-abyss_bool
+bool
 ListFindString(TList *      const listP,
                const char * const str,
                uint16_t *   const indexP);
@@ -63,17 +116,17 @@ TableInit(TTable * const t);
 void
 TableFree(TTable * const t);
 
-abyss_bool
+bool
 TableAdd(TTable *     const t,
          const char * const name,
          const char * const value);
 
-abyss_bool
+bool
 TableAddReplace(TTable *     const t,
                 const char * const name,
                 const char * const value);
 
-abyss_bool
+bool
 TableFindIndex(TTable *     const t,
                const char * const name,
                uint16_t *   const index);
@@ -103,7 +156,7 @@ typedef struct {
     struct abyss_mutex * mutexP;
 } TPool;
 
-abyss_bool
+bool
 PoolCreate(TPool *  const poolP,
            uint32_t const zonesize);
 

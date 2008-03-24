@@ -479,46 +479,6 @@ MIMETypeGuessFromFile(const char * const filename);
 #endif  /* FALSE */
 
 /*********************************************************************
-** Buffer
-*********************************************************************/
-
-typedef struct
-{
-    void *data;
-    xmlrpc_uint32_t size;
-    xmlrpc_uint32_t staticid;
-} TBuffer;
-
-abyss_bool
-BufferAlloc(TBuffer *       const buf,
-            xmlrpc_uint32_t const memsize);
-
-abyss_bool
-BufferRealloc(TBuffer *       const buf,
-              xmlrpc_uint32_t const memsize);
-
-void
-BufferFree(TBuffer * const buf);
-
-
-/*********************************************************************
-** String
-*********************************************************************/
-
-typedef struct
-{
-    TBuffer buffer;
-    xmlrpc_uint32_t size;
-} TString;
-
-abyss_bool StringAlloc(TString *s);
-abyss_bool StringConcat(TString *s,char *s2);
-abyss_bool StringBlockConcat(TString *s,char *s2,char **ref);
-void StringFree(TString *s);
-char *StringData(TString *s);
-
-
-/*********************************************************************
 ** Range
 *********************************************************************/
 

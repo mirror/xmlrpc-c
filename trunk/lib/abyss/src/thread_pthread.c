@@ -5,6 +5,7 @@
 
 #include "xmlrpc_config.h"
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 #include "pthreadx.h"
@@ -40,7 +41,7 @@ static void *
 pthreadStart(void * const arg) {
 
     struct abyss_thread * const threadP = arg;
-    abyss_bool const executeTrue = true;
+    bool const executeTrue = true;
 
     pthread_cleanup_push(threadP->threadDone, threadP->userHandle);
 
@@ -58,7 +59,7 @@ ThreadCreate(TThread **      const threadPP,
              void *          const userHandle,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
-             abyss_bool      const useSigchld ATTR_UNUSED,
+             bool            const useSigchld ATTR_UNUSED,
              const char **   const errorP) {
 
     TThread * threadP;
@@ -98,21 +99,21 @@ ThreadCreate(TThread **      const threadPP,
 
 
 
-abyss_bool
+bool
 ThreadRun(TThread * const threadP ATTR_UNUSED) {
     return TRUE;    
 }
 
 
 
-abyss_bool
+bool
 ThreadStop(TThread * const threadP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 ThreadKill(TThread * const threadP ATTR_UNUSED) {
 
     return (pthread_kill(threadP->thread, SIGTERM) == 0);
@@ -154,7 +155,7 @@ ThreadRelease(TThread * const threadP) {
 
 
 
-abyss_bool
+bool
 ThreadForks(void) {
 
     return FALSE;
@@ -189,11 +190,11 @@ struct abyss_mutex {
 };
 
 
-abyss_bool
+bool
 MutexCreate(TMutex ** const mutexPP) {
 
     TMutex * mutexP;
-    abyss_bool succeeded;
+    bool succeeded;
 
     MALLOCVAR(mutexP);
 
@@ -215,21 +216,21 @@ MutexCreate(TMutex ** const mutexPP) {
 
 
 
-abyss_bool
+bool
 MutexLock(TMutex * const mutexP) {
     return (pthread_mutex_lock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
-abyss_bool
+bool
 MutexUnlock(TMutex * const mutexP) {
     return (pthread_mutex_unlock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
-abyss_bool
+bool
 MutexTryLock(TMutex * const mutexP) {
     return (pthread_mutex_trylock(&mutexP->pthreadMutex) == 0);
 }

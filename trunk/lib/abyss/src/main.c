@@ -148,8 +148,8 @@ static void sigterm(int sig)
 static void
 sigchld(int const signalClass) {
 
-    abyss_bool childrenLeft;
-    abyss_bool error;
+    bool childrenLeft;
+    bool error;
 
     childrenLeft = true;
     error = false;
@@ -181,10 +181,14 @@ sigchld(int const signalClass) {
 
 int main(int argc,char **argv)
 {
+    const char * const name = argv[0];
     TServer srv;
-    char *p,*conffile=DEFAULT_CONF_FILE;
-    abyss_bool err=FALSE;
-    char *name=argv[0];
+    char * p;
+    const char * conffile;
+    bool err;
+
+    conffile = DEFAULT_CONF_FILE;  /* initial value */
+    err = FALSE;  /* initial value */
 
     while (p=*(++argv))
     {

@@ -1,15 +1,16 @@
 #ifndef HTTP_H_INCLUDED
 #define HTTP_H_INCLUDED
 
+#include "bool.h"
 #include "conn.h"
 
 /*********************************************************************
 ** Request
 *********************************************************************/
 
-abyss_bool RequestValidURI(TSession * const r);
-abyss_bool RequestValidURIPath(TSession * const r);
-abyss_bool RequestUnescapeURI(TSession *r);
+bool RequestValidURI(TSession * const r);
+bool RequestValidURIPath(TSession * const r);
+bool RequestUnescapeURI(TSession *r);
 
 void
 RequestRead(TSession * const sessionP,
@@ -18,7 +19,7 @@ RequestRead(TSession * const sessionP,
 void RequestInit(TSession * const r,TConn * const c);
 void RequestFree(TSession * const r);
 
-abyss_bool
+bool
 RequestAuth(TSession *   const sessionP,
             const char * const credential,
             const char * const user,
@@ -36,18 +37,18 @@ HTTPRead(TSession *   const sessionP,
          const char * const buffer,
          uint32_t     const len);
 
-abyss_bool
+bool
 HTTPWriteBodyChunk(TSession *   const sessionP,
                    const char * const buffer,
                    uint32_t     const len);
 
-abyss_bool
+bool
 HTTPWriteEndChunk(TSession * const sessionP);
 
-abyss_bool
+bool
 HTTPKeepalive(TSession * const sessionP);
 
-abyss_bool
+bool
 HTTPWriteContinue(TSession * const sessionP);
 
 #endif

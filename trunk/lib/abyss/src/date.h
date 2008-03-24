@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-#include "xmlrpc-c/abyss.h"
+#include "bool.h"
 
 void
 DateToString(time_t        const datetime,
@@ -15,7 +15,7 @@ DateToLogString(time_t        const datetime,
 
 void
 DateDecode(const char * const dateString,
-           abyss_bool * const validP,
+           bool *       const validP,
            time_t *     const datetimeP);
 
 #endif

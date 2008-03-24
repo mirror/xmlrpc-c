@@ -45,6 +45,7 @@
 #endif
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
@@ -59,46 +60,59 @@
 
 
 
-static abyss_bool
-ConfReadLine(TFile *f,char *buffer,uint32_t len) {
-    abyss_bool r=TRUE;
-    char c,*p,*z=buffer;
+static bool
+ConfReadLine(TFile *  const fileP,
+             char *   const buffer,
+             uint32_t const lenArg) {
 
-    while ((--len)>0)
-    {
-        if (FileRead(f,buffer,1)<1)
-        {
-            if (z==buffer)
-                r=FALSE;
+    bool r;
+    char c;
+    char * p;
+    char * z;
+    uint32_t len;
+
+    len = lenArg;  /* initial value */
+    r = TRUE;  /* initial value */
+    z = buffer;  /* initial value */
+
+    while (--len > 0) {
+        int32_t bytesRead;
+        
+        bytesRead = FileRead(fileP, z, 1);
+        if (bytesRead < 1) {
+            if (z == buffer)
+                r = FALSE;
             break;
         };
 
-        if ((*buffer==CR) || (*buffer==LF) )
+        if (*z == CR || *z == LF)
             break;
 
-        buffer++;
-    };
+        ++z;
+    }
 
-    if (len==0)
-        while (FileRead(f,&c,1)==1)
-            if ((c==CR) || (c==LF))
+    if (len == 0)
+        while (FileRead(fileP, &c, 1) == 1)
+            if (c == CR || c == LF)
                 break;
 
-    *buffer='\0';
+    *buffer = '\0';
 
     /* Discard comments */
-    p=strchr(z,'#');
+    p = strchr(z, '#');
     if (p)
-        *p='\0';
+        *p = '\0';
 
     return r;
 }
 
-static abyss_bool
-ConfNextToken(char **p) {
+
+
+static bool
+ConfNextToken(char ** const p) {
+
     while (1)
-        switch (**p)
-        {
+        switch (**p) {
         case '\t':
         case ' ':
             (*p)++;
@@ -137,7 +151,7 @@ ConfGetToken(char **p) {
         };
 }
 
-static abyss_bool
+static bool
 ConfReadInt(const char * const p,
             int32_t *    const n,
             int32_t      const min,
@@ -160,10 +174,11 @@ ConfReadInt(const char * const p,
 
 
 
-static abyss_bool
-ConfReadBool(const char * const token, abyss_bool * const bP) {
+static bool
+ConfReadBool(const char * const token,
+             bool *       const bP) {
 
-    abyss_bool succeeded;
+    bool succeeded;
 
     if (xmlrpc_strcaseeq(token, "yes")) {
         *bP = TRUE;
@@ -185,13 +200,13 @@ static void
 readMIMETypesFile(const char * const filename,
                   MIMEType **  const MIMETypePP) {
 
-    abyss_bool success;
+    bool success;
     MIMEType * MIMETypeP;
 
     MIMETypeP = MIMETypeCreate();
     if (MIMETypeP) {
         TFile * fileP;
-        abyss_bool fileOpened;
+        bool fileOpened;
 
         fileOpened = FileOpen(&fileP, filename, O_RDONLY);
         if (fileOpened) {
@@ -234,7 +249,7 @@ readMIMETypesFile(const char * const filename,
 
 static void
 chdirx(const char * const newdir,
-       abyss_bool * const successP) {
+       bool *       const successP) {
     
 #if defined(WIN32) && !defined(__BORLANDC__)
     *successP = _chdir(newdir) == 0;
@@ -277,7 +292,7 @@ static void
 parsePidfile(const char *      const p,
              struct _TServer * const srvP) {
 #ifdef _UNIX
-    abyss_bool succeeded;
+    bool succeeded;
     succeeded = FileOpenCreate(&srvP->pidfileP, p, O_TRUNC | O_WRONLY);
     if (!succeeded) {
         srvP->pidfileP = NULL;
@@ -324,7 +339,7 @@ ConfReadServerFile(const char * const filename,
                     else
                         TraceExit("Invalid port '%s'", p);
                 } else if (xmlrpc_strcaseeq(option, "serverroot")) {
-                    abyss_bool success;
+                    bool success;
                     chdirx(p, &success);
                     if (!success)
                         TraceExit("Invalid server root '%s'",p);

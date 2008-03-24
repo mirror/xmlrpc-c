@@ -15,6 +15,7 @@
 #include <time.h>
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "version.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
@@ -340,11 +341,11 @@ static void
 mimeTypeAdd(MIMEType *   const MIMETypeP,
             const char * const type,
             const char * const ext,
-            abyss_bool * const successP) {
+            bool *       const successP) {
     
     uint16_t index;
     void * mimeTypesItem;
-    abyss_bool typeIsInList;
+    bool typeIsInList;
 
     assert(MIMETypeP != NULL);
 
@@ -355,7 +356,7 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
         mimeTypesItem = (void*)PoolStrdup(&MIMETypeP->pool, type);
 
     if (mimeTypesItem) {
-        abyss_bool extIsInList;
+        bool extIsInList;
         extIsInList = ListFindString(&MIMETypeP->extList, ext, &index);
         if (extIsInList) {
             MIMETypeP->typeList.item[index] = mimeTypesItem;
@@ -363,12 +364,12 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
         } else {
             void * extItem = (void*)PoolStrdup(&MIMETypeP->pool, ext);
             if (extItem) {
-                abyss_bool addedToMimeTypes;
+                bool addedToMimeTypes;
 
                 addedToMimeTypes =
                     ListAdd(&MIMETypeP->typeList, mimeTypesItem);
                 if (addedToMimeTypes) {
-                    abyss_bool addedToExt;
+                    bool addedToExt;
                     
                     addedToExt = ListAdd(&MIMETypeP->extList, extItem);
                     *successP = addedToExt;
@@ -395,7 +396,7 @@ MIMETypeAdd2(MIMEType *   const MIMETypeArg,
 
     MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
 
-    abyss_bool success;
+    bool success;
 
     if (MIMETypeP == NULL)
         success = FALSE;
@@ -422,7 +423,7 @@ mimeTypeFromExt(MIMEType *   const MIMETypeP,
 
     const char * retval;
     uint16_t extindex;
-    abyss_bool extIsInList;
+    bool extIsInList;
 
     assert(MIMETypeP != NULL);
 
@@ -469,7 +470,7 @@ findExtension(const char *  const fileName,
 
     unsigned int extPos = 0;  /* stifle unset variable warning */
         /* Running estimation of where in fileName[] the extension starts */
-    abyss_bool extFound;
+    bool extFound;
     unsigned int i;
 
     /* We're looking for the last dot after the last slash */
@@ -539,14 +540,14 @@ MIMETypeFromFileName(const char * const fileName) {
 
 
 
-static abyss_bool
+static bool
 fileContainsText(const char * const fileName) {
 /*----------------------------------------------------------------------------
    Return true iff we can read the contents of the file named 'fileName'
    and see that it appears to be composed of plain text characters.
 -----------------------------------------------------------------------------*/
-    abyss_bool retval;
-    abyss_bool fileOpened;
+    bool retval;
+    bool fileOpened;
     TFile * fileP;
 
     fileOpened = FileOpen(&fileP, fileName, O_BINARY | O_RDONLY);
@@ -560,7 +561,7 @@ fileContainsText(const char * const fileName) {
        
         if (readRc >= 0) {
             unsigned int bytesRead = readRc;
-            abyss_bool nonTextFound;
+            bool nonTextFound;
 
             nonTextFound = FALSE;  /* initial value */
     

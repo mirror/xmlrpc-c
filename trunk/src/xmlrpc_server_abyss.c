@@ -17,6 +17,7 @@
 #  include <grp.h>
 #endif
 
+#include "bool.h"
 #include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"
@@ -220,7 +221,7 @@ refillBufferFromConnection(xmlrpc_env * const envP,
 /*----------------------------------------------------------------------------
    Get the next chunk of data from the connection into the buffer.
 -----------------------------------------------------------------------------*/
-    abyss_bool succeeded;
+    bool succeeded;
 
     succeeded = SessionRefillBuffer(abyssSessionP);
 
@@ -347,10 +348,10 @@ validateContentType(TSession *     const httpRequestP,
 
 
 static void
-processContentLength(TSession *     const httpRequestP,
-                     size_t *       const inputLenP,
-                     abyss_bool *   const missingP,
-                     const char **  const errorP) {
+processContentLength(TSession *    const httpRequestP,
+                     size_t *      const inputLenP,
+                     bool *        const missingP,
+                     const char ** const errorP) {
 /*----------------------------------------------------------------------------
   Make sure the content length is present and non-zero.  This is
   technically required by XML-RPC, but we only enforce it because we
@@ -587,7 +588,7 @@ handleXmlrpcReq(URIHandler2 * const this,
                     xmlrpc_strfree(error);
                 } else {
                     const char * error;
-                    abyss_bool missing;
+                    bool missing;
                     size_t contentSize;
 
                     processContentLength(abyssSessionP, 
@@ -777,7 +778,7 @@ extractServerCreateParms(
     xmlrpc_env *                      const envP,
     const xmlrpc_server_abyss_parms * const parmsP,
     unsigned int                      const parmSize,
-    abyss_bool *                      const socketBoundP,
+    bool *                            const socketBoundP,
     unsigned int *                    const portNumberP,
     TOsSocket *                       const socketFdP,
     const char **                     const logFileNameP) {
@@ -878,7 +879,7 @@ createServerBare(xmlrpc_env *                      const envP,
    Create a bare server.  It will need further setup before it is ready
    to use.
 -----------------------------------------------------------------------------*/
-    abyss_bool socketBound;
+    bool socketBound;
     unsigned int portNumber;
     TOsSocket socketFd;
     const char * logFileName;

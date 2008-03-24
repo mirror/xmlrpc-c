@@ -10,6 +10,7 @@
 #endif
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "girmath.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
@@ -67,15 +68,15 @@ initUnixStuff(struct _TServer * const srvP) {
 
 
 
-static abyss_bool
+static bool
 logOpen(struct _TServer * const srvP) {
 
-    abyss_bool success;
+    bool success;
 
     success = FileOpenCreate(&srvP->logfileP, srvP->logfilename,
                              O_WRONLY | O_APPEND);
     if (success) {
-        abyss_bool success;
+        bool success;
         success = MutexCreate(&srvP->logmutexP);
         if (success)
             srvP->logfileisopen = TRUE;
@@ -106,7 +107,7 @@ logClose(struct _TServer * const srvP) {
 
 static void
 initChanSwitchStuff(struct _TServer * const srvP,
-                    abyss_bool        const noAccept,
+                    bool              const noAccept,
                     TChanSwitch *     const userSwitchP,
                     unsigned short    const port,
                     const char **     const errorP) {
@@ -132,7 +133,7 @@ initChanSwitchStuff(struct _TServer * const srvP,
 
 static void
 createServer(struct _TServer ** const srvPP,
-             abyss_bool         const noAccept,
+             bool               const noAccept,
              TChanSwitch *      const userChanSwitchP,
              unsigned short     const portNumber,             
              const char **      const errorP) {
@@ -216,9 +217,9 @@ ServerCreate(TServer *       const serverP,
              const char *    const filesPath,
              const char *    const logFileName) {
 
-    abyss_bool const noAcceptFalse = FALSE;
+    bool const noAcceptFalse = FALSE;
 
-    abyss_bool success;
+    bool success;
     const char * error;
 
     createServer(&serverP->srvP, noAcceptFalse, NULL, portNumber, &error);
@@ -278,7 +279,7 @@ ServerCreateSocket(TServer *    const serverP,
                    const char * const filesPath,
                    const char * const logFileName) {
 
-    abyss_bool success;
+    bool success;
     TChanSwitch * chanSwitchP;
     const char * error;
 
@@ -289,7 +290,7 @@ ServerCreateSocket(TServer *    const serverP,
         success = FALSE;
         xmlrpc_strfree(error);
     } else {
-        abyss_bool const noAcceptFalse = FALSE;
+        bool const noAcceptFalse = FALSE;
 
         const char * error;
 
@@ -317,9 +318,9 @@ ServerCreateNoAccept(TServer *    const serverP,
                      const char * const filesPath,
                      const char * const logFileName) {
 
-    abyss_bool const noAcceptTrue = TRUE;
+    bool const noAcceptTrue = TRUE;
 
-    abyss_bool success;
+    bool success;
     const char * error;
 
     createServer(&serverP->srvP, noAcceptTrue, NULL, 0, &error);
@@ -343,7 +344,7 @@ ServerCreateSwitch(TServer *     const serverP,
                    TChanSwitch * const chanSwitchP,
                    const char ** const errorP) {
     
-    abyss_bool const noAcceptFalse = FALSE;
+    bool const noAcceptFalse = FALSE;
 
     assert(serverP);
     assert(chanSwitchP);
@@ -523,10 +524,10 @@ runUserHandler(TSession *        const sessionP,
 
 
 static void
-processDataFromClient(TConn *      const connectionP,
-                      abyss_bool   const lastReqOnConn,
-                      uint32_t     const timeout,
-                      abyss_bool * const keepAliveP) {
+processDataFromClient(TConn *  const connectionP,
+                      bool     const lastReqOnConn,
+                      uint32_t const timeout,
+                      bool *   const keepAliveP) {
 
     TSession session;
 
@@ -574,14 +575,14 @@ serverFunc(void * const userHandle) {
 
     unsigned int requestCount;
         /* Number of requests we've handled so far on this connection */
-    abyss_bool connectionDone;
+    bool connectionDone;
         /* No more need for this HTTP connection */
 
     requestCount = 0;
     connectionDone = FALSE;
 
     while (!connectionDone) {
-        abyss_bool success;
+        bool success;
         
         /* Wait to read until timeout */
         success = ConnRead(connectionP, srvP->keepalivetimeout);
@@ -589,10 +590,10 @@ serverFunc(void * const userHandle) {
         if (!success)
             connectionDone = TRUE;
         else {
-            abyss_bool const lastReqOnConn =
+            bool const lastReqOnConn =
                 requestCount + 1 >= srvP->keepalivemaxconn;
 
-            abyss_bool keepalive;
+            bool keepalive;
             
             processDataFromClient(connectionP, lastReqOnConn, srvP->timeout,
                                   &keepalive);
@@ -1278,7 +1279,7 @@ ServerAddHandler(TServer *  const serverP,
                  URIHandler const function) {
 
     URIHandler2 * handlerP;
-    abyss_bool success;
+    bool success;
 
     handlerP = createHandler(function);
 
@@ -1321,7 +1322,7 @@ LogWrite(TServer *    const serverP,
         logOpen(srvP);
 
     if (srvP->logfileisopen) {
-        abyss_bool success;
+        bool success;
         success = MutexLock(srvP->logmutexP);
         if (success) {
             const char * const lbr = "\n";

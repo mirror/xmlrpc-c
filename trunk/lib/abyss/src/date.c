@@ -5,9 +5,11 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "bool.h"
+#include "int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/time_int.h"
-#include "int.h"
+#include "xmlrpc-c/abyss.h"
 
 #include "date.h"
 
@@ -99,7 +101,7 @@ DateToLogString(time_t        const datetime,
 
 void
 DateDecode(const char * const dateString,
-           abyss_bool * const validP,
+           bool *       const validP,
            time_t *     const datetimeP) {
 /*----------------------------------------------------------------------------
    Return the datetime represented by 'dateString', which is in the
@@ -112,7 +114,7 @@ DateDecode(const char * const dateString,
     const char * s;
     unsigned int monthOff;
     struct tm tm;
-    abyss_bool error;
+    bool error;
 
     s = &dateString[0];
 
@@ -126,7 +128,7 @@ DateDecode(const char * const dateString,
     while ((*s==' ') || (*s=='\t'))
         ++s;
 
-    error = FALSE;  /* initial value */
+    error = false;  /* initial value */
 
     /* try to recognize the date format */
     rc = sscanf(s, "%*s %d %d:%d:%d %d%*s",
@@ -145,7 +147,7 @@ DateDecode(const char * const dateString,
                         &tm.tm_mday, &monthOff, &tm.tm_year,
                         &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
             if (rc != 5)
-                error = TRUE;
+                error = true;
         }
     }    
     if (!error) {
@@ -155,9 +157,9 @@ DateDecode(const char * const dateString,
             */
 
         unsigned int i;
-        abyss_bool gotMonth;
+        bool gotMonth;
 
-        for (i = 0, gotMonth = FALSE; i < 12; ++i) {
+        for (i = 0, gotMonth = false; i < 12; ++i) {
             const char * p;
 
             p =_DateMonth[i];
@@ -165,13 +167,13 @@ DateDecode(const char * const dateString,
             if (tolower(*p++) == tolower(monthName[0]))
                 if (*p++ == tolower(monthName[1]))
                     if (*p == tolower(monthName[2])) {
-                        gotMonth = TRUE;
+                        gotMonth = true;
                         tm.tm_mon = i;
                     }
         }
 
         if (!gotMonth)
-            error = TRUE;
+            error = true;
         else {
             if (tm.tm_year > 1900)
                 tm.tm_year -= 1900;
@@ -198,7 +200,7 @@ DateDecode(const char * const dateString,
 
 
 abyss_bool
-DateInit() {
+DateInit(void) {
 
-    return TRUE;
+    return true;
 }

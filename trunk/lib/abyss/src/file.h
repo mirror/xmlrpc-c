@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 
+#include "bool.h"
 #include "int.h"
 #include "xmlrpc-c/abyss.h"
 
@@ -77,20 +78,20 @@ typedef struct TFile {
     int fd;
 } TFile;
 
-abyss_bool
+bool
 FileOpen(TFile **     const filePP,
          const char * const name,
          uint32_t     const attrib);
 
-abyss_bool
+bool
 FileOpenCreate(TFile **     const filePP,
                const char * const name,
                uint32_t     const attrib);
 
-abyss_bool
+bool
 FileClose(TFile * const fileP);
 
-abyss_bool
+bool
 FileWrite(const TFile * const fileP,
           const void *  const buffer,
           uint32_t      const len);
@@ -100,7 +101,7 @@ FileRead(const TFile * const fileP,
          void *        const buffer,
          uint32_t      const len);
 
-abyss_bool
+bool
 FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib);
@@ -108,16 +109,16 @@ FileSeek(const TFile * const fileP,
 uint64_t
 FileSize(const TFile * const fileP);
 
-abyss_bool
+bool
 FileStat(const char * const filename,
          TFileStat *  const filestat);
 
-abyss_bool
+bool
 FileFindFirst(TFileFind ** const filefind,
               const char * const path,
               TFileInfo *  const fileinfo);
 
-abyss_bool
+bool
 FileFindNext(TFileFind * const filefind,
              TFileInfo * const fileinfo);
 

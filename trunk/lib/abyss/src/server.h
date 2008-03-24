@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 
+#include "bool.h"
 #include "xmlrpc-c/abyss.h"
 
 #include "data.h"
@@ -11,12 +12,12 @@ struct TFile;
 struct abyss_mutex;
 
 struct _TServer {
-    abyss_bool terminationRequested;
+    bool terminationRequested;
         /* User wants this server to terminate as soon as possible,
            in particular before accepting any more connections and without
            waiting for any.
         */
-    abyss_bool chanSwitchBound;
+    bool chanSwitchBound;
         /* The channel switch exists and is bound to a local address
            (may already be listening as well)
         */
@@ -24,16 +25,16 @@ struct _TServer {
         /* Meaningful only when 'chanSwitchBound' is true: the channel
            switch which directs connections from clients to this server.
         */
-    abyss_bool weCreatedChanSwitch;
+    bool weCreatedChanSwitch;
         /* We created the channel switch 'chanSwitchP', as
            opposed to 1) User supplied it; or 2) there isn't one.
         */
     const char * logfilename;
-    abyss_bool logfileisopen;
+    bool logfileisopen;
     struct TFile * logfileP;
     struct abyss_mutex * logmutexP;
     const char * name;
-    abyss_bool serverAcceptsConnections;
+    bool serverAcceptsConnections;
         /* We listen for and accept TCP connections for HTTP transactions.
            (The alternative is the user supplies a TCP-connected socket
            for each transaction)
@@ -65,8 +66,8 @@ struct _TServer {
            requests it.
         */
     void * builtinHandlerP;
-    abyss_bool advertise;
-    abyss_bool useSigchld;
+    bool advertise;
+    bool useSigchld;
         /* Meaningless if not using forking for threads.
            TRUE means user will call ServerHandleSigchld to indicate that
            a SIGCHLD signal was received, and server shall use that as its

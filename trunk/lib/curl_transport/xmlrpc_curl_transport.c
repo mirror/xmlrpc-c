@@ -528,13 +528,25 @@ curlProgress(void * const contextP,
    via our return code, that calls it that we don't want to wait
    anymore for the operation to complete.
 
-   In current Curl (2007.02.20), we get called once per second and
-   signals have no effect.  An update is in the works to get us called
+   In Curl versions before March 2007, we get called once per second
+   and signals have no effect.  In current Curl, we usually get called
    immediately after a signal gets caught while Curl is waiting to
-   receive a response from the server.
+   receive a response from the server.  But Curl doesn't properly
+   synchronize with signals, so it may miss one and then we don't get
+   called until the next scheduled one-per-second call.
 
    All we do is tell Caller it's time to give up if the transport's
    client says it is via his "interrupt" flag.
+
+   This function is not as important as it once was.  This module used
+   to use curl_easy_perform(), which can be interrupted only via this
+   progress function.  But because of the above-mentioned failure of
+   Curl to properly synchronize signals (and Bryan's failure to get
+   Curl developers to accept code to fix it), we now use the Curl
+   "multi" facility instead and do our own pselect().  But we keep the
+   progress function for logical completeness and because Curl may do
+   some other waiting we don't know about even with the multi function
+   (DNS lookup, maybe?).
 -----------------------------------------------------------------------------*/
     unsigned int * const interruptP = contextP;
 

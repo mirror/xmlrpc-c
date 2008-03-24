@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -48,7 +49,7 @@ socketOsTerm(void) {
     
 
 
-abyss_bool ChannelTraceIsActive;
+bool ChannelTraceIsActive;
 
 void
 ChannelInit(const char ** const errorP) {
@@ -127,7 +128,7 @@ void
 ChannelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             abyss_bool *          const failedP) {
+             bool *                const failedP) {
 
     if (ChannelTraceIsActive)
         fprintf(stderr, "Writing %u bytes to channel %p\n", len, channelP);
@@ -142,7 +143,7 @@ ChannelRead(TChannel *      const channelP,
             unsigned char * const buffer, 
             uint32_t        const len,
             uint32_t *      const bytesReceivedP,
-            abyss_bool *    const failedP) {
+            bool *          const failedP) {
     
     if (ChannelTraceIsActive)
         fprintf(stderr, "Reading %u bytes from channel %p\n", len, channelP);
@@ -153,13 +154,13 @@ ChannelRead(TChannel *      const channelP,
 
 
 void
-ChannelWait(TChannel *   const channelP,
-            abyss_bool   const waitForRead,
-            abyss_bool   const waitForWrite,
-            uint32_t     const timems,
-            abyss_bool * const readyToReadP,
-            abyss_bool * const readyToWriteP,
-            abyss_bool * const failedP) {
+ChannelWait(TChannel * const channelP,
+            bool       const waitForRead,
+            bool       const waitForWrite,
+            uint32_t   const timems,
+            bool *     const readyToReadP,
+            bool *     const readyToWriteP,
+            bool *     const failedP) {
 
     if (ChannelTraceIsActive) {
         if (waitForRead)
