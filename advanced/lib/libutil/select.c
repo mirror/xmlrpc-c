@@ -3,10 +3,10 @@
 #ifdef WIN32
 #include <winsock.h>
 #else
+#include <sys/time.h>
 #include <sys/select.h>
 #endif 
 #include <signal.h>
-#include <time.h>
 
 #include "xmlrpc_config.h"
 
