@@ -149,7 +149,9 @@ ifeq ($(findstring solaris,$(HOST_OS)),solaris)
   # If you can finish it and make it work on AIX, please do.
   # SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
-  LDFLAGS_SHLIB = -Wl,-Bdynamic,-G,-h,$(SONAME)
+  # Solaris compiler can't take multiple ld options as -Wl,-a,-b .  Ld sees
+  # -a,-b in that case.
+  LDFLAGS_SHLIB = -Wl,-Bdynamic -Wl,-G -Wl,-h -Wl,$(SONAME)
   CFLAGS_SHLIB = -Kpic
 endif
 
