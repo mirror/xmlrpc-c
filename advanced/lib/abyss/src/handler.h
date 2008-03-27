@@ -1,6 +1,7 @@
 #ifndef HANDLER_H_INCLUDED
 #define HANDLER_H_INCLUDED
 
+#include "bool.h"
 #include "xmlrpc-c/abyss.h"
 
 typedef struct BIHandler BIHandler;

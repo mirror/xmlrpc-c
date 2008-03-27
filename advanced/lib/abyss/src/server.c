@@ -10,6 +10,7 @@
 #endif
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "girmath.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
@@ -18,6 +19,7 @@
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
 #include "session.h"
+#include "file.h"
 #include "conn.h"
 #include "chanswitch.h"
 #include "channel.h"
@@ -39,6 +41,9 @@ ServerTerminate(TServer * const serverP) {
     struct _TServer * const srvP = serverP->srvP;
 
     srvP->terminationRequested = true;
+
+    if (srvP->chanSwitchP)
+        ChanSwitchInterrupt(srvP->chanSwitchP);
 }
 
 
@@ -56,21 +61,22 @@ ServerResetTerminate(TServer * const serverP) {
 static void
 initUnixStuff(struct _TServer * const srvP) {
 #ifndef WIN32
-    srvP->pidfile = srvP->uid = srvP->gid = -1;
+    srvP->pidfileP = NULL;
+    srvP->uid = srvP->gid = -1;
 #endif
 }
 
 
 
-static abyss_bool
+static bool
 logOpen(struct _TServer * const srvP) {
 
-    abyss_bool success;
+    bool success;
 
-    success = FileOpenCreate(&srvP->logfile, srvP->logfilename,
+    success = FileOpenCreate(&srvP->logfileP, srvP->logfilename,
                              O_WRONLY | O_APPEND);
     if (success) {
-        abyss_bool success;
+        bool success;
         success = MutexCreate(&srvP->logmutexP);
         if (success)
             srvP->logfileisopen = TRUE;
@@ -78,7 +84,7 @@ logOpen(struct _TServer * const srvP) {
             TraceMsg("Can't create mutex for log file");
 
         if (!success)
-            FileClose(&srvP->logfile);
+            FileClose(srvP->logfileP);
     } else
         TraceMsg("Can't open log file '%s'", srvP->logfilename);
 
@@ -91,7 +97,7 @@ static void
 logClose(struct _TServer * const srvP) {
 
     if (srvP->logfileisopen) {
-        FileClose(&srvP->logfile);
+        FileClose(srvP->logfileP);
         MutexDestroy(srvP->logmutexP);
         srvP->logfileisopen = FALSE;
     }
@@ -101,7 +107,7 @@ logClose(struct _TServer * const srvP) {
 
 static void
 initChanSwitchStuff(struct _TServer * const srvP,
-                    abyss_bool        const noAccept,
+                    bool              const noAccept,
                     TChanSwitch *     const userSwitchP,
                     unsigned short    const port,
                     const char **     const errorP) {
@@ -127,7 +133,7 @@ initChanSwitchStuff(struct _TServer * const srvP,
 
 static void
 createServer(struct _TServer ** const srvPP,
-             abyss_bool         const noAccept,
+             bool               const noAccept,
              TChanSwitch *      const userChanSwitchP,
              unsigned short     const portNumber,             
              const char **      const errorP) {
@@ -211,9 +217,9 @@ ServerCreate(TServer *       const serverP,
              const char *    const filesPath,
              const char *    const logFileName) {
 
-    abyss_bool const noAcceptFalse = FALSE;
+    bool const noAcceptFalse = FALSE;
 
-    abyss_bool success;
+    bool success;
     const char * error;
 
     createServer(&serverP->srvP, noAcceptFalse, NULL, portNumber, &error);
@@ -273,7 +279,7 @@ ServerCreateSocket(TServer *    const serverP,
                    const char * const filesPath,
                    const char * const logFileName) {
 
-    abyss_bool success;
+    bool success;
     TChanSwitch * chanSwitchP;
     const char * error;
 
@@ -284,7 +290,7 @@ ServerCreateSocket(TServer *    const serverP,
         success = FALSE;
         xmlrpc_strfree(error);
     } else {
-        abyss_bool const noAcceptFalse = FALSE;
+        bool const noAcceptFalse = FALSE;
 
         const char * error;
 
@@ -312,9 +318,9 @@ ServerCreateNoAccept(TServer *    const serverP,
                      const char * const filesPath,
                      const char * const logFileName) {
 
-    abyss_bool const noAcceptTrue = TRUE;
+    bool const noAcceptTrue = TRUE;
 
-    abyss_bool success;
+    bool success;
     const char * error;
 
     createServer(&serverP->srvP, noAcceptTrue, NULL, 0, &error);
@@ -338,7 +344,7 @@ ServerCreateSwitch(TServer *     const serverP,
                    TChanSwitch * const chanSwitchP,
                    const char ** const errorP) {
     
-    abyss_bool const noAcceptFalse = FALSE;
+    bool const noAcceptFalse = FALSE;
 
     assert(serverP);
     assert(chanSwitchP);
@@ -518,9 +524,10 @@ runUserHandler(TSession *        const sessionP,
 
 
 static void
-processDataFromClient(TConn *      const connectionP,
-                      abyss_bool   const lastReqOnConn,
-                      abyss_bool * const keepAliveP) {
+processDataFromClient(TConn *  const connectionP,
+                      bool     const lastReqOnConn,
+                      uint32_t const timeout,
+                      bool *   const keepAliveP) {
 
     TSession session;
 
@@ -528,7 +535,8 @@ processDataFromClient(TConn *      const connectionP,
 
     session.serverDeniesKeepalive = lastReqOnConn;
         
-    RequestRead(&session);
+    RequestRead(&session, timeout);
+
     if (session.status == 0) {
         if (session.version.major >= 2)
             ResponseStatus(&session, 505);
@@ -553,6 +561,7 @@ processDataFromClient(TConn *      const connectionP,
 }
 
 
+
 static TThreadProc serverFunc;
 
 static void
@@ -566,14 +575,14 @@ serverFunc(void * const userHandle) {
 
     unsigned int requestCount;
         /* Number of requests we've handled so far on this connection */
-    abyss_bool connectionDone;
+    bool connectionDone;
         /* No more need for this HTTP connection */
 
     requestCount = 0;
     connectionDone = FALSE;
 
     while (!connectionDone) {
-        abyss_bool success;
+        bool success;
         
         /* Wait to read until timeout */
         success = ConnRead(connectionP, srvP->keepalivetimeout);
@@ -581,12 +590,13 @@ serverFunc(void * const userHandle) {
         if (!success)
             connectionDone = TRUE;
         else {
-            abyss_bool const lastReqOnConn =
+            bool const lastReqOnConn =
                 requestCount + 1 >= srvP->keepalivemaxconn;
 
-            abyss_bool keepalive;
+            bool keepalive;
             
-            processDataFromClient(connectionP, lastReqOnConn, &keepalive);
+            processDataFromClient(connectionP, lastReqOnConn, srvP->timeout,
+                                  &keepalive);
             
             ++requestCount;
 
@@ -1206,12 +1216,12 @@ ServerDaemonize(TServer * const serverP) {
             TraceExit("Failed to change the user.");
     }
     
-    if (srvP->pidfile != -1) {
+    if (srvP->pidfileP) {
         char z[16];
     
         sprintf(z, "%d", getpid());
-        FileWrite(&srvP->pidfile, z, strlen(z));
-        FileClose(&srvP->pidfile);
+        FileWrite(srvP->pidfileP, z, strlen(z));
+        FileClose(srvP->pidfileP);
     }
 #endif  /* _WIN32 */
 }
@@ -1269,7 +1279,7 @@ ServerAddHandler(TServer *  const serverP,
                  URIHandler const function) {
 
     URIHandler2 * handlerP;
-    abyss_bool success;
+    bool success;
 
     handlerP = createHandler(function);
 
@@ -1312,12 +1322,12 @@ LogWrite(TServer *    const serverP,
         logOpen(srvP);
 
     if (srvP->logfileisopen) {
-        abyss_bool success;
+        bool success;
         success = MutexLock(srvP->logmutexP);
         if (success) {
             const char * const lbr = "\n";
-            FileWrite(&srvP->logfile, msg, strlen(msg));
-            FileWrite(&srvP->logfile, lbr, strlen(lbr));
+            FileWrite(srvP->logfileP, msg, strlen(msg));
+            FileWrite(srvP->logfileP, lbr, strlen(lbr));
         
             MutexUnlock(srvP->logmutexP);
         }

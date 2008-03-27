@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
@@ -126,46 +127,332 @@ RequestFree(TSession * const sessionP) {
 
 
 
-static void
-readRequestLine(TSession * const sessionP,
-                char **    const requestLineP,
-                uint16_t * const httpErrorCodeP) {
+static char *
+firstLfPos(TConn * const connectionP,
+           char *  const lineStart) {
 /*----------------------------------------------------------------------------
-   Read a line of the HTTP request from session 'sessionP'.  We read
-   through the session's internal buffer; i.e.  we may get data that was
-   previously read from the network, or we may read more from the network.
-   
-   Return as *requestLineP the request line read.  This ASCIIZ string is
-   in the session's internal buffer.
+   Return a pointer in the connection's receive buffer to the first
+   LF (linefeed aka newline) character in the buffer at or after 'lineStart'.
 
-   Return as *httpErrorCodeP the HTTP error code that describes how the
-   URI is invalid, or 0 if it is valid.  If it's invalid, *requestLineP
-   is meaningless.
+   If there is no LF in the buffer at or after 'lineStart', return NULL.
 -----------------------------------------------------------------------------*/
-    char * line;
-    abyss_bool gotNonEmptyLine;
+    const char * const bufferEnd =
+        connectionP->buffer + connectionP->buffersize;
 
-    *httpErrorCodeP = 0;  /* initial assumption */
-    gotNonEmptyLine = false;
+    char * p;
 
-    /* Ignore CRLFs in the beginning of the request (RFC2068-P30) */
-    while (!gotNonEmptyLine && *httpErrorCodeP == 0) {
-        abyss_bool success;
-        success = ConnReadHeader(sessionP->conn, &line);
-        if (success) {
-            if (line[0] != '\0')
-                gotNonEmptyLine = true;
-        } else
-            *httpErrorCodeP = 408;  /* Request Timeout */
-    }
-    *requestLineP = line;
+    for (p = lineStart; p < bufferEnd && *p != LF; ++p);
+
+    if (p < bufferEnd)
+        return p;
+    else
+        return NULL;
 }
 
 
 
 static void
-unescapeUri(char *       const uri,
-            abyss_bool * const errorP) {
+getLineInBuffer(TConn * const connectionP,
+                char *  const lineStart,
+                time_t  const deadline,
+                char ** const lineEndP,
+                bool *  const errorP) {
+/*----------------------------------------------------------------------------
+   Get a line into the connection's read buffer, starting at position
+   'lineStart', if there isn't one already there.   'lineStart' is either
+   within the buffer or just after it.
+
+   Read the channel until we get a full line, except fail if we don't get
+   one by 'deadline'.
+-----------------------------------------------------------------------------*/
+    bool error;
+    char * lfPos;
+
+    assert(lineStart <= connectionP->buffer + connectionP->buffersize);
+
+    error = FALSE;  /* initial value */
+    lfPos = NULL;  /* initial value */
+
+    while (!error && !lfPos) {
+        int const timeLeft = (int)(deadline - time(NULL));
+        assert(timeLeft == deadline - time(NULL));
+        if (timeLeft <= 0)
+            error = TRUE;
+        else {
+            lfPos = firstLfPos(connectionP, lineStart);
+            if (!lfPos)
+                error = !ConnRead(connectionP, timeLeft);
+        }
+    }    
+    *errorP = error;
+    *lineEndP = lfPos + 1;
+}
+
+
+
+static bool
+isContinuationLine(const char * const line) {
+
+    return (line[0] == ' ' || line[0] == '\t');
+}
+
+
+
+static bool
+isEmptyLine(const char * const line) {
+
+    return (line[0] == '\n' || (line[0] == '\r' && line[1] == '\n'));
+}
+
+
+
+static void
+convertLineEnd(char * const lineStart,
+               char * const prevLineStart,
+               char   const newVal) {
+/*----------------------------------------------------------------------------
+   Assuming a line begins at 'lineStart' and the line before it (the
+   "previous line") begins at 'prevLineStart', replace the line
+   delimiter at the end of the previous line with the character 'newVal'.
+
+   The line delimiter is either CRLF or LF.  In the CRLF case, we replace
+   both CR and LF with 'newVal'.
+-----------------------------------------------------------------------------*/
+    assert(lineStart >= prevLineStart + 1);
+    *(lineStart-1) = newVal;
+    if (prevLineStart + 1 < lineStart &&
+        *(lineStart-2) == CR)
+        *(lineStart-2) = newVal;
+}
+
+
+
+static void
+getRestOfHeader(TConn *       const connectionP,
+                char *        const lineEnd,
+                time_t        const deadline,
+                const char ** const headerEndP,
+                bool *        const errorP) {
+/*----------------------------------------------------------------------------
+   Given that the read buffer for connection *connectionP contains (at
+   its current read position) the first line of an HTTP header, which
+   ends at position 'lineEnd', find the rest of it.
+
+   Some or all of the rest of the header may be in the buffer already;
+   we read more from the connection as necessary, but not if it takes past
+   'deadline'.  In the latter case, we fail.
+
+   We return the location of the end of the whole header as *headerEndP.
+   We do not remove the header from the buffer, but we do modify the
+   buffer so as to join the multiple lines of the header into a single
+   line, and to NUL-terminate the header.
+-----------------------------------------------------------------------------*/
+    char * const headerStart = connectionP->buffer + connectionP->bufferpos;
+
+    char * headerEnd;
+        /* End of the header lines we've seen at so far */
+    bool gotWholeHeader;
+    bool error;
+
+    headerEnd = lineEnd;  /* initial value - end of 1st line */
+        
+    for (gotWholeHeader = FALSE, error = FALSE;
+         !gotWholeHeader && !error;) {
+
+        char * nextLineEnd;
+
+        /* Note that we are guaranteed, assuming the HTTP stream is
+           valid, that there is at least one more line in it.  Worst
+           case, it's the empty line that marks the end of the headers.
+        */
+        getLineInBuffer(connectionP, headerEnd, deadline,
+                        &nextLineEnd, &error);
+        if (!error) {
+            if (isContinuationLine(headerEnd)) {
+                /* Join previous line to this one */
+                convertLineEnd(headerEnd, headerStart, ' ');
+                /* Add this line to the header */
+                headerEnd = nextLineEnd;
+            } else {
+                gotWholeHeader = TRUE;
+                *headerEndP = headerEnd;
+
+                /* NUL-terminate the whole header */
+                convertLineEnd(headerEnd, headerStart, '\0');
+            }
+        }
+    }
+    *errorP = error;
+}
+
+
+
+static void
+readHeader(TConn * const connectionP,
+           time_t  const deadline,
+           bool *  const endOfHeadersP,
+           char ** const headerP,
+           bool *  const errorP) {
+/*----------------------------------------------------------------------------
+   Read an HTTP header, or the end of headers empty line, on connection
+   *connectionP.
+
+   An HTTP header is basically a line, except that if a line starts
+   with white space, it's a continuation of the previous line.  A line
+   is delimited by either LF or CRLF.
+
+   The first line of an HTTP header is never empty; an empty line signals
+   the end of the HTTP headers and beginning of the HTTP body.  We call
+   that empty line the EOH mark.
+
+   We assume the connection is positioned to a header or EOH mark.
+   
+   In the course of reading, we read at least one character past the
+   line delimiter at the end of the header or EOH mark; we may read
+   much more.  But we leave everything after the header or EOH (and
+   its line delimiter) in the internal buffer, with the buffer pointer
+   pointing to it.
+
+   We use stuff already in the internal buffer (perhaps left by a
+   previous call to this subroutine) before reading any more from from
+   the channel.
+
+   We return as *headerP the next header as an ASCIIZ string, with no
+   line delimiter.  That string is stored in the "unused" portion of
+   the connection's internal buffer.  Iff there is no next header, we
+   return *endOfHeadersP == true and nothing meaningful as *headerP.
+-----------------------------------------------------------------------------*/
+    char * const bufferStart = connectionP->buffer + connectionP->bufferpos;
+
+    bool error;
+    char * lineEnd;
+
+    getLineInBuffer(connectionP, bufferStart, deadline, &lineEnd, &error);
+
+    if (!error) {
+        if (isContinuationLine(bufferStart))
+            error = TRUE;
+        else if (isEmptyLine(bufferStart)) {
+            /* Consume the EOH mark from the buffer */
+            connectionP->bufferpos = lineEnd - connectionP->buffer;
+            *endOfHeadersP = TRUE;
+        } else {
+            /* We have the first line of a header; there may be more. */
+
+            const char * headerEnd;
+
+            *endOfHeadersP = FALSE;
+
+            getRestOfHeader(connectionP, lineEnd, deadline,
+                            &headerEnd, &error);
+
+            if (!error) {
+                *headerP = bufferStart;
+
+                /* Consume the header from the buffer (but be careful --
+                   you can't reuse that part of the buffer because the
+                   string we will return is in it!
+                */
+                connectionP->bufferpos = headerEnd - connectionP->buffer;
+            }
+        }
+    }
+    *errorP = error;
+}
+
+
+
+static void
+skipToNonemptyLine(TConn * const connectionP,
+                   time_t  const deadline,
+                   bool *  const errorP) {
+
+    char * const bufferStart = connectionP->buffer + connectionP->bufferpos;
+
+    bool gotNonEmptyLine;
+    bool error;
+    char * lineStart;
+    
+    lineStart       = bufferStart;  /* initial value */
+    gotNonEmptyLine = FALSE;        /* initial value */
+    error           = FALSE;        /* initial value */          
+
+    while (!gotNonEmptyLine && !error) {
+        char * lineEnd;
+
+        getLineInBuffer(connectionP, lineStart, deadline, &lineEnd, &error);
+
+        if (!error) {
+            if (!isEmptyLine(lineStart))
+                gotNonEmptyLine = TRUE;
+            else
+                lineStart = lineEnd;
+        }
+    }
+    if (!error) {
+        /* Consume all the empty lines; advance buffer pointer to first
+           non-empty line.
+        */
+        connectionP->bufferpos = lineStart - connectionP->buffer;
+    }
+    *errorP = error;
+}
+
+
+
+static void
+readRequestHeader(TSession * const sessionP,
+                  time_t     const deadline,
+                  char **    const requestLineP,
+                  uint16_t * const httpErrorCodeP) {
+/*----------------------------------------------------------------------------
+   Read the HTTP request header (aka request header field) from
+   session 'sessionP'.  We read through the session's internal buffer;
+   i.e.  we may get data that was previously read from the network, or
+   we may read more from the network.
+
+   We assume the connection is presently positioned to the beginning of
+   the HTTP document.  We leave it positioned after the request header.
+   
+   We ignore any empty lines at the beginning of the stream, per
+   RFC2616 Section 4.1.
+
+   Fail if we can't get the header before 'deadline'.
+
+   Return as *requestLineP the request header read.  This ASCIIZ string is
+   in the session's internal buffer.
+
+   Return as *httpErrorCodeP the HTTP error code that describes how we
+   are not able to read the request header, or 0 if we can.
+   If we can't, *requestLineP is meaningless.
+-----------------------------------------------------------------------------*/
+    char * line;
+    bool error;
+    bool endOfHeaders;
+
+    skipToNonemptyLine(sessionP->conn, deadline, &error);
+
+    if (!error)
+        readHeader(sessionP->conn, deadline, &endOfHeaders, &line, &error);
+
+    /* End of headers is delimited by an empty line, and we skipped all
+       the empty lines above, so we could not have encountered EOH:
+    */
+    assert(!endOfHeaders);
+
+    if (error)
+        *httpErrorCodeP = 408;  /* Request Timeout */
+    else {
+        *httpErrorCodeP = 0;
+        *requestLineP = line;
+    }
+}
+
+
+
+static void
+unescapeUri(char * const uri,
+            bool * const errorP) {
 
     char * x;
     char * y;
@@ -290,7 +577,7 @@ parseRequestUri(char *           const requestUri,
 
   This destroys 'requestUri'.  We should fix that.
 -----------------------------------------------------------------------------*/
-    abyss_bool error;
+    bool error;
 
     unescapeUri(requestUri, &error);
     
@@ -375,7 +662,7 @@ parseRequestLine(char *           const requestLine,
                  unsigned short * const portP,
                  const char **    const pathP,
                  const char **    const queryP,
-                 abyss_bool *     const moreLinesP,
+                 bool *           const moreLinesP,
                  uint16_t *       const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    Modifies *requestLine!
@@ -550,12 +837,12 @@ processHeader(const char * const fieldName,
         sessionP->requestInfo.referer = fieldValue;
     else if (xmlrpc_streq(fieldName, "range")) {
         if (xmlrpc_strneq(fieldValue, "bytes=", 6)) {
-            abyss_bool succeeded;
+            bool succeeded;
             succeeded = ListAddFromString(&sessionP->ranges, &fieldValue[6]);
             *httpErrorCodeP = succeeded ? 0 : 400;
         }
     } else if (xmlrpc_streq(fieldName, "cookies")) {
-        abyss_bool succeeded;
+        bool succeeded;
         succeeded = ListAddFromString(&sessionP->cookies, fieldValue);
         *httpErrorCodeP = succeeded ? 0 : 400;
     } else if (xmlrpc_streq(fieldName, "expect")) {
@@ -568,6 +855,7 @@ processHeader(const char * const fieldName,
 
 static void
 readAndProcessHeaders(TSession * const sessionP,
+                      time_t     const deadline,
                       uint16_t * const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    Read all the HTTP headers from the session *sessionP, which has at
@@ -575,10 +863,10 @@ readAndProcessHeaders(TSession * const sessionP,
    information in the headers.
 
    If we find an error in the headers or while trying to read them, we
-   return an appropriate HTTP error code as *httpErrorCodeP.  Otherwise,x
+   return an appropriate HTTP error code as *httpErrorCodeP.  Otherwise,
    we return *httpErrorCodeP = 0.
 -----------------------------------------------------------------------------*/
-    abyss_bool endOfHeaders;
+    bool endOfHeaders;
 
     assert(!sessionP->validRequest);
         /* Calling us doesn't make sense if there is already a valid request */
@@ -588,19 +876,15 @@ readAndProcessHeaders(TSession * const sessionP,
 
     while (!endOfHeaders && !*httpErrorCodeP) {
         char * header;
-        abyss_bool succeeded;
-        succeeded = ConnReadHeader(sessionP->conn, &header);
-        if (!succeeded)
+        bool error;
+        readHeader(sessionP->conn, deadline, &endOfHeaders, &header, &error);
+        if (error)
             *httpErrorCodeP = 408;  /* Request Timeout */
         else {
-            if (header[0] == '\0')
-                /* We have reached the empty line so all the request
-                   was read.
-                */
-                endOfHeaders = true;
-            else {
+            if (!endOfHeaders) {
                 char * p;
                 char * fieldName;
+
                 p = &header[0];
                 getFieldNameToken(&p, &fieldName, httpErrorCodeP);
                 if (!*httpErrorCodeP) {
@@ -624,19 +908,31 @@ readAndProcessHeaders(TSession * const sessionP,
 
 
 void
-RequestRead(TSession * const sessionP) {
+RequestRead(TSession * const sessionP,
+            uint32_t   const timeout) {
+/*----------------------------------------------------------------------------
+   Read the headers of a new HTTP request (assuming nothing has yet been
+   read on the session).
+
+   Update *sessionP with the information from the headers.
+
+   Leave the connection positioned to the body of the request, ready
+   to be read by an HTTP request handler (via SessionRefillBuffer() and
+   SessionGetReadData()).
+-----------------------------------------------------------------------------*/
+    time_t const deadline = time(NULL) + timeout;
 
     uint16_t httpErrorCode;  /* zero for no error */
     char * requestLine;  /* In connection;s internal buffer */
 
-    readRequestLine(sessionP, &requestLine, &httpErrorCode);
+    readRequestHeader(sessionP, deadline, &requestLine, &httpErrorCode);
     if (!httpErrorCode) {
         TMethod httpMethod;
         const char * host;
         const char * path;
         const char * query;
         unsigned short port;
-        abyss_bool moreHeaders;
+        bool moreHeaders;
 
         parseRequestLine(requestLine, &httpMethod, &sessionP->version,
                          &host, &port, &path, &query,
@@ -648,7 +944,7 @@ RequestRead(TSession * const sessionP) {
                             httpMethod, host, port, path, query);
 
             if (moreHeaders)
-                readAndProcessHeaders(sessionP, &httpErrorCode);
+                readAndProcessHeaders(sessionP, deadline, &httpErrorCode);
 
             if (httpErrorCode == 0)
                 sessionP->validRequest = true;
@@ -673,7 +969,7 @@ RequestHeaderValue(TSession *   const sessionP,
 
 
 
-abyss_bool
+bool
 RequestValidURI(TSession * const sessionP) {
 
     if (!sessionP->requestInfo.uri)
@@ -690,7 +986,7 @@ RequestValidURI(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 RequestValidURIPath(TSession * const sessionP) {
 
     uint32_t i;
@@ -728,7 +1024,7 @@ RequestValidURIPath(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 RequestAuth(TSession *   const sessionP,
             const char * const credential,
             const char * const user,
@@ -745,7 +1041,7 @@ RequestAuth(TSession *   const sessionP,
    When we return TRUE, we also set the username in the request info
    to 'user' so that a future SessionGetRequestInfo can get it.
 -----------------------------------------------------------------------------*/
-    abyss_bool authorized;
+    bool authorized;
     char * authHdrPtr;
 
     authHdrPtr = RequestHeaderValue(sessionP, "authorization");
@@ -910,12 +1206,12 @@ HTTPRead(TSession *   const s ATTR_UNUSED,
 
 
 
-abyss_bool
+bool
 HTTPWriteBodyChunk(TSession *   const sessionP,
                    const char * const buffer,
                    uint32_t     const len) {
 
-    abyss_bool succeeded;
+    bool succeeded;
 
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
         char chunkHeader[16];
@@ -937,10 +1233,10 @@ HTTPWriteBodyChunk(TSession *   const sessionP,
 
 
 
-abyss_bool
+bool
 HTTPWriteEndChunk(TSession * const sessionP) {
 
-    abyss_bool retval;
+    bool retval;
 
     if (sessionP->chunkedwritemode && sessionP->chunkedwrite) {
         /* May be one day trailer dumping will be added */
@@ -954,7 +1250,7 @@ HTTPWriteEndChunk(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 HTTPKeepalive(TSession * const sessionP) {
 /*----------------------------------------------------------------------------
    Return value: the connection should be kept alive after the session
@@ -967,7 +1263,7 @@ HTTPKeepalive(TSession * const sessionP) {
 
 
 
-abyss_bool
+bool
 HTTPWriteContinue(TSession * const sessionP) {
 
     char const continueStatus[] = "HTTP/1.1 100 continue\r\n\r\n";

@@ -535,8 +535,10 @@ packetSocket::read(bool *      const eofP,
 
 
 void
-packetSocket::readWait(bool *      const eofP,
-                       packetPtr * const packetPP) {
+packetSocket::readWait(volatile const int * const interruptP,
+                       bool *               const eofP,
+                       bool *               const gotPacketP,
+                       packetPtr *          const packetPP) {
 
     bool gotPacket;
     bool eof;
@@ -544,7 +546,7 @@ packetSocket::readWait(bool *      const eofP,
     gotPacket = false;
     eof = false;
 
-    while (!gotPacket && !eof) {
+    while (!gotPacket && !eof && !*interruptP) {
         struct pollfd pollfds[1];
 
         pollfds[0].fd = this->sockFd;
@@ -554,9 +556,35 @@ packetSocket::readWait(bool *      const eofP,
 
         this->read(&eof, &gotPacket, packetPP);
     }
+
+    *gotPacketP = gotPacket;
     *eofP = eof;
 }
 
 
+
+void
+packetSocket::readWait(volatile const int * const interruptP,
+                       bool *               const eofP,
+                       packetPtr *          const packetPP) {
+
+    bool gotPacket;
+
+    this->readWait(interruptP, eofP, &gotPacket, packetPP);
+
+    if (!gotPacket)
+        throwf("Packet read was interrupted");
+}
+
+
+
+void
+packetSocket::readWait(bool *      const eofP,
+                       packetPtr * const packetPP) {
+
+    int const interrupt(0);  // Never interrupt
+
+    this->readWait(&interrupt, eofP, packetPP);
+}
 
 } // namespace

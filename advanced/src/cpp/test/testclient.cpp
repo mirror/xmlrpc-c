@@ -567,15 +567,27 @@ public:
 
         carriageParm_curl1P->setBasicAuth("bryanh", "12345");
 
+        carriageParm_curl1P->setUser("bryanh", "12345");
+        carriageParm_curl1P->allowAuthBasic();
+        carriageParm_curl1P->disallowAuthBasic();
+        carriageParm_curl1P->allowAuthDigest();
+        carriageParm_curl1P->disallowAuthDigest();
+        carriageParm_curl1P->allowAuthNegotiate();
+        carriageParm_curl1P->disallowAuthNegotiate();
+        carriageParm_curl1P->allowAuthNtlm();
+        carriageParm_curl1P->disallowAuthNtlm();
+
         carriageParm_libwww0Ptr carriageParm_libwww1P(
             new carriageParm_libwww0("http://suckthis.com"));
 
-        carriageParm_libwww1P->setBasicAuth("bryanh", "12345");
+        carriageParm_libwww1P->setUser("bryanh", "12345");
+        carriageParm_libwww1P->allowAuthBasic();
 
         carriageParm_wininet0Ptr carriageParm_wininet1P(
             new carriageParm_wininet0("http://suckthis.com"));
 
-        carriageParm_wininet1P->setBasicAuth("bryanh", "12345");
+        carriageParm_wininet1P->setUser("bryanh", "12345");
+        carriageParm_wininet1P->allowAuthBasic();
     }
 };
 

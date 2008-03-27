@@ -1,8 +1,6 @@
 Build Instructions For XML-RPC For C/C++ On Windows
 ---------------------------------------------------
 
-Xmlrpc-c release 1.13, December, 2007.
-
 Latest Windows work was done by
 
   Geoff McLane

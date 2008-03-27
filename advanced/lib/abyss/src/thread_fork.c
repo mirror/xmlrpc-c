@@ -33,7 +33,7 @@ struct abyss_thread {
     TThreadDoneFn * threadDone;
     void * userHandle;
     pid_t pid;
-    abyss_bool useSigchld;
+    bool useSigchld;
         /* This means that user is going to call ThreadHandleSigchld()
            when it gets a death of a child signal for this process.  If
            false, he's going to leave us in the dark, so we'll have to
@@ -156,7 +156,7 @@ ThreadCreate(TThread **      const threadPP,
              void *          const userHandle,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
-             abyss_bool      const useSigchld,
+             bool            const useSigchld,
              const char **   const errorP) {
     
     TThread * threadP;
@@ -210,21 +210,21 @@ ThreadCreate(TThread **      const threadPP,
 
 
 
-abyss_bool
+bool
 ThreadRun(TThread * const threadP ATTR_UNUSED) {
     return TRUE;    
 }
 
 
 
-abyss_bool
+bool
 ThreadStop(TThread * const threadP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 ThreadKill(TThread * const threadP ATTR_UNUSED) {
     return TRUE;
 }
@@ -273,7 +273,7 @@ ThreadRelease(TThread * const threadP) {
 
 
 
-abyss_bool
+bool
 ThreadForks(void) {
 
     return TRUE;
@@ -289,28 +289,28 @@ ThreadForks(void) {
    so locking is a no-op.
 */
 
-abyss_bool
+bool
 MutexCreate(TMutex ** const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 MutexLock(TMutex * const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 MutexUnlock(TMutex * const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 MutexTryLock(TMutex * const mutexP ATTR_UNUSED) {
     return TRUE;
 }

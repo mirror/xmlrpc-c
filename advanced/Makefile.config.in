@@ -178,8 +178,8 @@ ifeq ($(findstring solaris,$(HOST_OS)),solaris)
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  # Solaris compiler can't take multiple ld options as -Wl,-a,-b .  Ld sees
-  # -a,-b in that case.
+  # Solaris compiler (Sun C 5.5) can't take multiple ld options as
+  # -Wl,-a,-b .  Ld sees -a,-b in that case.
   LDFLAGS_SHLIB = -Wl,-Bdynamic -Wl,-G -Wl,-h -Wl,$(SONAME)
   CFLAGS_SHLIB = -Kpic
 endif

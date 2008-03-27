@@ -3,6 +3,10 @@
 #ifdef WIN32
 #include <winsock.h>
 #else
+/* In some systems (SUS), the select() interface comes from <sys/time.h>;
+   in others, from <sys/select.h>, and other from both.  Including both
+   in this order appears to work on all.
+*/
 #include <sys/time.h>
 #include <sys/select.h>
 #endif 

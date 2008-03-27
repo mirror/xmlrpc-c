@@ -247,12 +247,12 @@ struct socketWin {
    The properties/state of a TSocket unique to a Unix TSocket.
 -----------------------------------------------------------------------------*/
     SOCKET winsock;
-    abyss_bool userSuppliedWinsock;
+    bool userSuppliedWinsock;
         /* 'socket' was supplied by the user; it belongs to him */
 };
 
 static
-abyss_bool
+bool
 connected(SOCKET const fd) {
 /*----------------------------------------------------------------------------
    Return TRUE iff the socket on file descriptor 'fd' is in the connected
@@ -260,7 +260,7 @@ connected(SOCKET const fd) {
    If 'fd' does not identify a stream socket or we are unable to determine
    the state of the stream socket, the answer is "false".
 -----------------------------------------------------------------------------*/
-    abyss_bool connected;
+    bool connected;
     struct sockaddr sockaddr;
     socklen_t nameLen;
     int rc;
@@ -333,12 +333,12 @@ static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             abyss_bool *          const failedP) {
+             bool *          const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
 
     size_t bytesLeft;
-    abyss_bool error;
+    bool error;
 
     assert(sizeof(size_t) >= sizeof(len));
 
@@ -370,7 +370,7 @@ channelRead(TChannel *   const channelP,
             unsigned char * const buffer, 
             uint32_t     const bufferSize,
             uint32_t *   const bytesReceivedP,
-            abyss_bool * const failedP) {
+            bool * const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
 
@@ -389,53 +389,80 @@ channelRead(TChannel *   const channelP,
 
 static ChannelWaitImpl channelWait;
 
-static uint32_t
-channelWait(TChannel *  const channelP,
-            abyss_bool  const rd,
-            abyss_bool  const wr,
-            uint32_t    const timems) {
+static void
+channelWait(TChannel * const channelP,
+            bool       const waitForRead,
+            bool       const waitForWrite,
+            uint32_t   const timems,
+            bool *     const readyToReadP,
+            bool *     const readyToWriteP,
+            bool *     const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
 
     fd_set rfds, wfds;
     TIMEVAL tv;
+    bool failed, readRdy, writeRdy, timedOut;
 
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
 
-    if (rd)
+    if (waitForRead)
         FD_SET(socketWinP->winsock, &rfds);
 
-    if (wr)
+    if (waitForWrite)
         FD_SET(socketWinP->winsock, &wfds);
 
     tv.tv_sec  = timems / 1000;
     tv.tv_usec = timems % 1000;
+ 
+    for (failed = FALSE, readRdy = FALSE, writeRdy = FALSE, timedOut = FALSE;
+         !failed && !readRdy && !writeRdy && !timedOut;
+        ) {
 
-    for (;;) {
         int rc;
 
         rc = select(socketWinP->winsock + 1, &rfds, &wfds, NULL,
                     (timems == TIME_INFINITE ? NULL : &tv));
 
         switch(rc) {   
-        case 0: /* time out */
-            return 0;
-
+        case 0:
+            timedOut = TRUE;
+            break;
         case -1:  /* socket error */
-            if (errno == EINTR)
-                break;
-            
-            return 0;
-            
+            if (errno != EINTR)
+                failed = TRUE;
+            break;
         default:
             if (FD_ISSET(socketWinP->winsock, &rfds))
-                return 1;
+                readRdy = TRUE;
             if (FD_ISSET(socketWinP->winsock, &wfds))
-                return 2;
-            return 0;
+                writeRdy = TRUE;
         }
     }
+
+    if (failedP)
+        *failedP       = failed;
+    if (readyToReadP)
+        *readyToReadP  = readRdy;
+    if (readyToWriteP)
+        *readyToWriteP = writeRdy;
+}
+
+
+
+static ChannelInterruptImpl channelInterrupt;
+
+static void
+channelInterrupt(TChannel * const channelP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in channelWait()
+  now or in the future.
+
+  Actually, this is just a no-op because we don't yet know how to
+  accomplish that.
+-----------------------------------------------------------------------------*/
+
 }
 
 
@@ -531,6 +558,7 @@ static struct TChannelVtbl const channelVtbl = {
     &channelWrite,
     &channelRead,
     &channelWait,
+    &channelInterrupt,
     &channelFormatPeerInfo,
 };
 
@@ -701,7 +729,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 -----------------------------------------------------------------------------*/
     struct socketWin * const listenSocketP = chanSwitchP->implP;
 
-    abyss_bool interrupted;
+    bool interrupted;
     TChannel * channelP;
 
     interrupted = FALSE; /* Haven't been interrupted yet */
@@ -752,10 +780,27 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
 
 
+static SwitchInterruptImpl chanSwitchInterrupt;
+
+static void
+chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in chanSwitchAccept()
+  now or in the future.
+
+  Actually, this is just a no-op because we don't yet know how to
+  accomplish that.
+-----------------------------------------------------------------------------*/
+
+}
+
+
+
 static struct TChanSwitchVtbl const chanSwitchVtbl = {
     &chanSwitchDestroy,
     &chanSwitchListen,
     &chanSwitchAccept,
+    &chanSwitchInterrupt,
 };
 
 

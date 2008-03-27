@@ -2,6 +2,7 @@
 #define SESSION_H_INCLUDED
 
 #include "xmlrpc-c/abyss.h"
+#include "bool.h"
 #include "date.h"
 #include "data.h"
 
@@ -11,7 +12,7 @@ typedef struct {
 } httpVersion;
 
 struct _TSession {
-    abyss_bool validRequest;
+    bool validRequest;
         /* Client has sent, and server has recognized, a valid HTTP request.
            This is false when the session is new.  If and when the server
            reads the request from the client and finds it to be valid HTTP,
@@ -36,12 +37,12 @@ struct _TSession {
         */
     TString header;
 
-    abyss_bool serverDeniesKeepalive;
+    bool serverDeniesKeepalive;
         /* Server doesn't want keepalive for this session, regardless of
            what happens in the session.  E.g. because the connection has
            already been kept alive long enough.
         */
-    abyss_bool responseStarted;
+    bool responseStarted;
         /* Handler has at least started the response (i.e. called
            ResponseWriteStart())
         */
@@ -60,10 +61,10 @@ struct _TSession {
 
     time_t date;
 
-    abyss_bool chunkedwrite;
-    abyss_bool chunkedwritemode;
+    bool chunkedwrite;
+    bool chunkedwritemode;
 
-    abyss_bool continueRequired;
+    bool continueRequired;
         /* This client must receive 100 (continue) status before it will
            send more of the body of the request.
         */

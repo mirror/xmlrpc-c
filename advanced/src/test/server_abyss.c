@@ -59,6 +59,64 @@ testServerParms(void) {
 
 
 
+static void
+testObject(void) {
+
+    xmlrpc_env env;
+    xmlrpc_server_abyss_parms parms;
+    xmlrpc_server_abyss_t * serverP;
+    xmlrpc_registry * registryP;
+    xmlrpc_server_abyss_sig * oldHandlersP;
+
+    xmlrpc_env_init(&env);
+
+    registryP = xmlrpc_registry_new(&env);
+    TEST_NO_FAULT(&env);
+
+    serverP = NULL;
+
+    xmlrpc_server_abyss_create(&env, &parms, XMLRPC_APSIZE(registryP),
+                               &serverP);
+
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);  /* Global init not done */
+
+    xmlrpc_server_abyss_global_init(&env);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_abyss_create(&env, &parms, XMLRPC_APSIZE(registryP),
+                               &serverP);
+
+    TEST_NO_FAULT(&env);
+    TEST(serverP != NULL);
+
+    xmlrpc_server_abyss_terminate(&env, serverP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_abyss_reset_terminate(&env, serverP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_abyss_setup_sig(&env, serverP, &oldHandlersP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_abyss_use_sigchld(serverP);
+    
+    xmlrpc_server_abyss_restore_sig(oldHandlersP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_abyss_destroy(serverP);
+    
+    xmlrpc_registry_free(registryP);
+
+    xmlrpc_server_abyss_global_term();
+
+    xmlrpc_server_abyss_setup_sig(&env, serverP, &oldHandlersP);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR); /* Not globally initialized */
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 void
 test_server_abyss(void) {
 
@@ -78,6 +136,8 @@ test_server_abyss(void) {
     ServerFree(&abyssServer);
 
     testServerParms();
+
+    testObject();
 
     printf("\n");
     printf("Abyss XML-RPC server tests done.\n");

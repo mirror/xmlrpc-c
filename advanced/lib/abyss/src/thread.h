@@ -5,6 +5,8 @@
 ** Thread
 *********************************************************************/
 
+#include "bool.h"
+
 typedef struct abyss_thread TThread;
 
 void
@@ -18,16 +20,16 @@ ThreadCreate(TThread **      const threadPP,
              void *          const userHandle,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
-             abyss_bool      const useSigchld,
+             bool            const useSigchld,
              const char **   const errorP);
 
-abyss_bool
+bool
 ThreadRun(TThread * const threadP);
 
-abyss_bool
+bool
 ThreadStop(TThread * const threadP);
 
-abyss_bool
+bool
 ThreadKill(TThread * const threadP);
 
 void
@@ -39,7 +41,7 @@ ThreadExit(int const retValue);
 void
 ThreadRelease(TThread * const threadP);
 
-abyss_bool
+bool
 ThreadForks(void);
 
 void
@@ -56,16 +58,16 @@ ThreadHandleSigchld(pid_t const pid);
 
 typedef struct abyss_mutex TMutex;
 
-abyss_bool
+bool
 MutexCreate(TMutex ** const mutexP);
 
-abyss_bool
+bool
 MutexLock(TMutex * const mutexP);
 
-abyss_bool
+bool
 MutexUnlock(TMutex * const mutexP);
 
-abyss_bool
+bool
 MutexTryLock(TMutex * const mutexP);
 
 void

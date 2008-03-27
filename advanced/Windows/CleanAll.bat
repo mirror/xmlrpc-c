@@ -26,6 +26,8 @@ call delsln
 @if EXIST ..\lib\*.dll del ..\lib\*.dll > nul
 @echo CleanAll: Cleaning test data files ...
 @if EXIST ..\bin\data\*.xml del ..\bin\data\*.xml > nul
+@if EXIST ..\bin\data\. rd ..\bin\data > nul
+@if EXIST ..\bin\. rd ..\bin > nul
 @echo CleanAll: Cleaning old residual built binaries ... but none should exist ...
 @if EXIST ..\lib\expat\gennmtab\Debug\. %TEMPX% ..\lib\expat\gennmtab\Debug
 @if EXIST ..\lib\expat\gennmtab\Release\. %TEMPX% ..\lib\expat\gennmtab\Release

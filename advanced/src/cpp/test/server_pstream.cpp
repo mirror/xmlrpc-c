@@ -136,7 +136,6 @@ public:
                                      .registryP(&myRegistry)
                                      .socketFd(devNullFd));
 
-            cerr << "doing dev/null" << endl;
             bool eof;
             server.runOnce(&eof);
             TEST(eof);

@@ -19,6 +19,7 @@
 #include <fcntl.h>
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "int.h"
 #include "girmath.h"
 #include "mallocvar.h"
@@ -28,6 +29,7 @@
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
 #include "session.h"
+#include "file.h"
 #include "conn.h"
 #include "http.h"
 #include "date.h"
@@ -142,9 +144,9 @@ cmpfiledates(const TFileInfo ** const f1PP,
 
 static void
 determineSortType(const char *  const query,
-                  abyss_bool *  const ascendingP,
+                  bool *        const ascendingP,
                   uint16_t *    const sortP,
-                  abyss_bool *  const textP,
+                  bool *        const textP,
                   const char ** const errorP) {
 
     *ascendingP = TRUE;
@@ -184,11 +186,11 @@ generateListing(TList *       const listP,
                 uint16_t *    const responseStatusP) {
     
     TFileInfo fileinfo;
-    TFileFind findhandle;
+    TFileFind * findhandleP;
 
     *errorP = NULL;
 
-    if (!FileFindFirst(&findhandle, dirName, &fileinfo)) {
+    if (!FileFindFirst(&findhandleP, dirName, &fileinfo)) {
         *responseStatusP = ResponseStatusFromErrno(errno);
         xmlrpc_asprintf(errorP, "Can't read first entry in directory");
     } else {
@@ -207,20 +209,20 @@ generateListing(TList *       const listP,
             }
             fi = (TFileInfo *)PoolAlloc(poolP, sizeof(fileinfo));
             if (fi) {
-                abyss_bool success;
+                bool success;
                 memcpy(fi, &fileinfo, sizeof(fileinfo));
                 success =  ListAdd(listP, fi);
                 if (!success)
                     xmlrpc_asprintf(errorP, "ListAdd() failed");
             } else
                 xmlrpc_asprintf(errorP, "PoolAlloc() failed.");
-        } while (!*errorP && FileFindNext(&findhandle, &fileinfo));
+        } while (!*errorP && FileFindNext(findhandleP, &fileinfo));
 
         if (*errorP) {
             *responseStatusP = 500;
             ListFree(listP);
         }            
-        FileFindClose(&findhandle);
+        FileFindClose(findhandleP);
     }
 }
 
@@ -228,9 +230,9 @@ generateListing(TList *       const listP,
 
 static void
 sendDirectoryDocument(TList *      const listP,
-                      abyss_bool   const ascending,
+                      bool         const ascending,
                       uint16_t     const sort,
-                      abyss_bool   const text,
+                      bool         const text,
                       const char * const uri,
                       MIMEType *   const mimeTypeP,
                       TSession *   const sessionP) {
@@ -370,16 +372,16 @@ sendDirectoryDocument(TList *      const listP,
 
 
 
-static abyss_bool
+static bool
 notRecentlyModified(TSession * const sessionP,
                     time_t     const fileModTime) {
 
-    abyss_bool retval;
+    bool retval;
     const char * imsHdr;
 
     imsHdr = RequestHeaderValue(sessionP, "if-modified-since");
     if (imsHdr) {
-        abyss_bool valid;
+        bool valid;
         time_t datetime;
         DateDecode(imsHdr, &valid, &datetime);
         if (valid) {
@@ -419,8 +421,8 @@ handleDirectory(TSession *   const sessionP,
                 time_t       const fileModTime,
                 MIMEType *   const mimeTypeP) {
 
-    abyss_bool text;
-    abyss_bool ascending;
+    bool text;
+    bool ascending;
     uint16_t sort;    /* 1=by name, 2=by date */
     const char * error;
     
@@ -435,7 +437,7 @@ handleDirectory(TSession *   const sessionP,
         ResponseWriteStart(sessionP);
     } else {
         TPool pool;
-        abyss_bool succeeded;
+        bool succeeded;
         succeeded = PoolCreate(&pool, 1024);
         if (!succeeded)
             ResponseStatus(sessionP, 500);
@@ -520,7 +522,7 @@ sendBody(TSession *      const sessionP,
             if (i < sessionP->ranges.size) {
                 uint64_t start;
                 uint64_t end;
-                abyss_bool decoded;
+                bool decoded;
                     
                 decoded = RangeDecode((char *)(sessionP->ranges.item[i]),
                                       filesize,
@@ -549,12 +551,12 @@ sendBody(TSession *      const sessionP,
 
 static void
 sendFileAsResponse(TSession *   const sessionP,
-                   TFile        const file,
+                   TFile *      const fileP,
                    const char * const fileName,
                    time_t       const fileModTime,
                    MIMEType *   const mimeTypeP) {
 
-    uint64_t const filesize = FileSize(&file);
+    uint64_t const filesize = FileSize(fileP);
     const char * const mediatype = MIMETypeGuessFromFile2(mimeTypeP, fileName);
 
     uint64_t start;  /* Defined only if session has one range */
@@ -566,7 +568,7 @@ sendFileAsResponse(TSession *   const sessionP,
         break;
 
     case 1: {
-        abyss_bool decoded;
+        bool decoded;
         decoded = RangeDecode((char *)(sessionP->ranges.item[0]), filesize,
                               &start, &end);
         if (!decoded) {
@@ -602,7 +604,7 @@ sendFileAsResponse(TSession *   const sessionP,
     ResponseWriteStart(sessionP);
 
     if (sessionP->requestInfo.method != m_head)
-        sendBody(sessionP, &file, filesize, mediatype, start, end);
+        sendBody(sessionP, fileP, filesize, mediatype, start, end);
 }        
 
 
@@ -616,10 +618,10 @@ handleFile(TSession *   const sessionP,
    This is an HTTP request handler for a GET.  It does the classic
    web server thing: send the file named in the URL to the client.
 -----------------------------------------------------------------------------*/
-    TFile file;
-    abyss_bool success;
+    TFile * fileP;
+    bool success;
     
-    success = FileOpen(&file, fileName, O_BINARY | O_RDONLY);
+    success = FileOpen(&fileP, fileName, O_BINARY | O_RDONLY);
     if (!success)
         ResponseStatusErrno(sessionP);
     else {
@@ -627,10 +629,10 @@ handleFile(TSession *   const sessionP,
             ResponseStatus(sessionP, 304);
             ResponseWriteStart(sessionP);
         } else
-            sendFileAsResponse(sessionP, file,
+            sendFileAsResponse(sessionP, fileP,
                                fileName, fileModTime, mimeTypeP);
 
-        FileClose(&file);
+        FileClose(fileP);
     }
 }
 
@@ -661,7 +663,9 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
     char * p;
     char z[4096];
     TFileStat fs;
-    abyss_bool endingslash=FALSE;
+    bool endingslash;
+
+    endingslash = FALSE;  /* initial value */
 
     if (!RequestValidURIPath(sessionP)) {
         ResponseStatus(sessionP, 400);

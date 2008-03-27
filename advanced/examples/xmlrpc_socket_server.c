@@ -4,7 +4,9 @@
    This example expects an already bound socket on Standard Input, ready to
    be listened on for client connections.  Also see xmlrpc_sample_add_server,
    which is the same thing, except you tell it a TCP port number and it
-   creates the socket itself.
+   creates the socket itself.  Also see xmlrpc_inetd_server.c, which is
+   the same thing except you give it a socket which is already connected
+   to a client.
  */
 
 #include <stdlib.h>

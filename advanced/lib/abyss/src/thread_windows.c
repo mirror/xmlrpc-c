@@ -13,6 +13,7 @@
 
 #include "xmlrpc_config.h"
 
+#include "bool.h"
 #include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
@@ -58,7 +59,7 @@ ThreadCreate(TThread **      const threadPP,
              void *          const userHandle,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
-             abyss_bool      const useSigchld,
+             bool            const useSigchld,
              const char **   const errorP) {
 
     TThread * threadP;
@@ -95,14 +96,14 @@ ThreadCreate(TThread **      const threadPP,
 
 
 
-abyss_bool
+bool
 ThreadRun(TThread * const threadP) {
     return (ResumeThread(threadP->handle) != 0xFFFFFFFF);
 }
 
 
 
-abyss_bool
+bool
 ThreadStop(TThread * const threadP) {
 
     return (SuspendThread(threadP->handle) != 0xFFFFFFFF);
@@ -110,7 +111,7 @@ ThreadStop(TThread * const threadP) {
 
 
 
-abyss_bool
+bool
 ThreadKill(TThread * const threadP) {
     return (TerminateThread(threadP->handle, 0) != 0);
 }
@@ -141,7 +142,7 @@ ThreadRelease(TThread * const threadP) {
 
 
 
-abyss_bool
+bool
 ThreadForks(void) {
 
     return FALSE;
@@ -168,11 +169,11 @@ struct abyss_mutex {
 };
 
 
-abyss_bool
+bool
 MutexCreate(TMutex ** const mutexPP) {
 
     TMutex * mutexP;
-    abyss_bool succeeded;
+    bool succeeded;
 
     MALLOCVAR(mutexP);
 
@@ -196,7 +197,7 @@ MutexCreate(TMutex ** const mutexPP) {
  
 
 
-abyss_bool
+bool
 MutexLock(TMutex * const mutexP) {
 
     return (WaitForSingleObject(mutexP->winMutex, INFINITE) != WAIT_TIMEOUT);
@@ -204,14 +205,14 @@ MutexLock(TMutex * const mutexP) {
 
 
 
-abyss_bool
+bool
 MutexUnlock(TMutex * const mutexP) {
 
     return ReleaseMutex(mutexP->winMutex);
 }
 
 
-abyss_bool
+bool
 MutexTryLock(TMutex * const mutexP) {
 
     return (WaitForSingleObject(mutexP->winMutex, 0) != WAIT_TIMEOUT);

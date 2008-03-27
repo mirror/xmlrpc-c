@@ -11,6 +11,7 @@
    oblivious to HTTP -- it just transports a byte stream in each direction.
 ============================================================================*/
 
+#include "bool.h"
 #include "int.h"
 #include "xmlrpc-c/abyss.h"
 
@@ -23,23 +24,28 @@ ChannelCreate(const struct TChannelVtbl * const vtblP,
 
 typedef void ChannelDestroyImpl(TChannel * const channelP);
 
-typedef void ChannelWriteImpl(TChannel *             const channelP,
-                              const unsigned char *  const buffer,
-                              uint32_t               const len,
-                              abyss_bool *           const failedP);
+typedef void ChannelWriteImpl(TChannel *            const channelP,
+                              const unsigned char * const buffer,
+                              uint32_t              const len,
+                              bool *                const failedP);
 
 typedef void ChannelReadImpl(TChannel *      const channelP,
                              unsigned char * const buffer,
                              uint32_t        const len,
                              uint32_t *      const bytesReceivedP,
-                             abyss_bool *    const failedP);
+                             bool *          const failedP);
 
 typedef uint32_t ChannelErrorImpl(TChannel * const channelP);
 
-typedef uint32_t ChannelWaitImpl(TChannel * const channelP,
-                                 abyss_bool const rd,
-                                 abyss_bool const wr,
-                                 uint32_t   const timems);
+typedef void ChannelWaitImpl(TChannel * const channelP,
+                             bool       const waitForRead,
+                             bool       const waitForWrite,
+                             uint32_t   const timems,
+                             bool *     const readyToReadP,
+                             bool *     const readyToWriteP,
+                             bool *     const failedP);
+
+typedef void ChannelInterruptImpl(TChannel * const channelP);
 
 typedef void ChannelFormatPeerInfoImpl(TChannel *    const channelP,
                                        const char ** const peerStringP);
@@ -49,6 +55,7 @@ struct TChannelVtbl {
     ChannelWriteImpl              * write;
     ChannelReadImpl               * read;
     ChannelWaitImpl               * wait;
+    ChannelInterruptImpl          * interrupt;
     ChannelFormatPeerInfoImpl     * formatPeerInfo;
 };
 
@@ -65,7 +72,7 @@ struct _TChannel {
 
 #define TIME_INFINITE   0xffffffff
 
-extern abyss_bool ChannelTraceIsActive;
+extern bool ChannelTraceIsActive;
 
 void
 ChannelInit(const char ** const errorP);
@@ -77,20 +84,26 @@ void
 ChannelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             abyss_bool *          const failedP);
+             bool *                const failedP);
 
 void
 ChannelRead(TChannel *      const channelP, 
             unsigned char * const buffer, 
             uint32_t        const len,
             uint32_t *      const bytesReceivedP,
-            abyss_bool *    const failedP);
+            bool *          const failedP);
 
-uint32_t
+void
 ChannelWait(TChannel * const channelP,
-            abyss_bool const rd,
-            abyss_bool const wr,
-            uint32_t   const timems);
+            bool       const waitForRead,
+            bool       const waitForWrite,
+            uint32_t   const timems,
+            bool *     const readyToReadP,
+            bool *     const readyToWriteP,
+            bool *     const failedP);
+
+void
+ChannelInterrupt(TChannel * const channelP);
 
 void
 ChannelFormatPeerInfo(TChannel *    const channelP,

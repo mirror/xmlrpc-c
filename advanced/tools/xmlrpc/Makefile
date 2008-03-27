@@ -26,7 +26,13 @@ LDFLAGS = $(LADD)
 
 all: xmlrpc
 
-UTIL_OBJS = cmdline_parser.o getoptx.o casprintf.o
+UTIL_OBJS = \
+  casprintf.o \
+  cmdline_parser.o \
+  getoptx.o \
+  stripcaseeq.o \
+  string_parser.o \
+
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 # Can we just use $(LIBS) in the link?

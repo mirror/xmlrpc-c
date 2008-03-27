@@ -210,15 +210,16 @@ xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
     if (!envP->fault_occurred) {
         const char * const data = XMLRPC_MEMBLOCK_CONTENTS(char, userNamePw64);
         size_t       const len  = XMLRPC_MEMBLOCK_SIZE(char, userNamePw64);
+        const char * const authType = "Basic ";
 
         char * hdrValue;
 
-        hdrValue = malloc(sizeof("Basic ") + len + 1);
+        hdrValue = malloc(sizeof(authType) + len + 1);
         if (hdrValue == NULL)
             xmlrpc_faultf(envP, "Could not allocate memory to store "
                           "authorization header value.");
         else {
-            strcpy(hdrValue, "Basic ");
+            strcpy(hdrValue, authType);
             strncat(hdrValue, data, len);
 
             if (serverInfoP->basicAuthHdrValue)

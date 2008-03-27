@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <assert.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
@@ -15,6 +16,7 @@
 #include "channel.h"
 #include "server.h"
 #include "thread.h"
+#include "file.h"
 
 #include "conn.h"
 
@@ -76,7 +78,7 @@ threadDone(void * const userHandle) {
 static void
 makeThread(TConn *             const connectionP,
            enum abyss_foreback const foregroundBackground,
-           abyss_bool          const useSigchld,
+           bool                const useSigchld,
            const char **       const errorP) {
            
     switch (foregroundBackground) {
@@ -110,7 +112,7 @@ ConnCreate(TConn **            const connectionPP,
            TThreadProc *       const job,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
-           abyss_bool          const useSigchld,
+           bool                const useSigchld,
            const char **       const errorP) {
 /*----------------------------------------------------------------------------
    Create an HTTP connection.
@@ -165,7 +167,7 @@ ConnCreate(TConn **            const connectionPP,
 
 
 
-abyss_bool
+bool
 ConnProcess(TConn * const connectionP) {
 /*----------------------------------------------------------------------------
    Drive the main processing of a connection -- run the connection's
@@ -177,7 +179,7 @@ ConnProcess(TConn * const connectionP) {
    we return or some time after.  If we fail, we guarantee the "done"
    function will not be called.
 -----------------------------------------------------------------------------*/
-    abyss_bool retval;
+    bool retval;
 
     if (connectionP->hasOwnThread) {
         /* There's a background thread to handle this connection.  Set
@@ -205,7 +207,7 @@ ConnWaitAndRelease(TConn * const connectionP) {
 
 
 
-abyss_bool
+bool
 ConnKill(TConn * const connectionP) {
     connectionP->finished = TRUE;
     return ThreadKill(connectionP->threadP);
@@ -300,7 +302,7 @@ static void
 traceChannelWrite(TConn *      const connectionP,
                   const char * const buffer,
                   unsigned int const size,
-                  abyss_bool   const failed) {
+                  bool         const failed) {
     
     if (connectionP->trace) {
         const char * const label =
@@ -319,7 +321,7 @@ bufferSpace(TConn * const connectionP) {
                     
 
 
-abyss_bool
+bool
 ConnRead(TConn *  const connectionP,
          uint32_t const timeout) {
 /*----------------------------------------------------------------------------
@@ -332,8 +334,8 @@ ConnRead(TConn *  const connectionP,
 -----------------------------------------------------------------------------*/
     time_t const deadline = time(NULL) + timeout;
 
-    abyss_bool cantGetData;
-    abyss_bool gotData;
+    bool cantGetData;
+    bool gotData;
 
     cantGetData = FALSE;
     gotData = FALSE;
@@ -341,21 +343,23 @@ ConnRead(TConn *  const connectionP,
     while (!gotData && !cantGetData) {
         int const timeLeft = (int)(deadline - time(NULL));
 
-        assert (timeLeft == deadline - time(NULL));
-
         if (timeLeft <= 0)
             cantGetData = TRUE;
         else {
-            int rc;
+            bool const waitForRead  = TRUE;
+            bool const waitForWrite = FALSE;
             
-            rc = ChannelWait(connectionP->channelP, TRUE, FALSE,
-                             timeLeft * 1000);
+            bool readyForRead;
+            bool failed;
             
-            if (rc != 1)
+            ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
+                        timeLeft * 1000, &readyForRead, NULL, &failed);
+            
+            if (failed)
                 cantGetData = TRUE;
             else {
                 uint32_t bytesRead;
-                abyss_bool readFailed;
+                bool readFailed;
 
                 ChannelRead(connectionP->channelP,
                             connectionP->buffer + connectionP->buffersize,
@@ -386,12 +390,12 @@ ConnRead(TConn *  const connectionP,
 
 
             
-abyss_bool
+bool
 ConnWrite(TConn *      const connectionP,
           const void * const buffer,
           uint32_t     const size) {
 
-    abyss_bool failed;
+    bool failed;
 
     ChannelWrite(connectionP->channelP, buffer, size, &failed);
 
@@ -405,7 +409,7 @@ ConnWrite(TConn *      const connectionP,
 
 
 
-abyss_bool
+bool
 ConnWriteFromFile(TConn *       const connectionP,
                   const TFile * const fileP,
                   uint64_t      const start,
@@ -421,9 +425,9 @@ ConnWriteFromFile(TConn *       const connectionP,
 
    Use the 'bufferSize' bytes at 'buffer' as an internal buffer for this.
 -----------------------------------------------------------------------------*/
-    abyss_bool retval;
+    bool retval;
     uint32_t waittime;
-    abyss_bool success;
+    bool success;
     uint32_t readChunkSize;
 
     if (rate > 0) {
@@ -465,163 +469,6 @@ ConnWriteFromFile(TConn *       const connectionP,
         }
         retval = (bytesread >= totalBytesToRead);
     }
-    return retval;
-}
-
-
-
-static char *
-firstLfPos(char *  const lineStart,
-           TConn * const connectionP) {
-
-    const char * const bufferEnd =
-        connectionP->buffer + connectionP->buffersize;
-
-    char * p;
-
-    for (p = lineStart; p < bufferEnd && *p != LF; ++p);
-
-    if (p < bufferEnd)
-        return p;
-    else
-        return NULL;
-}
-
-
-
-static abyss_bool
-isContinuationLine(const char * const line) {
-
-    return (line[0] == ' ' || line[0] == '\t');
-}
-
-
-
-static abyss_bool
-isEmptyLine(const char * const line) {
-
-    return (line[0] == '\n' || (line[0] == '\r' && line[1] == '\n'));
-}
-
-
-
-static void
-convertLineEnd(char * const lineStart,
-               char * const prevLineStart,
-               char   const newVal) {
-/*----------------------------------------------------------------------------
-   Assuming a line begins at 'lineStart' and the line before it (the
-   "previous line") begins at 'prevLineStart', replace the line
-   delimiter at the end of the previous line with the character 'newVal'.
-
-   The line delimiter is either CRLF or LF.  In the CRLF case, we replace
-   both CR and LF with 'newVal'.
------------------------------------------------------------------------------*/
-    assert(lineStart >= prevLineStart + 1);
-    *(lineStart-1) = newVal;
-    if (prevLineStart + 1 < lineStart &&
-        *(lineStart-2) == CR)
-        *(lineStart-2) = newVal;
-}
-
-
-
-abyss_bool
-ConnReadHeader(TConn * const connectionP,
-               char ** const headerP) {
-/*----------------------------------------------------------------------------
-   Read an HTTP header, or the end of header empty line, on connection
-   *connectionP.
-
-   An HTTP header is basically a line, except that if a line starts
-   with white space, it's a continuation of the previous line.  A line
-   is delimited by either LF or CRLF.  For purposes of this subroutine,
-   we consider the end-of-header empty line to be a header.
-
-   We assume the connection is positioned to a header.  Caller can tell
-   when he's through the headers by seeing the empty header returned.
-   After that, he must not call us.
-
-   In the course of reading, we read at least one character past the
-   line delimiter at the end of the header; we may read much more.
-   But we leave everything after the header (and its line delimiter)
-   in the internal buffer, with the buffer pointer pointing to it.
-
-   We use stuff already in the internal buffer (perhaps left by a
-   previous call to this subroutine) before reading any more from from
-   the channel.
-
-   Return as *headerP the header value.  This is in the connection's
-   internal buffer.  This contains no line delimiters.
------------------------------------------------------------------------------*/
-    time_t const deadline = time(NULL) + connectionP->server->srvP->timeout;
-
-    abyss_bool retval;
-    char * lineStart;
-    char * headerStart;
-    abyss_bool error;
-    abyss_bool gotHeader;
-
-    headerStart = connectionP->buffer + connectionP->bufferpos;
-    lineStart = headerStart;
-
-    gotHeader = FALSE;
-    error = FALSE;
-
-    while (!gotHeader && !error) {
-        int const timeLeft = (int)(deadline - time(NULL));
-
-        assert(timeLeft == deadline - time(NULL));
-
-        if (timeLeft <= 0)
-            error = TRUE;
-        else {
-            char * const lfPos = firstLfPos(lineStart, connectionP);
-            if (!lfPos)
-                error = !ConnRead(connectionP, timeLeft);
-            else {
-                if (isContinuationLine(lineStart)) {
-                    if (lineStart == headerStart)
-                        /* Continuation line, but no previous line */
-                        error = TRUE;
-                    else
-                        /* Join previous line to this one */
-                        convertLineEnd(lineStart, headerStart, ' ');
-                } else {
-                    if (lineStart == headerStart) {
-                        /* It's the first line of our header. */
-                        if (isEmptyLine(lineStart)) {
-                            /* It's also the last, because it's an EOH mark */
-                            convertLineEnd(lfPos+1, headerStart, '\0');
-                            gotHeader = true;
-                            connectionP->bufferpos =
-                                lfPos + 1 - connectionP->buffer;
-                        }
-                    } else {                        
-                        /* It's the first line of the following
-                           header.  NUL-terminate previous one and
-                           declare it present
-                        */
-                        convertLineEnd(lineStart, headerStart, '\0');
-                        gotHeader = true;
-                        /* We've consumed this part of the buffer (but
-                           be careful -- you can't reuse that part of
-                           the buffer because the string we will
-                           return is in it!
-                        */
-                        connectionP->bufferpos += (lineStart - headerStart);
-                    }
-                }
-                lineStart = lfPos+1;
-            }
-        }
-    }
-    if (gotHeader) {
-        *headerP = headerStart;
-        retval = TRUE;
-    } else
-        retval = FALSE;
-
     return retval;
 }
 

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "bool.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -23,7 +24,7 @@ SessionRefillBuffer(TSession * const sessionP) {
    I.e. read data from the socket.
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = sessionP->conn->server->srvP;
-    abyss_bool failed;
+    bool failed;
 
     failed = FALSE;  /* initial value */
             

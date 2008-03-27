@@ -18,8 +18,23 @@
      <winsock.h>
   */
   #define XMLRPC_SOCKET SOCKET
+  #define XMLRPC_HAVE_TIMEVAL 0
+  #define XMLRPC_HAVE_TIMESPEC 0
 #else
   #define XMLRPC_SOCKET int
+  #define XMLRPC_HAVE_TIMEVAL 1
+  #define XMLRPC_HAVE_TIMESPEC 1
 #endif
 
+#if defined(_MSC_VER)
+#if _MSC_VER < 1300
+  /* This is MSVC 6. */
+  #define XMLRPC_LONG_LONG __int64
+#else
+  #define XMLRPC_LONG_LONG long long
 #endif
+#else
+  #define XMLRPC_LONG_LONG long long
+#endif
+#endif
+

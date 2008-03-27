@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -48,7 +49,7 @@ socketOsTerm(void) {
     
 
 
-abyss_bool ChannelTraceIsActive;
+bool ChannelTraceIsActive;
 
 void
 ChannelInit(const char ** const errorP) {
@@ -127,7 +128,7 @@ void
 ChannelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             abyss_bool *          const failedP) {
+             bool *                const failedP) {
 
     if (ChannelTraceIsActive)
         fprintf(stderr, "Writing %u bytes to channel %p\n", len, channelP);
@@ -142,7 +143,7 @@ ChannelRead(TChannel *      const channelP,
             unsigned char * const buffer, 
             uint32_t        const len,
             uint32_t *      const bytesReceivedP,
-            abyss_bool *    const failedP) {
+            bool *          const failedP) {
     
     if (ChannelTraceIsActive)
         fprintf(stderr, "Reading %u bytes from channel %p\n", len, channelP);
@@ -152,21 +153,36 @@ ChannelRead(TChannel *      const channelP,
 
 
 
-uint32_t
+void
 ChannelWait(TChannel * const channelP,
-            abyss_bool const rd,
-            abyss_bool const wr,
-            uint32_t   const timems) {
+            bool       const waitForRead,
+            bool       const waitForWrite,
+            uint32_t   const timems,
+            bool *     const readyToReadP,
+            bool *     const readyToWriteP,
+            bool *     const failedP) {
 
     if (ChannelTraceIsActive) {
-        if (rd)
+        if (waitForRead)
             fprintf(stderr, "Waiting %u milliseconds for data from "
                     "channel %p\n", timems, channelP);
-        if (wr)
+        if (waitForWrite)
             fprintf(stderr, "Waiting %u milliseconds for channel %p "
                     "to be writable\n", timems, channelP);
     }
-    return (*channelP->vtbl.wait)(channelP, rd, wr, timems);
+    (*channelP->vtbl.wait)(channelP, waitForRead, waitForWrite, timems,
+                           readyToReadP, readyToWriteP, failedP);
+}
+
+
+
+void
+ChannelInterrupt(TChannel * const channelP) {
+
+    if (ChannelTraceIsActive)
+        fprintf(stderr, "Interrupting channel waits");
+
+    (*channelP->vtbl.interrupt)(channelP);
 }
 
 
@@ -177,3 +193,4 @@ ChannelFormatPeerInfo(TChannel *    const channelP,
 
     (*channelP->vtbl.formatPeerInfo)(channelP, peerStringP);
 }
+

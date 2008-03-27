@@ -6,7 +6,7 @@
 
    A major goal of this file is to reduce conditional compilation in
    the other source files as much as possible.  Even more, we want to avoid
-   having to generate source code particular to to a build environment
+   having to generate source code particular to a build environment
    except in this file.   
 
    This file is NOT meant to be used by any code outside of the

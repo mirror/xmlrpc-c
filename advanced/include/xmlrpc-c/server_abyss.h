@@ -1,3 +1,11 @@
+/*============================================================================
+                              server_abyss.h
+==============================================================================
+  This declares the user interface to libxmlrpc_server_abyss, which
+  provides facilities for running an XML-RPC server based on the Xmlrpc-c
+  Abyss HTTP server.
+============================================================================*/
+
 /* Copyright and license information is at the end of the file */
 
 #ifndef  XMLRPC_SERVER_ABYSS_H_INCLUDED
@@ -15,23 +23,21 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/*=========================================================================
-**  XML-RPC Server (based on Abyss)
-**=========================================================================
-**  A simple XML-RPC server based on the Abyss web server. If errors
-**  occur during server setup, the server will exit. In general, if you
-**  want to use this API, you'll need to be familiar with Abyss.
-**
-**  There are two ways to use Abyss:
-**    1) You can use the handy wrapper functions.
-**    2) You can set up Abyss yourself, and install the appropriate
-**       handlers manually.
-*/
-
 #define XMLRPC_SERVER_ABYSS_NO_FLAGS (0)
 
 
+/*=========================================================================
+**  Global Initialization/Termination.
+**  
+**  These are not thread-safe.  You call them at the beginning and end
+**  of your program, when it is only one thread.
+**=======================================================================*/
 
+void
+xmlrpc_server_abyss_global_init(xmlrpc_env * const envP);
+
+void
+xmlrpc_server_abyss_global_term(void);
 
 /*=========================================================================
 **  Basic Abyss Server Functions
@@ -75,10 +81,63 @@ typedef struct {
    not the caller is new enough to have supplied a certain parameter.
 */
 
+/*=========================================================================
+**  Simple server with Abyss under the covers
+**=======================================================================*/
+
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parms,
                     unsigned int                      const parm_size);
+
+/*=========================================================================
+**  Object-oriented XML-RPC server with Abyss under the covers
+**=======================================================================*/
+
+typedef struct xmlrpc_server_abyss xmlrpc_server_abyss_t;
+
+void
+xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
+                           const xmlrpc_server_abyss_parms * const parmsP,
+                           unsigned int                      const parmSize,
+                           xmlrpc_server_abyss_t **          const serverPP);
+
+void
+xmlrpc_server_abyss_destroy(xmlrpc_server_abyss_t * const serverP);
+
+void
+xmlrpc_server_abyss_run_server(xmlrpc_env *            const envP,
+                               xmlrpc_server_abyss_t * const serverP);
+
+void
+xmlrpc_server_abyss_terminate(xmlrpc_env *            const envP,
+                              xmlrpc_server_abyss_t * const serverP);
+
+void
+xmlrpc_server_abyss_reset_terminate(xmlrpc_env *            const envP,
+                                    xmlrpc_server_abyss_t * const serverP);
+
+void
+xmlrpc_server_abyss_use_sigchld(xmlrpc_server_abyss_t * const serverP);
+
+
+typedef struct xmlrpc_server_abyss_sig xmlrpc_server_abyss_sig;
+
+void
+xmlrpc_server_abyss_setup_sig(
+    xmlrpc_env *               const envP,
+    xmlrpc_server_abyss_t *    const serverP,
+    xmlrpc_server_abyss_sig ** const oldHandlersPP);
+
+void
+xmlrpc_server_abyss_restore_sig(
+    const xmlrpc_server_abyss_sig * const oldHandlersP);
+
+
+
+/*=========================================================================
+**  Functions to make an XML-RPC server out of your own Abyss server
+**=======================================================================*/
 
 void
 xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,

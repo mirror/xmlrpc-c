@@ -169,10 +169,157 @@ carriageParm_http0::instantiate(string const serverUrl) {
 
 
 void
+carriageParm_http0::setUser(string const userid,
+                            string const password) {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_set_user(
+        &env.env_c, this->c_serverInfoP, userid.c_str(), password.c_str());
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthBasic() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_basic(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthBasic() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_basic(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthDigest() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_digest(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthDigest() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_digest(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthNegotiate() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_negotiate(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthNegotiate() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_negotiate(
+        &env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthNtlm() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_ntlm(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthNtlm() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_ntlm(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
 carriageParm_http0::setBasicAuth(string const username,
                                  string const password) {
 
-    if (!c_serverInfoP)
+    if (!this->c_serverInfoP)
         throw(error("object not instantiated"));
     
     env_wrap env;

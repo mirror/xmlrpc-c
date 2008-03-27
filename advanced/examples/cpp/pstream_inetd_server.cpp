@@ -11,6 +11,10 @@
    The advantage of this example over XML-RPC is that it has a connection
    concept.  The client can be connected indefinitely and the server gets
    notified when the client terminates, even if it gets aborted by its OS.
+
+   Here's an example of running this:
+
+     $ socketexec -accept -local_port=8080 ./pstream_inetd_server
 */
 
 #ifndef WIN32

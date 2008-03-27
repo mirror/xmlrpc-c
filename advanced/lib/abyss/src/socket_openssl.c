@@ -32,6 +32,7 @@
 
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "bool.h"
 #include "mallocvar.h"
 #include "trace.h"
 #include "chanswitch.h"
@@ -51,7 +52,7 @@ struct channelOpenSsl {
         /* SSL connection handle (such as is created by SSL_new() in
            the openssl library).
         */
-    abyss_bool userSuppliedConn;
+    bool userSuppliedConn;
         /* The SSL connection belongs to the user; we did not create
            it.
         */
@@ -59,7 +60,7 @@ struct channelOpenSsl {
 
 
 
-static abyss_bool
+static bool
 connected(int const fd) {
 /*----------------------------------------------------------------------------
    Return TRUE iff the socket on file descriptor 'fd' is in the connected
@@ -68,7 +69,7 @@ connected(int const fd) {
    If 'fd' does not identify a stream socket or we are unable to determine
    the state of the stream socket, the answer is "false".
 -----------------------------------------------------------------------------*/
-    abyss_bool connected;
+    bool connected;
     struct sockaddr sockaddr;
     socklen_t nameLen;
     int rc;
@@ -135,12 +136,12 @@ static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             abyss_bool *          const failedP) {
+             bool *                const failedP) {
 
     struct channelOpenssl * const channelOpensslP = channelP->implP;
 
     int bytesLeft;
-    abyss_bool error;
+    bool error;
 
     assert(sizeof(int) >= sizeof(len));
 
@@ -181,7 +182,7 @@ channelRead(TChannel *      const channelP,
             unsigned char * const buffer, 
             uint32_t        const bufferSize,
             uint32_t *      const bytesReceivedP,
-            abyss_bool *    const failedP) {
+            bool *          const failedP) {
 
     struct channelOpenssl * const channelOpensslP = channelP->implP;
 
@@ -206,11 +207,49 @@ channelRead(TChannel *      const channelP,
 
 
 
+static ChannelWaitImpl channelWait;
+
+static void
+channelWait(TChannel * const channelP,
+            bool       const waitForRead,
+            bool       const waitForWrite,
+            uint32_t   const timeoutMs,
+            bool *     const readyToReadP,
+            bool *     const readyToWriteP,
+            bool *     const failedP) {
+/*----------------------------------------------------------------------------
+  See socket_unix.c for an explanation of the purpose of this
+  subroutine.
+
+  We don't actually fulfill that purpose, though, because we don't know
+  how yet.  Instead, we return immediately and hope that if Caller
+  subsequently does a read or write, it blocks until it can do its thing.
+-----------------------------------------------------------------------------*/
+
+}
+
+
+
+static ChannelInterruptImpl channelInterrupt;
+
+static void
+channelInterrupt(TChannel * const channelP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in channelWait()
+  now or in the future.
+-----------------------------------------------------------------------------*/
+
+    /* This is trivial, since channelWait() doesn't actually wait */
+}
+
+
+
 static struct TChannelVtbl const channelVtbl = {
     &channelDestroy,
     &channelWrite,
     &channelRead,
     &channelWait,
+    &channelInterrupt,
     &channelFormatPeerInfo,
 };
 
@@ -309,7 +348,7 @@ struct opensslSwitch {
         /* File descriptor of the POSIX socket (such as is created by
            socket() in the C library) for the socket.
         */
-    abyss_bool userSuppliedFd;
+    bool userSuppliedFd;
         /* The file descriptor and associated POSIX socket belong to the
            user; we did not create it.
         */
@@ -382,7 +421,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 -----------------------------------------------------------------------------*/
     struct opensslSwitch * const listenSocketP = chanSwitchP->implP;
 
-    abyss_bool interrupted;
+    bool interrupted;
     TChannel * channelP;
 
     interrupted = FALSE; /* Haven't been interrupted yet */
@@ -437,6 +476,22 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
                             errno, strerror(errno));
     }
     *channelPP = channelP;
+}
+
+
+
+static SwitchInterruptImpl chanSwitchInterrupt;
+
+static void
+chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in chanSwitchAccept()
+  now or in the future.
+
+  Actually, this is a no-op, since we don't yet know how to accomplish
+  that.
+-----------------------------------------------------------------------------*/
+
 }
 
 

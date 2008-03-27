@@ -135,6 +135,34 @@ public:
     ~carriageParm_http0();
 
     void
+    setUser(std::string const userid,
+            std::string const password);
+
+    void
+    allowAuthBasic();
+
+    void
+    disallowAuthBasic();
+            
+    void
+    allowAuthDigest();
+
+    void
+    disallowAuthDigest();
+            
+    void
+    allowAuthNegotiate();
+
+    void
+    disallowAuthNegotiate();
+            
+    void
+    allowAuthNtlm();
+
+    void
+    disallowAuthNtlm();
+            
+    void
     setBasicAuth(std::string const userid,
                  std::string const password);
 
@@ -206,7 +234,6 @@ class carriageParm_curl0 : public xmlrpc_c::carriageParm_http0 {
 
 public:
     carriageParm_curl0(std::string const serverUrl);
-
 };
 
 class carriageParm_curl0Ptr : public xmlrpc_c::carriageParm_http0Ptr {

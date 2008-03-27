@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -26,6 +27,8 @@
   #include <sys/filio.h>
 #endif
 
+#include "c_util.h"
+#include "int.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "mallocvar.h"
@@ -39,6 +42,44 @@
 
 
 
+typedef struct {
+    int interruptorFd;
+    int interrupteeFd;
+} interruptPipe;
+
+
+
+static void
+initInterruptPipe(interruptPipe * const pipeP,
+                  const char **   const errorP) {
+
+    int pipeFd[2];
+    int rc;
+
+    rc = pipe(pipeFd);
+
+    if (rc != 0)
+        xmlrpc_asprintf(errorP, "Unable to create a pipe to use to interrupt "
+                        "waits.  pipe() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else {
+        *errorP = NULL;
+        pipeP->interruptorFd = pipeFd[0];
+        pipeP->interrupteeFd = pipeFd[1];
+    }
+}
+
+
+
+static void
+termInterruptPipe(interruptPipe const pipe) {
+
+    close(pipe.interruptorFd);
+    close(pipe.interrupteeFd);
+}
+
+
+
 struct socketUnix {
 /*----------------------------------------------------------------------------
    The properties/state of a TChanSwitch or TChannel unique to the
@@ -48,15 +89,16 @@ struct socketUnix {
         /* File descriptor of the POSIX socket (such as is created by
            socket() in the C library) for the socket.
         */
-    abyss_bool userSuppliedFd;
+    bool userSuppliedFd;
         /* The file descriptor and associated POSIX socket belong to the
            user; we did not create it.
         */
+    interruptPipe interruptPipe;
 };
 
 
 
-static abyss_bool
+static bool
 connected(int const fd) {
 /*----------------------------------------------------------------------------
    Return TRUE iff the socket on file descriptor 'fd' is in the connected
@@ -65,7 +107,7 @@ connected(int const fd) {
    If 'fd' does not identify a stream socket or we are unable to determine
    the state of the stream socket, the answer is "false".
 -----------------------------------------------------------------------------*/
-    abyss_bool connected;
+    bool connected;
     struct sockaddr sockaddr;
     socklen_t nameLen;
     int rc;
@@ -108,6 +150,8 @@ channelDestroy(TChannel * const channelP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
+    termInterruptPipe(socketUnixP->interruptPipe);
+
     if (!socketUnixP->userSuppliedFd)
         close(socketUnixP->fd);
 
@@ -122,12 +166,12 @@ static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             abyss_bool *          const failedP) {
+             bool *                const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
     size_t bytesLeft;
-    abyss_bool error;
+    bool error;
 
     assert(sizeof(size_t) >= sizeof(len));
 
@@ -170,7 +214,7 @@ channelRead(TChannel *      const channelP,
             unsigned char * const buffer, 
             uint32_t        const bufferSize,
             uint32_t *      const bytesReceivedP,
-            abyss_bool *    const failedP) {
+            bool *          const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
@@ -198,53 +242,111 @@ channelRead(TChannel *      const channelP,
 
 static ChannelWaitImpl channelWait;
 
-static uint32_t
+static void
 channelWait(TChannel * const channelP,
-            abyss_bool const rd,
-            abyss_bool const wr,
-            uint32_t   const timems) {
+            bool       const waitForRead,
+            bool       const waitForWrite,
+            uint32_t   const timeoutMs,
+            bool *     const readyToReadP,
+            bool *     const readyToWriteP,
+            bool *     const failedP) {
+/*----------------------------------------------------------------------------
+   Wait for the channel to be immediately readable or writable.
 
+   Readable means there is at least one byte of data to read or the
+   partner has disconnected.  Writable means the channel will take at
+   least one byte of data to send or the partner has disconnected.
+
+   'waitForRead' and 'waitForWrite' determine which of these
+   conditions for which to wait; if both are true, we wait for either
+   one.
+
+   We return before the requested condition holds if 'timeoutMs'
+   milliseconds pass.  timoutMs == TIME_INFINITE means infinity.
+
+   We return before the requested condition holds if the process receives
+   (and catches) a signal, but only if it receives that signal a certain
+   time after we start running.  (That means this function isn't useful
+   for most purposes).
+
+   Return *readyToReadP == true if the reason for returning is that
+   the channel is immediately readable.  *readyToWriteP is analogous
+   for writable.  Both may be true.
+
+   Return *failedP true iff we fail to wait for the requested
+   condition because of some unusual problem.  Being interrupted by a
+   signal is not a failure.
+
+   If one of these return value pointers is NULL, don't return that
+   value.
+-----------------------------------------------------------------------------*/
     struct socketUnix * const socketUnixP = channelP->implP;
 
-    fd_set rfds, wfds;
-    struct timeval tv;
+    /* Design note: some old systems may not have poll().  We're assuming
+       that we don't have to run on any such system.  select() is more
+       universal, but can't handle a file descriptor with a high number.
 
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
+       pselect() and ppoll() would allow us to be properly
+       interruptible by a signal -- we would add a signal mask to our
+       arguments.  But ppoll() is fairly rare.  pselect() is more
+       common, but in older Linux systems it doesn't actually work.
+    */
+    bool readyToRead, readyToWrite, failed;
+    struct pollfd pollfds[2];
+    int rc;
 
-    if (rd)
-        FD_SET(socketUnixP->fd, &rfds);
+    pollfds[0].fd = socketUnixP->fd;
+    pollfds[0].events =
+        (waitForRead  ? POLLIN  : 0) |
+        (waitForWrite ? POLLOUT : 0);
 
-    if (wr)
-        FD_SET(socketUnixP->fd, &wfds);
+    pollfds[1].fd = socketUnixP->interruptPipe.interrupteeFd;
+    pollfds[1].events = POLLIN;
+    
+    rc = poll(pollfds, ARRAY_SIZE(pollfds),
+              timeoutMs == TIME_INFINITE ? -1 : timeoutMs);
 
-    tv.tv_sec  = timems / 1000;
-    tv.tv_usec = timems % 1000;
-
-    for (;;) {
-        int rc;
-
-        rc = select(socketUnixP->fd + 1, &rfds, &wfds, NULL,
-                    (timems == TIME_INFINITE ? NULL : &tv));
-
-        switch(rc) {   
-        case 0: /* time out */
-            return 0;
-
-        case -1:  /* socket error */
-            if (errno == EINTR)
-                break;
-            
-            return 0;
-            
-        default:
-            if (FD_ISSET(socketUnixP->fd, &rfds))
-                return 1;
-            if (FD_ISSET(socketUnixP->fd, &wfds))
-                return 2;
-            return 0;
+    if (rc < 0) {
+        if (errno == EINTR) {
+            failed       = FALSE;
+            readyToRead  = FALSE;
+            readyToWrite = FALSE;
+        } else {
+            failed       = TRUE;
+            readyToRead  = FALSE; /* quiet compiler warning */
+            readyToWrite = FALSE; /* quite compiler warning */
         }
+    } else {
+        failed       = FALSE;
+        readyToRead  = !!(pollfds[0].revents & POLLIN);
+        readyToWrite = !!(pollfds[0].revents & POLLOUT);
     }
+
+    if (failedP)
+        *failedP       = failed;
+    if (readyToReadP)
+        *readyToReadP  = readyToRead;
+    if (readyToWriteP)
+        *readyToWriteP = readyToWrite;
+}
+
+
+
+static ChannelInterruptImpl channelInterrupt;
+
+static void
+channelInterrupt(TChannel * const channelP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in channelWait()
+  now or in the future.
+
+  TODO: Make a way to reset this so that future channelWait()s can once
+  again wait.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * const socketUnixP = channelP->implP;
+    unsigned char const zero[1] = {0u};
+
+    write(socketUnixP->interruptPipe.interruptorFd, &zero, sizeof(zero));
 }
 
 
@@ -344,6 +446,7 @@ static struct TChannelVtbl const channelVtbl = {
     &channelWrite,
     &channelRead,
     &channelWait,
+    &channelInterrupt,
     &channelFormatPeerInfo,
 };
 
@@ -374,8 +477,8 @@ makeChannelInfo(struct abyss_unix_chaninfo ** const channelInfoPP,
 
 
 static void
-makeChannelFromFd(int const fd,
-                  TChannel ** const channelPP,
+makeChannelFromFd(int           const fd,
+                  TChannel **   const channelPP,
                   const char ** const errorP) {
 
     struct socketUnix * socketUnixP;
@@ -390,15 +493,21 @@ makeChannelFromFd(int const fd,
         
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = TRUE;
+
+        initInterruptPipe(&socketUnixP->interruptPipe, errorP);
+
+        if (!*errorP) {
+            ChannelCreate(&channelVtbl, socketUnixP, &channelP);
         
-        ChannelCreate(&channelVtbl, socketUnixP, &channelP);
-        
-        if (channelP == NULL)
-            xmlrpc_asprintf(errorP, "Unable to allocate memory for "
-                            "channel descriptor.");
-        else {
-            *channelPP = channelP;
-            *errorP = NULL;
+            if (channelP == NULL)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                                "channel descriptor.");
+            else {
+                *channelPP = channelP;
+                *errorP = NULL;
+            }
+            if (*errorP)
+                termInterruptPipe(socketUnixP->interruptPipe);
         }
         if (*errorP)
             free(socketUnixP);
@@ -452,6 +561,8 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
 
     struct socketUnix * const socketUnixP = chanSwitchP->implP;
 
+    termInterruptPipe(socketUnixP->interruptPipe);
+
     if (!socketUnixP->userSuppliedFd)
         close(socketUnixP->fd);
 
@@ -489,6 +600,97 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 
 
 
+static void
+waitForConnection(struct socketUnix * const listenSocketP,
+                  bool *              const interruptedP,
+                  const char **       const errorP) {
+/*----------------------------------------------------------------------------
+   Wait for the listening socket to have a connection ready to accept.
+
+   We return before the requested condition holds if the process receives
+   (and catches) a signal, but only if it receives that signal a certain
+   time after we start running.  (That means this function isn't useful
+   for most purposes).
+
+   Return *interruptedP == true if we return before there is a connection
+   ready to accept.
+-----------------------------------------------------------------------------*/
+    struct pollfd pollfds[2];
+    int rc;
+
+    pollfds[0].fd = listenSocketP->fd;
+    pollfds[0].events = POLLIN;
+
+    pollfds[1].fd = listenSocketP->interruptPipe.interrupteeFd;
+    pollfds[1].events = POLLIN;
+    
+    rc = poll(pollfds, ARRAY_SIZE(pollfds), -1);
+
+    if (rc < 0) {
+        if (errno == EINTR) {
+            *errorP       = NULL;
+            *interruptedP = TRUE;
+        } else {
+            xmlrpc_asprintf(errorP, "poll() failed, errno = %d (%s)",
+                            errno, strerror(errno));
+            *interruptedP = FALSE; /* quiet compiler warning */
+        }
+    } else {
+        *errorP       = NULL;
+        *interruptedP = !(pollfds[0].revents & POLLIN);
+    }
+}
+
+
+
+static void
+createChannelForAccept(int             const acceptedFd,
+                       struct sockaddr const peerAddr,
+                       TChannel **     const channelPP,
+                       void **         const channelInfoPP,
+                       const char **   const errorP) {
+/*----------------------------------------------------------------------------
+   Make a channel object (TChannel) out of a socket just created by
+   accept() on a listening socket -- i.e. a socket for a client connection.
+
+   'acceptedFd' is the file descriptor of the socket.
+
+   'peerAddr' is the address of the client, from accept().
+-----------------------------------------------------------------------------*/
+    struct socketUnix * acceptedSocketP;
+
+    MALLOCVAR(acceptedSocketP);
+
+    if (!acceptedSocketP)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory");
+    else {
+        struct abyss_unix_chaninfo * channelInfoP;
+        acceptedSocketP->fd = acceptedFd;
+        acceptedSocketP->userSuppliedFd = FALSE;
+                
+        makeChannelInfo(&channelInfoP, peerAddr, sizeof(peerAddr), errorP);
+        if (!*errorP) {
+            TChannel * channelP;
+
+            ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
+            if (!channelP)
+                xmlrpc_asprintf(errorP,
+                                "Failed to create TChannel object.");
+            else {
+                *errorP        = NULL;
+                *channelPP     = channelP;
+                *channelInfoPP = channelInfoP;
+            }
+            if (*errorP)
+                free(channelInfoP);
+        }
+        if (*errorP)
+            free(acceptedSocketP);
+    }
+}
+
+
+
 static SwitchAcceptImpl chanSwitchAccept;
 
 static void
@@ -507,7 +709,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 -----------------------------------------------------------------------------*/
     struct socketUnix * const listenSocketP = chanSwitchP->implP;
 
-    abyss_bool interrupted;
+    bool interrupted;
     TChannel * channelP;
 
     interrupted = FALSE; /* Haven't been interrupted yet */
@@ -515,51 +717,52 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
     *errorP     = NULL;  /* No error yet */
 
     while (!channelP && !*errorP && !interrupted) {
-        struct sockaddr peerAddr;
-        socklen_t size = sizeof(peerAddr);
-        int rc;
 
-        rc = accept(listenSocketP->fd, &peerAddr, &size);
+        waitForConnection(listenSocketP, &interrupted, errorP);
 
-        if (rc >= 0) {
-            int const acceptedFd = rc;
-            struct socketUnix * acceptedSocketP;
+        if (!*errorP && !interrupted) {
+            struct sockaddr peerAddr;
+            socklen_t size = sizeof(peerAddr);
+            int rc;
 
-            MALLOCVAR(acceptedSocketP);
+            rc = accept(listenSocketP->fd, &peerAddr, &size);
 
-            if (!acceptedSocketP)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory");
-            else {
-                struct abyss_unix_chaninfo * channelInfoP;
-                acceptedSocketP->fd = acceptedFd;
-                acceptedSocketP->userSuppliedFd = FALSE;
-                
-                makeChannelInfo(&channelInfoP, peerAddr, size, errorP);
-                if (!*errorP) {
-                    *channelInfoPP = channelInfoP;
+            if (rc >= 0) {
+                int const acceptedFd = rc;
 
-                    ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
-                    if (!channelP)
-                        xmlrpc_asprintf(errorP,
-                                        "Failed to create TChannel object.");
-                    else
-                        *errorP = NULL;
+                createChannelForAccept(acceptedFd, peerAddr,
+                                       &channelP, channelInfoPP, errorP);
 
-                    if (*errorP)
-                        free(channelInfoP);
-                }
                 if (*errorP)
-                    free(acceptedSocketP);
-            }
-            if (*errorP)
-                close(acceptedFd);
-        } else if (errno == EINTR)
-            interrupted = TRUE;
-        else
-            xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
-                            errno, strerror(errno));
+                    close(acceptedFd);
+            } else if (errno == EINTR)
+                interrupted = TRUE;
+            else
+                xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
+                                errno, strerror(errno));
+        }
     }
     *channelPP = channelP;
+}
+
+
+
+static SwitchInterruptImpl chanSwitchInterrupt;
+
+static void
+chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
+/*----------------------------------------------------------------------------
+  Interrupt any waiting that a thread might be doing in chanSwitchAccept()
+  now or in the future.
+
+  TODO: Make a way to reset this so that future chanSwitchAccept()s can once
+  again wait.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * const listenSocketP = chanSwitchP->implP;
+
+    unsigned char const zero[1] = {0u};
+
+    write(listenSocketP->interruptPipe.interruptorFd, &zero, sizeof(zero));
 }
 
 
@@ -568,6 +771,7 @@ static struct TChanSwitchVtbl const chanSwitchVtbl = {
     &chanSwitchDestroy,
     &chanSwitchListen,
     &chanSwitchAccept,
+    &chanSwitchInterrupt,
 };
 
 
@@ -652,9 +856,16 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
             if (!*errorP) {
                 bindSocketToPort(socketUnixP->fd, NULL, portNumber, errorP);
                 
-                if (!*errorP)
-                    ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
-                                     chanSwitchPP);
+                if (!*errorP) {
+                    initInterruptPipe(&socketUnixP->interruptPipe, errorP);
+
+                    if (!*errorP) {
+                        ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
+                                         chanSwitchPP);
+                        if (*errorP)
+                            termInterruptPipe(socketUnixP->interruptPipe);
+                    }
+                }
             }
             if (*errorP)
                 close(socketUnixP->fd);

@@ -23,8 +23,6 @@ CFG=xmlrpccpp - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "xmlrpccpp"
-# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
@@ -43,7 +41,7 @@ RSC=rc.exe
 LINK32=link.exe -lib
 MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../lib" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I ".." /I "../lib/expat/xmlparse" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../.." /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GR /GX /O2 /I "../lib" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I ".." /I "../lib/expat/xmlparse" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../.." /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -68,7 +66,7 @@ LIB32=link.exe -lib
 LINK32=link.exe -lib
 MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../lib" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I ".." /I "../lib/expat/xmlparse" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../.." /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /GR /Gm /GX /ZI /Od /I "../lib" /I "../lib/curl_transport" /I "../lib/util/include" /I "../include" /I ".." /I "../lib/expat/xmlparse" /I "../lib/abyss/src" /I "../lib/wininet_transport" /I "../.." /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "ABYSS_WIN32" /D "CURL_STATICLIB" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -101,6 +99,10 @@ SOURCE=..\src\cpp\client_simple.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\cpp\curl.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\cpp\env_wrap.cpp
 # End Source File
 # Begin Source File
@@ -114,6 +116,10 @@ SOURCE=..\src\cpp\girerr.cpp
 # Begin Source File
 
 SOURCE=..\src\cpp\girmem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\cpp\libwww.cpp
 # End Source File
 # Begin Source File
 

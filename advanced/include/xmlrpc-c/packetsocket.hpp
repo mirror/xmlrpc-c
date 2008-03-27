@@ -40,7 +40,7 @@ public:
 
     void
     addData(const unsigned char * const data,
-                    size_t                const dataLength);
+            size_t                const dataLength);
 
 private:
     unsigned char * bytes;  // malloc'ed
@@ -91,6 +91,17 @@ public:
          packetPtr * const packetPP);
 
     void
+    readWait(volatile const int * const interruptP,
+             bool *               const eofP,
+             bool *               const gotPacketP,
+             packetPtr *          const packetPP);
+
+    void
+    readWait(volatile const int * const interruptP,
+             bool *               const eofP,
+             packetPtr *          const packetPP);
+
+    void
     readWait(bool *      const eofP,
              packetPtr * const packetPP);
 
@@ -103,7 +114,7 @@ private:
         // it because the underlying stream socket is closed.
     std::queue<packetPtr> readBuffer;
     packetPtr packetAccumP;
-        // The packet we're currently accumulating; it will join
+        // The receive packet we're currently accumulating; it will join
         // 'readBuffer' when we've received the whole packet (and we've
         // seen the END escape sequence so we know we've received it all).
         // If we're not currently accumulating a packet (haven't seen a

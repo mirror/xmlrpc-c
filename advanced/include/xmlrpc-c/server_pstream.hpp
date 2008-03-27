@@ -40,6 +40,10 @@ public:
     ~serverPstreamConn();
 
     void
+    runOnce(volatile const int * const interruptP,
+            bool *               const eofP);
+
+    void
     runOnce(bool * const eofP);
 
 private:

@@ -32,7 +32,6 @@
 
 #if MSVCRT
 
-static const bool win32 = true;
 static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
 static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
 
@@ -41,8 +40,7 @@ void
 UnixTimeToFileTime(time_t     const t,
                    LPFILETIME const pft) {
 
-    /* Note that LONGLONG is a 64-bit value */
-    LONGLONG const ll =
+    int64_t const ll =
         Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
 
     pft->dwLowDateTime  = (DWORD)ll;
@@ -51,45 +49,51 @@ UnixTimeToFileTime(time_t     const t,
 
 
 
-void UnixTimeToSystemTime(const time_t t, LPSYSTEMTIME pst)
-{
+void
+UnixTimeToSystemTime(time_t const t,
+                     LPSYSTEMTIME const pst) {
     FILETIME ft;
 
     UnixTimeToFileTime(t, &ft);
     FileTimeToSystemTime(&ft, pst);
 }
 
-static void UnixTimeFromFileTime(xmlrpc_env *  const envP, LPFILETIME pft, time_t * const timeValueP) 
-{ 
-    LONGLONG ll;
 
-    ll = ((LONGLONG)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
-    /* convert to the Unix epoch */
-    ll -= (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
-    /* now convert to seconds */
-    ll /= SECS_TO_100NS; 
 
-    if ( (time_t)ll != ll )
-    {
-        //fail - value is too big for a time_t
+static void
+UnixTimeFromFileTime(xmlrpc_env *  const envP,
+                     LPFILETIME    const pft,
+                     time_t *      const timeValueP) { 
+
+    int64_t const WinEpoch100Ns =
+        ((int64_t)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
+    int64_t const unixEpoch100Ns =
+        WinEpoch100Ns - (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
+    int64_t const unixEpochSeconds =
+        unixEpoch100Ns / SECS_TO_100NS; 
+
+    if ((time_t)unixEpochSeconds != unixEpochSeconds) {
+        // Value is too big for a time_t; fail.
         xmlrpc_faultf(envP, "Does not indicate a valid date");
-        *timeValueP = (time_t)-1;
-        return;
-    }
-    *timeValueP = (time_t)ll;
+        *timeValueP = (time_t)(-1);
+    } else
+        *timeValueP = (time_t)unixEpochSeconds;
 }
 
-static void UnixTimeFromSystemTime(xmlrpc_env *  const envP, LPSYSTEMTIME pst, time_t * const timeValueP) 
-{
+
+
+static void
+UnixTimeFromSystemTime(xmlrpc_env * const envP,
+                       LPSYSTEMTIME const pst,
+                       time_t *     const timeValueP) {
     FILETIME filetime;
 
     SystemTimeToFileTime(pst, &filetime); 
     UnixTimeFromFileTime(envP, &filetime, timeValueP); 
 }
 
-#else
-static const bool win32 = false;
-#endif
+#endif  /* MSVCRT */
+
 
 
 static void

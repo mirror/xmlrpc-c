@@ -33,74 +33,136 @@
 ******************************************************************************/
 
 #include "xmlrpc_config.h"
+#include "mallocvar.h"
 
 #define _CRT_SECURE_NO_WARNINGS
     /* Tell msvcrt not to warn about functions that are often misused and
        cause security exposures.
     */
 
+#define _FILE_OFFSET_BITS 64
+    /* Tell GNU libc to make off_t 64 bits and all the POSIX file functions
+       the versions that handle 64 bit file offsets.
+    */
+#define _LARGE_FILES
+    /* Same as above, but for AIX */
+
 #include <string.h>
 
 #if MSVCRT
-#include <io.h>
+  #include <io.h>
+  typedef __int64 readwriterc_t;
+#else
+  #include <unistd.h>
+  #include <fcntl.h>
+  #include <dirent.h>
+  #include <sys/stat.h>
+  typedef ssize_t readwriterc_t;
 #endif
 
-#if !MSVCRT
-#include <dirent.h>
-#include <sys/stat.h>
-#endif
-
+#include "bool.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 #include "file.h"
 
-abyss_bool const win32 =
+bool const win32 =
 #ifdef WIN32
 TRUE;
 #else
 FALSE;
 #endif
 
+struct TFileFind {
+#ifdef WIN32
+  #if MSVCRT
+      intptr_t handle;
+  #else
+      HANDLE handle;
+  #endif
+#else
+    char path[NAME_MAX+1];
+    DIR * handle;
+#endif
+};
+
+    
 
 /*********************************************************************
 ** File
 *********************************************************************/
 
-abyss_bool
-FileOpen(TFile *      const f,
+static void
+createFileImage(TFile **     const filePP,
+                const char * const name,
+                uint32_t     const attrib,
+                bool         const createFile,
+                bool *       const succeededP) {
+
+    TFile * fileP;
+
+    MALLOCVAR(fileP);
+    if (fileP == NULL)
+        *succeededP = FALSE;
+    else {
+        int rc;
+
+        if (createFile)
+            rc = open(name, attrib | O_CREAT, S_IWRITE | S_IREAD);
+        else
+            rc = open(name, attrib);
+
+        if (rc < 0)
+            *succeededP = FALSE;
+        else {
+            fileP->fd = rc;
+            *succeededP = TRUE;
+        }
+        if (!*succeededP)
+            free(fileP);
+    }
+    *filePP = fileP;
+}
+
+
+
+bool
+FileOpen(TFile **     const filePP,
          const char * const name,
          uint32_t     const attrib) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return ((*f=_open(name,attrib))!=(-1));
-#else
-    return ((*f=open(name,attrib))!=(-1));
-#endif
+
+    bool succeeded;
+
+    createFileImage(filePP, name, attrib, FALSE, &succeeded);
+
+    return succeeded;
 }
 
 
 
-abyss_bool
-FileOpenCreate(TFile *      const f,
+bool
+FileOpenCreate(TFile **     const filePP,
                const char * const name,
                uint32_t     const attrib) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return ((*f=_open(name,attrib | O_CREAT,_S_IWRITE | _S_IREAD))!=(-1));
-#else
-    return ((*f=open(name,attrib | O_CREAT,S_IWRITE | S_IREAD))!=(-1));
-#endif
+
+    bool succeeded;
+
+    createFileImage(filePP, name, attrib, TRUE, &succeeded);
+
+    return succeeded;
 }
 
 
 
-abyss_bool
-FileWrite(TFile *      const f,
-          const void * const buffer,
-          uint32_t     const len) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_write(*f,buffer,len)==(int32_t)len);
-#else
-    return (write(*f,buffer,len)==(int32_t)len);
-#endif
+bool
+FileWrite(const TFile * const fileP,
+          const void *  const buffer,
+          uint32_t      const len) {
+
+    readwriterc_t rc;
+
+    rc = write(fileP->fd, buffer, len);
+
+    return (rc > 0 && (uint32_t)rc == len);
 }
 
 
@@ -109,24 +171,24 @@ int32_t
 FileRead(const TFile * const fileP,
          void *        const buffer,
          uint32_t      const len) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_read(*fileP, buffer, len));
-#else
-    return (read(*fileP, buffer, len));
-#endif
+
+    return read(fileP->fd, buffer, len);
 }
 
 
 
-abyss_bool
+bool
 FileSeek(const TFile * const fileP,
          uint64_t      const pos,
          uint32_t      const attrib) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_lseek(*fileP, (long)pos, attrib)!=(-1));
+
+    int64_t rc;
+#if MSVCRT
+    rc =  _lseeki64(fileP->fd, pos, attrib);
 #else
-    return (lseek(*fileP, pos, attrib)!=(-1));
+    rc =  lseek(fileP->fd, pos, attrib);
 #endif
+    return (rc >= 0);
 }
 
 
@@ -134,56 +196,65 @@ FileSeek(const TFile * const fileP,
 uint64_t
 FileSize(const TFile * const fileP) {
 
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_filelength(*fileP));
+#if MSVCRT
+    return (_filelength(fileP->fd));
 #else
     struct stat fs;
 
-    fstat(*fileP, &fs);
+    fstat(fileP->fd, &fs);
     return (fs.st_size);
 #endif  
 }
 
 
 
-abyss_bool
-FileClose(TFile * const f) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_close(*f)!=(-1));
-#else
-    return (close(*f)!=(-1));
-#endif
+bool
+FileClose(TFile * const fileP) {
+
+    int rc;
+
+    rc = close(fileP->fd);
+
+    if (rc >= 0)
+        free(fileP);
+
+    return (rc >= 0);
 }
 
 
 
-abyss_bool
+bool
 FileStat(const char * const filename,
          TFileStat *  const filestat) {
-#if defined( WIN32 ) && !defined( __BORLANDC__ )
-    return (_stati64(filename,filestat)!=(-1));
+
+    int rc;
+
+#if MSVCRT
+    rc = _stati64(filename,filestat);
 #else
-    return (stat(filename,filestat)!=(-1));
+    rc = stat(filename,filestat);
 #endif
+    return (rc >= 0);
 }
 
 
 
 static void
-fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
+fileFindFirstWin(TFileFind *  const filefindP ATTR_UNUSED,
                  const char * const path,
-                 TFileInfo *  const fileinfo ATTR_UNUSED,
-                 abyss_bool * const retP     ATTR_UNUSED) {
+                 TFileInfo *  const fileinfo  ATTR_UNUSED,
+                 bool *       const retP      ATTR_UNUSED) {
     const char * search;
 
     xmlrpc_asprintf(&search, "%s\\*", path);
 
-#ifdef WIN32
-#ifndef __BORLANDC__
-    *retP = (((*filefind) = _findfirst64(search, fileinfo)) != -1);
+#if MSVCRT
+    filefindP->handle = _findfirsti64(search, fileinfo);
+    *retP = filefindP->handle != -1;
 #else
-    *filefind = FindFirstFile(search, &fileinfo->data);
-    *retP = *filefind != INVALID_HANDLE_VALUE;
+#ifdef WIN32
+    filefindP->handle = FindFirstFile(search, &fileinfo->data);
+    *retP = filefindP->handle != INVALID_HANDLE_VALUE;
     if (*retP) {
         LARGE_INTEGER li;
         li.LowPart = fileinfo->data.nFileSizeLow;
@@ -194,24 +265,24 @@ fileFindFirstWin(TFileFind *  const filefind ATTR_UNUSED,
         fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
     }
 #endif
-#endif /* WIN32 */
+#endif
     xmlrpc_strfree(search);
 }
 
 
 
 static void
-fileFindFirstPosix(TFileFind *  const filefind,
+fileFindFirstPosix(TFileFind *  const filefindP,
                    const char * const path,
                    TFileInfo *  const fileinfo,
-                   abyss_bool * const retP) {
+                   bool *       const retP) {
     
-#ifndef WIN32
-    strncpy(filefind->path, path, NAME_MAX);
-    filefind->path[NAME_MAX] = '\0';
-    filefind->handle = opendir(path);
-    if (filefind->handle)
-        *retP = FileFindNext(filefind, fileinfo);
+#if !MSVCRT
+    strncpy(filefindP->path, path, NAME_MAX);
+    filefindP->path[NAME_MAX] = '\0';
+    filefindP->handle = opendir(path);
+    if (filefindP->handle)
+        *retP = FileFindNext(filefindP, fileinfo);
     else
         *retP = FALSE;
 #endif
@@ -219,89 +290,124 @@ fileFindFirstPosix(TFileFind *  const filefind,
     
 
 
-abyss_bool
-FileFindFirst(TFileFind *  const filefind,
+bool
+FileFindFirst(TFileFind ** const filefindPP,
               const char * const path,
               TFileInfo *  const fileinfo) {
 
-    abyss_bool ret;
+    bool succeeded;
 
-    if (win32)
-        fileFindFirstWin(filefind, path, fileinfo, &ret);
-    else
-        fileFindFirstPosix(filefind, path, fileinfo, &ret);
+    TFileFind * filefindP;
 
-    return ret;
+    MALLOCVAR(filefindP);
+
+    if (filefindP == NULL)
+        succeeded = FALSE;
+    else {
+        if (win32)
+            fileFindFirstWin(filefindP, path, fileinfo, &succeeded);
+        else
+            fileFindFirstPosix(filefindP, path, fileinfo, &succeeded);
+        if (!succeeded)
+            free(filefindP);
+    }
+    *filefindPP = filefindP;
+
+    return succeeded;
 }
 
 
 
-abyss_bool
-FileFindNext(TFileFind * const filefind,
-             TFileInfo * const fileinfo) {
-#ifdef WIN32
+static void
+fileFindNextWin(TFileFind * const filefindP ATTR_UNUSED,
+                TFileInfo * const fileinfo  ATTR_UNUSED,
+                bool *      const retvalP   ATTR_UNUSED) {
 
-#ifndef __BORLANDC__
-    return (_findnext64(*filefind,fileinfo)!=(-1));
+#if MSVCRT
+    *retvalP = _findnexti64(filefindP->handle, fileinfo) != -1;
 #else
-   abyss_bool ret = FindNextFile( *filefind, &fileinfo->data );
-   if( ret )
-   {
-      LARGE_INTEGER li;
-      li.LowPart = fileinfo->data.nFileSizeLow;
-      li.HighPart = fileinfo->data.nFileSizeHigh;
-      strcpy( fileinfo->name, fileinfo->data.cFileName );
-       fileinfo->attrib = fileinfo->data.dwFileAttributes;
-       fileinfo->size   = li.QuadPart;
-      fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
-   }
-    return ret;
+#ifdef WIN32
+    bool found;
+    found = FindNextFile(filefindP->handle, &fileinfo->data);
+    if (found) {
+        LARGE_INTEGER li;
+        li.LowPart = fileinfo->data.nFileSizeLow;
+        li.HighPart = fileinfo->data.nFileSizeHigh;
+        strcpy(fileinfo->name, fileinfo->data.cFileName);
+        fileinfo->attrib = fileinfo->data.dwFileAttributes;
+        fileinfo->size   = li.QuadPart;
+        fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
+    }
+    *retvalP = found;
 #endif
+#endif
+}
 
-#else  /* WIN32 */
-    struct dirent *de;
-    /****** Must be changed ***/
-    char z[NAME_MAX+1];
 
-    de=readdir(filefind->handle);
-    if (de)
-    {
+
+static void
+fileFindNextPosix(TFileFind * const filefindP,
+                  TFileInfo * const fileinfoP,
+                  bool *      const retvalP) {
+
+#ifndef WIN32
+    struct dirent * deP;
+
+    deP = readdir(filefindP->handle);
+    if (deP) {
+        char z[NAME_MAX+1];
         struct stat fs;
 
-        strcpy(fileinfo->name,de->d_name);
-        strcpy(z,filefind->path);
-        strncat(z,"/",NAME_MAX);
-        strncat(z,fileinfo->name,NAME_MAX);
-        z[NAME_MAX]='\0';
+        strcpy(fileinfoP->name, deP->d_name);
+        strcpy(z, filefindP->path);
+        strncat(z, "/",NAME_MAX);
+        strncat(z, fileinfoP->name, NAME_MAX);
+        z[NAME_MAX] = '\0';
         
-        stat(z,&fs);
+        stat(z, &fs);
 
         if (fs.st_mode & S_IFDIR)
-            fileinfo->attrib=A_SUBDIR;
+            fileinfoP->attrib = A_SUBDIR;
         else
-            fileinfo->attrib=0;
+            fileinfoP->attrib = 0;
 
-        fileinfo->size=fs.st_size;
-        fileinfo->time_write=fs.st_mtime;
+        fileinfoP->size       = fs.st_size;
+        fileinfoP->time_write = fs.st_mtime;
         
-        return TRUE;
-    };
-
-    return FALSE;
-#endif /* WIN32 */
+        *retvalP = TRUE;
+    } else
+        *retvalP = FALSE;
+#endif
 }
 
+
+
+bool
+FileFindNext(TFileFind * const filefindP,
+             TFileInfo * const fileinfo) {
+
+    bool retval;
+
+    if (win32)
+        fileFindNextWin(filefindP, fileinfo, &retval);
+    else
+        fileFindNextPosix(filefindP, fileinfo, &retval);
+
+    return retval;
+}
+
+
+
 void
-FileFindClose(TFileFind * const filefind) {
+FileFindClose(TFileFind * const filefindP) {
 #ifdef WIN32
-
-#ifndef __BORLANDC__
-    _findclose(*filefind);
+#if MSVCRT
+    _findclose(filefindP->handle);
 #else
-   FindClose( *filefind );
+   FindClose(filefindP->handle);
 #endif
-
-#else  /* WIN32 */
-    closedir(filefind->handle);
-#endif /* WIN32 */
+#else
+    closedir(filefindP->handle);
+#endif
+    free(filefindP);
 }
