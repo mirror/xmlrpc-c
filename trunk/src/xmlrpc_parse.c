@@ -793,6 +793,43 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
 
 
 static void
+interpretFaultCode(xmlrpc_env *   const envP,
+                   xmlrpc_value * const faultCodeVP,
+                   int *          const faultCodeP) {
+                   
+    xmlrpc_env fcEnv;
+    xmlrpc_env_init(&fcEnv);
+
+    xmlrpc_read_int(&fcEnv, faultCodeVP, faultCodeP);
+    if (fcEnv.fault_occurred)
+        xmlrpc_faultf(envP, "Invalid value for 'faultCode' member.  %s",
+                      fcEnv.fault_string);
+
+    xmlrpc_env_clean(&fcEnv);
+}
+
+
+
+static void
+interpretFaultString(xmlrpc_env *   const envP,
+                     xmlrpc_value * const faultStringVP,
+                     const char **  const faultStringP) {
+
+    xmlrpc_env fsEnv;
+    xmlrpc_env_init(&fsEnv);
+
+    xmlrpc_read_string(&fsEnv, faultStringVP, faultStringP);
+
+    if (fsEnv.fault_occurred)
+        xmlrpc_faultf(envP, "Invalid value for 'faultString' member.  %s",
+                      fsEnv.fault_string);
+
+    xmlrpc_env_clean(&fsEnv);
+}
+
+
+
+static void
 interpretFaultValue(xmlrpc_env *   const envP,
                     xmlrpc_value * const faultVP,
                     int *          const faultCodeP,
@@ -801,7 +838,7 @@ interpretFaultValue(xmlrpc_env *   const envP,
     if (faultVP->_type != XMLRPC_TYPE_STRUCT)
         xmlrpc_env_set_fault(
             envP, XMLRPC_PARSE_ERROR,
-            "<value> element of <fault> response contains is not "
+            "<value> element of <fault> response is not "
             "of structure type");
     else {
         xmlrpc_value * faultCodeVP;
@@ -811,14 +848,16 @@ interpretFaultValue(xmlrpc_env *   const envP,
 
         xmlrpc_struct_read_value(&fvEnv, faultVP, "faultCode", &faultCodeVP);
         if (!fvEnv.fault_occurred) {
-            xmlrpc_read_int(&fvEnv, faultCodeVP, faultCodeP);
+            interpretFaultCode(&fvEnv, faultCodeVP, faultCodeP);
+            
             if (!fvEnv.fault_occurred) {
                 xmlrpc_value * faultStringVP;
 
                 xmlrpc_struct_read_value(&fvEnv, faultVP, "faultString",
                                          &faultStringVP);
                 if (!fvEnv.fault_occurred) {
-                    xmlrpc_read_string(&fvEnv, faultStringVP, faultStringP);
+                    interpretFaultString(&fvEnv, faultStringVP, faultStringP);
+
                     xmlrpc_DECREF(faultStringVP);
                 }
             }
