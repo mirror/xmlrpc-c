@@ -307,41 +307,47 @@ testParseGoodResponse(void) {
 
 
 static void
-testParseBadResponse(void) {
+testParseBadResponseXml(void) {
 /*----------------------------------------------------------------------------
-   Test parsing of data that is supposed to be a response, but is not
-   valid.  Either not valid XML or not valid XML-RPC.
+   Test parsing of data that is supposed to be a response, but in not
+   even valid XML.
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * valueP;
+    int faultCode;
+    const char * faultString;
+
+    xmlrpc_env_init(&env);
+       
+    xmlrpc_parse_response2(&env,
+                           unparseable_value, strlen(unparseable_value),
+                           &valueP, &faultCode, &faultString);
+        
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+
+        /* And again with the old interface */
+    valueP = xmlrpc_parse_response(&env, unparseable_value,
+                                   strlen(unparseable_value));
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+    xmlrpc_env_clean(&env);
+    TEST(valueP == NULL);
+}
+
+
+
+static void
+testParseBadResponseXmlRpc(void) {
+/*----------------------------------------------------------------------------
+   Test parsing of data that is supposed to be a response, and is valid
+   XML, but is not valid XML-RPC.
 -----------------------------------------------------------------------------*/
     unsigned int i;
 
-    {
-        xmlrpc_env env;
-        xmlrpc_value * valueP;
-        int faultCode;
-        const char * faultString;
-
-        /* First, test some poorly-formed XML data. */
-        xmlrpc_env_init(&env);
-       
-        xmlrpc_parse_response2(&env,
-                               unparseable_value, strlen(unparseable_value),
-                               &valueP, &faultCode, &faultString);
-        
-        TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
-        xmlrpc_env_clean(&env);
-
-        xmlrpc_env_init(&env);
-
-        /* And again with the old interface */
-        valueP = xmlrpc_parse_response(&env, unparseable_value,
-                                       strlen(unparseable_value));
-        TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
-        xmlrpc_env_clean(&env);
-        TEST(valueP == NULL);
-    }
-
-    /* Try with good XML, but bad XML-RPC.  For this test, we test up to
-       but not including the <value> in a successful RPC response.
+    /* For this test, we test up to but not including the <value> in a
+       successful RPC response. 
     */
 
     /* Next, check for bogus responses. These are all well-formed XML, but
@@ -367,10 +373,19 @@ testParseBadResponse(void) {
         TEST(v == NULL);
         xmlrpc_env_clean(&env);
     }
-    
-    /* Try with good XML, good XML-RPC response, except that the value
-       isn't valid XML-RPC
-    */
+}    
+
+
+
+static void
+testParseBadResult(void) {
+/*----------------------------------------------------------------------------
+   Test parsing of data that is supposed to be a response, but is not
+   valid.  It looks like a valid success response, but the result value
+   is not valid XML-RPC.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
     for (i = 0; bad_values[i] != NULL; ++i) {
         const char * const bad_resp = bad_values[i];
         xmlrpc_env env;
@@ -404,6 +419,21 @@ testParseBadResponse(void) {
         TEST(valueP == NULL);
         xmlrpc_env_clean(&env);
     }
+}
+
+
+
+static void
+testParseBadResponse(void) {
+/*----------------------------------------------------------------------------
+   Test parsing of data that is supposed to be a response, but is not
+   valid.  Either not valid XML or not valid XML-RPC.
+-----------------------------------------------------------------------------*/
+    testParseBadResponseXml();
+
+    testParseBadResponseXmlRpc();
+
+    testParseBadResult();
 }
 
 
