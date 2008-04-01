@@ -1439,8 +1439,7 @@ getCurlTransactionError(curlTransaction * const curlTransactionP,
 static void
 performCurlTransaction(xmlrpc_env *      const envP,
                        curlTransaction * const curlTransactionP,
-                       curlMulti *       const curlMultiP,
-                       int *             const interruptP) {
+                       curlMulti *       const curlMultiP) {
 
     void * const finish = NULL;
         /* We don't need a finish function because we're going to wait here
@@ -1457,7 +1456,7 @@ performCurlTransaction(xmlrpc_env *      const envP,
     if (!envP->fault_occurred) {
         xmlrpc_timespec dummy = {0,0};
 
-        curlMulti_finish(envP, curlMultiP, timeout_no, dummy, interruptP);
+        curlMulti_finish(envP, curlMultiP, timeout_no, dummy, NULL);
 
         /* Failure here just means something screwy in the multi
            manager; any failure of the HTTP transaction would have been
@@ -2098,11 +2097,9 @@ destroyRpc(rpc * const rpcP) {
 static void
 performRpc(xmlrpc_env * const envP,
            rpc *        const rpcP,
-           curlMulti *  const curlMultiP,
-           int *        const interruptP) {
+           curlMulti *  const curlMultiP) {
 
-    performCurlTransaction(envP, rpcP->curlTransactionP, curlMultiP,
-                           interruptP);
+    performCurlTransaction(envP, rpcP->curlTransactionP, curlMultiP);
 }
 
 
@@ -2306,8 +2303,7 @@ call(xmlrpc_env *                     const envP,
                   &rpcP);
 
         if (!envP->fault_occurred) {
-            performRpc(envP, rpcP, clientTransportP->syncCurlMultiP,
-                       clientTransportP->interruptP);
+            performRpc(envP, rpcP, clientTransportP->syncCurlMultiP);
 
             *responseXmlPP = responseXmlP;
 
