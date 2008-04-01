@@ -234,6 +234,12 @@ public:
             TEST(outcome.getFault().getDescription().size() > 0);
         }
 
+        int interruptFlag(0);
+        EXPECT_ERROR(transportDirect.setInterrupt(&interruptFlag););
+            // This transport class isn't interruptible
+        EXPECT_ERROR(clientDirect.setInterrupt(&interruptFlag););
+            // Same as above
+        
         clientDirectAsyncTestSuite().run(indentation+1);
     }
 };
@@ -278,9 +284,12 @@ public:
             clientXmlTransport_curl::constrOpt()
             .no_ssl_verifypeer(false));
 
+        int interruptFlag(0);
+        transport5.setInterrupt(&interruptFlag);
+
         clientXmlTransport_curl transport6(
             clientXmlTransport_curl::constrOpt());
-        
+
         clientXmlTransportPtr transport1P(new clientXmlTransport_curl);
         clientXmlTransportPtr transport2P;
         transport2P = transport1P;
@@ -489,6 +498,10 @@ public:
         carriageParm_http0 carriageParmHttp("http://suckthis.com");
         carriageParm_curl0 carriageParmCurl("http://suckthis.com");
         connection connection0(&client0, &carriageParmHttp);
+
+        int interruptFlag(0);
+        client0.setInterrupt(&interruptFlag);
+
         paramList paramList0;
         
         rpcOutcome outcome0;
