@@ -253,6 +253,10 @@ get_wininet_response(xmlrpc_env *         const envP,
     inetBuffer.dwOffsetLow     = 0;
     inetBuffer.dwBufferLength  = 0;
 
+    /* Note that while Content-Length is optional in HTTP 1.1, it is
+       required by XML-RPC.  Following fails if server didn't send it.
+    */
+
     bOK = HttpQueryInfo(winInetTransactionP->hHttpRequest, 
                         HTTP_QUERY_CONTENT_LENGTH|HTTP_QUERY_FLAG_NUMBER, 
                         &inetBuffer.dwBufferTotal, &dwLen, NULL);
