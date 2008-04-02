@@ -504,11 +504,12 @@ public:
         client0.setInterrupt(&interruptFlag);
 
         interruptFlag = 1;
-        // Interrupt flag should have no effect on synchronous interface
+        // This fails because the call gets immediately interrupted
         EXPECT_ERROR(
             client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
                 );
-        interruptFlag = 0;
+        interruptFlag = 0; 
+        // This fails because server doesn't exist
         EXPECT_ERROR(
             client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
                 );
