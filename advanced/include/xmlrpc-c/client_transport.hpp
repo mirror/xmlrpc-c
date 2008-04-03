@@ -105,8 +105,8 @@ public:
         xmlrpc_mem_block *        const responseXmlMP,
         xmlrpc_env                const transportEnv);
 
-    void
-    setInterrupt(int *);
+    virtual void
+    setInterrupt(int * const interruptP);
 };
 
 class clientXmlTransportPtr : public girmem::autoObjectPtr {
@@ -210,7 +210,7 @@ public:
     virtual void
     finishAsync(xmlrpc_c::timeout const timeout);
 
-    void
+    virtual void
     setInterrupt(int * const interruptP);
 
     static std::vector<std::string>

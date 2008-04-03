@@ -73,7 +73,7 @@ public:
     void
     finishAsync(xmlrpc_c::timeout const timeout);
     
-    void
+    virtual void
     setInterrupt(int *);
 };
 
@@ -173,7 +173,7 @@ public:
     void
     finishAsync(xmlrpc_c::timeout const timeout);
 
-    void
+    virtual void
     setInterrupt(int * interruptP);
 
 private:

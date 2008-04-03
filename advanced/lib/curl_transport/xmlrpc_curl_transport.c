@@ -543,10 +543,12 @@ curlProgress(void * const contextP,
    progress function.  But because of the above-mentioned failure of
    Curl to properly synchronize signals (and Bryan's failure to get
    Curl developers to accept code to fix it), we now use the Curl
-   "multi" facility instead and do our own pselect().  But we keep the
-   progress function for logical completeness and because Curl may do
-   some other waiting we don't know about even with the multi function
-   (DNS lookup, maybe?).
+   "multi" facility instead and do our own pselect().  But
+   This function still normally gets called by curl_multi_perform(),
+   which the transport tries to call even when the user has requested
+   interruption, because we don't trust our ability to abort a running
+   Curl transaction.  curl_multi_perform() reliably winds up a Curl
+   transaction when this function tells it to.
 -----------------------------------------------------------------------------*/
     unsigned int * const interruptP = contextP;
 
@@ -1153,8 +1155,6 @@ processCurlMessages(xmlrpc_env * const envP,
                 curl_easy_getinfo(curlMsg.easy_handle, CURLINFO_PRIVATE,
                                   &curlTransactionP);
 
-                curlMulti_removeHandle(curlMultiP, curlTransactionP);
-
                 curlTransactionP->result = curlMsg.data.result;
 
                 if (curlTransactionP->finish)
@@ -1317,17 +1317,29 @@ curlMulti_finish(xmlrpc_env *       const envP,
                  xmlrpc_timeoutType const timeoutType,
                  xmlrpc_timespec    const deadline,
                  int *              const interruptP) {
-    
+/*----------------------------------------------------------------------------
+   Prosecute all the Curl transactions under the control of
+   *curlMultiP.  E.g. send data if server is ready to take it, get
+   data if server has sent some, wind up the transaction if it is
+   done.
+
+   Don't return until all the Curl transactions are done or we time out.
+
+   The *interruptP flag alone will not interrupt us.  We will wait in
+   spite of it for all Curl transactions to complete.  *interruptP
+   just gives us a hint that the Curl transactions are being
+   interrupted, so we know there is work to do for them.  (The way it
+   works is Caller sets up a "progress" function that checks the same
+   interrupt flag and reports "kill me."  When we see the interrupt
+   flag, we call that progress function and get the message).
+-----------------------------------------------------------------------------*/
     bool rpcStillRunning;
     bool timedOut;
-    bool interrupted;
 
     rpcStillRunning = true;  /* initial assumption */
     timedOut = false;
-    interrupted = false;
     
-    while (rpcStillRunning && !timedOut && !interrupted &&
-           !envP->fault_occurred) {
+    while (rpcStillRunning && !timedOut && !envP->fault_occurred) {
 
         if (interruptP) {
             waitForWorkInt(envP, curlMultiP, timeoutType, deadline,
@@ -1338,27 +1350,17 @@ curlMulti_finish(xmlrpc_env *       const envP,
         if (!envP->fault_occurred) {
             xmlrpc_timespec nowTime;
 
+            /* doCurlWork() (among other things) finds Curl
+               transactions that user wants to abort and finishes
+               them.
+            */
             doCurlWork(envP, curlMultiP, &rpcStillRunning);
             
             xmlrpc_gettimeofday(&nowTime);
             
             timedOut = (timeoutType == timeout_yes &&
                         timeIsAfter(nowTime, deadline));
-
-            interrupted = (interruptP && *interruptP != 0);
         }
-    }
-    if (!envP->fault_occurred) {
-        if (interrupted)
-            xmlrpc_env_set_fault(
-                envP, XMLRPC_TIMEOUT_ERROR,
-                "Wait for HTTP transaction to complete "
-                "at server was interrupted by a signal");
-        else if (timedOut)
-            xmlrpc_env_set_fault(
-                envP, XMLRPC_TIMEOUT_ERROR,
-                "Wait for HTTP transaction to complete "
-                "at server timed out");
     }
 }
 
@@ -1455,7 +1457,7 @@ performCurlTransaction(xmlrpc_env *      const envP,
     */
 
     if (!envP->fault_occurred) {
-        xmlrpc_timespec dummy = {0,0};
+        xmlrpc_timespec const dummy = {0,0};
 
         curlMulti_finish(envP, curlMultiP, timeout_no, dummy, interruptP);
 
@@ -1464,9 +1466,19 @@ performCurlTransaction(xmlrpc_env *      const envP,
            recorded in *curlTransactionP.
         */
 
-        if (!envP->fault_occurred)
-            /* Curl session completed OK.  But did HTTP transaction work? */
+        if (!envP->fault_occurred) {
+            /* Curl session completed OK.  But did HTTP transaction
+               work?
+            */
             getCurlTransactionError(curlTransactionP, envP);
+        }
+        /* If the CURL transaction is still going, removing the handle
+           here aborts it.  At least it's supposed to.  From what I've
+           seen in the Curl code in 2007, I don't think it does.  I
+           couldn't get Curl maintainers interested in the problem,
+           except to say, "If you're right, there's a bug."
+        */
+        curlMulti_removeHandle(curlMultiP, curlTransactionP);
     }
 }
 
@@ -1525,6 +1537,8 @@ struct xmlrpc_client_transport {
 
 
 struct rpc {
+    struct xmlrpc_client_transport * transportP;
+        /* The client XML transport that transports this RPC */
     curlTransaction * curlTransactionP;
         /* The object which does the HTTP transaction, with no knowledge
            of XML-RPC or Xmlrpc-c.
@@ -2058,6 +2072,7 @@ createRpc(xmlrpc_env *                     const envP,
     if (rpcP == NULL)
         xmlrpc_faultf(envP, "Couldn't allocate memory for rpc object");
     else {
+        rpcP->transportP   = clientTransportP;
         rpcP->callInfoP    = callInfoP;
         rpcP->complete     = complete;
         rpcP->responseXmlP = responseXmlP;
@@ -2121,9 +2136,8 @@ finishRpcCurlTransaction(xmlrpc_env *      const envP ATTR_UNUSED,
   Remove the Curl session from its Curl multi manager and destroy the
   Curl session, the XML response buffer, the Curl transaction, and the RPC.
 -----------------------------------------------------------------------------*/
-    rpc * rpcP;
-
-    rpcP = curlTransactionP->rpcP;
+    rpc * const rpcP = curlTransactionP->rpcP;
+    struct xmlrpc_client_transport * const transportP = rpcP->transportP;
 
     {
         xmlrpc_env env;
@@ -2137,6 +2151,8 @@ finishRpcCurlTransaction(xmlrpc_env *      const envP ATTR_UNUSED,
         xmlrpc_env_clean(&env);
     }
 
+    curlMulti_removeHandle(transportP->asyncCurlMultiP, curlTransactionP);
+
     curl_easy_cleanup(curlTransactionP->curlSessionP);
 
     XMLRPC_MEMBLOCK_FREE(char, rpcP->responseXmlP);
@@ -2148,11 +2164,11 @@ finishRpcCurlTransaction(xmlrpc_env *      const envP ATTR_UNUSED,
 
 static void
 startRpc(xmlrpc_env * const envP,
-         rpc *        const rpcP,
-         curlMulti *  const curlMultiP) {
+         rpc *        const rpcP) {
 
     startCurlTransaction(envP,
-                         rpcP->curlTransactionP, curlMultiP,
+                         rpcP->curlTransactionP,
+                         rpcP->transportP->asyncCurlMultiP,
                          &finishRpcCurlTransaction);
 }
 
@@ -2190,7 +2206,7 @@ sendRequest(xmlrpc_env *                     const envP,
                       &rpcP);
             
             if (!envP->fault_occurred) {
-                startRpc(envP, rpcP, clientTransportP->asyncCurlMultiP);
+                startRpc(envP, rpcP);
                 
                 if (envP->fault_occurred)
                     destroyRpc(rpcP);
@@ -2219,11 +2235,10 @@ finishAsynch(
    Wait for the Curl multi manager to finish the Curl transactions for
    all outstanding RPCs and destroy those RPCs.
 
-   But give up and return failure if a) too much time passes as defined by
-   'timeoutType' and 'timeout'; or b) the transport client requests
-   interruption (i.e. the transport's interrupt flag becomes nonzero).
-   Normally, a signal must get our attention for us to notice the
-   interrupt flag.
+   But give up if a) too much time passes as defined by 'timeoutType'
+   and 'timeout'; or b) the transport client requests interruption
+   (i.e. the transport's interrupt flag becomes nonzero).  Normally, a
+   signal must get our attention for us to notice the interrupt flag.
 
    This does the 'finish_asynch' operation for a Curl client transport.
 
@@ -2234,6 +2249,11 @@ finishAsynch(
    something like curl_multi_perform() to finish whatever RPCs are
    ready to finish at that moment.  The implementation would be little
    more than wrapping curl_multi_fdset() and curl_multi_perform().
+
+   Note that the user can call this multiple times, due to timeouts,
+   but must eventually call it once with no timeout so he
+   knows that all the RPCs are finished.  Either that or terminate the
+   process so it doesn't matter if RPCs are still going.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
 
@@ -2265,6 +2285,9 @@ finishAsynch(
        error.  Those things are reported up through the user's 
        xmlrpc_transport_asynch_complete routine.  A failure here is
        something that stopped us from calling that.
+
+       Note that a timeout or causes a successful completion,
+       but without finishing all the RPCs!
     */
 
     if (env.fault_occurred)
