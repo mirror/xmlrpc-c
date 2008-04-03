@@ -214,7 +214,7 @@ xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
 
         char * hdrValue;
 
-        hdrValue = malloc(sizeof(authType) + len + 1);
+        hdrValue = malloc(strlen(authType) + len + 1);
         if (hdrValue == NULL)
             xmlrpc_faultf(envP, "Could not allocate memory to store "
                           "authorization header value.");
