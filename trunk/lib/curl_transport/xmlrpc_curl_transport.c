@@ -2250,8 +2250,8 @@ finishAsynch(
    ready to finish at that moment.  The implementation would be little
    more than wrapping curl_multi_fdset() and curl_multi_perform().
 
-   Note that the user can call this multiple times, due to interruptions,
-   but must eventually call it once with no interruption allowed so he
+   Note that the user can call this multiple times, due to timeouts,
+   but must eventually call it once with no timeout so he
    knows that all the RPCs are finished.  Either that or terminate the
    process so it doesn't matter if RPCs are still going.
 -----------------------------------------------------------------------------*/
@@ -2286,7 +2286,7 @@ finishAsynch(
        xmlrpc_transport_asynch_complete routine.  A failure here is
        something that stopped us from calling that.
 
-       Note that a timeout or interruption causes a successful completion,
+       Note that a timeout causes a successful completion,
        but without finishing all the RPCs!
     */
 
