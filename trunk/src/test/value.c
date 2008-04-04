@@ -1823,8 +1823,11 @@ test_struct (void) {
     TEST_NO_FAULT(&env);
     TEST(size == 1);
 
-    /* Insert two more items with conflicting hash codes. (We assume that
-    ** nobody has changed the hash function.) */
+    /* Insert two more items with conflicting hash codes.
+       TODO: This worked for the old mod 256 additionn hash, but we
+       need to find some nice colliding ASCII keys for the current
+       Bernstein hash.
+    */
     xmlrpc_struct_set_value(&env, s, "bar", i2);
     TEST_NO_FAULT(&env);
     xmlrpc_struct_set_value(&env, s, "aas", i3);
