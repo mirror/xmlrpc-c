@@ -190,8 +190,10 @@ static int
 timeDiffMillisec(xmlrpc_timespec const minuend,
                  xmlrpc_timespec const subtractor) {
 
+    unsigned int const million = 1000000;
+
     return (minuend.tv_sec - subtractor.tv_sec) * 1000 +
-        (minuend.tv_nsec - subtractor.tv_nsec + 1E6/2) / 1E6;
+        (minuend.tv_nsec - subtractor.tv_nsec + million/2) / million;
 }
 
 
@@ -219,15 +221,18 @@ static void
 addMilliseconds(xmlrpc_timespec   const addend,
                 unsigned int      const adder,
                 xmlrpc_timespec * const sumP) {
+    
+    unsigned int const million = 1000000;
+    unsigned int const billion = 1000000000;
 
     xmlrpc_timespec sum;
 
     sum.tv_sec  = addend.tv_sec + adder / 1000;
-    sum.tv_nsec = addend.tv_nsec + (adder % 1000) * 1E6;
+    sum.tv_nsec = addend.tv_nsec + (adder % 1000) * million;
 
-    if (sum.tv_nsec >= 1E9) {
+    if ((uint32_t)sum.tv_nsec >= billion) {
         sum.tv_sec += 1;
-        sum.tv_nsec -= 1E9;
+        sum.tv_nsec -= billion;
     }
     *sumP = sum;
 }
@@ -1103,6 +1108,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
    there to be work for the Curl multi manager to do, given that the user
    wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
+    unsigned int const million = 1000000;
     unsigned int selectTimeoutMillisec;
     xmlrpc_timespec retval;
 
@@ -1128,7 +1134,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     break;
     }
     retval.tv_sec = selectTimeoutMillisec / 1000;
-    retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * 1E6);
+    retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * million);
 
     return retval;
 }        
