@@ -1253,11 +1253,11 @@ waitForWorkInt(xmlrpc_env *       const envP,
    a multithreaded program.  Therefore, don't call this if
    waitForWork() will suffice.
 -----------------------------------------------------------------------------*/
+    sigset_t callerBlockSet;
 #ifdef WIN32
     waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
 #else
     sigset_t allSignals;
-    sigset_t callerBlockSet;
 
     assert(interruptP != NULL);
 
