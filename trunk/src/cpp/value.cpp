@@ -831,13 +831,13 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
 
 
 
-value_i8::value_i8(long long const cppvalue) {
+value_i8::value_i8(xmlrpc_int64 const cppvalue) {
 
     class cWrapper {
     public:
         xmlrpc_value * valueP;
         
-        cWrapper(long long const cppvalue) {
+        cWrapper(xmlrpc_int64 const cppvalue) {
             env_wrap env;
             
             this->valueP = xmlrpc_i8_new(&env.env_c, cppvalue);
@@ -866,9 +866,9 @@ value_i8::value_i8(xmlrpc_c::value const baseValue) {
 
 
 
-value_i8::operator long long() const {
+value_i8::operator xmlrpc_int64() const {
 
-    long long retval;
+    xmlrpc_int64 retval;
     env_wrap env;
 
     xmlrpc_read_i8(&env.env_c, this->cValueP, &retval);

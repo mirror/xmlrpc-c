@@ -200,11 +200,11 @@ public:
 
 class value_i8 : public value {
 public:
-    value_i8(long long const cvalue);
+    value_i8(xmlrpc_int64 const cvalue);
 
     value_i8(xmlrpc_c::value const baseValue);
 
-    operator long long() const;
+    operator xmlrpc_int64() const;
 };
 
 
@@ -330,10 +330,10 @@ public:
     void
     getNil(unsigned int const paramNumber) const;
 
-    long long
+    xmlrpc_int64
     getI8(unsigned int const paramNumber,
-          long long    const minimum = XMLRPC_INT64_MIN,
-          long long    const maximum = XMLRPC_INT64_MAX) const;
+          xmlrpc_int64 const minimum = XMLRPC_INT64_MIN,
+          xmlrpc_int64 const maximum = XMLRPC_INT64_MAX) const;
 
     void
     verifyEnd(unsigned int const paramNumber) const;

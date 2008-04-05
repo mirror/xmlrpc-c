@@ -418,15 +418,15 @@ public:
     }
     virtual void runtests(unsigned int const) {
         value_i8 int1(7);
-        TEST(static_cast<long long>(int1) == 7);
+        TEST(static_cast<xmlrpc_int64>(int1) == 7);
         value_i8 int2(-7);
-        TEST(static_cast<long long>(int2) == -7);
+        TEST(static_cast<xmlrpc_int64>(int2) == -7);
         value_i8 int5(1ull << 40);
-        TEST(static_cast<long long>(int5) == (1ull << 40));
+        TEST(static_cast<xmlrpc_int64>(int5) == (1ull << 40));
         value val1(int1);
         TEST(val1.type() == value::TYPE_I8);
         value_i8 int3(val1);
-        TEST(static_cast<long long>(int3) == 7);
+        TEST(static_cast<xmlrpc_int64>(int3) == 7);
         try {
             value_i8 int4(value_double(3.7));
             TEST_FAILED("invalid cast double-i8 suceeded");
@@ -554,7 +554,7 @@ public:
         structData.insert(member);
         paramList1.add(value_struct(structData));
         paramList1.add(value_nil());
-        paramList1.add(value_i8((long long)UINT_MAX + 1));
+        paramList1.add(value_i8((xmlrpc_int64)UINT_MAX + 1));
 
         TEST(paramList1.size() == 11);
 
@@ -578,7 +578,7 @@ public:
         TEST(paramList1.getArray(7, 1, 3).size() == 3);
         paramList1.getStruct(8)["the_integer"];
         paramList1.getNil(9);
-        TEST(paramList1.getI8(10) == (long long)UINT_MAX + 1);
+        TEST(paramList1.getI8(10) == (xmlrpc_int64)UINT_MAX + 1);
         paramList1.verifyEnd(11);
 
         paramList paramList2(5);

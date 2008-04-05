@@ -824,7 +824,7 @@ public:
             TEST(rpcApacheP->isFinished());
             TEST(rpcApacheP->isSuccessful());
             value_i8 const result(rpcApacheP->getResult());
-            TEST(static_cast<long long>(result) == 7ll);
+            TEST(static_cast<xmlrpc_int64>(result) == 7ll);
         }
     }
 };

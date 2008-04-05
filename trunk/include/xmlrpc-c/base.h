@@ -8,7 +8,7 @@
 #include <time.h>
 #include <xmlrpc-c/util.h>
 #include <xmlrpc-c/config.h>
-  /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_LONG_LONG */
+  /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_INT64 */
 
 #if XMLRPC_HAVE_WCHAR
 #include <wchar.h>
@@ -36,9 +36,9 @@ extern unsigned int const xmlrpc_version_point;
 
 typedef signed int xmlrpc_int;  
     /* An integer of the type defined by XML-RPC <int>; i.e. 32 bit */
-typedef signed int xmlrpc_int32;
+typedef XMLRPC_INT32 xmlrpc_int32;
     /* An integer of the type defined by XML-RPC <i4>; i.e. 32 bit */
-typedef XMLRPC_LONG_LONG xmlrpc_int64;
+typedef XMLRPC_INT64 xmlrpc_int64;
     /* An integer of the type defined by "XML-RPC" <i8>; i.e. 64 bit */
 typedef int xmlrpc_bool;
     /* A boolean (of the type defined by XML-RPC <boolean>, but there's
