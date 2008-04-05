@@ -635,7 +635,7 @@ setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
     curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
 
     assert(timeout <= LONG_MAX);
-    curl_easy_setopt(curlSessionP, (long)(timeout+999)/1000);
+    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)(timeout+999)/1000);
 #else
     abort();
 #endif
