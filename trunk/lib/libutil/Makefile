@@ -41,7 +41,7 @@ OMIT_LIBXMLRPC_UTIL_RULE=Y
 MAJ=3
   # Major number of shared libraries in this directory
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
@@ -57,19 +57,19 @@ ifneq ($(SHARED_LIB_TYPE),NONE)
   TARGET_SHARED_LIBS := $(UTIL_SHLIB) $(UTIL_SHLIBLE)
   endif
 
-# This 'Makefile.common' dependency makes sure the symlinks get built before
+# This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/common.mk: srcdir blddir
 
 .PHONY: all
 all: libxmlrpc_util.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_LIBRARY_NAMES:
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
 $(UTIL_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_LIBRARY_NAMES:
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 
 libxmlrpc_util.a: $(TARGET_MODS:%=%.o)
 libxmlrpc_util.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
@@ -79,7 +79,7 @@ libxmlrpc_util.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 #-----------------------------------------------------------------------------
 
 # Rules to compile object modules from which to build the static and shared
-# library are in Makefile.common, courtesy of TARGET_MODS.
+# library are in common.mk, courtesy of TARGET_MODS.
 
 .PHONY: install
 install: install-common

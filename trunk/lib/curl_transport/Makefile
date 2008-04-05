@@ -13,14 +13,14 @@ default: all
 .PHONY: all
 all: xmlrpc_curl_transport.o xmlrpc_curl_transport.osh
 
-# Rules for the above dependencies are in Makefile.common,
+# Rules for the above dependencies are in common.mk,
 # courtesy of TARGET_MODS.
 
 TARGET_MODS = xmlrpc_curl_transport
 
 OMIT_CURL_TRANSPORT_RULE=Y
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 CURL_INCLUDES := $(shell curl-config --cflags)
 # We expect that curl-config --cflags just gives us -I options, because

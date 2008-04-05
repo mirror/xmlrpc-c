@@ -17,7 +17,7 @@ INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
 
 default: all
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 .PHONY: all
 all: gennmtab

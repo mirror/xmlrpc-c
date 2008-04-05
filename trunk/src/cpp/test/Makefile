@@ -39,7 +39,7 @@ INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 
 Makefile: srcdir
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
 TEST_OBJS = test.o registry.o server_abyss.o server_pstream.o tools.o

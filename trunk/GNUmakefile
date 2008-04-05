@@ -70,10 +70,10 @@ version.h: $(SRCDIR)/Makefile.version
 	echo "#define XMLRPC_VERSION_MINOR $(MINOR)" >>$@
 	echo "#define XMLRPC_VERSION_POINT $(POINT)" >>$@
 
-# We don't want Makefile.common's rule for version.h
+# We don't want common.mk's rule for version.h
 OMIT_VERSION_H = Y
 
-# We don't want Makefile.common's rule for transport_config.h
+# We don't want common.mk's rule for transport_config.h
 OMIT_TRANSPORT_CONFIG_H = Y
 
 include transport_config.make
@@ -162,13 +162,13 @@ xmlrpc_config.h xmlrpc_amconfig.h \
 	:%:%.in $(SRCDIR)/configure
 	$(SRCDIR)/configure
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
 # A trick to catch a common user error.  When you don't run 'configure',
 # you don't have a Makefile.srcdir, which means $(SRCDIR) is null.
 
-/Makefile.common:
+/common.mk:
 	@echo =======================================
 	@echo = You must run Configure before Make. =
 	@echo =======================================

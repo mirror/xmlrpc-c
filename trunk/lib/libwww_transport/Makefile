@@ -13,14 +13,14 @@ default: all
 .PHONY: all
 all: xmlrpc_libwww_transport.o xmlrpc_libwww_transport.osh
 
-# Rules for the above dependencies are in Makefile.common,
+# Rules for the above dependencies are in common.mk,
 # courtesy of TARGET_MODS.
 
 TARGET_MODS = xmlrpc_libwww_transport
 
 OMIT_LIBWWW_TRANSPORT_RULE=Y
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 

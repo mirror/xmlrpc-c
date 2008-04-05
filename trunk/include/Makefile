@@ -148,4 +148,4 @@ dep:
 
 OMIT_CONFIG_H_RULE = Y
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk

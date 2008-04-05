@@ -1,5 +1,3 @@
-# -*-makefile-*-    <-- an Emacs control
-
 # This file contains rules and variable settings for the convenience
 # of every other make file in the package.
 

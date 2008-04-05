@@ -26,7 +26,7 @@ CLIENT_LDLIBS += $(LDLIBS_XML)
 CLIENTPP_LDLIBS = -L$(BLDDIR)/src/cpp
 CLIENTPP_LDLIBS += -lxmlrpc_client++ -lxmlrpc_packetsocket -lxmlrpc++
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 .PHONY: install
 install: install-common

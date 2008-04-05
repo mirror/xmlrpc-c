@@ -31,7 +31,7 @@ include $(BLDDIR)/Makefile.config
 
 OMIT_UTILS_RULE = Y
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 LIBOBJS = \
   casprintf.o \

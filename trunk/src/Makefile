@@ -108,14 +108,14 @@ OMIT_XMLRPC_LIB_RULE=Y
 MAJ=3
   # Major number of shared libraries in this directory
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
-# This 'Makefile.common' dependency makes sure the symlinks get built before
+# This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/common.mk: srcdir blddir
 
-# TARGET_STATIC_LIBRARIES, etc. are set by Makefile.common, based on
+# TARGET_STATIC_LIBRARIES, etc. are set by common.mk, based on
 # TARGET_LIBRARY_NAMES.
 
 
@@ -135,7 +135,7 @@ endif
 #  RULES TO LINK LIBRARIES
 #-----------------------------------------------------------------------------
 
-# Rules for these are in Makefile.common, courtesy of TARGET_LIBRARY_NAMES:
+# Rules for these are in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 
 # shlibfn generates e.g. libxmlrpc.so.3.1
 # shliblefn generates e.g. libxmlrpc.so
@@ -224,7 +224,7 @@ libxmlrpc_client.a: LIBOBJECTS = \
 #  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
 #-----------------------------------------------------------------------------
 
-# Rules for these are in Makefile.common, courtesy of TARGET_MODS:
+# Rules for these are in common.mk, courtesy of TARGET_MODS:
 
 BASIC_INCLUDES = \
   -I$(BLDDIR) \

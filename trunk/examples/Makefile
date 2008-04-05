@@ -119,7 +119,7 @@ config.h:
 xmlrpc_amconfig.h:
 	$(LN_S) $(BLDDIR)/$@ .
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 .PHONY: clean
 clean: clean-common

@@ -66,13 +66,13 @@ OMIT_CPP_LIB_RULES = Y
 MAJ=4
   # Major number of shared libraries in this directory
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
-# This 'Makefile.common' dependency makes sure the symlinks get built before
+# This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/common.mk: srcdir blddir
 
 TRANSPORT_INCLUDES = \
   -I$(WININET_TRANSPORT_DIR) \
@@ -86,7 +86,7 @@ BASIC_INCLUDES = \
   -Isrcdir/lib/util/include
 
 
-# TARGET_STATIC_LIBARIES, etc. are set by Makefile.common, based on
+# TARGET_STATIC_LIBARIES, etc. are set by common.mk, based on
 # TARGET_LIB_NAMES_PP.
 
 all: \
@@ -99,7 +99,7 @@ all: \
 #  RULES TO LINK LIBRARIES
 #-----------------------------------------------------------------------------
 
-# Rules for these are in Makefile.common, courtesy of TARGET_LIB_NAMES_PP:
+# Rules for these are in common.mk, courtesy of TARGET_LIB_NAMES_PP:
 
 # shlibfn generates e.g. libxmlrpc.so.3.1
 # shliblefn generates e.g. libxmlrpc.so
@@ -181,7 +181,7 @@ libxmlrpc_packetsocket.a: LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o)
 #  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
 #-----------------------------------------------------------------------------
 
-# Rules for these are in Makefile.common, courtesy of TARGET_MODS_PP:
+# Rules for these are in common.mk, courtesy of TARGET_MODS_PP:
 
 XmlRpcCpp.o% XmlrpcCpp.osh: \
   INCLUDES = $(BASIC_INCLUDES)

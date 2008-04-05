@@ -46,7 +46,7 @@ else
   LIBXMLRPC_CLIENT_DEP =
 endif
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 test: \
   $(XMLRPC_C_CONFIG) \

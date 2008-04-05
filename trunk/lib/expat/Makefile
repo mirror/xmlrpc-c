@@ -33,7 +33,7 @@ check:
 
 dep: $(SUBDIRS:%=%/dep)
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
 

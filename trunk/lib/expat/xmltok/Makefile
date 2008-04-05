@@ -44,7 +44,7 @@ OMIT_XMLTOK_LIB_RULE = Y
 MAJ=3
   # Major number of shared libraries in this directory
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 XMLTOK_SHLIB = $(call shlibfn,libxmlrpc_xmltok)
 #XMLTOK_SHLIB is e.g. libxmlrpc_xmltok.so.3.1
@@ -58,11 +58,11 @@ ifneq ($(SHARED_LIB_TYPE),NONE)
 .PHONY: all
 all: libxmlrpc_xmltok.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
 $(XMLTOK_SHLIB): $(TARGET_MODS:%=%.osh)
 $(XMLTOK_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:
 
 libxmlrpc_xmltok.a: $(TARGET_MODS:%=%.o)
 libxmlrpc_xmltok.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
@@ -72,7 +72,7 @@ libxmlrpc_xmltok.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 #-----------------------------------------------------------------------------
 
 # Rules to compile object modules from which to build the static and shared
-# library are in Makefile.common, courtesy of TARGET_MODS.
+# library are in common.mk, courtesy of TARGET_MODS.
 
 
 .PHONY: clean
