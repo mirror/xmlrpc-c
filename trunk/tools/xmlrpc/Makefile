@@ -12,7 +12,7 @@ include $(BLDDIR)/Makefile.config
 
 PROGRAMS_TO_INSTALL = xmlrpc
 
-include $(SRCDIR)/tools/Makefile.common
+include $(SRCDIR)/tools/common.mk
 
 INCLUDES = \
   -I$(BLDDIR) \

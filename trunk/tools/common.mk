@@ -1,5 +1,3 @@
-# -*-makefile-*-    <-- an Emacs control
-
 # We try to get Xmlrpc-c directories early in the link library search
 # path to avert problems with other versions of Xmlrpc-c being in more
 # general directories (such as /usr/local/lib) that are added to the

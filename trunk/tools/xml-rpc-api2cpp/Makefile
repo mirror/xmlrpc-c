@@ -10,7 +10,7 @@ default: all
 
 include $(BLDDIR)/Makefile.config
 
-include $(SRCDIR)/tools/Makefile.common
+include $(SRCDIR)/tools/common.mk
 
 INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
 
