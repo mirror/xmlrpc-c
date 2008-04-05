@@ -632,10 +632,13 @@ setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
                unsigned int const timeout ATTR_UNUSED) {
 
 #if HAVE_CURL_NOSIGNAL
+    unsigned int const timeoutMs = (timeout + 999)/1000;
+
     curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
 
-    assert(timeout <= LONG_MAX);
-    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)(timeout+999)/1000);
+    assert((long)timeoutMs == (int)timeoutMs);
+        /* Calling requirement */
+    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutMs);
 #else
     abort();
 #endif
@@ -650,7 +653,7 @@ setupCurlSession(xmlrpc_env *               const envP,
                  xmlrpc_mem_block *         const responseXmlP,
                  const xmlrpc_server_info * const serverInfoP,
                  const char *               const userAgent,
-                 unsigned int *             const interruptP,
+                 int *                      const interruptP,
                  const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
    Set up the Curl session for the transaction *curlTransactionP so that
@@ -777,7 +780,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
                        const char *               const userAgent,
                        const struct curlSetup *   const curlSetupStuffP,
                        rpc *                      const rpcP,
-                       unsigned int *             const interruptP,
+                       int *                      const interruptP,
                        curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
@@ -1533,7 +1536,7 @@ struct xmlrpc_client_transport {
         */
     struct curlSetup curlSetupStuff;
         /* This is constant */
-    unsigned int * interruptP;
+    int * interruptP;
         /* Pointer to a value that user sets to nonzero to indicate he wants
            the transport to give up on whatever it is doing and return ASAP.
 
@@ -1649,8 +1652,8 @@ getTimeoutParm(xmlrpc_env *                          const envP,
         *timeoutP = 0;
     else {
         if (curlHasNosignal()) {
-            /* libcurl takes a 'long' for the timeout value */
-            if (curlXportParmsP->timeout > LONG_MAX)
+            /* libcurl takes a 'long' in milliseconds for the timeout value */
+            if ((curlXportParmsP->timeout + 999) / 1000 > LONG_MAX)
                 xmlrpc_faultf(envP, "Timeout value %u is too large.",
                               curlXportParmsP->timeout);
             else
