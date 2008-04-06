@@ -1516,21 +1516,21 @@ test_value_parse_value(void) {
 
 static void
 test_struct_get_element(xmlrpc_value * const structP,
-                        xmlrpc_value * const i1,
-                        xmlrpc_value * const i2,
+                        xmlrpc_value * const fooValueP,
+                        xmlrpc_value * const weirdValueP,
                         const char *   const weirdKey,
                         unsigned int   const weirdKeyLen) {
 
     xmlrpc_env env;
     xmlrpc_value * valueP;
-    xmlrpc_value * aasStringP;
+    xmlrpc_value * fooStringP;
     xmlrpc_value * bogusKeyStringP;
 
     xmlrpc_env_init(&env);
 
     /* build test tools */
 
-    aasStringP = xmlrpc_build_value(&env, "s", "aas");
+    fooStringP = xmlrpc_build_value(&env, "s", "foo");
     TEST_NO_FAULT(&env);
 
     bogusKeyStringP = xmlrpc_build_value(&env, "s", "doesn't_exist");
@@ -1538,69 +1538,69 @@ test_struct_get_element(xmlrpc_value * const structP,
 
     /* "find" interface */
 
-    xmlrpc_struct_find_value(&env, structP, "aas", &valueP);
+    xmlrpc_struct_find_value(&env, structP, "foo", &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_find_value(&env, structP, "doesn't_exist", &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP == NULL);
             
-    xmlrpc_struct_find_value_v(&env, structP, aasStringP, &valueP);
+    xmlrpc_struct_find_value_v(&env, structP, fooStringP, &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_find_value_v(&env, structP, bogusKeyStringP, &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP == NULL);
 
-    xmlrpc_struct_find_value(&env, i1, "aas", &valueP);
+    xmlrpc_struct_find_value(&env, fooValueP, "foo", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
             
     /* "read" interface */
             
-    xmlrpc_struct_read_value(&env, structP, "aas", &valueP);
+    xmlrpc_struct_read_value(&env, structP, "foo", &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value(&env, structP, "doesn't_exist", &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
             
-    xmlrpc_struct_read_value_v(&env, structP, aasStringP, &valueP);
+    xmlrpc_struct_read_value_v(&env, structP, fooStringP, &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value_v(&env, structP, bogusKeyStringP, &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
 
-    xmlrpc_struct_read_value(&env, i1, "aas", &valueP);
+    xmlrpc_struct_read_value(&env, fooValueP, "foo", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
             
     /* obsolete "get" interface.  Note that it does not update the
        reference count of the xmlrpc_value it returns.
     */
             
-    valueP = xmlrpc_struct_get_value(&env, structP, "aas");
+    valueP = xmlrpc_struct_get_value(&env, structP, "foo");
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
 
     valueP = xmlrpc_struct_get_value(&env, structP, "doesn't_exist");
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
 
-    valueP = xmlrpc_struct_get_value(&env, i1, "foo");
+    valueP = xmlrpc_struct_get_value(&env, fooValueP, "foo");
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
     valueP = xmlrpc_struct_get_value_n(&env, structP, weirdKey, weirdKeyLen);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i2);
+    TEST(valueP == weirdValueP);
 
     /* Clean up */
 
-    xmlrpc_DECREF(aasStringP);
+    xmlrpc_DECREF(fooStringP);
     xmlrpc_DECREF(bogusKeyStringP);
 
     xmlrpc_env_clean(&env);
@@ -1823,47 +1823,53 @@ test_struct (void) {
     TEST_NO_FAULT(&env);
     TEST(size == 1);
 
-    /* Insert two more items with conflicting hash codes.
-       TODO: This worked for the old mod 256 additionn hash, but we
-       need to find some nice colliding ASCII keys for the current
-       Bernstein hash.
-    */
-    xmlrpc_struct_set_value(&env, s, "bar", i2);
-    TEST_NO_FAULT(&env);
-    xmlrpc_struct_set_value(&env, s, "aas", i3);
+    /* Insert an item whose key has the same hash value as "foo". */
+    xmlrpc_struct_set_value(&env, s, "qmdebdw", i2);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 3);
+    TEST(size == 2);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(i == i1);
+    i = xmlrpc_struct_get_value(&env, s, "qmdebdw");
+    TEST_NO_FAULT(&env);
+    TEST(i == i2);
 
     /* Replace an existing element with a different element. */
-    xmlrpc_struct_set_value(&env, s, "aas", i1);
+    xmlrpc_struct_set_value(&env, s, "foo", i3);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 3);
+    TEST(size == 2);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(i == i3);
 
     /* Insert an item with a NUL in the key */
     xmlrpc_struct_set_value_n(&env, s, weirdKey, sizeof(weirdKey), i2);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 4);
+    TEST(size == 3);
 
-    test_struct_get_element(s, i1, i2, weirdKey, sizeof(weirdKey));
+    test_struct_get_element(s, i3, i2, weirdKey, sizeof(weirdKey));
 
     /* Replace an existing element with the same element (tricky). */
-    xmlrpc_struct_set_value(&env, s, "aas", i1);
+    xmlrpc_struct_set_value(&env, s, "foo", i3);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 4);
-    i = xmlrpc_struct_get_value(&env, s, "aas");
+    TEST(size == 3);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
     TEST_NO_FAULT(&env);
-    TEST(i == i1);
+    TEST(i == i3);
 
     /* Test for the presence and absence of elements. */
-    present = xmlrpc_struct_has_key(&env, s, "aas");
+    present = xmlrpc_struct_has_key(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(present);
+    present = xmlrpc_struct_has_key(&env, s, "qmdebdw");
     TEST_NO_FAULT(&env);
     TEST(present);
     present = xmlrpc_struct_has_key(&env, s, "bogus");
