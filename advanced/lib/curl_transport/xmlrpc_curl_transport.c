@@ -190,8 +190,10 @@ static int
 timeDiffMillisec(xmlrpc_timespec const minuend,
                  xmlrpc_timespec const subtractor) {
 
+    unsigned int const million = 1000000;
+
     return (minuend.tv_sec - subtractor.tv_sec) * 1000 +
-        (minuend.tv_nsec - subtractor.tv_nsec + 1E6/2) / 1E6;
+        (minuend.tv_nsec - subtractor.tv_nsec + million/2) / million;
 }
 
 
@@ -219,15 +221,18 @@ static void
 addMilliseconds(xmlrpc_timespec   const addend,
                 unsigned int      const adder,
                 xmlrpc_timespec * const sumP) {
+    
+    unsigned int const million = 1000000;
+    unsigned int const billion = 1000000000;
 
     xmlrpc_timespec sum;
 
     sum.tv_sec  = addend.tv_sec + adder / 1000;
-    sum.tv_nsec = addend.tv_nsec + (adder % 1000) * 1E6;
+    sum.tv_nsec = addend.tv_nsec + (adder % 1000) * million;
 
-    if (sum.tv_nsec >= 1E9) {
+    if ((uint32_t)sum.tv_nsec >= billion) {
         sum.tv_sec += 1;
-        sum.tv_nsec -= 1E9;
+        sum.tv_nsec -= billion;
     }
     *sumP = sum;
 }
@@ -630,7 +635,7 @@ setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
     curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
 
     assert(timeout <= LONG_MAX);
-    curl_easy_setopt(curlSessionP, (long)(timeout+999)/1000);
+    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)(timeout+999)/1000);
 #else
     abort();
 #endif
@@ -713,7 +718,8 @@ setupCurlSession(xmlrpc_env *               const envP,
             curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE,
                              curlSetupP->sslEngine);
         if (curlSetupP->sslEngineDefault)
-            curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT);
+            // 3rd argument seems to be required by some Curl
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT, 1l);
         if (curlSetupP->sslVersion != XMLRPC_SSLVERSION_DEFAULT)
             curl_easy_setopt(curlSessionP, CURLOPT_SSLVERSION,
                              curlSetupP->sslVersion);
@@ -1103,6 +1109,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
    there to be work for the Curl multi manager to do, given that the user
    wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
+    unsigned int const million = 1000000;
     unsigned int selectTimeoutMillisec;
     xmlrpc_timespec retval;
 
@@ -1128,7 +1135,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     break;
     }
     retval.tv_sec = selectTimeoutMillisec / 1000;
-    retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * 1E6);
+    retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * million);
 
     return retval;
 }        
@@ -1247,11 +1254,11 @@ waitForWorkInt(xmlrpc_env *       const envP,
    a multithreaded program.  Therefore, don't call this if
    waitForWork() will suffice.
 -----------------------------------------------------------------------------*/
+    sigset_t callerBlockSet;
 #ifdef WIN32
     waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
 #else
     sigset_t allSignals;
-    sigset_t callerBlockSet;
 
     assert(interruptP != NULL);
 
