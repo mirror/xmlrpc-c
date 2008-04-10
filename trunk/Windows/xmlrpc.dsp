@@ -113,6 +113,10 @@ SOURCE=..\lib\util\pthreadx_win32.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\parse_value.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\registry.c
 # End Source File
 # Begin Source File
