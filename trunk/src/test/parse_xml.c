@@ -78,6 +78,12 @@ char const xmldata[] =
     "<param><value><double>10</double></value></param>\r\n"
     "<param><value><double>10.1</double></value></param>\r\n"
     "<param><value><double>-10.1</double></value></param>\r\n"
+    "<param><value><double>+10.1</double></value></param>\r\n"
+    "<param><value><double>0</double></value></param>\r\n"
+    "<param><value><double>.01</double></value></param>\r\n"
+    "<param><value><double>5.</double></value></param>\r\n"
+    "<param><value><double>5.3E6</double></value></param>\r\n"
+    "<param><value><double> 1</double></value></param>\r\n"
     "</params>\r\n"
     "</methodCall>\r\n";
     
@@ -88,7 +94,7 @@ char const xmldata[] =
     xmlrpc_int int_max, int_min;
     xmlrpc_int32 i_i1, i_i2, i_i4;
     xmlrpc_int64 i_i8, i_ex_i8;
-    double d1, d2, d3;
+    double d1, d2, d3, d4, d5, d6, d7, d8, d9;
 
     xmlrpc_env_init(&env);
 
@@ -99,12 +105,12 @@ char const xmldata[] =
     arraySize = xmlrpc_array_size(&env, paramArrayP);
     TEST_NO_FAULT(&env);
 
-    TEST(arraySize == 10);
+    TEST(arraySize == 16);
 
     xmlrpc_decompose_value(
-        &env, paramArrayP, "(iiiiiIIddd)", 
+        &env, paramArrayP, "(iiiiiIIddddddddd)", 
         &int_max, &int_min, &i_i1, &i_i2, &i_i4, &i_i8, &i_ex_i8,
-        &d1, &d2, &d3);
+        &d1, &d2, &d3, &d4, &d5, &d6, &d7, &d8, &d9);
 
     TEST_NO_FAULT(&env);
 
@@ -115,9 +121,15 @@ char const xmldata[] =
     TEST(i_i4 == 10);
     TEST(i_i8 == 10);
     TEST(i_ex_i8 == 10);
-    TEST(d1 == 10.0);
-    TEST(d2 == 10.1);
-    TEST(d3 == -10.1);
+    TESTFLOATEQUAL(d1, 10.0);
+    TESTFLOATEQUAL(d2, 10.1);
+    TESTFLOATEQUAL(d3, -10.1);
+    TESTFLOATEQUAL(d4, +10.1);
+    TESTFLOATEQUAL(d5, 0.0);
+    TESTFLOATEQUAL(d6, 0.01);
+    TESTFLOATEQUAL(d7, 5.0);
+    TESTFLOATEQUAL(d8, 5.3E6);
+    TESTFLOATEQUAL(d9, 1.0);
 
     xmlrpc_DECREF(paramArrayP);
     strfree(methodName);

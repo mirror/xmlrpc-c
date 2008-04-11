@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
@@ -42,6 +43,11 @@ do { \
             (env)->fault_string); \
         } \
        } while (0)
+
+#define TEST_EPSILON 1E-5
+
+#define TESTFLOATEQUAL(comparand, comparator) \
+    TEST(fabs(comparand-comparator) < TEST_EPSILON)
 
 static __inline__ void
 test_fault(xmlrpc_env * const envP,

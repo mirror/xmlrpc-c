@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <limits.h>
+#include <float.h>
 
 #include "bool.h"
 
@@ -346,6 +347,150 @@ parseBoolean(xmlrpc_env *    const envP,
 
 
 static void
+scanAndValidateDoubleString(xmlrpc_env *  const envP,
+                            const char *  const string,
+                            const char ** const mantissaP,
+                            const char ** const mantissaEndP,
+                            const char ** const fractionP,
+                            const char ** const fractionEndP) {
+
+    const char * mantissa;
+    const char * dp;
+    const char * p;
+
+    if (string[0] == '-' || string[0] == '+')
+        mantissa = &string[1];
+    else
+        mantissa = &string[0];
+
+    for (p = mantissa, dp = NULL; *p; ++p) {
+        char const c = *p;
+        if (c == '.') {
+            if (dp) {
+                setParseFault(envP, "Two decimal points");
+                return;
+            } else
+                dp = p;
+        } else if (c < '0' || c > '9') {
+            setParseFault(envP, "Garbage (not sign, digit, or period) "
+                          "starting at '%s'", p);
+            return;
+        }
+    }
+    *mantissaP = mantissa;
+    if (dp) {
+        *mantissaEndP = dp;
+        *fractionP    = dp+1;
+        *fractionEndP = p;
+    } else {
+        *mantissaEndP = p;
+        *fractionP    = p;
+        *fractionEndP = p;
+    }
+}
+
+
+
+static bool
+isInfinite(double const value) {
+
+    return value > DBL_MAX;
+}
+
+
+
+static void
+parseDoubleString(xmlrpc_env *  const envP,
+                  const char *  const string,
+                  double *      const valueP) {
+/*----------------------------------------------------------------------------
+   Turn e.g. "4.3" into 4.3 .
+-----------------------------------------------------------------------------*/
+    /* strtod() is no good for this because it is designed for human
+       interfaces; it parses according to locale.  As a practical
+       matter that sometimes means that it does not recognize "." as a
+       decimal point.  In XML-RPC, "." is a decimal point.
+
+       Design note: in my experiments, using strtod() was 10 times
+       slower than using this function.
+    */
+    const char * mantissa;
+    const char * mantissaEnd;
+    const char * fraction;
+    const char * fractionEnd;
+
+    scanAndValidateDoubleString(envP, string, &mantissa, &mantissaEnd,
+                                &fraction, &fractionEnd);
+
+    if (!envP->fault_occurred) {
+        double accum;
+
+        accum = 0.0;
+
+        if (mantissa == mantissaEnd && fraction == fractionEnd) {
+            setParseFault(envP, "No digits");
+            return;
+        }
+        {
+            /* Add in the whole part */
+            const char * p;
+
+            for (p = mantissa; p < mantissaEnd; ++p) {
+                accum *= 10;
+                accum += (*p - '0');
+            }
+        }
+        {
+            /* Add in the fractional part */
+            double significance;
+            const char * p;
+            for (significance = 0.1, p = fraction;
+                 p < fractionEnd;
+                 ++p, significance *= 0.1) {
+                
+                accum += (*p - '0') * significance;
+            }
+        }
+        if (isInfinite(accum))
+            setParseFault(envP, "Value exceeds the size allowed by XML-RPC");
+        else
+            *valueP = string[0] == '-' ? (- accum) : accum;
+    }
+}
+
+
+
+static void
+parseDoubleStringStrtod(const char * const str,
+                        bool *       const failedP,
+                        double *     const valueP) {
+
+    if (strlen(str) == 0) {
+        /* strtod() happily interprets empty string as 0.0.  We don't think
+           the user will appreciate that XML-RPC extension.
+        */
+        *failedP = true;
+    } else {
+        char * tail;
+
+        errno = 0;
+
+        *valueP = strtod(str, &tail);
+    
+        if (errno != 0)
+            *failedP = true;
+        else {
+            if (tail[0] != '\0')
+                *failedP = true;
+            else
+                *failedP = false;
+        }
+    }
+}
+
+
+
+static void
 parseDouble(xmlrpc_env *    const envP,
             const char *    const str,
             xmlrpc_value ** const valuePP) {
@@ -354,40 +499,35 @@ parseDouble(xmlrpc_env *    const envP,
 
    'str' is that content.
 -----------------------------------------------------------------------------*/
+    xmlrpc_env parseEnv;
+    double valueDouble;
+
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(str);
 
-    if (str[0] == '\0')
-        setParseFault(envP, "<double> XML element content is empty");
-    else if (isspace(str[0]))
-        setParseFault(envP, "<double> content '%s' starts with white space",
-                      str);
-    else {
-        double d;
-        char * tail;
+    xmlrpc_env_init(&parseEnv);
 
-        errno = 0;
+    parseDoubleString(&parseEnv, str, &valueDouble);
 
-        d = strtod(str, &tail);
+    if (parseEnv.fault_occurred) {
+        /* As an alternative, try a strtod() parsing.  strtod()
+           accepts other forms, e.g. "3.4E6"; "3,4"; " 3.4".  These
+           are not permitted by XML-RPC, but an almost-XML-RPC partner
+           might use one.  In fact, for many years, Xmlrpc-c generated
+           such alternatives (by mistake).
+        */
+        bool failed;
+        parseDoubleStringStrtod(str, &failed, &valueDouble);
+        if (failed)
+            setParseFault(envP, "<double> element value '%s' is not a valid "
+                          "floating point number.  %s",
+                          str, parseEnv.fault_string);
+    }
     
-        if (errno == ERANGE)
-            setParseFault(envP, "<double> XML element value '%s' represents a "
-                          "number beyond the range that "
-                          "XML-RPC allows", str);
-        else if (errno != 0)
-            setParseFault(envP,
-                          "unexpected error parsing <double> XML element "
-                          "value '%s'.  strtod() failed with errno %d (%s)",
-                          str, errno, strerror(errno));
-        else {
-            if (tail[0] != '\0')
-                setParseFault(envP,
-                              "<double> value '%s' contains non-numerical "
-                              "junk: '%s'", str, tail);
-            else
-                *valuePP = xmlrpc_double_new(envP, d);
-        }
-    }            
+    if (!envP->fault_occurred)
+        *valuePP = xmlrpc_double_new(envP, valueDouble);
+
+    xmlrpc_env_clean(&parseEnv);
 }
 
 
