@@ -47,7 +47,7 @@ do { \
 #define TEST_EPSILON 1E-5
 
 #define TESTFLOATEQUAL(comparand, comparator) \
-    TEST(fabs(comparand-comparator) < TEST_EPSILON)
+    TEST(fabs((comparand)-(comparator)) < TEST_EPSILON)
 
 static __inline__ void
 test_fault(xmlrpc_env * const envP,
