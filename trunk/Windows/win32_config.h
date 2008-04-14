@@ -28,13 +28,9 @@
 
 #if defined(_MSC_VER)
 #if _MSC_VER < 1300
-  /* This is MSVC 6. */
+  /* Newer MSVC has long long, but MSVC 6 does not */
   #define XMLRPC_INT64 __int64
   #define XMLRPC_INT32 __int32
-#else
-  #define XMLRPC_INT64 long long
-  #define XMLRPC_INT32 int
-#endif
 #else
   #define XMLRPC_INT64 long long
   #define XMLRPC_INT32 int
