@@ -23,8 +23,6 @@ CFG=xmlrpc - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "xmlrpc"
-# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
@@ -349,6 +347,10 @@ SOURCE=..\src\method.h
 # Begin Source File
 
 SOURCE=..\lib\util\include\pthreadx.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\parse_value.h
 # End Source File
 # Begin Source File
 

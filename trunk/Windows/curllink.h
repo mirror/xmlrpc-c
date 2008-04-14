@@ -8,9 +8,9 @@
 */
 
 #ifdef _DEBUG
-#pragma comment( lib, "../lib/libcurld.lib" )
+#pragma comment( lib, "C:\\FG\\FGCOMXML\\curl\\build\\Debug\\Lib_curl.lib" )
 #else
-#pragma comment( lib, "../lib/libcurl.lib" )
+#pragma comment( lib, "C:\\FG\\FGCOMXML\\curl\\build\\Release\\Lib_curl.lib" )
 #endif
 
 #pragma comment( lib, "Winmm.lib" )
