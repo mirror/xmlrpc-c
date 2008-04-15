@@ -487,7 +487,7 @@ test_system_multicall(xmlrpc_registry * const registryP) {
                                 "(({s:s,s:V}d))",
                                 "methodName", "test.foo",
                                 "params", argArrayP,
-                                5);
+                                5.0);
 
     TEST_NO_FAULT(&env);
     doRpc(&env, registryP, "system.multicall", multiP, MULTI_CALLINFO,
