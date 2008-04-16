@@ -980,11 +980,7 @@ shutdownAbyss(xmlrpc_env * const envP,
 
    After we return, Abyss will finish up the system.shutdown and any
    other connections that are in progress, then the call to
-   ServerRun() etc. will return.  But Abyss may be stuck waiting for
-   something, such as the next HTTP connection.  In that case, until it
-   gets what it's waiting for, it won't even know it's supposed t shut
-   down.  In particular, a caller of system.shutdown may have to execute
-   one more RPC in order for the shutdown to happen.
+   ServerRun() etc. will return.
 -----------------------------------------------------------------------------*/
     TServer * const serverP = context;
 
