@@ -315,7 +315,7 @@ xmlrpc_serialize_value(xmlrpc_env *env,
 
     case XMLRPC_TYPE_DOUBLE:
         /* We must output a number of the form [+-]?\d*.\d*. */
-        format_out(env, output, "<double>%.17g</double>", value->_value.d);
+        format_out(env, output, "<double>%f</double>", value->_value.d);
         break;
 
     case XMLRPC_TYPE_STRING:
