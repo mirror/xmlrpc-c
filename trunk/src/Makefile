@@ -73,6 +73,7 @@ endif
 # LIBxxx_OBJS is the list of object files that make up library libxxx.
 
 LIBXMLRPC_MODS = \
+        double \
 	parse_value \
         resource \
 	trace \
