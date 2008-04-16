@@ -111,59 +111,75 @@ test_serialize_string(void) {
 
 
 static void
-test_serialize_double(void) {
+testOneDouble(double const value) {
 
     /* Test serialize of a double.  */
 
     xmlrpc_env env;
-    xmlrpc_value * v;
-    xmlrpc_mem_block *output;
+    xmlrpc_value * valueP;
+    xmlrpc_mem_block * serializedP;
     char * result;
         /* serialized result, as asciiz string */
     size_t resultLength;
         /* Length in characters of the serialized result */
-    float serializedValue;
+    double serializedValue;
     char nextChar;
     int itemsMatched;
     
     xmlrpc_env_init(&env);
 
     /* Build a double to serialize */
-    v = xmlrpc_build_value(&env, "d", 3.14159);
+    valueP = xmlrpc_double_new(&env, value);
     TEST_NO_FAULT(&env);
     
     /* Serialize the value. */
-    output = XMLRPC_TYPED_MEM_BLOCK_NEW(char, &env, 0);
+    serializedP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
     TEST_NO_FAULT(&env);
-    xmlrpc_serialize_value(&env, output, v);
+    xmlrpc_serialize_value(&env, serializedP, valueP);
     TEST_NO_FAULT(&env);
 
     /* Make sure we serialized the correct value.  Note that because
        doubles aren't precise, this might serialize as 3.1415899999
        or something like that.  So we check it arithmetically.
     */
-    resultLength = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
+    resultLength = XMLRPC_MEMBLOCK_SIZE(char, serializedP);
     result = malloc(resultLength + 1);
 
-    memcpy(result, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output), 
-           resultLength);
+    memcpy(result, XMLRPC_MEMBLOCK_CONTENTS(char, serializedP), resultLength);
     result[resultLength] = '\0';
     
     itemsMatched = sscanf(result, 
-                          "<value><double>%f</double></value>\r\n%c",
+                          "<value><double>%lf</double></value>\r\n%c",
                           &serializedValue, &nextChar);
 
     TEST(itemsMatched == 1);
-    TEST(serializedValue - 3.14159 < .000001);
-    /* We'd like to test more precision, but sscanf doesn't do doubles */
+    TESTFLOATEQUAL(serializedValue, value);
 
     free(result);
     
     /* Clean up our value. */
-    XMLRPC_TYPED_MEM_BLOCK_FREE(char, output);
-    xmlrpc_DECREF(v);
+    XMLRPC_TYPED_MEM_BLOCK_FREE(char, serializedP);
+    xmlrpc_DECREF(valueP);
 
     xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_serialize_double(void) {
+
+    testOneDouble(0);
+    testOneDouble(1);
+    testOneDouble(0.3);
+    testOneDouble(4.9);
+    testOneDouble(-8);
+    testOneDouble(-.7);
+    testOneDouble(-2.5);
+    testOneDouble(3.14159);
+    testOneDouble(1.2E37);
+    testOneDouble(1.2E-37);
+    testOneDouble(-5E200);
 }
 
 
@@ -214,7 +230,9 @@ test_serialize_value(void) {
     printf("  Running serialize value tests.");
 
     test_serialize_string();
+
     test_serialize_double();
+
     test_serialize_struct();
 
     printf("\n");
