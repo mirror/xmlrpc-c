@@ -34,6 +34,7 @@ TEST_OBJS = \
   method_registry.o \
   parse_xml.o \
   serialize.o \
+  serialize_value.o \
   server_abyss.o \
   value.o \
   xml_data.o \
