@@ -900,14 +900,21 @@ ChanSwitchUnixCreateFd(int            const fd,
             socketUnixP->fd = fd;
             socketUnixP->userSuppliedFd = TRUE;
             
-            ChanSwitchCreate(&chanSwitchVtbl, socketUnixP, &chanSwitchP);
+            initInterruptPipe(&socketUnixP->interruptPipe, errorP);
 
-            if (chanSwitchP == NULL)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
-                                "channel switch descriptor");
-            else {
-                *chanSwitchPP = chanSwitchP;
-                *errorP = NULL;
+            if (!*errorP) {
+                ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
+                                 &chanSwitchP);
+                if (*errorP)
+                    termInterruptPipe(socketUnixP->interruptPipe);
+
+                if (chanSwitchP == NULL)
+                    xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                                    "channel switch descriptor");
+                else {
+                    *chanSwitchPP = chanSwitchP;
+                    *errorP = NULL;
+                }
             }
             if (*errorP)
                 free(socketUnixP);
