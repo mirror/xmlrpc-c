@@ -314,7 +314,7 @@ channelWait(TChannel * const channelP,
         } else {
             failed       = TRUE;
             readyToRead  = FALSE; /* quiet compiler warning */
-            readyToWrite = FALSE; /* quite compiler warning */
+            readyToWrite = FALSE; /* quiet compiler warning */
         }
     } else {
         failed       = FALSE;
@@ -777,6 +777,49 @@ static struct TChanSwitchVtbl const chanSwitchVtbl = {
 
 
 static void
+createChanSwitch(int            const fd,
+                 bool           const userSuppliedFd,
+                 TChanSwitch ** const chanSwitchPP,
+                 const char **  const errorP) {
+
+    struct socketUnix * socketUnixP;
+
+    assert(!connected(fd));
+
+    MALLOCVAR(socketUnixP);
+
+    if (socketUnixP == NULL)
+        xmlrpc_asprintf(errorP, "unable to allocate memory for Unix "
+                        "channel switch descriptor.");
+    else {
+        TChanSwitch * chanSwitchP;
+
+        socketUnixP->fd = fd;
+        socketUnixP->userSuppliedFd = userSuppliedFd;
+            
+        initInterruptPipe(&socketUnixP->interruptPipe, errorP);
+
+        if (!*errorP) {
+            ChanSwitchCreate(&chanSwitchVtbl, socketUnixP, &chanSwitchP);
+            if (*errorP)
+                termInterruptPipe(socketUnixP->interruptPipe);
+
+            if (chanSwitchP == NULL)
+                xmlrpc_asprintf(errorP, "Unable to allocate memory for "
+                                "channel switch descriptor");
+            else {
+                *chanSwitchPP = chanSwitchP;
+                *errorP = NULL;
+            }
+        }
+        if (*errorP)
+            free(socketUnixP);
+    }
+}
+
+
+
+static void
 setSocketOptions(int           const fd,
                  const char ** const errorP) {
 
@@ -835,43 +878,25 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
    Set the socket's local address so that a subsequent "listen" will listen
    on all IP addresses, port number 'portNumber'.
 -----------------------------------------------------------------------------*/
-    struct socketUnix * socketUnixP;
-
-    MALLOCVAR(socketUnixP);
-
-    if (!socketUnixP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
-                        "channel descriptor structure.");
+    int rc;
+    rc = socket(AF_INET, SOCK_STREAM, 0);
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                        errno, strerror(errno));
     else {
-        int rc;
-        rc = socket(AF_INET, SOCK_STREAM, 0);
-        if (rc < 0)
-            xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
-                            errno, strerror(errno));
-        else {
-            socketUnixP->fd = rc;
-            socketUnixP->userSuppliedFd = FALSE;
+        int const socketFd = rc;
 
-            setSocketOptions(socketUnixP->fd, errorP);
-            if (!*errorP) {
-                bindSocketToPort(socketUnixP->fd, NULL, portNumber, errorP);
+        setSocketOptions(socketFd, errorP);
+        if (!*errorP) {
+            bindSocketToPort(socketFd, NULL, portNumber, errorP);
                 
-                if (!*errorP) {
-                    initInterruptPipe(&socketUnixP->interruptPipe, errorP);
-
-                    if (!*errorP) {
-                        ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
-                                         chanSwitchPP);
-                        if (*errorP)
-                            termInterruptPipe(socketUnixP->interruptPipe);
-                    }
-                }
+            if (!*errorP) {
+                bool const userSupplied = false;
+                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
             }
-            if (*errorP)
-                close(socketUnixP->fd);
         }
         if (*errorP)
-            free(socketUnixP);
+            close(socketFd);
     }
 }
 
@@ -882,43 +907,13 @@ ChanSwitchUnixCreateFd(int            const fd,
                        TChanSwitch ** const chanSwitchPP,
                        const char **  const errorP) {
 
-    struct socketUnix * socketUnixP;
-
     if (connected(fd))
         xmlrpc_asprintf(errorP,
                         "Socket (file descriptor %d) is in connected "
                         "state.", fd);
     else {
-        MALLOCVAR(socketUnixP);
-
-        if (socketUnixP == NULL)
-            xmlrpc_asprintf(errorP, "unable to allocate memory for Unix "
-                            "channel switch descriptor.");
-        else {
-            TChanSwitch * chanSwitchP;
-
-            socketUnixP->fd = fd;
-            socketUnixP->userSuppliedFd = TRUE;
-            
-            initInterruptPipe(&socketUnixP->interruptPipe, errorP);
-
-            if (!*errorP) {
-                ChanSwitchCreate(&chanSwitchVtbl, socketUnixP,
-                                 &chanSwitchP);
-                if (*errorP)
-                    termInterruptPipe(socketUnixP->interruptPipe);
-
-                if (chanSwitchP == NULL)
-                    xmlrpc_asprintf(errorP, "Unable to allocate memory for "
-                                    "channel switch descriptor");
-                else {
-                    *chanSwitchPP = chanSwitchP;
-                    *errorP = NULL;
-                }
-            }
-            if (*errorP)
-                free(socketUnixP);
-        }
+        bool const userSupplied = true;
+        createChanSwitch(fd, userSupplied, chanSwitchPP, errorP);
     }
 }
 
