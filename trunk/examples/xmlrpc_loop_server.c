@@ -90,7 +90,7 @@ sample_add(xmlrpc_env *   const envP,
 static xmlrpc_server_shutdown_fn requestShutdown;
 
 static void
-requestShutdown(xmlrpc_env * const envP,
+requestShutdown(xmlrpc_env * const faultP,
                 void *       const context,
                 const char * const comment,
                 void *       const callInfo) {
@@ -102,7 +102,7 @@ requestShutdown(xmlrpc_env * const envP,
     int * const terminationRequestedP = context;
     TSession * const abyssSessionP = callInfo;
 
-    xmlrpc_env_init(envP);
+    xmlrpc_env_init(faultP);
 
     fprintf(stderr, "Termination requested: %s\n", comment);
 
