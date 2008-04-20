@@ -29,6 +29,16 @@
 #include "xmlrpc-c/server_abyss.h"
 
 
+
+struct xmlrpc_server_abyss {
+    TServer       abyssServer;
+    TChanSwitch * chanSwitchP;
+    bool          shutdownEnabled;
+        /* User wants system.shutdown to succeed */
+};
+
+
+
 /*=========================================================================
 **  die_if_fault_occurred
 **=========================================================================
@@ -968,7 +978,7 @@ enableShutdownParm(const xmlrpc_server_abyss_parms * const parmsP,
 static xmlrpc_server_shutdown_fn shutdownAbyss;
 
 static void
-shutdownAbyss(xmlrpc_env * const envP,
+shutdownAbyss(xmlrpc_env * const faultP,
               void *       const context,
               const char * const comment ATTR_UNUSED,
               void *       const callInfo ATTR_UNUSED) {
@@ -981,12 +991,20 @@ shutdownAbyss(xmlrpc_env * const envP,
    After we return, Abyss will finish up the system.shutdown and any
    other connections that are in progress, then the call to
    ServerRun() etc. will return.
------------------------------------------------------------------------------*/
-    TServer * const serverP = context;
 
-    xmlrpc_env_init(envP);
+   *faultP is the result of the shutdown request, not whether we
+   succeeded or failed.  We are not allowed to fail.
+-----------------------------------------------------------------------------*/
+    xmlrpc_server_abyss_t * const serverP = context;
+
+    xmlrpc_env_init(faultP);
     
-    ServerTerminate(serverP);
+    if (!serverP->shutdownEnabled)
+        xmlrpc_env_set_fault_formatted(
+            faultP, XMLRPC_REQUEST_REFUSED_ERROR,
+            "Shutdown by client is disabled on this server.");
+    else
+        ServerTerminate(&serverP->abyssServer);
 }
 
 
@@ -994,13 +1012,6 @@ shutdownAbyss(xmlrpc_env * const envP,
 /*=============================================================================
   xmlrpc_server_abyss object methods
 =============================================================================*/
-
-struct xmlrpc_server_abyss {
-    TServer       abyssServer;
-    TChanSwitch * chanSwitchP;
-};
-
-
 
 void
 xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
@@ -1033,10 +1044,11 @@ xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
                              &serverP->abyssServer, &serverP->chanSwitchP);
             
                 if (!envP->fault_occurred) {
-                    if (enableShutdownParm(parmsP, parmSize))
-                        xmlrpc_registry_set_shutdown(
-                            parmsP->registryP, &shutdownAbyss,
-                            &serverP->abyssServer);
+                    serverP->shutdownEnabled =
+                        enableShutdownParm(parmsP, parmSize);
+
+                    xmlrpc_registry_set_shutdown(
+                        parmsP->registryP, &shutdownAbyss, serverP);
                 
                     if (envP->fault_occurred)
                         free(serverP);
