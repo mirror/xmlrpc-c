@@ -64,8 +64,8 @@ initInterruptPipe(interruptPipe * const pipeP,
                         errno, strerror(errno));
     else {
         *errorP = NULL;
-        pipeP->interruptorFd = pipeFd[0];
-        pipeP->interrupteeFd = pipeFd[1];
+        pipeP->interruptorFd = pipeFd[1];
+        pipeP->interrupteeFd = pipeFd[0];
     }
 }
 
