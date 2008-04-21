@@ -4,50 +4,31 @@ ifeq ($(SRCDIR),)
   SRCDIR := $(call updir,$(TOOLSDIR))
   BLDDIR := $(SRCDIR)
 endif
-SUBDIR := tools/xmlrpc
+SUBDIR := tools/lib
 
 default: all
 
 include $(BLDDIR)/Makefile.config
 
-PROGRAMS_TO_INSTALL = xmlrpc
+OMIT_LIB_RULE = Y
 
 include $(SRCDIR)/tools/common.mk
 
 INCLUDES = \
-  -I../lib/include \
+  -Isrcdir/$(SUBDIR)/include \
   -Iblddir \
-  -Iblddir/include \
   -Isrcdir/include \
-  -Isrcdir/lib/util/include
+  -Isrcdir/lib/util/include \
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
-LDFLAGS = $(LADD)
+LIBOBJS = \
+  dumpvalue.o \
 
-all: xmlrpc
+.PHONY: all
+all: $(LIBOBJS)
 
-UTIL_OBJS = \
-  casprintf.o \
-  cmdline_parser.o \
-  getoptx.o \
-  stripcaseeq.o \
-  string_parser.o \
-
-UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
-
-DUMPVALUE = $(TOOLSDIR)/lib/dumpvalue.o
-
-# Can we just use $(LIBS) in the link?
-
-LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
-
-XMLRPC_OBJS = xmlrpc.o $(DUMPVALUE)
-
-xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
-
-%.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
+%.o:%.c
 	$(CC) -c $(CFLAGS) $<
 
 # This Makefile.config dependency makes sure the symlinks get built before
@@ -62,7 +43,6 @@ dep: dep-common
 
 .PHONY: clean
 clean: clean-common
-	rm -f xmlrpc
 
 .PHONY: distclean
 distclean: clean distclean-common

@@ -28,6 +28,11 @@ CLIENTPP_LDLIBS += -lxmlrpc_client++ -lxmlrpc_packetsocket -lxmlrpc++
 
 include $(SRCDIR)/common.mk
 
+ifneq ($(OMIT_LIB_RULE),Y)
+$(SRCDIR)/tools/lib/dumpvalue.o: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/tools/lib/Makefile $(notdir $@) 
+endif
+
 .PHONY: install
 install: install-common
 
