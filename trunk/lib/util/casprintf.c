@@ -21,12 +21,12 @@ simpleVasprintf(char **      const retvalP,
     result = malloc(initialSize);
     if (result != NULL) {
         size_t bytesNeeded;
-        bytesNeeded = vsnprintf(result, initialSize, fmt, varargs);
+        bytesNeeded = XMLRPC_VSNPRINTF(result, initialSize, fmt, varargs);
         if (bytesNeeded > initialSize) {
             free(result);
             result = malloc(bytesNeeded);
             if (result != NULL)
-                vsnprintf(result, bytesNeeded, fmt, varargs);
+                XMLRPC_VSNPRINTF(result, bytesNeeded, fmt, varargs);
         } else if (bytesNeeded == initialSize) {
             if (result[initialSize-1] != '\0') {
                 /* This is one of those old systems where vsnprintf()

@@ -126,6 +126,12 @@
   #define HAVE_TIMESPEC 1
 #endif
 
+#if MSVCRT
+  #define XMLRPC_VSNPRINTF _vsnprintf
+#else
+  #define XMLRPC_VSNPRINTF vsnprintf
+#endif
+
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 /* Starting with MSVC 8, the runtime library defines various POSIX functions
    such as strdup() whose names violate the ISO C standard (the standard
