@@ -1518,6 +1518,8 @@ struct xmlrpc_client_transport {
            the transaction with proper interruptibility.  The only Curl
            transaction ever attached to this multi manager is
            'syncCurlSessionP'.
+           
+           This is constant (the handle, not the object).
         */
     curlMulti * asyncCurlMultiP;
         /* The Curl multi manager that this transport uses to execute
@@ -1525,6 +1527,8 @@ struct xmlrpc_client_transport {
            interface.  Note that there may be multiple such Curl transactions
            simultaneously and one can't wait for a particular one to finish;
            the collection of asynchronous RPCs are an indivisible mass.
+           
+           This is constant (the handle, not the object).
         */
     const char * userAgent;
         /* Prefix for the User-Agent HTTP header, reflecting facilities
