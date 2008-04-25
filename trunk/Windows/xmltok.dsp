@@ -23,8 +23,6 @@ CFG=xmltok - Win32 Release
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "xmltok"
-# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
