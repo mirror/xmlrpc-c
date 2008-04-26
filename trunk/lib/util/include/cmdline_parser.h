@@ -1,6 +1,13 @@
 #ifndef CMDLINE_PARSER_H
 #define CMDLINE_PARSER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+} /* to fake out automatic code indenters */
+#endif
+
 /*
 
    NOTE NOTE NOTE: cmd_getOptionValueString() and
@@ -69,5 +76,9 @@ cmd_argumentCount(cmdlineParser const cpP);
 const char * 
 cmd_getArgument(cmdlineParser const cpP, 
                 unsigned int  const argNumber); 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
