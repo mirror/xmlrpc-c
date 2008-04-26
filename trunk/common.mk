@@ -401,6 +401,7 @@ UTIL_DIR = $(BLDDIR)/lib/util
 UTILS = \
   casprintf.o \
   cmdline_parser.o \
+  cmdline_parser_cpp.o \
   getoptx.o \
   stripcaseeq.o \
   string_parser.o \
