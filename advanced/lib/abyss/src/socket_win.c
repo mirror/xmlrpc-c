@@ -347,7 +347,7 @@ channelWrite(TChannel *            const channelP,
         ) {
         size_t const maxSend = (size_t)(-1) >> 1;
 
-        size_t rc;
+        int rc;
         
         rc = send(socketWinP->winsock, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);

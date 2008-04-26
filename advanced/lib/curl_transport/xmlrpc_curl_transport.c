@@ -718,7 +718,7 @@ setupCurlSession(xmlrpc_env *               const envP,
             curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE,
                              curlSetupP->sslEngine);
         if (curlSetupP->sslEngineDefault)
-            // 3rd argument seems to be required by some Curl
+            /* 3rd argument seems to be required by some Curl */
             curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT, 1l);
         if (curlSetupP->sslVersion != XMLRPC_SSLVERSION_DEFAULT)
             curl_easy_setopt(curlSessionP, CURLOPT_SSLVERSION,
@@ -1113,7 +1113,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     unsigned int selectTimeoutMillisec;
     xmlrpc_timespec retval;
 
-    selectTimeoutMillisec = 0; // quiet compiler warning
+    selectTimeoutMillisec = 0; /* quiet compiler warning */
 
     /* We assume there is work to do at least every 3 seconds, because
        the Curl multi manager often has retries and other scheduled work

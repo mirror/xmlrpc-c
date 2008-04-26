@@ -47,6 +47,8 @@ static void
 testServerParms(void) {
     xmlrpc_server_abyss_parms parms;
 
+    parms.config_file_name = NULL;
+    parms.registryP = NULL;
     parms.port_number = 1000;
     parms.log_file_name = "/tmp/xmlrpc_logfile";
     parms.keepalive_timeout = 5;
@@ -72,6 +74,9 @@ testObject(void) {
 
     registryP = xmlrpc_registry_new(&env);
     TEST_NO_FAULT(&env);
+
+    parms.config_file_name = NULL;
+    parms.registryP = registryP;
 
     serverP = NULL;
 

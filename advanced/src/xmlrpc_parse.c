@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <limits.h>
+#include <float.h>
 
 #include "bool.h"
 

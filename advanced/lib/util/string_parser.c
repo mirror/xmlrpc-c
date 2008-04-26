@@ -43,14 +43,14 @@ interpretUll(const char *  const string,
         casprintf(errorP, "First non-blank character is '%c', not a digit.",
                   strippedString[0]);
     else {
-        // strtoull() does a bizarre thing where if the number is out
-        // of range, it returns a clamped value but tells you about it
-        // by setting errno = ERANGE.  If it is not out of range,
-        // strtoull() leaves errno alone.
-        
+        /* strtoull() does a bizarre thing where if the number is out
+           of range, it returns a clamped value but tells you about it
+           by setting errno = ERANGE.  If it is not out of range,
+           strtoull() leaves errno alone.
+        */
         char * tail;
         
-        errno = 0;  // So we can tell if strtoull() overflowed
+        errno = 0;  /* So we can tell if strtoull() overflowed */
 
         *ullP = strtoull(strippedString, &tail, 10);
         
@@ -73,14 +73,14 @@ interpretLl(const char *  const string,
     if (string[0] == '\0')
         casprintf(errorP, "Null string.");
     else {
-        // strtoll() does a bizarre thing where if the number is out
-        // of range, it returns a clamped value but tells you about it
-        // by setting errno = ERANGE.  If it is not out of range,
-        // strtoll() leaves errno alone.
-        
+        /* strtoll() does a bizarre thing where if the number is out
+           of range, it returns a clamped value but tells you about it
+           by setting errno = ERANGE.  If it is not out of range,
+           strtoll() leaves errno alone.
+        */
         char * tail;
         
-        errno = 0;  // So we can tell if strtoll() overflowed
+        errno = 0;  /* So we can tell if strtoll() overflowed */
 
         *llP = strtoll(string, &tail, 10);
         
@@ -116,15 +116,15 @@ interpretUint(const char *  const string,
         casprintf(errorP, "First non-blank character is '%c', not a digit.",
                   strippedString[0]);
     else {
-        // strtoul() does a bizarre thing where if the number is out
-        // of range, it returns a clamped value but tells you about it
-        // by setting errno = ERANGE.  If it is not out of range,
-        // strtoul() leaves errno alone.
-        
+        /* strtoul() does a bizarre thing where if the number is out
+           of range, it returns a clamped value but tells you about it
+           by setting errno = ERANGE.  If it is not out of range,
+           strtoul() leaves errno alone.
+        */
         char * tail;
         ulong ulongValue;
         
-        errno = 0;  // So we can tell if strtoul() overflowed
+        errno = 0;  /* So we can tell if strtoul() overflowed */
 
         ulongValue = strtoul(strippedString, &tail, 10);
         
@@ -151,15 +151,15 @@ interpretInt(const char *  const string,
     if (string[0] == '\0')
         casprintf(errorP, "Null string.");
     else {
-        // strtol() does a bizarre thing where if the number is out
-        // of range, it returns a clamped value but tells you about it
-        // by setting errno = ERANGE.  If it is not out of range,
-        // strtol() leaves errno alone.
-        
+        /* strtol() does a bizarre thing where if the number is out
+           of range, it returns a clamped value but tells you about it
+           by setting errno = ERANGE.  If it is not out of range,
+           strtol() leaves errno alone.
+        */
         char * tail;
         long longValue;
         
-        errno = 0;  // So we can tell if strtol() overflowed
+        errno = 0;  /* So we can tell if strtol() overflowed */
 
         longValue = strtol(string, &tail, 10);
         
@@ -214,7 +214,7 @@ interpretBinUint(const char *  const string,
         else if (stripcaseeq(tailptr, "P"))
             argNumber = mantissa * 1024 * 1024 * 1024 * 1024 * 1024;
         else {
-            argNumber = 0;  // quiet compiler warning
+            argNumber = 0;  /* quiet compiler warning */
             casprintf(errorP, "Garbage suffix '%s' on number", tailptr);
         }
         if (!*errorP) {
