@@ -14,6 +14,8 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
 
   ifeq ($(ENABLE_CPLUSPLUS),yes)
     SUBDIRS += xml-rpc-api2cpp xmlrpc_cpp_proxy
+    # We could add 'xmlrpc_pstream' here, but we don't because we don't
+    # want to deal with finding the Readline/Ncurses libraries.
   endif
 endif
 
