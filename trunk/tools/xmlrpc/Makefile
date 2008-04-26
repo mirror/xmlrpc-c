@@ -36,7 +36,7 @@ UTIL_OBJS = \
 
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-DUMPVALUE = $(TOOLSDIR)/lib/dumpvalue.o
+DUMPVALUE = srcdir/tools/lib/dumpvalue.o
 
 # Can we just use $(LIBS) in the link?
 

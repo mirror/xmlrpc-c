@@ -7,7 +7,7 @@
 # Note that in a properly configured system, curl-config, etc. do not
 # generate -L options for general directories.
 
-CLIENT_LDLIBS = -L$(BLDDIR)/src -L$(BLDDIR)/lib/libutil
+CLIENT_LDLIBS = -Lblddir/src -Lblddir/lib/libutil
 
 CLIENT_LDLIBS += -lxmlrpc_client -lxmlrpc -lxmlrpc_util
 
@@ -23,13 +23,13 @@ endif
 
 CLIENT_LDLIBS += $(LDLIBS_XML)
 
-CLIENTPP_LDLIBS = -L$(BLDDIR)/src/cpp
+CLIENTPP_LDLIBS = -Lblddir/src/cpp
 CLIENTPP_LDLIBS += -lxmlrpc_client++ -lxmlrpc_packetsocket -lxmlrpc++
 
 include $(SRCDIR)/common.mk
 
 ifneq ($(OMIT_LIB_RULE),Y)
-$(SRCDIR)/tools/lib/dumpvalue.o: FORCE
+srcdir/tools/lib/dumpvalue.o: FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/tools/lib/Makefile $(notdir $@) 
 endif
 
