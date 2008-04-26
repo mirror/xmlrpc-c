@@ -73,7 +73,7 @@ UnixTimeFromFileTime(xmlrpc_env *  const envP,
         unixEpoch100Ns / SECS_TO_100NS; 
 
     if ((time_t)unixEpochSeconds != unixEpochSeconds) {
-        // Value is too big for a time_t; fail.
+        /* Value is too big for a time_t; fail. */
         xmlrpc_faultf(envP, "Does not indicate a valid date");
         *timeValueP = (time_t)(-1);
     } else

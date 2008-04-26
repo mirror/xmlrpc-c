@@ -196,7 +196,7 @@ ResponseWriteStart(TSession * const sessionP) {
     assert(!sessionP->responseStarted);
 
     if (sessionP->status == 0) {
-        // Handler hasn't set status.  That's an error
+        /* Handler hasn't set status.  That's an error */
         sessionP->status = 500;
     }
 
