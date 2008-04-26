@@ -1,7 +1,6 @@
 #ifndef CMDLINE_PARSER_H
 #define CMDLINE_PARSER_H
 
-
 /*
 
    NOTE NOTE NOTE: cmd_getOptionValueString() and
@@ -10,17 +9,24 @@
 
 */
 
-enum optiontype {OPTTYPE_FLAG, OPTTYPE_INT, OPTTYPE_UINT, OPTTYPE_STRING};
+enum optiontype {
+    OPTTYPE_FLAG,
+    OPTTYPE_INT,
+    OPTTYPE_UINT,
+    OPTTYPE_STRING,
+    OPTTYPE_BINUINT,
+    OPTTYPE_FLOAT
+};
 
 struct cmdlineParserCtl;
 
 typedef struct cmdlineParserCtl * cmdlineParser;
 
 void
-cmd_processOptions(cmdlineParser   const cpP,
-                   int             const argc,
-                   const char **   const argv, 
-                   const char **   const errorP);
+cmd_processOptions(cmdlineParser const cpP,
+                   int           const argc,
+                   const char ** const argv, 
+                   const char ** const errorP);
 
 cmdlineParser
 cmd_createOptionParser(void);
@@ -37,17 +43,25 @@ int
 cmd_optionIsPresent(cmdlineParser const cpP,
                     const char *  const name);
 
-unsigned int
-cmd_getOptionValueUint(cmdlineParser const cpP,
-                       const char *  const name);
-
 int
 cmd_getOptionValueInt(cmdlineParser const cpP,
                       const char *  const name);
 
+unsigned int
+cmd_getOptionValueUint(cmdlineParser const cpP,
+                       const char *  const name);
+
 const char *
 cmd_getOptionValueString(cmdlineParser const cpP,
                          const char *  const name);
+
+unsigned long long
+cmd_getOptionValueBinUint(cmdlineParser const cpP,
+                          const char *  const name);
+
+double
+cmd_getOptionValueFloat(cmdlineParser const cpP,
+                        const char *  const name);
 
 unsigned int 
 cmd_argumentCount(cmdlineParser const cpP);
