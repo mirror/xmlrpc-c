@@ -212,8 +212,9 @@ static const char * const invalidSigString[] = {
 };
 
 
+
 static void
-test_signature_method(xmlrpc_registry * const registryP) {
+test_system_methodSignature(xmlrpc_registry * const registryP) {
 /*----------------------------------------------------------------------------
    Test system.methodSignature system method.
 -----------------------------------------------------------------------------*/
@@ -354,7 +355,7 @@ test_signature(void) {
                                      invalidSigString[0], NULL);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    test_signature_method(registryP);
+    test_system_methodSignature(registryP);
 
     xmlrpc_registry_free(registryP);
 
@@ -393,6 +394,73 @@ test_disable_introspection(void) {
     xmlrpc_DECREF(argArrayP);
     
     xmlrpc_registry_free(registryP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
+
+
+
+static const char * const expectedMethodName[] = {
+/*----------------------------------------------------------------------------
+   The list we expect back from system.listMethods.
+-----------------------------------------------------------------------------*/
+    "system.listMethods",
+    "system.methodSignature",
+    "system.methodHelp",
+    "system.multicall",
+    "system.shutdown",
+    "system.capabilities",
+    "test.foo",
+    "test.bar"
+};
+
+
+static void
+test_system_listMethods(xmlrpc_registry * const registryP) {
+/*----------------------------------------------------------------------------
+   Test system.listMethods
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * resultP;
+    xmlrpc_value * argArrayP;
+    const char * methodName[8];
+    unsigned int size;
+    unsigned int i;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running system.listMethods tests.");
+
+    argArrayP = xmlrpc_array_new(&env);
+    TEST_NO_FAULT(&env);
+
+    doRpc(&env, registryP, "system.listMethods", argArrayP, NULL, &resultP);
+    TEST_NO_FAULT(&env);
+
+    TEST(xmlrpc_value_type(resultP) == XMLRPC_TYPE_ARRAY);
+
+    size = xmlrpc_array_size(&env, resultP);
+
+    TEST_NO_FAULT(&env);
+
+    TEST(size == ARRAY_SIZE(expectedMethodName));
+
+    xmlrpc_decompose_value(&env, resultP, "(ssssssss)",
+                           &methodName[0], &methodName[1],
+                           &methodName[2], &methodName[3],
+                           &methodName[4], &methodName[5],
+                           &methodName[6], &methodName[7]);
+
+    for (i = 0; i < ARRAY_SIZE(methodName); ++i) {
+        TEST(streq(methodName[i], expectedMethodName[i]));
+        strfree(methodName[i]);
+    }
+
+    xmlrpc_DECREF(resultP);
+
+    xmlrpc_DECREF(argArrayP);
 
     xmlrpc_env_clean(&env);
 
@@ -757,7 +825,14 @@ test_method_registry(void) {
     xmlrpc_env_clean(&env2);
 
     printf("\n");
+
     testDefaultMethod(registryP);
+
+    test_system_listMethods(registryP);
+
+//    test_system_methodHelp(registryP);
+
+//    test_system_version(registryP);
 
     test_signature();
 
