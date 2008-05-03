@@ -26,7 +26,13 @@ LDFLAGS = $(LADD)
 
 all: xmlrpc_transport
 
-UTIL_OBJS = cmdline_parser.o getoptx.o casprintf.o
+UTIL_OBJS = \
+  casprintf.o \
+  cmdline_parser.o \
+  getoptx.o \
+  stripcaseeq.o \
+  string_parser.o \
+
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 # These are the Libtool .la files.  We use them only for make dependencies.
