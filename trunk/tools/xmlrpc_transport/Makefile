@@ -47,7 +47,7 @@ xmlrpc_transport:%:%.o $(LIBS) $(UTILS)
 # This Makefile.config dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: srcdir
+$(BLDDIR)/Makefile.config: srcdir blddir
 
 include Makefile.depend
 
