@@ -361,16 +361,16 @@ xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value ** const valuePP);
 
 void
+xmlrpc_struct_read_value(xmlrpc_env *    const envP,
+                         xmlrpc_value *  const structP,
+                         const char *    const key,
+                         xmlrpc_value ** const valuePP);
+
+void
 xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value *  const structP,
                            xmlrpc_value *  const keyP,
                            xmlrpc_value ** const valuePP);
-
-void
-xmlrpc_struct_read_value(xmlrpc_env *    const envP,
-                         xmlrpc_value *  const strctP,
-                         const char *    const key,
-                         xmlrpc_value ** const valuePP);
 
 /* The "get_value" functions are deprecated.  Use the "find_value"
    and "read_value" functions instead.
