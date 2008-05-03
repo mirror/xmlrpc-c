@@ -151,8 +151,8 @@
 #endif
 
 #define snprintf _snprintf
-#define vsnprintf _vsnprintf
 #define popen _popen
 #define strtoll _strtoui64
+#define strtoull _strtoui64
 
 #endif
