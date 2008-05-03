@@ -528,6 +528,50 @@ test_system_methodHelp(xmlrpc_registry * const registryP) {
 
 
 static void
+test_system_capabilities(xmlrpc_registry * const registryP) {
+/*----------------------------------------------------------------------------
+   Test system.capabilities
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * resultP;
+    xmlrpc_value * argArrayP;
+    const char * facility;
+    xmlrpc_int version_major, version_minor, version_point;
+    xmlrpc_int protocol_version;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running system.capabilities tests.");
+
+    argArrayP = xmlrpc_array_new(&env);
+    TEST_NO_FAULT(&env);
+
+    doRpc(&env, registryP, "system.capabilities", argArrayP, NULL, &resultP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_decompose_value(&env, resultP, "{s:s,s:i,s:i,s:i,s:i,*}",
+                           "facility", &facility,
+                           "version_major", &version_major,
+                           "version_minor", &version_minor,
+                           "version_point", &version_point,
+                           "protocol_version", &protocol_version);
+    TEST_NO_FAULT(&env);
+
+    TEST(streq(facility, "xmlrpc-c"));
+    TEST(protocol_version == 2);
+
+    xmlrpc_DECREF(resultP);
+
+    xmlrpc_DECREF(argArrayP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
+
+
+
+static void
 test_system_multicall(xmlrpc_registry * const registryP) {
 /*----------------------------------------------------------------------------
    Test system.multicall
@@ -890,7 +934,7 @@ test_method_registry(void) {
 
     test_system_methodHelp(registryP);
 
-//    test_system_version(registryP);
+    test_system_capabilities(registryP);
 
     test_signature();
 
