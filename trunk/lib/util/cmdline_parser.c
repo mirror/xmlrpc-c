@@ -500,7 +500,7 @@ cmd_getOptionValueBinUint(cmdlineParser const cpP,
 
     struct optionDesc * const optionDescP = findOptionDesc(cpP, name);
 
-    unsigned int retval;
+    uint64_t retval;
 
     if (!optionDescP) {
         fprintf(stderr, "cmdlineParser called incorrectly.  "
