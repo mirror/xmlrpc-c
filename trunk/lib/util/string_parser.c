@@ -120,7 +120,7 @@ interpretUint(const char *  const string,
            strtoul() leaves errno alone.
         */
         char * tail;
-        ulong ulongValue;
+        unsigned long ulongValue;
         
         errno = 0;  /* So we can tell if strtoul() overflowed */
 
