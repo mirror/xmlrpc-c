@@ -77,7 +77,7 @@ bool
 CmdlineParser::optionIsPresent(
     string const optionName) const {
 
-    return cmd_optionIsPresent(this->cp, optionName.c_str());
+    return (cmd_optionIsPresent(this->cp, optionName.c_str()) ? true : false);
 }
 
 
