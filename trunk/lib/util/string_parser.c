@@ -1,11 +1,9 @@
 #include <sys/types.h>
-#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <limits.h>
 
 #include "int.h"

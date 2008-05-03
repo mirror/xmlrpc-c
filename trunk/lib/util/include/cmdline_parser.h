@@ -8,6 +8,8 @@ extern "C" {
 } /* to fake out automatic code indenters */
 #endif
 
+#include "int.h"
+
 /*
 
    NOTE NOTE NOTE: cmd_getOptionValueString() and
@@ -62,7 +64,7 @@ const char *
 cmd_getOptionValueString(cmdlineParser const cpP,
                          const char *  const name);
 
-unsigned long long
+uint64_t
 cmd_getOptionValueBinUint(cmdlineParser const cpP,
                           const char *  const name);
 
