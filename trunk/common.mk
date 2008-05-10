@@ -110,15 +110,19 @@ ifeq ($(SHARED_LIB_TYPE),NONE)
 # into the shared library so that the runtime library loader will load
 # the specified libraries when asked to load the target library).
 
-ifeq ($(SHARED_LIB_TYPE),NONE)
+ifeq ($(MUST_BUILD_SHLIB),Y)
+  TARGET_SHARED_LIBRARIES = $(call shlibfn, $(TARGET_LIBRARY_NAMES))
+  TARGET_SHARED_LIBS_PP = $(call shlibfn, $(TARGET_LIB_NAMES_PP))
+  ifeq ($(MUST_BUILD_SHLIBLE),Y)
+    TARGET_SHARED_LE_LIBS = \
+      $(call shliblefn, $(TARGET_LIBRARY_NAMES) $(TARGET_LIB_NAMES_PP))
+  else
+    TARGET_SHARED_LE_LIBS =
+  endif
+else
   TARGET_SHARED_LIBRARIES =
   TARGET_SHARED_LIBS_PP =
   TARGET_SHARED_LE_LIBS =
-else
-  TARGET_SHARED_LIBRARIES = $(call shlibfn, $(TARGET_LIBRARY_NAMES))
-  TARGET_SHARED_LIBS_PP = $(call shlibfn, $(TARGET_LIB_NAMES_PP))
-  TARGET_SHARED_LE_LIBS = \
-    $(call shliblefn, $(TARGET_LIBRARY_NAMES) $(TARGET_LIB_NAMES_PP))
 endif
 
 #------ the actual rules ----------------------------------------------------
