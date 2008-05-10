@@ -79,11 +79,6 @@ xmlrpc_assertion_failed(const char * const fileName,
 #define XMLRPC_ASSERT_PTR_OK(ptr) \
     XMLRPC_ASSERT((ptr) != NULL)
 
-/* We only call this if something truly drastic happens. */
-#define XMLRPC_FATAL_ERROR(msg) xmlrpc_fatal_error(__FILE__, __LINE__, (msg))
-
-extern void xmlrpc_fatal_error (char* file, int line, char* msg);
-
 
 /*=========================================================================
 **  xmlrpc_env
