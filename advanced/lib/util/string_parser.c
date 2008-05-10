@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <limits.h>
 
 #include "int.h"
@@ -122,7 +122,7 @@ interpretUint(const char *  const string,
            strtoul() leaves errno alone.
         */
         char * tail;
-        ulong ulongValue;
+        unsigned long ulongValue;
         
         errno = 0;  /* So we can tell if strtoul() overflowed */
 

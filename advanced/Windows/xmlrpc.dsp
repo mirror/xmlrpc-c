@@ -141,7 +141,15 @@ SOURCE=..\src\trace.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\version.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\libutil\utf8.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\double.c
 # End Source File
 # Begin Source File
 
@@ -337,6 +345,10 @@ SOURCE=..\lib\util\include\linklist.h
 # Begin Source File
 
 SOURCE=..\lib\util\include\mallocvar.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\double.h
 # End Source File
 # Begin Source File
 
