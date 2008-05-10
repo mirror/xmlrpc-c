@@ -143,6 +143,10 @@ SOURCE=..\src\trace.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\version.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\libutil\utf8.c
 # End Source File
 # Begin Source File
