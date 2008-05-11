@@ -11,7 +11,7 @@ BLDDIR = $(SRCDIR)
 endif
 SUBDIR = examples
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 

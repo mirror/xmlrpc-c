@@ -17,7 +17,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/expat/xmltok
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 # I can't figure out what XML_BYTE_ORDER is, but it doesn't look like the
 # code has ever defined it.  That means it's treated like 0 in #if.  Since

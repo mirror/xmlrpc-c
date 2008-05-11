@@ -8,7 +8,7 @@ SUBDIR := tools/lib
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 OMIT_LIB_RULE = Y
 
@@ -31,10 +31,10 @@ all: $(LIBOBJS)
 %.o:%.c
 	$(CC) -c $(CFLAGS) $<
 
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: srcdir blddir
+$(SRCDIR)/tool/common.mk: srcdir blddir
 
 include Makefile.depend
 

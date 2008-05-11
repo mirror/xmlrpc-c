@@ -6,7 +6,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := src/test
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 

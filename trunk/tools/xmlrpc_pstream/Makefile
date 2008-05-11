@@ -10,7 +10,7 @@ READLINE_LDLIBS = -lreadline -lncurses
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 PROGRAMS_TO_INSTALL = xmlrpc_pstream
 
@@ -59,10 +59,10 @@ xmlrpc_pstream:  $(OBJECTS) $(LIBS) $(UTILS)
 %.o:%.cpp blddir/include/xmlrpc-c/config.h
 	$(CXX) -c $(CXXFLAGS) $<
 
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: srcdir blddir
+$(SRCDIR)/common.mk: srcdir blddir
 
 include Makefile.depend
 

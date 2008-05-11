@@ -8,7 +8,7 @@ SUBDIR := tools/xmlrpc_cpp_proxy
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 PROGRAMS_TO_INSTALL = xmlrpc_cpp_proxy
 
@@ -45,10 +45,10 @@ xmlrpc_cpp_proxy:  $(OBJECTS) $(LIBS)
 %.o:%.cpp $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CXX) -c $(CXXFLAGS) $<
 
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: srcdir
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
 include Makefile.depend
 

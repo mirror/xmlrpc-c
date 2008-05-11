@@ -6,7 +6,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := src/cpp
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 

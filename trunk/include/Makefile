@@ -5,7 +5,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := include
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 

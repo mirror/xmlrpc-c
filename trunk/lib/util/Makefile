@@ -27,7 +27,7 @@ SUBDIR := lib/util
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 OMIT_UTILS_RULE = Y
 

@@ -16,7 +16,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/libutil
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 

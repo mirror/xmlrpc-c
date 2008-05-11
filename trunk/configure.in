@@ -635,7 +635,7 @@ dnl result: xmlrpc_amconfig.h .
 
 AC_OUTPUT( \
           Makefile.srcdir \
-          Makefile.config \
+          config.mk \
           xmlrpc_config.h \
           )
 

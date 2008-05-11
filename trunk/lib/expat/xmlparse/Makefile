@@ -22,7 +22,7 @@ UTILDIR = $(SRCDIR)/lib/util
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 TARGET_LIBRARY_NAMES := libxmlrpc_xmlparse
 

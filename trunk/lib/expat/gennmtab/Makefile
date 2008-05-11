@@ -7,7 +7,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/expat/gennmtab
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 

@@ -5,7 +5,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := tools
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 SUBDIRS = binmode-rpc-kit turbocharger
 

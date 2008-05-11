@@ -7,7 +7,7 @@ export SRCDIR
 export BLDDIR
 
 include $(BLDDIR)/Makefile.version
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 SUBDIRS = include lib src tools examples
 
@@ -81,7 +81,7 @@ include transport_config.make
 # shell_config is a fragment to place inside a Bourne shell program that
 # sets variables that tell how the build is configured.
 
-shell_config: $(BLDDIR)/Makefile.config
+shell_config: $(BLDDIR)/config.mk
 	rm -f $@
 	@echo "Lots of echoes to '$@' suppressed here ..."
 	@echo '#' >>$@
@@ -116,7 +116,7 @@ shell_config: $(BLDDIR)/Makefile.config
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
 	@echo '#######################################################' >>$@
 
-# We don't want Makefile.config's xmlrpc-c-config.test rule:
+# We don't want config.mk's xmlrpc-c-config.test rule:
 OMIT_XMLRPC_C_CONFIG_TEST = Y
 
 xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config
@@ -140,7 +140,7 @@ clean-local:
 distclean: $(SUBDIRS:%=%/distclean) distclean-common distclean-local
 
 distclean-local: clean-local
-	rm -f config.log config.status Makefile.config Makefile.srcdir
+	rm -f config.log config.status config.mk Makefile.srcdir
 	rm -f xmlrpc_config.h xmlrpc_amconfig.h stamp-h 
 	rm -f shell_config xmlrpc-c-config xmlrpc-c-config.test
 	rm -f TAGS

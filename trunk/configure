@@ -6429,7 +6429,7 @@ BUILDDIR=`pwd`
 
 
 
-                              ac_config_files="$ac_config_files Makefile.srcdir Makefile.config xmlrpc_config.h"
+                              ac_config_files="$ac_config_files Makefile.srcdir config.mk xmlrpc_config.h"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -6966,7 +6966,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile.srcdir" ) CONFIG_FILES="$CONFIG_FILES Makefile.srcdir" ;;
-  "Makefile.config" ) CONFIG_FILES="$CONFIG_FILES Makefile.config" ;;
+  "config.mk" ) CONFIG_FILES="$CONFIG_FILES config.mk" ;;
   "xmlrpc_config.h" ) CONFIG_FILES="$CONFIG_FILES xmlrpc_config.h" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "xmlrpc_amconfig.h" ) CONFIG_HEADERS="$CONFIG_HEADERS xmlrpc_amconfig.h" ;;

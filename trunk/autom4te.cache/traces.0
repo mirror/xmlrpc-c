@@ -266,7 +266,7 @@ m4trace:configure.in:622: -1- AC_SUBST([CPP_WARN_FLAGS])
 m4trace:configure.in:626: -1- AC_SUBST([BUILDDIR])
 m4trace:configure.in:640: -1- AC_CONFIG_FILES([\
           Makefile.srcdir \
-          Makefile.config \
+          config.mk \
           xmlrpc_config.h \
           ])
 m4trace:configure.in:640: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.

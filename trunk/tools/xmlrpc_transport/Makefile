@@ -8,7 +8,7 @@ SUBDIR := tools/xmlrpc_transport
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 PROGRAMS_TO_INSTALL = xmlrpc_transport
 
@@ -50,10 +50,10 @@ xmlrpc_transport:%:%.o $(LIBS) $(UTILS)
 %.o:%.c
 	$(CC) -c $(CFLAGS) $<
 
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: srcdir blddir
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
 include Makefile.depend
 
