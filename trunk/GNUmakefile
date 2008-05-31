@@ -1,4 +1,4 @@
-include Makefile.srcdir
+include srcdir.mk
 
 BLDDIR = $(CURDIR)
 SUBDIR =
@@ -140,7 +140,7 @@ clean-local:
 distclean: $(SUBDIRS:%=%/distclean) distclean-common distclean-local
 
 distclean-local: clean-local
-	rm -f config.log config.status config.mk Makefile.srcdir
+	rm -f config.log config.status config.mk srcdir.mk
 	rm -f xmlrpc_config.h xmlrpc_amconfig.h stamp-h 
 	rm -f shell_config xmlrpc-c-config xmlrpc-c-config.test
 	rm -f TAGS
@@ -166,7 +166,7 @@ include $(SRCDIR)/common.mk
 
 
 # A trick to catch a common user error.  When you don't run 'configure',
-# you don't have a Makefile.srcdir, which means $(SRCDIR) is null.
+# you don't have a srcdir.mk, which means $(SRCDIR) is null.
 
 /common.mk:
 	@echo =======================================

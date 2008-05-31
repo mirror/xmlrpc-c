@@ -265,7 +265,7 @@ m4trace:configure.in:620: -1- AC_SUBST([CC_WARN_FLAGS])
 m4trace:configure.in:622: -1- AC_SUBST([CPP_WARN_FLAGS])
 m4trace:configure.in:626: -1- AC_SUBST([BUILDDIR])
 m4trace:configure.in:640: -1- AC_CONFIG_FILES([\
-          Makefile.srcdir \
+          srcdir.mk \
           config.mk \
           xmlrpc_config.h \
           ])
