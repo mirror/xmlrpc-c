@@ -239,7 +239,7 @@ endif
 #   foo.o foo.osh: INCLUDES = -Iinclude -I/usr/include/foostuff
 #   bar.o bar.osh: INCLUDES = -Iinclude -I/usr/include/barstuff
 #
-#   include Makefile.common
+#   include common.mk
 #
 # The above generates rules to build foo.o, bar.o, foo.osh, and bar.osh
 #
