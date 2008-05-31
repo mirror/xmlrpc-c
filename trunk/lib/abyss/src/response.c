@@ -188,7 +188,12 @@ addServerHeader(TSession * const sessionP) {
 
 void
 ResponseWriteStart(TSession * const sessionP) {
+/*----------------------------------------------------------------------------
+   Begin the process of sending the response for an HTTP transaction
+   (i.e. Abyss session).
 
+   As part of this, send the entire HTTP header for the response.
+-----------------------------------------------------------------------------*/
     struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
 
     unsigned int i;
