@@ -604,7 +604,7 @@ parseSimpleValue(xmlrpc_env *    const envP,
        UTF-8 multibyte sequences or NUL characters.  So will most of the
        others.
 
-       The "ex.XXX" element names are what the Apache XML-RPC facility
+       The "ex:XXX" element names are what the Apache XML-RPC facility
        uses: http://ws.apache.org/xmlrpc/types.html.  i1 and i2 are just
        from my imagination.
     */
@@ -613,8 +613,8 @@ parseSimpleValue(xmlrpc_env *    const envP,
         xmlrpc_streq(elementName, "i4")    ||
         xmlrpc_streq(elementName, "i1")    ||
         xmlrpc_streq(elementName, "i2")    ||
-        xmlrpc_streq(elementName, "ex.i1") ||
-        xmlrpc_streq(elementName, "ex.i2"))
+        xmlrpc_streq(elementName, "ex:i1") ||
+        xmlrpc_streq(elementName, "ex:i2"))
         parseInt(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "boolean"))
         parseBoolean(envP, cdata, valuePP);
@@ -627,10 +627,10 @@ parseSimpleValue(xmlrpc_env *    const envP,
     else if (xmlrpc_streq(elementName, "base64"))
         parseBase64(envP, cdata, cdataLength, valuePP);
     else if (xmlrpc_streq(elementName, "nil") ||
-             xmlrpc_streq(elementName, "ex.nil"))
+             xmlrpc_streq(elementName, "ex:nil"))
         *valuePP = xmlrpc_nil_new(envP);
     else if (xmlrpc_streq(elementName, "i8") ||
-             xmlrpc_streq(elementName, "ex.i8"))
+             xmlrpc_streq(elementName, "ex:i8"))
         parseI8(envP, cdata, valuePP);
     else
         parseFault(envP, "Unknown value type -- XML element is named "

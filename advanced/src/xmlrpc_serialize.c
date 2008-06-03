@@ -366,7 +366,7 @@ formatValueContent(xmlrpc_env *       const envP,
 
     case XMLRPC_TYPE_I8: {
         const char * const elemName =
-            dialect == xmlrpc_dialect_apache ? "ex.i8" : "i8";
+            dialect == xmlrpc_dialect_apache ? "ex:i8" : "i8";
         formatOut(envP, outputP, "<%s>%" PRId64 "</%s>",
                   elemName, valueP->_value.i8, elemName);
     } break;
@@ -436,7 +436,7 @@ formatValueContent(xmlrpc_env *       const envP,
 
     case XMLRPC_TYPE_NIL: {
         const char * const elemName =
-            dialect == xmlrpc_dialect_apache ? "ex.nil" : "nil";
+            dialect == xmlrpc_dialect_apache ? "ex:nil" : "nil";
         formatOut(envP, outputP, "<%s/>", elemName);
     } break;
 

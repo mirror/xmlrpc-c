@@ -370,8 +370,8 @@ test_serialize_apache_value(void) {
     char const serializedData[] =
         "<value><array><data>\r\n"
             "<value><i4>7</i4></value>\r\n"
-            "<value><ex.i8>8</ex.i8></value>\r\n"
-            "<value><ex.nil/></value>\r\n"
+            "<value><ex:i8>8</ex:i8></value>\r\n"
+            "<value><ex:nil/></value>\r\n"
         "</data></array></value>";
 
     xmlrpc_env env;
@@ -408,7 +408,7 @@ test_serialize_apache_params(void) {
     char const serializedData[] =
         "<params>\r\n"
             "<param><value><i4>7</i4></value></param>\r\n"
-            "<param><value><ex.i8>8</ex.i8></value></param>\r\n"
+            "<param><value><ex:i8>8</ex:i8></value></param>\r\n"
         "</params>\r\n";
 
     xmlrpc_env env;
@@ -447,7 +447,7 @@ test_serialize_apache_response(void) {
         XML_PROLOGUE
         "<methodResponse>\r\n"
         "<params>\r\n"
-        "<param><value><ex.i8>8</ex.i8></value></param>\r\n"
+        "<param><value><ex:i8>8</ex:i8></value></param>\r\n"
         "</params>\r\n"
         "</methodResponse>\r\n";
 

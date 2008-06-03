@@ -131,7 +131,7 @@ string const echoI8ApacheCall(
     "<methodCall>\r\n"
     "<methodName>echo</methodName>\r\n"
     "<params>\r\n"
-    "<param><value><ex.i8>5</ex.i8></value></param>\r\n"
+    "<param><value><ex:i8>5</ex:i8></value></param>\r\n"
     "</params>\r\n"
     "</methodCall>\r\n"
     );
@@ -140,7 +140,7 @@ string const echoI8ApacheResponse(
     xmlPrologue +
     "<methodResponse>\r\n"
     "<params>\r\n"
-    "<param><value><ex.i8>5</ex.i8></value></param>\r\n"
+    "<param><value><ex:i8>5</ex:i8></value></param>\r\n"
     "</params>\r\n"
     "</methodResponse>\r\n"
     );
@@ -159,7 +159,7 @@ string const echoNilApacheResponse(
     xmlPrologue +
     "<methodResponse>\r\n"
     "<params>\r\n"
-    "<param><value><ex.nil/></value></param>\r\n"
+    "<param><value><ex:nil/></value></param>\r\n"
     "</params>\r\n"
     "</methodResponse>\r\n"
     );

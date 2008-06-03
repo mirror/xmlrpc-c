@@ -646,8 +646,8 @@ test_apache_dialect(void) {
         "<methodResponse>\r\n"
         "<params>\r\n"
         "<param><value><array><data>\r\n"
-            "<value><ex.i8>8</ex.i8></value>\r\n"
-            "<value><ex.nil/></value>\r\n"
+            "<value><ex:i8>8</ex:i8></value>\r\n"
+            "<value><ex:nil/></value>\r\n"
         "</data></array></value></param>\r\n"
         "</params>\r\n"
         "</methodResponse>\r\n";
