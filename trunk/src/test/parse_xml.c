@@ -74,7 +74,7 @@ char const xmldata[] =
     "<param><value><i2>10</i2></value></param>\r\n"
     "<param><value><i4>10</i4></value></param>\r\n"
     "<param><value><i8>10</i8></value></param>\r\n"
-    "<param><value><ex.i8>10</ex.i8></value></param>\r\n"
+    "<param><value><ex:i8>10</ex:i8></value></param>\r\n"
     "<param><value><double>10</double></value></param>\r\n"
     "<param><value><double>10.1</double></value></param>\r\n"
     "<param><value><double>-10.1</double></value></param>\r\n"
@@ -154,7 +154,7 @@ char const xmldata[] =
        "</value></param>\r\n"
     "<param><value><base64>YmFzZTY0IGRhdGE=</base64></value></param>\r\n"
     "<param><value><nil/></value></param>\r\n"
-    "<param><value><ex.nil/></value></param>\r\n"
+    "<param><value><ex:nil/></value></param>\r\n"
     "</params>\r\n"
     "</methodCall>\r\n";
     

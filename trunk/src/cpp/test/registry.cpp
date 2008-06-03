@@ -20,8 +20,14 @@ using namespace xmlrpc_c;
 using namespace std;
 
 
-string const xmlPrologue("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n");
+static string const
+xmlPrologue("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n");
 
+static string const
+apacheUrl("http://ws.apache.org/xmlrpc/namespaces/extensions");
+
+static string const
+xmlnsApache("xmlns:ex=\"" + apacheUrl + "\"");
 
 
 namespace {
@@ -128,26 +134,26 @@ string const nonexistentMethodNoDefResponseXml(
 
 string const echoI8ApacheCall(
     xmlPrologue +
-    "<methodCall>\r\n"
+    "<methodCall " + xmlnsApache + ">\r\n"
     "<methodName>echo</methodName>\r\n"
     "<params>\r\n"
-    "<param><value><ex.i8>5</ex.i8></value></param>\r\n"
+    "<param><value><ex:i8>5</ex:i8></value></param>\r\n"
     "</params>\r\n"
     "</methodCall>\r\n"
     );
 
 string const echoI8ApacheResponse(
     xmlPrologue +
-    "<methodResponse>\r\n"
+    "<methodResponse " + xmlnsApache + ">\r\n"
     "<params>\r\n"
-    "<param><value><ex.i8>5</ex.i8></value></param>\r\n"
+    "<param><value><ex:i8>5</ex:i8></value></param>\r\n"
     "</params>\r\n"
     "</methodResponse>\r\n"
     );
 
 string const echoNilApacheCall(
     xmlPrologue +
-    "<methodCall>\r\n"
+    "<methodCall " + xmlnsApache + ">\r\n"
     "<methodName>echo</methodName>\r\n"
     "<params>\r\n"
     "<param><value><nil/></value></param>\r\n"
@@ -157,9 +163,9 @@ string const echoNilApacheCall(
 
 string const echoNilApacheResponse(
     xmlPrologue +
-    "<methodResponse>\r\n"
+    "<methodResponse " + xmlnsApache + ">\r\n"
     "<params>\r\n"
-    "<param><value><ex.nil/></value></param>\r\n"
+    "<param><value><ex:nil/></value></param>\r\n"
     "</params>\r\n"
     "</methodResponse>\r\n"
     );
