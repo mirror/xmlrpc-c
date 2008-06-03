@@ -1030,9 +1030,9 @@ xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
             xmlrpc_faultf(envP,
                           "You must specify members at least up through "
                           "'registryP' in the server parameters argument.  "
-                          "That would mean the parameter size would be >= %lu "
+                          "That would mean the parameter size would be >= %u "
                           "but you specified a size of %u",
-                          XMLRPC_APSIZE(registryP), parmSize);
+                          (unsigned)XMLRPC_APSIZE(registryP), parmSize);
         else {
             MALLOCVAR(serverP);
 
@@ -1363,9 +1363,9 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
             xmlrpc_faultf(envP,
                           "You must specify members at least up through "
                           "'registryP' in the server parameters argument.  "
-                          "That would mean the parameter size would be >= %lu "
+                          "That would mean the parameter size would be >= %u "
                           "but you specified a size of %u",
-                          XMLRPC_APSIZE(registryP), parmSize);
+                          (unsigned)XMLRPC_APSIZE(registryP), parmSize);
         else {
             if (parmsP->config_file_name)
                 oldHighLevelAbyssRun(envP, parmsP, parmSize);
