@@ -28,6 +28,8 @@
 #define CRLF "\015\012"
 #define SMALL_BUFFER_SZ (128)
 #define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"CRLF
+#define APACHE_URL "http://ws.apache.org/xmlrpc/namespaces/extensions"
+#define XMLNS_APACHE "xmlns:ex=\"" APACHE_URL "\""
 
 
 static void
@@ -567,7 +569,9 @@ xmlrpc_serialize_call2(xmlrpc_env *       const envP,
     
     addString(envP, outputP, XML_PROLOGUE);
     if (!envP->fault_occurred) {
-        addString(envP, outputP, "<methodCall>"CRLF"<methodName>");
+        const char * const xmlns =
+            dialect == xmlrpc_dialect_apache ? " " XMLNS_APACHE : "";
+        formatOut(envP, outputP, "<methodCall%s>"CRLF"<methodName>", xmlns);
         if (!envP->fault_occurred) {
             xmlrpc_mem_block * encodedP;
             escapeForXml(envP, methodName, strlen(methodName), &encodedP);
@@ -623,8 +627,10 @@ xmlrpc_serialize_response2(xmlrpc_env *       const envP,
 
     addString(envP, outputP, XML_PROLOGUE);
     if (!envP->fault_occurred) {
-        addString(envP, outputP,
-                  "<methodResponse>"CRLF"<params>"CRLF"<param>");
+        const char * const xmlns =
+            dialect == xmlrpc_dialect_apache ? " " XMLNS_APACHE : "";
+        formatOut(envP, outputP,
+                  "<methodResponse%s>"CRLF"<params>"CRLF"<param>", xmlns);
         if (!envP->fault_occurred) {
             xmlrpc_serialize_value2(envP, outputP, valueP, dialect);
             if (!envP->fault_occurred) {
