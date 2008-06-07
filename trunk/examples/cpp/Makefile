@@ -16,7 +16,7 @@ include $(BLDDIR)/config.mk
 default: all
 
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = $(LADD)
+LDFLAGS += $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
@@ -65,23 +65,23 @@ LDADD_BASE = \
 all: $(PROGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
+	$(CXXLD) -o $@ $^ $(LDADD_SERVER_ABYSS) $(LDFLAGS)
 
 $(CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
+	$(CXXLD) -o $@ $^ $(LDADD_CLIENT) $(LDFLAGS)
 
 
 LDADD_PSTREAM_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) c++2 client --ldadd)
 
 pstream_client:%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_PSTREAM_CLIENT)
+	$(CXXLD) -o $@ $^ $(LDADD_PSTREAM_CLIENT) $(LDFLAGS)
 
 LDADD_PSTREAM_SERVER = \
   $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --ldadd)
 
 pstream_inetd_server:%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_PSTREAM_SERVER)
+	$(CXXLD) -o $@ $^ $(LDADD_PSTREAM_SERVER) $(LDFLAGS)
 
 OBJECTS = $(PROGS:%=%.o)
 
