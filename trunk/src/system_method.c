@@ -287,6 +287,63 @@ static struct systemMethodReg const methodListMethods = {
 
 
 /*=========================================================================
+  system.methodExist
+==========================================================================*/
+
+static void
+determineMethodExistence(xmlrpc_env *      const envP,
+                         const char *      const methodName,
+                         xmlrpc_registry * const registryP,
+                         xmlrpc_value **   const existsPP) {
+
+    xmlrpc_methodInfo * methodP;
+
+    xmlrpc_methodListLookupByName(registryP->methodListP, methodName,
+                                  &methodP);
+
+    *existsPP = xmlrpc_bool_new(envP, !!methodP);
+}
+    
+
+
+static xmlrpc_value *
+system_methodExist(xmlrpc_env *   const envP,
+                   xmlrpc_value * const paramArrayP,
+                   void *         const serverInfo,
+                   void *         const callInfo ATTR_UNUSED) {
+
+    xmlrpc_registry * const registryP = serverInfo;
+
+    xmlrpc_value * retvalP;
+    
+    const char * methodName;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
+
+    xmlrpc_decompose_value(envP, paramArrayP, "(s)", &methodName);
+
+    if (!envP->fault_occurred)
+        determineMethodExistence(envP, methodName, registryP, &retvalP);
+
+    xmlrpc_strfree(methodName);
+
+    return retvalP;
+}
+
+
+
+static struct systemMethodReg const methodMethodExist = {
+    "system.methodExist",
+    &system_methodExist,
+    "s:b",
+    "Tell whether a method by a specified name exists on this server",
+};
+
+
+
+/*=========================================================================
   system.methodHelp
 =========================================================================*/
 
@@ -699,11 +756,14 @@ xmlrpc_installSystemMethods(xmlrpc_env *      const envP,
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, methodListMethods);
 
-    if (!envP->fault_occurred) 
-        registerSystemMethod(envP, registryP, methodMethodSignature);
+    if (!envP->fault_occurred)
+        registerSystemMethod(envP, registryP, methodMethodExist);
 
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, methodMethodHelp);
+
+    if (!envP->fault_occurred) 
+        registerSystemMethod(envP, registryP, methodMethodSignature);
 
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, methodMulticall);
