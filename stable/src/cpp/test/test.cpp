@@ -5,6 +5,7 @@
 #include <sstream>
 #include <memory>
 #include <time.h>
+#include <cstring>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;

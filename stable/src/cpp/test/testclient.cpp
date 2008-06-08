@@ -436,14 +436,6 @@ public:
         // This fails because server doesn't exist
         EXPECT_ERROR(rpc1P->call(connection0););
 
-        rpcPtr rpc2P("blowme", paramList0);
-
-        // This fails because the server doesn't exist
-        EXPECT_ERROR(rpc2P->start(&client0, &carriageParmCurl););
-
-        rpcPtr rpc3P("blowme", paramList0);
-        // This fails because the server doesn't exist
-        EXPECT_ERROR(rpc3P->start(connection0););
 #else
         // This fails because there is no Curl transport in the library.
         EXPECT_ERROR(clientXmlTransport_curl transportc0;);

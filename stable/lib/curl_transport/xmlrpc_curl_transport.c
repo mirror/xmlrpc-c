@@ -1214,7 +1214,8 @@ setupCurlSession(xmlrpc_env *             const envP,
             curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE,
                              curlSetupP->sslEngine);
         if (curlSetupP->sslEngineDefault)
-            curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT);
+            /* 3rd argument seems to be required by some Curl */
+            curl_easy_setopt(curlSessionP, CURLOPT_SSLENGINE_DEFAULT, 1l);
         if (curlSetupP->sslVersion != XMLRPC_SSLVERSION_DEFAULT)
             curl_easy_setopt(curlSessionP, CURLOPT_SSLVERSION,
                              curlSetupP->sslVersion);
