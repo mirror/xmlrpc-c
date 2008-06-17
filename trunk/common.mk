@@ -9,7 +9,7 @@
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
 # BLDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
 
-include $(SRCDIR)/Makefile.version
+include $(SRCDIR)/version.mk
 
 # .DELETE_ON_ERROR is a special predefined Make target that says to delete
 # the target if a command in the rule for it fails.  That's important,

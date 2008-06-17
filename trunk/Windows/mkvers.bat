@@ -1,9 +1,9 @@
 @if EXIST ..\version.h goto SHOW
-@if NOT EXIST ..\Makefile.version goto ERR1
+@if NOT EXIST ..\version.mk goto ERR1
 @if NOT EXIST mkvers1.bat goto ERR2
 @echo updating/creating ..\version.h ...
 @set TEMP1=1
-@for /F "skip=8 tokens=3" %%i in (..\Makefile.version) do @call mkvers1 %%i
+@for /F "skip=8 tokens=3" %%i in (..\version.mk) do @call mkvers1 %%i
 @if "%TEMPX1%." == "." goto NOX1
 @if "%TEMPX2%." == "." goto NOX1
 @if "%TEMPX3%." == "." goto NOX1
@@ -35,7 +35,7 @@ type %TEMP1%
 
 
 :ERR1
-@echo Can not locate ..\Makefile.version ... check name, location ...
+@echo Can not locate ..\version.mk ... check name, location ...
 @pause
 @goto END
 :ERR2
