@@ -2153,6 +2153,8 @@ finishRpcCurlTransaction(xmlrpc_env *      const envP ATTR_UNUSED,
     rpc * const rpcP = curlTransactionP->rpcP;
     struct xmlrpc_client_transport * const transportP = rpcP->transportP;
 
+    curlMulti_removeHandle(transportP->asyncCurlMultiP, curlTransactionP);
+
     {
         xmlrpc_env env;
 
@@ -2164,8 +2166,6 @@ finishRpcCurlTransaction(xmlrpc_env *      const envP ATTR_UNUSED,
 
         xmlrpc_env_clean(&env);
     }
-
-    curlMulti_removeHandle(transportP->asyncCurlMultiP, curlTransactionP);
 
     curl_easy_cleanup(curlTransactionP->curlSessionP);
 
@@ -2291,7 +2291,7 @@ finishAsynch(
        no way to release their resources.
 
        We should at least expand this interface some day to push the
-       problem back up the user, but for now we just do this Hail Mary
+       problem back up to the user, but for now we just do this Hail Mary
        response.
 
        Note that a failure of curlMult_finish() does not mean that
