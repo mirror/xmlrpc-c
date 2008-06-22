@@ -10,13 +10,15 @@ include $(BLDDIR)/config.mk
 
 default: all
 
+MODS := xmlrpc_curl_transport curltransaction curlmulti lock_pthread
+
 .PHONY: all
-all: xmlrpc_curl_transport.o xmlrpc_curl_transport.osh
+all: $(MODS:%=%.o) $(MODS:%=%.osh)
 
 # Rules for the above dependencies are in common.mk,
 # courtesy of TARGET_MODS.
 
-TARGET_MODS = xmlrpc_curl_transport
+TARGET_MODS = $(MODS)
 
 OMIT_CURL_TRANSPORT_RULE=Y
 
