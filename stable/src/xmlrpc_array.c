@@ -160,22 +160,50 @@ xmlrpc_array_read_item(xmlrpc_env *         const envP,
 xmlrpc_value * 
 xmlrpc_array_get_item(xmlrpc_env *         const envP,
                       const xmlrpc_value * const arrayP,
-                      int                  const index) {
+                      int                  const indexArg) {
+
+    /* We must maintain the historical thread-safeness of
+       xmlrpc_array_get_item().  That means we can't call
+       xmlrpc_read_array(), because it modifies the reference count
+       of its arguments, thus is not thread-safe.
+
+       The Xmlrpc-c method registry is an example of an application that
+       relies on thread-safeness of xmlrpc_array_get_item() -- it uses
+       xmlrpc_value's to represent the registry, and multiple server
+       threads read the registry simultaneously.
+    */
 
     xmlrpc_value * valueP;
 
-    if (index < 0)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.", index);
-    else {
-        xmlrpc_array_read_item(envP, arrayP, index, &valueP);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(arrayP);
 
-        if (!envP->fault_occurred)
-            xmlrpc_DECREF(valueP);
+    valueP = NULL;
+
+    if (indexArg < 0)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.", indexArg);
+    else {
+        unsigned int const index = indexArg;
+
+        if (arrayP->_type != XMLRPC_TYPE_ARRAY)
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_TYPE_ERROR, "Attempt to read array item from "
+                "a value that is not an array");
+        else {
+            xmlrpc_value ** const contents = 
+                XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, &arrayP->_block);
+            size_t const size = 
+                XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &arrayP->_block);
+
+            if (index >= size)
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_INDEX_ERROR, "Array index %u is beyond end "
+                    "of %u-item array", index, (unsigned int)size);
+            else
+                valueP = contents[index];
+        }
     }
-    if (envP->fault_occurred)
-        valueP = NULL;
-        
     return valueP;
 }
 
