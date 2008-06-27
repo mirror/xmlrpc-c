@@ -984,6 +984,14 @@ static void
 destroy(struct xmlrpc_client_transport * const clientTransportP) {
 /*----------------------------------------------------------------------------
    This does the 'destroy' operation for a Curl client transport.
+
+   An RPC is a reference to a client XML transport, so you may not
+   destroy a transport while RPCs are running.  To ensure no
+   asynchronous RPCs are running, you must successfully execute the
+   transport 'finishAsync' method, with no interruptions or timeouts
+   allowed.  To speed that up, you can set the transport's interrupt
+   flag to 1 first, which will make all outstanding RPCs fail
+   immediately.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(clientTransportP != NULL);
 
