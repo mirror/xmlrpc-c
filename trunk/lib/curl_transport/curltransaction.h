@@ -8,7 +8,8 @@
 
 typedef struct curlTransaction curlTransaction;
 
-typedef void finishCurlTransactionFn(xmlrpc_env * const, void * const);
+typedef void curlt_finishFn(xmlrpc_env * const, void * const);
+typedef void curlt_progressFn(void * const, bool * const);
 
 struct curlSetup {
 
@@ -83,8 +84,8 @@ curlTransaction_create(xmlrpc_env *               const envP,
                        const char *               const userAgent,
                        const struct curlSetup *   const curlSetupStuffP,
                        void *                     const userContextP,
-                       int *                      const interruptP,
-                       finishCurlTransactionFn *  const finish,
+                       curlt_finishFn *           const finish,
+                       curlt_progressFn *         const progress,
                        curlTransaction **         const curlTransactionPP);
 
 void

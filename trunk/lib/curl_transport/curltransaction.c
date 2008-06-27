@@ -38,7 +38,8 @@ struct curlTransaction {
            Curl session, so this had better not be a session that some other
            transaction is using simultaneously.
         */
-    finishCurlTransactionFn * finish;
+    curlt_finishFn * finish;
+    curlt_progressFn * progress;
     void * userContextP;
         /* Meaningful to our client; opaque to us */
     CURLcode result;
@@ -238,14 +239,19 @@ curlProgress(void * const contextP,
    Curl transaction.  curl_multi_perform() reliably winds up a Curl
    transaction when this function tells it to.
 -----------------------------------------------------------------------------*/
-    unsigned int * const interruptP = contextP;
+    curlTransaction * const curlTransactionP = contextP;
+
+    bool abort;
 
     /* We require anyone setting us up as the Curl progress function to
-       supply an interrupt flag:
+       supply a progress function:
     */
-    assert(contextP);
+    assert(curlTransactionP);
+    assert(curlTransactionP->progress);
 
-    return *interruptP != 0 ? 1 : 0;
+    curlTransactionP->progress(curlTransactionP->userContextP, &abort);
+
+    return abort;
 }
 
 
@@ -352,7 +358,6 @@ setupCurlSession(xmlrpc_env *               const envP,
                  xmlrpc_mem_block *         const responseXmlP,
                  const xmlrpc_server_info * const serverInfoP,
                  const char *               const userAgent,
-                 int *                      const interruptP,
                  const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
    Set up the Curl session for the transaction *curlTransactionP so that
@@ -361,10 +366,6 @@ setupCurlSession(xmlrpc_env *               const envP,
    The data curl_easy_perform() would send for that transaction would 
    be the contents of *callXmlP; the data curl_easy_perform() gets back
    would go into *responseXmlP.
-
-   'interruptP' is a pointer to an interrupt flag -- a flag that becomes
-   nonzero when the user wants to abandon this Curl session.  NULL means
-   there is no interrupt flag; user will never want to abandon the session.
 
    *serverInfoP tells what sort of authentication to set up.  This is
    an embarassment, as the xmlrpc_server_info type is part of the
@@ -396,11 +397,12 @@ setupCurlSession(xmlrpc_env *               const envP,
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, 
                          curlTransactionP->curlError);
-        if (interruptP) {
+        if (curlTransactionP->progress) {
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
             curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION,
                              curlProgress);
-            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, interruptP);
+            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA,
+                             curlTransactionP);
         } else
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
         
@@ -493,8 +495,8 @@ curlTransaction_create(xmlrpc_env *               const envP,
                        const char *               const userAgent,
                        const struct curlSetup *   const curlSetupStuffP,
                        void *                     const userContextP,
-                       int *                      const interruptP,
-                       finishCurlTransactionFn *  const finish,
+                       curlt_finishFn *           const finish,
+                       curlt_progressFn *         const progress,
                        curlTransaction **         const curlTransactionPP) {
 
     curlTransaction * curlTransactionP;
@@ -506,6 +508,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
         curlTransactionP->finish       = finish;
         curlTransactionP->curlSessionP = curlSessionP;
         curlTransactionP->userContextP = userContextP;
+        curlTransactionP->progress     = progress;
 
         curlTransactionP->serverUrl = strdup(serverP->serverUrl);
         if (curlTransactionP->serverUrl == NULL)
@@ -513,7 +516,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
         else {
             setupCurlSession(envP, curlTransactionP,
                              callXmlP, responseXmlP,
-                             serverP, userAgent, interruptP,
+                             serverP, userAgent,
                              curlSetupStuffP);
             
             if (envP->fault_occurred)

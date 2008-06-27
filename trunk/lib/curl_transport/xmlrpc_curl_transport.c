@@ -1051,10 +1051,6 @@ performCurlTransaction(xmlrpc_env *      const envP,
 
 
 
-static finishCurlTransactionFn finishRpcCurlTransaction;
-
-
-
 static void
 startRpc(xmlrpc_env * const envP,
          rpc *        const rpcP) {
@@ -1063,6 +1059,11 @@ startRpc(xmlrpc_env * const envP,
                         rpcP->transportP->asyncCurlMultiP,
                         curlTransaction_curlSession(rpcP->curlTransactionP));
 }
+
+
+
+static curlt_finishFn   finishRpcCurlTransaction;
+static curlt_progressFn curlTransactionProgress;
 
 
 
@@ -1096,8 +1097,8 @@ createRpc(xmlrpc_env *                     const envP,
                                clientTransportP->userAgent,
                                &clientTransportP->curlSetupStuff,
                                rpcP,
-                               clientTransportP->interruptP,
                                complete ? &finishRpcCurlTransaction : NULL,
+                               &curlTransactionProgress,
                                &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (envP->fault_occurred)
@@ -1135,7 +1136,7 @@ performRpc(xmlrpc_env * const envP,
 
 
 
-static finishCurlTransactionFn finishRpcCurlTransaction;
+static curlt_finishFn finishRpcCurlTransaction;
 
 static void
 finishRpcCurlTransaction(xmlrpc_env * const envP ATTR_UNUSED,
@@ -1173,6 +1174,24 @@ finishRpcCurlTransaction(xmlrpc_env * const envP ATTR_UNUSED,
     XMLRPC_MEMBLOCK_FREE(char, rpcP->responseXmlP);
 
     destroyRpc(rpcP);
+}
+
+
+
+static curlt_progressFn curlTransactionProgress;
+
+static void
+curlTransactionProgress(void * const context,
+                        bool * const abortP) {
+
+    rpc * const rpcP = context;
+
+    assert(rpcP);
+
+    if (rpcP->transportP->interruptP)
+        *abortP = *rpcP->transportP->interruptP;
+    else
+        *abortP = false;
 }
 
 
