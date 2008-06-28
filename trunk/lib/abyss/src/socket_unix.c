@@ -304,7 +304,7 @@ channelWait(TChannel * const channelP,
     pollfds[1].events = POLLIN;
     
     rc = poll(pollfds, ARRAY_SIZE(pollfds),
-              timeoutMs == TIME_INFINITE ? -1 : timeoutMs);
+              timeoutMs == TIME_INFINITE ? -1 : (int)timeoutMs);
 
     if (rc < 0) {
         if (errno == EINTR) {
