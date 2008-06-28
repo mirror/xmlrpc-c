@@ -37,6 +37,7 @@ TEST_OBJS = \
   serialize_value.o \
   server_abyss.o \
   value.o \
+  value_datetime.o \
   xml_data.o \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)

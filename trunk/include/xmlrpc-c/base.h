@@ -150,6 +150,23 @@ xmlrpc_value *
 xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
                         time_t       const value);
 
+xmlrpc_value*
+xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
+                         time_t       const secs,
+                         unsigned int const usecs);
+
+#if XMLRPC_HAVE_TIMEVAL
+xmlrpc_value *
+xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP, 
+                            struct timeval const value);
+#endif
+
+#if XMLRPC_HAVE_TIMESPEC
+xmlrpc_value *
+xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
+                             struct timespec const value);
+#endif
+
 void
 xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
@@ -159,6 +176,26 @@ void
 xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP);
+
+void
+xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          time_t *             const secsP,
+                          unsigned int *       const usecsP);
+
+#if XMLRPC_HAVE_TIMEVAL
+void
+xmlrpc_read_datetime_timeval(xmlrpc_env *         const envP,
+                             const xmlrpc_value * const valueP,
+                             struct timeval *     const timeValueP);
+#endif
+
+#if XMLRPC_HAVE_TIMESPEC
+void
+xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
+                              const xmlrpc_value * const valueP,
+                              struct timespec *    const timeValueP);
+#endif
 
 xmlrpc_value *
 xmlrpc_string_new(xmlrpc_env * const envP,

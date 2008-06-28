@@ -134,9 +134,11 @@ public:
     value_datetime(time_t const cvalue);
 #if XMLRPC_HAVE_TIMEVAL
     value_datetime(struct timeval const& cvalue);
+    value_datetime::operator timeval() const;
 #endif
 #if XMLRPC_HAVE_TIMESPEC
     value_datetime(struct timespec const& cvalue);
+    value_datetime::operator timespec() const;
 #endif
 
     value_datetime(xmlrpc_c::value const baseValue);

@@ -307,6 +307,56 @@ public:
 
 
 
+#ifdef XMLRPC_HAVE_TIMEVAL
+
+static struct timeval
+makeTv(time_t       const secs,
+       unsigned int const usecs) {
+
+    struct timeval retval;
+
+    retval.tv_sec  = secs;
+    retval.tv_usec = usecs;
+
+    return retval;
+}
+
+static bool
+tvIsEqual(struct timeval const comparand,
+          struct timeval const comparator) {
+    return
+        comparand.tv_sec  == comparator.tv_sec &&
+        comparand.tv_usec == comparator.tv_usec;
+}
+#endif
+
+
+
+#ifdef XMLRPC_HAVE_TIMESPEC
+
+static struct timespec
+makeTs(time_t       const secs,
+       unsigned int const usecs) {
+
+    struct timespec retval;
+
+    retval.tv_sec  = secs;
+    retval.tv_nsec = usecs * 1000;
+
+    return retval;
+}
+
+static bool
+tsIsEqual(struct timespec const comparand,
+          struct timespec const comparator) {
+    return
+        comparand.tv_sec  == comparator.tv_sec &&
+        comparand.tv_nsec == comparator.tv_nsec;
+}
+#endif
+
+
+
 class datetimeTestSuite : public testSuite {
 public:
     virtual string suiteName() {
@@ -322,6 +372,18 @@ public:
         TEST(val1.type() == value::TYPE_DATETIME);
         value_datetime datetime3(val1);
         TEST(static_cast<time_t>(datetime3) == testTime);
+#if XMLRPC_HAVE_TIMEVAL
+        struct timeval const testTimeTv(makeTv(testTime, 0));
+        value_datetime datetime4(testTimeTv);
+        TEST(static_cast<time_t>(datetime4) == testTime);
+        TEST(tvIsEqual(static_cast<timeval>(datetime4), testTimeTv));
+#endif
+#if XMLRPC_HAVE_TIMESPEC
+        struct timespec const testTimeTs(makeTs(testTime, 0));
+        value_datetime datetime5(testTimeTs);
+        TEST(static_cast<time_t>(datetime5) == testTime);
+        TEST(tsIsEqual(static_cast<timespec>(datetime5), testTimeTs));
+#endif
         try {
             value_datetime datetime4(value_int(4));
             TEST_FAILED("invalid cast int-datetime suceeded");
