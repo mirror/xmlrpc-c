@@ -6,7 +6,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := src/test
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
@@ -34,8 +34,10 @@ TEST_OBJS = \
   method_registry.o \
   parse_xml.o \
   serialize.o \
+  serialize_value.o \
   server_abyss.o \
   value.o \
+  value_datetime.o \
   xml_data.o \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
@@ -46,7 +48,7 @@ else
   LIBXMLRPC_CLIENT_DEP =
 endif
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 test: \
   $(XMLRPC_C_CONFIG) \

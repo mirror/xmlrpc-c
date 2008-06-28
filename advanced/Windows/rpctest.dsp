@@ -23,8 +23,6 @@ CFG=rpctest - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "rpctest"
-# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
@@ -125,6 +123,10 @@ SOURCE=..\src\test\serialize.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\test\serialize_value.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\test\server_abyss.c
 # End Source File
 # Begin Source File
@@ -158,6 +160,10 @@ SOURCE=..\src\test\parse_xml.h
 # Begin Source File
 
 SOURCE=..\src\test\serialize.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\test\serialize_value.h
 # End Source File
 # Begin Source File
 

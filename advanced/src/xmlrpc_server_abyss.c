@@ -29,6 +29,16 @@
 #include "xmlrpc-c/server_abyss.h"
 
 
+
+struct xmlrpc_server_abyss {
+    TServer       abyssServer;
+    TChanSwitch * chanSwitchP;
+    bool          shutdownEnabled;
+        /* User wants system.shutdown to succeed */
+};
+
+
+
 /*=========================================================================
 **  die_if_fault_occurred
 **=========================================================================
@@ -968,7 +978,7 @@ enableShutdownParm(const xmlrpc_server_abyss_parms * const parmsP,
 static xmlrpc_server_shutdown_fn shutdownAbyss;
 
 static void
-shutdownAbyss(xmlrpc_env * const envP,
+shutdownAbyss(xmlrpc_env * const faultP,
               void *       const context,
               const char * const comment ATTR_UNUSED,
               void *       const callInfo ATTR_UNUSED) {
@@ -980,17 +990,21 @@ shutdownAbyss(xmlrpc_env * const envP,
 
    After we return, Abyss will finish up the system.shutdown and any
    other connections that are in progress, then the call to
-   ServerRun() etc. will return.  But Abyss may be stuck waiting for
-   something, such as the next HTTP connection.  In that case, until it
-   gets what it's waiting for, it won't even know it's supposed t shut
-   down.  In particular, a caller of system.shutdown may have to execute
-   one more RPC in order for the shutdown to happen.
------------------------------------------------------------------------------*/
-    TServer * const serverP = context;
+   ServerRun() etc. will return.
 
-    xmlrpc_env_init(envP);
+   *faultP is the result of the shutdown request, not whether we
+   succeeded or failed.  We are not allowed to fail.
+-----------------------------------------------------------------------------*/
+    xmlrpc_server_abyss_t * const serverP = context;
+
+    xmlrpc_env_init(faultP);
     
-    ServerTerminate(serverP);
+    if (!serverP->shutdownEnabled)
+        xmlrpc_env_set_fault_formatted(
+            faultP, XMLRPC_REQUEST_REFUSED_ERROR,
+            "Shutdown by client is disabled on this server.");
+    else
+        ServerTerminate(&serverP->abyssServer);
 }
 
 
@@ -998,13 +1012,6 @@ shutdownAbyss(xmlrpc_env * const envP,
 /*=============================================================================
   xmlrpc_server_abyss object methods
 =============================================================================*/
-
-struct xmlrpc_server_abyss {
-    TServer       abyssServer;
-    TChanSwitch * chanSwitchP;
-};
-
-
 
 void
 xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
@@ -1023,9 +1030,9 @@ xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
             xmlrpc_faultf(envP,
                           "You must specify members at least up through "
                           "'registryP' in the server parameters argument.  "
-                          "That would mean the parameter size would be >= %lu "
+                          "That would mean the parameter size would be >= %u "
                           "but you specified a size of %u",
-                          XMLRPC_APSIZE(registryP), parmSize);
+                          (unsigned)XMLRPC_APSIZE(registryP), parmSize);
         else {
             MALLOCVAR(serverP);
 
@@ -1037,10 +1044,11 @@ xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
                              &serverP->abyssServer, &serverP->chanSwitchP);
             
                 if (!envP->fault_occurred) {
-                    if (enableShutdownParm(parmsP, parmSize))
-                        xmlrpc_registry_set_shutdown(
-                            parmsP->registryP, &shutdownAbyss,
-                            &serverP->abyssServer);
+                    serverP->shutdownEnabled =
+                        enableShutdownParm(parmsP, parmSize);
+
+                    xmlrpc_registry_set_shutdown(
+                        parmsP->registryP, &shutdownAbyss, serverP);
                 
                     if (envP->fault_occurred)
                         free(serverP);
@@ -1355,9 +1363,9 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
             xmlrpc_faultf(envP,
                           "You must specify members at least up through "
                           "'registryP' in the server parameters argument.  "
-                          "That would mean the parameter size would be >= %lu "
+                          "That would mean the parameter size would be >= %u "
                           "but you specified a size of %u",
-                          XMLRPC_APSIZE(registryP), parmSize);
+                          (unsigned)XMLRPC_APSIZE(registryP), parmSize);
         else {
             if (parmsP->config_file_name)
                 oldHighLevelAbyssRun(envP, parmsP, parmSize);

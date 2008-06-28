@@ -5,7 +5,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := src
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 
@@ -53,6 +53,9 @@ ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport
+  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curltransaction
+  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curlmulti
+  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/lock_pthread
   TRANSPORT_LIBDEP += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
@@ -74,6 +77,7 @@ endif
 
 LIBXMLRPC_MODS = \
         double \
+	parse_value \
         resource \
 	trace \
 	version \
@@ -109,14 +113,14 @@ OMIT_XMLRPC_LIB_RULE=Y
 MAJ=3
   # Major number of shared libraries in this directory
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
-# This 'Makefile.common' dependency makes sure the symlinks get built before
+# This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/common.mk: srcdir blddir
 
-# TARGET_STATIC_LIBRARIES, etc. are set by Makefile.common, based on
+# TARGET_STATIC_LIBRARIES, etc. are set by common.mk, based on
 # TARGET_LIBRARY_NAMES.
 
 
@@ -136,7 +140,7 @@ endif
 #  RULES TO LINK LIBRARIES
 #-----------------------------------------------------------------------------
 
-# Rules for these are in Makefile.common, courtesy of TARGET_LIBRARY_NAMES:
+# Rules for these are in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 
 # shlibfn generates e.g. libxmlrpc.so.3.1
 # shliblefn generates e.g. libxmlrpc.so
@@ -225,7 +229,7 @@ libxmlrpc_client.a: LIBOBJECTS = \
 #  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
 #-----------------------------------------------------------------------------
 
-# Rules for these are in Makefile.common, courtesy of TARGET_MODS:
+# Rules for these are in common.mk, courtesy of TARGET_MODS:
 
 BASIC_INCLUDES = \
   -I$(BLDDIR) \

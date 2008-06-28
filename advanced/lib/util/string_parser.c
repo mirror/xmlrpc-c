@@ -1,8 +1,6 @@
 #include <sys/types.h>
-#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>

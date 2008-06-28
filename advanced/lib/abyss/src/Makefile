@@ -7,7 +7,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/abyss/src
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 
@@ -48,7 +48,7 @@ OMIT_ABYSS_LIB_RULE = Y
 MAJ=3
   # Major number of shared libraries in this directory
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 CFLAGS = $(CFLAGS_COMMON) -D_UNIX $(CFLAGS_PERSONAL) $(CADD)
 
@@ -68,20 +68,20 @@ ifneq ($(SHARED_LIB_TYPE),NONE)
   TARGET_SHARED_LIBS := $(ABYSS_SHLIB) $(ABYSS_SHLIBLE)
   endif
 
-# This 'Makefile.common' dependency makes sure the symlinks get built before
+# This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir blddir
+$(SRCDIR)/common.mk: srcdir blddir
 
 .PHONY: all
 all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
 
-# Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
 $(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) $(LIBDEP)
 $(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh) $(LIBDEP)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:
 
 libxmlrpc_abyss.a: $(TARGET_MODS:%=%.o)
 libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
@@ -91,7 +91,7 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 #-----------------------------------------------------------------------------
 
 # Rules to compile object modules from which to build the static and shared
-# Abyss library are in Makefile.common, courtesy of TARGET_MODS.
+# Abyss library are in common.mk, courtesy of TARGET_MODS.
 
 
 # Need this dependency for those who don't use Makefile.depend.

@@ -6,21 +6,21 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/wininet_transport
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 
 .PHONY: all
 all: xmlrpc_wininet_transport.o xmlrpc_wininet_transport.osh
 
-# Rules for the above dependencies are in Makefile.common,
+# Rules for the above dependencies are in common.mk,
 # courtesy of TARGET_MODS.
 
 TARGET_MODS = xmlrpc_wininet_transport
 
 OMIT_WININET_TRANSPORT_RULE=Y
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 

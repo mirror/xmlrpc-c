@@ -64,6 +64,22 @@ public:
         this->valueP = xmlrpc_datetime_new_sec(&env.env_c, cppvalue);
         throwIfError(env);
     }
+#if XMLRPC_HAVE_TIMEVAL
+    cDatetimeValueWrapper(struct timeval const cppvalue) {
+        env_wrap env;
+        
+        this->valueP = xmlrpc_datetime_new_timeval(&env.env_c, cppvalue);
+        throwIfError(env);
+    }
+#endif
+#if XMLRPC_HAVE_TIMESPEC
+    cDatetimeValueWrapper(struct timespec const cppvalue) {
+        env_wrap env;
+        
+        this->valueP = xmlrpc_datetime_new_timespec(&env.env_c, cppvalue);
+        throwIfError(env);
+    }
+#endif
     ~cDatetimeValueWrapper() {
         xmlrpc_DECREF(this->valueP);
     }
@@ -393,7 +409,7 @@ value_datetime::value_datetime(time_t const cppvalue) {
 #if XMLRPC_HAVE_TIMEVAL
 value_datetime::value_datetime(struct timeval const& cppvalue) {
 
-    cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
+    cDatetimeValueWrapper wrapper(cppvalue);
 
     this->instantiate(wrapper.valueP);
 }
@@ -404,7 +420,7 @@ value_datetime::value_datetime(struct timeval const& cppvalue) {
 #if XMLRPC_HAVE_TIMESPEC
 value_datetime::value_datetime(struct timespec const& cppvalue) {
 
-    cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
+    cDatetimeValueWrapper wrapper(cppvalue);
 
     this->instantiate(wrapper.valueP);
 }
@@ -433,6 +449,38 @@ value_datetime::operator time_t() const {
 
     return retval;
 }
+
+
+
+#if XMLRPC_HAVE_TIMEVAL
+
+value_datetime::operator timeval() const {
+
+    struct timeval retval;
+    env_wrap env;
+
+    xmlrpc_read_datetime_timeval(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
+}
+#endif
+
+
+
+#if XMLRPC_HAVE_TIMESPEC
+
+value_datetime::operator timespec() const {
+
+    struct timespec retval;
+    env_wrap env;
+
+    xmlrpc_read_datetime_timespec(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
+}
+#endif
 
 
 
@@ -831,13 +879,13 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
 
 
 
-value_i8::value_i8(long long const cppvalue) {
+value_i8::value_i8(xmlrpc_int64 const cppvalue) {
 
     class cWrapper {
     public:
         xmlrpc_value * valueP;
         
-        cWrapper(long long const cppvalue) {
+        cWrapper(xmlrpc_int64 const cppvalue) {
             env_wrap env;
             
             this->valueP = xmlrpc_i8_new(&env.env_c, cppvalue);
@@ -866,9 +914,9 @@ value_i8::value_i8(xmlrpc_c::value const baseValue) {
 
 
 
-value_i8::operator long long() const {
+value_i8::operator xmlrpc_int64() const {
 
-    long long retval;
+    xmlrpc_int64 retval;
     env_wrap env;
 
     xmlrpc_read_i8(&env.env_c, this->cValueP, &retval);

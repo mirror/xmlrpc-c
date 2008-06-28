@@ -22,7 +22,7 @@ UTILDIR = $(SRCDIR)/lib/util
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 TARGET_LIBRARY_NAMES := libxmlrpc_xmlparse
 
@@ -37,7 +37,7 @@ OMIT_XMLPARSE_LIB_RULE=Y
 MAJ=3
   # Major number of shared libraries in this directory
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
@@ -64,11 +64,11 @@ ifneq ($(SHARED_LIB_TYPE),NONE)
 .PHONY: all
 all: libxmlrpc_xmlparse.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
 $(XMLPARSE_SHLIB): $(TARGET_MODS:%=%.osh) $(LIBDEP)
 $(XMLPARSE_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh) $(LIBDEP)
 
-# Rule for this is in Makefile.common, courtesy of TARGET_STATIC_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:
 
 libxmlrpc_xmlparse.a: $(TARGET_MODS:%=%.o)
 libxmlrpc_xmlparse.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
@@ -78,7 +78,7 @@ libxmlrpc_xmlparse.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 #-----------------------------------------------------------------------------
 
 # Rules to compile object modules from which to build the static and shared
-# library are in Makefile.common, courtesy of TARGET_MODS.
+# library are in common.mk, courtesy of TARGET_MODS.
 
 .PHONY: install
 install: install-common
@@ -91,9 +91,9 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
-# This 'Makefile.common' dependency makes sure the symlinks get built before
+# This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/Makefile.common: srcdir
+$(SRCDIR)/common.mk: srcdir
 
 include Makefile.depend

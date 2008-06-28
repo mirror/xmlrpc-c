@@ -8,7 +8,7 @@
 #include <time.h>
 #include <xmlrpc-c/util.h>
 #include <xmlrpc-c/config.h>
-  /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_LONG_LONG */
+  /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_INT64 */
 
 #if XMLRPC_HAVE_WCHAR
 #include <wchar.h>
@@ -36,9 +36,9 @@ extern unsigned int const xmlrpc_version_point;
 
 typedef signed int xmlrpc_int;  
     /* An integer of the type defined by XML-RPC <int>; i.e. 32 bit */
-typedef signed int xmlrpc_int32;
+typedef XMLRPC_INT32 xmlrpc_int32;
     /* An integer of the type defined by XML-RPC <i4>; i.e. 32 bit */
-typedef XMLRPC_LONG_LONG xmlrpc_int64;
+typedef XMLRPC_INT64 xmlrpc_int64;
     /* An integer of the type defined by "XML-RPC" <i8>; i.e. 64 bit */
 typedef int xmlrpc_bool;
     /* A boolean (of the type defined by XML-RPC <boolean>, but there's
@@ -150,6 +150,23 @@ xmlrpc_value *
 xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
                         time_t       const value);
 
+xmlrpc_value*
+xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
+                         time_t       const secs,
+                         unsigned int const usecs);
+
+#if XMLRPC_HAVE_TIMEVAL
+xmlrpc_value *
+xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP, 
+                            struct timeval const value);
+#endif
+
+#if XMLRPC_HAVE_TIMESPEC
+xmlrpc_value *
+xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
+                             struct timespec const value);
+#endif
+
 void
 xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
@@ -159,6 +176,26 @@ void
 xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP);
+
+void
+xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          time_t *             const secsP,
+                          unsigned int *       const usecsP);
+
+#if XMLRPC_HAVE_TIMEVAL
+void
+xmlrpc_read_datetime_timeval(xmlrpc_env *         const envP,
+                             const xmlrpc_value * const valueP,
+                             struct timeval *     const timeValueP);
+#endif
+
+#if XMLRPC_HAVE_TIMESPEC
+void
+xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
+                              const xmlrpc_value * const valueP,
+                              struct timespec *    const timeValueP);
+#endif
 
 xmlrpc_value *
 xmlrpc_string_new(xmlrpc_env * const envP,
@@ -361,16 +398,16 @@ xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value ** const valuePP);
 
 void
+xmlrpc_struct_read_value(xmlrpc_env *    const envP,
+                         xmlrpc_value *  const structP,
+                         const char *    const key,
+                         xmlrpc_value ** const valuePP);
+
+void
 xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value *  const structP,
                            xmlrpc_value *  const keyP,
                            xmlrpc_value ** const valuePP);
-
-void
-xmlrpc_struct_read_value(xmlrpc_env *    const envP,
-                         xmlrpc_value *  const strctP,
-                         const char *    const key,
-                         xmlrpc_value ** const valuePP);
 
 /* The "get_value" functions are deprecated.  Use the "find_value"
    and "read_value" functions instead.

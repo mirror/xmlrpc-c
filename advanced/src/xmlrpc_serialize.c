@@ -63,7 +63,7 @@ formatOut(xmlrpc_env *       const envP,
 
     va_start(args, formatString);
 
-    count = vsnprintf(buffer, SMALL_BUFFER_SZ, formatString, args);
+    count = XMLRPC_VSNPRINTF(buffer, SMALL_BUFFER_SZ, formatString, args);
 
     /* Old C libraries return -1 if vsnprintf overflows its buffer.
     ** New C libraries return the number of characters which *would* have

@@ -284,9 +284,6 @@ public:
             clientXmlTransport_curl::constrOpt()
             .no_ssl_verifypeer(false));
 
-        int interruptFlag(0);
-        transport5.setInterrupt(&interruptFlag);
-
         clientXmlTransport_curl transport6(
             clientXmlTransport_curl::constrOpt());
 
@@ -299,6 +296,12 @@ public:
         transport2P->finishAsync(timeout(2000));
         transport2P->finishAsync(2000);
         TEST(time(NULL) <= nowtime + 1);
+
+        int interruptFlag;
+        transport2P->setInterrupt(&interruptFlag);
+        interruptFlag = 0;
+        transport2P->finishAsync(2000);
+        transport2P->finishAsync(timeout());
 #else
         EXPECT_ERROR(clientXmlTransport_curl transport0;);
         EXPECT_ERROR(clientXmlTransport_curl transport1("eth0"););
@@ -476,6 +479,46 @@ public:
         
 
 
+class clientCurlIntTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+  The object of this class tests interruptibility functions of the
+  combination of a client with Curl transport.
+
+  We don't have an HTTP server, so we test only superficially.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "clientCurlIntTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+#if MUST_BUILD_CURL_CLIENT
+        clientXmlTransport_curl transportc0;
+        client_xml client0(&transportc0);
+        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
+
+        paramList paramList0;
+        
+        rpcOutcome outcome0;
+
+        int interruptFlag;
+        client0.setInterrupt(&interruptFlag);
+
+        interruptFlag = 1;
+        // This fails because the call gets immediately interrupted
+        EXPECT_ERROR(
+            client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
+                );
+        interruptFlag = 0; 
+        // This fails because server doesn't exist
+        EXPECT_ERROR(
+            client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
+                );
+#endif
+    }
+};
+
+
+
 class clientCurlTestSuite : public testSuite {
 /*----------------------------------------------------------------------------
   The object of this class tests the combination of a client with
@@ -491,16 +534,13 @@ public:
     virtual string suiteName() {
         return "clientCurlTestSuite";
     }
-    virtual void runtests(unsigned int) {
+    virtual void runtests(unsigned int const indentation) {
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         client_xml client0(&transportc0);
         carriageParm_http0 carriageParmHttp("http://suckthis.com");
         carriageParm_curl0 carriageParmCurl("http://suckthis.com");
         connection connection0(&client0, &carriageParmHttp);
-
-        int interruptFlag(0);
-        client0.setInterrupt(&interruptFlag);
 
         paramList paramList0;
         
@@ -549,6 +589,7 @@ public:
         TEST(rpc2P->isFinished());
         TEST(!rpc2P->isSuccessful());
 
+        clientCurlIntTestSuite().run(indentation+1);
 #else
         // This fails because there is no Curl transport in the library.
         EXPECT_ERROR(clientXmlTransport_curl transportc0;);
@@ -783,7 +824,7 @@ public:
             TEST(rpcApacheP->isFinished());
             TEST(rpcApacheP->isSuccessful());
             value_i8 const result(rpcApacheP->getResult());
-            TEST(static_cast<long long>(result) == 7ll);
+            TEST(static_cast<xmlrpc_int64>(result) == 7ll);
         }
     }
 };

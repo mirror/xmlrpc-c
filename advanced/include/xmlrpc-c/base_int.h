@@ -16,6 +16,7 @@
 
 #include "xmlrpc_config.h"
 #include "bool.h"
+#include "int.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/util_int.h>
@@ -90,9 +91,9 @@ struct _xmlrpc_value {
 
 
 typedef struct {
-    unsigned char key_hash;
-    xmlrpc_value *key;
-    xmlrpc_value *value;
+    uint32_t keyHash;
+    xmlrpc_value * key;
+    xmlrpc_value * value;
 } _struct_member;
 
 

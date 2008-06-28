@@ -8,17 +8,18 @@ SUBDIR := tools/xmlrpc
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 PROGRAMS_TO_INSTALL = xmlrpc
 
-include $(SRCDIR)/tools/Makefile.common
+include $(SRCDIR)/tools/common.mk
 
 INCLUDES = \
-  -I$(BLDDIR) \
-  -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include
+  -I../lib/include \
+  -Iblddir \
+  -Iblddir/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
@@ -35,11 +36,13 @@ UTIL_OBJS = \
 
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
+DUMPVALUE = srcdir/tools/lib/dumpvalue.o
+
 # Can we just use $(LIBS) in the link?
 
 LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 
-XMLRPC_OBJS = xmlrpc.o dumpvalue.o
+XMLRPC_OBJS = xmlrpc.o $(DUMPVALUE)
 
 xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
 	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
@@ -47,10 +50,10 @@ xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
 %.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS) $<
 
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: srcdir
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
 include Makefile.depend
 

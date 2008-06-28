@@ -11,12 +11,12 @@ BLDDIR = $(SRCDIR)
 endif
 SUBDIR = examples
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = $(LADD)
+LDFLAGS += $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
@@ -90,16 +90,16 @@ $(BLDDIR)/examples/cpp:
 	mkdir $@
 
 $(CLIENTPROGS):%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
+	$(CCLD) -o $@ $^ $(LDADD_CLIENT) $(LDFLAGS)
 
 $(SERVERPROGS_CGI):%.cgi:%_cgi.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_CGI)
+	$(CCLD) -o $@ $^ $(LDADD_SERVER_CGI) $(LDFLAGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
+	$(CCLD) -o $@ $^ $(LDADD_SERVER_ABYSS) $(LDFLAGS)
 
 gen_sample_add_xml:%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_BASE)
+	$(CCLD) -o $@ $^ $(LDADD_BASE) $(LDFLAGS) 
 
 OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
 
@@ -119,7 +119,7 @@ config.h:
 xmlrpc_amconfig.h:
 	$(LN_S) $(BLDDIR)/$@ .
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 .PHONY: clean
 clean: clean-common

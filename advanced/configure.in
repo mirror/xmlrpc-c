@@ -634,8 +634,8 @@ dnl Note that AM_CONFIG_HEADER at the top of this file outputs another
 dnl result: xmlrpc_amconfig.h .
 
 AC_OUTPUT( \
-          Makefile.srcdir \
-          Makefile.config \
+          srcdir.mk \
+          config.mk \
           xmlrpc_config.h \
           )
 

@@ -6,21 +6,23 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/curl_transport
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 
-.PHONY: all
-all: xmlrpc_curl_transport.o xmlrpc_curl_transport.osh
+MODS := xmlrpc_curl_transport curltransaction curlmulti lock_pthread
 
-# Rules for the above dependencies are in Makefile.common,
+.PHONY: all
+all: $(MODS:%=%.o) $(MODS:%=%.osh)
+
+# Rules for the above dependencies are in common.mk,
 # courtesy of TARGET_MODS.
 
-TARGET_MODS = xmlrpc_curl_transport
+TARGET_MODS = $(MODS)
 
 OMIT_CURL_TRANSPORT_RULE=Y
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 CURL_INCLUDES := $(shell curl-config --cflags)
 # We expect that curl-config --cflags just gives us -I options, because

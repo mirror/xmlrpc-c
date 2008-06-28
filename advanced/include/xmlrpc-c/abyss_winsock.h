@@ -19,19 +19,9 @@ ChanSwitchWinCreateWinsock(SOCKET         const winsock,
                            const char **  const errorP);
 
 void
-ChannelWinCreate(TChanSwitch ** const chanSwitchPP);
-
-void
 ChannelWinCreateWinsock(SOCKET                       const fd,
                         TChannel **                  const channelPP,
                         struct abyss_win_chaninfo ** const channelInfoPP,
                         const char **                const errorP);
-
-void
-SocketWinCreate(TSocket ** const socketPP);
-
-void
-SocketWinCreateWinsock(SOCKET     const winsock,
-                       TSocket ** const socketPP);
 
 typedef SOCKET TOsSocket;

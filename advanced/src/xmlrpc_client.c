@@ -524,6 +524,35 @@ xmlrpc_client_transport_call2(
 
 
 
+static void
+parseResponse(xmlrpc_env *       const envP,
+              xmlrpc_mem_block * const respXmlP,
+              xmlrpc_value **    const resultPP,
+              int *              const faultCodeP,
+              const char **      const faultStringP) {
+
+    xmlrpc_env respEnv;
+
+    xmlrpc_env_init(&respEnv);
+
+    xmlrpc_parse_response2(
+        &respEnv,
+        XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
+        XMLRPC_MEMBLOCK_SIZE(char, respXmlP),
+        resultPP, faultCodeP, faultStringP);
+
+    if (respEnv.fault_occurred)
+        xmlrpc_env_set_fault_formatted(
+            envP, respEnv.fault_code,
+            "Unable to make sense of XML-RPC response from server.  "
+            "%s.  Use XMLRPC_TRACE_XML to see for yourself",
+            respEnv.fault_string);
+
+    xmlrpc_env_clean(&respEnv);
+}
+
+
+
 void
 xmlrpc_client_call2(xmlrpc_env *               const envP,
                     struct xmlrpc_client *     const clientP,
@@ -558,12 +587,8 @@ xmlrpc_client_call2(xmlrpc_env *               const envP,
                             XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
                             XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
             
-            xmlrpc_parse_response2(
-                envP,
-                XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
-                XMLRPC_MEMBLOCK_SIZE(char, respXmlP),
-                resultPP, &faultCode, &faultString);
-
+            parseResponse(envP, respXmlP, resultPP, &faultCode, &faultString);
+            
             if (!envP->fault_occurred) {
                 if (faultString) {
                     xmlrpc_env_set_fault_formatted(

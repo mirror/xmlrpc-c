@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 
 extern int total_tests;
 extern int total_failures;
@@ -42,6 +44,15 @@ do { \
             (env)->fault_string); \
         } \
        } while (0)
+
+#define TEST_EPSILON 1E-5
+
+#define FORCENONZERO(x) (MAX(fabs(x), TEST_EPSILON))
+
+#define FLOATEQUAL(comparand, comparator) \
+    ((fabs((comparand)-(comparator)))/FORCENONZERO(comparand) < TEST_EPSILON)
+#define TESTFLOATEQUAL(comparand, comparator) \
+    TEST(FLOATEQUAL(comparand, comparator))
 
 static __inline__ void
 test_fault(xmlrpc_env * const envP,

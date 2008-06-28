@@ -8,9 +8,9 @@ SUBDIR := tools/xml-rpc-api2cpp
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
-include $(SRCDIR)/tools/Makefile.common
+include $(SRCDIR)/tools/common.mk
 
 INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
 
@@ -48,10 +48,10 @@ xml-rpc-api2cpp: \
 %.o:%.cpp
 	$(CXX) -c $(CXXFLAGS) $<
 
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: srcdir
+$(SRCDIR)/common.mk: srcdir blddir
 
 include Makefile.depend
 

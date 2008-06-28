@@ -5,7 +5,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 # Build up SUBDIRS:
 SUBDIRS = 
@@ -52,7 +52,7 @@ check:
 
 dep: $(SUBDIRS:%=%/dep)
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
 

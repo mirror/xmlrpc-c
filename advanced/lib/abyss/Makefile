@@ -6,7 +6,7 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/abyss
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 SUBDIRS = src
 
@@ -35,7 +35,7 @@ install: $(SUBDIRS:%=%/install)
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep)
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
 

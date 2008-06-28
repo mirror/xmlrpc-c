@@ -14,6 +14,8 @@
 #include "xmlrpc-c/string_int.h"
 
 #include "test.h"
+#include "value_datetime.h"
+
 #include "value.h"
 
 
@@ -152,197 +154,6 @@ test_value_double(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
     TEST(d == 1.0);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime_varytime(const char * const datestring,
-                             time_t       const datetime) {
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    const char * ds;
-    time_t dt;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_datetime_new_str(&env, datestring);
-    TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_NO_FAULT(&env);
-    TEST(dt == datetime);
-
-    xmlrpc_DECREF(v);
-
-    v = xmlrpc_datetime_new_sec(&env, datetime);
-    TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-
-    xmlrpc_read_datetime_str(&env, v, &ds);
-    TEST_NO_FAULT(&env);
-    TEST(streq(ds, datestring));
-    strfree(ds);
-
-    xmlrpc_DECREF(v);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime_not_unix(const char * const datestring) {
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    time_t dt;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_datetime_new_str(&env, datestring);
-    TEST_NO_FAULT(&env);
-
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-
-    xmlrpc_DECREF(v);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime_invalid(const char * const datestring) {
-
-    /* Ideally, xmlrpc_datetime_new_str() would fail on these, but
-       the code doesn't implement that today.  However,
-       xmlrpc_read_datetime_sec() does catch many cases, so we
-       use that.
-
-       Note that xmlrpc_read_datetime_sec() doesn't catch them all.
-       Sometimes it just returns garbage, e.g. returns July 1 for
-       June 31.
-    */
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    time_t dt;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_datetime_new_str(&env, datestring);
-    TEST_NO_FAULT(&env);
-
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
-
-    xmlrpc_DECREF(v);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_build_decomp_datetime(void) {
-
-    const char * datestring = "19980717T14:08:55";
-    time_t const datetime = 900684535;
-
-    xmlrpc_env env;
-    xmlrpc_value * v;
-    time_t dt;
-    const char * ds;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_build_value(&env, "t", datetime);
-    TEST_NO_FAULT(&env);
-    TEST(v != NULL);
-    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_DATETIME);
-
-    dt = 0;
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST(dt == datetime);
-
-    dt = 0;
-    xmlrpc_decompose_value(&env, v, "t", &dt);
-    xmlrpc_DECREF(v);
-    TEST_NO_FAULT(&env);
-    TEST(dt == datetime);
-
-    v = xmlrpc_int_new(&env, 9);
-    TEST_NO_FAULT(&env);
-    xmlrpc_decompose_value(&env, v, "t", &dt);
-    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
-    xmlrpc_decompose_value(&env, v, "8", &ds);
-    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
-    xmlrpc_DECREF(v);
-
-    v = xmlrpc_build_value(&env, "8", datestring);
-    TEST_NO_FAULT(&env);
-    TEST(v != NULL);
-    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_DATETIME);
-    xmlrpc_decompose_value(&env, v, "8", &ds);
-    xmlrpc_DECREF(v);
-    TEST_NO_FAULT(&env);
-    TEST(streq(ds, datestring));
-    strfree(ds);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime(void) {
-
-    const char * datestring = "19980717T14:08:55";
-    time_t const datetime = 900684535;
-
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-
-    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DATETIME), "DATETIME"));
-
-    /* Valid datetime, generated from XML-RPC string */
-
-    test_value_datetime_varytime(datestring, datetime);
-
-    /* Leap years */
-    test_value_datetime_varytime("20000229T23:59:59", 951868799);
-    test_value_datetime_varytime("20000301T00:00:00", 951868800);
-    test_value_datetime_varytime("20010228T23:59:59", 983404799);
-    test_value_datetime_varytime("20010301T00:00:00", 983404800);
-    test_value_datetime_varytime("20040229T23:59:59", 1078099199);
-    test_value_datetime_varytime("20040301T00:00:00", 1078099200);
-
-    /* Datetimes that can't be represented as time_t */
-    test_value_datetime_not_unix("19691231T23:59:59");
-
-    /* Invalid datetimes */
-    /* Note that the code today does a pretty weak job of validating datetimes,
-       so we test only the validation that we know is implemented.
-    */
-    test_value_datetime_invalid("19700101T25:00:00");
-    test_value_datetime_invalid("19700101T10:61:01");
-    test_value_datetime_invalid("19700101T10:59:61");
-    test_value_datetime_invalid("19700001T10:00:00");
-    test_value_datetime_invalid("19701301T10:00:00");
-    test_value_datetime_invalid("19700132T10:00:00");
-
-    test_build_decomp_datetime();
 
     xmlrpc_env_clean(&env);
 }
@@ -952,7 +763,7 @@ test_value_base64(void) {
     TEST_NO_FAULT(&env);
     TEST(len == sizeof(data2));
     TEST(memeq(data, data1, sizeof(data2)));
-    strfree(data);
+    free((void *)data);
 
     xmlrpc_env_clean(&env);
 }
@@ -1516,21 +1327,21 @@ test_value_parse_value(void) {
 
 static void
 test_struct_get_element(xmlrpc_value * const structP,
-                        xmlrpc_value * const i1,
-                        xmlrpc_value * const i2,
+                        xmlrpc_value * const fooValueP,
+                        xmlrpc_value * const weirdValueP,
                         const char *   const weirdKey,
                         unsigned int   const weirdKeyLen) {
 
     xmlrpc_env env;
     xmlrpc_value * valueP;
-    xmlrpc_value * aasStringP;
+    xmlrpc_value * fooStringP;
     xmlrpc_value * bogusKeyStringP;
 
     xmlrpc_env_init(&env);
 
     /* build test tools */
 
-    aasStringP = xmlrpc_build_value(&env, "s", "aas");
+    fooStringP = xmlrpc_build_value(&env, "s", "foo");
     TEST_NO_FAULT(&env);
 
     bogusKeyStringP = xmlrpc_build_value(&env, "s", "doesn't_exist");
@@ -1538,69 +1349,69 @@ test_struct_get_element(xmlrpc_value * const structP,
 
     /* "find" interface */
 
-    xmlrpc_struct_find_value(&env, structP, "aas", &valueP);
+    xmlrpc_struct_find_value(&env, structP, "foo", &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_find_value(&env, structP, "doesn't_exist", &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP == NULL);
             
-    xmlrpc_struct_find_value_v(&env, structP, aasStringP, &valueP);
+    xmlrpc_struct_find_value_v(&env, structP, fooStringP, &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_find_value_v(&env, structP, bogusKeyStringP, &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP == NULL);
 
-    xmlrpc_struct_find_value(&env, i1, "aas", &valueP);
+    xmlrpc_struct_find_value(&env, fooValueP, "foo", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
             
     /* "read" interface */
             
-    xmlrpc_struct_read_value(&env, structP, "aas", &valueP);
+    xmlrpc_struct_read_value(&env, structP, "foo", &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value(&env, structP, "doesn't_exist", &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
             
-    xmlrpc_struct_read_value_v(&env, structP, aasStringP, &valueP);
+    xmlrpc_struct_read_value_v(&env, structP, fooStringP, &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value_v(&env, structP, bogusKeyStringP, &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
 
-    xmlrpc_struct_read_value(&env, i1, "aas", &valueP);
+    xmlrpc_struct_read_value(&env, fooValueP, "foo", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
             
     /* obsolete "get" interface.  Note that it does not update the
        reference count of the xmlrpc_value it returns.
     */
             
-    valueP = xmlrpc_struct_get_value(&env, structP, "aas");
+    valueP = xmlrpc_struct_get_value(&env, structP, "foo");
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
 
     valueP = xmlrpc_struct_get_value(&env, structP, "doesn't_exist");
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
 
-    valueP = xmlrpc_struct_get_value(&env, i1, "foo");
+    valueP = xmlrpc_struct_get_value(&env, fooValueP, "foo");
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
     valueP = xmlrpc_struct_get_value_n(&env, structP, weirdKey, weirdKeyLen);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i2);
+    TEST(valueP == weirdValueP);
 
     /* Clean up */
 
-    xmlrpc_DECREF(aasStringP);
+    xmlrpc_DECREF(fooStringP);
     xmlrpc_DECREF(bogusKeyStringP);
 
     xmlrpc_env_clean(&env);
@@ -1823,44 +1634,53 @@ test_struct (void) {
     TEST_NO_FAULT(&env);
     TEST(size == 1);
 
-    /* Insert two more items with conflicting hash codes. (We assume that
-    ** nobody has changed the hash function.) */
-    xmlrpc_struct_set_value(&env, s, "bar", i2);
-    TEST_NO_FAULT(&env);
-    xmlrpc_struct_set_value(&env, s, "aas", i3);
+    /* Insert an item whose key has the same hash value as "foo". */
+    xmlrpc_struct_set_value(&env, s, "qmdebdw", i2);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 3);
+    TEST(size == 2);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(i == i1);
+    i = xmlrpc_struct_get_value(&env, s, "qmdebdw");
+    TEST_NO_FAULT(&env);
+    TEST(i == i2);
 
     /* Replace an existing element with a different element. */
-    xmlrpc_struct_set_value(&env, s, "aas", i1);
+    xmlrpc_struct_set_value(&env, s, "foo", i3);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 3);
+    TEST(size == 2);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(i == i3);
 
     /* Insert an item with a NUL in the key */
     xmlrpc_struct_set_value_n(&env, s, weirdKey, sizeof(weirdKey), i2);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 4);
+    TEST(size == 3);
 
-    test_struct_get_element(s, i1, i2, weirdKey, sizeof(weirdKey));
+    test_struct_get_element(s, i3, i2, weirdKey, sizeof(weirdKey));
 
     /* Replace an existing element with the same element (tricky). */
-    xmlrpc_struct_set_value(&env, s, "aas", i1);
+    xmlrpc_struct_set_value(&env, s, "foo", i3);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 4);
-    i = xmlrpc_struct_get_value(&env, s, "aas");
+    TEST(size == 3);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
     TEST_NO_FAULT(&env);
-    TEST(i == i1);
+    TEST(i == i3);
 
     /* Test for the presence and absence of elements. */
-    present = xmlrpc_struct_has_key(&env, s, "aas");
+    present = xmlrpc_struct_has_key(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(present);
+    present = xmlrpc_struct_has_key(&env, s, "qmdebdw");
     TEST_NO_FAULT(&env);
     TEST(present);
     present = xmlrpc_struct_has_key(&env, s, "bogus");

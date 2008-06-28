@@ -27,15 +27,16 @@ SUBDIR := lib/util
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 OMIT_UTILS_RULE = Y
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 LIBOBJS = \
   casprintf.o \
   cmdline_parser.o \
+  cmdline_parser_cpp.o \
   getoptx.o \
   string_parser.o \
   stripcaseeq.o \
@@ -49,6 +50,9 @@ CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
 %.o:%.c
 	$(CC) -c $(CFLAGS) $<
+
+%.o:%.cpp
+	$(CXX) -c $(CFLAGS) $<
 
 include Makefile.depend
 

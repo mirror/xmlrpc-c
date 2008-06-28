@@ -10,6 +10,7 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
+#include "version.h"
 #include "registry.h"
 #include "method.h"
 
@@ -286,6 +287,63 @@ static struct systemMethodReg const methodListMethods = {
 
 
 /*=========================================================================
+  system.methodExist
+==========================================================================*/
+
+static void
+determineMethodExistence(xmlrpc_env *      const envP,
+                         const char *      const methodName,
+                         xmlrpc_registry * const registryP,
+                         xmlrpc_value **   const existsPP) {
+
+    xmlrpc_methodInfo * methodP;
+
+    xmlrpc_methodListLookupByName(registryP->methodListP, methodName,
+                                  &methodP);
+
+    *existsPP = xmlrpc_bool_new(envP, !!methodP);
+}
+    
+
+
+static xmlrpc_value *
+system_methodExist(xmlrpc_env *   const envP,
+                   xmlrpc_value * const paramArrayP,
+                   void *         const serverInfo,
+                   void *         const callInfo ATTR_UNUSED) {
+
+    xmlrpc_registry * const registryP = serverInfo;
+
+    xmlrpc_value * retvalP;
+    
+    const char * methodName;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
+
+    xmlrpc_decompose_value(envP, paramArrayP, "(s)", &methodName);
+
+    if (!envP->fault_occurred)
+        determineMethodExistence(envP, methodName, registryP, &retvalP);
+
+    xmlrpc_strfree(methodName);
+
+    return retvalP;
+}
+
+
+
+static struct systemMethodReg const methodMethodExist = {
+    "system.methodExist",
+    &system_methodExist,
+    "s:b",
+    "Tell whether a method by a specified name exists on this server",
+};
+
+
+
+/*=========================================================================
   system.methodHelp
 =========================================================================*/
 
@@ -345,7 +403,7 @@ system_methodHelp(xmlrpc_env *   const envP,
 }
 
 
-static struct systemMethodReg const methodHelp = {
+static struct systemMethodReg const methodMethodHelp = {
     "system.methodHelp",
     &system_methodHelp,
     "s:s",
@@ -521,7 +579,7 @@ system_methodSignature(xmlrpc_env *   const envP,
 
 
 
-static struct systemMethodReg const methodSignature = {
+static struct systemMethodReg const methodMethodSignature = {
     "system.methodSignature",
     &system_methodSignature,
     "s:s",
@@ -601,6 +659,68 @@ static struct systemMethodReg const methodShutdown = {
 
 
 
+/*=========================================================================
+  system.capabilities
+=========================================================================*/
+
+static void
+getCapabilities(xmlrpc_env *      const envP,
+                xmlrpc_registry * const registryP ATTR_UNUSED,
+                xmlrpc_value **   const capabilitiesPP) {
+
+    *capabilitiesPP =
+        xmlrpc_build_value(
+            envP, "{s:s,s:i,s:i,s:i,s:i}",
+            "facility", "xmlrpc-c",
+            "version_major", XMLRPC_VERSION_MAJOR,
+            "version_minor", XMLRPC_VERSION_MINOR,
+            "version_point", XMLRPC_VERSION_POINT,
+            "protocol_version", 2
+            );
+
+}
+
+
+
+static xmlrpc_value *
+system_capabilities(xmlrpc_env *   const envP,
+                    xmlrpc_value * const paramArrayP,
+                    void *         const serverInfo,
+                    void *         const callInfo ATTR_UNUSED) {
+    
+    xmlrpc_registry * const registryP = serverInfo;
+
+    xmlrpc_value * retvalP;
+    
+    unsigned int paramCount;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
+
+    paramCount = xmlrpc_array_size(envP, paramArrayP);
+
+    if (paramCount > 0)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INDEX_ERROR,
+            "There are no parameters.  You supplied %u", paramCount);
+    else
+        getCapabilities(envP, registryP, &retvalP);
+
+    return retvalP;
+}
+
+
+static struct systemMethodReg const methodCapabilities = {
+    "system.capabilities",
+    &system_capabilities,
+    "S:",
+    "Return the capabilities of XML-RPC server.  This includes the "
+    "version number of the XML-RPC For C/C++ software"
+};
+
+
+
 /*============================================================================
   Installer of system methods
 ============================================================================*/
@@ -636,17 +756,23 @@ xmlrpc_installSystemMethods(xmlrpc_env *      const envP,
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, methodListMethods);
 
-    if (!envP->fault_occurred) 
-        registerSystemMethod(envP, registryP, methodSignature);
+    if (!envP->fault_occurred)
+        registerSystemMethod(envP, registryP, methodMethodExist);
 
     if (!envP->fault_occurred)
-        registerSystemMethod(envP, registryP, methodHelp);
+        registerSystemMethod(envP, registryP, methodMethodHelp);
+
+    if (!envP->fault_occurred) 
+        registerSystemMethod(envP, registryP, methodMethodSignature);
 
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, methodMulticall);
 
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, methodShutdown);
+
+    if (!envP->fault_occurred)
+        registerSystemMethod(envP, registryP, methodCapabilities);
 }
 
 

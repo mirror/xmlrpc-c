@@ -23,8 +23,6 @@ CFG=xmlrpc_cpp_proxy - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "xmlrpc_cpp_proxy"
-# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
