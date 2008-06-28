@@ -60,7 +60,7 @@ $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 COMPAT_LINK_CMDS = \
   $(LN_S) xmlrpc-c/oldxmlrpc.h         xmlrpc.h; \
   $(LN_S) xmlrpc-c/server.h            xmlrpc_server.h; \
-  $(LN_S) xmlrpc-c/server_abyss.h      xmlrpc_server_abyss.h; \
+  $(LN_S) xmlrpc-c/server_abyss.h      xmlrpc_abyss.h; \
   $(LN_S) xmlrpc-c/server_w32httpsys.h xmlrpc_server_w32httpsys.h; \
 
 HEADERS_TO_INSTALL = \
@@ -125,7 +125,8 @@ install-compat-hdr:
 # Install old names of header files for backward compatibility
 	cd $(DESTDIR)$(HEADERINST_DIR); \
 	  rm -f xmlrpc.h xmlrpc_client.h xmlrpc_server.h xmlrpc_cgi.h \
-                xmlrpc_server_abyss.h xmlrpc_server_w32httpsys.h \
+                xmlrpc_server_abyss.h xmlrpc_abyss.h \
+		xmlrpc_server_w32httpsys.h \
 	        XmlRpcCpp.h; \
 	  $(COMPAT_LINK_CMDS)
 
