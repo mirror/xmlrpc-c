@@ -8,4 +8,4 @@
 ###############################################################################
 XMLRPC_MAJOR_RELEASE = 1
 XMLRPC_MINOR_RELEASE = 15
-XMLRPC_POINT_RELEASE = 00
+XMLRPC_POINT_RELEASE = 99
