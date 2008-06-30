@@ -96,10 +96,10 @@ ConfReadLine(TFile *  const fileP,
             if (c == CR || c == LF)
                 break;
 
-    *buffer = '\0';
+    *z = '\0';
 
     /* Discard comments */
-    p = strchr(z, '#');
+    p = strchr(buffer, '#');
     if (p)
         *p = '\0';
 
