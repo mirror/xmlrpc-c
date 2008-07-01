@@ -137,7 +137,7 @@ firstLfPos(TConn * const connectionP,
    If there is no LF in the buffer at or after 'lineStart', return NULL.
 -----------------------------------------------------------------------------*/
     const char * const bufferEnd =
-        connectionP->buffer + connectionP->buffersize;
+        connectionP->buffer.t + connectionP->buffersize;
 
     char * p;
 
@@ -168,7 +168,7 @@ getLineInBuffer(TConn * const connectionP,
     bool error;
     char * lfPos;
 
-    assert(lineStart <= connectionP->buffer + connectionP->buffersize);
+    assert(lineStart <= connectionP->buffer.t + connectionP->buffersize);
 
     error = FALSE;  /* initial value */
     lfPos = NULL;  /* initial value */
@@ -247,7 +247,7 @@ getRestOfHeader(TConn *       const connectionP,
    buffer so as to join the multiple lines of the header into a single
    line, and to NUL-terminate the header.
 -----------------------------------------------------------------------------*/
-    char * const headerStart = connectionP->buffer + connectionP->bufferpos;
+    char * const headerStart = connectionP->buffer.t + connectionP->bufferpos;
 
     char * headerEnd;
         /* End of the header lines we've seen at so far */
@@ -322,7 +322,7 @@ readHeader(TConn * const connectionP,
    the connection's internal buffer.  Iff there is no next header, we
    return *endOfHeadersP == true and nothing meaningful as *headerP.
 -----------------------------------------------------------------------------*/
-    char * const bufferStart = connectionP->buffer + connectionP->bufferpos;
+    char * const bufferStart = connectionP->buffer.t + connectionP->bufferpos;
 
     bool error;
     char * lineEnd;
@@ -334,7 +334,7 @@ readHeader(TConn * const connectionP,
             error = TRUE;
         else if (isEmptyLine(bufferStart)) {
             /* Consume the EOH mark from the buffer */
-            connectionP->bufferpos = lineEnd - connectionP->buffer;
+            connectionP->bufferpos = lineEnd - connectionP->buffer.t;
             *endOfHeadersP = TRUE;
         } else {
             /* We have the first line of a header; there may be more. */
@@ -353,7 +353,7 @@ readHeader(TConn * const connectionP,
                    you can't reuse that part of the buffer because the
                    string we will return is in it!
                 */
-                connectionP->bufferpos = headerEnd - connectionP->buffer;
+                connectionP->bufferpos = headerEnd - connectionP->buffer.t;
             }
         }
     }
@@ -367,7 +367,7 @@ skipToNonemptyLine(TConn * const connectionP,
                    time_t  const deadline,
                    bool *  const errorP) {
 
-    char * const bufferStart = connectionP->buffer + connectionP->bufferpos;
+    char * const bufferStart = connectionP->buffer.t + connectionP->bufferpos;
 
     bool gotNonEmptyLine;
     bool error;
@@ -393,7 +393,7 @@ skipToNonemptyLine(TConn * const connectionP,
         /* Consume all the empty lines; advance buffer pointer to first
            non-empty line.
         */
-        connectionP->bufferpos = lineStart - connectionP->buffer;
+        connectionP->bufferpos = lineStart - connectionP->buffer.t;
     }
     *errorP = error;
 }

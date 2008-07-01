@@ -48,7 +48,10 @@ struct _TConn {
     const char * trace;
     TThreadProc * job;
     TThreadDoneFn * done;
-    char buffer[BUFFER_SIZE];
+    union {
+        unsigned char b[BUFFER_SIZE];  /* Just bytes */
+        char          t[BUFFER_SIZE];  /* Taken as text */
+    } buffer;
 };
 
 typedef struct _TConn TConn;
