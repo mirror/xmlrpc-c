@@ -657,35 +657,42 @@ createChannelForAccept(int             const acceptedFd,
 
    'peerAddr' is the address of the client, from accept().
 -----------------------------------------------------------------------------*/
-    struct socketUnix * acceptedSocketP;
+    struct abyss_unix_chaninfo * channelInfoP;
 
-    MALLOCVAR(acceptedSocketP);
+    makeChannelInfo(&channelInfoP, peerAddr, sizeof(peerAddr), errorP);
+    if (!*errorP) {
+        struct socketUnix * acceptedSocketP;
 
-    if (!acceptedSocketP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory");
-    else {
-        struct abyss_unix_chaninfo * channelInfoP;
-        acceptedSocketP->fd = acceptedFd;
-        acceptedSocketP->userSuppliedFd = FALSE;
-                
-        makeChannelInfo(&channelInfoP, peerAddr, sizeof(peerAddr), errorP);
-        if (!*errorP) {
-            TChannel * channelP;
+        MALLOCVAR(acceptedSocketP);
 
-            ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
-            if (!channelP)
-                xmlrpc_asprintf(errorP,
-                                "Failed to create TChannel object.");
-            else {
-                *errorP        = NULL;
-                *channelPP     = channelP;
-                *channelInfoPP = channelInfoP;
+        if (!acceptedSocketP)
+            xmlrpc_asprintf(errorP, "Unable to allocate memory");
+        else {
+            acceptedSocketP->fd = acceptedFd;
+            acceptedSocketP->userSuppliedFd = FALSE;
+
+            initInterruptPipe(&acceptedSocketP->interruptPipe, errorP);
+
+            if (!*errorP) {
+                TChannel * channelP;
+
+                ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
+                if (!channelP)
+                    xmlrpc_asprintf(errorP,
+                                    "Failed to create TChannel object.");
+                else {
+                    *errorP        = NULL;
+                    *channelPP     = channelP;
+                    *channelInfoPP = channelInfoP;
+                }
+                if (*errorP)
+                    termInterruptPipe(acceptedSocketP->interruptPipe);
             }
             if (*errorP)
-                free(channelInfoP);
+                free(acceptedSocketP);
         }
         if (*errorP)
-            free(acceptedSocketP);
+            free(channelInfoP);
     }
 }
 
