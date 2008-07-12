@@ -240,8 +240,10 @@ typedef struct {
 */
 
 static void
-start_element (void *user_data, const xmlChar *name, const xmlChar **attrs)
-{
+start_element(void *           const user_data,
+              const xmlChar *  const name,
+              const xmlChar ** const attrs ATTR_UNUSED) {
+
     parse_context *context;
     xml_element *elem, *new_current;
 
@@ -281,9 +283,12 @@ start_element (void *user_data, const xmlChar *name, const xmlChar **attrs)
     }
 }
 
+
+
 static void
-end_element (void *user_data, const xmlChar *name)
-{
+end_element(void *          const user_data,
+            const xmlChar * const name ATTR_UNUSED) {
+
     parse_context *context;
 
     XMLRPC_ASSERT(user_data != NULL && name != NULL);
