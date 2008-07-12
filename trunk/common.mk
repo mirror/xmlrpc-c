@@ -343,6 +343,12 @@ endif
 ifneq ($(OMIT_CURL_TRANSPORT_RULE),Y)
 $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.o \
 $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.osh \
+$(BLDDIR)/lib/curl_transport/curltransaction.o \
+$(BLDDIR)/lib/curl_transport/curltransaction.osh \
+$(BLDDIR)/lib/curl_transport/curlmulti.o \
+$(BLDDIR)/lib/curl_transport/curlmulti.osh \
+$(BLDDIR)/lib/curl_transport/lock_pthread.o \
+$(BLDDIR)/lib/curl_transport/lock_pthread.osh \
 : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/curl_transport/Makefile \
 	    $(notdir $@)
