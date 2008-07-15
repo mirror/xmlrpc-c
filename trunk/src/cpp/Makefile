@@ -242,4 +242,4 @@ distclean-local:
 .PHONY: dep
 dep: dep-common $(BLDDIR)/transport_config.h
 
-include Makefile.depend
+include depend.mk

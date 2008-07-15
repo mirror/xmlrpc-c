@@ -54,7 +54,7 @@ CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 %.o:%.cpp
 	$(CXX) -c $(CFLAGS) $<
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: clean distclean
 clean: clean-common

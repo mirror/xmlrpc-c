@@ -105,4 +105,4 @@ $(GENNMTAB):
 
 xmltok.o xmltok.osh: nametab.h
 
-include Makefile.depend
+include depend.mk

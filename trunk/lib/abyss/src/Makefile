@@ -94,7 +94,7 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 # Abyss library are in common.mk, courtesy of TARGET_MODS.
 
 
-# Need this dependency for those who don't use Makefile.depend.
+# Need this dependency for those who don't use depend.mk.
 # Without it, version.h doesn't get created.
 response.o response.osh handler.o handler.osh: version.h
 
@@ -116,4 +116,4 @@ install: install-common
 .PHONY: dep
 dep: dep-common
 
-include Makefile.depend
+include depend.mk

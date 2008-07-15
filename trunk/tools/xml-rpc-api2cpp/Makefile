@@ -53,7 +53,7 @@ xml-rpc-api2cpp: \
 
 $(SRCDIR)/common.mk: srcdir blddir
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: clean
 clean: clean-common

@@ -95,4 +95,4 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
-include Makefile.depend
+include depend.mk

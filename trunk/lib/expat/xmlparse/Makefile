@@ -96,4 +96,4 @@ dep: dep-common
 
 $(SRCDIR)/common.mk: srcdir
 
-include Makefile.depend
+include depend.mk

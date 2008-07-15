@@ -51,8 +51,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
-include Makefile.depend
+include depend.mk
 
-# Need this dependency for those who don't use Makefile.depend.
+# Need this dependency for those who don't use depend.mk.
 # Without it, version.h doesn't get created.
 xmlrpc_libwww_transport.o xmlrpc_libwww_transport.osh: version.h
