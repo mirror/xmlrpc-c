@@ -53,35 +53,35 @@ endif
 
 INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 
-LDADD_SERVER_ABYSS = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --ldadd)
+LIBS_SERVER_ABYSS = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --libs)
 
-LDADD_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 client --ldadd)
+LIBS_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 client --libs)
 
-LDADD_BASE = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 --ldadd)
+LIBS_BASE = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 --libs)
 
 all: $(PROGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
-	$(CXXLD) -o $@ $^ $(LDADD_SERVER_ABYSS) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS)
 
 $(CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $^ $(LDADD_CLIENT) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS)
 
 
-LDADD_PSTREAM_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 client --ldadd)
+LIBS_PSTREAM_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 client --libs)
 
 pstream_client:%:%.o
-	$(CXXLD) -o $@ $^ $(LDADD_PSTREAM_CLIENT) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_CLIENT) $(LDFLAGS)
 
-LDADD_PSTREAM_SERVER = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --ldadd)
+LIBS_PSTREAM_SERVER = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --libs)
 
 pstream_inetd_server:%:%.o
-	$(CXXLD) -o $@ $^ $(LDADD_PSTREAM_SERVER) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_SERVER) $(LDFLAGS)
 
 OBJECTS = $(PROGS:%=%.o)
 
