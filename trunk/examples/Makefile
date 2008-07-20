@@ -63,17 +63,17 @@ endif
 
 INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) client abyss-server --cflags)
 
-LDADD_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) client --ldadd)
+LIBS_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) client --libs)
 
-LDADD_SERVER_ABYSS = \
-  $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
+LIBS_SERVER_ABYSS = \
+  $(shell $(XMLRPC_C_CONFIG) abyss-server --libs)
 
-LDADD_SERVER_CGI = \
-  $(shell $(XMLRPC_C_CONFIG) cgi-server --ldadd)
+LIBS_SERVER_CGI = \
+  $(shell $(XMLRPC_C_CONFIG) cgi-server --libs)
 
-LDADD_BASE = \
-  $(shell $(XMLRPC_C_CONFIG) --ldadd)
+LIBS_BASE = \
+  $(shell $(XMLRPC_C_CONFIG) --libs)
 
 all: $(PROGS)
 
@@ -90,16 +90,16 @@ $(BLDDIR)/examples/cpp:
 	mkdir $@
 
 $(CLIENTPROGS):%:%.o
-	$(CCLD) -o $@ $^ $(LDADD_CLIENT) $(LDFLAGS)
+	$(CCLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS)
 
 $(SERVERPROGS_CGI):%.cgi:%_cgi.o
-	$(CCLD) -o $@ $^ $(LDADD_SERVER_CGI) $(LDFLAGS)
+	$(CCLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
-	$(CCLD) -o $@ $^ $(LDADD_SERVER_ABYSS) $(LDFLAGS)
+	$(CCLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS)
 
 gen_sample_add_xml:%:%.o
-	$(CCLD) -o $@ $^ $(LDADD_BASE) $(LDFLAGS) 
+	$(CCLD) -o $@ $^ $(LIBS_BASE) $(LDFLAGS) 
 
 OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
 
