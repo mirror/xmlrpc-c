@@ -143,6 +143,10 @@ SOURCE=..\src\test\value.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\test\value_datetime.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\test\xml_data.c
 # End Source File
 # End Group
