@@ -307,7 +307,7 @@ public:
 
 
 
-#ifdef XMLRPC_HAVE_TIMEVAL
+#if XMLRPC_HAVE_TIMEVAL
 
 static struct timeval
 makeTv(time_t       const secs,
@@ -332,7 +332,7 @@ tvIsEqual(struct timeval const comparand,
 
 
 
-#ifdef XMLRPC_HAVE_TIMESPEC
+#if XMLRPC_HAVE_TIMESPEC
 
 static struct timespec
 makeTs(time_t       const secs,

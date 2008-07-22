@@ -86,8 +86,19 @@ xmlrpc_makePrintableChar(char const input);
 	(strncmp((A), (B), sizeof(A)))
 #define STRSCAT(A,B) \
     (strncat((A), (B), sizeof(A)-strlen(A)), *((A)+sizeof(A)-1) = '\0')
+
+/* We could do this, but it works only in GNU C 
 #define SSPRINTF(TARGET, REST...) \
   (snprintf(TARGET, sizeof(TARGET) , ## REST)) 
+
+Or this, but it works only in C99 compilers, which leaves out MSVC
+before 2005 and can't handle the zero variable argument case except
+by an MSVC extension:
+
+#define SSPRINTF(TARGET, ...) \
+  (snprintf(TARGET, sizeof(TARGET) , __VA_ARGS__)) 
+
+*/
 
 #ifdef __cplusplus
 }
