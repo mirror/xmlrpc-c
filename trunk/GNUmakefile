@@ -6,7 +6,6 @@ SUBDIR =
 export SRCDIR
 export BLDDIR
 
-include $(BLDDIR)/version.mk
 include $(BLDDIR)/config.mk
 
 SUBDIRS = include lib src tools examples
@@ -27,6 +26,14 @@ DEFAULT_SUBDIRS = include lib src
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 
 default: xmlrpc-c-config xmlrpc-c-config.test $(DEFAULT_SUBDIRS:%=%/all)
+
+# We don't want common.mk's rule for version.h
+OMIT_VERSION_H = Y
+
+# We don't want common.mk's rule for transport_config.h
+OMIT_TRANSPORT_CONFIG_H = Y
+
+include $(SRCDIR)/common.mk
 
 .PHONY: all
 all: xmlrpc-c-config xmlrpc-c-config.test $(SUBDIRS:%=%/all)
@@ -69,12 +76,6 @@ version.h: $(SRCDIR)/version.mk
 	echo "#define XMLRPC_VERSION_MAJOR $(MAJOR)" >>$@
 	echo "#define XMLRPC_VERSION_MINOR $(MINOR)" >>$@
 	echo "#define XMLRPC_VERSION_POINT $(POINT)" >>$@
-
-# We don't want common.mk's rule for version.h
-OMIT_VERSION_H = Y
-
-# We don't want common.mk's rule for transport_config.h
-OMIT_TRANSPORT_CONFIG_H = Y
 
 include transport_config.make
 
@@ -161,9 +162,6 @@ dep: version.h $(BLDDIR)/include/xmlrpc-c/config.h $(SUBDIRS:%=%/dep)
 xmlrpc_config.h xmlrpc_amconfig.h \
 	:%:%.in $(SRCDIR)/configure
 	$(SRCDIR)/configure
-
-include $(SRCDIR)/common.mk
-
 
 # A trick to catch a common user error.  When you don't run 'configure',
 # you don't have a srcdir.mk, which means $(SRCDIR) is null.
