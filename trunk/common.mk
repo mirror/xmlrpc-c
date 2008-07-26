@@ -477,9 +477,9 @@ $(SUBDIRS:%=$(CURDIR)/%):
 
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
-.PHONY: install-common install-ltlibraries install-headers install-bin
+.PHONY: install-common install-headers install-bin
 install-common: \
-  install-ltlibraries install-static-libraries install-shared-libraries \
+  install-static-libraries install-shared-libraries \
   install-headers install-bin
 
 INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
