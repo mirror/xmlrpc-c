@@ -13,9 +13,9 @@ default: all
 # libxmlrpc_cpp is the legacy C++ wrapper library.  The others are the
 # more elaborate replacements.
 
-TARGET_LIB_NAMES_PP := \
+TARGET_LIB_NAMES_PP = \
   libxmlrpc_cpp \
-  libxmlrpc++ \
+  lib$(LIBXMLRPCPP_NAME) \
   libxmlrpc_server++ \
   libxmlrpc_server_abyss++ \
   libxmlrpc_server_pstream++ \
@@ -27,8 +27,8 @@ endif
 
 STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
 
-SHARED_LIBS_TO_BUILD := $(TARGET_LIB_NAMES_PP)
-SHARED_LIBS_TO_INSTALL := $(TARGET_LIB_NAMES_PP)
+SHARED_LIBS_TO_BUILD = $(TARGET_LIB_NAMES_PP)
+SHARED_LIBS_TO_INSTALL = $(TARGET_LIB_NAMES_PP)
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
 INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
@@ -109,7 +109,7 @@ LIBXMLRPC_CPP = $(call shlibfn, libxmlrpc_cpp)
 $(LIBXMLRPC_CPP): XmlRpcCpp.osh
 $(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.osh
 
-LIBXMLRPCPP = $(call shlibfn, libxmlrpc++)
+LIBXMLRPCPP = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 
 $(LIBXMLRPCPP): $(LIBXMLRPCPP_MODS:%=%.osh) \
   $(LIBXMLRPC)
@@ -149,7 +149,7 @@ $(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
   $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENTPP): LIBDEP = \
-  -L. -lxmlrpc++ -Lblddir/src -lxmlrpc_client
+  -L. -l$(LIBXMLRPCPP_NAME) -Lblddir/src -lxmlrpc_client
 
 LIBXMLRPC_PACKETSOCKET = $(call shlibfn, libxmlrpc_packetsocket)
 
@@ -159,8 +159,8 @@ $(LIBXMLRPC_PACKETSOCKET): LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o
 
-libxmlrpc++.a: $(LIBXMLRPCPP_MODS:%=%.o)
-libxmlrpc++.a: LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.o)
+lib$(LIBXMLRPCPP_NAME).a: $(LIBXMLRPCPP_MODS:%=%.o)
+lib$(LIBXMLRPCPP_NAME).a: LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.o)
 
 libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
 libxmlrpc_server++.a: LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.o)

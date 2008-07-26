@@ -96,6 +96,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'MUST_BUILD_LIBWWW_CLIENT="$(MUST_BUILD_LIBWWW_CLIENT)"'	>>$@
 	@echo 'NEED_RPATH="$(NEED_RPATH)"'				>>$@
 	@echo 'NEED_WL_RPATH="$(NEED_WL)RPATH)"'			>>$@
+	@echo 'LIBXMLRPCPP_NAME="$(LIBXMLRPCPP_NAME)"'                  >>$@
 	@echo 'LSOCKET="$(LSOCKET)"'					>>$@
 	@echo 'WININET_LDADD="$(WININET_LDADD)"'			>>$@
 	@echo 'WININET_RPATH="$(WININET_RPATH)"'			>>$@

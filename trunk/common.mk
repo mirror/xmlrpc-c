@@ -55,6 +55,15 @@ ifeq ($(CURDIR)x,x)
   CURDIR := $(shell /bin/pwd)
 endif
 
+# The package XmlRpc++ on Sourceforge includes a library named
+# libxmlrpc++ just as Xmlrpc-c does.  To use them both, you may need
+# to rename one.  To rename the Xmlrpc-c one, set the make variable
+# LIBXMLRPCPP_NAME, e.g. on the 'make' command line.
+
+ifeq ($(LIBXMLRPCPP_NAME),)
+  LIBXMLRPCPP_NAME := xmlrpc++
+endif
+
 ##############################################################################
 #                        STATIC LINK LIBRARY RULES                           #
 ##############################################################################
