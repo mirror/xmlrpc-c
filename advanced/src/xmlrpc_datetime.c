@@ -265,7 +265,7 @@ parseDateNumbersRegex(xmlrpc_env *   const envP,
 
 
 
-static inline void
+static __inline__ void
 parseDateNumbersNoRegex(xmlrpc_env *   const envP,
                         const char *   const datetimeString,
                         unsigned int * const YP,
@@ -421,7 +421,7 @@ validateFractionalSeconds(xmlrpc_env * const envP,
 
 
 
-static inline void
+static __inline__ void
 validateFormat(xmlrpc_env * const envP,
                const char * const dt) {
 
@@ -642,7 +642,7 @@ xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
         if (usecs != 0) {
             char usecString[64];
             assert(usecs < 1000000);
-            SSPRINTF(usecString, ".%06u", usecs);
+            snprintf(usecString, sizeof(usecString), ".%06u", usecs);
             STRSCAT(timeString, usecString);
         }
 
