@@ -39,17 +39,12 @@ struct xmlrpc_server_abyss {
 
 
 
-/*=========================================================================
-**  die_if_fault_occurred
-**=========================================================================
-**  If certain kinds of out-of-memory errors occur during server setup,
-**  we want to quit and print an error.
-*/
+static void
+dieIfFaultOccurred(xmlrpc_env * const envP) {
 
-static void die_if_fault_occurred(xmlrpc_env *env) {
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         fprintf(stderr, "Unexpected XML-RPC fault: %s (%d)\n",
-                env->fault_string, env->fault_code);
+                envP->fault_string, envP->fault_code);
         exit(1);
     }
 }
@@ -1416,7 +1411,7 @@ xmlrpc_server_abyss_init_registry(void) {
 
     xmlrpc_env_init(&env);
     builtin_registryP = xmlrpc_registry_new(&env);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 
     setHandlers(&globalSrv, "/RPC2", builtin_registryP, false);
@@ -1446,7 +1441,7 @@ xmlrpc_server_abyss_add_method(char *        const method_name,
     xmlrpc_env_init(&env);
     xmlrpc_registry_add_method(&env, builtin_registryP, NULL, method_name,
                                method, user_data);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 }
 
@@ -1464,7 +1459,7 @@ xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
     xmlrpc_registry_add_method_w_doc(
         &env, builtin_registryP, NULL, method_name,
         method, user_data, signature, help);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);    
 }
 
