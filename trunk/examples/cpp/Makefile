@@ -15,7 +15,7 @@ include $(BLDDIR)/config.mk
 
 default: all
 
-CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+CXXFLAGS = $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS += $(LADD)
 
 # If this were a real application, working from an installed copy of
@@ -97,10 +97,8 @@ config.h:
 xmlrpc_amconfig.h:
 	$(LN_S) $(BLDDIR)/$@ .
 
-include $(SRCDIR)/common.mk
-
 .PHONY: clean
-clean: clean-common
+clean:
 	rm -f $(PROGS) config.h xmlrpc_amconfig.h
 
 .PHONY: distclean
