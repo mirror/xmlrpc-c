@@ -119,10 +119,8 @@ config.h:
 xmlrpc_amconfig.h:
 	$(LN_S) $(BLDDIR)/$@ .
 
-include $(SRCDIR)/common.mk
-
 .PHONY: clean
-clean: clean-common
+clean:
 	rm -f $(PROGS) config.h xmlrpc_amconfig.h
 	$(MAKE) -C cpp clean
 
