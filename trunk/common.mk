@@ -17,7 +17,7 @@ include $(SRCDIR)/version.mk
 # fully made.
 .DELETE_ON_ERROR:
 
-GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline -Wundef
+GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline
   # We need -Wwrite-strings after we fix all the missing consts
 
 GCC_C_WARNINGS = $(GCC_WARNINGS) \
@@ -69,7 +69,7 @@ endif
 ##############################################################################
 
 
-# To use this rule, the including make file must set a target_specific
+# To use this rule, the including make file must set a target-specific
 # variable LIBOBJECTS (and declare dependencies that include LIBOBJECTS).
 # Example:
 #   FOO_OBJECTS = foo1.o foo2.o
