@@ -15,7 +15,7 @@ include $(BLDDIR)/config.mk
 
 default: all
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS = $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS += $(LADD)
 
 # If this were a real application, working from an installed copy of
