@@ -47,6 +47,10 @@ struct _TConn {
         */
     const char * trace;
     TThreadProc * job;
+        /* The function to run, in a connection thread, to conduct business
+           on the connection.  It reads stuff and writes stuff and, when it
+           is done with the connection, exits.
+        */
     TThreadDoneFn * done;
     union {
         unsigned char b[BUFFER_SIZE];  /* Just bytes */
@@ -66,6 +70,7 @@ ConnCreate(TConn **            const connectionPP,
            TChannel *          const channelP,
            void *              const channelInfoP,
            TThreadProc *       const job,
+           size_t              const jobStackSize,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,

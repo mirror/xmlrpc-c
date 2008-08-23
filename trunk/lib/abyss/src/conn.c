@@ -49,6 +49,12 @@ connJob(void * const userHandle) {
 
 
 
+/* This is the maximum amount of stack that 'connJob' itself uses --
+   does not count what user's connection job function uses.
+*/
+#define CONNJOB_STACK 1024
+
+
 static void
 connDone(TConn * const connectionP) {
 
@@ -79,6 +85,7 @@ static void
 makeThread(TConn *             const connectionP,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,
+           size_t              const jobStackSize,
            const char **       const errorP) {
            
     switch (foregroundBackground) {
@@ -91,6 +98,7 @@ makeThread(TConn *             const connectionP,
         connectionP->hasOwnThread = TRUE;
         ThreadCreate(&connectionP->threadP, connectionP,
                      &connJob, &threadDone, useSigchld,
+                     CONNJOB_STACK + jobStackSize,
                      &error);
         if (error) {
             xmlrpc_asprintf(errorP, "Unable to create thread to "
@@ -110,6 +118,7 @@ ConnCreate(TConn **            const connectionPP,
            TChannel *          const channelP,
            void *              const channelInfoP,
            TThreadProc *       const job,
+           size_t              const jobStackSize,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,
@@ -160,7 +169,8 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->outbytes     = 0;
         connectionP->trace        = getenv("ABYSS_TRACE_CONN");
 
-        makeThread(connectionP, foregroundBackground, useSigchld, errorP);
+        makeThread(connectionP, foregroundBackground, useSigchld,
+                   jobStackSize, errorP);
     }
     *connectionPP = connectionP;
 }

@@ -33,7 +33,8 @@
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP,
            xmlrpc_value * const paramArrayP,
-           void *         const user_data ATTR_UNUSED) {
+           void *         const serverInfo ATTR_UNUSED,
+           void *         const channelInfo ATTR_UNUSED) {
 
     xmlrpc_int32 x, y, z;
 
@@ -61,6 +62,11 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
+    struct xmlrpc_method_info3 const methodInfo = {
+        .methodName     = "sample.add",
+        .methodFunction = &sample_add,
+        .serverInfo = NULL
+    };
     xmlrpc_server_abyss_parms serverparm;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
@@ -77,8 +83,7 @@ main(int           const argc,
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method(
-        &env, registryP, NULL, "sample.add", &sample_add, NULL);
+    xmlrpc_registry_add_method3(&env, registryP, &methodInfo);
 
     /* In the modern form of the Abyss API, we supply parameters in memory
        like a normal API.  We select the modern form by setting

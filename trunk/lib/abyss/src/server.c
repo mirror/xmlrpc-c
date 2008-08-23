@@ -35,6 +35,17 @@
 #include "server.h"
 
 
+struct uriHandler {
+    initHandlerFn init;
+    termHandlerFn term;
+    handleReq3Fn  handleReq3;
+    handleReq2Fn  handleReq2;
+    URIHandler    handleReq1;
+    void *        userdata;
+};
+
+
+
 void
 ServerTerminate(TServer * const serverP) {
 
@@ -167,6 +178,7 @@ createServer(struct _TServer ** const srvPP,
                 srvP->timeout          = 15;
                 srvP->advertise        = TRUE;
                 srvP->useSigchld       = FALSE;
+                srvP->uriHandlerStackSize = 0;
             
                 initUnixStuff(srvP);
 
@@ -383,7 +395,7 @@ terminateHandlers(TList * const handlersP) {
     if (handlersP->item) {
         unsigned int i;
         for (i = handlersP->size; i > 0; --i) {
-            URIHandler2 * const handlerP = handlersP->item[i-1];
+            struct uriHandler * const handlerP = handlersP->item[i-1];
             if (handlerP->term)
                 handlerP->term(handlerP->userdata);
         }
@@ -497,6 +509,22 @@ ServerSetMimeType(TServer *  const serverP,
 
 
 
+static URIHandler2
+makeUriHandler2(const struct uriHandler * const handlerP) {
+
+    URIHandler2 retval;
+
+    retval.init       = handlerP->init;
+    retval.term       = handlerP->term;
+    retval.handleReq2 = handlerP->handleReq2;
+    retval.handleReq1 = handlerP->handleReq1;
+    retval.userdata   = handlerP->userdata;
+
+    return retval;
+}
+
+
+
 static void
 runUserHandler(TSession *        const sessionP,
                struct _TServer * const srvP) {
@@ -507,11 +535,14 @@ runUserHandler(TSession *        const sessionP,
     for (i = srvP->handlers.size-1, handled = FALSE;
          i >= 0 && !handled;
          --i) {
-        URIHandler2 * const handlerP = srvP->handlers.item[i];
+        const struct uriHandler * const handlerP = srvP->handlers.item[i];
         
-        if (handlerP->handleReq2)
-            handlerP->handleReq2(handlerP, sessionP, &handled);
-        else if (handlerP->handleReq1)
+        if (handlerP->handleReq3)
+            handlerP->handleReq3(handlerP->userdata, sessionP, &handled);
+        if (handlerP->handleReq2) {
+            URIHandler2 handler2 = makeUriHandler2(handlerP);
+            handlerP->handleReq2(&handler2, sessionP, &handled);
+        } else if (handlerP->handleReq1)
             handled = handlerP->handleReq1(sessionP);
     }
 
@@ -608,6 +639,14 @@ serverFunc(void * const userHandle) {
         }
     }
 }
+
+
+
+/* This is the maximum amount of stack space, in bytes, serverFunc()
+   itself requires -- not counting what the user's request handler
+   (which serverFunc() calls) requires.
+*/
+#define SERVER_FUNC_STACK 1024
 
 
 
@@ -918,7 +957,9 @@ acceptAndProcessNextConnection(
             waitForConnectionCapacity(outstandingConnListP);
             
             ConnCreate(&connectionP, serverP, channelP, channelInfoP,
-                       &serverFunc, &destroyChannel, ABYSS_BACKGROUND,
+                       &serverFunc,
+                       SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
+                       &destroyChannel, ABYSS_BACKGROUND,
                        srvP->useSigchld,
                        &error);
             if (!error) {
@@ -996,7 +1037,8 @@ serverRunChannel(TServer *     const serverP,
 
     ConnCreate(&connectionP, 
                serverP, channelP, channelInfoP,
-               &serverFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
+               &serverFunc, SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
+               NULL, ABYSS_FOREGROUND, srvP->useSigchld,
                &error);
     if (error) {
         xmlrpc_asprintf(errorP, "Couldn't create HTTP connection out of "
@@ -1228,24 +1270,43 @@ ServerDaemonize(TServer * const serverP) {
 
 
 
-void
-ServerAddHandler2(TServer *     const serverP,
-                  URIHandler2 * const handlerArgP,
-                  abyss_bool *  const successP) {
+static void
+serverAddHandler(TServer *     const serverP,
+                 initHandlerFn       init,
+                 termHandlerFn       term,
+                 URIHandler          handleReq1,
+                 handleReq2Fn        handleReq2,
+                 handleReq3Fn        handleReq3,
+                 void *        const userdata,
+                 size_t        const handleReqStackSizeReq,
+                 abyss_bool *  const successP) {
 
-    URIHandler2 * handlerP;
+    struct _TServer * const srvP = serverP->srvP;
+    size_t handleReqStackSize =
+        handleReqStackSizeReq ? handleReqStackSizeReq : 128*1024;
+
+    struct uriHandler * handlerP;
 
     MALLOCVAR(handlerP);
     if (handlerP == NULL)
         *successP = FALSE;
     else {
-        *handlerP = *handlerArgP;
+        handlerP->init       = init;
+        handlerP->term       = term;
+        handlerP->handleReq1 = handleReq1;
+        handlerP->handleReq2 = handleReq2;
+        handlerP->handleReq3 = handleReq3;
+        handlerP->userdata   = userdata;
 
+        srvP->uriHandlerStackSize =
+            MAX(srvP->uriHandlerStackSize, handleReqStackSize);
+        
         if (handlerP->init == NULL)
             *successP = TRUE;
-        else
-            handlerP->init(handlerP, successP);
-
+        else {
+            URIHandler2 handler2 = makeUriHandler2(handlerP);
+            handlerP->init(&handler2, successP);
+        }
         if (*successP)
             *successP = ListAdd(&serverP->srvP->handlers, handlerP);
 
@@ -1256,20 +1317,42 @@ ServerAddHandler2(TServer *     const serverP,
 
 
 
-static URIHandler2 *
-createHandler(URIHandler const function) {
+void
+ServerAddHandler3(TServer *                        const serverP,
+                  const struct ServerReqHandler3 * const handlerP,
+                  abyss_bool *                     const successP) {
 
-    URIHandler2 * handlerP;
+    serverAddHandler(serverP, NULL, handlerP->term, NULL, NULL,
+                     handlerP->handleReq, handlerP->userdata,
+                     handlerP->handleReqStackSize, successP);
+}
 
-    MALLOCVAR(handlerP);
-    if (handlerP != NULL) {
-        handlerP->init       = NULL;
-        handlerP->term       = NULL;
-        handlerP->userdata   = NULL;
-        handlerP->handleReq2 = NULL;
-        handlerP->handleReq1 = function;
-    }
-    return handlerP;
+
+
+void
+ServerAddHandler2(TServer *     const serverP,
+                  URIHandler2 * const handlerArgP,
+                  abyss_bool *  const successP) {
+
+    /* This generation of the URI handler interface is strange because
+       it went through an unfortunate evolution.  So it halfway looks like
+       the use supplies a handler object and Abyss calls its methods, and
+       halfway looks like the user simply describes his handler.
+
+       Abyss calls handleReq2 with a pointer to a URIHandler2 like the
+       one which is our argument, but it isn't the same one.  User can
+       discard *handlerArgP as soon as we return.
+    */
+    
+    serverAddHandler(serverP,
+                     handlerArgP->init,
+                     handlerArgP->term,
+                     NULL,
+                     handlerArgP->handleReq2,
+                     NULL,
+                     handlerArgP->userdata,
+                     0,
+                     successP);
 }
 
 
@@ -1278,23 +1361,29 @@ abyss_bool
 ServerAddHandler(TServer *  const serverP,
                  URIHandler const function) {
 
-    URIHandler2 * handlerP;
-    bool success;
+    URIHandler2 handler;
+    abyss_bool success;
 
-    handlerP = createHandler(function);
+    handler.init       = NULL;
+    handler.term       = NULL;
+    handler.userdata   = NULL;
+    handler.handleReq2 = NULL;
+    handler.handleReq1 = function;
 
-    if (handlerP == NULL)
-        success = FALSE;
-    else {
-        success = ListAdd(&serverP->srvP->handlers, handlerP);
+    ServerAddHandler2(serverP, &handler, &success);
 
-        if (!success)
-            free(handlerP);
-    }
     return success;
 }
 
 
+
+/* This is the maximum amount of stack we allow a user's default URI
+   handler to use.  (If he exceeds this, results are undefined).
+
+   We really ought to provide user a way to set this, as he can for
+   his non-default URI handlers.
+*/
+#define USER_DEFAULT_HANDLER_STACK 128*1024
 
 void
 ServerDefaultHandler(TServer *  const serverP,
@@ -1302,11 +1391,15 @@ ServerDefaultHandler(TServer *  const serverP,
 
     struct _TServer * const srvP = serverP->srvP;
 
-    if (handler)
+    if (handler) {
         srvP->defaultHandler = handler;
-    else {
+        srvP->uriHandlerStackSize =
+            MAX(srvP->uriHandlerStackSize, USER_DEFAULT_HANDLER_STACK);
+    } else {
         srvP->defaultHandler = HandlerDefaultBuiltin;
         srvP->defaultHandlerContext = srvP->builtinHandlerP;
+        srvP->uriHandlerStackSize =
+            MAX(srvP->uriHandlerStackSize, HandlerDefaultBuiltinStack);
     }
 }
 

@@ -173,7 +173,8 @@ pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
 static xmlrpc_value *
 c_executeMethod(xmlrpc_env *   const envP,
                 xmlrpc_value * const paramArrayP,
-                void *         const methodPtr) {
+                void *         const methodPtr,
+                void *) {
 /*----------------------------------------------------------------------------
    This is a function designed to be called via a C registry to
    execute an XML-RPC method, but use a C++ method object to do the
@@ -298,13 +299,17 @@ registry::addMethod(string    const name,
 
     this->methodList.push_back(methodP);
 
+    struct xmlrpc_method_info3 methodInfo;
     env_wrap env;
+
+    methodInfo.methodName      = name.c_str();
+    methodInfo.methodFunction  = &c_executeMethod;
+    methodInfo.serverInfo      = methodP.get();
+    methodInfo.stackSize       = 0;
+    methodInfo.signatureString = methodP->signature().c_str();
+    methodInfo.help            = methodP->help().c_str();
     
-	xmlrpc_registry_add_method_w_doc(
-        &env.env_c, this->c_registryP, NULL,
-        name.c_str(), &c_executeMethod, 
-        (void*) methodP.get(), 
-        methodP->signature().c_str(), methodP->help().c_str());
+	xmlrpc_registry_add_method3(&env.env_c, this->c_registryP, &methodInfo);
 
     throwIfError(env);
 }

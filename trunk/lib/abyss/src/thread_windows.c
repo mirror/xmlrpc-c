@@ -15,6 +15,7 @@
 
 #include "bool.h"
 #include "int.h"
+#include "util_int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 
@@ -32,7 +33,7 @@ struct abyss_thread {
     TThreadDoneFn * threadDone;
 };
 
-#define  THREAD_STACK_SIZE (16*1024L)
+#define  MIN_THREAD_STACK_SIZE (16*1024L)
 
 
 typedef uint32_t (WINAPI WinThreadProc)(void *);
@@ -60,6 +61,7 @@ ThreadCreate(TThread **      const threadPP,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
              bool            const useSigchld,
+             size_t          const stackSize,
              const char **   const errorP) {
 
     TThread * threadP;
@@ -76,12 +78,13 @@ ThreadCreate(TThread **      const threadPP,
         threadP->func       = func;
         threadP->threadDone = threadDone;
 
-        threadP->handle = (HANDLE)_beginthreadex(NULL,
-                                                 THREAD_STACK_SIZE,
-                                                 threadRun,
-                                                 threadP,
-                                                 CREATE_SUSPENDED,
-                                                 &z);
+        threadP->handle = (HANDLE)
+            _beginthreadex(NULL,
+                           MAX(stackSize, MIN_STACK_SIZE),
+                           threadRun,
+                           threadP,
+                           CREATE_SUSPENDED,
+                           &z);
 
         if (threadP->handle == NULL)
             xmlrpc_asprintf(errorP, "_beginthreadex() failed.");
