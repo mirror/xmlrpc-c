@@ -74,6 +74,9 @@ while test $# -gt 0; do
       ;;
     server-util)
       the_libs="-lxmlrpc_server $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="-lxmlrpc_server++ $the_libs"
+        fi
       ;;
     cgi-server)
       the_libs="-lxmlrpc_server $the_libs"
