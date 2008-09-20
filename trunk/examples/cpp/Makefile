@@ -99,7 +99,7 @@ xmlrpc_amconfig.h:
 
 .PHONY: clean
 clean:
-	rm -f $(PROGS) config.h xmlrpc_amconfig.h
+	rm -f $(PROGS) *.o config.h xmlrpc_amconfig.h
 
 .PHONY: distclean
 distclean: clean
