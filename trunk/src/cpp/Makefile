@@ -18,6 +18,7 @@ TARGET_LIB_NAMES_PP = \
   lib$(LIBXMLRPCPP_NAME) \
   libxmlrpc_server++ \
   libxmlrpc_server_abyss++ \
+  libxmlrpc_server_cgi++ \
   libxmlrpc_server_pstream++ \
   libxmlrpc_packetsocket \
 
@@ -49,6 +50,7 @@ LIBXMLRPCPP_MODS = \
   base64 env_wrap fault girerr girmem outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
+LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi
 LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream
 LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet pstream
 LIBXMLRPC_PACKETSOCKET_MODS = packetsocket
@@ -58,6 +60,7 @@ TARGET_MODS_PP = \
   $(LIBXMLRPCPP_MODS) \
   $(LIBXMLRPC_SERVERPP_MODS) \
   $(LIBXMLRPC_SERVER_ABYSSPP_MODS) \
+  $(LIBXMLRPC_SERVER_CGIPP_MODS) \
   $(LIBXMLRPC_SERVER_PSTREAMPP_MODS) \
   $(LIBXMLRPC_CLIENTPP_MODS) \
   $(LIBXMLRPC_PACKETSOCKET_MODS) \
@@ -133,6 +136,16 @@ $(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.os
 $(LIBXMLRPC_SERVER_ABYSSPP): LIBDEP = \
   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss -Lblddir/src -lxmlrpc
 
+LIBXMLRPC_SERVER_CGIPP = $(call shlibfn, libxmlrpc_server_cgi++)
+
+$(LIBXMLRPC_SERVER_CGIPP): $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_SERVERPP) \
+  $(LIBXMLRPCPP) \
+  $(LIBXMLRPC)
+$(LIBXMLRPC_SERVER_CGIPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_CGIPP): LIBDEP = \
+  -L. -lxmlrpc_server++ -lxmlrpc++ -Lblddir/src -lxmlrpc
+
 LIBXMLRPC_SERVER_PSTREAMPP = $(call shlibfn, libxmlrpc_server_pstream++)
 
 $(LIBXMLRPC_SERVER_PSTREAMPP): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh) \
@@ -168,6 +181,9 @@ libxmlrpc_server++.a: LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
 libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
 libxmlrpc_server_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
 
+libxmlrpc_server_cgi++.a: $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.o)
+libxmlrpc_server_cgi++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.o)
+
 libxmlrpc_server_pstream++.a: $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
 libxmlrpc_server_pstream++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
 
@@ -197,11 +213,15 @@ $(LIBXMLRPC_SERVERPP_MODS:%=%.osh): \
   INCLUDES = $(SERVER_INCLUDES)
 
 $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o) \
-$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o): \
+$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh): \
+  INCLUDES = $(SERVER_INCLUDES)
+
+$(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh): \
   INCLUDES = $(SERVER_INCLUDES)
 
 $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o) \
-$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o): \
+$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh): \
   INCLUDES = $(SERVER_INCLUDES)
 
 $(LIBXMLRPC_CLIENTPP_MODS:%=%.o) \

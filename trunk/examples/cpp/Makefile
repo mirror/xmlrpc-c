@@ -24,6 +24,9 @@ LDFLAGS += $(LADD)
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 
+SERVERPROGS_CGI = \
+  xmlrpc_sample_add_server.cgi
+
 SERVERPROGS_ABYSS = \
   xmlrpc_inetd_server \
   xmlrpc_loop_server \
@@ -45,6 +48,10 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
   PROGS += $(CLIENTPROGS)
 endif
 
+ifeq ($(ENABLE_CGI_SERVER),yes)
+  PROGS += $(SERVERPROGS_CGI) 
+endif
+
 PROGS += pstream_inetd_server
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
@@ -56,6 +63,9 @@ INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 LIBS_SERVER_ABYSS = \
   $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --libs)
 
+LIBS_SERVER_CGI = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 cgi-server --libs)
+
 LIBS_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) c++2 client --libs)
 
@@ -63,6 +73,9 @@ LIBS_BASE = \
   $(shell $(XMLRPC_C_CONFIG) c++2 --libs)
 
 all: $(PROGS)
+
+$(SERVERPROGS_CGI):%.cgi:%_cgi.o
+	$(CXXLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
 	$(CXXLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS)
@@ -83,7 +96,7 @@ LIBS_PSTREAM_SERVER = \
 pstream_inetd_server:%:%.o
 	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_SERVER) $(LDFLAGS)
 
-OBJECTS = $(PROGS:%=%.o)
+OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
 
 $(OBJECTS):%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
