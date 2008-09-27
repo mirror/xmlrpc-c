@@ -77,6 +77,21 @@ xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
                             const char *      const help,
                             void *            const serverInfo);
 
+struct xmlrpc_method_info3 {
+    const char *      methodName;
+    xmlrpc_method2    methodFunction;
+    void *            serverInfo;
+    size_t            stackSize;
+    const char *      signatureString;
+    const char *      help;
+};
+
+void
+xmlrpc_registry_add_method3(
+    xmlrpc_env *                       const envP,
+    xmlrpc_registry *                  const registryP,
+    const struct xmlrpc_method_info3 * const infoP);
+
 void
 xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
                                    xmlrpc_registry *     const registryP,
@@ -123,6 +138,9 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
                              const char *      const host,
                              const char *      const xmlData,
                              size_t            const xmlLen);
+
+size_t
+xmlrpc_registry_max_stackSize(xmlrpc_registry * const registryP);
 
 #ifdef __cplusplus
 }

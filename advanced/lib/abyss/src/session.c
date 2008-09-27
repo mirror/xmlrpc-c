@@ -75,7 +75,7 @@ SessionGetReadData(TSession *    const sessionP,
 -----------------------------------------------------------------------------*/
     uint32_t const bufferPos = sessionP->conn->bufferpos;
 
-    *outStartP = &sessionP->conn->buffer[bufferPos];
+    *outStartP = &sessionP->conn->buffer.t[bufferPos];
 
     assert(bufferPos <= sessionP->conn->buffersize);
 

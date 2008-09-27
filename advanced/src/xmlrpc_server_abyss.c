@@ -39,17 +39,12 @@ struct xmlrpc_server_abyss {
 
 
 
-/*=========================================================================
-**  die_if_fault_occurred
-**=========================================================================
-**  If certain kinds of out-of-memory errors occur during server setup,
-**  we want to quit and print an error.
-*/
+static void
+dieIfFaultOccurred(xmlrpc_env * const envP) {
 
-static void die_if_fault_occurred(xmlrpc_env *env) {
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         fprintf(stderr, "Unexpected XML-RPC fault: %s (%d)\n",
-                env->fault_string, env->fault_code);
+                envP->fault_string, envP->fault_code);
         exit(1);
     }
 }
@@ -543,7 +538,7 @@ termUriHandler(void * const arg) {
 
 
 static void
-handleXmlrpcReq(URIHandler2 * const this,
+handleXmlrpcReq(void *        const handlerArg,
                 TSession *    const abyssSessionP,
                 abyss_bool *  const handledP) {
 /*----------------------------------------------------------------------------
@@ -557,9 +552,9 @@ handleXmlrpcReq(URIHandler2 * const this,
    Note that failing the request counts as handling it, and not handling
    it does not mean we failed it.
 
-   This is an Abyss HTTP Request handler -- type URIHandler2.
+   This is an Abyss HTTP Request handler -- type handleReqFn3.
 -----------------------------------------------------------------------------*/
-    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = this->userdata;
+    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = handlerArg;
 
     const TRequestInfo * requestInfoP;
 
@@ -626,6 +621,10 @@ handleXmlrpcReq(URIHandler2 * const this,
 }
 
 
+/* This doesn't include what the user's method function requires */
+#define HANDLE_XMLRPC_REQ_STACK 1024
+
+
 
 /*=========================================================================
 **  xmlrpc_server_abyss_default_handler
@@ -671,7 +670,6 @@ setHandler(xmlrpc_env *      const envP,
            bool              const chunkResponse) {
     
     struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
-    URIHandler2 uriHandler;
     abyss_bool success;
 
     trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
@@ -681,15 +679,18 @@ setHandler(xmlrpc_env *      const envP,
     uriHandlerXmlrpcP->registryP     = registryP;
     uriHandlerXmlrpcP->uriPath       = strdup(uriPath);
     uriHandlerXmlrpcP->chunkResponse = chunkResponse;
-
-    uriHandler.handleReq2 = handleXmlrpcReq;
-    uriHandler.handleReq1 = NULL;
-    uriHandler.userdata   = uriHandlerXmlrpcP;
-    uriHandler.init       = NULL;
-    uriHandler.term       = &termUriHandler;
-
-    ServerAddHandler2(srvP, &uriHandler, &success);
-
+    
+    {
+        size_t const stackSize = 
+            HANDLE_XMLRPC_REQ_STACK + xmlrpc_registry_max_stackSize(registryP);
+        struct ServerReqHandler3 const handlerDesc = {
+            .userdata           = uriHandlerXmlrpcP,
+            .handleReq          = &handleXmlrpcReq,
+            .term               = &termUriHandler,
+            .handleReqStackSize = stackSize
+        };
+        ServerAddHandler3(srvP, &handlerDesc, &success);
+    }
     if (!success)
         xmlrpc_faultf(envP, "Abyss failed to register the Xmlrpc-c request "
                       "handler.  ServerAddHandler2() failed.");
@@ -1416,7 +1417,7 @@ xmlrpc_server_abyss_init_registry(void) {
 
     xmlrpc_env_init(&env);
     builtin_registryP = xmlrpc_registry_new(&env);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 
     setHandlers(&globalSrv, "/RPC2", builtin_registryP, false);
@@ -1446,7 +1447,7 @@ xmlrpc_server_abyss_add_method(char *        const method_name,
     xmlrpc_env_init(&env);
     xmlrpc_registry_add_method(&env, builtin_registryP, NULL, method_name,
                                method, user_data);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 }
 
@@ -1464,7 +1465,7 @@ xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
     xmlrpc_registry_add_method_w_doc(
         &env, builtin_registryP, NULL, method_name,
         method, user_data, signature, help);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);    
 }
 

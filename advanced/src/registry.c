@@ -86,7 +86,8 @@ registryAddMethod(xmlrpc_env *      const envP,
                   xmlrpc_method2          method2,
                   const char *      const signatureString,
                   const char *      const help,
-                  void *            const userData) {
+                  void *            const userData,
+                  size_t            const stackSize) {
 
     const char * const helpString =
         help ? help : "No help is available for this method.";
@@ -99,7 +100,7 @@ registryAddMethod(xmlrpc_env *      const envP,
     XMLRPC_ASSERT(method1 != NULL || method2 != NULL);
 
     xmlrpc_methodCreate(envP, method1, method2, userData,
-                        signatureString, helpString, &methodP);
+                        signatureString, helpString, stackSize, &methodP);
 
     if (!envP->fault_occurred) {
         xmlrpc_methodListAdd(envP, registryP->methodListP, methodName,
@@ -126,7 +127,7 @@ xmlrpc_registry_add_method_w_doc(
     XMLRPC_ASSERT(host == NULL);
 
     registryAddMethod(envP, registryP, methodName, method, NULL,
-                      signatureString, help, serverInfo);
+                      signatureString, help, serverInfo, 0);
 }
 
 
@@ -156,7 +157,21 @@ xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
                             void *            const serverInfo) {
 
     registryAddMethod(envP, registryP, methodName, NULL, method,
-                      signatureString, help, serverInfo);
+                      signatureString, help, serverInfo, 0);
+}
+
+
+
+void
+xmlrpc_registry_add_method3(
+    xmlrpc_env *                       const envP,
+    xmlrpc_registry *                  const registryP,
+    const struct xmlrpc_method_info3 * const infoP) {
+
+    registryAddMethod(envP, registryP, infoP->methodName, NULL,
+                      infoP->methodFunction,
+                      infoP->signatureString, infoP->help, infoP->serverInfo,
+                      infoP->stackSize);
 }
 
 
@@ -180,6 +195,43 @@ xmlrpc_registry_set_default_method(
     registryP->defaultMethodUserData = userData;
 }
 
+
+
+/* This is our guess at what a method function requires when the user
+   doesn't say.
+*/
+#define METHOD_FUNCTION_STACK 128*1024
+
+
+
+static size_t
+methodStackSize(const xmlrpc_methodInfo * const methodP) {
+
+    return methodP->stackSize ==
+        0 ? METHOD_FUNCTION_STACK : methodP->stackSize;
+}
+
+
+
+size_t
+xmlrpc_registry_max_stackSize(xmlrpc_registry * const registryP) {
+/*----------------------------------------------------------------------------
+   Return the maximum amount of stack required by the methods in registry
+   *registryP.
+
+   If there are no methods, return 0.
+-----------------------------------------------------------------------------*/
+    xmlrpc_methodNode * p;
+    size_t stackSize;
+
+    for (p = registryP->methodListP->firstMethodP, stackSize = 0;
+         p;
+         p = p->nextP) {
+        
+        stackSize = MAX(stackSize, methodStackSize(p->methodP));
+    }
+    return stackSize;
+}
 
 
 

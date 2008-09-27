@@ -47,4 +47,4 @@ gennmtab.o:%.o:%.c
 gennmtab:%:%.o
 	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS) $^
 
-include Makefile.depend
+include depend.mk

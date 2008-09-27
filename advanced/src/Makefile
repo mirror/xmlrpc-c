@@ -296,4 +296,4 @@ xmlrpc_client.o xmlrpc_client.osh: $(BLDDIR)/version.h
 registry.o registry.osh: $(BLDDIR)/version.h
 version.o version.osh: $(BLDDIR)/version.h
 
-include Makefile.depend
+include depend.mk

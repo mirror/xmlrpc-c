@@ -157,6 +157,7 @@ ThreadCreate(TThread **      const threadPP,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
              bool            const useSigchld,
+             size_t          const stackSize,
              const char **   const errorP) {
     
     TThread * threadP;

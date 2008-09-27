@@ -26,6 +26,7 @@ using girmem::autoObject;
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/xml.hpp"
+#include "xmlrpc-c/timeout.hpp"
 #include "xmlrpc-c/client.hpp"
 #include "transport_config.h"
 

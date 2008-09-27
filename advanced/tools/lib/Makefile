@@ -36,7 +36,7 @@ all: $(LIBOBJS)
 
 $(SRCDIR)/tool/common.mk: srcdir blddir
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: dep
 dep: dep-common

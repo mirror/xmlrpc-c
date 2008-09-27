@@ -49,6 +49,12 @@ connJob(void * const userHandle) {
 
 
 
+/* This is the maximum amount of stack that 'connJob' itself uses --
+   does not count what user's connection job function uses.
+*/
+#define CONNJOB_STACK 1024
+
+
 static void
 connDone(TConn * const connectionP) {
 
@@ -79,6 +85,7 @@ static void
 makeThread(TConn *             const connectionP,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,
+           size_t              const jobStackSize,
            const char **       const errorP) {
            
     switch (foregroundBackground) {
@@ -91,6 +98,7 @@ makeThread(TConn *             const connectionP,
         connectionP->hasOwnThread = TRUE;
         ThreadCreate(&connectionP->threadP, connectionP,
                      &connJob, &threadDone, useSigchld,
+                     CONNJOB_STACK + jobStackSize,
                      &error);
         if (error) {
             xmlrpc_asprintf(errorP, "Unable to create thread to "
@@ -110,6 +118,7 @@ ConnCreate(TConn **            const connectionPP,
            TChannel *          const channelP,
            void *              const channelInfoP,
            TThreadProc *       const job,
+           size_t              const jobStackSize,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,
@@ -150,7 +159,7 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->server       = serverP;
         connectionP->channelP     = channelP;
         connectionP->channelInfoP = channelInfoP;
-        connectionP->buffer[0]    = '\0';
+        connectionP->buffer.b[0]  = '\0';
         connectionP->buffersize   = 0;
         connectionP->bufferpos    = 0;
         connectionP->finished     = FALSE;
@@ -160,7 +169,8 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->outbytes     = 0;
         connectionP->trace        = getenv("ABYSS_TRACE_CONN");
 
-        makeThread(connectionP, foregroundBackground, useSigchld, errorP);
+        makeThread(connectionP, foregroundBackground, useSigchld,
+                   jobStackSize, errorP);
     }
     *connectionPP = connectionP;
 }
@@ -220,14 +230,14 @@ ConnReadInit(TConn * const connectionP) {
 
     if (connectionP->buffersize > connectionP->bufferpos) {
         connectionP->buffersize -= connectionP->bufferpos;
-        memmove(connectionP->buffer,
-                connectionP->buffer + connectionP->bufferpos,
+        memmove(connectionP->buffer.b,
+                connectionP->buffer.b + connectionP->bufferpos,
                 connectionP->buffersize);
         connectionP->bufferpos = 0;
     } else
         connectionP->buffersize = connectionP->bufferpos = 0;
 
-    connectionP->buffer[connectionP->buffersize] = '\0';
+    connectionP->buffer.b[connectionP->buffersize] = '\0';
 
     connectionP->inbytes = connectionP->outbytes = 0;
 }
@@ -261,9 +271,11 @@ nextLineSize(const char * const string,
 
 
 static void
-traceBuffer(const char * const label,
-            const char * const buffer,
-            unsigned int const size) {
+traceBuffer(const char *          const label,
+            const unsigned char * const buffer,
+            unsigned int          const size) {
+
+    const char * const buffer_t = (const char *)buffer;
 
     size_t cursor;  /* Index into buffer[] */
 
@@ -272,9 +284,9 @@ traceBuffer(const char * const label,
     for (cursor = 0; cursor < size; ) {
         /* Print one line of buffer */
 
-        size_t const lineSize = nextLineSize(buffer, cursor, size);
+        size_t const lineSize = nextLineSize(buffer_t, cursor, size);
         const char * const printableLine =
-            xmlrpc_makePrintable_lp(&buffer[cursor], lineSize);
+            xmlrpc_makePrintable_lp(&buffer_t[cursor], lineSize);
         
         fprintf(stderr, "%s\n", printableLine);
 
@@ -293,7 +305,7 @@ traceChannelRead(TConn *      const connectionP,
 
     if (connectionP->trace)
         traceBuffer("READ FROM CHANNEL",
-                    connectionP->buffer + connectionP->buffersize, size);
+                    connectionP->buffer.b + connectionP->buffersize, size);
 }
 
 
@@ -362,7 +374,7 @@ ConnRead(TConn *  const connectionP,
                 bool readFailed;
 
                 ChannelRead(connectionP->channelP,
-                            connectionP->buffer + connectionP->buffersize,
+                            connectionP->buffer.t + connectionP->buffersize,
                             bufferSpace(connectionP) - 1,
                             &bytesRead, &readFailed);
 
@@ -373,7 +385,7 @@ ConnRead(TConn *  const connectionP,
                         traceChannelRead(connectionP, bytesRead);
                         connectionP->inbytes += bytesRead;
                         connectionP->buffersize += bytesRead;
-                        connectionP->buffer[connectionP->buffersize] = '\0';
+                        connectionP->buffer.t[connectionP->buffersize] = '\0';
                         gotData = TRUE;
                     } else
                         /* Other end has disconnected */

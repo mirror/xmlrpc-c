@@ -329,7 +329,8 @@ xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
 
     utf8P = XMLRPC_MEMBLOCK_NEW(char, envP, estimate);
     if (!envP->fault_occurred) {
-        unsigned char * const buffer = XMLRPC_MEMBLOCK_CONTENTS(char, utf8P);
+        unsigned char * const buffer =
+            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, utf8P);
         size_t bytesUsed;
         size_t i;
 

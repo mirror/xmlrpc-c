@@ -52,7 +52,7 @@ while test $# -gt 0; do
       ;;
     c++2)
       needCpp=yes
-      the_libs="${BLDDIR}/src/cpp/libxmlrpc++.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/lib$LIBXMLRPCPP_NAME.a $the_libs"
       ;;
     server-util)
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
@@ -62,7 +62,12 @@ while test $# -gt 0; do
       ;;
     cgi-server)
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
-      the_libs="${BLDDIR}/src/libxmlrpc_server_cgi.a $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_cgi++.a $the_libs"
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+      else
+        the_libs="${BLDDIR}/src/libxmlrpc_server_cgi.a $the_libs"
+        fi
       ;;
     abyss-server)
       if test "${ENABLE_ABYSS_THREADS}" = "yes"; then

@@ -13,11 +13,12 @@ default: all
 # libxmlrpc_cpp is the legacy C++ wrapper library.  The others are the
 # more elaborate replacements.
 
-TARGET_LIB_NAMES_PP := \
+TARGET_LIB_NAMES_PP = \
   libxmlrpc_cpp \
-  libxmlrpc++ \
+  lib$(LIBXMLRPCPP_NAME) \
   libxmlrpc_server++ \
   libxmlrpc_server_abyss++ \
+  libxmlrpc_server_cgi++ \
   libxmlrpc_server_pstream++ \
   libxmlrpc_packetsocket \
 
@@ -27,8 +28,8 @@ endif
 
 STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
 
-SHARED_LIBS_TO_BUILD := $(TARGET_LIB_NAMES_PP)
-SHARED_LIBS_TO_INSTALL := $(TARGET_LIB_NAMES_PP)
+SHARED_LIBS_TO_BUILD = $(TARGET_LIB_NAMES_PP)
+SHARED_LIBS_TO_INSTALL = $(TARGET_LIB_NAMES_PP)
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
 INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
@@ -49,6 +50,7 @@ LIBXMLRPCPP_MODS = \
   base64 env_wrap fault girerr girmem outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
+LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi
 LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream
 LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet pstream
 LIBXMLRPC_PACKETSOCKET_MODS = packetsocket
@@ -58,6 +60,7 @@ TARGET_MODS_PP = \
   $(LIBXMLRPCPP_MODS) \
   $(LIBXMLRPC_SERVERPP_MODS) \
   $(LIBXMLRPC_SERVER_ABYSSPP_MODS) \
+  $(LIBXMLRPC_SERVER_CGIPP_MODS) \
   $(LIBXMLRPC_SERVER_PSTREAMPP_MODS) \
   $(LIBXMLRPC_CLIENTPP_MODS) \
   $(LIBXMLRPC_PACKETSOCKET_MODS) \
@@ -109,7 +112,7 @@ LIBXMLRPC_CPP = $(call shlibfn, libxmlrpc_cpp)
 $(LIBXMLRPC_CPP): XmlRpcCpp.osh
 $(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.osh
 
-LIBXMLRPCPP = $(call shlibfn, libxmlrpc++)
+LIBXMLRPCPP = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 
 $(LIBXMLRPCPP): $(LIBXMLRPCPP_MODS:%=%.osh) \
   $(LIBXMLRPC)
@@ -133,6 +136,16 @@ $(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.os
 $(LIBXMLRPC_SERVER_ABYSSPP): LIBDEP = \
   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss -Lblddir/src -lxmlrpc
 
+LIBXMLRPC_SERVER_CGIPP = $(call shlibfn, libxmlrpc_server_cgi++)
+
+$(LIBXMLRPC_SERVER_CGIPP): $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_SERVERPP) \
+  $(LIBXMLRPCPP) \
+  $(LIBXMLRPC)
+$(LIBXMLRPC_SERVER_CGIPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_CGIPP): LIBDEP = \
+  -L. -lxmlrpc_server++ -lxmlrpc++ -Lblddir/src -lxmlrpc
+
 LIBXMLRPC_SERVER_PSTREAMPP = $(call shlibfn, libxmlrpc_server_pstream++)
 
 $(LIBXMLRPC_SERVER_PSTREAMPP): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh) \
@@ -149,7 +162,7 @@ $(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
   $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENTPP): LIBDEP = \
-  -L. -lxmlrpc++ -Lblddir/src -lxmlrpc_client
+  -L. -l$(LIBXMLRPCPP_NAME) -Lblddir/src -lxmlrpc_client
 
 LIBXMLRPC_PACKETSOCKET = $(call shlibfn, libxmlrpc_packetsocket)
 
@@ -159,14 +172,17 @@ $(LIBXMLRPC_PACKETSOCKET): LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o
 
-libxmlrpc++.a: $(LIBXMLRPCPP_MODS:%=%.o)
-libxmlrpc++.a: LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.o)
+lib$(LIBXMLRPCPP_NAME).a: $(LIBXMLRPCPP_MODS:%=%.o)
+lib$(LIBXMLRPCPP_NAME).a: LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.o)
 
 libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
 libxmlrpc_server++.a: LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
 
 libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
 libxmlrpc_server_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
+
+libxmlrpc_server_cgi++.a: $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.o)
+libxmlrpc_server_cgi++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.o)
 
 libxmlrpc_server_pstream++.a: $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
 libxmlrpc_server_pstream++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
@@ -197,11 +213,15 @@ $(LIBXMLRPC_SERVERPP_MODS:%=%.osh): \
   INCLUDES = $(SERVER_INCLUDES)
 
 $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o) \
-$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o): \
+$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh): \
+  INCLUDES = $(SERVER_INCLUDES)
+
+$(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh): \
   INCLUDES = $(SERVER_INCLUDES)
 
 $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o) \
-$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o): \
+$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh): \
   INCLUDES = $(SERVER_INCLUDES)
 
 $(LIBXMLRPC_CLIENTPP_MODS:%=%.o) \
@@ -242,4 +262,4 @@ distclean-local:
 .PHONY: dep
 dep: dep-common $(BLDDIR)/transport_config.h
 
-include Makefile.depend
+include depend.mk

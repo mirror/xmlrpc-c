@@ -117,6 +117,11 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
+    struct xmlrpc_method_info3 const methodInfo = {
+        .methodName     = "sample.add",
+        .methodFunction = &sample_add,
+        .serverInfo = NULL
+    };
     TServer abyssServer;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
@@ -136,8 +141,7 @@ main(int           const argc,
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method2(
-        &env, registryP, "sample.add", &sample_add, NULL, NULL, NULL);
+    xmlrpc_registry_add_method3(&env, registryP, &methodInfo);
 
     xmlrpc_registry_set_shutdown(registryP,
                                  &requestShutdown, &terminationRequested);

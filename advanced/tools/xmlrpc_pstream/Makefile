@@ -64,7 +64,7 @@ xmlrpc_pstream:  $(OBJECTS) $(LIBS) $(UTILS)
 
 $(SRCDIR)/common.mk: srcdir blddir
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: clean
 clean: clean-common

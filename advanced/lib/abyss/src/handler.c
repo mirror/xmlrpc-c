@@ -749,6 +749,9 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
 
 
+size_t const HandlerDefaultBuiltinStack = 1024;
+
+
 /******************************************************************************
 **
 ** server.c

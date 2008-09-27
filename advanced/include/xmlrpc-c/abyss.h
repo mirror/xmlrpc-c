@@ -242,14 +242,29 @@ typedef abyss_bool (*URIHandler) (TSession *); /* deprecated */
 
 struct URIHandler2;
 
-typedef void (*initHandlerFn)(struct URIHandler2 *,
-                              abyss_bool *);
+typedef void (*initHandlerFn)(struct URIHandler2 *, abyss_bool *);
 
 typedef void (*termHandlerFn)(void *);
+
+typedef void (*handleReq3Fn)(void *,
+                             TSession *,
+                             abyss_bool *);
 
 typedef void (*handleReq2Fn)(struct URIHandler2 *,
                              TSession *,
                              abyss_bool *);
+
+struct ServerReqHandler3 {
+    termHandlerFn term;
+    handleReq3Fn  handleReq;
+    void *        userdata;
+    size_t        handleReqStackSize; /* zero = default */
+};
+
+void
+ServerAddHandler3(TServer *                        const serverP,
+                  const struct ServerReqHandler3 * const handlerP,
+                  abyss_bool *                     const successP);
 
 typedef struct URIHandler2 {
     initHandlerFn init;

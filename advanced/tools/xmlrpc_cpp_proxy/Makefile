@@ -50,7 +50,7 @@ xmlrpc_cpp_proxy:  $(OBJECTS) $(LIBS)
 
 $(SRCDIR)/tools/common.mk: srcdir blddir
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: clean
 clean: clean-common
