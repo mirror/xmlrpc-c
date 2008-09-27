@@ -1527,7 +1527,7 @@ fi
 
 PACKAGE=xmlrpc-c
 
-VERSION=1.06.27
+VERSION=1.06.31
 
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   { { echo "$as_me:$LINENO: error: source directory already configured; run \"make distclean\" there first" >&5
