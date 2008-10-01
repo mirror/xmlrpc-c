@@ -684,10 +684,10 @@ setHandler(xmlrpc_env *      const envP,
         size_t const stackSize = 
             HANDLE_XMLRPC_REQ_STACK + xmlrpc_registry_max_stackSize(registryP);
         struct ServerReqHandler3 const handlerDesc = {
-            .userdata           = uriHandlerXmlrpcP,
-            .handleReq          = &handleXmlrpcReq,
-            .term               = &termUriHandler,
-            .handleReqStackSize = stackSize
+            /* .term               = */ &termUriHandler,
+            /* .handleReq          = */ &handleXmlrpcReq,
+            /* .userdata           = */ uriHandlerXmlrpcP,
+            /* .handleReqStackSize = */ stackSize
         };
         ServerAddHandler3(srvP, &handlerDesc, &success);
     }

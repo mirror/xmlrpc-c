@@ -15,7 +15,7 @@
 
 #include "bool.h"
 #include "int.h"
-#include "util_int.h"
+#include "xmlrpc-c/util_int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 
@@ -23,7 +23,6 @@
 #include "trace.h"
 
 #include "thread.h"
-
 
 
 struct abyss_thread {
@@ -80,7 +79,7 @@ ThreadCreate(TThread **      const threadPP,
 
         threadP->handle = (HANDLE)
             _beginthreadex(NULL,
-                           MAX(stackSize, MIN_STACK_SIZE),
+                           MAX(stackSize, MIN_THREAD_STACK_SIZE),
                            threadRun,
                            threadP,
                            CREATE_SUSPENDED,
