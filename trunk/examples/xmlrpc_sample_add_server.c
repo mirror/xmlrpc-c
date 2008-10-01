@@ -55,8 +55,8 @@ main(int           const argc,
      const char ** const argv) {
 
     struct xmlrpc_method_info3 const methodInfo = {
-        .methodName     = "sample.add",
-        .methodFunction = &sample_add,
+        /* .methodName     = */ "sample.add",
+        /* .methodFunction = */ &sample_add,
     };
     xmlrpc_server_abyss_parms serverparm;
     xmlrpc_registry * registryP;
