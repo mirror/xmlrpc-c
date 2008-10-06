@@ -33,6 +33,9 @@ OMIT_VERSION_H = Y
 # We don't want common.mk's rule for transport_config.h
 OMIT_TRANSPORT_CONFIG_H = Y
 
+# We don't want common.mk's rule for xmlrpc-c-config.test:
+OMIT_XMLRPC_C_CONFIG_TEST = Y
+
 include $(SRCDIR)/common.mk
 
 .PHONY: all
@@ -117,9 +120,6 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
 	@echo '#######################################################' >>$@
-
-# We don't want config.mk's xmlrpc-c-config.test rule:
-OMIT_XMLRPC_C_CONFIG_TEST = Y
 
 xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config
 	rm -f $@
