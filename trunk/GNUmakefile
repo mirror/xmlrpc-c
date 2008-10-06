@@ -118,7 +118,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
 	@echo '#######################################################' >>$@
 
-# We don't want config.mk's xmlrpc-c-config.test rule:
+# We don't want common.mk's xmlrpc-c-config.test rule:
 OMIT_XMLRPC_C_CONFIG_TEST = Y
 
 xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config
