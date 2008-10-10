@@ -13,8 +13,10 @@
 */
 #ifdef __GNUC__
 #define GNU_PRINTF_ATTR(a,b) __attribute__ ((format (printf, a, b)))
+#define XMLRPC_NORETURN_ATTR __attribute__((noreturn))
 #else
 #define GNU_PRINTF_ATTR(a,b)
+#define XMLRPC_NORETURN_ATTR
 #endif
 
 #endif

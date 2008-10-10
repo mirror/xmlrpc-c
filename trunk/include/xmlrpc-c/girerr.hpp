@@ -3,6 +3,7 @@
 
 #include <string>
 #include <exception>
+#include <xmlrpc-c/c_util.h>
 
 #define HAVE_GIRERR_ERROR
 
@@ -24,7 +25,9 @@ private:
 // throwf() always throws a girerr::error .
 
 void
-throwf(const char * const format, ...);
+throwf(const char * const format, ...)
+  GNU_PRINTF_ATTR(1,2)
+  XMLRPC_NORETURN_ATTR;
 
 } // namespace
 
