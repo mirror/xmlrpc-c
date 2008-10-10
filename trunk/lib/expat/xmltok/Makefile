@@ -24,7 +24,7 @@ include $(BLDDIR)/config.mk
 # we started using the Gcc -Wundef option, that generates a warning, so
 # se set it explicitly to 0 here.
 
-CFLAGS = $(CFLAGS_COMMON) -DXML_BYTE_ORDER=0 $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS_LOCAL = -DXML_BYTE_ORDER=0
 
 # -I. is necessary when blddir != srcdir
 INCLUDES = -I. -I$(BLDDIR) -I$(SRCDIR)/lib/util/include

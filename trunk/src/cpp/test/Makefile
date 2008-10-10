@@ -17,8 +17,6 @@ all: $(PROGS)
 
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
-CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 LDFLAGS += $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
@@ -78,7 +76,7 @@ test: $(TEST_OBJS) $(TEST_LIBS)
 	$(CXXLD) -o $@ $(LDFLAGS) $(LDADD_XML) $^
 
 %.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our

@@ -43,8 +43,6 @@ MAJ=3
 
 include $(SRCDIR)/common.mk
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 INCLUDES = -I$(BLDDIR) -Isrcdir \
            -I$(BLDDIR)/include -Isrcdir/include -Isrcdir/lib/util/include
 

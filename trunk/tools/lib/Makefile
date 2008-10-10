@@ -20,8 +20,6 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include \
 
-CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
-
 LIBOBJS = \
   dumpvalue.o \
 
@@ -29,7 +27,7 @@ LIBOBJS = \
 all: $(LIBOBJS)
 
 %.o:%.c
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS_ALL) $<
 
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.

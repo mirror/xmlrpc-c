@@ -24,8 +24,6 @@ include $(SRCDIR)/common.mk
 
 LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \

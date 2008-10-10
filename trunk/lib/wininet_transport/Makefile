@@ -22,8 +22,6 @@ OMIT_WININET_TRANSPORT_RULE=Y
 
 include $(SRCDIR)/common.mk
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \

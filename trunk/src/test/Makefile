@@ -64,12 +64,10 @@ cgitest1:%:%.o $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_CGI_A) \
   $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) $(LIBXMLRPC_XML)
 	$(CCLD) -o $@ $< $(LDFLAGS) $(LDADD_CGI_SERVER)
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 OBJS = $(TEST_OBJS) cgitest1.o
 
 $(OBJS):%.o:%.c
-	$(CC) -c $(INCLUDES) $(CFLAGS) $<
+	$(CC) -c $(INCLUDES) $(CFLAGS_ALL) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our

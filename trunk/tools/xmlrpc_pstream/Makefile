@@ -23,8 +23,6 @@ INCLUDES = \
   -Iblddir/include \
   -Isrcdir/include \
 
-CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 LDFLAGS = $(LADD)
 
 all: xmlrpc_pstream
@@ -57,7 +55,7 @@ xmlrpc_pstream:  $(OBJECTS) $(LIBS) $(UTILS)
 	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(UTILS) $(LDLIBS) $(LADD)
 
 %.o:%.cpp blddir/include/xmlrpc-c/config.h
-	$(CXX) -c $(CXXFLAGS) $<
+	$(CXX) -c $(CXXFLAGS_ALL) $<
 
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
