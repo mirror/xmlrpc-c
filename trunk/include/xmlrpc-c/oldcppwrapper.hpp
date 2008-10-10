@@ -51,9 +51,9 @@ public:
     XmlRpcFault (const xmlrpc_env *env);
     ~XmlRpcFault (void);
 
-    int          getFaultCode (void) const;
-    std::string  getFaultString (void) const;
-    xmlrpc_env  *getFaultEnv (void);
+    inline int getFaultCode (void) const;
+    std::string getFaultString (void) const;
+    inline xmlrpc_env * getFaultEnv (void);
 };
 
 inline int XmlRpcFault::getFaultCode (void) const {
