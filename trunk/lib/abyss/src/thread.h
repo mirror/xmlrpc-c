@@ -37,7 +37,8 @@ void
 ThreadWaitAndRelease(TThread * const threadP);
 
 void
-ThreadExit(int const retValue);
+ThreadExit(TThread * const threadP,
+           int       const retValue);
 
 void
 ThreadRelease(TThread * const threadP);

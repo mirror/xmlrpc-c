@@ -50,6 +50,11 @@ pthreadStart(void * const arg) {
 
     pthread_cleanup_pop(executeTrue);
 
+    /* Note that func() may not return; it may just exit the thread,
+       by calling ThreadExit(), in which case code here doesn't run.
+    */
+    threadP->threadDone(threadP->userHandle);
+
     return NULL;
 }
 
@@ -142,7 +147,8 @@ ThreadWaitAndRelease(TThread * const threadP) {
 
 
 void
-ThreadExit(int const retValue) {
+ThreadExit(TThread * const threadP ATTR_UNUSED,
+           int       const retValue) {
 
     pthread_exit((void*)&retValue);
 
