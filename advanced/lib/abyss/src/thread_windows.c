@@ -129,7 +129,10 @@ ThreadWaitAndRelease(TThread * const threadP) {
 
 
 void
-ThreadExit(int const retValue) {
+ThreadExit(TThread * const threadP,
+           int       const retValue) {
+
+    threadP->threadDone(threadP->userHandle);
 
     _endthreadex(retValue);
 }

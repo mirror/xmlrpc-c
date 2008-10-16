@@ -31,6 +31,8 @@ connJob(void * const userHandle) {
 /*----------------------------------------------------------------------------
    This is the root function for a thread that processes a connection
    (performs HTTP transactions).
+
+   We never return.  We ultimately exit the thread.
 -----------------------------------------------------------------------------*/
     TConn * const connectionP = userHandle;
 
@@ -44,7 +46,11 @@ connJob(void * const userHandle) {
            after we exit.
         */
 
-    ThreadExit(0);
+
+    /* Note that ThreadExit() runs a cleanup function, which in our
+       case is connDone().
+    */
+    ThreadExit(connectionP->threadP, 0);
 }
 
 
@@ -195,6 +201,7 @@ ConnProcess(TConn * const connectionP) {
         /* There's a background thread to handle this connection.  Set
            it running.
         */
+        assert(connectionP->threadP);
         retval = ThreadRun(connectionP->threadP);
     } else {
         /* No background thread.  We just handle it here while Caller waits. */
@@ -209,9 +216,11 @@ ConnProcess(TConn * const connectionP) {
 
 void
 ConnWaitAndRelease(TConn * const connectionP) {
-    if (connectionP->hasOwnThread)
+
+    if (connectionP->hasOwnThread) {
+        assert(connectionP->threadP);
         ThreadWaitAndRelease(connectionP->threadP);
-    
+    }
     free(connectionP);
 }
 
