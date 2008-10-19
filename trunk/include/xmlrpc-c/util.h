@@ -18,7 +18,7 @@
 #include <stdarg.h>
 
 #include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
-#include <xmlrpc-c/c_util.h>  /* for GNU_PRINTF_ATTR */
+#include <xmlrpc-c/c_util.h>  /* for XMLRPC_PRINTF_ATTR */
 
 #if XMLRPC_HAVE_WCHAR
 #include <wchar.h>
@@ -147,7 +147,7 @@ void
 xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP, 
                                int          const code,
                                const char * const format, 
-                               ...) GNU_PRINTF_ATTR(3,4);
+                               ...) XMLRPC_PRINTF_ATTR(3,4);
 
 /* This one infers XMLRPC_INTERNAL_ERROR and has a shorter name.
    So a call takes up less source code space.
@@ -155,7 +155,7 @@ xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP,
 void
 xmlrpc_faultf(xmlrpc_env * const envP,
               const char * const format,
-              ...) GNU_PRINTF_ATTR(2,3);
+              ...) XMLRPC_PRINTF_ATTR(2,3);
 
 /* A simple debugging assertion. */
 #define XMLRPC_ASSERT_ENV_OK(envP) \

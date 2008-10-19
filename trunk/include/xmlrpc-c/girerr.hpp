@@ -26,7 +26,7 @@ private:
 
 void
 throwf(const char * const format, ...)
-  GNU_PRINTF_ATTR(1,2)
+  XMLRPC_PRINTF_ATTR(1,2)
   XMLRPC_NORETURN_ATTR;
 
 } // namespace
