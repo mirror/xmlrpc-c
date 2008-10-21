@@ -135,7 +135,7 @@ to have it.  The make file obviously specifies the path to the current
 libraries that the user just built in the link library search order,
 but the link is picking up the old system version instead.  Why?
 Because the link options say to search /usr/lib _before_ the local
-build directory.  And it does that because curl-config erroneously
+build directory.  And they do that because curl-config erroneously
 says that you need a -L /usr/lib link option to find the Curl library.
 
 
