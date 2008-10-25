@@ -63,8 +63,6 @@
 #else
 # include <winsock2.h>
 # include <io.h>
-  static inline int close(int s) { return ::closesocket(SOCKET(s)); }
-  typedef  int ssize_t;
 # define EWOULDBLOCK  WSAEWOULDBLOCK 
 #endif
 
@@ -110,6 +108,12 @@ private:
 
 
 
+/* Sockets are similar, but not identical between Unix and Windows.
+   Some Unix socket functions appear to be available on Windows (a
+   Unix compatibility feature), but work only for file descriptor
+   numbers < 32, so we don't use those.
+*/
+
 socketx::socketx(int const sockFd) {
 #ifdef WIN32        
     // We don't have any way to duplicate; we'll just have to borrow.
@@ -134,8 +138,14 @@ socketx::socketx(int const sockFd) {
 
 
 socketx::~socketx() {
-    if (!this->fdIsBorrowed)
-        close(fd);
+
+    if (!this->fdIsBorrowed) {
+#ifdef WIN32
+        ::closesocket(SOCKET(this->fd));
+#else
+        close(this->fd);
+#endif
+    }
 }
 
 
@@ -226,7 +236,7 @@ writeFd(int                   const fd,
     totalBytesWritten = 0;
 
     while (totalBytesWritten < size && !full) {
-        ssize_t rc;
+        int rc;
 
         rc = send(fd, (char*)&data[totalBytesWritten],
                   size - totalBytesWritten, 0);
