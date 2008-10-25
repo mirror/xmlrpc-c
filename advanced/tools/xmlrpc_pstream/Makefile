@@ -62,7 +62,7 @@ xmlrpc_pstream:  $(OBJECTS) $(LIBS) $(UTILS)
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/common.mk: srcdir blddir
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
 include depend.mk
 

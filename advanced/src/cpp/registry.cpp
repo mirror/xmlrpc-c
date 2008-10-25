@@ -306,8 +306,10 @@ registry::addMethod(string    const name,
     methodInfo.methodFunction  = &c_executeMethod;
     methodInfo.serverInfo      = methodP.get();
     methodInfo.stackSize       = 0;
-    methodInfo.signatureString = methodP->signature().c_str();
-    methodInfo.help            = methodP->help().c_str();
+    string const signatureString(methodP->signature());
+    methodInfo.signatureString = signatureString.c_str();
+    string const help(methodP->help());
+    methodInfo.help            = help.c_str();
     
 	xmlrpc_registry_add_method3(&env.env_c, this->c_registryP, &methodInfo);
 

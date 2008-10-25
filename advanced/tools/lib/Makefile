@@ -34,7 +34,7 @@ all: $(LIBOBJS)
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(SRCDIR)/tool/common.mk: srcdir blddir
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
 include depend.mk
 

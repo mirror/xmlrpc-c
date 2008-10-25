@@ -7,7 +7,7 @@ SUBDIR := tools
 
 include $(BLDDIR)/config.mk
 
-SUBDIRS = binmode-rpc-kit turbocharger
+SUBDIRS = lib binmode-rpc-kit turbocharger
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   SUBDIRS += xmlrpc xmlrpc_transport
