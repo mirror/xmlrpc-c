@@ -158,6 +158,7 @@ socketx::waitForReadable() const {
     */
 #ifdef  WIN32
     // poll() is not available; settle for select().
+    // Starting in Windows Vista, there is WSApoll()
     fd_set rd_set;
     FD_ZERO(&rd_set);
     FD_SET(this->fd, &rd_set);
