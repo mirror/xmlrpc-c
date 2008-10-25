@@ -35,7 +35,7 @@ using namespace std;
 class sampleAddMethod : public method {
 public:
     sampleAddMethod() {
-        this->_signature = "ii";
+        this->_signature = "i:ii";
         this->_help = "This method adds two integers together";
     }
     void
