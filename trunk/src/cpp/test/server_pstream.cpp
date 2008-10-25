@@ -25,6 +25,18 @@ using namespace xmlrpc_c;
 using namespace std;
 
 
+#define ESC_STR "\x1B"
+
+
+static string const
+xmlPrologue("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n");
+
+static string const
+packetStart(ESC_STR "PKT");
+
+static string const
+packetEnd(ESC_STR "END");
+
 
 class sampleAddMethod : public method {
 public:
@@ -47,45 +59,269 @@ public:
 
 
 
-static void
-createTestFile(string const& contents,
-               int *  const  fdP) {
+class client {
+/*----------------------------------------------------------------------------
+   This is an object you can use as a client to test a packet stream
+   server.
 
-    string const filename("/tmp/xmlrpc_test_pstream");
-    unlink(filename.c_str());
+   You attach the 'serverFd' member to your packet stream server, then
+   call the 'sendCall' method to send a call to your server, then call
+   the 'recvResp' method to get the response.
+
+   Destroying the object closes the connection.
+
+   We rely on typical, though unguaranteed socket function: we need to
+   be able to write 'contents' to the socket in a single write()
+   system call before the other side reads anything -- i.e. the socket
+   has to have a buffer that big.  We do this because we're lazy; doing
+   it right would require forking a writer process.
+-----------------------------------------------------------------------------*/
+public:
+
+    client();
+    
+    ~client();
+
+    void
+    sendCall(string const& callBytes) const;
+
+    void
+    hangup();
+
+    void
+    recvResp(string * const respBytesP) const;
+
+    int serverFd;
+
+private:
+
+    bool closed;
+    int clientFd;
+};
+
+
+
+client::client() {
+
+    enum {
+        SERVER = 0,
+        CLIENT = 1,
+    };
+    int sockets[2];
     int rc;
-    rc = open(filename.c_str(), O_RDWR | O_CREAT);
-    unlink(filename.c_str());
-    
+
+    rc = socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
+
     if (rc < 0)
-        throwf("Failed to create file '%s' as a test tool.  errno=%d (%s)",
-               filename.c_str(), errno, strerror(errno));
+        throwf("Failed to create UNIX domain stream socket pair "
+               "as test tool.  errno=%d (%s)",
+               errno, strerror(errno));
     else {
-        int const fd(rc);
+        fcntl(sockets[CLIENT], F_SETFL, O_NONBLOCK);
 
-        int rc;
-    
-        rc = write(fd, contents.c_str(), contents.length());
-
-        if (rc < 0)
-            throwf("write() of test file failed, errno=%d (%s)",
-                   errno, strerror(errno));
-        else {
-            unsigned int bytesWritten(rc);
-
-            if (bytesWritten != contents.length())
-                throwf("Short write");
-            else {
-                int rc;
-                rc = lseek(fd, 0, SEEK_SET);
-                
-                if (rc < 0)
-                    throwf("lseek(0) of test file failed, errno=%d (%s)",
-                           errno, strerror(errno));
-            }
-        }
-        *fdP = fd;
+        this->serverFd = sockets[SERVER];
+        this->clientFd = sockets[CLIENT];
+        this->closed   = false;
     }
+}
+
+
+
+client::~client() {
+
+    if (!closed)
+        close(this->clientFd);
+
+    close(this->serverFd);
+}
+
+
+
+void
+client::sendCall(string const& packetBytes) const {
+
+    int rc;
+
+    rc = send(this->clientFd, packetBytes.c_str(), packetBytes.length(), 0);
+
+    if (rc < 0)
+        throwf("send() of test data to socket failed, errno=%d (%s)",
+               errno, strerror(errno));
+    else {
+        unsigned int bytesWritten(rc);
+
+        if (bytesWritten != packetBytes.length())
+            throwf("Short write to socket");
+    }
+}
+
+
+
+void
+client::hangup() {
+
+    close(this->clientFd);
+
+    this->closed = true;
+}
+
+
+
+void
+client::recvResp(string * const packetBytesP) const {
+
+    char buffer[4096];
+    int rc;
+
+    rc = recv(this->clientFd, buffer, sizeof(buffer), 0);
+
+    if (rc < 0)
+        throwf("recv() from socket failed, errno=%d (%s)",
+               errno, strerror(errno));
+    else {
+        unsigned int bytesReceived(rc);
+
+        *packetBytesP = string(buffer, bytesReceived);
+    }
+}
+
+
+
+static void
+testEmptyStream(registry const& myRegistry) {
+/*----------------------------------------------------------------------------
+   Here we send the pstream server an empty stream; i.e. we close the
+   socket from the client end without sending anything.
+
+   This should cause the server to recognize EOF.
+-----------------------------------------------------------------------------*/
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    client.hangup();
+
+    bool eof;
+    server.runOnce(&eof);
+
+    TEST(eof);
+}
+
+
+
+static void
+testBrokenPacket(registry const& myRegistry) {
+/*----------------------------------------------------------------------------
+   Here we send a stream that is not a legal packetsocket stream: it
+   doesn't have any control word.
+-----------------------------------------------------------------------------*/
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    client.sendCall("junk");
+    client.hangup();
+
+    bool eof;
+
+    EXPECT_ERROR(
+        server.runOnce(&eof);
+        );
+}
+
+
+
+static void
+testEmptyPacket(registry const& myRegistry) {
+/*----------------------------------------------------------------------------
+   Here we send the pstream server one empty packet.  It should respond
+   with one packet, being an XML-RPC fault response complaining that the
+   call is not valid XML.
+-----------------------------------------------------------------------------*/
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    client.sendCall(packetStart + packetEnd);
+
+    bool eof;
+    server.runOnce(&eof);
+
+    TEST(!eof);
+
+    string response;
+    client.recvResp(&response);
+
+    // We ought to validate that the response is a complaint about
+    // the empty call
+
+    client.hangup();
+
+    server.runOnce(&eof);
+
+    TEST(eof);
+}
+
+
+
+static void
+testNormalCall(registry const& myRegistry) {
+
+    string const sampleAddGoodCallStream(
+        packetStart +
+        xmlPrologue +
+        "<methodCall>\r\n"
+        "<methodName>sample.add</methodName>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>5</i4></value></param>\r\n"
+        "<param><value><i4>7</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodCall>\r\n" +
+        packetEnd
+        );
+    
+
+    string const sampleAddGoodResponseStream(
+        packetStart +
+        xmlPrologue +
+        "<methodResponse>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>12</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodResponse>\r\n" +
+        packetEnd
+        );
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    client.sendCall(sampleAddGoodCallStream);
+
+    bool eof;
+    server.runOnce(&eof);
+
+    TEST(!eof);
+
+    string response;
+    client.recvResp(&response);
+
+    TEST(response == sampleAddGoodResponseStream);
+    
+    client.hangup();
+
+    server.runOnce(&eof);
+
+    TEST(eof);
 }
 
 
@@ -97,11 +333,6 @@ public:
         return "serverPstreamConnTestSuite";
     }
     virtual void runtests(unsigned int const) {
-        int const devNullFd(open("/dev/null", 0));
-
-        if (devNullFd < 0)
-            throwf("Failed to open /dev/null, needed for test.");
-
         registry myRegistry;
         
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
@@ -131,32 +362,13 @@ public:
                                      .socketFd(37));
             );
         
-        {
-            serverPstreamConn server(serverPstreamConn::constrOpt()
-                                     .registryP(&myRegistry)
-                                     .socketFd(devNullFd));
+        testEmptyStream(myRegistry);
 
-            bool eof;
-            server.runOnce(&eof);
-            TEST(eof);
-        }
-        {
-            int fd;
-            createTestFile("junk", &fd);
+        testBrokenPacket(myRegistry);
 
-            serverPstreamConn server(serverPstreamConn::constrOpt()
-                                     .registryP(&myRegistry)
-                                     .socketFd(fd));
+        testEmptyPacket(myRegistry);
 
-            bool eof;
-
-            EXPECT_ERROR(   // EOF in the middle of a packet
-                server.runOnce(&eof);
-                );
-            close(fd);
-        }
-
-        close(devNullFd);
+        testNormalCall(myRegistry);
     }
 };
 
