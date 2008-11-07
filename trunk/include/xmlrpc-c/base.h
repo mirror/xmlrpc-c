@@ -343,10 +343,10 @@ xmlrpc_array_get_item(xmlrpc_env *         const envP,
 
 /* Not implemented--we don't need it yet.
 extern 
-int xmlrpc_array_set_item (xmlrpc_env* env,
-xmlrpc_value* array,
-int index,
-                                  xmlrpc_value* value);
+int xmlrpc_array_set_item (xmlrpc_env *   const envP,
+                           xmlrpc_value * const arrayP,
+                           unsigned int   const index,
+                           xmlrpc_value * const valueP);
 */
 
 xmlrpc_value *
