@@ -17,10 +17,13 @@ TARGET_LIB_NAMES_PP = \
   libxmlrpc_cpp \
   lib$(LIBXMLRPCPP_NAME) \
   libxmlrpc_server++ \
-  libxmlrpc_server_abyss++ \
   libxmlrpc_server_cgi++ \
   libxmlrpc_server_pstream++ \
   libxmlrpc_packetsocket \
+
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  TARGET_LIB_NAMES_PP += libxmlrpc_server_abyss++
+endif
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TARGET_LIB_NAMES_PP += libxmlrpc_client++
@@ -111,6 +114,7 @@ LIBXMLRPC_CPP = $(call shlibfn, libxmlrpc_cpp)
 
 $(LIBXMLRPC_CPP): XmlRpcCpp.osh
 $(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.osh
+$(LIBXMLRPC_CPP): LIBDEP = -Lblddir/src -lxmlrpc
 
 LIBXMLRPCPP = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 

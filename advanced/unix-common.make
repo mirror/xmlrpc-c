@@ -51,7 +51,7 @@
 #   is libfoo.so.1 .
 SONAME = $(@:%.$(MIN)=%)
 
-SHLIB_CMD = $(CCLD) $(LDFLAGS_SHLIB) -o $@ $^ $(LADD)
+SHLIB_CMD = $(CCLD) $(LADD) $(LDFLAGS_SHLIB) -o $@ $^ 
 
 SHLIB_LE_TARGETS = $(call shliblefn, $(SHARED_LIBS_TO_BUILD))
 

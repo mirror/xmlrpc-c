@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <stdio.h>
+#include <cstdlib>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::throwf;
@@ -36,7 +37,7 @@ public:
     bool authCookiePresent;
     string authCookie;
 
-    httpInfo::httpInfo() {
+    httpInfo() {
 
         const char * const requestMethodC = getenv("REQUEST_METHOD");
         const char * const contentTypeC   = getenv("CONTENT_TYPE");
