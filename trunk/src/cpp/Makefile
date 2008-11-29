@@ -114,6 +114,7 @@ LIBXMLRPC_CPP = $(call shlibfn, libxmlrpc_cpp)
 
 $(LIBXMLRPC_CPP): XmlRpcCpp.osh
 $(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.osh
+$(LIBXMLRPC_CPP): LIBDEP = -Lblddir/src -lxmlrpc
 
 LIBXMLRPCPP = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 
