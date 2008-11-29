@@ -12,6 +12,7 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+#include <cstdlib>  // for getenv
 #include <memory>
 #include <stdio.h>
 
@@ -36,7 +37,7 @@ public:
     bool authCookiePresent;
     string authCookie;
 
-    httpInfo::httpInfo() {
+    httpInfo() {
 
         const char * const requestMethodC = getenv("REQUEST_METHOD");
         const char * const contentTypeC   = getenv("CONTENT_TYPE");
