@@ -32,6 +32,8 @@
 **
 ******************************************************************************/
 
+#define _BSD_SOURCE   /* For strcaseeq() */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
