@@ -195,7 +195,6 @@ LIBXMLRPC_ABYSS          = \
 LIBXMLRPC_ABYSS_A        = $(LIBXMLRPC_ABYSS_DIR)/libxmlrpc_abyss.a
 endif
 
-ifneq ($(OMIT_CPP_LIB_RULES),Y)
 LIBXMLRPC_CPP              = \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_cpp)
 LIBXMLRPC_CPP_A            = $(BLDDIR)/src/cpp/libxmlrpc_cpp.a
@@ -217,7 +216,6 @@ LIBXMLRPC_SERVER_ABYSSPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++.a
 LIBXMLRPC_SERVER_PSTREAMPP = \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_server_pstream++)
 LIBXMLRPC_SERVER_PSTREAMPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_pstream++.a
-endif
 
 # LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
 # XML.  If we're using an external library to parse XML, this is null.
@@ -410,6 +408,8 @@ $(LIBXMLRPC_ABYSS) $(LIBXMLRPC_ABYSS_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
 	    $(notdir $@)
 
+ifneq ($(OMIT_CPP_LIB_RULES),Y)
+
 $(LIBXMLRPCPP) $(LIBXMLRPCPP_A) \
 $(LIBXMLRPC_PACKETSOCKET) $(LIBXMLRPC_PACKETSOCKET_A) \
 $(LIBXMLRPC_CLIENTPP) $(LIBXMLRPC_CLIENTPP_A) \
@@ -419,6 +419,7 @@ $(LIBXMLRPC_SERVER_PSTREAMPP) $(LIBXMLRPC_SERVER_PSTREAMPP_A) \
 $(LIBXMLRPC_CPP) $(LIBXMLRPC_CPP_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
+endif
 
 # For the following utilities, we don't bother with a library -- we
 # just explicitly link the object file we need.  This is to save
