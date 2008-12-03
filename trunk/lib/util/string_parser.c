@@ -94,9 +94,9 @@ interpretLl(const char *  const string,
 
 
 void
-interpretUint(const char *  const string,
-              uint *        const uintP,
-              const char ** const errorP) {
+interpretUint(const char *   const string,
+              unsigned int * const uintP,
+              const char **  const errorP) {
 
     /* strtoul() does a lousy job of dealing with invalid numbers.  A null
        string is just zero; a negative number is a large positive one; a

@@ -16,6 +16,7 @@
 
 #include "xmlrpc_config.h"
 #include "bool.h"
+#include "int.h"
 #include "version.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
@@ -650,7 +651,7 @@ Base64Encode(const char * const chars,
         '4','5','6','7','8','9','+','/'
     };
 
-    uint i;
+    unsigned int i;
     uint32_t length;
     char * p;
     const char * s;
