@@ -261,7 +261,8 @@ ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
   SHLIB_SUFFIX = dylib
   shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  LDFLAGS_SHLIB = -dynamiclib -undefined suppress -single_module \
+	-flat_namespace $(SHLIB_CLIB)
 endif
 
 ifeq ($(HOST_OS),irix)
