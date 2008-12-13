@@ -402,7 +402,7 @@ xmlrpc_force_to_utf8(char * const buffer) {
     char * p;
 
     for (p = &buffer[0]; *p;) {
-        uint const length = utf8_seq_length[(unsigned char) *p];
+        unsigned int const length = utf8_seq_length[(unsigned char) *p];
 
         bool forceDel;
         uint32_t decoded;
@@ -483,7 +483,7 @@ xmlrpc_force_to_xml_chars(char * const buffer) {
     char * p;
 
     for (p = &buffer[0]; *p;) {
-        uint const length = utf8_seq_length[(unsigned char) *p];
+        unsigned int const length = utf8_seq_length[(unsigned char) *p];
 
         if (length == 1) {
             if (*p < 0x20 && *p != '\r' && *p != '\n' && *p != '\t')

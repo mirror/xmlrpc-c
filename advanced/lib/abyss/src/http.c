@@ -1,5 +1,7 @@
 /* Copyright information is at the end of the file */
 
+#define _BSD_SOURCE   /* For strcaseeq() */
+
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>

@@ -46,6 +46,11 @@ xmlrpc_memeq(const void * const a,
     return (memcmp(a, b, size) == 0);
 }
 
+/* strcasecmp doesn't exist on some systems without _BSD_SOURCE, so
+   xmlrpc_strcaseeq() can't either.
+*/
+#ifdef _BSD_SOURCE
+
 static __inline__ bool
 xmlrpc_strcaseeq(const char * const a,
                  const char * const b) {
@@ -59,6 +64,7 @@ xmlrpc_strcaseeq(const char * const a,
     #error "This platform has no known case-independent string compare fn"
 #endif
 }
+#endif
 
 static __inline__ bool
 xmlrpc_strneq(const char * const a,

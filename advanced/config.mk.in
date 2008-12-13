@@ -253,7 +253,7 @@ ifeq ($(HOST_OS),beos)
   LDFLAGS_SHLIB = -nostart
 endif
 
-ifeq ($(patsubst darwin%, darwin, $(HOST_OS)), darwin)
+ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
   # (I once saw a system that generated 'darwin8.10.1').
   SHARED_LIB_TYPE = dylib
   MUST_BUILD_SHLIB = Y
@@ -261,7 +261,8 @@ ifeq ($(patsubst darwin%, darwin, $(HOST_OS)), darwin)
   SHLIB_SUFFIX = dylib
   shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  LDFLAGS_SHLIB = -dynamiclib -undefined suppress -single_module \
+	-flat_namespace $(SHLIB_CLIB)
 endif
 
 ifeq ($(HOST_OS),irix)
