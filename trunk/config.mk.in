@@ -253,7 +253,7 @@ ifeq ($(HOST_OS),beos)
   LDFLAGS_SHLIB = -nostart
 endif
 
-ifeq ($(patsubst darwin%, darwin, $(HOST_OS)), darwin)
+ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
   # (I once saw a system that generated 'darwin8.10.1').
   SHARED_LIB_TYPE = dylib
   MUST_BUILD_SHLIB = Y
