@@ -1352,7 +1352,7 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
    a thread of a multi-threaded program, use
    xmlrpc_server_abyss_create() instead.  As required by that
    subroutine, your program will contain a call to
-   xmlrpc_server_abyss_init() early in your program, when it is only
+   xmlrpc_server_abyss_global_init() early in your program, when it is only
    one thread.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
