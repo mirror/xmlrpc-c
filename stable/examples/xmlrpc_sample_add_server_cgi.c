@@ -1,4 +1,22 @@
-/* A simple standalone XML-RPC server written in C. */
+/* A CGI script written in C to effect a simple XML-RPC server.
+
+   Example of use:
+
+     - Compile this as the executable 'xmlrpc_sample_add_server.cgi'
+
+     - Place the .cgi file in web server www.example.com's /cgi-bin
+       directory.
+
+     - Configure the web server to permit CGI scripts in /cgi-bin
+       (Apache ExecCgi directory option).
+
+     - Configure the web server to recognize this .cgi file as a CGI
+       script (Apache "AddHandler cgi-script ..." or ScriptAlias).
+
+     - $ xmlrpc http://www.example.com/cgi-bin/xmlrpc_sample_add_server.cgi \
+           sample.add i/5 i/7
+*/
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,22 +28,22 @@
 #include "config.h"  /* information about this build environment */
 
 static xmlrpc_value *
-sample_add(xmlrpc_env *   const env, 
-           xmlrpc_value * const param_array, 
+sample_add(xmlrpc_env *   const envP,
+           xmlrpc_value * const paramArrayP,
            void *         const user_data ATTR_UNUSED) {
 
     xmlrpc_int32 x, y, z;
 
     /* Parse our argument array. */
-    xmlrpc_decompose_value(env, param_array, "(ii)", &x, &y);
-    if (env->fault_occurred)
+    xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
+    if (envP->fault_occurred)
         return NULL;
 
     /* Add our two numbers. */
     z = x + y;
 
     /* Return our result. */
-    return xmlrpc_build_value(env, "i", z);
+    return xmlrpc_build_value(envP, "i", z);
 }
 
 

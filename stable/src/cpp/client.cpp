@@ -26,6 +26,7 @@ using girmem::autoObject;
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/xml.hpp"
+#include "xmlrpc-c/timeout.hpp"
 #include "xmlrpc-c/client.hpp"
 #include "transport_config.h"
 
@@ -73,6 +74,30 @@ public:
 
 namespace xmlrpc_c {
 
+struct client_xml_impl {
+    /* We have both kinds of pointers to give the user flexibility -- we
+       have constructors that take both.  But the simple pointer
+       'transportP' is valid in both cases.
+    */
+    clientXmlTransport * transportP;
+    clientXmlTransportPtr transportPtr;
+    xmlrpc_dialect dialect;
+
+    client_xml_impl(clientXmlTransport * const transportP,
+                    xmlrpc_dialect       const dialect = xmlrpc_dialect_i8) :
+        transportP(transportP),
+        dialect(dialect) {}
+
+    client_xml_impl(clientXmlTransportPtr const transportPtr,
+                    clientXmlTransport *  const transportP,
+                    xmlrpc_dialect        const dialect = xmlrpc_dialect_i8) :
+        transportP(transportP),
+        transportPtr(transportPtr),
+        dialect(dialect) {}
+};
+     
+
+
 carriageParm::carriageParm() {}
 
 
@@ -88,9 +113,7 @@ carriageParmPtr::carriageParmPtr() {
 
 
 carriageParmPtr::carriageParmPtr(
-    carriageParm * const carriageParmP) {
-    this->point(carriageParmP);
-}
+carriageParm * const carriageParmP) : autoObjectPtr(carriageParmP) {}
 
 
 
@@ -147,10 +170,157 @@ carriageParm_http0::instantiate(string const serverUrl) {
 
 
 void
+carriageParm_http0::setUser(string const userid,
+                            string const password) {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_set_user(
+        &env.env_c, this->c_serverInfoP, userid.c_str(), password.c_str());
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthBasic() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_basic(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthBasic() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_basic(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthDigest() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_digest(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthDigest() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_digest(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthNegotiate() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_negotiate(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthNegotiate() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_negotiate(
+        &env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::allowAuthNtlm() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_allow_auth_ntlm(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+carriageParm_http0::disallowAuthNtlm() {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_disallow_auth_ntlm(&env.env_c, this->c_serverInfoP);
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
 carriageParm_http0::setBasicAuth(string const username,
                                  string const password) {
 
-    if (!c_serverInfoP)
+    if (!this->c_serverInfoP)
         throw(error("object not instantiated"));
     
     env_wrap env;
@@ -169,9 +339,8 @@ carriageParm_http0Ptr::carriageParm_http0Ptr() {
 
 
 carriageParm_http0Ptr::carriageParm_http0Ptr(
-    carriageParm_http0 * const carriageParmP) {
-    this->point(carriageParmP);
-}
+    carriageParm_http0 * const carriageParmP) :
+    carriageParmPtr(carriageParmP) {}
 
 
 
@@ -205,6 +374,11 @@ xmlTransaction::finishErr(error const&) const {
 
 xmlTransactionPtr::xmlTransactionPtr() {}
 
+
+
+xmlTransactionPtr::xmlTransactionPtr(xmlTransaction * xmlTransP) :
+    autoObjectPtr(xmlTransP) {}
+ 
 
 
 xmlTransaction *
@@ -268,6 +442,9 @@ void
 clientXmlTransport::start(carriageParm *    const  carriageParmP,
                           string            const& callXml,
                           xmlTransactionPtr const& xmlTranP) {
+
+    // Note: derived class clientXmlTransport_http overrides this,
+    // so it doesn't normally get used.
     
     string responseXml;
 
@@ -279,9 +456,14 @@ clientXmlTransport::start(carriageParm *    const  carriageParmP,
 
 
 void
-clientXmlTransport::finishAsync(xmlrpc_c::timeout const timeout) {
-    if (timeout.finite == timeout.finite)
-        throw(error("This class does not have finishAsync()"));
+clientXmlTransport::finishAsync(xmlrpc_c::timeout) {
+
+    // Since our start() does the whole thing, there's nothing for
+    // us to do.
+
+    // A derived class that overrides start() with something properly
+    // asynchronous had better also override finishAsync() with something
+    // substantial.
 }
 
 
@@ -321,6 +503,14 @@ clientXmlTransport::asyncComplete(
 
 
 
+void
+clientXmlTransport::setInterrupt(int *) {
+
+    throwf("The client XML transport is not interruptible");
+}
+
+
+
 clientXmlTransportPtr::clientXmlTransportPtr() {
     // Base class constructor will construct pointer that points to nothing
 }
@@ -328,9 +518,7 @@ clientXmlTransportPtr::clientXmlTransportPtr() {
 
 
 clientXmlTransportPtr::clientXmlTransportPtr(
-    clientXmlTransport * const transportP) {
-    this->point(transportP);
-}
+    clientXmlTransport * const transportP) : autoObjectPtr(transportP) {}
 
 
 
@@ -437,6 +625,16 @@ clientXmlTransport_http::finishAsync(xmlrpc_c::timeout const timeout) {
 }
 
 
+
+void
+clientXmlTransport_http::setInterrupt(int * const interruptP) {
+
+    if (this->c_transportOpsP->set_interrupt)
+        this->c_transportOpsP->set_interrupt(this->c_transportP, interruptP);
+}
+
+
+
 bool const haveCurl(
 #if MUST_BUILD_CURL_CLIENT
 true
@@ -511,6 +709,11 @@ clientTransactionPtr::clientTransactionPtr() {}
 
 
 
+clientTransactionPtr::clientTransactionPtr(
+    clientTransaction * const transP) : autoObjectPtr(transP) {}
+
+
+
 clientTransactionPtr::~clientTransactionPtr() {}
 
 
@@ -548,6 +751,27 @@ client::start(carriageParm *       const  carriageParmP,
 
 
 
+void
+client::finishAsync(xmlrpc_c::timeout) {
+
+    // Since our start() does the whole thing, there's nothing for
+    // us to do.
+
+    // A derived class that overrides start() with something properly
+    // asynchronous had better also override finishAsync() with something
+    // substantial.
+}
+
+
+
+void
+client::setInterrupt(int *) {
+
+    throwf("Clients of this type are not interruptible");
+}
+
+
+
 clientPtr::clientPtr() {
     // Base class constructor will construct pointer that points to nothing
 }
@@ -555,9 +779,7 @@ clientPtr::clientPtr() {
 
 
 clientPtr::clientPtr(
-    client * const clientP) {
-    this->point(clientP);
-}
+    client * const clientP) : autoObjectPtr(clientP) {}
 
 
 
@@ -577,17 +799,42 @@ clientPtr::get() const {
 
 
 
-client_xml::client_xml(clientXmlTransport * const transportP) :
-    transportP(transportP) {}
+client_xml::client_xml(clientXmlTransport * const transportP) {
+
+    this->implP = new client_xml_impl(transportP);
+}
 
 
 
 client_xml::client_xml(clientXmlTransportPtr const transportPtr) {
 
-    this->transportPtr = transportPtr;
-    this->transportP   = transportPtr.get();
+    this->implP = new client_xml_impl(transportPtr, transportPtr.get());
 }
-     
+
+
+
+client_xml::client_xml(clientXmlTransport * const transportP,
+                       xmlrpc_dialect       const dialect) {
+
+    this->implP = new client_xml_impl(transportP, dialect);
+}
+
+
+
+client_xml::client_xml(clientXmlTransportPtr const transportPtr,
+                       xmlrpc_dialect        const dialect) {
+
+    this->implP = new client_xml_impl(transportPtr, transportPtr.get(),
+                                      dialect);
+}
+
+
+
+client_xml::~client_xml() {
+
+    delete(this->implP);
+}
+
 
 
 void
@@ -599,12 +846,12 @@ client_xml::call(carriageParm * const  carriageParmP,
     string callXml;
     string responseXml;
 
-    xml::generateCall(methodName, paramList, &callXml);
+    xml::generateCall(methodName, paramList, this->implP->dialect, &callXml);
     
     xml::trace("XML-RPC CALL", callXml);
 
     try {
-        this->transportP->call(carriageParmP, callXml, &responseXml);
+        this->implP->transportP->call(carriageParmP, callXml, &responseXml);
     } catch (error const& error) {
         throwf("Unable to transport XML to server and "
                "get XML response back.  %s", error.what());
@@ -629,13 +876,13 @@ client_xml::start(carriageParm *       const  carriageParmP,
 
     string callXml;
 
-    xml::generateCall(methodName, paramList, &callXml);
+    xml::generateCall(methodName, paramList, this->implP->dialect, &callXml);
     
     xml::trace("XML-RPC CALL", callXml);
 
     xmlTransaction_clientPtr const xmlTranP(tranP);
 
-    this->transportP->start(carriageParmP, callXml, xmlTranP);
+    this->implP->transportP->start(carriageParmP, callXml, xmlTranP);
 }
  
 
@@ -643,7 +890,15 @@ client_xml::start(carriageParm *       const  carriageParmP,
 void
 client_xml::finishAsync(xmlrpc_c::timeout const timeout) {
 
-    transportP->finishAsync(timeout);
+    this->implP->transportP->finishAsync(timeout);
+}
+
+
+
+void
+client_xml::setInterrupt(int * const interruptP) {
+
+    this->implP->transportP->setInterrupt(interruptP);
 }
 
 
@@ -675,9 +930,8 @@ serverAccessorPtr::serverAccessorPtr() {
 
 
 serverAccessorPtr::serverAccessorPtr(
-    serverAccessor * const serverAccessorParmP) {
-    this->point(serverAccessorParmP);
-}
+    serverAccessor * const serverAccessorParmP) :
+    autoObjectPtr(serverAccessorParmP) {}
 
 
 
@@ -707,20 +961,43 @@ connection::~connection() {}
 
 
 
-rpc::rpc(string              const  methodName,
-         xmlrpc_c::paramList const& paramList) {
+struct rpc_impl {
+    enum state {
+        STATE_UNFINISHED,  // RPC is running or not started yet
+        STATE_ERROR,       // We couldn't execute the RPC
+        STATE_FAILED,      // RPC executed successfully, but failed per XML-RPC
+        STATE_SUCCEEDED    // RPC is done, no exception
+    };
+    enum state state;
+    girerr::error * errorP;     // Defined only in STATE_ERROR
+    rpcOutcome outcome;
+        // Defined only in STATE_FAILED and STATE_SUCCEEDED
+    string methodName;
+    xmlrpc_c::paramList paramList;
+
+    rpc_impl(string              const& methodName,
+             xmlrpc_c::paramList const& paramList) :
+        state(STATE_UNFINISHED),
+        methodName(methodName),
+        paramList(paramList) {}
+};
+
+
+
+rpc::rpc(string    const  methodName,
+         paramList const& paramList) {
     
-    this->state      = STATE_UNFINISHED;
-    this->methodName = methodName;
-    this->paramList  = paramList;
+    this->implP = new rpc_impl(methodName, paramList);
 }
 
 
 
 rpc::~rpc() {
+    
+    if (this->implP->state == rpc_impl::STATE_ERROR)
+        delete(this->implP->errorP);
 
-    if (this->state == STATE_ERROR)
-        delete(this->errorP);
+    delete(this->implP);
 }
 
 
@@ -729,16 +1006,17 @@ void
 rpc::call(client       * const clientP,
           carriageParm * const carriageParmP) {
 
-    if (this->state != STATE_UNFINISHED)
+    if (this->implP->state != rpc_impl::STATE_UNFINISHED)
         throw(error("Attempt to execute an RPC that has already been "
                     "executed"));
 
     clientP->call(carriageParmP,
-                  this->methodName,
-                  this->paramList,
-                  &this->outcome);
+                  this->implP->methodName,
+                  this->implP->paramList,
+                  &this->implP->outcome);
 
-    this->state = outcome.succeeded() ? STATE_SUCCEEDED : STATE_FAILED;
+    this->implP->state = this->implP->outcome.succeeded() ?
+        rpc_impl::STATE_SUCCEEDED : rpc_impl::STATE_FAILED;
 }
 
 
@@ -756,13 +1034,13 @@ void
 rpc::start(client       * const clientP,
            carriageParm * const carriageParmP) {
     
-    if (this->state != STATE_UNFINISHED)
+    if (this->implP->state != rpc_impl::STATE_UNFINISHED)
         throw(error("Attempt to execute an RPC that has already been "
                     "executed"));
 
     clientP->start(carriageParmP,
-                   this->methodName,
-                   this->paramList,
+                   this->implP->methodName,
+                   this->implP->paramList,
                    rpcPtr(this));
 }
 
@@ -779,9 +1057,11 @@ rpc::start(xmlrpc_c::connection const& connection) {
 void
 rpc::finish(rpcOutcome const& outcome) {
 
-    this->state = outcome.succeeded() ? STATE_SUCCEEDED : STATE_FAILED;
+    this->implP->state =
+        outcome.succeeded() ?
+        rpc_impl::STATE_SUCCEEDED : rpc_impl::STATE_FAILED;
 
-    this->outcome = outcome;
+    this->implP->outcome = outcome;
 
     this->notifyComplete();
 }
@@ -791,8 +1071,8 @@ rpc::finish(rpcOutcome const& outcome) {
 void
 rpc::finishErr(error const& error) {
 
-    this->state = STATE_ERROR;
-    this->errorP = new girerr::error(error);
+    this->implP->state = rpc_impl::STATE_ERROR;
+    this->implP->errorP = new girerr::error(error);
     this->notifyComplete();
 }
 
@@ -821,23 +1101,23 @@ rpc::notifyComplete() {
 value
 rpc::getResult() const {
 
-    switch (this->state) {
-    case STATE_UNFINISHED:
+    switch (this->implP->state) {
+    case rpc_impl::STATE_UNFINISHED:
         throw(error("Attempt to get result of RPC that is not finished."));
         break;
-    case STATE_ERROR:
-        throw(*this->errorP);
+    case rpc_impl::STATE_ERROR:
+        throw(*this->implP->errorP);
         break;
-    case STATE_FAILED:
+    case rpc_impl::STATE_FAILED:
         throw(error("RPC response indicates failure.  " +
-                    this->outcome.getFault().getDescription()));
+                    this->implP->outcome.getFault().getDescription()));
         break;
-    case STATE_SUCCEEDED: {
+    case rpc_impl::STATE_SUCCEEDED: {
         // All normal
     }
     }
 
-    return this->outcome.getResult();
+    return this->implP->outcome.getResult();
 }
 
 
@@ -846,36 +1126,36 @@ rpc::getResult() const {
 fault
 rpc::getFault() const {
 
-    switch (this->state) {
-    case STATE_UNFINISHED:
+    switch (this->implP->state) {
+    case rpc_impl::STATE_UNFINISHED:
         throw(error("Attempt to get fault from RPC that is not finished"));
         break;
-    case STATE_ERROR:
-        throw(*this->errorP);
+    case rpc_impl::STATE_ERROR:
+        throw(*this->implP->errorP);
         break;
-    case STATE_SUCCEEDED:
+    case rpc_impl::STATE_SUCCEEDED:
         throw(error("Attempt to get fault from an RPC that succeeded"));
         break;
-    case STATE_FAILED: {
+    case rpc_impl::STATE_FAILED: {
         // All normal
     }
     }
 
-    return this->outcome.getFault();
+    return this->implP->outcome.getFault();
 }
 
 
 
 bool
 rpc::isFinished() const {
-    return (this->state != STATE_UNFINISHED);
+    return (this->implP->state != rpc_impl::STATE_UNFINISHED);
 }
 
 
 
 bool
 rpc::isSuccessful() const {
-    return (this->state == STATE_SUCCEEDED);
+    return (this->implP->state == rpc_impl::STATE_SUCCEEDED);
 }
 
 
@@ -884,17 +1164,13 @@ rpcPtr::rpcPtr() {}
 
 
 
-rpcPtr::rpcPtr(rpc * const rpcP) {
-    this->point(rpcP);
-}
+rpcPtr::rpcPtr(rpc * const rpcP) : clientTransactionPtr(rpcP) {}
 
 
 
 rpcPtr::rpcPtr(string              const  methodName,
-               xmlrpc_c::paramList const& paramList) {
-
-    this->point(new rpc(methodName, paramList));
-}
+               xmlrpc_c::paramList const& paramList) :
+                   clientTransactionPtr(new rpc(methodName, paramList)) {}
 
 
 
@@ -944,10 +1220,8 @@ xmlTransaction_clientPtr::xmlTransaction_clientPtr() {}
 
 
 xmlTransaction_clientPtr::xmlTransaction_clientPtr(
-    clientTransactionPtr const& tranP) {
-
-    this->point(new xmlTransaction_client(tranP));
-}
+    clientTransactionPtr const& tranP) :
+        xmlTransactionPtr(new xmlTransaction_client(tranP)) {}
 
 
 

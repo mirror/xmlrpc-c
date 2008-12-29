@@ -15,20 +15,17 @@
 #define XMLRPC_C_UTIL_H_INCLUDED
 
 #include <sys/types.h>
+#include <stdarg.h>
+
+#include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
+#include <xmlrpc-c/c_util.h>  /* for GNU_PRINTF_ATTR */
+
+#if XMLRPC_HAVE_WCHAR
+#include <wchar.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-
-/* GNU_PRINTF_ATTR lets the GNU compiler check printf-type
-   calls to be sure the arguments match the format string, thus preventing
-   runtime segmentation faults and incorrect messages.
-*/
-#ifdef __GNUC__
-#define GNU_PRINTF_ATTR(a,b) __attribute__ ((format (printf, a, b)))
-#else
-#define GNU_PRINTF_ATTR(a,b)
 #endif
 
 
@@ -43,7 +40,7 @@ extern "C" {
 */
 
 #define _XMLRPC_STRUCT_MEMBER_OFFSET(TYPE, MBRNAME) \
-  ((unsigned long)(char*)&((TYPE *)0)->MBRNAME)
+  ((size_t)(char*)&((TYPE *)0)->MBRNAME)
 #define _XMLRPC_STRUCT_MEMBER_SIZE(TYPE, MBRNAME) \
   sizeof(((TYPE *)0)->MBRNAME)
 #define XMLRPC_STRUCTSIZE(TYPE, MBRNAME) \
@@ -81,11 +78,6 @@ xmlrpc_assertion_failed(const char * const fileName,
 /* Validate a pointer. */
 #define XMLRPC_ASSERT_PTR_OK(ptr) \
     XMLRPC_ASSERT((ptr) != NULL)
-
-/* We only call this if something truly drastic happens. */
-#define XMLRPC_FATAL_ERROR(msg) xmlrpc_fatal_error(__FILE__, __LINE__, (msg))
-
-extern void xmlrpc_fatal_error (char* file, int line, char* msg);
 
 
 /*=========================================================================
@@ -133,7 +125,7 @@ typedef struct _xmlrpc_env {
 /* Initialize and destroy the contents of the provided xmlrpc_env object.
 ** These functions will never fail. */
 void xmlrpc_env_init (xmlrpc_env* env);
-void xmlrpc_env_clean (xmlrpc_env* env);
+void xmlrpc_env_clean (xmlrpc_env* const env);
 
 /* Fill out an xmlrpc_fault with the specified values, and set the
 ** fault_occurred flag. This function will make a private copy of 'string',
@@ -142,6 +134,13 @@ void
 xmlrpc_env_set_fault(xmlrpc_env * const env, 
                      int          const faultCode, 
                      const char * const faultDescription);
+
+/* The same as the above, but using varargs */
+void
+xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
+                             int          const code,
+                             const char * const format,
+                             va_list      const args);
 
 /* The same as the above, but using a printf-style format string. */
 void 
@@ -188,6 +187,17 @@ xmlrpc_faultf(xmlrpc_env * const envP,
         goto cleanup; \
     } while (0)
 
+#if !defined(__cplusplus)
+#if defined(__GNUC__)
+#define XMLRPC_FAILF( env, code, fmt, ... )  \
+    do {  \
+        xmlrpc_env_set_fault_formatted((env), (code), (fmt),  \
+                                       ##__VA_ARGS__ );  \
+        goto cleanup;  \
+    } while (0)
+#endif
+#endif
+
 #define XMLRPC_FAIL_IF_NULL(ptr,env,code,str) \
     do { \
         if ((ptr) == NULL) \
@@ -196,32 +206,6 @@ xmlrpc_faultf(xmlrpc_env * const envP,
 
 #define XMLRPC_FAIL_IF_FAULT(env) \
     do { if ((env)->fault_occurred) goto cleanup; } while (0)
-
-
-/*=========================================================================
-**  Resource Limits
-**=========================================================================
-**  To discourage denial-of-service attacks, we provide several adjustable
-**  resource limits. These functions are *not* re-entrant.
-*/
-
-/* Limit IDs. There will be more of these as time goes on. */
-#define XMLRPC_NESTING_LIMIT_ID   (0)
-#define XMLRPC_XML_SIZE_LIMIT_ID  (1)
-#define XMLRPC_LAST_LIMIT_ID      (XMLRPC_XML_SIZE_LIMIT_ID)
-
-/* By default, deserialized data may be no more than 64 levels deep. */
-#define XMLRPC_NESTING_LIMIT_DEFAULT  (64)
-
-/* By default, XML data from the network may be no larger than 512K.
-** Some client and server modules may fail to enforce this properly. */
-#define XMLRPC_XML_SIZE_LIMIT_DEFAULT (512*1024)
-
-/* Set a specific limit to the specified value. */
-extern void xmlrpc_limit_set (int limit_id, size_t value);
-
-/* Get the value of a specified limit. */
-extern size_t xmlrpc_limit_get (int limit_id);
 
 
 /*=========================================================================
@@ -239,18 +223,18 @@ typedef struct _xmlrpc_mem_block {
 } xmlrpc_mem_block;
 
 /* Allocate a new xmlrpc_mem_block. */
-xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* env, size_t size);
+xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* const env, size_t const size);
 
 /* Destroy an existing xmlrpc_mem_block, and everything it contains. */
-void xmlrpc_mem_block_free (xmlrpc_mem_block* block);
+void xmlrpc_mem_block_free (xmlrpc_mem_block* const block);
 
 /* Initialize the contents of the provided xmlrpc_mem_block. */
 void xmlrpc_mem_block_init
-    (xmlrpc_env* env, xmlrpc_mem_block* block, size_t size);
+    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Deallocate the contents of the provided xmlrpc_mem_block, but not the
 ** block itself. */
-void xmlrpc_mem_block_clean (xmlrpc_mem_block* block);
+void xmlrpc_mem_block_clean (xmlrpc_mem_block* const block);
 
 /* Get the size and contents of the xmlrpc_mem_block. */
 size_t 
@@ -262,11 +246,11 @@ xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block);
 /* Resize an xmlrpc_mem_block, preserving as much of the contents as
 ** possible. */
 void xmlrpc_mem_block_resize
-    (xmlrpc_env* env, xmlrpc_mem_block* block, size_t size);
+    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Append data to an existing xmlrpc_mem_block. */
 void xmlrpc_mem_block_append
-    (xmlrpc_env* env, xmlrpc_mem_block* block, const void *data, size_t len);
+    (xmlrpc_env* const env, xmlrpc_mem_block* const block, const void * const data, size_t const len);
 
 #define XMLRPC_MEMBLOCK_NEW(type,env,size) \
     xmlrpc_mem_block_new((env), sizeof(type) * (size))
@@ -305,6 +289,37 @@ void xmlrpc_mem_block_append
     XMLRPC_MEMBLOCK_RESIZE(type,env,block,size)
 #define XMLRPC_TYPED_MEM_BLOCK_APPEND(type,env,block,data,size) \
     XMLRPC_MEMBLOCK_APPEND(type,env,block,data,size)
+
+
+/*=========================================================================
+**  UTF-8 Encoding and Decoding
+**=======================================================================*/
+
+void 
+xmlrpc_validate_utf8(xmlrpc_env * const envP,
+                     const char * const utf8Data,
+                     size_t       const utf8Len);
+
+/* Decode a UTF-8 string. */
+xmlrpc_mem_block *
+xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
+                   const char * const utf8_data,
+                   size_t       const utf8_len);
+
+/* Encode a UTF-8 string. */
+
+#if XMLRPC_HAVE_WCHAR
+xmlrpc_mem_block *
+xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
+                   const wchar_t * const wcsData,
+                   size_t          const wcsLen);
+#endif
+
+void
+xmlrpc_force_to_utf8(char * const buffer);
+
+void
+xmlrpc_force_to_xml_chars(char * const buffer);
 
 #ifdef __cplusplus
 }

@@ -5,7 +5,6 @@
 #include <sstream>
 #include <memory>
 #include <time.h>
-#include <cstring>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -15,7 +14,9 @@ using girerr::error;
 #include "xmlrpc-c/registry.hpp"
 
 #include "testclient.hpp"
+#include "registry.hpp"
 #include "server_abyss.hpp"
+#include "server_pstream.hpp"
 #include "tools.hpp"
 
 using namespace xmlrpc_c;
@@ -47,39 +48,6 @@ using namespace std;
 //  If you add new tests to this file, please deallocate any data
 //  structures you use in the appropriate fashion. This allows us to test
 //  various destructor code for memory leaks.
-
-
-class sampleAddMethod : public method {
-public:
-    sampleAddMethod() {
-        this->_signature = "i:ii";
-        this->_help = "This method adds two integers together";
-    }
-    void
-    execute(xmlrpc_c::paramList const& paramList,
-            value *             const  retvalP) {
-        
-        int const addend(paramList.getInt(0));
-        int const adder(paramList.getInt(1));
-        
-        paramList.verifyEnd(2);
-        
-        *retvalP = value_int(addend + adder);
-    }
-};
-
-
-
-class nameMethod : public defaultMethod {
-
-    void
-    execute(string              const& methodName,
-            xmlrpc_c::paramList const& ,  // paramList
-            value *             const  retvalP) {
-        
-        *retvalP = value_string(string("no such method: ") + methodName);
-    }
-};
 
 
 //=========================================================================
@@ -149,7 +117,7 @@ void test_env (void) {
     try {
         env2.throwIfFaultOccurred();
         TEST_PASSED();
-    } catch (XmlRpcFault const& fault) {
+    } catch (XmlRpcFault const&) {
         TEST_FAILED("We threw a fault when one hadn't occurred");
     } 
     xmlrpc_env_set_fault(env2, 9, "Fault 9");
@@ -339,6 +307,56 @@ public:
 
 
 
+#if XMLRPC_HAVE_TIMEVAL
+
+static struct timeval
+makeTv(time_t       const secs,
+       unsigned int const usecs) {
+
+    struct timeval retval;
+
+    retval.tv_sec  = secs;
+    retval.tv_usec = usecs;
+
+    return retval;
+}
+
+static bool
+tvIsEqual(struct timeval const comparand,
+          struct timeval const comparator) {
+    return
+        comparand.tv_sec  == comparator.tv_sec &&
+        comparand.tv_usec == comparator.tv_usec;
+}
+#endif
+
+
+
+#if XMLRPC_HAVE_TIMESPEC
+
+static struct timespec
+makeTs(time_t       const secs,
+       unsigned int const usecs) {
+
+    struct timespec retval;
+
+    retval.tv_sec  = secs;
+    retval.tv_nsec = usecs * 1000;
+
+    return retval;
+}
+
+static bool
+tsIsEqual(struct timespec const comparand,
+          struct timespec const comparator) {
+    return
+        comparand.tv_sec  == comparator.tv_sec &&
+        comparand.tv_nsec == comparator.tv_nsec;
+}
+#endif
+
+
+
 class datetimeTestSuite : public testSuite {
 public:
     virtual string suiteName() {
@@ -354,6 +372,18 @@ public:
         TEST(val1.type() == value::TYPE_DATETIME);
         value_datetime datetime3(val1);
         TEST(static_cast<time_t>(datetime3) == testTime);
+#if XMLRPC_HAVE_TIMEVAL
+        struct timeval const testTimeTv(makeTv(testTime, 0));
+        value_datetime datetime4(testTimeTv);
+        TEST(static_cast<time_t>(datetime4) == testTime);
+        TEST(tvIsEqual(static_cast<timeval>(datetime4), testTimeTv));
+#endif
+#if XMLRPC_HAVE_TIMESPEC
+        struct timespec const testTimeTs(makeTs(testTime, 0));
+        value_datetime datetime5(testTimeTs);
+        TEST(static_cast<time_t>(datetime5) == testTime);
+        TEST(tsIsEqual(static_cast<timespec>(datetime5), testTimeTs));
+#endif
         try {
             value_datetime datetime4(value_int(4));
             TEST_FAILED("invalid cast int-datetime suceeded");
@@ -379,8 +409,17 @@ public:
         TEST(static_cast<string>(string3) == "hello world");
         try {
             value_string string4(value_int(4));
-            TEST_FAILED("invalid cast int-string suceeded");
+            TEST_FAILED("invalid cast int-string succeeded");
         } catch (error) {}
+        value_string string5("hello world", value_string::nlCode_all);
+        TEST(static_cast<string>(string5) == "hello world");
+        value_string string6("hello\nthere\rworld\r\n\n",
+                             value_string::nlCode_all);
+        TEST(static_cast<string>(string6) == "hello\nthere\nworld\n\n");
+        TEST(string6.crlfValue() == "hello\r\nthere\r\nworld\r\n\r\n");
+        value_string string7("hello\nthere\rworld\r\n\n",
+                             value_string::nlCode_lf);
+        TEST(static_cast<string>(string7) == "hello\nthere\rworld\r\n\n");
     }
 };
 
@@ -428,6 +467,31 @@ public:
         try {
             value_nil nil4(value_int(4));
             TEST_FAILED("invalid cast int-nil suceeded");
+        } catch (error) {}
+    }
+};
+
+
+
+class i8TestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "i8TestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        value_i8 int1(7);
+        TEST(static_cast<xmlrpc_int64>(int1) == 7);
+        value_i8 int2(-7);
+        TEST(static_cast<xmlrpc_int64>(int2) == -7);
+        value_i8 int5(1ull << 40);
+        TEST(static_cast<xmlrpc_int64>(int5) == (1ull << 40));
+        value val1(int1);
+        TEST(val1.type() == value::TYPE_I8);
+        value_i8 int3(val1);
+        TEST(static_cast<xmlrpc_int64>(int3) == 7);
+        try {
+            value_i8 int4(value_double(3.7));
+            TEST_FAILED("invalid cast double-i8 suceeded");
         } catch (error) {}
     }
 };
@@ -512,112 +576,11 @@ public:
         stringTestSuite().run(indentation+1);
         bytestringTestSuite().run(indentation+1);
         nilTestSuite().run(indentation+1);
+        i8TestSuite().run(indentation+1);
         structTestSuite().run(indentation+1);
         arrayTestSuite().run(indentation+1);
     }
 };
-
-
-namespace {
-string const noElementFoundXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<fault>\r\n"
-    "<value><struct>\r\n"
-    "<member><name>faultCode</name>\r\n"
-    "<value><i4>-503</i4></value></member>\r\n"
-    "<member><name>faultString</name>\r\n"
-    "<value><string>Call XML not a proper XML-RPC call.  "
-    "Call is not valid XML.  no element found</string></value>"
-    "</member>\r\n"
-    "</struct></value>\r\n"
-    "</fault>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-string const sampleAddGoodCallXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodCall>\r\n"
-    "<methodName>sample.add</methodName>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>5</i4></value></param>\r\n"
-    "<param><value><i4>7</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodCall>\r\n"
-    );
-
-string const sampleAddGoodResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>12</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-
-string const sampleAddBadCallXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodCall>\r\n"
-    "<methodName>sample.add</methodName>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>5</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodCall>\r\n"
-    );
-
-string const sampleAddBadResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<fault>\r\n"
-    "<value><struct>\r\n"
-    "<member><name>faultCode</name>\r\n"
-    "<value><i4>-501</i4></value></member>\r\n"
-    "<member><name>faultString</name>\r\n"
-    "<value><string>Not enough parameters</string></value></member>\r\n"
-    "</struct></value>\r\n"
-    "</fault>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-
-string const nonexistentMethodCallXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodCall>\r\n"
-    "<methodName>nosuchmethod</methodName>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>5</i4></value></param>\r\n"
-    "<param><value><i4>7</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodCall>\r\n"
-    );
-
-string const nonexistentMethodYesDefResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<params>\r\n"
-    "<param><value><string>no such method: nosuchmethod</string>"
-    "</value></param>\r\n"
-    "</params>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-string const nonexistentMethodNoDefResponseXml(
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<methodResponse>\r\n"
-    "<fault>\r\n"
-    "<value><struct>\r\n"
-    "<member><name>faultCode</name>\r\n"
-    "<value><i4>-506</i4></value></member>\r\n"
-    "<member><name>faultString</name>\r\n"
-    "<value><string>Method 'nosuchmethod' not defined</string></value>"
-    "</member>\r\n"
-    "</struct></value>\r\n"
-    "</fault>\r\n"
-    "</methodResponse>\r\n"
-    );
-
-} // namespace
 
 
 class paramListTestSuite : public testSuite {
@@ -653,8 +616,9 @@ public:
         structData.insert(member);
         paramList1.add(value_struct(structData));
         paramList1.add(value_nil());
+        paramList1.add(value_i8((xmlrpc_int64)UINT_MAX + 1));
 
-        TEST(paramList1.size() == 10);
+        TEST(paramList1.size() == 11);
 
         TEST(paramList1.getInt(0) == 7);
         TEST(paramList1.getInt(0, 7) == 7);
@@ -676,98 +640,13 @@ public:
         TEST(paramList1.getArray(7, 1, 3).size() == 3);
         paramList1.getStruct(8)["the_integer"];
         paramList1.getNil(9);
-        paramList1.verifyEnd(10);
+        TEST(paramList1.getI8(10) == (xmlrpc_int64)UINT_MAX + 1);
+        paramList1.verifyEnd(11);
 
         paramList paramList2(5);
         TEST(paramList2.size() == 0);
     }
 };
-
-class registryRegMethodTestSuite : public testSuite {
-
-public:
-    virtual string suiteName() {
-        return "registryRegMethodTestSuite";
-    }
-    virtual void runtests(unsigned int) {
-
-        xmlrpc_c::registry myRegistry;
-        
-        myRegistry.addMethod("sample.add", 
-                             xmlrpc_c::methodPtr(new sampleAddMethod));
-        
-        myRegistry.disableIntrospection();
-        {
-            string response;
-            myRegistry.processCall("", &response);
-            TEST(response == noElementFoundXml);
-        }
-        {
-            string response;
-            myRegistry.processCall(sampleAddGoodCallXml, &response);
-            TEST(response == sampleAddGoodResponseXml);
-        }
-        {
-            string response;
-            myRegistry.processCall(sampleAddBadCallXml, &response);
-            TEST(response == sampleAddBadResponseXml);
-        }
-    }
-};
-
-
-
-class registryDefaultMethodTestSuite : public testSuite {
-
-public:
-    virtual string suiteName() {
-        return "registryDefaultMethodTestSuite";
-    }
-    virtual void runtests(unsigned int) {
-
-        xmlrpc_c::registry myRegistry;
-        
-        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-
-        {
-            string response;
-            myRegistry.processCall(sampleAddGoodCallXml, &response);
-            TEST(response == sampleAddGoodResponseXml);
-        }
-        {
-            string response;
-            myRegistry.processCall(nonexistentMethodCallXml, &response);
-            TEST(response == nonexistentMethodNoDefResponseXml);
-        }
-        // We're actually violating the spirit of setDefaultMethod by
-        // doing this to a registry that's already been used, but as long
-        // as it works, it's a convenient way to implement this test.
-        myRegistry.setDefaultMethod(defaultMethodPtr(new nameMethod));
-
-        {
-            string response;
-            myRegistry.processCall(nonexistentMethodCallXml, &response);
-            TEST(response == nonexistentMethodYesDefResponseXml);
-        }
-    }
-};
-
-
-
-class registryTestSuite : public testSuite {
-
-public:
-    virtual string suiteName() {
-        return "registryTestSuite";
-    }
-    virtual void runtests(unsigned int const indentation) {
-
-        registryRegMethodTestSuite().run(indentation+1);
-        registryDefaultMethodTestSuite().run(indentation+1);
-    }
-};
-
-
 
 //=========================================================================
 //  Test Driver
@@ -791,6 +670,9 @@ main(int argc, char**) {
         paramListTestSuite().run(0);
         registryTestSuite().run(0);
         serverAbyssTestSuite().run(0);
+#ifndef  WIN32
+        serverPstreamTestSuite().run(0);
+#endif
         clientTestSuite().run(0);
 
         testXmlRpcCpp();

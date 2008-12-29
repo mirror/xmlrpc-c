@@ -1,9 +1,11 @@
 #ifndef CONN_H_INCLUDED
 #define CONN_H_INCLUDED
 
+#include "bool.h"
 #include "xmlrpc-c/abyss.h"
-#include "socket.h"
-#include "file.h"
+#include "thread.h"
+
+struct TFile;
 
 #define BUFFER_SIZE 4096 
 
@@ -22,11 +24,18 @@ struct _TConn {
            the next byte to be delivered to the user is.
         */
     uint32_t inbytes,outbytes;  
-    TSocket * socketP;
-    TIPAddr peerip;
-    abyss_bool hasOwnThread;
+    TChannel * channelP;
+    void * channelInfoP;
+        /* Information about the channel, such as who is on the other end.
+           Format depends on the type of channel.  The user of the connection
+           is expected to know that type, because he supplied the channel
+           when he created the channel.
+
+           NULL means no channel info is available.
+        */
+    bool hasOwnThread;
     TThread * threadP;
-    abyss_bool finished;
+    bool finished;
         /* We have done all the processing there is to do on this
            connection, other than possibly notifying someone that we're
            done.  One thing this signifies is that any thread or process
@@ -38,8 +47,15 @@ struct _TConn {
         */
     const char * trace;
     TThreadProc * job;
+        /* The function to run, in a connection thread, to conduct business
+           on the connection.  It reads stuff and writes stuff and, when it
+           is done with the connection, exits.
+        */
     TThreadDoneFn * done;
-    char buffer[BUFFER_SIZE];
+    union {
+        unsigned char b[BUFFER_SIZE];  /* Just bytes */
+        char          t[BUFFER_SIZE];  /* Taken as text */
+    } buffer;
 };
 
 typedef struct _TConn TConn;
@@ -51,48 +67,50 @@ void ConnFree(TConn * const connectionP);
 void
 ConnCreate(TConn **            const connectionPP,
            TServer *           const serverP,
-           TSocket *           const connectedSocketP,
+           TChannel *          const channelP,
+           void *              const channelInfoP,
            TThreadProc *       const job,
+           size_t              const jobStackSize,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
-           abyss_bool          const useSigchld,
+           bool                const useSigchld,
            const char **       const errorP);
 
-abyss_bool
+bool
 ConnProcess(TConn * const connectionP);
 
-abyss_bool
+bool
 ConnKill(TConn * const connectionP);
 
 void
 ConnWaitAndRelease(TConn * const connectionP);
 
-abyss_bool
+bool
 ConnWrite(TConn *      const connectionP,
           const void * const buffer,
           uint32_t     const size);
 
-abyss_bool
+bool
 ConnRead(TConn *  const c,
          uint32_t const timems);
 
 void
 ConnReadInit(TConn * const connectionP);
 
-abyss_bool
-ConnReadHeader(TConn * const connectionP,
-               char ** const headerP);
-
-abyss_bool
-ConnWriteFromFile(TConn *  const connectionP,
-                  TFile *  const file,
-                  uint64_t const start,
-                  uint64_t const end,
-                  void *   const buffer,
-                  uint32_t const buffersize,
-                  uint32_t const rate);
+bool
+ConnWriteFromFile(TConn *              const connectionP,
+                  const struct TFile * const fileP,
+                  uint64_t             const start,
+                  uint64_t             const last,
+                  void *               const buffer,
+                  uint32_t             const buffersize,
+                  uint32_t             const rate);
 
 TServer *
 ConnServer(TConn * const connectionP);
+
+void
+ConnFormatClientAddr(TConn *       const connectionP,
+                     const char ** const clientAddrPP);
 
 #endif

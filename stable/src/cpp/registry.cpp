@@ -4,7 +4,7 @@
 #include <algorithm>
 
 #include "xmlrpc-c/girerr.hpp"
-using girerr::error;
+using girerr::throwf;
 #include "xmlrpc-c/girmem.hpp"
 using girmem::autoObject;
 using girmem::autoObjectPtr;
@@ -24,7 +24,7 @@ void
 throwIfError(env_wrap const& env) {
 
     if (env.env_c.fault_occurred)
-        throw(error(env.env_c.fault_string));
+        throw(girerr::error(env.env_c.fault_string));
 }
 
 
@@ -173,7 +173,8 @@ pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
 static xmlrpc_value *
 c_executeMethod(xmlrpc_env *   const envP,
                 xmlrpc_value * const paramArrayP,
-                void *         const methodPtr) {
+                void *         const methodPtr,
+                void *) {
 /*----------------------------------------------------------------------------
    This is a function designed to be called via a C registry to
    execute an XML-RPC method, but use a C++ method object to do the
@@ -203,20 +204,27 @@ c_executeMethod(xmlrpc_env *   const envP,
         } catch (xmlrpc_c::fault const& fault) {
             xmlrpc_env_set_fault(envP, fault.getCode(), 
                                  fault.getDescription().c_str()); 
-        } catch (girerr::error const& error) {
-            xmlrpc_env_set_fault(envP, 0, error.what());
         }
-        if (envP->fault_occurred)
-            retval = NULL;
-        else
-            retval = result.cValue();
+        if (!envP->fault_occurred) {
+            if (result.isInstantiated())
+                retval = result.cValue();
+            else
+                throwf("Xmlrpc-c user's xmlrpc_c::method object's "
+                       "'execute method' failed to set the RPC result "
+                       "value.");
+        }
+    } catch (exception const& e) {
+        xmlrpc_faultf(envP, "Unexpected error executing code for "
+                      "particular method, detected by Xmlrpc-c "
+                      "method registry code.  Method did not "
+                      "fail; rather, it did not complete at all.  %s",
+                      e.what());
     } catch (...) {
         xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
-                             "Unexpected error executing the code for this "
-                             "particular method, detected by the Xmlrpc-c "
-                             "method registry code.  The method did not "
+                             "Unexpected error executing code for "
+                             "particular method, detected by Xmlrpc-c "
+                             "method registry code.  Method did not "
                              "fail; rather, it did not complete at all.");
-        retval = NULL;
     }
     return retval;
 }
@@ -251,27 +259,34 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
     xmlrpc_value * retval;
 
     try {
-        value result;
+        xmlrpc_c::value result;
         
         try {
             methodP->execute(methodName, paramList, &result);
         } catch (xmlrpc_c::fault const& fault) {
             xmlrpc_env_set_fault(envP, fault.getCode(), 
                                  fault.getDescription().c_str()); 
-        } catch (girerr::error const& error) {
-            xmlrpc_env_set_fault(envP, 0, error.what());
         }
-        if (envP->fault_occurred)
-            retval = NULL;
-        else
-            retval = result.cValue();
+        if (!envP->fault_occurred) {
+            if (result.isInstantiated())
+                retval = result.cValue();
+            else
+                throwf("Xmlrpc-c user's xmlrpc_c::defaultMethod object's "
+                       "'execute method' failed to set the RPC result "
+                       "value.");
+        }
+    } catch (exception const& e) {
+        xmlrpc_faultf(envP, "Unexpected error executing default "
+                      "method code, detected by Xmlrpc-c "
+                      "method registry code.  Method did not "
+                      "fail; rather, it did not complete at all.  %s",
+                      e.what());
     } catch (...) {
         xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
-                             "Unexpected error executing the default "
-                             "method code, detected by the Xmlrpc-c "
-                             "method registry code.  The method did not "
+                             "Unexpected error executing default "
+                             "method code, detected by Xmlrpc-c "
+                             "method registry code.  Method did not "
                              "fail; rather, it did not complete at all.");
-        retval = NULL;
     }
     return retval;
 }
@@ -284,13 +299,19 @@ registry::addMethod(string    const name,
 
     this->methodList.push_back(methodP);
 
+    struct xmlrpc_method_info3 methodInfo;
     env_wrap env;
+
+    methodInfo.methodName      = name.c_str();
+    methodInfo.methodFunction  = &c_executeMethod;
+    methodInfo.serverInfo      = methodP.get();
+    methodInfo.stackSize       = 0;
+    string const signatureString(methodP->signature());
+    methodInfo.signatureString = signatureString.c_str();
+    string const help(methodP->help());
+    methodInfo.help            = help.c_str();
     
-	xmlrpc_registry_add_method_w_doc(
-        &env.env_c, this->c_registryP, NULL,
-        name.c_str(), &c_executeMethod, 
-        (void*) methodP.get(), 
-        methodP->signature().c_str(), methodP->help().c_str());
+	xmlrpc_registry_add_method3(&env.env_c, this->c_registryP, &methodInfo);
 
     throwIfError(env);
 }
@@ -317,6 +338,52 @@ void
 registry::disableIntrospection() {
 
     xmlrpc_registry_disable_introspection(this->c_registryP);
+}
+
+
+
+static xmlrpc_server_shutdown_fn shutdownServer;
+
+static void
+shutdownServer(xmlrpc_env * const envP,
+               void *       const context,
+               const char * const comment,
+               void *       const callInfo) {
+
+    registry::shutdown * const shutdownP(
+        static_cast<registry::shutdown *>(context));
+
+    assert(shutdownP != NULL);
+
+    try {
+        shutdownP->doit(string(comment), callInfo);
+    } catch (exception const& e) {
+        xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR, e.what());
+    }
+}
+
+
+
+void
+registry::setShutdown(const registry::shutdown * const shutdownP) {
+
+    void * const context(const_cast<registry::shutdown *>(shutdownP));
+
+    xmlrpc_registry_set_shutdown(this->c_registryP,
+                                 &shutdownServer,
+                                 context);
+}
+
+
+
+void
+registry::setDialect(xmlrpc_dialect const dialect) {
+
+    env_wrap env;
+
+    xmlrpc_registry_set_dialect(&env.env_c, this->c_registryP, dialect);
+
+    throwIfError(env);
 }
 
 
@@ -363,3 +430,6 @@ registry::c_registry() const {
 }
 
 }  // namespace
+
+
+registry::shutdown::~shutdown() {}

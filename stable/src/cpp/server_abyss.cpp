@@ -1,12 +1,15 @@
-#include <cassert>
 #include <cstdlib>
 #include <string>
 #include <memory>
 #include <signal.h>
 #include <errno.h>
 #include <iostream>
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 
+#include "assertx.hpp"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
@@ -35,7 +38,7 @@ sigterm(int const signalClass) {
 
 
 static void 
-sigchld(int const signalClass) {
+sigchld(int const ASSERT_ONLY_ARG(signalClass)) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
    one of our child processes has terminated).
@@ -43,7 +46,8 @@ sigchld(int const signalClass) {
    We respond by reaping the zombie process.
 
    Implementation note: In some systems, just setting the signal handler
-   to SIG_IGN (ignore signal) does this.  In others, it doesn't.
+   to SIG_IGN (ignore signal) does this.  In some, the system does this
+   automatically if the signal is blocked.
 -----------------------------------------------------------------------------*/
 #ifndef _WIN32
     /* Reap zombie children until there aren't any more. */
@@ -74,8 +78,23 @@ sigchld(int const signalClass) {
 
 
 
+struct signalHandlers {
+#ifndef WIN32
+    struct sigaction term;
+    struct sigaction int_;
+    struct sigaction hup;
+    struct sigaction usr1;
+    struct sigaction pipe;
+    struct sigaction chld;
+#else
+    int dummy;
+#endif
+};
+
+
+
 void
-setupSignalHandlers(void) {
+setupSignalHandlers(struct signalHandlers * const oldHandlersP) {
 #ifndef _WIN32
     struct sigaction mysigaction;
    
@@ -84,23 +103,78 @@ setupSignalHandlers(void) {
 
     /* These signals abort the program, with tracing */
     mysigaction.sa_handler = sigterm;
-    sigaction(SIGTERM, &mysigaction, NULL);
-    sigaction(SIGINT,  &mysigaction, NULL);
-    sigaction(SIGHUP,  &mysigaction, NULL);
-    sigaction(SIGUSR1, &mysigaction, NULL);
+    sigaction(SIGTERM, &mysigaction, &oldHandlersP->term);
+    sigaction(SIGINT,  &mysigaction, &oldHandlersP->int_);
+    sigaction(SIGHUP,  &mysigaction, &oldHandlersP->hup);
+    sigaction(SIGUSR1, &mysigaction, &oldHandlersP->usr1);
 
     /* This signal indicates connection closed in the middle */
     mysigaction.sa_handler = SIG_IGN;
-    sigaction(SIGPIPE, &mysigaction, NULL);
+    sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
    
     /* This signal indicates a child process (request handler) has died */
     mysigaction.sa_handler = sigchld;
-    sigaction(SIGCHLD, &mysigaction, NULL);
+    sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
 #endif
 }    
 
 
+
+void
+restoreSignalHandlers(struct signalHandlers const& oldHandlers) {
+
+#ifndef _WIN32
+    sigaction(SIGCHLD, &oldHandlers.chld, NULL);
+    sigaction(SIGPIPE, &oldHandlers.pipe, NULL);
+    sigaction(SIGUSR1, &oldHandlers.usr1, NULL);
+    sigaction(SIGHUP,  &oldHandlers.hup,  NULL);
+    sigaction(SIGINT,  &oldHandlers.int_, NULL);
+    sigaction(SIGTERM, &oldHandlers.term, NULL);
+#endif
+}
+
+
+
+// We need 'global' because methods of class serverAbyss call
+// functions in the Abyss C library.  By virtue of global's static
+// storage class, the program loader will call its constructor and
+// destructor and thus initialize and terminate the Abyss C library.
+
+class abyssGlobalState {
+public:
+    abyssGlobalState() {
+        const char * error;
+        AbyssInit(&error);
+        if (error) {
+            string const e(error);
+            xmlrpc_strfree(error);
+            throwf("AbyssInit() failed.  %s", e.c_str());
+        }
+    }
+    ~abyssGlobalState() {
+        AbyssTerm();
+    }
+} const global;
+
 } // namespace
+
+
+
+serverAbyss::shutdown::shutdown(serverAbyss * const serverAbyssP) :
+    serverAbyssP(serverAbyssP) {}
+
+
+
+serverAbyss::shutdown::~shutdown() {}
+
+
+
+void
+serverAbyss::shutdown::doit(string const&,
+                            void * const) const {
+
+    this->serverAbyssP->terminate();
+}
 
 
 
@@ -118,9 +192,9 @@ serverAbyss::constrOpt::constrOpt() {
     present.chunkResponse    = false;
     
     // Set default values
-    value.dontAdvertise = false;
-    value.uriPath       = string("/RPC2");
-    value.chunkResponse = false;
+    value.dontAdvertise  = false;
+    value.uriPath        = string("/RPC2");
+    value.chunkResponse  = false;
 }
 
 
@@ -135,12 +209,12 @@ serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
 
 DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
 DEFINE_OPTION_SETTER(registryP,        const registry *);
-DEFINE_OPTION_SETTER(socketFd,         xmlrpc_socket);
-DEFINE_OPTION_SETTER(portNumber,       uint);
+DEFINE_OPTION_SETTER(socketFd,         XMLRPC_SOCKET);
+DEFINE_OPTION_SETTER(portNumber,       unsigned int);
 DEFINE_OPTION_SETTER(logFileName,      string);
-DEFINE_OPTION_SETTER(keepaliveTimeout, uint);
-DEFINE_OPTION_SETTER(keepaliveMaxConn, uint);
-DEFINE_OPTION_SETTER(timeout,          uint);
+DEFINE_OPTION_SETTER(keepaliveTimeout, unsigned int);
+DEFINE_OPTION_SETTER(keepaliveMaxConn, unsigned int);
+DEFINE_OPTION_SETTER(timeout,          unsigned int);
 DEFINE_OPTION_SETTER(dontAdvertise,    bool);
 DEFINE_OPTION_SETTER(uriPath,          string);
 DEFINE_OPTION_SETTER(chunkResponse,    bool);
@@ -180,7 +254,7 @@ createServer(bool         const  logFileNameGiven,
 
     const char * const serverName("XmlRpcServer");
 
-    bool created;
+    abyss_bool created;
         
     if (socketFdGiven)
         created =
@@ -236,7 +310,7 @@ serverAbyss::initialize(constrOpt const& opt) {
 
     try {
         setAdditionalServerParms(opt);
-        
+
         // chunked response implementation is incomplete.  We must
         // eventually get away from libxmlrpc_server_abyss and
         // register our own handler with the Abyss server.  At that
@@ -249,8 +323,6 @@ serverAbyss::initialize(constrOpt const& opt) {
         
         if (opt.present.portNumber || opt.present.socketFd)
             ServerInit(&this->cServer);
-        
-        setupSignalHandlers();
     } catch (...) {
         ServerFree(&this->cServer);
         throw;
@@ -275,7 +347,7 @@ serverAbyss::serverAbyss(
     unsigned int       const  timeout,
     bool               const  dontAdvertise,
     bool               const  socketBound,
-    xmlrpc_socket      const  socketFd) {
+    XMLRPC_SOCKET      const  socketFd) {
 /*----------------------------------------------------------------------------
   This is a backward compatibility interface.  This used to be the only
   constructor.
@@ -312,7 +384,25 @@ serverAbyss::~serverAbyss() {
 void
 serverAbyss::run() {
 
+    /* We do some pretty ugly stuff for an object method: we set signal
+       handlers, which are process-global.
+
+       One example of where this can be hairy is: Caller has a child
+       process unrelated to the Abyss server.  That child dies.  We
+       get his death of a child signal and Caller never knows.
+
+       We really expect to be the only thing in the process, at least
+       for the time we're running.  If you want the Abyss Server
+       to behave more like an object and own the signals yourself,
+       use runOnce() in a loop instead of run().
+    */
+    signalHandlers oldHandlers;
+
+    setupSignalHandlers(&oldHandlers);
+
     ServerRun(&this->cServer);
+
+    restoreSignalHandlers(oldHandlers);
 }
  
 
@@ -332,6 +422,12 @@ serverAbyss::runConn(int const socketFd) {
 }
 
 
+
+void
+serverAbyss::terminate() {
+
+    ServerTerminate(&this->cServer);
+}
 
 void
 server_abyss_set_handlers(TServer * const  srvP,

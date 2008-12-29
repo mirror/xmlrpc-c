@@ -5,11 +5,18 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stdio.h>
+#if MSVCRT
+#include <windows.h>
+#endif
 
 #include "bool.h"
 
+#include "xmlrpc-c/c_util.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/time_int.h"
 
 
 /* Future work: the XMLRPC_TYPE_DATETIME xmlrpc_value should store the
@@ -24,62 +31,80 @@
    after 2038.  We need to figure out something better.
 */
 
+#if HAVE_REGEX
+#include "regex.h"
+#endif
 
-#ifdef WIN32
+#if MSVCRT
 
-static const bool win32 = TRUE;
 static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
 static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
 
 
-void UnixTimeToFileTime(const time_t t, LPFILETIME pft)
-{
-    // Note that LONGLONG is a 64-bit value
-    LONGLONG ll;
-    ll = Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
-    pft->dwLowDateTime = (DWORD)ll;
-    pft->dwHighDateTime = ll >> 32;
+void
+UnixTimeToFileTime(time_t     const t,
+                   LPFILETIME const pft) {
+
+    int64_t const ll =
+        Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
+
+    pft->dwLowDateTime  = (DWORD)ll;
+    pft->dwHighDateTime = (DWORD)(ll >> 32);
 }
 
-void UnixTimeToSystemTime(const time_t t, LPSYSTEMTIME pst)
-{
+
+
+void
+UnixTimeToSystemTime(time_t const t,
+                     LPSYSTEMTIME const pst) {
     FILETIME ft;
 
     UnixTimeToFileTime(t, &ft);
     FileTimeToSystemTime(&ft, pst);
 }
 
-static void UnixTimeFromFileTime(xmlrpc_env *  const envP, LPFILETIME pft, time_t * const timeValueP) 
-{ 
-    LONGLONG ll;
 
-    ll = ((LONGLONG)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
-    /* convert to the Unix epoch */
-    ll -= (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
-    /* now convert to seconds */
-    ll /= SECS_TO_100NS; 
 
-    if ( (time_t)ll != ll )
-    {
-        //fail - value is too big for a time_t
+static void
+UnixTimeFromFileTime(xmlrpc_env *  const envP,
+                     LPFILETIME    const pft,
+                     time_t *      const timeValueP) { 
+
+    int64_t const WinEpoch100Ns =
+        ((int64_t)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
+    int64_t const unixEpoch100Ns =
+        WinEpoch100Ns - (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
+    int64_t const unixEpochSeconds =
+        unixEpoch100Ns / SECS_TO_100NS; 
+
+    if ((time_t)unixEpochSeconds != unixEpochSeconds) {
+        /* Value is too big for a time_t; fail. */
         xmlrpc_faultf(envP, "Does not indicate a valid date");
-        *timeValueP = (time_t)-1;
-        return;
-    }
-    *timeValueP = (time_t)ll;
+        *timeValueP = (time_t)(-1);
+    } else
+        *timeValueP = (time_t)unixEpochSeconds;
 }
 
-static void UnixTimeFromSystemTime(xmlrpc_env *  const envP, LPSYSTEMTIME pst, time_t * const timeValueP) 
-{
+
+
+static void
+UnixTimeFromSystemTime(xmlrpc_env * const envP,
+                       LPSYSTEMTIME const pst,
+                       time_t *     const timeValueP) {
     FILETIME filetime;
 
     SystemTimeToFileTime(pst, &filetime); 
     UnixTimeFromFileTime(envP, &filetime, timeValueP); 
 }
 
-#else
-static const bool win32 = false;
-#endif
+#endif  /* MSVCRT */
+
+
+
+static const char * const iso8601Regex =
+  "^([0-9]{4})([0-9]{2})([0-9]{2})T"
+  "([0-9]{2}):?([0-9]{2}):?([0-9]{2})\\.?([0-9]+)?$";
+
 
 
 static void
@@ -90,8 +115,8 @@ validateDatetimeType(xmlrpc_env *         const envP,
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
             "type %s was expected.", 
-            xmlrpc_typeName(valueP->_type), 
-            xmlrpc_typeName(XMLRPC_TYPE_DATETIME));
+            xmlrpc_type_name(valueP->_type), 
+            xmlrpc_type_name(XMLRPC_TYPE_DATETIME));
     }
 }
 
@@ -129,14 +154,129 @@ xmlrpc_read_datetime_str_old(xmlrpc_env *         const envP,
 
 
 
+#if HAVE_REGEX
+
+static unsigned int
+digitStringValue(const char * const string,
+                 regmatch_t   const match) {
+/*----------------------------------------------------------------------------
+   Return the numerical value of the decimal whole number substring of
+   'string' identified by 'match'.  E.g. if 'string' is 'abc34d' and
+   'match' says start at 3 and end at 5, we return 34.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+    unsigned int accum;
+
+    assert(match.rm_so >= 0);
+    assert(match.rm_eo >= 0);
+
+    for (i = match.rm_so, accum = 0; i < (unsigned)match.rm_eo; ++i) {
+        accum *= 10;
+        assert(isdigit(string[i]));
+        accum += string[i] - '0';
+    }
+    return accum;
+}
+#endif  /* HAVE_REGEX */
+
+
+
+#if HAVE_REGEX
+
+static unsigned int
+digitStringMillionths(const char * const string,
+                      regmatch_t   const match) {
+/*----------------------------------------------------------------------------
+   Return the number of millionths represented by the digits after the
+   decimal point in a decimal string, where thse digits are the substring
+   of 'string' identified by 'match'.  E.g. if the substring is
+   34, we return 340,000.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+    unsigned int accum;
+
+    assert(match.rm_so >= 0);
+    assert(match.rm_eo >= 0);
+
+    for (i = match.rm_so, accum = 0; i < (unsigned)match.rm_so+6; ++i) {
+        accum *= 10;
+        if (i < (unsigned)match.rm_eo) {
+            assert(isdigit(string[i]));
+            accum += string[i] - '0';
+        }
+    }
+    return accum;
+}
+#endif /* HAVE_REGEX */
+
+
+
+#if HAVE_REGEX
 static void
-parseDateNumbers(const char * const t,
-                 unsigned int * const YP,
-                 unsigned int * const MP,
-                 unsigned int * const DP,
-                 unsigned int * const hP,
-                 unsigned int * const mP,
-                 unsigned int * const sP) {
+parseDateNumbersRegex(xmlrpc_env *   const envP,
+                      const char *   const datetimeString,
+                      unsigned int * const YP,
+                      unsigned int * const MP,
+                      unsigned int * const DP,
+                      unsigned int * const hP,
+                      unsigned int * const mP,
+                      unsigned int * const sP,
+                      unsigned int * const uP) {
+
+
+    int status;
+    char errBuf[1024];
+    regex_t re;
+
+    status = regcomp(&re, iso8601Regex, REG_ICASE | REG_EXTENDED);
+    if (status == 0) {
+        regmatch_t matches[1024];
+        int status;
+
+        status = regexec(&re, datetimeString, ARRAY_SIZE(matches), matches, 0);
+
+        if (status == 0) {
+            assert(matches[0].rm_so != -1);  /* Match of whole regex */
+            
+            *YP = digitStringValue(datetimeString, matches[1]);
+            *MP = digitStringValue(datetimeString, matches[2]);
+            *DP = digitStringValue(datetimeString, matches[3]);
+            *hP = digitStringValue(datetimeString, matches[4]);
+            *mP = digitStringValue(datetimeString, matches[5]);
+            *sP = digitStringValue(datetimeString, matches[6]);
+
+            if (matches[7].rm_so == -1)
+                *uP = 0;
+            else
+                *uP = digitStringMillionths(datetimeString, matches[7]);
+        } else {
+            regerror(status, &re, errBuf, sizeof(errBuf));
+            xmlrpc_env_set_fault(envP, XMLRPC_PARSE_ERROR, errBuf);
+        }
+
+    } else {
+        regerror(status, &re, errBuf, sizeof(errBuf));
+        xmlrpc_faultf(envP, "internal regex error at %s:%d: '%s'",
+                      __FILE__, __LINE__, errBuf);
+    }
+    regfree(&re);
+}
+#endif  /* HAVE_REGEX */
+
+
+
+static __inline__ void
+parseDateNumbersNoRegex(xmlrpc_env *   const envP,
+                        const char *   const datetimeString,
+                        unsigned int * const YP,
+                        unsigned int * const MP,
+                        unsigned int * const DP,
+                        unsigned int * const hP,
+                        unsigned int * const mP,
+                        unsigned int * const sP,
+                        unsigned int * const uP) {
+
+    unsigned int const dtStrlen = strlen(datetimeString);
 
     char year[4+1];
     char month[2+1];
@@ -145,260 +285,259 @@ parseDateNumbers(const char * const t,
     char minute[2+1];
     char second[2+1];
 
-    assert(strlen(t) == 17);
+    if (dtStrlen < 17 || dtStrlen == 18 || dtStrlen > 24)
+        xmlrpc_faultf(envP, "could not parse date, size incompatible: '%d'",
+                      dtStrlen);
+    else {
+        year[0]   = datetimeString[ 0];
+        year[1]   = datetimeString[ 1];
+        year[2]   = datetimeString[ 2];
+        year[3]   = datetimeString[ 3];
+        year[4]   = '\0';
 
-    year[0]   = t[ 0];
-    year[1]   = t[ 1];
-    year[2]   = t[ 2];
-    year[3]   = t[ 3];
-    year[4]   = '\0';
+        month[0]  = datetimeString[ 4];
+        month[1]  = datetimeString[ 5];
+        month[2]  = '\0';
 
-    month[0]  = t[ 4];
-    month[1]  = t[ 5];
-    month[2]  = '\0';
+        day[0]    = datetimeString[ 6];
+        day[1]    = datetimeString[ 7];
+        day[2]    = '\0';
 
-    day[0]    = t[ 6];
-    day[1]    = t[ 7];
-    day[2]    = '\0';
+        assert(datetimeString[ 8] == 'T');
 
-    assert(t[ 8] == 'T');
+        hour[0]   = datetimeString[ 9];
+        hour[1]   = datetimeString[10];
+        hour[2]   = '\0';
 
-    hour[0]   = t[ 9];
-    hour[1]   = t[10];
-    hour[2]   = '\0';
+        assert(datetimeString[11] == ':');
 
-    assert(t[11] == ':');
+        minute[0] = datetimeString[12];
+        minute[1] = datetimeString[13];
+        minute[2] = '\0';
 
-    minute[0] = t[12];
-    minute[1] = t[13];
-    minute[2] = '\0';
+        assert(datetimeString[14] == ':');
 
-    assert(t[14] == ':');
+        second[0] = datetimeString[15];
+        second[1] = datetimeString[16];
+        second[2] = '\0';
 
-    second[0] = t[15];
-    second[1] = t[16];
-    second[2] = '\0';
+        if (dtStrlen > 17) {
+            unsigned int const pad = 24 - dtStrlen;
+            unsigned int i;
 
-    *YP = atoi(year);
-    *MP = atoi(month);
-    *DP = atoi(day);
-    *hP = atoi(hour);
-    *mP = atoi(minute);
-    *sP = atoi(second);
-}
-
-
-#ifdef HAVE_SETENV
-xmlrpc_bool const haveSetenv = true;
-#else
-xmlrpc_bool const haveSetenv = false;
-static void
-setenv(const char * const name ATTR_UNUSED,
-       const char * const value ATTR_UNUSED,
-       int          const replace ATTR_UNUSED) {
-    assert(FALSE);
-}
-#endif
-
-static void
-makeTimezoneUtc(xmlrpc_env *  const envP,
-                const char ** const oldTzP) {
-
-    const char * const tz = getenv("TZ");
-
-#ifdef WIN32
-	/* Windows implementation does not exist */
-	assert(TRUE);
-#endif
-
-    if (haveSetenv) {
-        if (tz) {
-            *oldTzP = strdup(tz);
-            if (*oldTzP == NULL)
-                xmlrpc_faultf(envP, "Unable to get memory to save TZ "
-                              "environment variable.");
+            *uP = atoi(&datetimeString[18]);
+            for (i = 0; i < pad; ++i)
+                *uP *= 10;
         } else
-            *oldTzP = NULL;
+            *uP = 0;
 
-        if (!envP->fault_occurred)
-            setenv("TZ", "", 1);
-    } else {
-        if (tz && strlen(tz) == 0) {
-            /* Everything's fine.  Nothing to change or restore */
+        *YP = atoi(year);
+        *MP = atoi(month);
+        *DP = atoi(day);
+        *hP = atoi(hour);
+        *mP = atoi(minute);
+        *sP = atoi(second);
+    }
+}
+
+
+
+static void
+validateFirst17(xmlrpc_env * const envP,
+                const char * const dt) {
+/*----------------------------------------------------------------------------
+   Assuming 'dt' is at least 17 characters long, validate that the first
+   17 characters are a valid XML-RPC datetime, e.g.
+   "20080628T16:35:02"
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
+    for (i = 0; i < 8 && !envP->fault_occurred; ++i)
+        if (!isdigit(dt[i]))
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_PARSE_ERROR, "Not a digit: '%c'", dt[i]);
+
+    if (dt[8] != 'T')
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "9th character is '%c', not 'T'",
+            dt[8]);
+    if (!isdigit(dt[9]))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a digit: '%c'", dt[9]);
+    if (!isdigit(dt[10]))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a digit: '%c'", dt[10]);
+    if (dt[11] != ':')
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a colon: '%c'", dt[11]);
+    if (!isdigit(dt[12]))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a digit: '%c'", dt[12]);
+    if (!isdigit(dt[13]))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a digit: '%c'", dt[13]);
+    if (dt[14] != ':')
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a colon: '%c'", dt[14]);
+    if (!isdigit(dt[15]))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a digit: '%c'", dt[15]);
+    if (!isdigit(dt[16]))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, "Not a digit: '%c'", dt[16]);
+}
+
+
+
+static void
+validateFractionalSeconds(xmlrpc_env * const envP,
+                          const char * const dt) {
+/*----------------------------------------------------------------------------
+   Validate the fractional seconds part of the XML-RPC datetime string
+   'dt', if any.  That's the decimal point and everything following
+   it.
+-----------------------------------------------------------------------------*/
+    if (strlen(dt) > 17) {
+        if (dt[17] != '.') {
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_PARSE_ERROR,
+                "'%c' where only a period is valid", dt[17]);
         } else {
-            /* Note that putenv() is not sufficient.  You can't restore
-               the original value with that, because it sets a pointer into
-               your own storage.
-            */
-            xmlrpc_faultf(envP, "Your TZ environment variable is not a "
-                          "null string and your C library does not have "
-                          "setenv(), so we can't change it.");
+            if (dt[18] == '\0')
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_PARSE_ERROR, "Nothing after decimal point");
+            else {
+                unsigned int i;
+                for (i = 18; dt[i] != '\0' && !envP->fault_occurred; ++i) {
+                    if (!isdigit(dt[i]))
+                        xmlrpc_env_set_fault_formatted(
+                            envP, XMLRPC_PARSE_ERROR,
+                            "Non-digit in fractional seconds: '%c'", dt[i]);
+                }
+            }
         }
     }
 }
-    
-
-
-static void
-restoreTimezone(const char * const oldTz) {
-
-    if (haveSetenv) {
-        setenv("TZ", oldTz, 1);
-        free((char*)oldTz);
-    }
-}
 
 
 
-static void
-mkAbsTimeWin32(xmlrpc_env * const envP ATTR_UNUSED,
-               struct tm    const brokenTime ATTR_UNUSED,
-               time_t     * const timeValueP ATTR_UNUSED) {
-#ifdef WIN32
-    /* Windows Implementation */
-    SYSTEMTIME stbrokenTime;
-
-    stbrokenTime.wHour = brokenTime.tm_hour;
-    stbrokenTime.wMinute = brokenTime.tm_min;
-    stbrokenTime.wSecond = brokenTime.tm_sec;
-    stbrokenTime.wMonth = brokenTime.tm_mon;
-    stbrokenTime.wDay = brokenTime.tm_mday;
-    stbrokenTime.wYear = brokenTime.tm_year;
-    stbrokenTime.wMilliseconds = 0;
-
-    /* When the date string is parsed into the tm structure, it was
-       modified to decrement the month count by one and convert the
-       4 digit year to a two digit year.  We undo what the parser 
-       did to make it a true SYSTEMTIME structure, then convert this
-       structure into a UNIX time_t structure
-    */
-    stbrokenTime.wYear+=1900;
-    stbrokenTime.wMonth+=1;
-
-    UnixTimeFromSystemTime(envP, &stbrokenTime,timeValueP);
-#endif
-}
-
-
-static void
-mkAbsTimeUnix(xmlrpc_env * const envP ATTR_UNUSED,
-              struct tm    const brokenTime ATTR_UNUSED,
-              time_t     * const timeValueP ATTR_UNUSED) {
-
-#ifndef WIN32
-    time_t mktimeResult;
-    const char * oldTz;
-    struct tm mktimeWork;
-
-    /* We use mktime() to create the time_t because it's the
-       best we have available, but mktime() takes a local time
-       argument, and we have absolute time.  So we fake it out
-       by temporarily setting the timezone to UTC.
-    */
-    makeTimezoneUtc(envP, &oldTz);
-
-    if (!envP->fault_occurred) {
-        mktimeWork = brokenTime;
-        mktimeResult = mktime(&mktimeWork);
-
-        restoreTimezone(oldTz);
-
-        if (mktimeResult == (time_t)-1)
-            xmlrpc_faultf(envP, "Does not indicate a valid date");
-        else
-            *timeValueP = mktimeResult;
-    }
-#endif
-}
- 
-
-
-static void
-mkAbsTime(xmlrpc_env * const envP,
-          struct tm    const brokenTime,
-          time_t     * const timeValueP) {
-
-    if (win32)
-        mkAbsTimeWin32(envP, brokenTime, timeValueP);
-    else
-        mkAbsTimeUnix(envP, brokenTime, timeValueP);
-}
-
-
-
-static void
+static __inline__ void
 validateFormat(xmlrpc_env * const envP,
-               const char * const t) {
+               const char * const dt) {
 
-    if (strlen(t) != 17)
-        xmlrpc_faultf(envP, "%u characters instead of 15.", strlen(t));
-    else if (t[8] != 'T')
-        xmlrpc_faultf(envP, "9th character is '%c', not 'T'", t[8]);
+    if (strlen(dt) < 17)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR, 
+            "Invalid length of %u of datetime.  "
+            "Must be at least 17 characters",
+            strlen(dt));
     else {
-        unsigned int i;
+        validateFirst17(envP, dt);
 
-        for (i = 0; i < 8 && !envP->fault_occurred; ++i)
-            if (!isdigit(t[i]))
-                xmlrpc_faultf(envP, "Not a digit: '%c'", t[i]);
-
-        if (!isdigit(t[9]))
-            xmlrpc_faultf(envP, "Not a digit: '%c'", t[9]);
-        if (!isdigit(t[10]))
-            xmlrpc_faultf(envP, "Not a digit: '%c'", t[10]);
-        if (t[11] != ':')
-            xmlrpc_faultf(envP, "Not a colon: '%c'", t[11]);
-        if (!isdigit(t[12]))
-            xmlrpc_faultf(envP, "Not a digit: '%c'", t[12]);
-        if (!isdigit(t[13]))
-            xmlrpc_faultf(envP, "Not a digit: '%c'", t[13]);
-        if (t[14] != ':')
-            xmlrpc_faultf(envP, "Not a colon: '%c'", t[14]);
-        if (!isdigit(t[15]))
-            xmlrpc_faultf(envP, "Not a digit: '%c'", t[15]);
-        if (!isdigit(t[16]))
-            xmlrpc_faultf(envP, "Not a digit: '%c'", t[16]);
+        validateFractionalSeconds(envP, dt);
     }
-}        
+}
 
 
 
 static void
-parseDatetime(xmlrpc_env * const envP,
-              const char * const t,
-              time_t *     const timeValueP) {
+parseDateNumbers(xmlrpc_env *   const envP,
+                 const char *   const datetimeString,
+                 unsigned int * const YP,
+                 unsigned int * const MP,
+                 unsigned int * const DP,
+                 unsigned int * const hP,
+                 unsigned int * const mP,
+                 unsigned int * const sP,
+                 unsigned int * const uP) {
+
+#if HAVE_REGEX
+    parseDateNumbersRegex(envP, datetimeString, YP, MP, DP, hP, mP, sP, uP);
+#else
+    /* Note: validation is not as strong without regex */
+    validateFormat(envP, datetimeString);
+    if (!envP->fault_occurred)
+        parseDateNumbersNoRegex(envP, datetimeString,
+                                YP, MP, DP, hP, mP, sP, uP);
+#endif
+}
+
+
+
+static void
+parseDatetime(xmlrpc_env *   const envP,
+              const char *   const datetimeString,
+              time_t *       const timeValueP,
+              unsigned int * const usecsP) {
 /*----------------------------------------------------------------------------
    Parse a time in the format stored in an xmlrpc_value and return the
    time that it represents.
 
-   t[] is the input time string.  We return the result as *timeValueP.
+   datetimeString[] is the input time string.  We return the result as
+   *timeValueP.
 
    Example of the format we parse: "19980717T14:08:55"
    Note that this is not quite ISO 8601.  It's a bizarre combination of
    two ISO 8601 formats.
+
+   The input is capable of representing datetimes that cannot be expressed
+   as a time_t.  In that case, we fail, with fault code
+   XMLRPC_INTERNAL_ERROR.
+
+   And of course the input may not validly represent a datetime at all.
+   In that case too, we fail with fault code XMLRPC_PARSE_ERROR.
 -----------------------------------------------------------------------------*/
-    validateFormat(envP, t);
+    validateFormat(envP, datetimeString);
 
     if (!envP->fault_occurred) {
-        unsigned int Y, M, D, h, m, s;
+        unsigned int Y, M, D, h, m, s, u;
         
-        parseDateNumbers(t, &Y, &M, &D, &h, &m, &s);
-        
-        if (Y < 1900)
-            xmlrpc_faultf(envP, "Year is too early to represent as "
-                          "a standard Unix time");
-        else {
-            struct tm brokenTime;
-            
-            brokenTime.tm_sec   = s;
-            brokenTime.tm_min   = m;
-            brokenTime.tm_hour  = h;
-            brokenTime.tm_mday  = D;
-            brokenTime.tm_mon   = M - 1;
-            brokenTime.tm_year  = Y - 1900;
-            
-            mkAbsTime(envP, brokenTime, timeValueP);
+        parseDateNumbers(envP, datetimeString, &Y, &M, &D, &h, &m, &s, &u);
+
+        if (!envP->fault_occurred) {
+            if (Y < 1970)
+                xmlrpc_env_set_fault_formatted(envP, XMLRPC_INTERNAL_ERROR,
+                                     "Year is too early to represent as "
+                                     "a standard Unix time");
+            else {
+                struct tm brokenTime;
+                const char * error;
+                
+                brokenTime.tm_sec  = s;
+                brokenTime.tm_min  = m;
+                brokenTime.tm_hour = h;
+                brokenTime.tm_mday = D;
+                brokenTime.tm_mon  = M - 1;
+                brokenTime.tm_year = Y - 1900;
+                
+                xmlrpc_timegm(&brokenTime, timeValueP, &error);
+
+                if (error) {
+                    xmlrpc_env_set_fault_formatted(
+                        envP, XMLRPC_PARSE_ERROR, error);
+                    xmlrpc_strfree(error);
+                } else
+                    *usecsP = u;
+            }
         }
     }
+}
+
+
+
+void
+xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          time_t *             const secsP,
+                          unsigned int *       const usecsP) {
+    
+    validateDatetimeType(envP, valueP);
+
+    if (!envP->fault_occurred)
+        parseDatetime(envP,
+                      XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block),
+                      secsP,
+                      usecsP);
 }
 
 
@@ -408,12 +547,48 @@ xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP) {
     
-    validateDatetimeType(envP, valueP);
-    if (!envP->fault_occurred)
-        parseDatetime(envP,
-                      XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block),
-                      timeValueP);
+    unsigned int usecs;
+
+    xmlrpc_read_datetime_usec(envP, valueP, timeValueP, &usecs);
 }
+
+
+
+#if XMLRPC_HAVE_TIMEVAL
+
+void
+xmlrpc_read_datetime_timeval(xmlrpc_env *         const envP,
+                             const xmlrpc_value * const valueP,
+                             struct timeval *     const timeValueP) {
+    
+    time_t secs;
+    unsigned int usecs;
+
+    xmlrpc_read_datetime_usec(envP, valueP, &secs, &usecs);
+
+    timeValueP->tv_sec  = secs;
+    timeValueP->tv_usec = usecs;
+}
+#endif
+
+
+
+#if XMLRPC_HAVE_TIMESPEC
+
+void
+xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
+                              const xmlrpc_value * const valueP,
+                              struct timespec *    const timeValueP) {
+    
+    time_t secs;
+    unsigned int usecs;
+
+    xmlrpc_read_datetime_usec(envP, valueP, &secs, &usecs);
+
+    timeValueP->tv_sec  = secs;
+    timeValueP->tv_nsec = usecs * 1000;
+}
+#endif
 
 
 
@@ -443,38 +618,82 @@ xmlrpc_datetime_new_str(xmlrpc_env * const envP,
 
 
 
-xmlrpc_value *
-xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
-                        time_t       const value) {
+xmlrpc_value*
+xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
+                         time_t       const secs,
+                         unsigned int const usecs) {
 
     xmlrpc_value * valP;
-    
+
     xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         struct tm brokenTime;
         char timeString[64];
-        
-        valP->_type = XMLRPC_TYPE_DATETIME;
 
-        gmtime_r(&value, &brokenTime);
-        
+        xmlrpc_gmtime(secs, &brokenTime);
+
         /* Note that this format is NOT ISO 8601 -- it's a bizarre
            hybrid of two ISO 8601 formats.
         */
         strftime(timeString, sizeof(timeString), "%Y%m%dT%H:%M:%S", 
                  &brokenTime);
+
+        if (usecs != 0) {
+            char usecString[64];
+            assert(usecs < 1000000);
+            snprintf(usecString, sizeof(usecString), ".%06u", usecs);
+            STRSCAT(timeString, usecString);
+        }
+
+        valP->_type = XMLRPC_TYPE_DATETIME;
         
         XMLRPC_TYPED_MEM_BLOCK_INIT(
             char, envP, &valP->_block, strlen(timeString) + 1);
+
         if (!envP->fault_occurred) {
             char * const contents =
                 XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &valP->_block);
-            
+        
             strcpy(contents, timeString);
         }
-        if (envP->fault_occurred)
+        if (envP->fault_occurred) {
             free(valP);
+            valP = NULL;
+        }
     }
     return valP;
 }
+
+
+
+xmlrpc_value *
+xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
+                        time_t       const value) {
+
+    return xmlrpc_datetime_new_usec(envP, value, 0);
+}
+
+
+
+#if XMLRPC_HAVE_TIMEVAL
+
+xmlrpc_value *
+xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP, 
+                            struct timeval const value) {
+
+    return xmlrpc_datetime_new_usec(envP, value.tv_sec, value.tv_usec);
+}
+#endif
+
+
+
+#if XMLRPC_HAVE_TIMESPEC
+
+xmlrpc_value *
+xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
+                             struct timespec const value) {
+
+    return xmlrpc_datetime_new_usec(envP, value.tv_sec, value.tv_nsec/1000);
+}
+#endif

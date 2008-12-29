@@ -97,11 +97,11 @@ exchange(char ** const argv) {
 
     /* Interchange the two blocks of data in argv.  */
 
-    bcopy (&argv[first_nonopt], temp, nonopts_size);
-    bcopy (&argv[last_nonopt], &argv[first_nonopt],
-           (optindx - last_nonopt) * sizeof (char *));
-    bcopy (temp, &argv[first_nonopt + optindx - last_nonopt],
-           nonopts_size);
+    memcpy (temp, &argv[first_nonopt], nonopts_size);
+    memcpy (&argv[first_nonopt], &argv[last_nonopt], 
+            (optindx - last_nonopt) * sizeof (char *));
+    memcpy (&argv[first_nonopt + optindx - last_nonopt], temp, 
+            nonopts_size);
 
     /* Update records for the slots the non-options now occupy.  */
 
@@ -318,7 +318,7 @@ getoptx(int          const argc,
                 *(pfound->flag) = pfound->val;
             return 0;
         }
-        if (argv[optindx][0] == '+' || index (optstring, *nextchar) == 0)
+        if (argv[optindx][0] == '+' || strchr (optstring, *nextchar) == 0)
         {
             if (opterrx != 0)
                 fprintf (stderr, "%s: unrecognized option `%c%s'\n",
@@ -332,7 +332,7 @@ getoptx(int          const argc,
 
     {
         char c = *nextchar++;
-        char *temp = index (optstring, c);
+        char *temp = strchr (optstring, c);
 
         /* Increment `optindx' when we start to process its last character.  */
         if (*nextchar == 0)

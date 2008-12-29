@@ -5,34 +5,39 @@
 # these programs depend.
 
 
-ifeq ($(SRCDIR)x,x)
+ifeq ($(SRCDIR),)
 SRCDIR = $(CURDIR)/..
-BUILDDIR = $(SRCDIR)
+BLDDIR = $(SRCDIR)
 endif
+SUBDIR = examples
+
+include $(BLDDIR)/config.mk
 
 default: all
 
-include $(BUILDDIR)/Makefile.config
-
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = $(LADD)
+CFLAGS = $(CFLAGS_PERSONAL) $(CADD)
+LDFLAGS += $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
 # found in the user's PATH.
-XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
+XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 CLIENTPROGS = \
   auth_client \
-  query-meerkat \
   synch_client \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
+
+ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
+  CLIENTPROGS += interrupted_client
+endif
 
 SERVERPROGS_CGI = \
   xmlrpc_sample_add_server.cgi
 
 SERVERPROGS_ABYSS = \
+  interrupted_server \
   xmlrpc_inetd_server \
   xmlrpc_socket_server \
   xmlrpc_loop_server \
@@ -56,19 +61,19 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
   PROGS += $(SERVERPROGS_CGI) 
 endif
 
-INCLUDES = $(shell $(XMLRPC_C_CONFIG) client abyss-server --cflags)
+INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) client abyss-server --cflags)
 
-LDADD_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) client --ldadd)
+LIBS_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) client --libs)
 
-LDADD_SERVER_ABYSS = \
-  $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
+LIBS_SERVER_ABYSS = \
+  $(shell $(XMLRPC_C_CONFIG) abyss-server --libs)
 
-LDADD_SERVER_CGI = \
-  $(shell $(XMLRPC_C_CONFIG) cgi-server --ldadd)
+LIBS_SERVER_CGI = \
+  $(shell $(XMLRPC_C_CONFIG) cgi-server --libs)
 
-LDADD_BASE = \
-  $(shell $(XMLRPC_C_CONFIG) --ldadd)
+LIBS_BASE = \
+  $(shell $(XMLRPC_C_CONFIG) --libs)
 
 all: $(PROGS)
 
@@ -77,36 +82,46 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
 endif
 
 .PHONY: cpp/all
-cpp/all:
-	$(MAKE) -C $(dir $@) $(notdir $@)
+cpp/all: $(BLDDIR)/examples/cpp
+	$(MAKE) -C cpp -f $(SRCDIR)/examples/cpp/Makefile all
+
+# When building in separate tree, directory won't exist yet
+$(BLDDIR)/examples/cpp:
+	mkdir $@
 
 $(CLIENTPROGS):%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
+	$(CCLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS)
 
 $(SERVERPROGS_CGI):%.cgi:%_cgi.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_CGI)
+	$(CCLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
+	$(CCLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS)
 
 gen_sample_add_xml:%:%.o
-	$(CCLD) -o $@ $(LDFLAGS) $^ $(LDADD_BASE)
+	$(CCLD) -o $@ $^ $(LIBS_BASE) $(LDFLAGS) 
 
-%.o:%.c
+OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
+
+$(OBJECTS):%.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS) $<
 
-*.c: config.h xmlrpc_amconfig.h
+# config.h and xmlrpc_amconfig.h just describe the build environment.
+# We use them so that the example programs will build in users'
+# various environments.  If you're copying these examples, you can
+# just remove these headers from the programs and hardcode whatever is
+# right for your build environment.
+
+$(OBJECTS): config.h xmlrpc_amconfig.h
 
 config.h:
-	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
 xmlrpc_amconfig.h:
-	$(LN_S) $(BUILDDIR)/$@ .
-
-include $(SRCDIR)/Makefile.common
+	$(LN_S) $(BLDDIR)/$@ .
 
 .PHONY: clean
-clean: clean-common
-	rm -f $(PROGS) config.h xmlrpc_amconfig.h
+clean:
+	rm -f $(PROGS) *.o config.h xmlrpc_amconfig.h
 	$(MAKE) -C cpp clean
 
 .PHONY: distclean

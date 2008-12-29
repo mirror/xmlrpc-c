@@ -61,6 +61,156 @@ static void test_expat (void)
 
 
 static void
+testParseNumberValue(void) {
+
+char const xmldata[] =
+    XML_PROLOGUE
+    "<methodCall>\r\n"
+    "<methodName>test</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><int>2147483647</int></value></param>\r\n" \
+    "<param><value><int>-2147483648</int></value></param>\r\n" \
+    "<param><value><i1>10</i1></value></param>\r\n"
+    "<param><value><i2>10</i2></value></param>\r\n"
+    "<param><value><i4>10</i4></value></param>\r\n"
+    "<param><value><i8>10</i8></value></param>\r\n"
+    "<param><value><ex:i8>10</ex:i8></value></param>\r\n"
+    "<param><value><double>10</double></value></param>\r\n"
+    "<param><value><double>10.1</double></value></param>\r\n"
+    "<param><value><double>-10.1</double></value></param>\r\n"
+    "<param><value><double>+10.1</double></value></param>\r\n"
+    "<param><value><double>0</double></value></param>\r\n"
+    "<param><value><double>.01</double></value></param>\r\n"
+    "<param><value><double>5.</double></value></param>\r\n"
+    "<param><value><double>5.3E6</double></value></param>\r\n"
+    "<param><value><double> 1</double></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n";
+    
+    xmlrpc_env env;
+    xmlrpc_value * paramArrayP;
+    const char * methodName;
+    int arraySize;
+    xmlrpc_int int_max, int_min;
+    xmlrpc_int32 i_i1, i_i2, i_i4;
+    xmlrpc_int64 i_i8, i_ex_i8;
+    double d1, d2, d3, d4, d5, d6, d7, d8, d9;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_call(&env, xmldata, strlen(xmldata),
+                      &methodName, &paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    arraySize = xmlrpc_array_size(&env, paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    TEST(arraySize == 16);
+
+    xmlrpc_decompose_value(
+        &env, paramArrayP, "(iiiiiIIddddddddd)", 
+        &int_max, &int_min, &i_i1, &i_i2, &i_i4, &i_i8, &i_ex_i8,
+        &d1, &d2, &d3, &d4, &d5, &d6, &d7, &d8, &d9);
+
+    TEST_NO_FAULT(&env);
+
+    TEST(int_max == INT_MAX);
+    TEST(int_min == INT_MIN);
+    TEST(i_i1 == 10);
+    TEST(i_i2 == 10);
+    TEST(i_i4 == 10);
+    TEST(i_i8 == 10);
+    TEST(i_ex_i8 == 10);
+    TESTFLOATEQUAL(d1, 10.0);
+    TESTFLOATEQUAL(d2, 10.1);
+    TESTFLOATEQUAL(d3, -10.1);
+    TESTFLOATEQUAL(d4, +10.1);
+    TESTFLOATEQUAL(d5, 0.0);
+    TESTFLOATEQUAL(d6, 0.01);
+    TESTFLOATEQUAL(d7, 5.0);
+    TESTFLOATEQUAL(d8, 5.3E6);
+    TESTFLOATEQUAL(d9, 1.0);
+
+    xmlrpc_DECREF(paramArrayP);
+    strfree(methodName);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+testParseMiscSimpleValue(void) {
+
+char const xmldata[] =
+    XML_PROLOGUE
+    "<methodCall>\r\n"
+    "<methodName>test</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><string>hello</string></value></param>\r\n"
+    "<param><value><boolean>0</boolean></value></param>\r\n"
+    "<param><value><boolean>1</boolean></value></param>\r\n"
+    "<param><value><dateTime.iso8601>19980717T14:08:55</dateTime.iso8601>"
+       "</value></param>\r\n"
+    "<param><value>"
+       "<dateTime.iso8601>19980717T14:08:55.123456</dateTime.iso8601>"
+       "</value></param>\r\n"
+    "<param><value><base64>YmFzZTY0IGRhdGE=</base64></value></param>\r\n"
+    "<param><value><nil/></value></param>\r\n"
+    "<param><value><ex:nil/></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n";
+    
+    xmlrpc_env env;
+    xmlrpc_value * paramArrayP;
+    const char * methodName;
+    int arraySize;
+    const char * str_hello;
+    xmlrpc_bool b_false, b_true;
+    const char * datetime_sec;
+    const char * datetime_usec;
+    unsigned char * b64_data;
+    size_t b64_len;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_call(&env, xmldata, strlen(xmldata),
+                      &methodName, &paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    arraySize = xmlrpc_array_size(&env, paramArrayP);
+    TEST_NO_FAULT(&env);
+
+    TEST(arraySize == 8);
+
+    xmlrpc_decompose_value(
+        &env, paramArrayP, "(sbb886nn)", 
+        &str_hello, &b_false, &b_true, &datetime_sec, &datetime_usec,
+        &b64_data, &b64_len);
+
+    TEST_NO_FAULT(&env);
+
+    TEST(streq(str_hello, "hello"));
+    TEST(!b_false);
+    TEST(b_true);
+    TEST(streq(datetime_sec, "19980717T14:08:55")); 
+    TEST(streq(datetime_usec, "19980717T14:08:55.123456")); 
+    TEST(b64_len == 11);
+    TEST(memcmp(b64_data, "base64 data", b64_len) == 0);
+
+    free(b64_data);
+    strfree(str_hello);
+    strfree(datetime_sec);
+    strfree(datetime_usec);
+    xmlrpc_DECREF(paramArrayP);
+    strfree(methodName);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 validateParseResponseResult(xmlrpc_value * const valueP) {
 
     xmlrpc_env env;
@@ -176,41 +326,47 @@ testParseGoodResponse(void) {
 
 
 static void
-testParseBadResponse(void) {
+testParseBadResponseXml(void) {
 /*----------------------------------------------------------------------------
-   Test parsing of data that is supposed to be a response, but is not
-   valid.  Either not valid XML or not valid XML-RPC.
+   Test parsing of data that is supposed to be a response, but in not
+   even valid XML.
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * valueP;
+    int faultCode;
+    const char * faultString;
+
+    xmlrpc_env_init(&env);
+       
+    xmlrpc_parse_response2(&env,
+                           unparseable_value, strlen(unparseable_value),
+                           &valueP, &faultCode, &faultString);
+        
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+
+        /* And again with the old interface */
+    valueP = xmlrpc_parse_response(&env, unparseable_value,
+                                   strlen(unparseable_value));
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+    xmlrpc_env_clean(&env);
+    TEST(valueP == NULL);
+}
+
+
+
+static void
+testParseBadResponseXmlRpc(void) {
+/*----------------------------------------------------------------------------
+   Test parsing of data that is supposed to be a response, and is valid
+   XML, but is not valid XML-RPC.
 -----------------------------------------------------------------------------*/
     unsigned int i;
 
-    {
-        xmlrpc_env env;
-        xmlrpc_value * valueP;
-        int faultCode;
-        const char * faultString;
-
-        /* First, test some poorly-formed XML data. */
-        xmlrpc_env_init(&env);
-       
-        xmlrpc_parse_response2(&env,
-                               unparseable_value, strlen(unparseable_value),
-                               &valueP, &faultCode, &faultString);
-        
-        TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
-        xmlrpc_env_clean(&env);
-
-        xmlrpc_env_init(&env);
-
-        /* And again with the old interface */
-        valueP = xmlrpc_parse_response(&env, unparseable_value,
-                                       strlen(unparseable_value));
-        TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
-        xmlrpc_env_clean(&env);
-        TEST(valueP == NULL);
-    }
-
-    /* Try with good XML, but bad XML-RPC.  For this test, we test up to
-       but not including the <value> in a successful RPC response.
+    /* For this test, we test up to but not including the <value> in a
+       successful RPC response. 
     */
 
     /* Next, check for bogus responses. These are all well-formed XML, but
@@ -236,10 +392,19 @@ testParseBadResponse(void) {
         TEST(v == NULL);
         xmlrpc_env_clean(&env);
     }
-    
-    /* Try with good XML, good XML-RPC response, except that the value
-       isn't valid XML-RPC
-    */
+}    
+
+
+
+static void
+testParseBadResult(void) {
+/*----------------------------------------------------------------------------
+   Test parsing of data that is supposed to be a response, but is not
+   valid.  It looks like a valid success response, but the result value
+   is not valid XML-RPC.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
     for (i = 0; bad_values[i] != NULL; ++i) {
         const char * const bad_resp = bad_values[i];
         xmlrpc_env env;
@@ -273,6 +438,21 @@ testParseBadResponse(void) {
         TEST(valueP == NULL);
         xmlrpc_env_clean(&env);
     }
+}
+
+
+
+static void
+testParseBadResponse(void) {
+/*----------------------------------------------------------------------------
+   Test parsing of data that is supposed to be a response, but is not
+   valid.  Either not valid XML or not valid XML-RPC.
+-----------------------------------------------------------------------------*/
+    testParseBadResponseXml();
+
+    testParseBadResponseXmlRpc();
+
+    testParseBadResult();
 }
 
 
@@ -379,6 +559,8 @@ test_parse_xml(void) {
 
     printf("Running XML parsing tests.\n");
     test_expat();
+    testParseNumberValue();
+    testParseMiscSimpleValue();
     testParseGoodResponse();
     testParseFaultResponse();
     testParseBadResponse();

@@ -1,12 +1,24 @@
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
+#ifdef WIN32
+#  include <windows.h>
+#else
+#  include <unistd.h>
+#endif
 
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/server_abyss.hpp>
 
 using namespace std;
+
+#ifdef WIN32
+  #define SLEEP(seconds) SleepEx(seconds * 1000);
+#else
+  #define SLEEP(seconds) sleep(seconds);
+#endif
+
 
 class sampleAddMethod : public xmlrpc_c::method {
 public:
@@ -28,6 +40,11 @@ public:
         paramList.verifyEnd(2);
         
         *retvalP = xmlrpc_c::value_int(addend + adder);
+
+        // Sometimes, make it look hard (so client can see what it's like
+        // to do an RPC that takes a while).
+        if (adder == 1)
+            SLEEP(2);
     }
 };
 

@@ -5,35 +5,37 @@
 # these programs depend.
 
 
-ifeq ($(SRCDIR)x,x)
+ifeq ($(SRCDIR),)
 SRCDIR = $(CURDIR)/../..
-BUILDDIR = ../..
+BLDDIR = $(SRCDIR)
 endif
+SUBDIR=examples/cpp
+
+include $(BLDDIR)/config.mk
 
 default: all
 
-include $(BUILDDIR)/Makefile.config
-
-CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = $(LADD)
+CXXFLAGS = $(CFLAGS_PERSONAL) $(CADD)
+LDFLAGS += $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
 # found in the user's PATH.
-XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
+XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
+
+SERVERPROGS_CGI = \
+  xmlrpc_sample_add_server.cgi
 
 SERVERPROGS_ABYSS = \
   xmlrpc_inetd_server \
   xmlrpc_loop_server \
   xmlrpc_sample_add_server \
 
-LEGACY_CLIENTPROGS = \
-  meerkat-app-list
-
 CLIENTPROGS = \
   xmlrpc_sample_add_client \
   sample_add_client_complex \
+  asynch_client \
 
 # Build up PROGS:
 PROGS = 
@@ -43,49 +45,74 @@ ifeq ($(ENABLE_ABYSS_SERVER),yes)
 endif
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
-  PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)
+  PROGS += $(CLIENTPROGS)
 endif
 
-INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
+ifeq ($(ENABLE_CGI_SERVER),yes)
+  PROGS += $(SERVERPROGS_CGI) 
+endif
 
-LDADD_SERVER_ABYSS = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --ldadd)
+PROGS += pstream_inetd_server
 
-LDADD_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 client --ldadd)
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += pstream_client
+endif
 
-LDADD_BASE = \
-  $(shell $(XMLRPC_C_CONFIG) c++2 --ldadd)
+INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 
-LDADD_LEGACY_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
+LIBS_SERVER_ABYSS = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --libs)
+
+LIBS_SERVER_CGI = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 cgi-server --libs)
+
+LIBS_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 client --libs)
+
+LIBS_BASE = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 --libs)
 
 all: $(PROGS)
 
-$(SERVERPROGS_ABYSS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
+$(SERVERPROGS_CGI):%.cgi:%_cgi.o
+	$(CXXLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS)
 
-$(LEGACY_CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_LEGACY_CLIENT)
+$(SERVERPROGS_ABYSS):%:%.o
+	$(CXXLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS)
 
 $(CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
+	$(CXXLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS)
 
-%.o:%.cpp
+
+LIBS_PSTREAM_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 client --libs)
+
+pstream_client:%:%.o
+	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_CLIENT) $(LDFLAGS)
+
+LIBS_PSTREAM_SERVER = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --libs)
+
+pstream_inetd_server:%:%.o
+	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_SERVER) $(LDFLAGS)
+
+OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
+
+$(OBJECTS):%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
 
-*.c: config.h xmlrpc_amconfig.h
+# See example/Makefile for an explanation of config.h and xmlrpc_amconfig.h
+
+$(OBJECTS): config.h xmlrpc_amconfig.h
 
 config.h:
-	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
 xmlrpc_amconfig.h:
-	$(LN_S) $(BUILDDIR)/$@ .
-
-include $(SRCDIR)/Makefile.common
+	$(LN_S) $(BLDDIR)/$@ .
 
 .PHONY: clean
-clean: clean-common
-	rm -f $(PROGS) config.h xmlrpc_amconfig.h
+clean:
+	rm -f $(PROGS) *.o config.h xmlrpc_amconfig.h
 
 .PHONY: distclean
 distclean: clean

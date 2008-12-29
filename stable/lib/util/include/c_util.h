@@ -16,5 +16,4 @@
 #else
 #define GNU_PRINTF_ATTR(a,b)
 #endif
-
 #endif

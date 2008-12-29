@@ -35,6 +35,8 @@ class clientTransactionPtr : public girmem::autoObjectPtr {
 public:
     clientTransactionPtr();
 
+    clientTransactionPtr(clientTransaction * const transP);
+
     virtual ~clientTransactionPtr();
 
     virtual xmlrpc_c::clientTransaction *
@@ -67,6 +69,12 @@ public:
           std::string                    const& methodName,
           xmlrpc_c::paramList            const& paramList,
           xmlrpc_c::clientTransactionPtr const& tranP);
+
+    void
+    finishAsync(xmlrpc_c::timeout const timeout);
+    
+    virtual void
+    setInterrupt(int *);
 };
 
 class clientPtr : public girmem::autoObjectPtr {
@@ -140,7 +148,15 @@ class client_xml : public xmlrpc_c::client {
 public:
     client_xml(xmlrpc_c::clientXmlTransport * const transportP);
 
+    client_xml(xmlrpc_c::clientXmlTransport * const transportP,
+               xmlrpc_dialect                 const dialect);
+
     client_xml(xmlrpc_c::clientXmlTransportPtr const transportP);
+
+    client_xml(xmlrpc_c::clientXmlTransportPtr const transportP,
+               xmlrpc_dialect                  const dialect);
+
+    ~client_xml();
 
     void
     call(carriageParm *         const  carriageParmP,
@@ -157,13 +173,11 @@ public:
     void
     finishAsync(xmlrpc_c::timeout const timeout);
 
+    virtual void
+    setInterrupt(int * interruptP);
+
 private:
-    /* We have both kinds of pointers to give the user flexibility -- we
-       have constructors that take both.  But the simple pointer
-       'transportP' is valid in both cases.
-    */
-    xmlrpc_c::clientXmlTransport * transportP;
-    xmlrpc_c::clientXmlTransportPtr transportPtr;
+    struct client_xml_impl * implP;
 };
 
 class xmlTransaction_client : public xmlrpc_c::xmlTransaction {
@@ -252,18 +266,7 @@ public:
     virtual ~rpc();
 
 private:
-    enum state {
-        STATE_UNFINISHED,  // RPC is running or not started yet
-        STATE_ERROR,       // We couldn't execute the RPC
-        STATE_FAILED,      // RPC executed successfully, but failed per XML-RPC
-        STATE_SUCCEEDED    // RPC is done, no exception
-    };
-    enum state state;
-    girerr::error * errorP;     // Defined only in STATE_ERROR
-    xmlrpc_c::rpcOutcome outcome;
-        // Defined only in STATE_FAILED and STATE_SUCCEEDED
-    std::string methodName;
-    xmlrpc_c::paramList paramList;
+    struct rpc_impl * implP;
 };
 
 class rpcPtr : public clientTransactionPtr {

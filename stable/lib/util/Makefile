@@ -17,29 +17,44 @@
 # just link utility object modules into each Xmlrpc-c library.
 ##############################################################################
 
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  LIBDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib/util
-BUILDDIR = $(SRCDIR)
+SUBDIR := lib/util
 
 default: all
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
-include $(SRCDIR)/Makefile.common
+OMIT_UTILS_RULE = Y
+
+include $(SRCDIR)/common.mk
+
+LIBOBJS = \
+  casprintf.o \
+  cmdline_parser.o \
+  cmdline_parser_cpp.o \
+  getoptx.o \
+  string_parser.o \
+  stripcaseeq.o \
 
 .PHONY: all
-all: cmdline_parser.lo getoptx.lo casprintf.lo
+all: $(LIBOBJS)
 
-INCLUDES = -Iinclude -I$(BUILDDIR)
+INCLUDES = -I$(SRCDIR)/$(SUBDIR)/include -I$(BLDDIR)
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
-%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $<
+%.o:%.c
+	$(CC) -c $(CFLAGS) $<
 
-include Makefile.depend
+%.o:%.cpp
+	$(CXX) -c $(CFLAGS) $<
+
+include depend.mk
 
 .PHONY: clean distclean
 clean: clean-common

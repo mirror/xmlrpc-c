@@ -3,32 +3,19 @@
 
 #include <time.h>
 
-#include "xmlrpc-c/abyss.h"
+#include "bool.h"
 
-typedef struct tm TDate;
+void
+DateToString(time_t        const datetime,
+             const char ** const dateStringP);
 
-abyss_bool
-DateToString(TDate * const tmP,
-             char *  const s);
+void
+DateToLogString(time_t        const datetime,
+                const char ** const dateStringP);
 
-abyss_bool
-DateToLogString(TDate * const tmP,
-                char *  const s);
-
-abyss_bool
-DateDecode(const char *  const dateString,
-           TDate *       const tmP);
-
-int32_t
-DateCompare(TDate * const d1,
-            TDate * const d2);
-
-abyss_bool
-DateFromGMT(TDate * const d,
-            time_t  const t);
-
-abyss_bool
-DateFromLocal(TDate * const d,
-              time_t const t);
+void
+DateDecode(const char * const dateString,
+           bool *       const validP,
+           time_t *     const datetimeP);
 
 #endif

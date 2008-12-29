@@ -1,13 +1,15 @@
 #include <unistd.h>
-#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
 
 #include "xmlrpc_config.h"
 
+#include "bool.h"
 #include "mallocvar.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "pthreadx.h"
 
 #include "xmlrpc-c/abyss.h"
 
@@ -22,12 +24,12 @@ struct abyss_thread {
     TThreadDoneFn * threadDone;
 };
 
-/* We used to have THREAD_STACK_SIZE = 16K, which was said to be the
+/* We used to have MIN_STACK_SIZE = 16K, which was said to be the
    minimum stack size on Win32.  Scott Kolodzeski found in November
    2005 that this was insufficient for 64 bit Solaris -- we fail
    when creating the first thread.  So we changed to 128K.
 */
-#define  THREAD_STACK_SIZE (128*1024L)
+#define  MIN_STACK_SIZE (128*1024L)
 
 
 typedef void * (pthreadStartRoutine)(void *);
@@ -40,7 +42,7 @@ static void *
 pthreadStart(void * const arg) {
 
     struct abyss_thread * const threadP = arg;
-    abyss_bool const executeTrue = true;
+    bool const executeTrue = true;
 
     pthread_cleanup_push(threadP->threadDone, threadP->userHandle);
 
@@ -48,8 +50,14 @@ pthreadStart(void * const arg) {
 
     pthread_cleanup_pop(executeTrue);
 
+    /* Note that func() may not return; it may just exit the thread,
+       by calling ThreadExit(), in which case code here doesn't run.
+    */
+    threadP->threadDone(threadP->userHandle);
+
     return NULL;
 }
+
 
 
 
@@ -58,61 +66,67 @@ ThreadCreate(TThread **      const threadPP,
              void *          const userHandle,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
-             abyss_bool      const useSigchld ATTR_UNUSED,
+             bool            const useSigchld ATTR_UNUSED,
+             size_t          const stackSize,
              const char **   const errorP) {
 
-    TThread * threadP;
-
-    MALLOCVAR(threadP);
-    if (threadP == NULL)
-        xmlrpc_asprintf(errorP,
-                        "Can't allocate memory for thread descriptor.");
+    if ((size_t)(int)stackSize != stackSize)
+        xmlrpc_asprintf(errorP, "Stack size %lu is too big",
+                        (unsigned long)stackSize);
     else {
-        pthread_attr_t attr;
-        int rc;
+        TThread * threadP;
 
-        pthread_attr_init(&attr);
+        MALLOCVAR(threadP);
+        if (threadP == NULL)
+            xmlrpc_asprintf(errorP,
+                            "Can't allocate memory for thread descriptor.");
+        else {
+            pthread_attr_t attr;
+            int rc;
 
-        pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
+            pthread_attr_init(&attr);
+
+            pthread_attr_setstacksize(&attr, MAX(MIN_STACK_SIZE, stackSize));
         
-        threadP->userHandle = userHandle;
-        threadP->func       = func;
-        threadP->threadDone = threadDone;
+            threadP->userHandle = userHandle;
+            threadP->func       = func;
+            threadP->threadDone = threadDone;
 
-        rc = pthread_create(&threadP->thread, &attr,
-                            pthreadStart, threadP);
-        if (rc == 0) {
-            *errorP = NULL;
-            *threadPP = threadP;
-        } else
-            xmlrpc_asprintf(
-                errorP, "pthread_create() failed, errno = %d (%s)",
-                errno, strerror(errno));
+            rc = pthread_create(&threadP->thread, &attr,
+                                pthreadStart, threadP);
+            if (rc == 0) {
+                *errorP = NULL;
+                *threadPP = threadP;
+            } else
+                xmlrpc_asprintf(
+                    errorP, "pthread_create() failed, errno = %d (%s)",
+                    errno, strerror(errno));
         
-        pthread_attr_destroy(&attr);
+            pthread_attr_destroy(&attr);
 
-        if (*errorP)
-            free(threadP);
+            if (*errorP)
+                free(threadP);
+        }
     }
 }
 
 
 
-abyss_bool
+bool
 ThreadRun(TThread * const threadP ATTR_UNUSED) {
     return TRUE;    
 }
 
 
 
-abyss_bool
+bool
 ThreadStop(TThread * const threadP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 ThreadKill(TThread * const threadP ATTR_UNUSED) {
 
     return (pthread_kill(threadP->thread, SIGTERM) == 0);
@@ -133,7 +147,8 @@ ThreadWaitAndRelease(TThread * const threadP) {
 
 
 void
-ThreadExit(int const retValue) {
+ThreadExit(TThread * const threadP ATTR_UNUSED,
+           int       const retValue) {
 
     pthread_exit((void*)&retValue);
 
@@ -154,7 +169,7 @@ ThreadRelease(TThread * const threadP) {
 
 
 
-abyss_bool
+bool
 ThreadForks(void) {
 
     return FALSE;
@@ -184,38 +199,61 @@ ThreadHandleSigchld(pid_t const pid ATTR_UNUSED) {
 ** Mutex
 *********************************************************************/
 
+struct abyss_mutex {
+    pthread_mutex_t pthreadMutex;
+};
 
 
-abyss_bool
-MutexCreate(TMutex * const mutexP) {
+bool
+MutexCreate(TMutex ** const mutexPP) {
 
-    return (pthread_mutex_init(mutexP, NULL) == 0);
+    TMutex * mutexP;
+    bool succeeded;
+
+    MALLOCVAR(mutexP);
+
+    if (mutexP) {
+        int rc;
+        rc = pthread_mutex_init(&mutexP->pthreadMutex, NULL);
+
+        succeeded = (rc == 0);
+    } else
+        succeeded = FALSE;
+
+    if (!succeeded)
+        free(mutexP);
+
+    *mutexPP = mutexP;
+
+    return succeeded;
 }
 
 
 
-abyss_bool
+bool
 MutexLock(TMutex * const mutexP) {
-    return (pthread_mutex_lock(mutexP) == 0);
+    return (pthread_mutex_lock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
-abyss_bool
+bool
 MutexUnlock(TMutex * const mutexP) {
-    return (pthread_mutex_unlock(mutexP) == 0);
+    return (pthread_mutex_unlock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
-abyss_bool
+bool
 MutexTryLock(TMutex * const mutexP) {
-    return (pthread_mutex_trylock(mutexP) == 0);
+    return (pthread_mutex_trylock(&mutexP->pthreadMutex) == 0);
 }
 
 
 
 void
-MutexFree(TMutex * const mutexP) {
-    pthread_mutex_destroy(mutexP);
+MutexDestroy(TMutex * const mutexP) {
+    pthread_mutex_destroy(&mutexP->pthreadMutex);
+
+    free(mutexP);
 }

@@ -33,7 +33,7 @@ struct abyss_thread {
     TThreadDoneFn * threadDone;
     void * userHandle;
     pid_t pid;
-    abyss_bool useSigchld;
+    bool useSigchld;
         /* This means that user is going to call ThreadHandleSigchld()
            when it gets a death of a child signal for this process.  If
            false, he's going to leave us in the dark, so we'll have to
@@ -156,7 +156,8 @@ ThreadCreate(TThread **      const threadPP,
              void *          const userHandle,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
-             abyss_bool      const useSigchld,
+             bool            const useSigchld,
+             size_t          const stackSize,
              const char **   const errorP) {
     
     TThread * threadP;
@@ -189,6 +190,9 @@ ThreadCreate(TThread **      const threadPP,
         else if (rc == 0) {
             /* This is the child */
             (*func)(userHandle);
+            /* Note that thread cleanup (threadDone) is done by the _parent_,
+               upon seeing our exit.
+            */
             exit(0);
         } else {
             /* This is the parent */
@@ -210,21 +214,21 @@ ThreadCreate(TThread **      const threadPP,
 
 
 
-abyss_bool
+bool
 ThreadRun(TThread * const threadP ATTR_UNUSED) {
     return TRUE;    
 }
 
 
 
-abyss_bool
+bool
 ThreadStop(TThread * const threadP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 ThreadKill(TThread * const threadP ATTR_UNUSED) {
     return TRUE;
 }
@@ -249,7 +253,8 @@ ThreadWaitAndRelease(TThread * const threadP) {
 
 
 void
-ThreadExit(int const retValue) {
+ThreadExit(TThread * const threadP ATTR_UNUSED,
+           int       const retValue) {
 
     /* Note that the OS will automatically send a SIGCHLD signal to
        the parent process after we exit.  The handler for that signal
@@ -257,6 +262,10 @@ ThreadExit(int const retValue) {
        the parent is set up for signals, the parent will eventually
        poll for the existence of our PID and call threadDone when he
        sees we've gone.
+    */
+
+    /* Note that thread cleanup (threadDone) is done by the _parent_,
+       upon seeing our exit.
     */
 
     exit(retValue);
@@ -273,7 +282,7 @@ ThreadRelease(TThread * const threadP) {
 
 
 
-abyss_bool
+bool
 ThreadForks(void) {
 
     return TRUE;
@@ -289,28 +298,28 @@ ThreadForks(void) {
    so locking is a no-op.
 */
 
-abyss_bool
-MutexCreate(TMutex * const mutexP ATTR_UNUSED) {
+bool
+MutexCreate(TMutex ** const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 MutexLock(TMutex * const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 MutexUnlock(TMutex * const mutexP ATTR_UNUSED) {
     return TRUE;
 }
 
 
 
-abyss_bool
+bool
 MutexTryLock(TMutex * const mutexP ATTR_UNUSED) {
     return TRUE;
 }
@@ -318,6 +327,6 @@ MutexTryLock(TMutex * const mutexP ATTR_UNUSED) {
 
 
 void
-MutexFree(TMutex * const mutexP ATTR_UNUSED) {
+MutexDestroy(TMutex * const mutexP ATTR_UNUSED) {
 
 }

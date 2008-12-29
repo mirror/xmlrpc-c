@@ -6,7 +6,19 @@
 
    xmlrpc_sample_add_server.c is a server that does the same thing,
    but you give it a TCP port number and it listens for TCP connecitons
-   and processes RPCs ad infinitum.
+   and processes RPCs ad infinitum.  xmlrpc_socket_server.c is halfway
+   in between those -- you give it an already bound and listening
+   socket, and it lists for TCP connections and processes RPCs ad
+   infinitum.
+
+   Here is an easy way to test this program:
+
+     socketexec --accept --local_port=8080 --stdin -- ./xmlrpc_inetd_server
+
+   Now run the client program 'xmlrpc_sample_add_client'.  Socketexec
+   will accept the connection that the client program requests and pass it
+   to this program on Standard Input.  This program will perform the RPC,
+   respond to the client, then exit.
 */
 
 #include <stdlib.h>
@@ -36,12 +48,14 @@ setupSignalHandlers(void) {
        obviously don't want to die just because a client didn't complete
        an RPC, so we ignore SIGPIPE.
     */
+#ifndef WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
     mysigaction.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &mysigaction, NULL);
+#endif
 }
 
 
@@ -49,7 +63,8 @@ setupSignalHandlers(void) {
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP, 
            xmlrpc_value * const paramArrayP,
-           void *         const userData ATTR_UNUSED) {
+           void *         const serverInfo ATTR_UNUSED,
+           void *         const channelInfo ATTR_UNUSED) {
     
     xmlrpc_int x, y, z;
 
@@ -71,6 +86,11 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
+    struct xmlrpc_method_info3 const methodInfo = {
+        .methodName     = "sample.add",
+        .methodFunction = &sample_add,
+        .serverInfo = NULL
+    };
     TServer abyssServer;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
@@ -86,8 +106,7 @@ main(int           const argc,
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method(
-        &env, registryP, NULL, "sample.add", &sample_add, NULL);
+    xmlrpc_registry_add_method3(&env, registryP, &methodInfo);
 
     ServerCreateNoAccept(&abyssServer, "XmlRpcServer", NULL, NULL);
     

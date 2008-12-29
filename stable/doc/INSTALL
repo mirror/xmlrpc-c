@@ -11,6 +11,12 @@ Essentially, it's just the conventional
   $ make
   $ make install
 
+To build handy tools such as the 'xmlrpc' command line XML-RPC client:
+
+  $ cd tools
+  $ make
+  $ make install
+
 You can also do
 
   $ make check
@@ -19,18 +25,18 @@ to run a battery of tests before you install.  But note that it's as common
 for the tests to fail because the tests are broken as because the product
 is broken, so consider the results carefully.
 
-To see it work, run a simple server like this:
+To see it work, build and run a simple server like this:
 
-  $ examples/xmlrpc_sample_add_server 8080
+  $ cd examples
+  $ make
+  $ ./xmlrpc_sample_add_server 8080
 
-Then run a client that does an RPC to this server:
+That runs forever, serving clients as they arrive.  Now, from another
+shell, run a client that does an RPC to this server:
 
-  $ examples/xmlrpc_sample_add_client
+  $ ./xmlrpc_sample_add_client
 
-(I don't mean to imply that the above are consecutive shell commands;
-They can't be, because the server program runs indefinitely).
-
-Also try other sample servers and clients, described in examples/README.
+Also try other example servers and clients, described in examples/README.
 
 
 You may want to pass a '--prefix' argument to 'configure'.  See
@@ -44,6 +50,36 @@ libwww facilities, must attach all those libraries, and that can take
 a significant amount of time.
 
 See './configure --help' for the options that disable certain transports.
+
+
+SEPARATE BUILD TREE
+-------------------
+
+While it's traditional to build a Unix package by adding object files
+to the same tree with the source files, it's actually much cleaner to
+keep your source tree exactly as you got it and put the built files in
+a separate directory, called the build tree.
+
+To do this, just create an empty directory and run 'configure' in it,
+then 'make':
+
+  mkdir xmlrpcbuild
+  cd xmlrpcbuild
+  /usr/src/xmlrpc-c/configure
+  ...
+  make
+
+But if you plan to work on Xmlrpc-c source code, you'll probably find
+it more convenient to build the traditional way, with a single tree
+for source and build.
+
+In the source tree, you can type 'make' in any directory to do the
+default make for that directory, or make FILENAME to make the file of
+that name there.  In the separate build tree, there are special
+facilities to allow you to do a simple make from the _top level
+directory_, but if you want to make a subcomponent or individual part,
+you have to have a -f option and set SRCDIR and BLDDIR on your 'make'
+command.
 
 
 COMMON PROBLEMS
@@ -101,23 +137,6 @@ but the link is picking up the old system version instead.  Why?
 Because the link options say to search /usr/lib _before_ the local
 build directory.  And it does that because curl-config erroneously
 says that you need a -L /usr/lib link option to find the Curl library.
-
-64 Bit Linux -fPIC 
-------------------
-
-The GNU link-editor produces this error message when building the C++
-libraries for certain 64 bit machines:
-
-  relocation R_X86_64_32 against `a local symbol' can not be used when
-  making a shared object; recompile with -fPIC
-
-Xmlrpc-c 1.06 C++ libraries are not designed for these platforms.
-(Releases starting with 1.07 are).
-
-You can work around this by adding a setting of the CADD make variable
-to your make command:
-
-  make CADD=-fPIC
 
 
 WINDOWS

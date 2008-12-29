@@ -5,6 +5,8 @@
 ** Thread
 *********************************************************************/
 
+#include "bool.h"
+
 typedef struct abyss_thread TThread;
 
 void
@@ -18,28 +20,30 @@ ThreadCreate(TThread **      const threadPP,
              void *          const userHandle,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
-             abyss_bool      const useSigchld,
+             bool            const useSigchld,
+             size_t          const stackSize,
              const char **   const errorP);
 
-abyss_bool
+bool
 ThreadRun(TThread * const threadP);
 
-abyss_bool
+bool
 ThreadStop(TThread * const threadP);
 
-abyss_bool
-ThreadKill(TThread * threadP);
+bool
+ThreadKill(TThread * const threadP);
 
 void
 ThreadWaitAndRelease(TThread * const threadP);
 
 void
-ThreadExit(int const retValue);
+ThreadExit(TThread * const threadP,
+           int       const retValue);
 
 void
 ThreadRelease(TThread * const threadP);
 
-abyss_bool
+bool
 ThreadForks(void);
 
 void
@@ -54,17 +58,21 @@ ThreadHandleSigchld(pid_t const pid);
 ** Mutex
 *********************************************************************/
 
-#ifdef WIN32
-typedef HANDLE TMutex;
-#else
-#include <pthread.h>
-typedef pthread_mutex_t TMutex;
-#endif  /* WIN32 */
+typedef struct abyss_mutex TMutex;
 
-abyss_bool MutexCreate(TMutex *m);
-abyss_bool MutexLock(TMutex *m);
-abyss_bool MutexUnlock(TMutex *m);
-abyss_bool MutexTryLock(TMutex *m);
-void MutexFree(TMutex *m);
+bool
+MutexCreate(TMutex ** const mutexP);
+
+bool
+MutexLock(TMutex * const mutexP);
+
+bool
+MutexUnlock(TMutex * const mutexP);
+
+bool
+MutexTryLock(TMutex * const mutexP);
+
+void
+MutexDestroy(TMutex * const mutexP);
 
 #endif

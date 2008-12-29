@@ -8,10 +8,10 @@
 #include <stdarg.h>
 
 #include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/util.h"
 
 
-#define ERROR_BUFFER_SZ (256)
 
 void
 xmlrpc_assertion_failed(const char * const fileName,
@@ -58,6 +58,8 @@ xmlrpc_env_set_fault(xmlrpc_env * const envP,
                      int          const faultCode, 
                      const char * const faultDescription) {
 
+    char * buffer;
+
     XMLRPC_ASSERT(envP != NULL); 
     XMLRPC_ASSERT(faultDescription != NULL);
 
@@ -68,28 +70,31 @@ xmlrpc_env_set_fault(xmlrpc_env * const envP,
     envP->fault_code     = faultCode;
 
     /* Try to copy the fault string. If this fails, use a default. */
-    envP->fault_string = strdup(faultDescription);
-    if (envP->fault_string == NULL)
+    buffer = strdup(faultDescription);
+    if (buffer == NULL)
         envP->fault_string = (char *)default_fault_string;
+    else {
+        xmlrpc_force_to_utf8(buffer);
+        xmlrpc_force_to_xml_chars(buffer);
+        envP->fault_string = buffer;
+    }
 }
 
 
 
-static void
-set_fault_formatted_v(xmlrpc_env * const envP,
-                      int          const code,
-                      const char * const format,
-                      va_list      const args) {
+void
+xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
+                             int          const code,
+                             const char * const format,
+                             va_list      const args) {
 
-    char buffer[ERROR_BUFFER_SZ];
+    const char * faultDescription;
 
-    vsnprintf(buffer, ERROR_BUFFER_SZ, format, args);
+    xmlrpc_vasprintf(&faultDescription, format, args);
 
-    /* vsnprintf is guaranteed to terminate the buffer, but we're paranoid. */
-    buffer[ERROR_BUFFER_SZ - 1] = '\0';
+    xmlrpc_env_set_fault(envP, code, faultDescription);
 
-    /* Set the fault. */
-    xmlrpc_env_set_fault(envP, code, buffer);
+    xmlrpc_strfree(faultDescription);
 }
 
 
@@ -106,7 +111,7 @@ xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP,
 
     /* Print our error message to the buffer. */
     va_start(args, format);
-    set_fault_formatted_v(envP, code, format, args);
+    xmlrpc_set_fault_formatted_v(envP, code, format, args);
     va_end(args);
 }
 
@@ -124,7 +129,7 @@ xmlrpc_faultf(xmlrpc_env * const envP,
 
     /* Print our error message to the buffer. */
     va_start(args, format);
-    set_fault_formatted_v(envP, XMLRPC_INTERNAL_ERROR, format, args);
+    xmlrpc_set_fault_formatted_v(envP, XMLRPC_INTERNAL_ERROR, format, args);
     va_end(args);
 
 }

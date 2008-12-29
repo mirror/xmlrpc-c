@@ -25,13 +25,12 @@
   class members had to be declared public so that other components of
   the library could see them, but the user is not supposed to access
   those members.
-
 *****************************************************************************/
 
 #include <cstdlib>
 #include <string>
 #include <vector>
-#include <time.h>
+#include <ctime>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -65,6 +64,22 @@ public:
         this->valueP = xmlrpc_datetime_new_sec(&env.env_c, cppvalue);
         throwIfError(env);
     }
+#if XMLRPC_HAVE_TIMEVAL
+    cDatetimeValueWrapper(struct timeval const cppvalue) {
+        env_wrap env;
+        
+        this->valueP = xmlrpc_datetime_new_timeval(&env.env_c, cppvalue);
+        throwIfError(env);
+    }
+#endif
+#if XMLRPC_HAVE_TIMESPEC
+    cDatetimeValueWrapper(struct timespec const cppvalue) {
+        env_wrap env;
+        
+        this->valueP = xmlrpc_datetime_new_timespec(&env.env_c, cppvalue);
+        throwIfError(env);
+    }
+#endif
     ~cDatetimeValueWrapper() {
         xmlrpc_DECREF(this->valueP);
     }
@@ -129,6 +144,17 @@ value::~value() {
     if (this->cValueP) {
         xmlrpc_DECREF(this->cValueP);
     }
+}
+
+
+
+bool
+value::isInstantiated() const {
+/*----------------------------------------------------------------------------
+   Return whether the value is actually a value, as opposed to a placeholder
+   variable waiting to be assigned a value.
+-----------------------------------------------------------------------------*/
+    return (this->cValueP != NULL);
 }
 
 
@@ -330,7 +356,7 @@ value_boolean::operator bool() const {
     xmlrpc_read_bool(&env.env_c, this->cValueP, &retval);
     throwIfError(env);
 
-    return (bool)retval;
+    return (retval != false);
 }
 
 
@@ -380,21 +406,25 @@ value_datetime::value_datetime(time_t const cppvalue) {
 
 
 
+#if XMLRPC_HAVE_TIMEVAL
 value_datetime::value_datetime(struct timeval const& cppvalue) {
 
-    cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
+    cDatetimeValueWrapper wrapper(cppvalue);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 
+#if XMLRPC_HAVE_TIMESPEC
 value_datetime::value_datetime(struct timespec const& cppvalue) {
 
-    cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
+    cDatetimeValueWrapper wrapper(cppvalue);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 
@@ -422,30 +452,90 @@ value_datetime::operator time_t() const {
 
 
 
-value_string::value_string(string const& cppvalue) {
-    
-    class cWrapper {
-    public:
-        xmlrpc_value * valueP;
+#if XMLRPC_HAVE_TIMEVAL
+
+value_datetime::operator timeval() const {
+
+    struct timeval retval;
+    env_wrap env;
+
+    xmlrpc_read_datetime_timeval(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
+}
+#endif
+
+
+
+#if XMLRPC_HAVE_TIMESPEC
+
+value_datetime::operator timespec() const {
+
+    struct timespec retval;
+    env_wrap env;
+
+    xmlrpc_read_datetime_timespec(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
+}
+#endif
+
+
+
+class cNewStringWrapper {
+public:
+    xmlrpc_value * valueP;
         
-        cWrapper(string const cppvalue) {
-            env_wrap env;
+    cNewStringWrapper(string               const cppvalue,
+                      value_string::nlCode const nlCode) {
+        env_wrap env;
             
-            this->valueP = xmlrpc_string_new(&env.env_c, cppvalue.c_str());
-            throwIfError(env);
+        switch (nlCode) {
+        case value_string::nlCode_all:
+            this->valueP = xmlrpc_string_new_lp(&env.env_c,
+                                                cppvalue.length(),
+                                                cppvalue.c_str());
+            break;
+        case value_string::nlCode_lf:
+            this->valueP = xmlrpc_string_new_lp_cr(&env.env_c,
+                                                   cppvalue.length(),
+                                                   cppvalue.c_str());
+            break;
+        default:
+            throw(error("Newline encoding argument to value_string "
+                        "constructor is not one of the defined "
+                        "enumerations of value_string::nlCode"));
         }
-        ~cWrapper() {
-            xmlrpc_DECREF(this->valueP);
-        }
-    };
+        throwIfError(env);
+    }
+    ~cNewStringWrapper() {
+        xmlrpc_DECREF(this->valueP);
+    }
+};
     
-    cWrapper wrapper(cppvalue);
+
+
+value_string::value_string(std::string          const& cppvalue,
+                           value_string::nlCode const  nlCode) {
+    
+    cNewStringWrapper wrapper(cppvalue, nlCode);
     
     this->instantiate(wrapper.valueP);
 }
 
 
 
+value_string::value_string(std::string const& cppvalue) {
+
+    cNewStringWrapper wrapper(cppvalue, nlCode_all);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+    
 value_string::value_string(xmlrpc_c::value const baseValue) {
 
     if (baseValue.type() != xmlrpc_c::value::TYPE_STRING)
@@ -453,6 +543,31 @@ value_string::value_string(xmlrpc_c::value const baseValue) {
     else {
         this->instantiate(baseValue.cValueP);
     }
+}
+
+
+
+std::string
+value_string::crlfValue() const {
+
+    class cWrapper {
+    public:
+        const char * str;
+        size_t length;
+        cWrapper(xmlrpc_value * valueP) {
+            env_wrap env;
+            
+            xmlrpc_read_string_lp_crlf(&env.env_c, valueP, &length, &str);
+            throwIfError(env);
+        }
+        ~cWrapper() {
+            free((char*)str);
+        }
+    };
+    
+    cWrapper wrapper(this->cValueP);
+
+    return string(wrapper.str, wrapper.length);
 }
 
 
@@ -764,5 +879,52 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
 
 
 
-} // namespace
+value_i8::value_i8(xmlrpc_int64 const cppvalue) {
 
+    class cWrapper {
+    public:
+        xmlrpc_value * valueP;
+        
+        cWrapper(xmlrpc_int64 const cppvalue) {
+            env_wrap env;
+            
+            this->valueP = xmlrpc_i8_new(&env.env_c, cppvalue);
+            throwIfError(env);
+        }
+        ~cWrapper() {
+            xmlrpc_DECREF(this->valueP);
+        }
+    };
+    
+    cWrapper wrapper(cppvalue);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+
+value_i8::value_i8(xmlrpc_c::value const baseValue) {
+
+    if (baseValue.type() != xmlrpc_c::value::TYPE_I8)
+        throw(error("Not 64 bit integer type.  See type() method"));
+    else {
+        this->instantiate(baseValue.cValueP);
+    }
+}
+
+
+
+value_i8::operator xmlrpc_int64() const {
+
+    xmlrpc_int64 retval;
+    env_wrap env;
+
+    xmlrpc_read_i8(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
+}
+
+
+
+} // namespace

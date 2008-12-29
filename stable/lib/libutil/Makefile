@@ -8,47 +8,78 @@
 # library, which have nothing in particular to do with XML-RPC.
 ###############################################################################
 
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  LIBDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib/libutil
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
-BLDDIR = ../..
-BUILDDIR = blddir
-VPATH = .:$(SRCDIR)
+SUBDIR := lib/libutil
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 
-all: libxmlrpc_util.la
+TARGET_LIBRARY_NAMES := libxmlrpc_util
 
-LIBXMLRPC_UTIL_OBJS = \
-  casprintf.lo \
-  error.lo \
-  make_printable.lo \
-  memblock.lo \
-  resource.lo \
-  sleep.lo \
+STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_util.a
 
-INCLUDES = -Iblddir -I$(SRCDIR) \
-           -Isrcdir/include -Isrcdir/lib/util/include
+SHARED_LIBS_TO_BUILD := libxmlrpc_util
+SHARED_LIBS_TO_INSTALL := libxmlrpc_util
 
-LDFLAGS = $(LADD)
+TARGET_MODS = \
+  asprintf \
+  error \
+  make_printable \
+  memblock \
+  select \
+  sleep \
+  time \
+  utf8 \
 
-LIBLDFLAGS = $(LDFLAGS_VERSINFO) -rpath $(LIBINST_DIR) $(LADD)
+OMIT_LIBXMLRPC_UTIL_RULE=Y
+MAJ=3
+  # Major number of shared libraries in this directory
 
-libxmlrpc_util.la: $(LIBXMLRPC_UTIL_OBJS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LIBLDFLAGS) $^
+include $(SRCDIR)/common.mk
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-$(LIBXMLRPC_UTIL_OBJS):%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+INCLUDES = -I$(BLDDIR) -Isrcdir \
+           -I$(BLDDIR)/include -Isrcdir/include -Isrcdir/lib/util/include
 
-LTLIBRARIES_TO_INSTALL = libxmlrpc_util.la
+UTIL_SHLIB = $(call shlibfn,libxmlrpc_util)
+#UTIL_SHLIB is e.g. libxmlrpc_util.so.3.1
+UTIL_SHLIBLE = $(call shliblefn,libxmlrpc_util)
+#UTIL_SHLIBLE is e.g. libxmlrpc_util.so
+
+ifneq ($(SHARED_LIB_TYPE),NONE)
+  TARGET_SHARED_LIBS := $(UTIL_SHLIB) $(UTIL_SHLIBLE)
+  endif
+
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
+
+.PHONY: all
+all: libxmlrpc_util.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
+$(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
+$(UTIL_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
+
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
+
+libxmlrpc_util.a: $(TARGET_MODS:%=%.o)
+libxmlrpc_util.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
+
+#-----------------------------------------------------------------------------
+#  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
+#-----------------------------------------------------------------------------
+
+# Rules to compile object modules from which to build the static and shared
+# library are in common.mk, courtesy of TARGET_MODS.
 
 .PHONY: install
 install: install-common
@@ -61,11 +92,4 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
-# This 'Makefile.common' dependency makes sure the symlinks get built before
-# this make file is used for anything.
-
-$(SRCDIR)/Makefile.common: srcdir blddir
-
-include $(SRCDIR)/Makefile.common
-
-include Makefile.depend
+include depend.mk

@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <limits.h>
 
+#include "bool.h"
+#include "int.h"
 #include "xmlrpc-c/abyss.h"
 
 #ifndef NAME_MAX
@@ -37,12 +39,11 @@
 
 #ifdef WIN32
 
-#ifndef __BORLANDC__
+#if MSVCRT
 typedef struct _stati64 TFileStat;
-typedef struct _finddata_t TFileInfo;
-typedef long TFileFind;
+typedef struct _finddatai64_t TFileInfo;
 
-#else  /* WIN32 */
+#else  /* MSVCRT */
 
 typedef struct stat TFileStat;
 typedef struct finddata_t {
@@ -53,11 +54,9 @@ typedef struct finddata_t {
     WIN32_FIND_DATA data;
 } TFileInfo;
 
-typedef HANDLE TFileFind;
+#endif /* MSVCRT */
 
-#endif /* WIN32 */
-
-#else
+#else /* WIN32 */
 
 #include <unistd.h>
 #include <dirent.h>
@@ -71,56 +70,55 @@ typedef struct finddata_t {
     time_t time_write;
 } TFileInfo;
 
-typedef struct {
-    char path[NAME_MAX+1];
-    DIR *handle;
-} TFileFind;
-
 #endif
 
-typedef int TFile;
+typedef struct TFileFind TFileFind;
 
-abyss_bool
-FileOpen(TFile *      const f,
+typedef struct TFile {
+    int fd;
+} TFile;
+
+bool
+FileOpen(TFile **     const filePP,
          const char * const name,
          uint32_t     const attrib);
 
-abyss_bool
-FileOpenCreate(TFile *      const f,
+bool
+FileOpenCreate(TFile **     const filePP,
                const char * const name,
                uint32_t     const attrib);
 
-abyss_bool
-FileClose(TFile * const f);
+bool
+FileClose(TFile * const fileP);
 
-abyss_bool
-FileWrite(TFile *      const f,
-          const void * const buffer,
-          uint32_t     const len);
+bool
+FileWrite(const TFile * const fileP,
+          const void *  const buffer,
+          uint32_t      const len);
 
 int32_t
-FileRead(TFile *  const f,
-         void *   const buffer,
-         uint32_t const len);
+FileRead(const TFile * const fileP,
+         void *        const buffer,
+         uint32_t      const len);
 
-abyss_bool
-FileSeek(TFile *  const f,
-         uint64_t const pos,
-         uint32_t const attrib);
+bool
+FileSeek(const TFile * const fileP,
+         uint64_t      const pos,
+         uint32_t      const attrib);
 
 uint64_t
-FileSize(TFile * const f);
+FileSize(const TFile * const fileP);
 
-abyss_bool
+bool
 FileStat(const char * const filename,
          TFileStat *  const filestat);
 
-abyss_bool
-FileFindFirst(TFileFind *  const filefind,
+bool
+FileFindFirst(TFileFind ** const filefind,
               const char * const path,
               TFileInfo *  const fileinfo);
 
-abyss_bool
+bool
 FileFindNext(TFileFind * const filefind,
              TFileInfo * const fileinfo);
 

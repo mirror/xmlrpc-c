@@ -3,60 +3,71 @@
 
 #include <sys/types.h>
 
+#include "bool.h"
 #include "xmlrpc-c/abyss.h"
 
-#include "file.h"
 #include "data.h"
 
-typedef struct _Tsocket Tsocket;
+struct TFile;
+struct abyss_mutex;
 
 struct _TServer {
-    abyss_bool terminationRequested;
+    bool terminationRequested;
         /* User wants this server to terminate as soon as possible,
            in particular before accepting any more connections and without
            waiting for any.
         */
-    abyss_bool socketBound;
-        /* The listening socket exists and is bound to a local address
+    bool chanSwitchBound;
+        /* The channel switch exists and is bound to a local address
            (may already be listening as well)
         */
-    TSocket * listenSocketP;
-        /* Meaningful only when 'socketBound' is true: file descriptor of
-           the listening socket ("listening socket" means socket for listening,
-           not a socket that is listening right now).
+    TChanSwitch * chanSwitchP;
+        /* Meaningful only when 'chanSwitchBound' is true: the channel
+           switch which directs connections from clients to this server.
         */
-    abyss_bool weCreatedListenSocket;
-        /* We created the listen socket (whose fd is 'listensock'), as
+    bool weCreatedChanSwitch;
+        /* We created the channel switch 'chanSwitchP', as
            opposed to 1) User supplied it; or 2) there isn't one.
         */
     const char * logfilename;
-    abyss_bool logfileisopen;
-    TFile logfile;
-    TMutex logmutex;
+    bool logfileisopen;
+    struct TFile * logfileP;
+    struct abyss_mutex * logmutexP;
     const char * name;
-    const char * filespath;
-    abyss_bool serverAcceptsConnections;
+    bool serverAcceptsConnections;
         /* We listen for and accept TCP connections for HTTP transactions.
            (The alternative is the user supplies a TCP-connected socket
            for each transaction)
         */
     uint16_t port;
-        /* Meaningful only when 'socketBound' is false: port number to which
-           we should bind the listening socket
+        /* Meaningful only when 'chanSwitchBound' is false: TCP port
+           number to which we should bind the switch.
         */
     uint32_t keepalivetimeout;
     uint32_t keepalivemaxconn;
     uint32_t timeout;
         /* Maximum time in seconds the server will wait to read a header
-           or a data chunk from the socket.
+           or a data chunk from the channel.
         */
     TList handlers;
-    TList defaultfilenames;
-    void * defaulthandler;
-    abyss_bool advertise;
-    MIMEType * mimeTypeP;
-        /* NULL means to use the global MIMEType object */
-    abyss_bool useSigchld;
+        /* Ordered list of HTTP request handlers.  For each HTTP request,
+           Server calls each one in order until one reports that it handled
+           it.
+
+           Each item in the list of of type 'uriHandler'.
+        */
+    URIHandler defaultHandler;
+        /* The handler for HTTP requests that aren't claimed by any handler
+           in the list 'handlers'.  This can't be null; if user doesn't
+           supply anything better, it is a built-in basic web server
+           handler.  */
+    void * defaultHandlerContext;
+        /* This is opaque data to be given to the default handler when it
+           requests it.
+        */
+    void * builtinHandlerP;
+    bool advertise;
+    bool useSigchld;
         /* Meaningless if not using forking for threads.
            TRUE means user will call ServerHandleSigchld to indicate that
            a SIGCHLD signal was received, and server shall use that as its
@@ -64,15 +75,17 @@ struct _TServer {
            be aware of SIGCHLD and will instead poll for existence of PIDs
            to determine if a child has died.
         */
+    size_t uriHandlerStackSize;
+        /* The maximum amount of stack any URI handler request handler
+           function will use.  Note that this is just the requirement
+           of the function itself, not the stack size for the thread
+           that runs it.
+        */
 #ifndef WIN32
     uid_t uid;
     gid_t gid;
-    TFile pidfile;
+    struct TFile * pidfileP;
 #endif
 };
-
-
-void
-ServerBackgroundProcessComplete(pid_t const pid);
 
 #endif

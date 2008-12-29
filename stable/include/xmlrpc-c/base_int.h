@@ -16,6 +16,7 @@
 
 #include "xmlrpc_config.h"
 #include "bool.h"
+#include "int.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/util_int.h>
@@ -32,16 +33,34 @@ struct _xmlrpc_value {
     /* Certain data types store their data directly in the xmlrpc_value. */
     union {
         xmlrpc_int32 i;
+        xmlrpc_int64 i8;
         xmlrpc_bool b;
         double d;
         /* time_t t */
-        void *c_ptr;
+        void * c_ptr;
     } _value;
     
     /* Other data types use a memory block.
 
-       For a string, this is the characters of the string in UTF-8, plus
-       a NUL added to the end.
+       For a string, this is the characters of the lines of the string
+       in UTF-8, with lines delimited by either CR, LF, or CRLF, plus
+       a NUL added to the end.  The characters of the lines may be any
+       character representable in UTF-8, even the ones that are not
+       legal XML (XML doesn't allow ASCII control characters except
+       tab, CR, LF).  But note that a line can't contain CR or LF
+       because that would form a line delimiter.  To disambiguate:
+       CRLF together is always one line delimiter.
+       
+       This format for string is quite convenient because it is also
+       the format of that part of an XML document which is the
+       contents of a <string> element (except of course that for the
+       non-XML characters, we have to stretch the definition of XML).
+
+       For base64, this is bytes of the byte string, directly.
+
+       For datetime, this is in the same format as the contents of
+       a <dateTime.iso8601> XML element.  That really ought to be changed
+       to time_t some day.
     */
     xmlrpc_mem_block _block;
 
@@ -72,9 +91,9 @@ struct _xmlrpc_value {
 
 
 typedef struct {
-    unsigned char key_hash;
-    xmlrpc_value *key;
-    xmlrpc_value *value;
+    uint32_t keyHash;
+    xmlrpc_value * key;
+    xmlrpc_value * value;
 } _struct_member;
 
 
@@ -89,6 +108,9 @@ void
 xmlrpc_traceXml(const char * const label, 
                 const char * const xml,
                 unsigned int const xmlLength);
+
+void
+xmlrpc_destroyString(xmlrpc_value * const stringP);
 
 void
 xmlrpc_destroyStruct(xmlrpc_value * const structP);

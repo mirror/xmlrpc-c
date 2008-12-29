@@ -7,7 +7,8 @@
 #include <stdarg.h>
 #include <time.h>
 #include <xmlrpc-c/util.h>
-#include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
+#include <xmlrpc-c/config.h>
+  /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_INT64 */
 
 #if XMLRPC_HAVE_WCHAR
 #include <wchar.h>
@@ -19,16 +20,26 @@ extern "C" {
 
 
 /*=========================================================================
-**  Typedefs
-**=========================================================================
-**  We define names for these types, because they may change from platform
-**  to platform.
+**  Version of libxmlrpc
+**=======================================================================*/
+extern unsigned int const xmlrpc_version_major;
+extern unsigned int const xmlrpc_version_minor;
+extern unsigned int const xmlrpc_version_point;
+
+/*=========================================================================
+**  C types equivalent to XML-RPC types
+**=======================================================================*/
+
+/*  We define names for these types, because they may change from platform
+    to platform.
 */
 
 typedef signed int xmlrpc_int;  
     /* An integer of the type defined by XML-RPC <int>; i.e. 32 bit */
-typedef signed int xmlrpc_int32;
-    /* An integer of the type defined by XML-RPC <int4>; i.e. 32 bit */
+typedef XMLRPC_INT32 xmlrpc_int32;
+    /* An integer of the type defined by XML-RPC <i4>; i.e. 32 bit */
+typedef XMLRPC_INT64 xmlrpc_int64;
+    /* An integer of the type defined by "XML-RPC" <i8>; i.e. 64 bit */
 typedef int xmlrpc_bool;
     /* A boolean (of the type defined by XML-RPC <boolean>, but there's
        really only one kind)
@@ -40,15 +51,19 @@ typedef double xmlrpc_double;
        for mathematical completeness.
     */
 
-#ifdef _WIN32
-typedef SOCKET xmlrpc_socket;
-#else
+/* xmlrpc_socket is just for backward compatibility, in case someone decided
+   to use this in user code.  New code should use the native type for a
+   socket (e.g. int or SOCKET).  (We stopped using this because for winsock
+   users, we would have to #include <winsock.h> in every file that
+   #includes <xmlrpc-c/base.h> and we don't want that).
+*/
 typedef int xmlrpc_socket;
-#endif
 
-#define XMLRPC_INT32_MAX (2147483647)
+#define XMLRPC_INT32_MAX 0x7fffffff
 #define XMLRPC_INT32_MIN (-XMLRPC_INT32_MAX - 1)
 
+#define XMLRPC_INT64_MAX 0x7fffffffffffffffll
+#define XMLRPC_INT64_MIN (-XMLRPC_INT64_MAX - 1)
 
 
 /*=========================================================================
@@ -58,21 +73,27 @@ typedef int xmlrpc_socket;
 */
 
 typedef enum {
-    XMLRPC_TYPE_INT      = 0,
-    XMLRPC_TYPE_BOOL     = 1,
-    XMLRPC_TYPE_DOUBLE   = 2,
-    XMLRPC_TYPE_DATETIME = 3,
-    XMLRPC_TYPE_STRING   = 4,
-    XMLRPC_TYPE_BASE64   = 5,
-    XMLRPC_TYPE_ARRAY    = 6,
-    XMLRPC_TYPE_STRUCT   = 7,
-    XMLRPC_TYPE_C_PTR    = 8,
-    XMLRPC_TYPE_NIL      = 9,
+    XMLRPC_TYPE_INT      =  0,
+    XMLRPC_TYPE_BOOL     =  1,
+    XMLRPC_TYPE_DOUBLE   =  2,
+    XMLRPC_TYPE_DATETIME =  3,
+    XMLRPC_TYPE_STRING   =  4,
+    XMLRPC_TYPE_BASE64   =  5,
+    XMLRPC_TYPE_ARRAY    =  6,
+    XMLRPC_TYPE_STRUCT   =  7,
+    XMLRPC_TYPE_C_PTR    =  8,
+    XMLRPC_TYPE_NIL      =  9,
+    XMLRPC_TYPE_I8       = 10,
     XMLRPC_TYPE_DEAD     = 0xDEAD
 } xmlrpc_type;
 
+#define XMLRPC_HAVE_I8 1
+
 /* These are *always* allocated on the heap. No exceptions. */
 typedef struct _xmlrpc_value xmlrpc_value;
+
+const char *
+xmlrpc_type_name(xmlrpc_type const type);
 
 void
 xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
@@ -81,18 +102,22 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
     xmlrpc_abort_if_array_bad(val)
 
 /* Increment the reference count of an xmlrpc_value. */
-extern void xmlrpc_INCREF (xmlrpc_value* value);
+extern void xmlrpc_INCREF (xmlrpc_value* const value);
 
 /* Decrement the reference count of an xmlrpc_value. If there
 ** are no more references, free it. */
-extern void xmlrpc_DECREF (xmlrpc_value* value);
+extern void xmlrpc_DECREF (xmlrpc_value* const value);
 
 /* Get the type of an XML-RPC value. */
-extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* value);
+extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* const value);
 
 xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP,
                int          const intValue);
+
+xmlrpc_value *
+xmlrpc_i8_new(xmlrpc_env * const envP, 
+              xmlrpc_int64 const value);
 
 void 
 xmlrpc_read_int(xmlrpc_env *         const envP,
@@ -125,6 +150,23 @@ xmlrpc_value *
 xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
                         time_t       const value);
 
+xmlrpc_value*
+xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
+                         time_t       const secs,
+                         unsigned int const usecs);
+
+#if XMLRPC_HAVE_TIMEVAL
+xmlrpc_value *
+xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP, 
+                            struct timeval const value);
+#endif
+
+#if XMLRPC_HAVE_TIMESPEC
+xmlrpc_value *
+xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
+                             struct timespec const value);
+#endif
+
 void
 xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
@@ -135,6 +177,26 @@ xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP);
 
+void
+xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          time_t *             const secsP,
+                          unsigned int *       const usecsP);
+
+#if XMLRPC_HAVE_TIMEVAL
+void
+xmlrpc_read_datetime_timeval(xmlrpc_env *         const envP,
+                             const xmlrpc_value * const valueP,
+                             struct timeval *     const timeValueP);
+#endif
+
+#if XMLRPC_HAVE_TIMESPEC
+void
+xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
+                              const xmlrpc_value * const valueP,
+                              struct timespec *    const timeValueP);
+#endif
+
 xmlrpc_value *
 xmlrpc_string_new(xmlrpc_env * const envP,
                   const char * const stringValue);
@@ -144,11 +206,41 @@ xmlrpc_string_new_lp(xmlrpc_env * const envP,
                      size_t       const length,
                      const char * const stringValue);
 
+xmlrpc_value *
+xmlrpc_string_new_va(xmlrpc_env * const envP,
+                     const char * const format,
+                     va_list            args);
+
+xmlrpc_value *
+xmlrpc_string_new_f(xmlrpc_env * const envP,
+                    const char * const format,
+                    ...);
+
+xmlrpc_value *
+xmlrpc_string_new_lp_cr(xmlrpc_env * const envP, 
+                        size_t       const length,
+                        const char * const value);
+
+xmlrpc_value *
+xmlrpc_string_new_cr(xmlrpc_env * const envP,
+                     const char * const value);
+
 void
 xmlrpc_read_string(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    const char **        const stringValueP);
 
+
+void
+xmlrpc_read_string_crlf(xmlrpc_env *         const envP,
+                        const xmlrpc_value * const valueP,
+                        const char **        const stringValueP);
+
+void
+xmlrpc_read_string_lp_crlf(xmlrpc_env *         const envP,
+                           const xmlrpc_value * const valueP,
+                           size_t *             const lengthP,
+                           const char **        const stringValueP);
 
 void
 xmlrpc_read_string_lp(xmlrpc_env *         const envP,
@@ -172,10 +264,30 @@ xmlrpc_read_string_w(xmlrpc_env *     const envP,
                      const wchar_t ** const stringValueP);
 
 void
+xmlrpc_read_string_w_crlf(xmlrpc_env *     const envP,
+                          xmlrpc_value *   const valueP,
+                          const wchar_t ** const stringValueP);
+
+void
 xmlrpc_read_string_w_lp(xmlrpc_env *     const envP,
                         xmlrpc_value *   const valueP,
                         size_t *         const lengthP,
                         const wchar_t ** const stringValueP);
+
+void
+xmlrpc_read_string_w_lp_crlf(xmlrpc_env *     const envP,
+                             xmlrpc_value *   const valueP,
+                             size_t *         const lengthP,
+                             const wchar_t ** const stringValueP);
+
+xmlrpc_value *
+xmlrpc_string_w_new_lp_cr(xmlrpc_env *    const envP, 
+                          size_t          const length,
+                          const wchar_t * const value);
+
+xmlrpc_value *
+xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
+                       const wchar_t * const value);
 
 #endif /* XMLRPC_HAVE_WCHAR */
 
@@ -207,9 +319,9 @@ xmlrpc_array_size(xmlrpc_env *         const env,
 /* Append an item to an XML-RPC array.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
 extern void
-xmlrpc_array_append_item (xmlrpc_env   * envP,
-                          xmlrpc_value * arrayP,
-                          xmlrpc_value * valueP);
+xmlrpc_array_append_item (xmlrpc_env   * const envP,
+                          xmlrpc_value * const arrayP,
+                          xmlrpc_value * const valueP);
 
 void
 xmlrpc_array_read_item(xmlrpc_env *         const envP,
@@ -237,18 +349,8 @@ int index,
                                   xmlrpc_value* value);
 */
 
-void
-xmlrpc_read_nil(xmlrpc_env *   const envP,
-                xmlrpc_value * const valueP);
-                
-
-void
-xmlrpc_read_cptr(xmlrpc_env *         const envP,
-                 const xmlrpc_value * const valueP,
-                 void **              const ptrValueP);
-
 xmlrpc_value *
-xmlrpc_struct_new(xmlrpc_env * env);
+xmlrpc_struct_new(xmlrpc_env * const env);
 
 /* Return the number of key/value pairs in a struct.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
@@ -296,16 +398,16 @@ xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value ** const valuePP);
 
 void
+xmlrpc_struct_read_value(xmlrpc_env *    const envP,
+                         xmlrpc_value *  const structP,
+                         const char *    const key,
+                         xmlrpc_value ** const valuePP);
+
+void
 xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value *  const structP,
                            xmlrpc_value *  const keyP,
                            xmlrpc_value ** const valuePP);
-
-void
-xmlrpc_struct_read_value(xmlrpc_env *    const envP,
-                         xmlrpc_value *  const strctP,
-                         const char *    const key,
-                         xmlrpc_value ** const valuePP);
 
 /* The "get_value" functions are deprecated.  Use the "find_value"
    and "read_value" functions instead.
@@ -372,11 +474,27 @@ xmlrpc_struct_read_member(xmlrpc_env *    const envP,
    Deprecated.  Use xmlrpc_struct_read_member() instead.
 */
 void
-xmlrpc_struct_get_key_and_value(xmlrpc_env *    env,
-                                xmlrpc_value *  strct,
-                                int             index,
-                                xmlrpc_value ** out_keyval,
-                                xmlrpc_value ** out_value);
+xmlrpc_struct_get_key_and_value(xmlrpc_env *    const env,
+                                xmlrpc_value *  const strct,
+                                int             const index,
+                                xmlrpc_value ** const out_keyval,
+                                xmlrpc_value ** const out_value);
+
+void
+xmlrpc_read_cptr(xmlrpc_env *         const envP,
+                 const xmlrpc_value * const valueP,
+                 void **              const ptrValueP);
+
+void
+xmlrpc_read_nil(xmlrpc_env *   const envP,
+                xmlrpc_value * const valueP);
+                
+
+void 
+xmlrpc_read_i8(xmlrpc_env *         const envP,
+               const xmlrpc_value * const valueP,
+               xmlrpc_int64 *       const intValueP);
+
 
 xmlrpc_value *
 xmlrpc_cptr_new(xmlrpc_env * const envP,
@@ -397,7 +515,7 @@ xmlrpc_build_value(xmlrpc_env * const env,
 void
 xmlrpc_build_value_va(xmlrpc_env *    const env,
                       const char *    const format,
-                      va_list               args,
+                      va_list         const args,
                       xmlrpc_value ** const valPP,
                       const char **   const tailP);
 
@@ -411,7 +529,7 @@ void
 xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
                           xmlrpc_value * const value,
                           const char *   const format,
-                          va_list              args);
+                          va_list        const args);
 
 /* xmlrpc_parse_value... is the same as xmlrpc_decompose_value... except
    that it doesn't do proper memory management -- it returns xmlrpc_value's
@@ -431,44 +549,67 @@ void
 xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       xmlrpc_value * const value,
                       const char *   const format,
-                      va_list              args);
+                      va_list        const args);
 
 /*=========================================================================
 **  Encoding XML
 **=======================================================================*/
 
-/* Serialize an XML value without any XML header. This is primarily used
-** for testing purposes. */
-void
-xmlrpc_serialize_value(xmlrpc_env *       env,
-                       xmlrpc_mem_block * output,
-                       xmlrpc_value *     value);
+typedef enum xmlrpc_dialect {
+    xmlrpc_dialect_i8,
+    xmlrpc_dialect_apache
+} xmlrpc_dialect;
 
-/* Serialize a list of parameters without any XML header. This is
-** primarily used for testing purposes. */
-void
-xmlrpc_serialize_params(xmlrpc_env *       env,
-                        xmlrpc_mem_block * output,
-                        xmlrpc_value *     param_array);
-
-/* Serialize an XML-RPC call. */
 void 
-xmlrpc_serialize_call (xmlrpc_env *       const env,
-                       xmlrpc_mem_block * const output,
-                       const char *       const method_name,
-                       xmlrpc_value *     const param_array);
+xmlrpc_serialize_value2(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const outputP,
+                        xmlrpc_value *     const valueP,
+                        xmlrpc_dialect     const dialect);
 
-/* Serialize an XML-RPC return value. */
-extern void
-xmlrpc_serialize_response(xmlrpc_env *       env,
-                          xmlrpc_mem_block * output,
-                          xmlrpc_value *     value);
+void
+xmlrpc_serialize_value(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       xmlrpc_value *     const valueP);
 
-/* Serialize an XML-RPC fault (as specified by 'fault'). */
-extern void
-xmlrpc_serialize_fault(xmlrpc_env *       env,
-                       xmlrpc_mem_block * output,
-                       xmlrpc_env *       fault);
+void 
+xmlrpc_serialize_params2(xmlrpc_env *       const envP,
+                         xmlrpc_mem_block * const outputP,
+                         xmlrpc_value *     const paramArrayP,
+                         xmlrpc_dialect     const dialect);
+
+void
+xmlrpc_serialize_params(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const outputP,
+                        xmlrpc_value *     const paramArrayP);
+
+void 
+xmlrpc_serialize_call2(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       const char *       const methodName,
+                       xmlrpc_value *     const paramArrayP,
+                       xmlrpc_dialect     const dialect);
+
+void 
+xmlrpc_serialize_call(xmlrpc_env *       const envP,
+                      xmlrpc_mem_block * const outputP,
+                      const char *       const methodName,
+                      xmlrpc_value *     const paramArrayP);
+
+void 
+xmlrpc_serialize_response2(xmlrpc_env *       const envP,
+                           xmlrpc_mem_block * const outputP,
+                           xmlrpc_value *     const valueP,
+                           xmlrpc_dialect     const dialect);
+
+void
+xmlrpc_serialize_response(xmlrpc_env *       const envP,
+                          xmlrpc_mem_block * const outputP,
+                          xmlrpc_value *     const valueP);
+
+void
+xmlrpc_serialize_fault(xmlrpc_env *       const envP,
+                       xmlrpc_mem_block * const outputP,
+                       const xmlrpc_env * const faultP);
 
 
 /*=========================================================================
@@ -532,42 +673,6 @@ xmlrpc_base64_decode(xmlrpc_env * const envP,
 
 
 /*=========================================================================
-**  UTF-8 Encoding and Decoding
-**=========================================================================
-**  We need a correct, reliable and secure UTF-8 decoder. This decoder
-**  raises a fault if it encounters invalid UTF-8.
-**
-**  Note that ANSI C does not precisely define the representation used
-**  by wchar_t--it may be UCS-2, UTF-16, UCS-4, or something from outer
-**  space. If your platform does something especially bizarre, you may
-**  need to reimplement these routines.
-*/
-
-/* Ensure that a string contains valid, legally-encoded UTF-8 data.
-   (Incorrectly-encoded UTF-8 strings are often used to bypass security
-   checks.)
-*/
-void 
-xmlrpc_validate_utf8 (xmlrpc_env * const env,
-                      const char * const utf8_data,
-                      size_t       const utf8_len);
-
-/* Decode a UTF-8 string. */
-xmlrpc_mem_block *
-xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
-                   const char * const utf8_data,
-                   size_t       const utf8_len);
-
-/* Encode a UTF-8 string. */
-
-#if XMLRPC_HAVE_WCHAR
-xmlrpc_mem_block *
-xmlrpc_wcs_to_utf8(xmlrpc_env * env,
-                   wchar_t *    wcs_data,
-                   size_t       wcs_len);
-#endif
-
-/*=========================================================================
 **  Authorization Cookie Handling
 **=========================================================================
 **  Routines to get and set values for authorizing via authorization
@@ -577,11 +682,43 @@ xmlrpc_wcs_to_utf8(xmlrpc_env * env,
 **  a cookie replacement of basic authentication.)
 **/
 
-extern void xmlrpc_authcookie_set(xmlrpc_env * env,
-                                  const char * username,
-                                  const char * password);
+extern void xmlrpc_authcookie_set(xmlrpc_env * const env,
+                                  const char * const username,
+                                  const char * const password);
 
 char *xmlrpc_authcookie(void);
+
+/*=========================================================================
+   Resource Limits
+
+   Ideally, there would be enough resource limits to ensure that
+   XML-RPC partners cannot cause libxmlrpc objects and routines to use
+   more resource than is available for them (either by accident or
+   malice).  We have a long way to go to get there.
+   
+=========================================================================*/
+/* These functions are _not_ re-entrant and the limits are per-process
+   (i.e. their values live in static global variables).
+*/
+
+/* Limit IDs. There will be more of these as time goes on. */
+#define XMLRPC_NESTING_LIMIT_ID   (0)
+#define XMLRPC_XML_SIZE_LIMIT_ID  (1)
+#define XMLRPC_LAST_LIMIT_ID      (XMLRPC_XML_SIZE_LIMIT_ID)
+
+/* By default, deserialized data may be no more than 64 levels deep. */
+#define XMLRPC_NESTING_LIMIT_DEFAULT  (64)
+
+/* By default, XML data from the network may be no larger than 512K.
+** Some client and server modules may fail to enforce this properly. */
+#define XMLRPC_XML_SIZE_LIMIT_DEFAULT (512*1024)
+
+/* Set a specific limit to the specified value. */
+extern void xmlrpc_limit_set (int const limit_id, size_t const value);
+
+/* Get the value of a specified limit. */
+extern size_t xmlrpc_limit_get (int const limit_id);
+
 
 #ifdef __cplusplus
 }

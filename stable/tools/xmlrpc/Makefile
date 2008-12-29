@@ -1,21 +1,25 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  TOOLSDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(TOOLSDIR))
+  BLDDIR := $(SRCDIR)
 endif
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
-BLDDIR = $(SRCDIR)
-BUILDDIR = blddir
+SUBDIR := tools/xmlrpc
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 PROGRAMS_TO_INSTALL = xmlrpc
 
-include ../Makefile.common
+include $(SRCDIR)/tools/common.mk
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
+INCLUDES = \
+  -I../lib/include \
+  -Iblddir \
+  -Iblddir/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
@@ -23,44 +27,42 @@ LDFLAGS = $(LADD)
 
 all: xmlrpc
 
-UTIL_OBJS = cmdline_parser.o getoptx.o casprintf.o
+UTIL_OBJS = \
+  casprintf.o \
+  cmdline_parser.o \
+  getoptx.o \
+  stripcaseeq.o \
+  string_parser.o \
+
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-# These are the Libtool .la files.  We use them only for make dependencies.
-# We'd like to use these in the link rule, by using libtool --link, but
-# Libtool adds -l options to the link to cover the dependencies that are
-# recorded inside the shared libraries.  And it doesn't add the necessary
-# -L options (it can't), so we end up with a messy mixture of the two
-# forms of specifying libraries.
+DUMPVALUE = srcdir/tools/lib/dumpvalue.o
+
+# Can we just use $(LIBS) in the link?
 
 LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 
-XMLRPC_OBJS = xmlrpc.o dumpvalue.o
+XMLRPC_OBJS = xmlrpc.o $(DUMPVALUE)
 
 xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
 	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
 
-%.o:%.c
+%.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS) $<
 
-*.c: config.h
-
-config.h:
-	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
-
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: blddir srcdir
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: dep
 dep: dep-common
 
 .PHONY: clean
 clean: clean-common
-	rm -f xmlrpc config.h
+	rm -f xmlrpc
 
 .PHONY: distclean
 distclean: clean distclean-common

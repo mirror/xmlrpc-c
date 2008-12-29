@@ -6,25 +6,30 @@
 #include <errno.h>
 
 #include "casprintf.h"
+#include "girstring.h"
 
 #include "xmlrpc_config.h"
 
 #include "xmlrpc-c/base.h"
+#include "xmlrpc-c/string_int.h"
 
 #include "test.h"
+#include "value_datetime.h"
+
 #include "value.h"
 
 
+#if HAVE_UNICODE_WCHAR
 
-/*=========================================================================
-**  Test Data
-**=========================================================================
-**  Some common test data which need to be allocated at a fixed address,
-**  or which are inconvenient to allocate inline.
-*/
-static char* test_string_1 = "foo";
+static bool
+wcsneq(const wchar_t * const comparand,
+       const wchar_t * const comparator,
+       size_t          const length) {
 
+    return(wcsncmp(comparand, comparator, length) == 0);
+}
 
+#endif /* HAVE_UNICODE_WCHAR */
 
 static void
 test_value_alloc_dealloc(void) {
@@ -47,7 +52,7 @@ test_value_alloc_dealloc(void) {
 
 
 static void
-test_value_integer(void) { 
+test_value_int(void) { 
 
     xmlrpc_value * v;
     xmlrpc_env env;
@@ -55,18 +60,28 @@ test_value_integer(void) {
 
     xmlrpc_env_init(&env);
 
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_INT), "INT"));
+
     v = xmlrpc_int_new(&env, (xmlrpc_int32) 25);
     TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_INT == xmlrpc_value_type(v));
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_INT);
     xmlrpc_read_int(&env, v, &i);
     TEST_NO_FAULT(&env);
     TEST(i == 25);
     xmlrpc_DECREF(v);
 
+    v = xmlrpc_int_new(&env, (xmlrpc_int32) -25);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_INT);
+    xmlrpc_read_int(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == -25);
+    xmlrpc_DECREF(v);
+
     v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 10);
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
-    TEST(XMLRPC_TYPE_INT == xmlrpc_value_type(v));
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_INT);
     xmlrpc_decompose_value(&env, v, "i", &i);
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
@@ -87,6 +102,8 @@ test_value_bool(void) {
     /* Test booleans. */
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_BOOL), "BOOL"));
 
     v = xmlrpc_bool_new(&env, (xmlrpc_bool) 1);
     TEST_NO_FAULT(&env);
@@ -119,6 +136,8 @@ test_value_double(void) {
 
     xmlrpc_env_init(&env);
 
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DOUBLE), "DOUBLE"));
+
     v = xmlrpc_double_new(&env, -3.25);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_DOUBLE == xmlrpc_value_type(v));
@@ -141,60 +160,22 @@ test_value_double(void) {
 
 
 
-static void
-test_value_datetime(void) {
+static xmlrpc_value *
+test_string_new_va(xmlrpc_env * const envP,
+                   const char * const format,
+                   ...) {
 
-    const char * datestring = "19980717T14:08:55";
-    time_t const datetime = 900684535;
+    va_list args;
 
     xmlrpc_value * v;
-    xmlrpc_env env;
-    const char * ds;
-    time_t dt;
 
-    xmlrpc_env_init(&env);
+    va_start(args, format);
 
-    v = xmlrpc_datetime_new_str(&env, datestring);
-    TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
+    v = xmlrpc_string_new_va(envP, format, args);
 
-    xmlrpc_read_datetime_str(&env, v, &ds);
-    TEST_NO_FAULT(&env);
-    TEST(strcmp(ds, datestring) == 0);
-    strfree(ds);
+    va_end(args);
 
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_NO_FAULT(&env);
-    TEST(dt == datetime);
-
-    xmlrpc_DECREF(v);
-
-    v = xmlrpc_datetime_new_sec(&env, datetime);
-    TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-
-    xmlrpc_read_datetime_str(&env, v, &ds);
-    TEST_NO_FAULT(&env);
-    TEST(strcmp(ds, datestring) == 0);
-    strfree(ds);
-
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_NO_FAULT(&env);
-    TEST(dt == datetime);
-
-    xmlrpc_DECREF(v);
-
-    v = xmlrpc_build_value(&env, "8", datestring);
-    TEST_NO_FAULT(&env);
-    TEST(v != NULL);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-    xmlrpc_decompose_value(&env, v, "8", &ds);
-    xmlrpc_DECREF(v);
-    TEST_NO_FAULT(&env);
-    TEST(strcmp(ds, datestring) == 0);
-    strfree(ds);
-
-    xmlrpc_env_clean(&env);
+    return v;
 }
 
 
@@ -202,24 +183,45 @@ test_value_datetime(void) {
 static void
 test_value_string_no_null(void) {
 
+    /* Test strings (without '\0' bytes). */
+
     xmlrpc_value * v;
     xmlrpc_env env;
     const char * str;
     size_t len;
 
-    /* Test strings (without '\0' bytes). */
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_string_new(&env, test_string_1);
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_STRING), "STRING"));
+
+    v = xmlrpc_string_new(&env, "foo");
     TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_STRING == xmlrpc_value_type(v));
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
     xmlrpc_read_string(&env, v, &str);
     TEST_NO_FAULT(&env);
-    TEST(strcmp(str, test_string_1) == 0);
+    TEST(streq(str, "foo"));
     xmlrpc_DECREF(v);
     strfree(str);
 
-    v = xmlrpc_build_value(&env, "s", test_string_1);
+    v = xmlrpc_string_new_f(&env, "String %s, number %d", "xyz", 7);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "String xyz, number 7"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = test_string_new_va(&env, "String %s, number %d", "xyz", 7);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "String xyz, number 7"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_build_value(&env, "s", "foo");
 
     TEST_NO_FAULT(&env);
     TEST(v != NULL);
@@ -227,13 +229,14 @@ test_value_string_no_null(void) {
 
     xmlrpc_decompose_value(&env, v, "s", &str);
     TEST_NO_FAULT(&env);
-    TEST(strcmp(str, test_string_1) == 0);
+    TEST(streq(str, "foo"));
     strfree(str);
 
     xmlrpc_decompose_value(&env, v, "s#", &str, &len);
     TEST_NO_FAULT(&env);
-    TEST(memcmp(str, test_string_1, strlen(test_string_1)) == 0);
-    TEST(strlen(str) == strlen(test_string_1));
+    TEST(len == strlen("foo"));
+    TEST(xmlrpc_streq(str, "foo"));
+    TEST(strlen(str) == strlen("foo"));
     strfree(str);
 
     xmlrpc_DECREF(v);
@@ -262,7 +265,7 @@ test_value_string_null(void) {
     xmlrpc_read_string_lp(&env, v, &len, &str);
     TEST_NO_FAULT(&env);
     TEST(len == 7);
-    TEST(memcmp(str, "foo\0bar", 7) == 0);
+    TEST(memeq(str, "foo\0bar", 7));
     xmlrpc_DECREF(v);
     strfree(str);
 
@@ -273,7 +276,7 @@ test_value_string_null(void) {
 
     xmlrpc_decompose_value(&env, v, "s#", &str, &len);
     TEST_NO_FAULT(&env);
-    TEST(memcmp(str, "foo\0bar", 7) == 0);
+    TEST(memeq(str, "foo\0bar", 7));
     TEST(len == 7);
     strfree(str);
 
@@ -288,6 +291,213 @@ test_value_string_null(void) {
     xmlrpc_env_clean(&env);
 }
 
+
+
+static void
+test_value_string_multiline(void) {
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    const char * str;
+    size_t len;
+
+    xmlrpc_env_init(&env);
+
+    /* LF line ending */
+
+    v = xmlrpc_string_new(&env, "foo\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n"));
+    strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\n"));
+    strfree(str);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new(&env, "foo\n\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n\n"));
+    strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\n\r\n"));
+    strfree(str);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new(&env, "foo\nbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar"));
+    strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar"));
+    strfree(str);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new(&env, "foo\nbar\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\n"));
+    strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar\r\n"));
+    strfree(str);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_string_new(&env, "foo\nbar\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\nbaz"));
+    strfree(str);
+    xmlrpc_read_string_crlf(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar\r\nbaz"));
+    strfree(str);
+    xmlrpc_DECREF(v);
+
+    /* CR line ending */
+
+    v = xmlrpc_string_new(&env, "foo\r");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\r");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\rbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\rbar\r");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\rbar\rbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\nbaz"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    /* CRLF line ending */
+
+    v = xmlrpc_string_new(&env, "foo\r\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\n\r\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\n\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\nbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\nbar\r\n");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\n"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new(&env, "foo\r\nbar\r\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\nbar\nbaz"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    /* Embedded null */
+
+    v = xmlrpc_string_new_lp(&env, 14, "foo\r\n\0bar\r\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string_lp(&env, v, &len, &str);
+    TEST_NO_FAULT(&env);
+    TEST(len == 12);
+    TEST(memeq(str, "foo\n\0bar\nbaz", len));
+    strfree(str);
+    xmlrpc_read_string_lp_crlf(&env, v, &len, &str);
+    TEST_NO_FAULT(&env);
+    TEST(len == 14);
+    TEST(memeq(str, "foo\r\n\0bar\r\nbaz", len));
+    strfree(str);
+    xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_string_cr(void) {
+
+    xmlrpc_env env;
+    xmlrpc_value * v;
+    const char * str;
+    size_t len;
+
+    xmlrpc_env_init(&env);
+    v = xmlrpc_string_new_cr(&env, "foo\r\nbar\r\nbaz");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string(&env, v, &str);
+    TEST_NO_FAULT(&env);
+    TEST(streq(str, "foo\r\nbar\r\nbaz"));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    v = xmlrpc_string_new_lp_cr(&env, 7, "\0foo\rbar");
+    TEST_NO_FAULT(&env);
+    xmlrpc_read_string_lp(&env, v, &len, &str);
+    TEST_NO_FAULT(&env);
+    TEST(len == 7);
+    TEST(memeq(str, "\0foo\rbar", len));
+    xmlrpc_DECREF(v);
+    strfree(str);
+
+    xmlrpc_env_clean(&env);
+}
 
 
 #if HAVE_UNICODE_WCHAR
@@ -322,7 +532,7 @@ test_value_string_wide_build(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_DECREF(valueP);
@@ -338,12 +548,66 @@ test_value_string_wide_build(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_DECREF(valueP);
 }
 #endif /* HAVE_UNICODE_WCHAR */
+
+
+static void
+test_value_string_wide_line(void) {
+        /* Test with various line delimiters */
+
+#if HAVE_UNICODE_WCHAR
+    xmlrpc_env env;
+    xmlrpc_value * valueP;
+    const wchar_t * wcs;
+    size_t len;
+
+    wchar_t const wcs_lines[] = {'\n', '\r', '\r', '\n', '\0'};
+    wchar_t const wcs_lines_lf[] = {'\n', '\n', '\n'};
+    wchar_t const wcs_lines_crlf[] = {
+        '\r', '\n', '\r', '\n', '\r', '\n' };
+        
+    xmlrpc_env_init(&env);
+
+    valueP = xmlrpc_string_w_new(&env, wcs_lines);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_read_string_w_lp(&env, valueP, &len, &wcs);
+    TEST_NO_FAULT(&env);
+    TEST(len == 3);
+    TEST(wcs[len] == '\0');
+    TEST(wcsneq(wcs, wcs_lines_lf, len));
+    free((void*)wcs);
+
+    xmlrpc_read_string_w_lp_crlf(&env, valueP, &len, &wcs);
+    TEST_NO_FAULT(&env);
+    TEST(len == 6);
+    TEST(wcs[len] == '\0');
+    TEST(wcsneq(wcs, wcs_lines_crlf, len));
+    free((void*)wcs);
+
+    xmlrpc_DECREF(valueP);
+
+    valueP = xmlrpc_string_w_new_cr(&env, wcs_lines);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_read_string_w_lp(&env, valueP, &len, &wcs);
+    TEST_NO_FAULT(&env);
+    TEST(len == 4);
+    TEST(wcs[len] == '\0');
+    TEST(wcsneq(wcs, wcs_lines, len));
+    free((void*)wcs);
+
+    xmlrpc_DECREF(valueP);
+
+    xmlrpc_env_clean(&env);
+#endif /* HAVE_UNICODE_WCHAR */
+}
+
 
 
 static void 
@@ -368,14 +632,14 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_read_string_w(&env, valueP, &wcs);
     TEST_NO_FAULT(&env);
     TEST(wcs != NULL);
     TEST(wcs[3] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, 3));
+    TEST(wcsneq(wcs, wcs_data, 3));
     free((void*)wcs);
 
     xmlrpc_decompose_value(&env, valueP, "w#", &wcs, &len);
@@ -383,7 +647,7 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     {
@@ -413,7 +677,7 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_DECREF(valueP);
@@ -431,7 +695,7 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 3);
     TEST(wcs[len] == 0x0000);
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
     xmlrpc_DECREF(valueP);
 
@@ -448,13 +712,17 @@ test_value_string_wide(void) {
     TEST(wcs != NULL);
     TEST(len == 4);
     TEST(wcs[len] == '\0');
-    TEST(0 == wcsncmp(wcs, wcs_data, len));
+    TEST(wcsneq(wcs, wcs_data, len));
     free((void*)wcs);
 
     xmlrpc_read_string_w(&env, valueP, &wcs);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
     xmlrpc_DECREF(valueP);
+
+    test_value_string_wide_line();
+
+    xmlrpc_env_clean(&env);
 #endif /* HAVE_UNICODE_WCHAR */
 }
 
@@ -475,12 +743,14 @@ test_value_base64(void) {
 
     xmlrpc_env_init(&env);
 
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_BASE64), "BASE64"));
+
     v = xmlrpc_base64_new(&env, sizeof(data1), data1);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v));
     xmlrpc_read_base64(&env, v, &len, &data);
     TEST_NO_FAULT(&env);
-    TEST(memcmp(data, data1, sizeof(data1)) == 0);
+    TEST(memeq(data, data1, sizeof(data1)));
     TEST(len == sizeof(data1));
     xmlrpc_DECREF(v);
     free((void*)data);
@@ -492,8 +762,8 @@ test_value_base64(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
     TEST(len == sizeof(data2));
-    TEST(memcmp(data, data1, sizeof(data2)) == 0);
-    strfree(data);
+    TEST(memeq(data, data1, sizeof(data2)));
+    free((void *)data);
 
     xmlrpc_env_clean(&env);
 }
@@ -537,6 +807,8 @@ test_value_array(void) {
     /* Basic array-building test. */
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_ARRAY), "ARRAY"));
 
     v = xmlrpc_array_new(&env);
     TEST_NO_FAULT(&env);
@@ -604,19 +876,17 @@ test_value_AS_typecheck(void) {
     /* Test typechecks for 'A' and 'S'. */
 
     xmlrpc_env_init(&env);
+    xmlrpc_env_init(&env2);
 
     v = xmlrpc_build_value(&env, "s", "foo");
     TEST_NO_FAULT(&env);
-    xmlrpc_env_init(&env2);
     xmlrpc_decompose_value(&env2, v, "A", &v2);
     TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
 
-    xmlrpc_env_init(&env2);
     xmlrpc_decompose_value(&env2, v, "S", &v2);
     TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
     xmlrpc_DECREF(v);
+    xmlrpc_env_clean(&env2);
     xmlrpc_env_clean(&env);
 }
 
@@ -627,7 +897,7 @@ test_value_array2(void) {
 
     xmlrpc_value * arrayP;
     xmlrpc_env env;
-    xmlrpc_int32 i, i1, i2, i3, i4;
+    xmlrpc_int32 i, i1, i2, i3, i4, i5;
     xmlrpc_value * itemP;
     xmlrpc_value * subarrayP;
     size_t len;
@@ -679,22 +949,42 @@ test_value_array2(void) {
     xmlrpc_decompose_value(&env, arrayP, "(i(ii*)i)", &i1, &i2, &i3, &i4);
     TEST_NO_FAULT(&env);
 
+    xmlrpc_decompose_value(&env, arrayP, "(i(iii)i)", &i1, &i2, &i3, &i4, &i5);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+
+    xmlrpc_decompose_value(&env, arrayP, "(i(i)i)", &i1, &i2, &i3, &i4, &i5);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+
+    xmlrpc_decompose_value(&env, arrayP, "(i(ii)i*i)",
+                           &i1, &i2, &i3, &i4, &i5);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_decompose_value(&env, arrayP, "(i(iiQ)i*i)",
+                           &i1, &i2, &i3, &i4, &i5);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_decompose_value(&env, arrayP, "(",
+                           &i1, &i2, &i3, &i4, &i5);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_decompose_value(&env, arrayP, "(i",
+                           &i1, &i2, &i3, &i4, &i5);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_decompose_value(&env, arrayP, "(i*",
+                           &i1, &i2, &i3, &i4, &i5);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
 
     /* Test bounds check on xmlrpc_array_get_item. */
     xmlrpc_array_read_item(&env, arrayP, 3, &itemP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     xmlrpc_array_get_item(&env, arrayP, 3);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     xmlrpc_array_get_item(&env, arrayP, -1);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     xmlrpc_DECREF(arrayP);
 
@@ -743,41 +1033,11 @@ test_value_array_nil(void) {
     /* Test bounds check on xmlrpc_array_get_item. */
     xmlrpc_array_read_item(&env, arrayP, 4, &itemP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     xmlrpc_array_get_item(&env, arrayP, 4);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     xmlrpc_DECREF(arrayP);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_type_mismatch(void) {
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    xmlrpc_env env2;
-    char * str;
-
-    /* Test for one, simple kind of type mismatch error. We assume that
-    ** if one of these typechecks works, the rest work fine. */
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
-    TEST_NO_FAULT(&env);
-    xmlrpc_env_init(&env2);
-    xmlrpc_decompose_value(&env2, v, "s", &str);
-    xmlrpc_DECREF(v);
-    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env2);
 
     xmlrpc_env_clean(&env);
 }
@@ -796,6 +1056,8 @@ test_value_cptr(void) {
     */
 
     xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_C_PTR), "C_PTR"));
 
     v = xmlrpc_build_value(&env, "p", (void*) 0x00000017);
     TEST_NO_FAULT(&env);
@@ -818,6 +1080,8 @@ test_value_nil(void) {
 
     xmlrpc_env_init(&env);
 
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_NIL), "NIL"));
+
     v = xmlrpc_nil_new(&env);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_NIL == xmlrpc_value_type(v));
@@ -830,6 +1094,81 @@ test_value_nil(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_i8(void) { 
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_int64 i;
+
+    xmlrpc_env_init(&env);
+
+    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_I8), "I8"));
+
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64) 25);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_read_i8(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == 25);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64) -25);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_read_i8(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == -25);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64)1 << 40);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_read_i8(&env, v, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == (xmlrpc_int64)1 << 40);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_build_value(&env, "I", (xmlrpc_int64) 10);
+    TEST_NO_FAULT(&env);
+    TEST(v != NULL);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_I8);
+    xmlrpc_decompose_value(&env, v, "I", &i);
+    xmlrpc_DECREF(v);
+    TEST_NO_FAULT(&env);
+    TEST(i == 10);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_type_mismatch(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_env env2;
+    char * str;
+
+    /* Test for one, simple kind of type mismatch error. We assume that
+    ** if one of these typechecks works, the rest work fine. */
+
+    xmlrpc_env_init(&env);
+    xmlrpc_env_init(&env2);
+
+    v = xmlrpc_build_value(&env, "i", (xmlrpc_int32) 5);
+    TEST_NO_FAULT(&env);
+    xmlrpc_decompose_value(&env2, v, "s", &str);
+    xmlrpc_DECREF(v);
+    TEST_FAULT(&env2, XMLRPC_TYPE_ERROR);
+
+    xmlrpc_env_clean(&env2);
     xmlrpc_env_clean(&env);
 }
 
@@ -862,13 +1201,13 @@ test_value_missing_array_delim(void) {
     /* Test missing close parenthesis on array */
 
     xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "(");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-    xmlrpc_env_clean(&env);
 
-    xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "(i");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -883,18 +1222,16 @@ test_value_missing_struct_delim(void) {
     /* Test missing closing brace on struct */
 
     xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "{");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-    xmlrpc_env_clean(&env);
 
-    xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{s:i", "key1", 7);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-    xmlrpc_env_clean(&env);
 
-    xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{s:i,s:i", "key1", 9, "key2", -4);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -913,18 +1250,16 @@ test_value_invalid_struct(void) {
     */
     
     xmlrpc_env_init(&env);
+
     v = xmlrpc_build_value(&env, "{s:ii", "key1", 9, 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-    xmlrpc_env_clean(&env);
 
-    xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{si:", "key1", 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-    xmlrpc_env_clean(&env);
 
-    xmlrpc_env_init(&env);
     v = xmlrpc_build_value(&env, "{s", "key1");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -972,12 +1307,12 @@ test_value_parse_value(void) {
         TEST(i == 7);
         TEST(d == 3.14);
         TEST(b == (xmlrpc_bool)1);
-        TEST(strcmp(dt_str, datestring) == 0);
-        TEST(strcmp(s1, "hello world") == 0);
+        TEST(streq(dt_str, datestring));
+        TEST(streq(s1, "hello world"));
         TEST(s2_len == 3);
-        TEST(memcmp(s2, "a\0b", 3) == 0);
+        TEST(memeq(s2, "a\0b", 3));
         TEST(b64_len == strlen("base64 data"));
-        TEST(memcmp(b64, "base64 data", b64_len) == 0);
+        TEST(memeq(b64, "base64 data", b64_len));
         TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(arrayP));
         TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(structP));
         TEST(cptr == &valueP);
@@ -992,21 +1327,21 @@ test_value_parse_value(void) {
 
 static void
 test_struct_get_element(xmlrpc_value * const structP,
-                        xmlrpc_value * const i1,
-                        xmlrpc_value * const i2,
+                        xmlrpc_value * const fooValueP,
+                        xmlrpc_value * const weirdValueP,
                         const char *   const weirdKey,
                         unsigned int   const weirdKeyLen) {
 
     xmlrpc_env env;
     xmlrpc_value * valueP;
-    xmlrpc_value * aasStringP;
+    xmlrpc_value * fooStringP;
     xmlrpc_value * bogusKeyStringP;
 
     xmlrpc_env_init(&env);
 
     /* build test tools */
 
-    aasStringP = xmlrpc_build_value(&env, "s", "aas");
+    fooStringP = xmlrpc_build_value(&env, "s", "foo");
     TEST_NO_FAULT(&env);
 
     bogusKeyStringP = xmlrpc_build_value(&env, "s", "doesn't_exist");
@@ -1014,69 +1349,69 @@ test_struct_get_element(xmlrpc_value * const structP,
 
     /* "find" interface */
 
-    xmlrpc_struct_find_value(&env, structP, "aas", &valueP);
+    xmlrpc_struct_find_value(&env, structP, "foo", &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_find_value(&env, structP, "doesn't_exist", &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP == NULL);
             
-    xmlrpc_struct_find_value_v(&env, structP, aasStringP, &valueP);
+    xmlrpc_struct_find_value_v(&env, structP, fooStringP, &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_find_value_v(&env, structP, bogusKeyStringP, &valueP);
     TEST_NO_FAULT(&env);
     TEST(valueP == NULL);
 
-    xmlrpc_struct_find_value(&env, i1, "aas", &valueP);
+    xmlrpc_struct_find_value(&env, fooValueP, "foo", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
             
     /* "read" interface */
             
-    xmlrpc_struct_read_value(&env, structP, "aas", &valueP);
+    xmlrpc_struct_read_value(&env, structP, "foo", &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value(&env, structP, "doesn't_exist", &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
             
-    xmlrpc_struct_read_value_v(&env, structP, aasStringP, &valueP);
+    xmlrpc_struct_read_value_v(&env, structP, fooStringP, &valueP);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
     xmlrpc_DECREF(valueP);
             
     xmlrpc_struct_read_value_v(&env, structP, bogusKeyStringP, &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
 
-    xmlrpc_struct_read_value(&env, i1, "aas", &valueP);
+    xmlrpc_struct_read_value(&env, fooValueP, "foo", &valueP);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
             
     /* obsolete "get" interface.  Note that it does not update the
        reference count of the xmlrpc_value it returns.
     */
             
-    valueP = xmlrpc_struct_get_value(&env, structP, "aas");
+    valueP = xmlrpc_struct_get_value(&env, structP, "foo");
     TEST_NO_FAULT(&env);
-    TEST(valueP == i1);
+    TEST(valueP == fooValueP);
 
     valueP = xmlrpc_struct_get_value(&env, structP, "doesn't_exist");
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
 
-    valueP = xmlrpc_struct_get_value(&env, i1, "foo");
+    valueP = xmlrpc_struct_get_value(&env, fooValueP, "foo");
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
     valueP = xmlrpc_struct_get_value_n(&env, structP, weirdKey, weirdKeyLen);
     TEST_NO_FAULT(&env);
-    TEST(valueP == i2);
+    TEST(valueP == weirdValueP);
 
     /* Clean up */
 
-    xmlrpc_DECREF(aasStringP);
+    xmlrpc_DECREF(fooStringP);
     xmlrpc_DECREF(bogusKeyStringP);
 
     xmlrpc_env_clean(&env);
@@ -1105,8 +1440,6 @@ testStructReadout(xmlrpc_value * const structP,
 
     xmlrpc_struct_read_member(&env, structP, expectedSize, &keyP, &valueP);
     TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
 
     for (index = 0; index < expectedSize; ++index) {
         xmlrpc_struct_get_key_and_value(&env, structP, index, &keyP, &valueP);
@@ -1118,15 +1451,161 @@ testStructReadout(xmlrpc_value * const structP,
 
 
 static void
+test_struct_decompose_invalid_format_string(
+    xmlrpc_value * const testStructP) {
+
+    xmlrpc_env env;
+    xmlrpc_int32 ival;
+    xmlrpc_bool bval;
+    char * sval;
+
+    xmlrpc_env_init(&env);
+
+    /* Premature end of format string: */
+
+    xmlrpc_decompose_value(&env, testStructP, "{");
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+    
+    xmlrpc_decompose_value(&env, testStructP, "{s", "baz");
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_decompose_value(&env, testStructP, "{s:", "baz");
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+    
+    xmlrpc_decompose_value(&env, testStructP, "{s:", "baz");
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+    
+    xmlrpc_decompose_value(&env, testStructP, "{s:b", "baz", &bval);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+    
+    xmlrpc_decompose_value(&env, testStructP, "{s:b,", "baz", &bval);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+    
+    xmlrpc_decompose_value(&env, testStructP, "{s:b,*", "baz", &bval);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    /* Key not 's' */
+    xmlrpc_decompose_value(&env, testStructP, "{i:s,s:i,*}",
+                           "baz", &sval,
+                           "foo", &ival);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    /* Missing colon */
+    xmlrpc_decompose_value(&env, testStructP, "{is,s:i,*}",
+                           "baz", &sval,
+                           "foo", &ival);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    /* Missing comma */
+    xmlrpc_decompose_value(&env, testStructP, "{i:ss:i,*}",
+                           "baz", &sval,
+                           "foo", &ival);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    /* Undefined format specifier */
+    xmlrpc_decompose_value(&env, testStructP, "{s:Q,*}",
+                           "baz", &sval);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    /* No * at end */
+    xmlrpc_decompose_value(&env, testStructP, "{s:b,s:s,s:i}",
+                           "baz", &bval,
+                           "foo", &sval,
+                           "bar", &ival);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_struct_decompose(xmlrpc_value * const testStructP) {
+
+    xmlrpc_env env;
+
+    xmlrpc_int32 ival;
+    xmlrpc_bool bval;
+    char * sval;
+    xmlrpc_value * topStructP;
+    xmlrpc_value * value1P;
+
+    xmlrpc_env_init(&env);
+
+    /* Make a test struct */
+    topStructP = xmlrpc_build_value(&env, "{s:S,s:s}",
+                                    "key1", testStructP,
+                                    "key2", "my_string_value");
+    TEST_NO_FAULT(&env);
+
+    test_struct_decompose_invalid_format_string(testStructP);
+
+    /* Decompose a struct */
+    xmlrpc_decompose_value(&env, testStructP, "{s:b,s:s,s:i,*}",
+                           "baz", &bval,
+                           "foo", &sval,
+                           "bar", &ival);
+    TEST_NO_FAULT(&env);
+    TEST(ival == 1);
+    TEST(!bval);
+    TEST(streq(sval, "Hello!"));
+    free(sval);
+
+    /* Decompose a deep struct */
+
+    xmlrpc_decompose_value(&env, topStructP, "{s:S,*}", "key1", &value1P);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(value1P) == XMLRPC_TYPE_STRUCT);
+    xmlrpc_DECREF(value1P);
+
+    xmlrpc_decompose_value(&env, topStructP, "{s:{s:b,s:s,s:i,*},*}",
+                           "key1",
+                           "baz", &bval,
+                           "foo", &sval,
+                           "bar", &ival);
+    TEST_NO_FAULT(&env);
+
+    /* First value of wrong type */
+    xmlrpc_decompose_value(&env, testStructP, "{s:b,s:i,*}",
+                           "baz", &sval,
+                           "foo", &ival);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+
+    /* Subsequent value of wrong type */
+    xmlrpc_decompose_value(&env, testStructP, "{s:s,s:i,*}",
+                           "foo", &sval,
+                           "baz", &bval);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+
+    /* Nonexistent key */
+    xmlrpc_decompose_value(&env, testStructP, "{s:b,s:i,*}",
+                           "baz", &bval,
+                           "nosuch", &sval);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+
+    /* Error subsequent to nested value */
+    xmlrpc_decompose_value(&env, topStructP, "{s:{s:s,*},s:i,*}",
+                           "key1",
+                           "foo", &sval,
+                           "key2", &ival);
+    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
+
+    xmlrpc_DECREF(topStructP);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 test_struct (void) {
 
     xmlrpc_env env;
+    xmlrpc_value * value1P;
     xmlrpc_value *s, *i, *i1, *i2, *i3, *key, *value;
     size_t size;
     int present;
-    xmlrpc_int32 ival;
     xmlrpc_bool bval;
-    char *sval;
     char const weirdKey[] = {'f', 'o', 'o', '\0', 'b', 'a', 'r'};
 
     xmlrpc_env_init(&env);
@@ -1155,44 +1634,53 @@ test_struct (void) {
     TEST_NO_FAULT(&env);
     TEST(size == 1);
 
-    /* Insert two more items with conflicting hash codes. (We assume that
-    ** nobody has changed the hash function.) */
-    xmlrpc_struct_set_value(&env, s, "bar", i2);
-    TEST_NO_FAULT(&env);
-    xmlrpc_struct_set_value(&env, s, "aas", i3);
+    /* Insert an item whose key has the same hash value as "foo". */
+    xmlrpc_struct_set_value(&env, s, "qmdebdw", i2);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 3);
+    TEST(size == 2);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(i == i1);
+    i = xmlrpc_struct_get_value(&env, s, "qmdebdw");
+    TEST_NO_FAULT(&env);
+    TEST(i == i2);
 
     /* Replace an existing element with a different element. */
-    xmlrpc_struct_set_value(&env, s, "aas", i1);
+    xmlrpc_struct_set_value(&env, s, "foo", i3);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 3);
+    TEST(size == 2);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(i == i3);
 
     /* Insert an item with a NUL in the key */
     xmlrpc_struct_set_value_n(&env, s, weirdKey, sizeof(weirdKey), i2);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 4);
+    TEST(size == 3);
 
-    test_struct_get_element(s, i1, i2, weirdKey, sizeof(weirdKey));
+    test_struct_get_element(s, i3, i2, weirdKey, sizeof(weirdKey));
 
     /* Replace an existing element with the same element (tricky). */
-    xmlrpc_struct_set_value(&env, s, "aas", i1);
+    xmlrpc_struct_set_value(&env, s, "foo", i3);
     TEST_NO_FAULT(&env);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
-    TEST(size == 4);
-    i = xmlrpc_struct_get_value(&env, s, "aas");
+    TEST(size == 3);
+    i = xmlrpc_struct_get_value(&env, s, "foo");
     TEST_NO_FAULT(&env);
-    TEST(i == i1);
+    TEST(i == i3);
 
     /* Test for the presence and absence of elements. */
-    present = xmlrpc_struct_has_key(&env, s, "aas");
+    present = xmlrpc_struct_has_key(&env, s, "foo");
+    TEST_NO_FAULT(&env);
+    TEST(present);
+    present = xmlrpc_struct_has_key(&env, s, "qmdebdw");
     TEST_NO_FAULT(&env);
     TEST(present);
     present = xmlrpc_struct_has_key(&env, s, "bogus");
@@ -1215,14 +1703,13 @@ test_struct (void) {
     /* Test cleanup code (w/memprof). */
     xmlrpc_DECREF(s);
 
-    /* Build a struct using our automagic struct builder. */
     s = xmlrpc_build_value(&env, "{s:s,s:i,s:b}",
                            "foo", "Hello!",
                            "bar", (xmlrpc_int32) 1,
                            "baz", (xmlrpc_bool) 0);
     TEST_NO_FAULT(&env);
     TEST(s != NULL);
-    TEST(XMLRPC_TYPE_STRUCT == xmlrpc_value_type(s));
+    TEST(xmlrpc_value_type(s) == XMLRPC_TYPE_STRUCT);
     size = xmlrpc_struct_size(&env, s);
     TEST_NO_FAULT(&env);
     TEST(size == 3);
@@ -1235,36 +1722,16 @@ test_struct (void) {
     present = xmlrpc_struct_has_key(&env, s, "baz");
     TEST_NO_FAULT(&env);
     TEST(present);
-    i = xmlrpc_struct_get_value(&env, s, "baz");
+    xmlrpc_struct_read_value(&env, s, "baz", &value1P);
     TEST_NO_FAULT(&env);
-    xmlrpc_decompose_value(&env, i, "b", &bval);
+    xmlrpc_read_bool(&env, value1P, &bval);
     TEST_NO_FAULT(&env);
     TEST(!bval);
+    xmlrpc_DECREF(value1P);
 
     testStructReadout(s, 3);
 
-    /* Test our automagic struct parser. */
-    xmlrpc_decompose_value(&env, s, "{s:b,s:s,s:i,*}",
-                           "baz", &bval,
-                           "foo", &sval,
-                           "bar", &ival);
-    TEST_NO_FAULT(&env);
-    TEST(ival == 1);
-    TEST(!bval);
-    TEST(strcmp(sval, "Hello!") == 0);
-    free(sval);
-
-    /* Test automagic struct parser with value of wrong type. */
-    xmlrpc_decompose_value(&env, s, "{s:b,s:i,*}",
-                           "baz", &bval,
-                           "foo", &sval);
-    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-
-    /* Test automagic struct parser with bad key. */
-    xmlrpc_decompose_value(&env, s, "{s:b,s:i,*}",
-                           "baz", &bval,
-                           "nosuch", &sval);
-    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+    test_struct_decompose(s);
 
     /* Test type check. */
     xmlrpc_struct_get_key_and_value(&env, i1, 0, &key, &value);
@@ -1297,12 +1764,14 @@ test_value(void) {
     printf("Running value tests.");
 
     test_value_alloc_dealloc();
-    test_value_integer();
+    test_value_int();
     test_value_bool();
     test_value_double();
     test_value_datetime();
     test_value_string_no_null();
     test_value_string_null();
+    test_value_string_multiline();
+    test_value_string_cr();
     test_value_string_wide();
     test_value_base64();
     test_value_array();
@@ -1313,6 +1782,7 @@ test_value(void) {
     test_value_AS_typecheck();
     test_value_cptr();
     test_value_nil();
+    test_value_i8();
     test_value_type_mismatch();
     test_value_invalid_type();
     test_value_missing_array_delim();

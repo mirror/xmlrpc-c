@@ -7,25 +7,15 @@ dnl =======================================================================
 dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
 dnl =======================================================================
 
-dnl Increment the package version for each release.
-AM_INIT_AUTOMAKE(xmlrpc-c, 1.06.32)
-
-dnl This version number needs to be changed in several *different* tricky
-dnl ways for each release. Please read the libtool documentation very
-dnl closely before touching this or making a release!
-VERSION_INFO="-version-info 7:0:6"
-AC_SUBST(VERSION_INFO)
+dnl "x.xx" is supposed to be a version number, but is meaningless here.
+dnl The real version number is in Makefile.version.
+AM_INIT_AUTOMAKE(xmlrpc-c, x.xx)
 
 dnl Define @build@, @build_cpu@, @build_vendor@, @build_os,
 dnl @host, @host_cpu@, @host_vender, and @host_os@ substitutions.
 dnl "host" means the target system -- the one for which we are building.
 dnl "build" means the system that will do the building.
 AC_CANONICAL_HOST
-
-dnl We need this to compensate for an incompatibility between autoconf
-dnl and our libtool.  autoconf generates an invalid ltconfig command
-dnl otherwise.
-test -z "$target" && target=NONE
 
 dnl =======================================================================
 dnl Decide What To Build
@@ -94,11 +84,6 @@ fi
 AC_MSG_CHECKING(whether to build Libwww client XML transport module)
 AC_MSG_RESULT($MUST_BUILD_LIBWWW_CLIENT)
 AC_SUBST(MUST_BUILD_LIBWWW_CLIENT)
-
-
-if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-  AC_MSG_NOTICE([We are not building any client XML transport, therefore we will not build the client library at all.])
-fi
 
 
 dnl Set up the appropriate Makefile substitutions.
@@ -341,13 +326,25 @@ AC_MSG_ERROR(your C library does not provide vsnprintf)
 dnl Unicode function needed by test suites.
 AC_CHECK_FUNCS(wcsncmp)
 
-dnl CygWin looks like Unix, but doesn't provide setgroups.
+dnl CygWin doesn't provide setgroups.
 AC_CHECK_FUNCS(setgroups)
 
 AC_CHECK_FUNCS(asprintf)
 
 AC_CHECK_FUNCS(setenv)
 
+dnl uclib doesn't have pselect
+AC_CHECK_FUNCS(pselect)
+
+dnl Windows doesn't have gettimeofday, localtime_r, or gmtime_r
+AC_CHECK_FUNCS(gettimeofday)
+AC_CHECK_FUNCS(localtime_r)
+AC_CHECK_FUNCS(gmtime_r)
+
+dnl Windows doesn't have strcasecmp;
+AC_CHECK_FUNCS(strcasecmp)
+AC_CHECK_FUNCS(stricmp)
+AC_CHECK_FUNCS(_stricmp)
 
 dnl =======================================================================
 dnl Checks for operating system features.
@@ -559,7 +556,7 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
 
     dnl Oh, such massive brain damage! Because there may be another copy
     dnl of curl in the default dynamic loader search path, we need to
-    dnl adjust the search patch manually. Just gag me with a backquote, OK?
+    dnl adjust the search path manually. Just gag me with a backquote, OK?
     AC_MSG_CHECKING(for curl library directory)
     dnl Yawn. We're using the regular boring version.
     CURL_LIBDIR="`$CURL_CONFIG --prefix`/lib"
@@ -604,7 +601,7 @@ AC_MSG_RESULT($enable_libxml2_backend)
 if test $enable_libxml2_backend = yes; then
   AC_CHECK_PROG(have_xml2_config, xml2-config, yes, no)
   if test $have_xml2_config = no; then
-    AC_MSG_ERROR([You specified --enable-libxml2_backend, but don't appear to have libxml2 installed (no working xml2-config inyour command search path), so we cannot not build for libxml2])
+    AC_MSG_ERROR([You specified --enable-libxml2_backend, but don't appear to have libxml2 installed (no working xml2-config in your command search path), so we cannot not build for libxml2])
   fi
 fi
 ENABLE_LIBXML2_BACKEND=$enable_libxml2_backend
@@ -628,11 +625,6 @@ AC_SUBST(CPP_WARN_FLAGS)
 BUILDDIR=`pwd`
 AC_SUBST(BUILDDIR)
 
-dnl =======================================================================
-dnl Libtool
-dnl =======================================================================
-AM_PROG_LIBTOOL
-
 
 dnl =======================================================================
 dnl Output our results.
@@ -641,10 +633,23 @@ dnl =======================================================================
 dnl Note that AM_CONFIG_HEADER at the top of this file outputs another
 dnl result: xmlrpc_amconfig.h .
 
-AC_OUTPUT(xmlrpc-c-config \
-          xmlrpc-c-config.test \
-          Makefile.config \
+AC_OUTPUT( \
+          srcdir.mk \
+          config.mk \
           xmlrpc_config.h \
           )
-chmod +x xmlrpc-c-config
-chmod +x xmlrpc-c-config.test
+
+
+if test ! -f GNUmakefile; then
+  ln -s "${srcdir}/GNUmakefile" .
+fi
+if test ! -f Makefile; then
+  ln -s "${srcdir}/Makefile" .
+fi
+
+
+if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
+  AC_MSG_NOTICE([\n\n==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY.])
+fi
+
+

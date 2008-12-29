@@ -31,6 +31,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "int.h"
 
 #define KEY_ERROR_BUFFER_SZ (32)
 
@@ -115,26 +116,23 @@ xmlrpc_struct_size(xmlrpc_env* env, xmlrpc_value* strct)
 
 
 
-/*=========================================================================
-**  get_hash
-**=========================================================================
-**  A mindlessly simple hash function. Please feel free to write something
-**  more clever if this produces bad results.
-*/
+static uint32_t
+hashStructKey(const char * const key, 
+              size_t       const keyLen) {
 
-static unsigned char 
-get_hash(const char * const key, 
-         size_t       const key_len) {
-
-    unsigned char retval;
+    uint32_t hash;
     size_t i;
 
     XMLRPC_ASSERT(key != NULL);
     
-    retval = 0;
-    for (i = 0; i < key_len; i++)
-        retval += key[i];
-    return retval;
+    /* This is the Bernstein hash, optimized for lower case ASCII
+       keys.  Note that the bytes of such a key differ only in their
+       lower 5 bits.
+    */
+    for (hash = 0, i = 0; i < keyLen; ++i)
+        hash = hash + key[i] + (hash << 5);
+
+    return hash;
 }
 
 
@@ -149,28 +147,28 @@ get_hash(const char * const key,
 static int 
 find_member(xmlrpc_value * const strctP, 
             const char *   const key, 
-            size_t         const key_len) {
+            size_t         const keyLen) {
 
     size_t size, i;
-    unsigned char hash;
-    _struct_member *contents;
-    xmlrpc_value *keyval;
-    char *keystr;
-    size_t keystr_size;
+    uint32_t searchHash;
+    _struct_member * contents;  /* array */
+    xmlrpc_value * keyvalP;
+    const char * keystr;
+    size_t keystrSize;
 
     XMLRPC_ASSERT_VALUE_OK(strctP);
     XMLRPC_ASSERT(key != NULL);
 
     /* Look for our key. */
-    hash = get_hash(key, key_len);
+    searchHash = hashStructKey(key, keyLen);
     size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strctP->_block);
     contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
-    for (i = 0; i < size; i++) {
-        if (contents[i].key_hash == hash) {
-            keyval = contents[i].key;
-            keystr = XMLRPC_MEMBLOCK_CONTENTS(char, &keyval->_block);
-            keystr_size = XMLRPC_MEMBLOCK_SIZE(char, &keyval->_block)-1;
-            if (key_len == keystr_size && memcmp(key, keystr, key_len) == 0)
+    for (i = 0; i < size; ++i) {
+        if (contents[i].keyHash == searchHash) {
+            keyvalP = contents[i].key;
+            keystr = XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+            keystrSize = XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block)-1;
+            if (keystrSize == keyLen && memcmp(key, keystr, keyLen) == 0)
                 return i;
         }   
     }
@@ -270,14 +268,14 @@ xmlrpc_struct_find_value(xmlrpc_env *    const envP,
 
 
 
-static void
-findValueVNoRef(xmlrpc_env *    const envP,
-                xmlrpc_value *  const structP,
-                xmlrpc_value *  const keyP,
-                xmlrpc_value ** const valuePP) {
+void
+xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
+                           xmlrpc_value *  const structP,
+                           xmlrpc_value *  const keyP,
+                           xmlrpc_value ** const valuePP) {
 /*----------------------------------------------------------------------------
-  Same as xmlrpc_find_value_v(), except we don't increment the reference
-  count on the xmlrpc_value we return.
+  Given a key, retrieve a value from the struct.  If the key is not
+  present, return NULL as *valuePP.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_VALUE_OK(structP);
@@ -308,26 +306,11 @@ findValueVNoRef(xmlrpc_env *    const envP,
                 *valuePP = members[index].value;
                 
                 XMLRPC_ASSERT_VALUE_OK(*valuePP);
+                
+                xmlrpc_INCREF(*valuePP);
             }
         }
     }
-}
-
-
-
-void
-xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
-                           xmlrpc_value *  const structP,
-                           xmlrpc_value *  const keyP,
-                           xmlrpc_value ** const valuePP) {
-/*----------------------------------------------------------------------------
-  Given a key, retrieve a value from the struct.  If the key is not
-  present, return NULL as *valuePP.
------------------------------------------------------------------------------*/
-    findValueVNoRef(envP, structP, keyP, valuePP);
-
-    if (!envP->fault_occurred && *valuePP)
-        xmlrpc_INCREF(*valuePP);
 }
 
 
@@ -398,12 +381,7 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
     
     keyP = xmlrpc_build_value(envP, "s#", key, keyLen);
     if (!envP->fault_occurred) {
-        /* We cannot use xmlrpc_find_value_v here because 
-           some legacy code uses xmlrpc_struct_get_value() from multiple
-           simultaneous threads and xmlrpc_find_value isn't thread safe
-           due to its manipulation of the reference count.
-        */
-        findValueVNoRef(envP, structP, keyP, &retval);
+        xmlrpc_struct_find_value_v(envP, structP, keyP, &retval);
 
         if (!envP->fault_occurred) {
             if (retval == NULL) {
@@ -413,7 +391,9 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                     (int)keyLen, key);
                 /* We should fix the error message to format the key
                    for display */
-            }
+            } else
+                /* For backward compatibility.  */
+                xmlrpc_DECREF(retval);
         }
         xmlrpc_DECREF(keyP);
     }
@@ -518,9 +498,9 @@ xmlrpc_struct_set_value_v(xmlrpc_env *   const envP,
         xmlrpc_DECREF(old_value);
     } else {
         /* Add a new member. */
-        new_member.key_hash = get_hash(key, key_len);
-        new_member.key      = keyvalP;
-        new_member.value    = valueP;
+        new_member.keyHash = hashStructKey(key, key_len);
+        new_member.key     = keyvalP;
+        new_member.value   = valueP;
         XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &strctP->_block,
                                &new_member, 1);
         XMLRPC_FAIL_IF_FAULT(envP);

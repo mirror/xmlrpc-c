@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-typedef struct _xmlrpc_registry xmlrpc_registry;
+typedef struct xmlrpc_registry xmlrpc_registry;
 
 typedef void
 (*xmlrpc_preinvoke_method)(xmlrpc_env *   const envP,
@@ -18,16 +18,28 @@ typedef void
                            void *         const userData);
 
 typedef xmlrpc_value *
-(*xmlrpc_method)(xmlrpc_env *   const envP,
-                 xmlrpc_value * const paramArrayP,
-                 void *         const userData);
+(*xmlrpc_method1)(xmlrpc_env *   const envP,
+                  xmlrpc_value * const paramArrayP,
+                  void *         const serverInfo);
+
+typedef xmlrpc_value *
+(*xmlrpc_method2)(xmlrpc_env *   const envP,
+                  xmlrpc_value * const paramArrayP,
+                  void *         const serverInfo,
+                  void *         const callInfo);
+
+typedef xmlrpc_method1 xmlrpc_method;  /* backward compatibility */
 
 typedef xmlrpc_value *
 (*xmlrpc_default_method)(xmlrpc_env *   const envP,
-                         const char *   const host,
+                         const char *   const callInfoP,
                          const char *   const methodName,
                          xmlrpc_value * const paramArrayP,
-                         void *         const userData);
+                         void *         const serverInfo);
+
+extern unsigned int const xmlrpc_server_version_major;
+extern unsigned int const xmlrpc_server_version_minor;
+extern unsigned int const xmlrpc_server_version_point;
 
 xmlrpc_registry *
 xmlrpc_registry_new(xmlrpc_env * const envP);
@@ -44,7 +56,7 @@ xmlrpc_registry_add_method(xmlrpc_env *      const envP,
                            const char *      const host,
                            const char *      const methodName,
                            xmlrpc_method     const method,
-                           void *            const userData);
+                           void *            const serverInfo);
 
 void
 xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
@@ -52,9 +64,33 @@ xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
                                  const char *      const host,
                                  const char *      const methodName,
                                  xmlrpc_method     const method,
-                                 void *            const userData,
-                                 const char *      const signature,
+                                 void *            const serverInfo,
+                                 const char *      const signatureString,
                                  const char *      const help);
+
+void
+xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            const char *      const methodName,
+                            xmlrpc_method2          method,
+                            const char *      const signatureString,
+                            const char *      const help,
+                            void *            const serverInfo);
+
+struct xmlrpc_method_info3 {
+    const char *      methodName;
+    xmlrpc_method2    methodFunction;
+    void *            serverInfo;
+    size_t            stackSize;
+    const char *      signatureString;
+    const char *      help;
+};
+
+void
+xmlrpc_registry_add_method3(
+    xmlrpc_env *                       const envP,
+    xmlrpc_registry *                  const registryP,
+    const struct xmlrpc_method_info3 * const infoP);
 
 void
 xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
@@ -69,27 +105,42 @@ xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            const envP,
                                      void *                  const userData);
 
 
-typedef void xmlrpc_server_shutdown_fn(xmlrpc_env *, void *, const char *);
-    /* A function that shuts down a server that uses a registry.
-       Second argument is context specific to that function; third
-       argument is a comment to describe the shutdown.
-    */
+typedef void xmlrpc_server_shutdown_fn(xmlrpc_env * const envP,
+                                       void *       const context,
+                                       const char * const comment,
+                                       void *       const callInfo);
 
 void
 xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
                              xmlrpc_server_shutdown_fn * const shutdownFn,
                              void *                      const context);
 
+void
+xmlrpc_registry_set_dialect(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            xmlrpc_dialect    const dialect);
+
 /*----------------------------------------------------------------------------
    Lower interface -- services to be used by an HTTP request handler
 -----------------------------------------------------------------------------*/
                     
+void
+xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
+                              xmlrpc_registry *   const registryP,
+                              const char *        const xmlData,
+                              size_t              const xmlLen,
+                              void *              const callInfo,
+                              xmlrpc_mem_block ** const outputPP);
+
 xmlrpc_mem_block *
 xmlrpc_registry_process_call(xmlrpc_env *      const envP,
                              xmlrpc_registry * const registryP,
                              const char *      const host,
                              const char *      const xmlData,
                              size_t            const xmlLen);
+
+size_t
+xmlrpc_registry_max_stackSize(xmlrpc_registry * const registryP);
 
 #ifdef __cplusplus
 }

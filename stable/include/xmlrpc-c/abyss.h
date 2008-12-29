@@ -11,8 +11,8 @@
   Copyright information is at the end of the file.
 ****************************************************************************/
 
-#ifndef _ABYSS_H_
-#define _ABYSS_H_
+#ifndef XMLRPC_ABYSS_H_INCLUDED
+#define XMLRPC_ABYSS_H_INCLUDED
 
 
 #ifdef __cplusplus
@@ -21,17 +21,23 @@ extern "C" {
 
 #include <sys/types.h>
 
-#ifdef WIN32
-#include "xmlrpc_config.h"
-#else
-#include <inttypes.h>
-#endif
+#include <xmlrpc-c/inttypes.h>
 
 /****************************************************************************
   STUFF FOR THE OUTER CONTROL PROGRAM TO USE
 ****************************************************************************/
 
 typedef int abyss_bool;
+
+/****************************************************************************
+  GLOBAL (STATIC) PROGRAM STUFF
+****************************************************************************/
+
+void
+AbyssInit(const char ** const errorP);
+
+void
+AbyssTerm(void);
 
 /*********************************************************************
 ** MIMEType
@@ -63,34 +69,40 @@ MIMETypeAdd(const char * const type,
 
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
+#define HAVE_CHANSWITCH
 
+typedef struct _TChanSwitch TChanSwitch;
+typedef struct _TChannel TChannel;
 typedef struct _TSocket TSocket;
 
-/* TOsSocket is the type of a conventional socket offered by our OS.
-   This is for backward compatibility; everyone should use TSocket
-   sockets today.
-*/
 #ifdef WIN32
-void
-SocketWinCreate(TSocket ** const socketPP);
+  #include <xmlrpc-c/abyss_winsock.h>
+#else
+  #include <xmlrpc-c/abyss_unixsock.h>
+#endif
 
 void
-SocketWinCreateWinsock(SOCKET     const winsock,
-                       TSocket ** const socketPP);
-
-typedef SOCKET TOsSocket;
-
-#else  /* WIN32 */
+ChanSwitchInit(const char ** const errorP);
 
 void
-SocketUnixCreate(TSocket ** const socketPP);
+ChanSwitchTerm(void);
+
+/* If you're wondering where the constructors for TChanSwitch,
+   TChannel, and TSocket are: They're implementation-specific, so look
+   in abyss_unixsock.h, etc.
+*/
 
 void
-SocketUnixCreateFd(int        const fd,
-                   TSocket ** const socketPP);
+ChanSwitchDestroy(TChanSwitch * const chanSwitchP);
 
-typedef int TOsSocket;
-#endif  /* WIN32 */
+void
+ChannelInit(const char ** const errorP);
+
+void
+ChannelTerm(void);
+
+void
+ChannelDestroy(TChannel * const channelP);
 
 void
 SocketDestroy(TSocket * const socketP);
@@ -109,11 +121,16 @@ typedef struct {
 typedef struct _TSession TSession;
 
 abyss_bool
-ServerCreate(TServer *    const serverP,
-             const char * const name,
-             uint16_t     const port,
-             const char * const filespath,
-             const char * const logfilename);
+ServerCreate(TServer *       const serverP,
+             const char *    const name,
+             xmlrpc_uint16_t const port,
+             const char *    const filespath,
+             const char *    const logfilename);
+
+void
+ServerCreateSwitch(TServer *     const serverP,
+                   TChanSwitch * const chanSwitchP,
+                   const char ** const errorP);
 
 abyss_bool
 ServerCreateSocket(TServer *    const serverP,
@@ -151,18 +168,18 @@ ServerSetLogFileName(TServer *    const serverP,
 
 #define HAVE_SERVER_SET_KEEPALIVE_TIMEOUT 1
 void
-ServerSetKeepaliveTimeout(TServer * const serverP,
-                          uint32_t  const keepaliveTimeout);
+ServerSetKeepaliveTimeout(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveTimeout);
 
 #define HAVE_SERVER_SET_KEEPALIVE_MAX_CONN 1
 void
-ServerSetKeepaliveMaxConn(TServer * const serverP,
-                          uint32_t  const keepaliveMaxConn);
+ServerSetKeepaliveMaxConn(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveMaxConn);
 
 #define HAVE_SERVER_SET_TIMEOUT 1
 void
-ServerSetTimeout(TServer * const serverP,
-                 uint32_t  const timeout);
+ServerSetTimeout(TServer *       const serverP,
+                 xmlrpc_uint32_t const timeout);
 
 #define HAVE_SERVER_SET_ADVERTISE 1
 void
@@ -189,14 +206,20 @@ ServerRunOnce2(TServer *           const serverP,
                enum abyss_foreback const foregroundBackground);
 
 void
-ServerRunConn(TServer * const serverP,
-              TOsSocket const connectedSocket);
+ServerRunChannel(TServer *     const serverP,
+                 TChannel *    const channelP,
+                 void *        const channelInfoP,
+                 const char ** const errorP);
 
 #define HAVE_SERVER_RUN_CONN_2
 void
 ServerRunConn2(TServer *     const serverP,
                TSocket *     const connectedSocketP,
                const char ** const errorP);
+
+void
+ServerRunConn(TServer * const serverP,
+              TOsSocket const connectedSocket);
 
 void
 ServerDaemonize(TServer * const serverP);
@@ -219,14 +242,29 @@ typedef abyss_bool (*URIHandler) (TSession *); /* deprecated */
 
 struct URIHandler2;
 
-typedef void (*initHandlerFn)(struct URIHandler2 *,
-                              abyss_bool *);
+typedef void (*initHandlerFn)(struct URIHandler2 *, abyss_bool *);
 
 typedef void (*termHandlerFn)(void *);
+
+typedef void (*handleReq3Fn)(void *,
+                             TSession *,
+                             abyss_bool *);
 
 typedef void (*handleReq2Fn)(struct URIHandler2 *,
                              TSession *,
                              abyss_bool *);
+
+struct ServerReqHandler3 {
+    termHandlerFn term;
+    handleReq3Fn  handleReq;
+    void *        userdata;
+    size_t        handleReqStackSize; /* zero = default */
+};
+
+void
+ServerAddHandler3(TServer *                        const serverP,
+                  const struct ServerReqHandler3 * const handlerP,
+                  abyss_bool *                     const successP);
 
 typedef struct URIHandler2 {
     initHandlerFn init;
@@ -245,14 +283,21 @@ abyss_bool
 ServerAddHandler(TServer * const srvP,
                  URIHandler const handler);
 
-void
-ServerDefaultHandler(TServer *  const srvP,
-                     URIHandler const handler);
+typedef abyss_bool (*THandlerDflt) (TSession *);
 
-/* This is inappropriately named; it was a mistake.  But then, so is
-   having this function at all.  The config file is inappropriate for
-   an API.
+/* Note: 'handler' used to be URIHandler;  THandlerDflt is a newer name
+   for the same type
 */
+
+void
+ServerDefaultHandler(TServer *    const srvP,
+                     THandlerDflt const handler);
+
+/* ConfReadServerFile() is inappropriately named; it was a mistake.
+   But then, so is having this function at all.  The config file is
+   inappropriate for an API.
+*/
+
 abyss_bool
 ConfReadServerFile(const char * const filename,
                    TServer *    const srvP);
@@ -262,7 +307,7 @@ LogWrite(TServer *    const srvP,
          const char * const c);
 
 /****************************************************************************
-  STUFF FOR URI HANDLERS TO USE
+  STUFF FOR HTTP REQUEST HANDLERS TO USE
 ****************************************************************************/
 
 typedef enum {
@@ -274,20 +319,28 @@ typedef struct {
     const char * uri;
         /* This is NOT the URI.  It is the pathname part of the URI.
            We really should fix that and put the pathname in another
-           member.
+           member.  If the URI does not contain a pathname, this is "*".
         */
     const char * query;
-        /* The query part of the URI (stuff after '?') */
+        /* The query part of the URI (stuff after '?').  NULL if none. */
     const char * host;
         /* NOT the value of the host: header.  Rather, the name of the
-           target host (could be part of the host: value).  No port number.
+           target host (could be part of the host: value; could be from the
+           URI).  No port number.  NULL if request does not specify a host
+           name.
         */
     const char * from;
     const char * useragent;
     const char * referer;
     const char * requestline;
     const char * user;
-    unsigned short port;
+        /* Requesting user (from authorization: header).  NULL if
+           request doesn't specify or handler has not authenticated it.
+        */
+    xmlrpc_uint16_t port;
+        /* The port number from the URI, or default 80 if the URI doesn't
+           specify a port.
+        */
     abyss_bool keepalive;
 } TRequestInfo;
 
@@ -307,9 +360,16 @@ void
 SessionGetRequestInfo(TSession *            const sessionP,
                       const TRequestInfo ** const requestInfoPP);
 
+void
+SessionGetChannelInfo(TSession * const sessionP,
+                      void **    const channelInfoPP);
+
+void *
+SessionGetDefaultHandlerCtx(TSession * const sessionP);
+
 char *
-RequestHeaderValue(TSession * const sessionP,
-                   char *     const name);
+RequestHeaderValue(TSession *   const sessionP,
+                   const char * const name);
 
 abyss_bool
 ResponseAddField(TSession *   const sessionP,
@@ -323,9 +383,9 @@ ResponseWriteStart(TSession * const sessionP);
 #define ResponseWrite ResponseWriteStart
 
 abyss_bool
-ResponseWriteBody(TSession *   const sessionP,
-                  const char * const data,
-                  uint32_t     const len);
+ResponseWriteBody(TSession *      const sessionP,
+                  const char *    const data,
+                  xmlrpc_uint32_t const len);
 
 abyss_bool
 ResponseWriteEnd(TSession * const sessionP);
@@ -333,12 +393,12 @@ ResponseWriteEnd(TSession * const sessionP);
 abyss_bool
 ResponseChunked(TSession * const sessionP);
 
-uint16_t
+xmlrpc_uint16_t
 ResponseStatusFromErrno(int const errnoArg);
 
 void
-ResponseStatus(TSession * const sessionP,
-               uint16_t   const code);
+ResponseStatus(TSession *      const sessionP,
+               xmlrpc_uint16_t const code);
 
 void
 ResponseStatusErrno(TSession * const sessionP);
@@ -348,8 +408,12 @@ ResponseContentType(TSession *   const serverP,
                     const char * const type);
 
 abyss_bool
-ResponseContentLength(TSession * const sessionP,
-                      uint64_t   const len);
+ResponseContentLength(TSession *      const sessionP,
+                      xmlrpc_uint64_t const len);
+
+void
+ResponseError2(TSession *   const sessionP,
+               const char * const explanation);
 
 void
 ResponseError(TSession * const sessionP);
@@ -430,47 +494,14 @@ MIMETypeGuessFromFile(const char * const filename);
 #endif  /* FALSE */
 
 /*********************************************************************
-** Buffer
-*********************************************************************/
-
-typedef struct
-{
-    void *data;
-    uint32_t size;
-    uint32_t staticid;
-} TBuffer;
-
-abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize);
-abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize);
-void BufferFree(TBuffer *buf);
-
-
-/*********************************************************************
-** String
-*********************************************************************/
-
-typedef struct
-{
-    TBuffer buffer;
-    uint32_t size;
-} TString;
-
-abyss_bool StringAlloc(TString *s);
-abyss_bool StringConcat(TString *s,char *s2);
-abyss_bool StringBlockConcat(TString *s,char *s2,char **ref);
-void StringFree(TString *s);
-char *StringData(TString *s);
-
-
-/*********************************************************************
 ** Range
 *********************************************************************/
 
 abyss_bool
-RangeDecode(char *str,
-            uint64_t filesize,
-            uint64_t *start,
-            uint64_t *end);
+RangeDecode(char *            const str,
+            xmlrpc_uint64_t   const filesize,
+            xmlrpc_uint64_t * const start,
+            xmlrpc_uint64_t * const end);
 
 abyss_bool DateInit(void);
 
@@ -478,13 +509,15 @@ abyss_bool DateInit(void);
 ** Base64
 *********************************************************************/
 
-void Base64Encode(char *s,char *d);
+void
+Base64Encode(const char * const chars,
+             char *       const base64);
 
 /*********************************************************************
 ** Session
 *********************************************************************/
 
-abyss_bool SessionLog(TSession *s);
+abyss_bool SessionLog(TSession * const s);
 
 
 #ifdef __cplusplus

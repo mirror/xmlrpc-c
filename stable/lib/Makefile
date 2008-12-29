@@ -1,9 +1,11 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  SRCDIR := $(call updir,$(CURDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib
+SUBDIR := lib
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 # Build up SUBDIRS:
 SUBDIRS = 
@@ -26,9 +28,13 @@ endif
 
 default: all
 
-.PHONY: all clean distclean tags distdir intall check dep
+.PHONY: all clean distclean tags distdir install check dep
 
 all: $(SUBDIRS:%=%/all)
+
+# Extra dependencies to make parallel make work in spite of all the submakes
+# (See top level make file for details)
+abyss/all curl_transport/all: $(BLDDIR)/version.h
 
 clean: $(SUBDIRS:%=%/clean) clean-common
 
@@ -46,7 +52,7 @@ check:
 
 dep: $(SUBDIRS:%=%/dep)
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
 

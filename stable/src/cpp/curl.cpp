@@ -26,8 +26,6 @@ using girmem::autoObject;
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/base_int.h"
 
-#include "xmlrpc_curl_transport.h"
-
 /* transport_config.h defines MUST_BUILD_CURL_CLIENT */
 #include "transport_config.h"
 
@@ -149,6 +147,7 @@ clientXmlTransport_curl::constrOpt::constrOpt() {
     present.randomfile = false;
     present.egdsocket = false;
     present.ssl_cipher_list = false;
+    present.timeout = false;
 }
 
 
@@ -179,6 +178,7 @@ DEFINE_OPTION_SETTER(capath, string);
 DEFINE_OPTION_SETTER(randomfile, string);
 DEFINE_OPTION_SETTER(egdsocket, string);
 DEFINE_OPTION_SETTER(ssl_cipher_list, string);
+DEFINE_OPTION_SETTER(timeout, unsigned int);
 
 #undef DEFINE_OPTION_SETTER
 
@@ -224,14 +224,16 @@ clientXmlTransport_curl::initialize(constrOpt const& opt) {
         opt.value.egdsocket.c_str()         : NULL;
     transportParms.ssl_cipher_list   = opt.present.ssl_cipher_list ? 
         opt.value.ssl_cipher_list.c_str()   : NULL;
+    transportParms.timeout           = opt.present.timeout ? 
+        opt.value.timeout                   : 0;
 
     this->c_transportOpsP = &xmlrpc_curl_transport_ops;
 
     env_wrap env;
 
     xmlrpc_curl_transport_ops.create(
-        &env.env_c, 0, "", "", (xmlrpc_xportparms *)&transportParms,
-        XMLRPC_CXPSIZE(ssl_cipher_list),
+        &env.env_c, 0, "", "",
+        &transportParms, XMLRPC_CXPSIZE(timeout),
         &this->c_transportP);
 
     if (env.env_c.fault_occurred)

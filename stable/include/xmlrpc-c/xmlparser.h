@@ -27,7 +27,7 @@
 typedef struct _xml_element xml_element;
 
 /* Destroy an xml_element. */
-void xml_element_free (xml_element *elem);
+void xml_element_free (xml_element * const elem);
 
 /* Return a pointer to the element's name. Do not free this pointer!
 ** This pointer should point to standard ASCII or UTF-8 data. */

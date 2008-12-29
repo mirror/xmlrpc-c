@@ -56,7 +56,7 @@ void Answer(TSession *r, uint16_t statuscode, char *buffer)
 
     ResponseContentType(r,"text/html");
 
-    ResponseWrite(r);
+    ResponseWriteStart(r);
     
     HTTPWrite(r,"<HTML><BODY>",12);
     
@@ -72,6 +72,8 @@ abyss_bool HandleTime(TSession *r)
     char z[50];
     time_t ltime;
     TDate date;
+    const char * dateString;
+    const char * answer;
 
     if (strcmp(r->uri,"/time")!=0)
         return FALSE;
@@ -79,14 +81,17 @@ abyss_bool HandleTime(TSession *r)
     if (!RequestAuth(r,"Mot de passe","moez","hello"))
         return TRUE;
 
-    time( &ltime );
-    DateFromGMT(&date,ltime);
-    
+    time(&ltime);
+    DateFromGMT(&date, ltime);
 
-    strcpy(z,"The time is ");
-    DateToString(&date,z+strlen(z));
+    DateToString(&date, &dateString);
 
-    Answer(r,200,z);
+    xmlrpc_asprintf(&answer, "The time is %s", dateString);
+
+    Answer(r, 200, answer);
+
+    xmlrpc_strfree(dateString);
+    xmlrpc_strfree(answer);
 
     return TRUE;
 }
@@ -143,8 +148,8 @@ static void sigterm(int sig)
 static void
 sigchld(int const signalClass) {
 
-    abyss_bool childrenLeft;
-    abyss_bool error;
+    bool childrenLeft;
+    bool error;
 
     childrenLeft = true;
     error = false;
@@ -176,10 +181,14 @@ sigchld(int const signalClass) {
 
 int main(int argc,char **argv)
 {
+    const char * const name = argv[0];
     TServer srv;
-    char *p,*conffile=DEFAULT_CONF_FILE;
-    abyss_bool err=FALSE;
-    char *name=argv[0];
+    char * p;
+    const char * conffile;
+    bool err;
+
+    conffile = DEFAULT_CONF_FILE;  /* initial value */
+    err = FALSE;  /* initial value */
 
     while (p=*(++argv))
     {

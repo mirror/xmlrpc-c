@@ -21,7 +21,7 @@
 #define VERSION "1.0"
 
 static void 
-die_if_fault_occurred (xmlrpc_env * const envP) {
+die_if_fault_occurred(xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
         fprintf(stderr, "Something failed. %s (XML-RPC fault code %d)\n",
                 envP->fault_string, envP->fault_code);
@@ -32,9 +32,9 @@ die_if_fault_occurred (xmlrpc_env * const envP) {
 
 
 static void 
-handle_sample_add_response(const char *   const server_url,
-                           const char *   const method_name,
-                           xmlrpc_value * const param_array,
+handle_sample_add_response(const char *   const serverUrl,
+                           const char *   const methodName,
+                           xmlrpc_value * const paramArrayP,
                            void *         const user_data ATTR_UNUSED,
                            xmlrpc_env *   const faultP,
                            xmlrpc_value * const resultP) {
@@ -48,14 +48,14 @@ handle_sample_add_response(const char *   const server_url,
     /* Our first four arguments provide helpful context.  Let's grab the
        addends from our parameter array. 
     */
-    xmlrpc_decompose_value(&env, param_array, "(ii)", &addend, &adder);
+    xmlrpc_decompose_value(&env, paramArrayP, "(ii)", &addend, &adder);
     die_if_fault_occurred(&env);
 
     printf("RPC with method '%s' at URL '%s' to add %d and %d "
-           "has completed\n", method_name, server_url, addend, adder);
+           "has completed\n", methodName, serverUrl, addend, adder);
     
     if (faultP->fault_occurred)
-        printf("The RPC failed.  %s", faultP->fault_string);
+        printf("The RPC failed.  %s\n", faultP->fault_string);
     else {
         xmlrpc_int sum;
 
@@ -72,8 +72,8 @@ int
 main(int           const argc, 
      const char ** const argv ATTR_UNUSED) {
 
-    char * const serverUrl = "http://localhost:8080/RPC2";
-    char * const methodName = "sample.add";
+    const char * const serverUrl = "http://localhost:8080/RPC2";
+    const char * const methodName = "sample.add";
 
     xmlrpc_env env;
     xmlrpc_client * clientP;
@@ -117,6 +117,7 @@ main(int           const argc,
     printf("All RPCs finished.\n");
 
     xmlrpc_client_destroy(clientP);
+    xmlrpc_client_teardown_global_const();
 
     return 0;
 }

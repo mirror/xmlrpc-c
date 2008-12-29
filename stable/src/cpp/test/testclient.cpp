@@ -4,7 +4,7 @@
   Test the client C++ facilities of XML-RPC for C/C++.
   
   Contrary to what you might expect, we use the server facilities too
-  because we test of the client using a simulated server, via the
+  because we test much of the client using a simulated server, via the
   "direct" client XML transport we define herein.
 =============================================================================*/
 #include <string>
@@ -13,6 +13,8 @@
 #include <sstream>
 #include <memory>
 #include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -46,6 +48,22 @@ public:
         paramList.verifyEnd(2);
         
         *retvalP = value_int(addend + adder);
+    }
+};
+
+
+
+class testApacheDialectMethod : public method {
+public:
+    void
+    execute(xmlrpc_c::paramList const& paramList,
+            value *             const  retvalP) {
+        
+        paramList.getNil(0);
+        
+        paramList.verifyEnd(1);
+        
+        *retvalP = value_i8(7ll);
     }
 };
 
@@ -118,6 +136,14 @@ public:
         rpcPtr const rpcSampleAdd2P("sample.add", paramListSampleAdd2);
         rpcSampleAdd2P->start(&clientDirect, &carriageParmDirect);
 
+        // Note that for clientXmlTransport_direct, start() and call() are
+        // the same thing.  I.e. the RPC is guaranteed finished as soon
+        // as it is started.
+
+
+        clientDirect.finishAsync(timeout());
+        clientDirect.finishAsync(timeout(50));
+
         TEST(rpcSampleAdd1P->isFinished());
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result1(rpcSampleAdd1P->getResult());
@@ -127,9 +153,6 @@ public:
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result2(rpcSampleAdd2P->getResult());
         TEST(static_cast<int>(result2) == 20);
-
-        EXPECT_ERROR(clientDirect.finishAsync(timeout()););
-        EXPECT_ERROR(clientDirect.finishAsync(timeout(50)););
     }
 };
 
@@ -211,6 +234,12 @@ public:
             TEST(outcome.getFault().getDescription().size() > 0);
         }
 
+        int interruptFlag(0);
+        EXPECT_ERROR(transportDirect.setInterrupt(&interruptFlag););
+            // This transport class isn't interruptible
+        EXPECT_ERROR(clientDirect.setInterrupt(&interruptFlag););
+            // Same as above
+        
         clientDirectAsyncTestSuite().run(indentation+1);
     }
 };
@@ -257,10 +286,22 @@ public:
 
         clientXmlTransport_curl transport6(
             clientXmlTransport_curl::constrOpt());
-        
+
         clientXmlTransportPtr transport1P(new clientXmlTransport_curl);
         clientXmlTransportPtr transport2P;
         transport2P = transport1P;
+
+        time_t nowtime = time(NULL);
+        transport2P->finishAsync(timeout());
+        transport2P->finishAsync(timeout(2000));
+        transport2P->finishAsync(2000);
+        TEST(time(NULL) <= nowtime + 1);
+
+        int interruptFlag;
+        transport2P->setInterrupt(&interruptFlag);
+        interruptFlag = 0;
+        transport2P->finishAsync(2000);
+        transport2P->finishAsync(timeout());
 #else
         EXPECT_ERROR(clientXmlTransport_curl transport0;);
         EXPECT_ERROR(clientXmlTransport_curl transport1("eth0"););
@@ -318,11 +359,11 @@ public:
 
 
 
-class ambivalentTransportTestSuite : public testSuite {
+class ambivalentHttpTransportTestSuite : public testSuite {
 
 public:
     virtual string suiteName() {
-        return "ambivalentTransportTestSuite";
+        return "ambivalentHttpTransportTestSuite";
     }
     virtual void runtests(unsigned int const) {
         vector<string> const typeList(
@@ -347,6 +388,52 @@ public:
 
 
 
+class pstreamTransportTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "pstreamTransportTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        int const devNullFd(open("/dev/null", 0));
+
+        if (devNullFd < 0)
+            throw error("Failed to open /dev/null, needed for test.");
+
+        EXPECT_ERROR(clientXmlTransport_pstream transport1(
+            clientXmlTransport_pstream::constrOpt()
+            .fd(37)
+            ););  // ERROR: no such file descriptor
+
+        carriageParm_pstream carriageParm0;
+
+        {
+            clientXmlTransport_pstream transport2(
+                clientXmlTransport_pstream::constrOpt()
+                .fd(devNullFd)
+                );
+            
+            string callXml("hello");
+            string responseXml;
+            EXPECT_ERROR(transport2.call(NULL, callXml, &responseXml););
+                // Error: carriage parm not of type carriageParm_pstream
+            EXPECT_ERROR(transport2.call(&carriageParm0, callXml,
+                                         &responseXml););
+                // Error: no response
+        }
+        clientXmlTransportPtr transport1P(new clientXmlTransport_pstream(
+            clientXmlTransport_pstream::constrOpt()
+            .fd(devNullFd)
+            ));
+        clientXmlTransportPtr transport2P;
+        transport2P = transport1P;
+
+        close(devNullFd);
+    }
+};
+
+
+
 class clientXmlTransportTestSuite : public testSuite {
 
 public:
@@ -357,7 +444,8 @@ public:
         curlTransportTestSuite().run(indentation + 1);
         libwwwTransportTestSuite().run(indentation + 1);
         wininetTransportTestSuite().run(indentation + 1);
-        ambivalentTransportTestSuite().run(indentation + 1);
+        ambivalentHttpTransportTestSuite().run(indentation + 1);
+        pstreamTransportTestSuite().run(indentation + 1);
     }
 };
 
@@ -391,6 +479,46 @@ public:
         
 
 
+class clientCurlIntTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+  The object of this class tests interruptibility functions of the
+  combination of a client with Curl transport.
+
+  We don't have an HTTP server, so we test only superficially.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "clientCurlIntTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+#if MUST_BUILD_CURL_CLIENT
+        clientXmlTransport_curl transportc0;
+        client_xml client0(&transportc0);
+        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
+
+        paramList paramList0;
+        
+        rpcOutcome outcome0;
+
+        int interruptFlag;
+        client0.setInterrupt(&interruptFlag);
+
+        interruptFlag = 1;
+        // This fails because the call gets immediately interrupted
+        EXPECT_ERROR(
+            client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
+                );
+        interruptFlag = 0; 
+        // This fails because server doesn't exist
+        EXPECT_ERROR(
+            client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
+                );
+#endif
+    }
+};
+
+
+
 class clientCurlTestSuite : public testSuite {
 /*----------------------------------------------------------------------------
   The object of this class tests the combination of a client with
@@ -406,13 +534,14 @@ public:
     virtual string suiteName() {
         return "clientCurlTestSuite";
     }
-    virtual void runtests(unsigned int) {
+    virtual void runtests(unsigned int const indentation) {
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         client_xml client0(&transportc0);
         carriageParm_http0 carriageParmHttp("http://suckthis.com");
         carriageParm_curl0 carriageParmCurl("http://suckthis.com");
         connection connection0(&client0, &carriageParmHttp);
+
         paramList paramList0;
         
         rpcOutcome outcome0;
@@ -436,6 +565,31 @@ public:
         // This fails because server doesn't exist
         EXPECT_ERROR(rpc1P->call(connection0););
 
+        rpcPtr rpc2P("blowme", paramList0);
+
+        // This RPC fails to execute because the server doesn't exist,
+        // But libcurl "starts" it just fine.
+        rpc2P->start(&client0, &carriageParmCurl);
+
+        transportc0.finishAsync(5000);
+
+        TEST(rpc2P->isFinished());
+
+        TEST(!rpc2P->isSuccessful());
+
+        // Because the RPC did not return an XML-RPC failure (because the
+        // server doesn't exist), this throws:
+        EXPECT_ERROR(rpc2P->getFault(););
+
+        rpcPtr rpc3P("blowme", paramList0);
+        // This RPC fails to execute because the server doesn't exist
+        rpc3P->start(connection0);
+
+        transportc0.finishAsync(5000);
+        TEST(rpc2P->isFinished());
+        TEST(!rpc2P->isSuccessful());
+
+        clientCurlIntTestSuite().run(indentation+1);
 #else
         // This fails because there is no Curl transport in the library.
         EXPECT_ERROR(clientXmlTransport_curl transportc0;);
@@ -467,15 +621,27 @@ public:
 
         carriageParm_curl1P->setBasicAuth("bryanh", "12345");
 
+        carriageParm_curl1P->setUser("bryanh", "12345");
+        carriageParm_curl1P->allowAuthBasic();
+        carriageParm_curl1P->disallowAuthBasic();
+        carriageParm_curl1P->allowAuthDigest();
+        carriageParm_curl1P->disallowAuthDigest();
+        carriageParm_curl1P->allowAuthNegotiate();
+        carriageParm_curl1P->disallowAuthNegotiate();
+        carriageParm_curl1P->allowAuthNtlm();
+        carriageParm_curl1P->disallowAuthNtlm();
+
         carriageParm_libwww0Ptr carriageParm_libwww1P(
             new carriageParm_libwww0("http://suckthis.com"));
 
-        carriageParm_libwww1P->setBasicAuth("bryanh", "12345");
+        carriageParm_libwww1P->setUser("bryanh", "12345");
+        carriageParm_libwww1P->allowAuthBasic();
 
         carriageParm_wininet0Ptr carriageParm_wininet1P(
             new carriageParm_wininet0("http://suckthis.com"));
 
-        carriageParm_wininet1P->setBasicAuth("bryanh", "12345");
+        carriageParm_wininet1P->setUser("bryanh", "12345");
+        carriageParm_wininet1P->allowAuthBasic();
     }
 };
 
@@ -615,6 +781,56 @@ public:
 
 
 
+class xmlTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+   This test suite tests the generation an interpretation of XML-RPC
+   XML, by doing RPCs via an XML client and server.  Each complete RPC
+   involves generating XML and interpreting it, so this is a handy way
+   to test.
+
+   A stronger test would be to make an XML transport that actually verifies
+   the XML.  We're too lazy for that.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "xmlTestSuite";
+    }
+    virtual void runtests(unsigned int) {
+        registry myRegistry;
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        myRegistry.addMethod("apache", methodPtr(new testApacheDialectMethod));
+        carriageParm_direct carriageParmDirect(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        client_xml clientDirect(&transportDirect, xmlrpc_dialect_apache);
+
+        paramList paramListSampleAdd;
+        paramListSampleAdd.add(value_int(5));
+        paramListSampleAdd.add(value_int(7));
+
+        {
+            rpcPtr rpcSampleAddP("sample.add", paramListSampleAdd);
+            rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcSampleAddP->isFinished());
+            TEST(rpcSampleAddP->isSuccessful());
+            value_int const result(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(result) == 12);
+        }
+        paramList paramListApache;
+        paramListApache.add(value_nil());
+
+        {
+            rpcPtr rpcApacheP("apache", paramListApache);
+            rpcApacheP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcApacheP->isFinished());
+            TEST(rpcApacheP->isSuccessful());
+            value_i8 const result(rpcApacheP->getResult());
+            TEST(static_cast<xmlrpc_int64>(result) == 7ll);
+        }
+    }
+};
+
+
+
 string
 clientTestSuite::suiteName() {
     return "clientTestSuite";
@@ -640,4 +856,6 @@ clientTestSuite::runtests(unsigned int const indentation) {
     clientSimpleTestSuite().run(indentation+1);
 
     serverAccessorTestSuite().run(indentation+1);
+
+    xmlTestSuite().run(indentation+1);
 }

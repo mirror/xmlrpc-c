@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "bool.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
@@ -43,6 +44,7 @@
 #include "xmlrpc-c/abyss.h"
 
 #include "token.h"
+#include "thread.h"
 
 #include "data.h"
 
@@ -50,14 +52,14 @@
 ** List
 *********************************************************************/
 
-void ListInit(TList *sl)
+void ListInit(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
     sl->autofree=FALSE;
 }
 
-void ListInitAutoFree(TList *sl)
+void ListInitAutoFree(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
@@ -97,13 +99,13 @@ ListFreeItems(TList * const sl) {
 
 
 
-abyss_bool
+bool
 ListAdd(TList * const sl,
         void *  const str) {
 /*----------------------------------------------------------------------------
    Add an item to the end of the list.
 -----------------------------------------------------------------------------*/
-    abyss_bool success;
+    bool success;
 
     if (sl->size >= sl->maxsize) {
         uint16_t newSize = sl->maxsize + 16;
@@ -140,11 +142,11 @@ ListRemove(TList * const sl) {
 
 
 
-abyss_bool
+bool
 ListAddFromString(TList *      const list,
                   const char * const stringArg) {
 
-    abyss_bool retval;
+    bool retval;
     
     if (!stringArg)
         retval = TRUE;
@@ -155,8 +157,8 @@ ListAddFromString(TList *      const list,
         if (!buffer)
             retval = FALSE;
         else {
-            abyss_bool endOfString;
-            abyss_bool error;
+            bool endOfString;
+            bool error;
             char * c;
 
             for (c = &buffer[0], endOfString = FALSE, error = FALSE;
@@ -178,7 +180,7 @@ ListAddFromString(TList *      const list,
                         *p = '\0';
                     
                     if (t[0] != '\0') {
-                        abyss_bool added;
+                        bool added;
                         added = ListAdd(list, (void*)t);
                         
                         if (!added)
@@ -195,7 +197,7 @@ ListAddFromString(TList *      const list,
 
 
 
-abyss_bool
+bool
 ListFindString(TList *      const sl,
                const char * const str,
                uint16_t *   const indexP)
@@ -217,8 +219,10 @@ ListFindString(TList *      const sl,
 ** Buffer
 *********************************************************************/
 
-abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
-{
+bool
+BufferAlloc(TBuffer *       const buf,
+            xmlrpc_uint32_t const memsize) {
+
     /* ************** Implement the static buffers ***/
     buf->staticid=0;
     buf->data=(void *)malloc(memsize);
@@ -234,8 +238,11 @@ abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
     };
 }
 
-void BufferFree(TBuffer *buf)
-{
+
+
+void
+BufferFree(TBuffer * const buf) {
+
     if (buf->staticid)
     {
         /* ************** Implement the static buffers ***/
@@ -247,8 +254,12 @@ void BufferFree(TBuffer *buf)
     buf->staticid=0;
 }
 
-abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize)
-{
+
+
+bool
+BufferRealloc(TBuffer *       const buf,
+              xmlrpc_uint32_t const memsize) {
+
     if (buf->staticid)
     {
         TBuffer b;
@@ -285,55 +296,82 @@ abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize)
 ** String
 *********************************************************************/
 
-abyss_bool StringAlloc(TString *s)
-{
-    s->size=0;
-    if (BufferAlloc(&(s->buffer),256))
-    {
-        *(char *)(s->buffer.data)='\0';
+bool
+StringAlloc(TString * const stringP) {
+
+    bool succeeded;
+    
+    stringP->size = 0;
+
+    succeeded = BufferAlloc(&stringP->buffer, 256);
+    if (succeeded) {
+        *(char *)(stringP->buffer.data) = '\0';
         return TRUE;
-    }
-    else
+    } else
         return FALSE;
 }
 
-abyss_bool StringConcat(TString *s,char *s2)
-{
-    uint32_t len=strlen(s2);
 
-    if (len+s->size+1>s->buffer.size)
-        if (!BufferRealloc(&(s->buffer),((len+s->size+1+256)/256)*256))
+
+bool
+StringConcat(TString *    const stringP,
+             const char * const string2) {
+
+    uint32_t const len = strlen(string2);
+
+    if (len + stringP->size + 1 > stringP->buffer.size) {
+        bool succeeded;
+        succeeded = BufferRealloc(
+            &stringP->buffer,
+            ((len + stringP->size + 1 + 256) / 256) * 256);
+        if (!succeeded)
             return FALSE;
-    
-    strcat((char *)(s->buffer.data),s2);
-    s->size+=len;
+    }
+    strcat((char *)(stringP->buffer.data), string2);
+    stringP->size += len;
     return TRUE;
 }
 
-abyss_bool StringBlockConcat(TString *s,char *s2,char **ref)
-{
-    uint32_t len=strlen(s2)+1;
 
-    if (len+s->size>s->buffer.size)
-        if (!BufferRealloc(&(s->buffer),((len+s->size+1+256)/256)*256))
+
+bool
+StringBlockConcat(TString *    const stringP,
+                  const char * const string2,
+                  char **      const ref) {
+
+    uint32_t const len = strlen(string2) + 1;
+
+    if (len + stringP->size > stringP->buffer.size) {
+        bool succeeded;
+        succeeded = BufferRealloc(
+            &stringP->buffer,
+            ((len + stringP->size + 1 + 256) / 256) * 256);
+        if (!succeeded)
             return FALSE;
-    
-    *ref=(char *)(s->buffer.data)+s->size;
-    memcpy(*ref,s2,len);
-    s->size+=len;
+    }
+    *ref = (char *)(stringP->buffer.data) + stringP->size;
+    memcpy(*ref, string2, len);
+    stringP->size += len;
+
     return TRUE;
 }
 
-void StringFree(TString *s)
-{
-    s->size=0;
-    BufferFree(&(s->buffer));
+
+
+void
+StringFree(TString * const stringP) {
+    stringP->size = 0;
+    BufferFree(&stringP->buffer);
 }
 
-char *StringData(TString *s)
-{
-    return (char *)(s->buffer.data);
+
+
+char *
+StringData(TString * const stringP) {
+    return (char *)stringP->buffer.data;
 }
+
+
 
 /*********************************************************************
 ** Hash
@@ -359,13 +397,13 @@ Hash16(const char * const start) {
 ** Table
 *********************************************************************/
 
-void TableInit(TTable *t)
+void TableInit(TTable * const t)
 {
     t->item=NULL;
     t->size=t->maxsize=0;
 }
 
-void TableFree(TTable *t)
+void TableFree(TTable * const t)
 {
     uint16_t i;
 
@@ -386,7 +424,7 @@ void TableFree(TTable *t)
 
 
 
-abyss_bool
+bool
 TableFindIndex(TTable *     const t,
                const char * const name,
                uint16_t *   const index) {
@@ -409,7 +447,7 @@ TableFindIndex(TTable *     const t,
 
 
 
-abyss_bool
+bool
 TableAddReplace(TTable *     const t,
                 const char * const name,
                 const char * const value) {
@@ -436,7 +474,7 @@ TableAddReplace(TTable *     const t,
 
 
 
-abyss_bool
+bool
 TableAdd(TTable *     const t,
          const char * const name,
          const char * const value) {
@@ -507,16 +545,16 @@ PoolZoneFree(TPoolZone * const poolZoneP) {
 
 
 
-abyss_bool
+bool
 PoolCreate(TPool *  const poolP,
            uint32_t const zonesize) {
 
-    abyss_bool success;
-    abyss_bool mutexCreated;
+    bool success;
+    bool mutexCreated;
 
     poolP->zonesize = zonesize;
 
-    mutexCreated = MutexCreate(&poolP->mutex);
+    mutexCreated = MutexCreate(&poolP->mutexP);
     if (mutexCreated) {
         TPoolZone * const firstZoneP = PoolZoneAlloc(zonesize);
 
@@ -527,7 +565,7 @@ PoolCreate(TPool *  const poolP,
         } else
             success = FALSE;
         if (!success)
-            MutexFree(&poolP->mutex);
+            MutexDestroy(poolP->mutexP);
     } else
         success = FALSE;
 
@@ -547,9 +585,9 @@ PoolAlloc(TPool *  const poolP,
     if (size == 0)
         retval = NULL;
     else {
-        abyss_bool gotMutexLock;
+        bool gotMutexLock;
 
-        gotMutexLock = MutexLock(&poolP->mutex);
+        gotMutexLock = MutexLock(poolP->mutexP);
         if (!gotMutexLock)
             retval = NULL;
         else {
@@ -572,7 +610,7 @@ PoolAlloc(TPool *  const poolP,
                 } else
                     retval = NULL;
             }
-            MutexUnlock(&poolP->mutex);
+            MutexUnlock(poolP->mutexP);
         }
     }
     return retval;
@@ -619,6 +657,7 @@ PoolFree(TPool * const poolP) {
         nextPoolZoneP = poolZoneP->next;
         free(poolZoneP);
     }
+    MutexDestroy(poolP->mutexP);
 }
 
 

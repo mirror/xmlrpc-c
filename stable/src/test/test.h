@@ -1,7 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
+#include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 
 extern int total_tests;
 extern int total_failures;
@@ -42,13 +45,23 @@ do { \
         } \
        } while (0)
 
-static inline void
+#define TEST_EPSILON 1E-5
+
+#define FORCENONZERO(x) (MAX(fabs(x), TEST_EPSILON))
+
+#define FLOATEQUAL(comparand, comparator) \
+    ((fabs((comparand)-(comparator)))/FORCENONZERO(comparand) < TEST_EPSILON)
+#define TESTFLOATEQUAL(comparand, comparator) \
+    TEST(FLOATEQUAL(comparand, comparator))
+
+static __inline__ void
 test_fault(xmlrpc_env * const envP,
            int          const expectedCode,
            const char * const fileName,
            unsigned int const lineNumber) {
 
     ++total_tests;
+
     if (!envP->fault_occurred)
         test_failure(fileName, lineNumber, "no fault occurred", "");
     else if (envP->fault_code != expectedCode)
@@ -67,9 +80,30 @@ test_fault(xmlrpc_env * const envP,
 
 ;
 
+
+static __inline__ void
+test_null_string(const char * const string,
+                 const char * const fileName,
+                 unsigned int const lineNumber) {
+
+    ++total_tests;
+
+    if (string != NULL)
+        test_failure(fileName, lineNumber, "string not null", string);
+    else
+        printf(".");
+}
+
+
+#define TEST_NULL_STRING(string) \
+    do { test_null_string(string, __FILE__, __LINE__); } while(0)
+
+;
+
 #define TEST_ERROR(reason) \
 do { \
     printf("Unable to test at %s/%u.  %s", __FILE__, __LINE__, reason); \
     abort(); \
    } while (0)
 
+;

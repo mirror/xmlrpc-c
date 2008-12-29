@@ -30,11 +30,9 @@
 #include "bool.h"
 #include "mallocvar.h"
 
-#include "xmlrpc-c/base.h"
-#include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
-#include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
+#include "xmlrpc-c/transport.h"
 
 /* The libwww interface */
 
@@ -54,8 +52,6 @@
 #if HAVE_LIBWWW_SSL
 #include "WWWSSL.h"
 #endif
-
-#include "xmlrpc_libwww_transport.h"
 
 /* This value was discovered by Rick Blair. His efforts shaved two seconds
 ** off of every request processed. Many thanks. */
@@ -121,8 +117,11 @@ initLibwww(const char * const appname,
            const char * const appversion) {
     
     /* We initialize the library using a robot profile, because we don't
-    ** care about redirects or HTTP authentication, and we want to
-    ** reduce our application footprint as much as possible. */
+       care about redirects or HTTP authentication, and we want to
+       reduce our application footprint as much as possible.
+       
+       This takes the place of HTLibInit().
+    */
     HTProfile_newRobot(appname, appversion);
 
     /* Ilya Goldberg <igg@mit.edu> provided the following code to access
@@ -170,11 +169,16 @@ create(xmlrpc_env *                      const envP,
        int                               const flags,
        const char *                      const appname,
        const char *                      const appversion,
-       const struct xmlrpc_xportparms *  const transportParmsP ATTR_UNUSED,
+       const void *                      const transportParmsP ATTR_UNUSED,
        size_t                            const parm_size ATTR_UNUSED,
        struct xmlrpc_client_transport ** const handlePP) {
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Libwww client transport.
+
+   TODO: put 'appname' and 'appversion' in *transportParmsP and
+   deprecate the create() arguments.  Reason: these are particular to
+   the Libwww transport.  They're create() arguments because originally,
+   Libwww was the only transport.
 -----------------------------------------------------------------------------*/
     /* The Libwww transport is not re-entrant -- you can have only one
        per program instance.  Even if we changed the Xmlrpc-c code not
@@ -223,6 +227,7 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 
     if (!(clientTransportP->saved_flags & XMLRPC_CLIENT_SKIP_LIBWWW_INIT)) {
         HTProfile_delete();
+            /* This takes the place of HTLibTerminate() */
     }
     destroyCookieJar(clientTransportP->cookieJarP);
 }
@@ -256,7 +261,7 @@ formatLibwwwError(HTRequest *   const requestP,
            XXX - The documentation for this API is terrible, so we may
            be using it incorrectly.  
         */
-        const char * msg =
+        const char * const msg =
             HTDialog_errorMessage(requestP, HT_A_MESSAGE, HT_MSG_NULL,
                                   "An error occurred", errStack);
         
@@ -415,7 +420,7 @@ createDestAnchor(xmlrpc_env *               const envP,
                  HTAnchor **                const destAnchorPP,
                  const xmlrpc_server_info * const serverP) {
                  
-    *destAnchorPP = HTAnchor_findAddress(serverP->_server_url);
+    *destAnchorPP = HTAnchor_findAddress(serverP->serverUrl);
 
     if (*destAnchorPP == NULL)
         xmlrpc_env_set_fault_formatted(
@@ -475,9 +480,9 @@ rpcCreate(xmlrpc_env *                       const envP,
     HTRequest_setRqHd(rpcP->request, request_headers);
 
     /* Send an authorization header if we need one. */
-    if (serverP->_http_basic_auth)
+    if (serverP->allowedAuth.basic)
         HTRequest_addCredentials(rpcP->request, "Authorization",
-                                 serverP->_http_basic_auth);
+                                 (char *)serverP->basicAuthHdrValue);
     
     /* Make sure there is no XML conversion handler to steal our data.
     ** The 'override' parameter is currently ignored by libwww, so our
@@ -524,8 +529,8 @@ static void
 rpcDestroy(rpc * const rpcP) {
 
     XMLRPC_ASSERT_PTR_OK(rpcP);
-    XMLRPC_ASSERT(rpcP->request != XMLRPC_BAD_POINTER);
-    XMLRPC_ASSERT(rpcP->response_data != XMLRPC_BAD_POINTER);
+    XMLRPC_ASSERT(rpcP->request != NULL);
+    XMLRPC_ASSERT(rpcP->response_data != NULL);
 
     /* Junji Kanemaru reports on 05.04.11 that with asynch calls, he
        get a segfault, and reversing the order of deleting the request
@@ -539,9 +544,9 @@ rpcDestroy(rpc * const rpcP) {
     */
 
     HTRequest_delete(rpcP->request);
-    rpcP->request = XMLRPC_BAD_POINTER;
+    rpcP->request = NULL;
     HTChunk_delete(rpcP->response_data);
-    rpcP->response_data = XMLRPC_BAD_POINTER;
+    rpcP->response_data = NULL;
 
     /* This anchor points to private data, so we're allowed to delete it.  */
     deleteSourceAnchor(rpcP->source_anchor);
@@ -571,6 +576,16 @@ static void
 extract_response_chunk(xmlrpc_env *        const envP,
                        rpc *               const rpcP,
                        xmlrpc_mem_block ** const responseXmlPP) {
+
+    /* Implementation warning: A Libwww chunk has nothing to do with
+       an HTTP chunk.  HTTP chunks (as in a chunked response) are not
+       visible to us; Libwww delivers the entire unchunked body to us
+       at once (we never see chunk headers and trailers).  This
+       subroutine is about a Libwww chunk, which is just a memory
+       buffer.  (Libwww is capable of delivering the response in a
+       number of ways other than a chunk, e.g. it can write it to a
+       file.
+    */
 
     /* Check to make sure that w3c-libwww actually sent us some data.
     ** XXX - This may happen if libwww is shut down prematurely, believe it
@@ -700,7 +715,7 @@ static int timer_called = 0;
 static void 
 register_asynch_call(void) {
     XMLRPC_ASSERT(outstanding_asynch_calls >= 0);
-    outstanding_asynch_calls++;
+    ++outstanding_asynch_calls;
 }
 
 
@@ -709,7 +724,7 @@ static void
 unregister_asynch_call(void) {
 
     XMLRPC_ASSERT(outstanding_asynch_calls > 0);
-    outstanding_asynch_calls--;
+    --outstanding_asynch_calls;
     if (outstanding_asynch_calls == 0)
         HTEventList_stopLoop();
 }
@@ -934,4 +949,5 @@ struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops = {
     &sendRequest,
     &call,
     &finishAsynch,
+    NULL,
 };

@@ -1,25 +1,24 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  TOOLSDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(TOOLSDIR))
+  BLDDIR := $(SRCDIR)
 endif
-# BLDDIR is for use in places where a symbolic link won't work.
-# BUILDDIR is for places in Makefile.common that can use the 'blddir'
-# symbolic link (but in other directories, doesn't).
-BLDDIR = $(SRCDIR)
-BUILDDIR = blddir
+SUBDIR := tools/xml-rpc-api2cpp
 
 default: all
 
-include $(BLDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
-include ../Makefile.common
+include $(SRCDIR)/tools/common.mk
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include
+INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
 
 CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 LDFLAGS = $(LADD)
 
-LDLIBS = -Lblddir/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
+LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
 
 PROGS :=
 
@@ -49,16 +48,16 @@ xml-rpc-api2cpp: \
 %.o:%.cpp
 	$(CXX) -c $(CXXFLAGS) $<
 
-# This Makefile.config dependency makes sure the symlinks get built before
+# This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-$(BLDDIR)/Makefile.config: blddir srcdir
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: clean
 clean: clean-common
-	rm -f xml-rpc-api2cpp
+	rm -f $(PROGS)
 
 .PHONY: distclean
 distclean: clean distclean-common

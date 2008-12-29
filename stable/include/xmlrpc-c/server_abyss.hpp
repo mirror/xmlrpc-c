@@ -1,6 +1,11 @@
 #ifndef SERVER_ABYSS_HPP_INCLUDED
 #define SERVER_ABYSS_HPP_INCLUDED
 
+#ifdef WIN32
+#include <winsock.h>   // For XMLRPC_SOCKET (= SOCKET)
+#endif
+
+#include "xmlrpc-c/config.h"  // For XMLRPC_SOCKET
 #include "xmlrpc-c/base.hpp"
 #include "abyss.h"
 
@@ -15,12 +20,12 @@ public:
 
         constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
-        constrOpt & socketFd          (xmlrpc_socket  const& arg);
-        constrOpt & portNumber        (uint           const& arg);
+        constrOpt & socketFd          (XMLRPC_SOCKET  const& arg);
+        constrOpt & portNumber        (unsigned int   const& arg);
         constrOpt & logFileName       (std::string    const& arg);
-        constrOpt & keepaliveTimeout  (uint           const& arg);
-        constrOpt & keepaliveMaxConn  (uint           const& arg);
-        constrOpt & timeout           (uint           const& arg);
+        constrOpt & keepaliveTimeout  (unsigned int   const& arg);
+        constrOpt & keepaliveMaxConn  (unsigned int   const& arg);
+        constrOpt & timeout           (unsigned int   const& arg);
         constrOpt & dontAdvertise     (bool           const& arg);
         constrOpt & uriPath           (std::string    const& arg);
         constrOpt & chunkResponse     (bool           const& arg);
@@ -28,12 +33,12 @@ public:
         struct value {
             xmlrpc_c::registryPtr      registryPtr;
             const xmlrpc_c::registry * registryP;
-            xmlrpc_socket  socketFd;
-            uint           portNumber;
+            XMLRPC_SOCKET  socketFd;
+            unsigned int   portNumber;
             std::string    logFileName;
-            uint           keepaliveTimeout;
-            uint           keepaliveMaxConn;
-            uint           timeout;
+            unsigned int   keepaliveTimeout;
+            unsigned int   keepaliveMaxConn;
+            unsigned int   timeout;
             bool           dontAdvertise;
             std::string    uriPath;
             bool           chunkResponse;
@@ -64,7 +69,7 @@ public:
         unsigned int       const  timeout = 0,
         bool               const  dontAdvertise = false,
         bool               const  socketBound = false,
-        xmlrpc_socket      const  socketFd = 0
+        XMLRPC_SOCKET      const  socketFd = 0
         );
     ~serverAbyss();
     
@@ -76,7 +81,19 @@ public:
 
     void
     runConn(int const socketFd);
+
+    void
+    terminate();
     
+    class shutdown : public xmlrpc_c::registry::shutdown {
+    public:
+        shutdown(xmlrpc_c::serverAbyss * const severAbyssP);
+        virtual ~shutdown();
+        void doit(std::string const& comment, void * const callInfo) const;
+    private:
+        xmlrpc_c::serverAbyss * const serverAbyssP;
+    };
+
 private:
     // The user has the choice of supplying the registry by plain pointer
     // (and managing the object's existence himself) or by autoObjectPtr

@@ -17,15 +17,31 @@ extern "C" {
 #endif /* __cplusplus */
 
 struct xmlrpc_client;
+struct xmlrpc_client_transport;
+struct xmlrpc_client_transport_ops;
 #ifndef __cplusplus
 typedef struct xmlrpc_client xmlrpc_client;
+typedef struct xmlrpc_client_transport xmlrpc_client_transport;
+typedef struct xmlrpc_client_transport_ops xmlrpc_client_transport_ops;
 #endif
 
-struct xmlrpc_xportparms;
-    /* This is a "base class".  The struct is never complete; you're
-       supposed to cast between struct xmlrpc_xportparms * and 
-       "struct xmlrpc_..._xportparms *" in order to use it.  
-    */
+/* libxmlrpc_client typically does _not_ actually include all of the
+   XML transports declared here by xmlrpc_*_transport_ops.
+
+   Use 'xmlrpc-c-config --features' to determine which features are
+   installed.
+*/
+
+/* Before Xmlrpc-c 1.13 (December 2007), we declared struct
+   xmlrpc_xportparms, as a sort of "base class."  The struct was never
+   complete -- you just cast pointer to it it to pointers to other
+   types.  It turned out not to be really helpful and casts are ugly,
+   so now we just use void * as a base class pointer.
+*/
+
+extern struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops;
+extern struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops;
+extern struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops;
 
 enum xmlrpc_sslversion {
     XMLRPC_SSLVERSION_DEFAULT,
@@ -54,6 +70,7 @@ struct xmlrpc_curl_xportparms {
     const char * randomfile;
     const char * egdsocket;
     const char * ssl_cipher_list;
+    unsigned int timeout;
 };
 
 
@@ -72,10 +89,17 @@ struct xmlrpc_wininet_xportparms {
 /* XMLRPC_WXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
 
 struct xmlrpc_clientparms {
+    /* (transport, transportparmsP, transportparm_size) and
+       (transportOpsP, transportP) are mutually exclusive.
+    */
     const char *               transport;
-    struct xmlrpc_xportparms * transportparmsP;
-        /* Cast a "struct ..._xportparms *" to fit here */
+    const void *               transportparmsP;
+        /* This should be type "const struct ..._xportparms *" */
     size_t                     transportparm_size;
+
+    const struct xmlrpc_client_transport_ops * transportOpsP;
+    xmlrpc_client_transport *  transportP;
+    xmlrpc_dialect             dialect;
 };
 
 #define XMLRPC_CPSIZE(mbrname) \
@@ -108,32 +132,39 @@ typedef void (*xmlrpc_response_handler) (const char *server_url,
 
 
 /*=========================================================================
-**  xmlrpc_server_info
-**=========================================================================
-**  We normally refer to servers by URL. But sometimes we need to do extra
-**  setup for particular servers. In that case, we can create an
-**  xmlrpc_server_info object, configure it in various ways, and call the
-**  remote server.
-**
-**  (This interface is also designed to discourage further multiplication
-**  of xmlrpc_client_call APIs. We have enough of those already. Please
-**  add future options and flags using xmlrpc_server_info.)
-*/
+   xmlrpc_server_info
+===========================================================================
+  We normally refer to servers by URL. But sometimes we need to do extra
+  setup for particular servers. In that case, we can create an
+  xmlrpc_server_info object, configure it in various ways, and call the
+  remote server.
+
+  (This interface is also designed to discourage further multiplication
+  of xmlrpc_client_call APIs. We have enough of those already. Please
+  add future options and flags using xmlrpc_server_info.)
+=========================================================================*/
 
 typedef struct _xmlrpc_server_info xmlrpc_server_info;
 
 /* Create a new server info record, pointing to the specified server. */
 xmlrpc_server_info *
-xmlrpc_server_info_new(xmlrpc_env * const env,
-                       const char * const server_url);
+xmlrpc_server_info_new(xmlrpc_env * const envP,
+                       const char * const serverUrl);
 
 /* Create a new server info record, with a copy of the old server. */
 extern xmlrpc_server_info * 
-xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *src_server);
+xmlrpc_server_info_copy(xmlrpc_env *         const envP,
+                        xmlrpc_server_info * const srcP);
 
-/* Delete a server info record. */
-extern void
-xmlrpc_server_info_free (xmlrpc_server_info *server);
+void
+xmlrpc_server_info_free(xmlrpc_server_info * const serverP);
+
+
+void 
+xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
+                            xmlrpc_server_info * const serverInfoP,
+                            const char *         const username,
+                            const char *         const password);
 
 void 
 xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
@@ -141,6 +172,41 @@ xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   const char *         const username,
                                   const char *         const password);
 
+void
+xmlrpc_server_info_allow_auth_basic(xmlrpc_env *         const envP,
+                                    xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_basic(xmlrpc_env *         const envP,
+                                       xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_digest(xmlrpc_env *         const envP,
+                                     xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_digest(xmlrpc_env *         const envP,
+                                        xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_negotiate(xmlrpc_env *         const envP,
+                                        xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_negotiate(xmlrpc_env *         const envP,
+                                           xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_ntlm(xmlrpc_env *         const envP,
+                                   xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_ntlm(xmlrpc_env *         const envP,
+                                      xmlrpc_server_info * const sP);
+
+extern unsigned int const xmlrpc_client_version_major;
+extern unsigned int const xmlrpc_client_version_minor;
+extern unsigned int const xmlrpc_client_version_point;
 
 void
 xmlrpc_client_setup_global_const(xmlrpc_env * const envP);
@@ -210,6 +276,10 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          void *          const userData,
                          const char *    const format,
                          ...);
+
+void
+xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
+                            int *           const interruptP);
 
 #include <xmlrpc-c/client_global.h>
 

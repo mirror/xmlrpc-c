@@ -15,12 +15,16 @@
 #include <time.h>
 
 #include "xmlrpc_config.h"
+#include "bool.h"
+#include "int.h"
+#include "version.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 
 #include "server.h"
 #include "session.h"
+#include "file.h"
 #include "conn.h"
 #include "token.h"
 #include "date.h"
@@ -31,9 +35,9 @@
 
 
 void
-ResponseError(TSession * const sessionP) {
+ResponseError2(TSession *   const sessionP,
+               const char * const explanation) {
 
-    const char * const reason = HTTPReasonByStatus(sessionP->status);
     const char * errorDocument;
 
     ResponseAddField(sessionP, "Content-type", "text/html");
@@ -42,14 +46,26 @@ ResponseError(TSession * const sessionP) {
     
     xmlrpc_asprintf(&errorDocument,
                     "<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
-                    "<BODY><H1>Error %d</H1><P>%s</P>" SERVER_HTML_INFO 
-                    "</BODY></HTML>",
-                    sessionP->status, sessionP->status, reason);
+                    "<BODY>"
+                    "<H1>Error %d</H1>"
+                    "<P>%s</P>" SERVER_HTML_INFO 
+                    "</BODY>"
+                    "</HTML>",
+                    sessionP->status, sessionP->status, explanation);
     
     ConnWrite(sessionP->conn, errorDocument, strlen(errorDocument)); 
 
     xmlrpc_strfree(errorDocument);
 }
+
+
+
+void
+ResponseError(TSession * const sessionP) {
+
+    ResponseError2(sessionP, HTTPReasonByStatus(sessionP->status));
+}
+
 
 
 
@@ -72,15 +88,15 @@ ResponseChunked(TSession * const sessionP) {
 
 
 void
-ResponseStatus(TSession * const sessionP,
-               uint16_t   const code) {
+ResponseStatus(TSession *     const sessionP,
+               unsigned short const code) {
 
     sessionP->status = code;
 }
 
 
 
-uint16_t
+xmlrpc_uint16_t
 ResponseStatusFromErrno(int const errnoArg) {
 
     uint16_t code;
@@ -119,42 +135,9 @@ ResponseAddField(TSession *   const sessionP,
 
 
 static void
-addDateHeader(TSession * const sessionP) {
-
-    char dateValue[64];
-    abyss_bool validDate;
-
-    validDate = DateToString(&sessionP->date, dateValue);
-
-    if (sessionP->status >= 200 && validDate)
-        ResponseAddField(sessionP, "Date", dateValue);
-}
-
-
-
-void
-ResponseWriteStart(TSession * const sessionP) {
+addConnectionHeader(TSession * const sessionP) {
 
     struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
-
-    unsigned int i;
-
-    assert(!sessionP->responseStarted);
-
-    if (sessionP->status == 0) {
-        // Handler hasn't set status.  That's an error
-        sessionP->status = 500;
-    }
-
-    sessionP->responseStarted = TRUE;
-
-    {
-        const char * const reason = HTTPReasonByStatus(sessionP->status);
-        const char * line;
-        xmlrpc_asprintf(&line,"HTTP/1.1 %u %s\r\n", sessionP->status, reason);
-        ConnWrite(sessionP->conn, line, strlen(line));
-        xmlrpc_strfree(line);
-    }
 
     if (HTTPKeepalive(sessionP)) {
         const char * keepaliveValue;
@@ -169,15 +152,79 @@ ResponseWriteStart(TSession * const sessionP) {
         xmlrpc_strfree(keepaliveValue);
     } else
         ResponseAddField(sessionP, "Connection", "close");
+}
     
+
+
+static void
+addDateHeader(TSession * const sessionP) {
+
+    if (sessionP->status >= 200) {
+        const char * dateValue;
+
+        DateToString(sessionP->date, &dateValue);
+
+        if (dateValue) {
+            ResponseAddField(sessionP, "Date", dateValue);
+            xmlrpc_strfree(dateValue);
+        }
+    }
+}
+
+
+
+static void
+addServerHeader(TSession * const sessionP) {
+
+    const char * serverValue;
+
+    xmlrpc_asprintf(&serverValue, "XMLRPC_ABYSS/%s", XMLRPC_C_VERSION);
+
+    ResponseAddField(sessionP, "Server", serverValue);
+
+    xmlrpc_strfree(serverValue);
+}
+
+
+
+void
+ResponseWriteStart(TSession * const sessionP) {
+/*----------------------------------------------------------------------------
+   Begin the process of sending the response for an HTTP transaction
+   (i.e. Abyss session).
+
+   As part of this, send the entire HTTP header for the response.
+-----------------------------------------------------------------------------*/
+    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+
+    unsigned int i;
+
+    assert(!sessionP->responseStarted);
+
+    if (sessionP->status == 0) {
+        /* Handler hasn't set status.  That's an error */
+        sessionP->status = 500;
+    }
+
+    sessionP->responseStarted = TRUE;
+
+    {
+        const char * const reason = HTTPReasonByStatus(sessionP->status);
+        const char * line;
+        xmlrpc_asprintf(&line,"HTTP/1.1 %u %s\r\n", sessionP->status, reason);
+        ConnWrite(sessionP->conn, line, strlen(line));
+        xmlrpc_strfree(line);
+    }
+
+    addConnectionHeader(sessionP);
+
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode)
         ResponseAddField(sessionP, "Transfer-Encoding", "chunked");
 
     addDateHeader(sessionP);
 
-    /* Generation of the server field */
     if (srvP->advertise)
-        ResponseAddField(sessionP, "Server", SERVER_HVERSION);
+        addServerHeader(sessionP);
 
     /* send all the fields */
     for (i = 0; i < sessionP->response_headers.size; ++i) {
@@ -194,9 +241,9 @@ ResponseWriteStart(TSession * const sessionP) {
 
 
 abyss_bool
-ResponseWriteBody(TSession *   const sessionP,
-                  const char * const data,
-                  uint32_t     const len) {
+ResponseWriteBody(TSession *      const sessionP,
+                  const char *    const data,
+                  xmlrpc_uint32_t const len) {
 
     return HTTPWriteBodyChunk(sessionP, data, len);
 }
@@ -221,11 +268,12 @@ ResponseContentType(TSession *   const serverP,
 
 
 abyss_bool
-ResponseContentLength(TSession * const sessionP,
-                      uint64_t   const len) {
+ResponseContentLength(TSession *      const sessionP,
+                      xmlrpc_uint64_t const len) {
+
     char contentLengthValue[32];
     
-    sprintf(contentLengthValue, "%llu", len);
+    sprintf(contentLengthValue, "%" PRIu64, len);
 
     return ResponseAddField(sessionP, "Content-length", contentLengthValue);
 }
@@ -299,11 +347,11 @@ static void
 mimeTypeAdd(MIMEType *   const MIMETypeP,
             const char * const type,
             const char * const ext,
-            abyss_bool * const successP) {
+            bool *       const successP) {
     
     uint16_t index;
     void * mimeTypesItem;
-    abyss_bool typeIsInList;
+    bool typeIsInList;
 
     assert(MIMETypeP != NULL);
 
@@ -314,7 +362,7 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
         mimeTypesItem = (void*)PoolStrdup(&MIMETypeP->pool, type);
 
     if (mimeTypesItem) {
-        abyss_bool extIsInList;
+        bool extIsInList;
         extIsInList = ListFindString(&MIMETypeP->extList, ext, &index);
         if (extIsInList) {
             MIMETypeP->typeList.item[index] = mimeTypesItem;
@@ -322,12 +370,12 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
         } else {
             void * extItem = (void*)PoolStrdup(&MIMETypeP->pool, ext);
             if (extItem) {
-                abyss_bool addedToMimeTypes;
+                bool addedToMimeTypes;
 
                 addedToMimeTypes =
                     ListAdd(&MIMETypeP->typeList, mimeTypesItem);
                 if (addedToMimeTypes) {
-                    abyss_bool addedToExt;
+                    bool addedToExt;
                     
                     addedToExt = ListAdd(&MIMETypeP->extList, extItem);
                     *successP = addedToExt;
@@ -354,7 +402,7 @@ MIMETypeAdd2(MIMEType *   const MIMETypeArg,
 
     MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
 
-    abyss_bool success;
+    bool success;
 
     if (MIMETypeP == NULL)
         success = FALSE;
@@ -381,7 +429,7 @@ mimeTypeFromExt(MIMEType *   const MIMETypeP,
 
     const char * retval;
     uint16_t extindex;
-    abyss_bool extIsInList;
+    bool extIsInList;
 
     assert(MIMETypeP != NULL);
 
@@ -428,7 +476,7 @@ findExtension(const char *  const fileName,
 
     unsigned int extPos = 0;  /* stifle unset variable warning */
         /* Running estimation of where in fileName[] the extension starts */
-    abyss_bool extFound;
+    bool extFound;
     unsigned int i;
 
     /* We're looking for the last dot after the last slash */
@@ -498,28 +546,28 @@ MIMETypeFromFileName(const char * const fileName) {
 
 
 
-static abyss_bool
+static bool
 fileContainsText(const char * const fileName) {
 /*----------------------------------------------------------------------------
    Return true iff we can read the contents of the file named 'fileName'
    and see that it appears to be composed of plain text characters.
 -----------------------------------------------------------------------------*/
-    abyss_bool retval;
-    abyss_bool fileOpened;
-    TFile file;
+    bool retval;
+    bool fileOpened;
+    TFile * fileP;
 
-    fileOpened = FileOpen(&file, fileName, O_BINARY | O_RDONLY);
+    fileOpened = FileOpen(&fileP, fileName, O_BINARY | O_RDONLY);
     if (fileOpened) {
         char const ctlZ = 26;
         unsigned char buffer[80];
         int32_t readRc;
         unsigned int i;
 
-        readRc = FileRead(&file, buffer, sizeof(buffer));
+        readRc = FileRead(fileP, buffer, sizeof(buffer));
        
         if (readRc >= 0) {
             unsigned int bytesRead = readRc;
-            abyss_bool nonTextFound;
+            bool nonTextFound;
 
             nonTextFound = FALSE;  /* initial value */
     
@@ -531,7 +579,7 @@ fileContainsText(const char * const fileName) {
             retval = !nonTextFound;
         } else
             retval = FALSE;
-        FileClose(&file);
+        FileClose(fileP);
     } else
         retval = FALSE;
 
@@ -587,8 +635,10 @@ MIMETypeGuessFromFile(const char * const fileName) {
 ** Base64
 *********************************************************************/
 
-void Base64Encode(char *s,char *d)
-{
+void
+Base64Encode(const char * const chars,
+             char *       const base64) {
+
     /* Conversion table. */
     static char tbl[64] = {
         'A','B','C','D','E','F','G','H',
@@ -601,12 +651,16 @@ void Base64Encode(char *s,char *d)
         '4','5','6','7','8','9','+','/'
     };
 
-    uint32_t i,length=strlen(s);
-    char *p=d;
+    unsigned int i;
+    uint32_t length;
+    char * p;
+    const char * s;
     
+    length = strlen(chars);  /* initial value */
+    s = &chars[0];  /* initial value */
+    p = &base64[0];  /* initial value */
     /* Transform the 3x8 bits to 4x6 bits, as required by base64. */
-    for (i = 0; i < length; i += 3)
-    {
+    for (i = 0; i < length; i += 3) {
         *p++ = tbl[s[0] >> 2];
         *p++ = tbl[((s[0] & 3) << 4) + (s[1] >> 4)];
         *p++ = tbl[((s[1] & 0xf) << 2) + (s[2] >> 6)];
@@ -623,6 +677,8 @@ void Base64Encode(char *s,char *d)
     /* ...and zero-terminate it. */
     *p = '\0';
 }
+
+
 
 /******************************************************************************
 **

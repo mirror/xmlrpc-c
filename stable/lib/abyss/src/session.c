@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "bool.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -23,7 +24,7 @@ SessionRefillBuffer(TSession * const sessionP) {
    I.e. read data from the socket.
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = sessionP->conn->server->srvP;
-    abyss_bool failed;
+    bool failed;
 
     failed = FALSE;  /* initial value */
             
@@ -74,7 +75,7 @@ SessionGetReadData(TSession *    const sessionP,
 -----------------------------------------------------------------------------*/
     uint32_t const bufferPos = sessionP->conn->bufferpos;
 
-    *outStartP = &sessionP->conn->buffer[bufferPos];
+    *outStartP = &sessionP->conn->buffer.t[bufferPos];
 
     assert(bufferPos <= sessionP->conn->buffersize);
 
@@ -92,7 +93,16 @@ void
 SessionGetRequestInfo(TSession *            const sessionP,
                       const TRequestInfo ** const requestInfoPP) {
     
-    *requestInfoPP = &sessionP->request_info;
+    *requestInfoPP = &sessionP->requestInfo;
+}
+
+
+
+void
+SessionGetChannelInfo(TSession * const sessionP,
+                      void **    const channelInfoPP) {
+    
+    *channelInfoPP = sessionP->conn->channelInfoP;
 }
 
 
@@ -100,38 +110,49 @@ SessionGetRequestInfo(TSession *            const sessionP,
 abyss_bool
 SessionLog(TSession * const sessionP) {
 
-    abyss_bool retval;
+    const char * logline;
+    const char * user;
+    const char * date;
+    const char * peerInfo;
 
-    if (!sessionP->validRequest)
-        retval = FALSE;
-    else {
-        const char * const user = sessionP->request_info.user;
-
-        const char * logline;
-        char date[30];
-
-        DateToLogString(&sessionP->date, date);
-
-        xmlrpc_asprintf(&logline, "%d.%d.%d.%d - %s - [%s] \"%s\" %d %d",
-                        IPB1(sessionP->conn->peerip),
-                        IPB2(sessionP->conn->peerip),
-                        IPB3(sessionP->conn->peerip),
-                        IPB4(sessionP->conn->peerip),
-                        user ? user : "",
-                        date, 
-                        sessionP->request_info.requestline,
-                        sessionP->status,
-                        sessionP->conn->outbytes
-            );
-        if (logline) {
-            LogWrite(sessionP->conn->server, logline);
-
-            xmlrpc_strfree(logline);
-        }
-        retval = TRUE;
+    if (sessionP->validRequest) {
+        if (sessionP->requestInfo.user)
+            user = sessionP->requestInfo.user;
+        else
+            user = "no_user";
+    } else
+        user = "???";
+    
+    DateToLogString(sessionP->date, &date);
+    
+    ConnFormatClientAddr(sessionP->conn, &peerInfo);
+    
+    xmlrpc_asprintf(&logline, "%s - %s - [%s] \"%s\" %d %d",
+                    peerInfo,
+                    user,
+                    date, 
+                    sessionP->validRequest ?
+                        sessionP->requestInfo.requestline : "???",
+                    sessionP->status,
+                    sessionP->conn->outbytes
+        );
+    xmlrpc_strfree(peerInfo);
+    xmlrpc_strfree(date);
+    
+    if (logline) {
+        LogWrite(sessionP->conn->server, logline);
+        
+        xmlrpc_strfree(logline);
     }
-    return retval;
+    return true;
 }
 
 
 
+void *
+SessionGetDefaultHandlerCtx(TSession * const sessionP) {
+
+    struct _TServer * const srvP = sessionP->conn->server->srvP;
+
+    return srvP->defaultHandlerContext;
+}
