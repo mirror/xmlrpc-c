@@ -290,6 +290,22 @@ public:
 
 
 
+class testShutdown : public xmlrpc_c::registry::shutdown {
+/*----------------------------------------------------------------------------
+   This class is logically local to
+   registryShutdownTestSuite::runtests(), but if we declare it that
+   way, gcc 2.95.3 fails with some bogus messages about undefined
+   references from random functions when we do that.
+-----------------------------------------------------------------------------*/
+public:
+    void doit(string const&,
+              void * const) const {
+        
+    }
+};
+
+
+
 class registryShutdownTestSuite : public testSuite {
 
 public:
@@ -300,15 +316,7 @@ public:
 
         xmlrpc_c::registry myRegistry;
 
-        class myshutdown : public xmlrpc_c::registry::shutdown {
-        public:
-            void doit(string const&,
-                      void * const) const {
-                
-            }
-        };
-
-        myshutdown shutdown;
+        testShutdown shutdown;
         
         myRegistry.setShutdown(&shutdown);
     }

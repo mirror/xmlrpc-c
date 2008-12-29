@@ -46,13 +46,11 @@ all: $(LIBOBJS)
 
 INCLUDES = -I$(SRCDIR)/$(SUBDIR)/include -I$(BLDDIR)
 
-CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
-
 %.o:%.c
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS_ALL) $<
 
 %.o:%.cpp
-	$(CXX) -c $(CFLAGS) $<
+	$(CXX) -c $(CXXFLAGS_ALL) $<
 
 include depend.mk
 

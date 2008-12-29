@@ -12,9 +12,11 @@ include $(BLDDIR)/config.mk
 
 include $(SRCDIR)/tools/common.mk
 
-INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
+# <sstream.h> in Glibc 2.2 has a bug that results in inlining failure,
+# so we disable warnings for that:
+CFLAGS_LOCAL = -Wno-inline
 
-CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
 
 LDFLAGS = $(LADD)
 
@@ -46,7 +48,7 @@ xml-rpc-api2cpp: \
 	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS)
 
 %.o:%.cpp
-	$(CXX) -c $(CXXFLAGS) $<
+	$(CXX) -c $(CXXFLAGS_ALL) $<
 
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.

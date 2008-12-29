@@ -50,7 +50,7 @@ MAJ=3
 
 include $(SRCDIR)/common.mk
 
-CFLAGS = $(CFLAGS_COMMON) -D_UNIX $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS_LOCAL = -D_UNIX
 
 INCLUDES = -Iblddir -Isrcdir -Isrcdir/include -Isrcdir/lib/util/include
 

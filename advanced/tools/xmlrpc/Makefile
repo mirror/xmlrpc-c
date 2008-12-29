@@ -21,8 +21,6 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include
 
-CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
-
 LDFLAGS = $(LADD)
 
 all: xmlrpc
@@ -48,7 +46,7 @@ xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
 	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
 
 %.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS_ALL) $<
 
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.

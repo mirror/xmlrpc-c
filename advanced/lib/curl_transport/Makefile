@@ -29,8 +29,6 @@ CURL_INCLUDES := $(shell curl-config --cflags)
 # we need just the -I options for 'make dep'.  Plus, it's scary to think
 # of what any other compiler flag would do to our compile.
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \

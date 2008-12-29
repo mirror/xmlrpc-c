@@ -12,9 +12,9 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+#include <cstdlib>  // for getenv
 #include <memory>
 #include <stdio.h>
-#include <cstdlib>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::throwf;

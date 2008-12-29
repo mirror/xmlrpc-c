@@ -252,25 +252,35 @@ endif
 #
 # For C++ source files, use TARGET_MODS_PP instead.
 
-# CFLAGS and CXXFLAGS are designed to be overridden on the make command
-# line.  We pile all the options except -I into these variables so the
-# user can override them all if he wants.
+# CFLAGS and CXXFLAGS are designed to be picked up as environment
+# variables.  The user may use them to add inclusion search directories
+# (-I) or control 32/64 bitness or the like.  Using these is always
+# iffy, because the options one might include can interact in unpredictable
+# ways with what the make file is trying to do.  But at least some users
+# get useful results.
+
+CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+
+CXXFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CXXFLAGS) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+
 
 $(TARGET_MODS:%=%.o):%.o:%.c
-	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS_ALL) $<
 
 $(TARGET_MODS:%=%.osh): CFLAGS_COMMON += $(CFLAGS_SHLIB)
 
 $(TARGET_MODS:%=%.osh):%.osh:%.c
-	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $(CFLAGS_SHLIB) $<
+	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS_ALL) $(CFLAGS_SHLIB) $<
 
 $(TARGET_MODS_PP:%=%.o):%.o:%.cpp
-	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 $(TARGET_MODS_PP:%=%.osh): CXXFLAGS_COMMON += $(CFLAGS_SHLIB)
 
 $(TARGET_MODS_PP:%=%.osh):%.osh:%.cpp
-	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 
 ##############################################################################

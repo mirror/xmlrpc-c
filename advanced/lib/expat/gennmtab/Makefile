@@ -9,8 +9,6 @@ SUBDIR := lib/expat/gennmtab
 
 include $(BLDDIR)/config.mk
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 LDFLAGS = $(LADD)
 
 INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
@@ -42,7 +40,7 @@ install:
 dep: dep-common
 
 gennmtab.o:%.o:%.c
-	$(BUILDTOOL_CC) -c $< -o $@ $(CFLAGS) $(INCLUDES)
+	$(BUILDTOOL_CC) -c $< -o $@ $(CFLAGS_ALL) $(INCLUDES)
 
 gennmtab:%:%.o
 	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS) $^

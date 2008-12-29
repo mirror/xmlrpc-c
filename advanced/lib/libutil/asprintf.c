@@ -71,7 +71,7 @@ xmlrpc_vasprintf(const char ** const retvalP,
 
 
 
-void GNU_PRINTF_ATTR(2,3)
+void XMLRPC_PRINTF_ATTR(2,3)
 xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...) {
 
     va_list varargs;  /* mysterious structure used by variable arg facility */

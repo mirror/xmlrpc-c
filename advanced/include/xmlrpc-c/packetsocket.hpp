@@ -25,10 +25,10 @@ public:
     packet();
 
     packet(const unsigned char * const data,
-                   size_t                const dataLength);
+           size_t                const dataLength);
 
     packet(const char * const data,
-                   size_t       const dataLength);
+           size_t       const dataLength);
 
     ~packet();
 
@@ -66,6 +66,8 @@ public:
 };
 
 
+
+class packetSocket_impl;
 
 class packetSocket {
 /*----------------------------------------------------------------------------
@@ -106,56 +108,7 @@ public:
              packetPtr * const packetPP);
 
 private:
-    int sockFd;
-        // The kernel stream socket we use.
-    bool eof;
-        // The packet socket is at end-of-file for reads.
-        // 'readBuffer' is empty and there won't be any more data to fill
-        // it because the underlying stream socket is closed.
-    std::queue<packetPtr> readBuffer;
-    packetPtr packetAccumP;
-        // The receive packet we're currently accumulating; it will join
-        // 'readBuffer' when we've received the whole packet (and we've
-        // seen the END escape sequence so we know we've received it all).
-        // If we're not currently accumulating a packet (haven't seen a
-        // PKT escape sequence), this points to nothing.
-    bool inEscapeSeq;
-        // In our trek through the data read from the underlying stream
-        // socket, we are after an ESC character and before the end of the
-        // escape sequence.  'escAccum' shows what of the escape sequence
-        // we've seen so far.
-    bool inPacket;
-        // We're now receiving packet data from the underlying stream
-        // socket.  We've seen a complete PKT escape sequence, but have not
-        // seen a complete END escape sequence since.
-    struct {
-        unsigned char bytes[3];
-        size_t len;
-    } escAccum;
-
-    void
-    bufferFinishedPacket();
-
-    void
-    takeSomeEscapeSeq(const unsigned char * const buffer,
-                                    size_t                const length,
-                                    size_t *              const bytesTakenP);
-
-    void
-    takeSomePacket(const unsigned char * const buffer,
-                   size_t                const length,
-                   size_t *              const bytesTakenP);
-
-    void
-    verifyNothingAccumulated();
-
-    void
-    processBytesRead(const unsigned char * const buffer,
-                     size_t                const bytesRead);
-
-    void
-    readFromFile();
-
+    packetSocket_impl * implP;
 };
 
 

@@ -195,6 +195,7 @@ c_executeMethod(xmlrpc_env *   const envP,
     xmlrpc_c::paramList const paramList(pListFromXmlrpcArray(paramArrayP));
 
     xmlrpc_value * retval;
+    retval = NULL; // silence used-before-set warning
 
     try {
         xmlrpc_c::value result;
@@ -257,6 +258,7 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
     paramList const paramList(pListFromXmlrpcArray(paramArrayP));
 
     xmlrpc_value * retval;
+    retval = NULL; // silence used-before-set warning
 
     try {
         xmlrpc_c::value result;

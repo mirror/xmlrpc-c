@@ -102,11 +102,11 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
     xmlrpc_abort_if_array_bad(val)
 
 /* Increment the reference count of an xmlrpc_value. */
-extern void xmlrpc_INCREF (xmlrpc_value* const value);
+extern void xmlrpc_INCREF(xmlrpc_value* const value);
 
 /* Decrement the reference count of an xmlrpc_value. If there
 ** are no more references, free it. */
-extern void xmlrpc_DECREF (xmlrpc_value* const value);
+extern void xmlrpc_DECREF(xmlrpc_value* const value);
 
 /* Get the type of an XML-RPC value. */
 extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* const value);
@@ -316,12 +316,10 @@ int
 xmlrpc_array_size(xmlrpc_env *         const env, 
                   const xmlrpc_value * const array);
 
-/* Append an item to an XML-RPC array.
-** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
-extern void
-xmlrpc_array_append_item (xmlrpc_env   * const envP,
-                          xmlrpc_value * const arrayP,
-                          xmlrpc_value * const valueP);
+void
+xmlrpc_array_append_item(xmlrpc_env   * const envP,
+                         xmlrpc_value * const arrayP,
+                         xmlrpc_value * const valueP);
 
 void
 xmlrpc_array_read_item(xmlrpc_env *         const envP,
@@ -342,11 +340,11 @@ xmlrpc_array_get_item(xmlrpc_env *         const envP,
                       int                  const index);
 
 /* Not implemented--we don't need it yet.
-extern 
-int xmlrpc_array_set_item (xmlrpc_env* env,
-xmlrpc_value* array,
-int index,
-                                  xmlrpc_value* value);
+int
+xmlrpc_array_set_item(xmlrpc_env *   const envP,
+                      xmlrpc_value * const arrayP,
+                      unsigned int   const index,
+                      xmlrpc_value * const valueP);
 */
 
 xmlrpc_value *
