@@ -11,46 +11,8 @@ default: all
 
 all: xmlrpc-c/config.h
 
-xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
-	>$@
-	@echo "Lots of echoes to '$@' suppressed here ..."
-	@echo '#ifndef XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
-	@echo '#define XMLRPC_C_CONFIG_H_INCLUDED'                        >>$@
-	@echo ''                                                          >>$@
-	@echo '/* This file, part of XML-RPC For C/C++, is meant to '     >>$@
-	@echo '   define characteristics of this particular installation '>>$@ 
-	@echo '   that the other <xmlrpc-c/...> header files need in '    >>$@
-	@echo '   order to compile correctly when #included in Xmlrpc-c'  >>$@
-	@echo '   user code.'						  >>$@
-	@echo ''                                                          >>$@
-	@echo '   Those header files #include this one.'                  >>$@
-	@echo ''                                                          >>$@
-	@echo '   This file was created by a make rule.'                  >>$@
-	@echo '*/'                                                        >>$@
-	@echo '#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)'          >>$@
-	@echo '#ifdef WIN32'                                              >>$@
-	@echo '  /* SOCKET is a type defined by <winsock.h>.  Anyone who' >>$@
-	@echo '     uses XMLRPC_SOCKET on a WIN32 system must #include'   >>$@
-	@echo '     <winsock.h>'                                          >>$@
-	@echo '  */'                                                      >>$@
-	@echo '  #define XMLRPC_SOCKET SOCKET'                            >>$@
-	@echo '  #define XMLRPC_HAVE_TIMEVAL 0'                           >>$@
-	@echo '  #define XMLRPC_HAVE_TIMESPEC 0'                          >>$@
-	@echo '#else'                                                     >>$@
-	@echo '  #define XMLRPC_SOCKET int'                               >>$@
-	@echo '  #define XMLRPC_HAVE_TIMEVAL 1'                           >>$@
-	@echo '  #define XMLRPC_HAVE_TIMESPEC 1'                          >>$@
-	@echo '#endif'                                                    >>$@
-	@echo ''                                                          >>$@
-	@echo '#if defined(_MSC_VER)'                                     >>$@
-	@echo '  /* Newer MSVC has long long, but MSVC 6 does not */'     >>$@
-	@echo '  #define XMLRPC_INT64 __int64'				  >>$@
-	@echo '  #define XMLRPC_INT32 __int32'				  >>$@
-	@echo '#else'							  >>$@
-	@echo '  #define XMLRPC_INT64 long long'	                  >>$@
-	@echo '  #define XMLRPC_INT32 int'		                  >>$@
-	@echo '#endif'                                                    >>$@
-	@echo '#endif'                                                    >>$@
+xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c gen_config_h
+	./gen_config_h $@ $(HAVE_WCHAR_H_DEFINE)
 
 $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 	mkdir $@
@@ -134,6 +96,7 @@ install: install-common install-compat-hdr
 .PHONY: clean distclean dep
 clean:
 	rm -f xmlrpc-c/config.h
+	rm -f xmlrpc-c/config.h.temp
 distclean:
 
 .PHONY: check
