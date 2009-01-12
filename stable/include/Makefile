@@ -119,7 +119,7 @@ default: all
 all:
 
 .PHONY: install-compat-hdr
-install-compat-hdr:
+install-compat-hdr: install-headers
 # Install old names of header files for backward compatibility
 	cd $(DESTDIR)$(HEADERINST_DIR); \
 	  rm -f xmlrpc.h xmlrpc_client.h xmlrpc_server.h xmlrpc_cgi.h \
