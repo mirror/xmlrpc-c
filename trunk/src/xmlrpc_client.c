@@ -631,7 +631,8 @@ clientCall2f_va(xmlrpc_env *               const envP,
     if (argenv.fault_occurred)
         xmlrpc_env_set_fault_formatted(
             envP, argenv.fault_code, "Invalid RPC arguments.  "
-            "The format argument must indicate a single array, and the "
+            "The format argument must indicate a single array (each element "
+            "of which is one argument to the XML-RPC call), and the "
             "following arguments must correspond to that format argument.  "
             "The failure is: %s",
             argenv.fault_string);
