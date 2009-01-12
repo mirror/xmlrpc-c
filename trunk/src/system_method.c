@@ -582,7 +582,7 @@ system_methodSignature(xmlrpc_env *   const envP,
 static struct systemMethodReg const methodMethodSignature = {
     "system.methodSignature",
     &system_methodSignature,
-    "s:s",
+    "A:s",
     "Given the name of a method, return an array of legal signatures. "
     "Each signature is an array of strings.  The first item of each signature "
     "is the return type, and any others items are parameter types.",
