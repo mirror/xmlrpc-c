@@ -139,11 +139,8 @@ SessionLog(TSession * const sessionP) {
     xmlrpc_strfree(peerInfo);
     xmlrpc_strfree(date);
     
-    if (logline) {
-        LogWrite(sessionP->conn->server, logline);
+    LogWrite(sessionP->conn->server, logline);
         
-        xmlrpc_strfree(logline);
-    }
     return true;
 }
 
