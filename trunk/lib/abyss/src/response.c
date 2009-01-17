@@ -22,6 +22,7 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 
+#include "trace.h"
 #include "server.h"
 #include "session.h"
 #include "file.h"
@@ -203,9 +204,9 @@ ResponseWriteStart(TSession * const sessionP) {
 
     if (sessionP->status == 0) {
         /* Handler hasn't set status.  That's an error */
-        fprintf(stderr, "Abyss client called ResponseWriteStart() on "
-                "a session for which he has not set the request status "
-                "('status' member of TSession).  Using status 500\n");
+        TraceMsg("Abyss client called ResponseWriteStart() on "
+                 "a session for which he has not set the request status "
+                 "('status' member of TSession).  Using status 500\n");
         sessionP->status = 500;
     }
 
