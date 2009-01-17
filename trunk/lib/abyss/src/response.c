@@ -203,6 +203,9 @@ ResponseWriteStart(TSession * const sessionP) {
 
     if (sessionP->status == 0) {
         /* Handler hasn't set status.  That's an error */
+        fprintf(stderr, "Abyss client called ResponseWriteStart() on "
+                "a session for which he has not set the request status "
+                "('status' member of TSession).  Using status 500\n");
         sessionP->status = 500;
     }
 
