@@ -125,7 +125,7 @@ decode_utf8(xmlrpc_env * const envP,
             wchar_t *    const ioBuff,
             size_t *     const outBuffLenP) {
 /*----------------------------------------------------------------------------
-  Decode to UCS-2 (or validates as UTF-8 that can be decoded to UCS-2)
+  Decode to UCS-2 (or validate as UTF-8 that can be decoded to UCS-2)
   a UTF-8 string.  To validate, set ioBuff and outBuffLenP to NULL.
   To decode, allocate a sufficiently large buffer, pass it as ioBuff,
   and pass a pointer as as outBuffLenP.  The data will be written to
