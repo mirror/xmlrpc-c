@@ -232,6 +232,18 @@ ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
   NEED_WL_RPATH=yes
 endif
 
+ifeq ($(findstring freebsd,$(HOST_OS)),freebsd)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = so
+  MUST_BUILD_SHLIB = Y
+  MUST_BUILD_SHLIBLE = Y
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  CFLAGS_SHLIB = -fpic
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  NEED_WL_RPATH=yes
+endif
+
 ifeq ($(HOST_OS),dragonfly)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
