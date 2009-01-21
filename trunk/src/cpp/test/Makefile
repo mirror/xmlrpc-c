@@ -68,6 +68,7 @@ ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
   TEST_LIBS += $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
   LDADD_XML =
+  registry.o: D_INTERNAL_EXPAT=-DINTERNAL_EXPAT
 else
   LDADD_XML = $(shell xml2-config --libs)
 endif
@@ -76,7 +77,7 @@ test: $(TEST_OBJS) $(TEST_LIBS)
 	$(CXXLD) -o $@ $(LDFLAGS) $(LDADD_XML) $^
 
 %.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $<
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $(D_INTERNAL_EXPAT) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our

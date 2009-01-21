@@ -219,6 +219,22 @@ public:
 
 
 
+static void
+testEmptyXmlDocCall(xmlrpc_c::registry const& myRegistry) {
+
+    string response;
+    myRegistry.processCall("", &response);
+
+#ifdef D_INTERNAL_EXPAT
+    TEST(response == noElementFoundXml);
+#else
+    // We don't know exactly how the XML parser would describe the
+    // error, so we can't do a simple test.
+#endif
+}
+
+
+
 class registryRegMethodTestSuite : public testSuite {
 
 public:
@@ -233,11 +249,7 @@ public:
                              xmlrpc_c::methodPtr(new sampleAddMethod));
         
         myRegistry.disableIntrospection();
-        {
-            string response;
-            myRegistry.processCall("", &response);
-            TEST(response == noElementFoundXml);
-        }
+        testEmptyXmlDocCall(myRegistry);
         {
             string response;
             myRegistry.processCall(sampleAddGoodCallXml, &response);
