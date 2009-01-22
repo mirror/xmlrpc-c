@@ -47,6 +47,22 @@ string const noElementFoundXml(
     "</methodResponse>\r\n"
     );
 
+string const invalidXMLCall(
+    xmlPrologue +
+    "<methodResponse>\r\n"
+    "<fault>\r\n"
+    "<value><struct>\r\n"
+    "<member><name>faultCode</name>\r\n"
+    "<value><i4>-503</i4></value></member>\r\n"
+    "<member><name>faultString</name>\r\n"
+    "<value><string>Call XML not a proper XML-RPC call.  "
+    "Call is not valid XML.  XML parsing failed</string></value>"
+    "</member>\r\n"
+    "</struct></value>\r\n"
+    "</fault>\r\n"
+    "</methodResponse>\r\n"
+    );
+
 string const sampleAddGoodCallXml(
     xmlPrologue +
     "<methodCall>\r\n"
@@ -228,8 +244,8 @@ testEmptyXmlDocCall(xmlrpc_c::registry const& myRegistry) {
 #ifdef D_INTERNAL_EXPAT
     TEST(response == noElementFoundXml);
 #else
-    // We don't know exactly how the XML parser would describe the
-    // error, so we can't do a simple test.
+    // This is what we get with libxml2
+    TEST(response == invalidXMLCall);
 #endif
 }
 
