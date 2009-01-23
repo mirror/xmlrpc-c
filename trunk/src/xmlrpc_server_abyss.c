@@ -202,8 +202,8 @@ sendXmlData(xmlrpc_env * const envP,
    header said charset="utf-8" (i.e. with the value of 'charset' an HTTP quoted
    string).  Before 0.9.10, the header didn't have charset at all.
 
-   We got a complaint in January 2009 that the Apache XML-RPC module
-   didn't understand that, saying  
+   We got a complaint in January 2009 that some client didn't understand that,
+   saying
 
      apache2: XML-RPC: xmlrpcmsg::parseResponse: invalid charset encoding of
      received response: "UTF-8"
@@ -212,8 +212,7 @@ sendXmlData(xmlrpc_env * const envP,
 
    From what I can tell, the module is wrong to distinguish between the
    two, but I don't think it hurts anything to use a basic HTTP token instead
-   of an HTTP quoted string here, so starting in 1.18, we do.
-*/
+   of an HTTP quoted string here, so starting in 1.18, we do.  */
 
 
 static void
