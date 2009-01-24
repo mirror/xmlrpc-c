@@ -117,8 +117,6 @@ fi
 
 dnl Set up the appropriate Makefile substitutions.
 
-LIBXMLRPC_CLIENT_LA=libxmlrpc_client.la
-AC_SUBST(LIBXMLRPC_CLIENT_LA)
 CLIENTTEST=clienttest
 AC_SUBST(CLIENTTEST)
 XMLRPC_CLIENT_H=xmlrpc_client.h
@@ -155,7 +153,6 @@ AC_SUBST(ENABLE_ABYSS_SERVER)
 
 dnl Set up the appropriate Makefile substitutions.
 ABYSS_SUBDIR=
-LIBXMLRPC_ABYSS_SERVER_LA=
 SERVERTEST=
 VALIDATEE=
 XMLRPC_ABYSS_H=
@@ -163,14 +160,12 @@ SERVER=
 if test x"$enable_abyss_server" != xno; then
     FEATURE_LIST="abyss-server $FEATURE_LIST"
     ABYSS_SUBDIR=abyss
-    LIBXMLRPC_ABYSS_SERVER_LA=libxmlrpc_abyss_server.la
     SERVERTEST=servertest
     VALIDATEE=validatee
     XMLRPC_ABYSS_H=xmlrpc_abyss.h
     SERVER=server
 fi
 AC_SUBST(ABYSS_SUBDIR)
-AC_SUBST(LIBXMLRPC_ABYSS_SERVER_LA)
 AC_SUBST(SERVERTEST)
 AC_SUBST(VALIDATEE)
 AC_SUBST(XMLRPC_ABYSS_H)
