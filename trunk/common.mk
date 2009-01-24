@@ -497,10 +497,10 @@ $(SUBDIRS:%=$(CURDIR)/%):
 
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
-.PHONY: install-common install-headers install-bin
+.PHONY: install-common install-headers install-bin install-man
 install-common: \
   install-static-libraries install-shared-libraries \
-  install-headers install-bin
+  install-headers install-bin install-man
 
 INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
@@ -546,6 +546,16 @@ install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
 $(DESTDIR)$(PROGRAMINST_DIR):
 	$(MKINSTALLDIRS) $@
 
+MANDESTDIR = $(DESTDIR)$(MANINST_DIR)
+INSTALL_MAN_CMD = $(INSTALL_DATA) $$p $(MANDESTDIR)/$$p
+
+install-man: $(MAN_FILES_TO_INSTALL)
+	$(MKINSTALLDIRS) $(MANDESTDIR)
+	@list='$(MAN_FILES_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(MAN_FILES_TO_INSTALL)"; \
+	   $(INSTALL_MAN_CMD); \
+	 done
 
 ##############################################################################
 #                           MISCELLANEOUS RULES                              #

@@ -23,6 +23,10 @@ SUBDIRS = include lib src tools examples
 
 DEFAULT_SUBDIRS = include lib src
 
+ifeq ($(BUILD_TOOLS),yes)
+  DEFAULT_SUBDIRS += tools
+endif
+
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 
 default: xmlrpc-c-config xmlrpc-c-config.test $(DEFAULT_SUBDIRS:%=%/all)
