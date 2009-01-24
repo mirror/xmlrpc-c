@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <memory>
+#include <cstring>
 #include <time.h>
 
 #include "xmlrpc-c/girerr.hpp"

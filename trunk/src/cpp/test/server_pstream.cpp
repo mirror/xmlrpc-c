@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <string>
+#include <cstring>
 #include <fcntl.h>
 
 #include "xmlrpc-c/girerr.hpp"
