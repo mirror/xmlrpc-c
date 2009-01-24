@@ -113,6 +113,9 @@ all: \
 LIBXMLRPC_CPP_SH = $(call shlibfn, libxmlrpc_cpp)
 
 $(LIBXMLRPC_CPP_SH): XmlRpcCpp.osh \
+  $(LIBXMLRPC_UTIL) \
+  $(LIBXMLRPC) \
+  $(LIBXMLRPC_SERVER) \
   $(LIBXMLRPC_UTIL)
 $(LIBXMLRPC_CPP_SH): LIBOBJECTS = XmlRpcCpp.osh
 $(LIBXMLRPC_CPP_SH): LIBDEP = -Lblddir/src -lxmlrpc -lxmlrpc_server -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
