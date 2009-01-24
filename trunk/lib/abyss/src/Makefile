@@ -59,11 +59,6 @@ ABYSS_SHLIB = $(call shlibfn,libxmlrpc_abyss)
 ABYSS_SHLIBLE = $(call shliblefn,libxmlrpc_abyss)
 #ABYSS_SHLIBLE is e.g. libxmlrpc_abyss.so
 
-# LIBDEP is the shared libraries on which libxmlrpc_abyss depends.
-# The runtime loader should load these libraries when it loads libxmlrpc_abyss.
-
-LIBDEP = $(LIBXMLRPC_UTIL)
-
 ifneq ($(SHARED_LIB_TYPE),NONE)
   TARGET_SHARED_LIBS := $(ABYSS_SHLIB) $(ABYSS_SHLIBLE)
   endif
@@ -78,8 +73,13 @@ all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
 
 
 # Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
-$(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) $(LIBDEP)
-$(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh) $(LIBDEP)
+$(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) \
+	$(LIBXMLRPC_UTIL)
+$(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
+$(ABYSS_SHLIB): LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+ifeq ($(ENABLE_ABYSS_THREADS),yes)
+  $(ABYSS_SHLIB):  LIBDEP += -lpthread
+endif
 
 # Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:
 

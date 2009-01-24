@@ -143,10 +143,14 @@ LIBXMLRPC_SERVER_ABYSSPP_SH = $(call shlibfn, libxmlrpc_server_abyss++)
 
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
   $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC_SERVER_ABYSS) \
+  $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
+  $(call shlibfn, libxmlrpc_server++) \
+  $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \
-  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss -Lblddir/src -lxmlrpc
+  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss -Lblddir/src -lxmlrpc_server_abyss -lxmlrpc -L. -l$(LIBXMLRPCPP_NAME) -lxmlrpc_server++ -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPC_SERVER_CGIPP_SH = $(call shlibfn, libxmlrpc_server_cgi++)
 
