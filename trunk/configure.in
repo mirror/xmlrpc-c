@@ -90,12 +90,20 @@ AC_ARG_ENABLE(tools,
   [  --enable-tools            Build the tools], , 
 [enable_tools=no])
 
+# The first AC_CHECK_LIB has to be in unconditional code because as a
+# side effect, it determines what the object file suffix is on this system,
+# and if it is statically present even though not actually executed, Autoconf
+# later thinks it has already computed the object file suffix and uses it
+# without computing it.  This was with Autoconf 2.59
+AC_CHECK_LIB(ncurses, main, [have_libncurses=yes], [have_libncurses=no])
+AC_CHECK_LIB(readline, main, [have_libreadline=yes], [have_libreadline=no])
+
+AC_MSG_CHECKING(whether to build tools)
+
 BUILD_XMLRPC_PSTREAM=no
 
 if test $enable_tools = yes; then
   if ! test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-    AC_CHECK_LIB(ncurses, main, [have_libncurses=yes], [have_libncurses=no])
-    AC_CHECK_LIB(readline, main, [have_libreadline=yes], [have_libreadline=no])
     if test $have_libreadline = yes && test $have_libncurses = yes; then
       BUILD_XMLRPC_PSTREAM=yes
     fi
@@ -105,9 +113,9 @@ else
   BUILD_TOOLS=$enable_tools
 fi
 
-AC_MSG_CHECKING(whether to build tools)
 AC_MSG_RESULT($BUILD_TOOLS)
 AC_SUBST(BUILD_TOOLS)
+
 if test $BUILD_TOOLS = yes; then
   AC_MSG_CHECKING(whether to build the xmlrpc_pstream tool)
   AC_MSG_RESULT($BUILD_XMLRPC_PSTREAM)

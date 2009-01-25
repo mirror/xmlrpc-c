@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO SET_MAKE build build_cpu build_vendor build_os host host_cpu host_vendor host_os have_wininet_config MUST_BUILD_WININET_CLIENT have_curl_config MUST_BUILD_CURL_CLIENT have_libwww_config MUST_BUILD_LIBWWW_CLIENT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT BUILD_TOOLS BUILD_XMLRPC_PSTREAM LIBXMLRPC_CLIENT_LA CLIENTTEST XMLRPC_CLIENT_H XMLRPC_TRANSPORT_H SYNCH_CLIENT ASYNCH_CLIENT AUTH_CLIENT QUERY_MEERKAT ENABLE_ABYSS_SERVER ABYSS_SUBDIR LIBXMLRPC_ABYSS_SERVER_LA SERVERTEST VALIDATEE XMLRPC_ABYSS_H SERVER ENABLE_CGI_SERVER ENABLE_CPLUSPLUS LIBXMLRPC_CPP_A CPPTEST XMLRPCCPP_H XML_RPC_API2CPP_SUBDIR FEATURE_LIST CXX CXXFLAGS ac_ct_CXX LSOCKET CPP EGREP HAVE_WCHAR_H_DEFINE HAVE_SYS_FILIO_H_DEFINE HAVE_SYS_IOCTL_H_DEFINE VA_LIST_IS_ARRAY_DEFINE ATTR_UNUSED DIRECTORY_SEPARATOR ENABLE_ABYSS_THREADS WININET_CONFIG WININET_CFLAGS WININET_LDADD WININET_LIBDIR WININET_RPATH WININET_WL_RPATH LIBWWW_CONFIG LIBWWW_LDADD LIBWWW_LIBDIR LIBWWW_RPATH LIBWWW_WL_RPATH CURL_CONFIG CURL_LDADD CURL_LIBDIR CURL_RPATH CURL_WL_RPATH HAVE_LIBWWW_SSL_DEFINE have_xml2_config ENABLE_LIBXML2_BACKEND C_COMPILER_GNU CXX_COMPILER_GNU CC_WARN_FLAGS CPP_WARN_FLAGS BUILDDIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO SET_MAKE build build_cpu build_vendor build_os host host_cpu host_vendor host_os have_wininet_config MUST_BUILD_WININET_CLIENT have_curl_config MUST_BUILD_CURL_CLIENT have_libwww_config MUST_BUILD_LIBWWW_CLIENT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT BUILD_TOOLS BUILD_XMLRPC_PSTREAM CLIENTTEST XMLRPC_CLIENT_H XMLRPC_TRANSPORT_H SYNCH_CLIENT ASYNCH_CLIENT AUTH_CLIENT QUERY_MEERKAT ENABLE_ABYSS_SERVER ABYSS_SUBDIR SERVERTEST VALIDATEE XMLRPC_ABYSS_H SERVER ENABLE_CGI_SERVER ENABLE_CPLUSPLUS LIBXMLRPC_CPP_A CPPTEST XMLRPCCPP_H XML_RPC_API2CPP_SUBDIR FEATURE_LIST CXX CXXFLAGS ac_ct_CXX LSOCKET CPP EGREP HAVE_WCHAR_H_DEFINE HAVE_SYS_FILIO_H_DEFINE HAVE_SYS_IOCTL_H_DEFINE VA_LIST_IS_ARRAY_DEFINE ATTR_UNUSED DIRECTORY_SEPARATOR ENABLE_ABYSS_THREADS WININET_CONFIG WININET_CFLAGS WININET_LDADD WININET_LIBDIR WININET_RPATH WININET_WL_RPATH LIBWWW_CONFIG LIBWWW_LDADD LIBWWW_LIBDIR LIBWWW_RPATH LIBWWW_WL_RPATH CURL_CONFIG CURL_LDADD CURL_LIBDIR CURL_RPATH CURL_WL_RPATH HAVE_LIBWWW_SSL_DEFINE have_xml2_config ENABLE_LIBXML2_BACKEND C_COMPILER_GNU CXX_COMPILER_GNU CC_WARN_FLAGS CPP_WARN_FLAGS BUILDDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1875,11 +1875,12 @@ else
   enable_tools=no
 fi;
 
-BUILD_XMLRPC_PSTREAM=no
-
-if test $enable_tools = yes; then
-  if ! test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-    ac_ext=c
+# The first AC_CHECK_LIB has to be in unconditional code because as a
+# side effect, it determines what the object file suffix is on this system,
+# and if it is statically present even though not actually executed, Autoconf
+# later thinks it has already computed the object file suffix and uses it
+# without computing it.  This was with Autoconf 2.59
+ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -2874,7 +2875,7 @@ else
   have_libncurses=no
 fi
 
-    echo "$as_me:$LINENO: checking for main in -lreadline" >&5
+echo "$as_me:$LINENO: checking for main in -lreadline" >&5
 echo $ECHO_N "checking for main in -lreadline... $ECHO_C" >&6
 if test "${ac_cv_lib_readline_main+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -2938,6 +2939,14 @@ else
   have_libreadline=no
 fi
 
+
+echo "$as_me:$LINENO: checking whether to build tools" >&5
+echo $ECHO_N "checking whether to build tools... $ECHO_C" >&6
+
+BUILD_XMLRPC_PSTREAM=no
+
+if test $enable_tools = yes; then
+  if ! test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
     if test $have_libreadline = yes && test $have_libncurses = yes; then
       BUILD_XMLRPC_PSTREAM=yes
     fi
@@ -2947,10 +2956,9 @@ else
   BUILD_TOOLS=$enable_tools
 fi
 
-echo "$as_me:$LINENO: checking whether to build tools" >&5
-echo $ECHO_N "checking whether to build tools... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: $BUILD_TOOLS" >&5
 echo "${ECHO_T}$BUILD_TOOLS" >&6
+
 
 if test $BUILD_TOOLS = yes; then
   echo "$as_me:$LINENO: checking whether to build the xmlrpc_pstream tool" >&5
@@ -2961,8 +2969,6 @@ echo "${ECHO_T}$BUILD_XMLRPC_PSTREAM" >&6
 fi
 
 
-
-LIBXMLRPC_CLIENT_LA=libxmlrpc_client.la
 
 CLIENTTEST=clienttest
 
@@ -3004,7 +3010,6 @@ ENABLE_ABYSS_SERVER=$enable_abyss_server
 
 
 ABYSS_SUBDIR=
-LIBXMLRPC_ABYSS_SERVER_LA=
 SERVERTEST=
 VALIDATEE=
 XMLRPC_ABYSS_H=
@@ -3012,13 +3017,11 @@ SERVER=
 if test x"$enable_abyss_server" != xno; then
     FEATURE_LIST="abyss-server $FEATURE_LIST"
     ABYSS_SUBDIR=abyss
-    LIBXMLRPC_ABYSS_SERVER_LA=libxmlrpc_abyss_server.la
     SERVERTEST=servertest
     VALIDATEE=validatee
     XMLRPC_ABYSS_H=xmlrpc_abyss.h
     SERVER=server
 fi
-
 
 
 
@@ -7982,7 +7985,6 @@ s,@EXEEXT@,$EXEEXT,;t t
 s,@OBJEXT@,$OBJEXT,;t t
 s,@BUILD_TOOLS@,$BUILD_TOOLS,;t t
 s,@BUILD_XMLRPC_PSTREAM@,$BUILD_XMLRPC_PSTREAM,;t t
-s,@LIBXMLRPC_CLIENT_LA@,$LIBXMLRPC_CLIENT_LA,;t t
 s,@CLIENTTEST@,$CLIENTTEST,;t t
 s,@XMLRPC_CLIENT_H@,$XMLRPC_CLIENT_H,;t t
 s,@XMLRPC_TRANSPORT_H@,$XMLRPC_TRANSPORT_H,;t t
@@ -7992,7 +7994,6 @@ s,@AUTH_CLIENT@,$AUTH_CLIENT,;t t
 s,@QUERY_MEERKAT@,$QUERY_MEERKAT,;t t
 s,@ENABLE_ABYSS_SERVER@,$ENABLE_ABYSS_SERVER,;t t
 s,@ABYSS_SUBDIR@,$ABYSS_SUBDIR,;t t
-s,@LIBXMLRPC_ABYSS_SERVER_LA@,$LIBXMLRPC_ABYSS_SERVER_LA,;t t
 s,@SERVERTEST@,$SERVERTEST,;t t
 s,@VALIDATEE@,$VALIDATEE,;t t
 s,@XMLRPC_ABYSS_H@,$XMLRPC_ABYSS_H,;t t
