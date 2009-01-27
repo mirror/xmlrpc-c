@@ -127,7 +127,7 @@ SessionLog(TSession * const sessionP) {
     
     ConnFormatClientAddr(sessionP->conn, &peerInfo);
     
-    xmlrpc_asprintf(&logline, "%s - %s - [%s] \"%s\" %d %d",
+    xmlrpc_asprintf(&logline, "%s - %s - [%s] \"%s\" %d %u",
                     peerInfo,
                     user,
                     date, 

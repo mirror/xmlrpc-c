@@ -10,6 +10,8 @@
 #include <vector>
 #include <sstream>
 #include <memory>
+#include <cstring>
+#include <cstdlib>
 #include <time.h>
 #ifdef WIN32
   #include <winsock.h>
