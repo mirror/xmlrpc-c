@@ -331,10 +331,18 @@ INSTALL_SCRIPT = $(INSTALL) -c -m 755
 # PREFIX is designed to be overridden at make time if the user decides
 # he doesn't like the default specified at 'configure' time.
 
-LIBINST_DIR = $(PREFIX)/lib
-HEADERINST_DIR = $(PREFIX)/include
-PROGRAMINST_DIR = $(PREFIX)/bin
-MANINST_DIR = $(PREFIX)/share/man/man1
+prefix = $(PREFIX)
+
+#datarootdir is the new Autoconf(2.60) name for datadir, which is still
+#accepted, but a warning is issued if datarootdir is not also used.
+
+exec_prefix = @exec_prefix@
+DATAROOT_DIR = @datarootdir@
+DATAINST_DIR = @datadir@
+LIBINST_DIR = @libdir@
+HEADERINST_DIR = @includedir@
+PROGRAMINST_DIR = @bindir@
+MANINST_DIR = @mandir@/man1
 
 # DESTDIR is designed to be overridden at make time in order to relocate
 # the entire install into a subdirectory.
