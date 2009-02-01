@@ -4,13 +4,32 @@
   Test the pstream server C++ facilities of XML-RPC for C/C++.
   
 =============================================================================*/
-#include <unistd.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+
+#include "xmlrpc_config.h"
+
+#if MSVCRT
+  #include <winsock2.h>
+  #include <io.h>
+#else
+  #include <unistd.h>
+  #include <sys/socket.h>
+  #include <arpa/inet.h>
+#endif
+
 #include <errno.h>
 #include <string>
 #include <cstring>
 #include <fcntl.h>
+
+#include "xmlrpc-c/config.h"
+
+#if MSVCRT
+  int
+  xmlrpc_win32_socketpair(int    const domain,
+                          int    const type,
+                          int    const protocol,
+                          SOCKET       socks[2]);
+#endif
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -24,6 +43,19 @@ using girerr::throwf;
 
 using namespace xmlrpc_c;
 using namespace std;
+
+
+
+static void
+setNonBlocking(XMLRPC_SOCKET const socket) {
+    
+#if MSVCRT
+    // Don't know how/if to do this
+#else
+    fcntl(socket, F_SETFL, O_NONBLOCK);
+#endif
+}
+
 
 
 #define ESC_STR "\x1B"
@@ -108,7 +140,7 @@ client::client() {
         SERVER = 0,
         CLIENT = 1,
     };
-    int sockets[2];
+    XMLRPC_SOCKET sockets[2];
     int rc;
 
     rc = socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
@@ -118,7 +150,7 @@ client::client() {
                "as test tool.  errno=%d (%s)",
                errno, strerror(errno));
     else {
-        fcntl(sockets[CLIENT], F_SETFL, O_NONBLOCK);
+        setNonBlocking(sockets[CLIENT]);
 
         this->serverFd = sockets[SERVER];
         this->clientFd = sockets[CLIENT];
