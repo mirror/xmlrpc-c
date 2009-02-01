@@ -241,7 +241,7 @@ testEmptyXmlDocCall(xmlrpc_c::registry const& myRegistry) {
     string response;
     myRegistry.processCall("", &response);
 
-#ifdef D_INTERNAL_EXPAT
+#ifdef INTERNAL_EXPAT
     TEST(response == noElementFoundXml);
 #else
     // This is what we get with libxml2
