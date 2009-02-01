@@ -132,6 +132,18 @@
   #define XMLRPC_VSNPRINTF vsnprintf
 #endif
 
+#if MSVCRT
+  #define HAVE_REGEX 0
+#else
+  #define HAVE_REGEX 1
+#endif
+
+#if MSVCRT
+  #define XMLRPC_SOCKETPAIR xmlrpc_win32_socketpair
+#else
+  #define XMLRPC_SOCKETPAIR socketpair
+#endif
+
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 /* Starting with MSVC 8, the runtime library defines various POSIX functions
    such as strdup() whose names violate the ISO C standard (the standard

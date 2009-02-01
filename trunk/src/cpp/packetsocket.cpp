@@ -206,8 +206,11 @@ socketx::read(unsigned char * const buffer,
               size_t *        const bytesReadP) const {
     
     int rc;
-    
-    rc = recv(this->fd, buffer, bufferSize, 0);
+
+    // We've seen a Windows library whose recv() expects a char * buffer
+    // (cf POSIX void *), so we cast.
+
+    rc = recv(this->fd, (char *)buffer, bufferSize, 0);
 
     if (rc < 0) {
         if (errno == EWOULDBLOCK) {
