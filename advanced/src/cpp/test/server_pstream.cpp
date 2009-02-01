@@ -50,7 +50,8 @@ static void
 setNonBlocking(XMLRPC_SOCKET const socket) {
     
 #if MSVCRT
-    // Don't know how/if to do this
+    u_long iMode = 1;
+    ioctlsocket(socket, FIONBIO, &iMode);
 #else
     fcntl(socket, F_SETFL, O_NONBLOCK);
 #endif
@@ -143,7 +144,7 @@ client::client() {
     XMLRPC_SOCKET sockets[2];
     int rc;
 
-    rc = socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
+    rc = XMLRPC_SOCKETPAIR(AF_UNIX, SOCK_STREAM, 0, sockets);
 
     if (rc < 0)
         throwf("Failed to create UNIX domain stream socket pair "
