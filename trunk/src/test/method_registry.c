@@ -415,6 +415,7 @@ static const char * const expectedMethodName[] = {
     "system.multicall",
     "system.shutdown",
     "system.capabilities",
+    "system.getCapabilities",
     "test.foo",
     "test.bar"
 };
@@ -451,12 +452,12 @@ test_system_listMethods(xmlrpc_registry * const registryP) {
 
     TEST(size == ARRAY_SIZE(expectedMethodName));
 
-    xmlrpc_decompose_value(&env, resultP, "(sssssssss)",
+    xmlrpc_decompose_value(&env, resultP, "(ssssssssss)",
                            &methodName[0], &methodName[1],
                            &methodName[2], &methodName[3],
                            &methodName[4], &methodName[5],
                            &methodName[6], &methodName[7],
-                           &methodName[8]);
+                           &methodName[8], &methodName[9]);
 
     TEST_NO_FAULT(&env);
 
@@ -620,6 +621,53 @@ test_system_capabilities(xmlrpc_registry * const registryP) {
 
     TEST(streq(facility, "xmlrpc-c"));
     TEST(protocol_version == 2);
+
+    strfree(facility);
+
+    xmlrpc_DECREF(resultP);
+
+    xmlrpc_DECREF(argArrayP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
+
+
+
+static void
+test_system_getCapabilities(xmlrpc_registry * const registryP) {
+/*----------------------------------------------------------------------------
+   Test system.getCapabilities
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * resultP;
+    xmlrpc_value * argArrayP;
+    const char * specUrl;
+    int specVersion;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running system.getCapabilities tests.");
+
+    argArrayP = xmlrpc_array_new(&env);
+    TEST_NO_FAULT(&env);
+
+    doRpc(&env, registryP, "system.getCapabilities", argArrayP, NULL,
+          &resultP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_decompose_value(&env, resultP, "{s:{s:s,s:i,*},*}",
+                           "introspect",
+                           "specUrl", &specUrl,
+                           "specVersion", &specVersion);
+    TEST_NO_FAULT(&env);
+
+    TEST(streq(specUrl,
+               "http://xmlrpc-c.sourceforge.net/xmlrpc-c/introspection.html"));
+    TEST(specVersion == 1);
+
+    strfree(specUrl);
 
     xmlrpc_DECREF(resultP);
 
@@ -998,6 +1046,8 @@ test_method_registry(void) {
     test_system_methodHelp(registryP);
 
     test_system_capabilities(registryP);
+
+    test_system_getCapabilities(registryP);
 
     test_signature();
 
