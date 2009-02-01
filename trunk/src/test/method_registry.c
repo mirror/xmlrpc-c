@@ -310,7 +310,7 @@ test_signature(void) {
 
     xmlrpc_env env;
     xmlrpc_registry * registryP;
-    uint i;
+    unsigned int i;
 
     xmlrpc_env_init(&env);
 
