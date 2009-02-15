@@ -297,12 +297,12 @@ dumpStructMember(const char *   const prefix,
         const char * prefix2;
         const char * blankPrefix;
 
-        casprintf(&prefix2, "%s  Key:   ", prefix);
+        casprintf(&blankPrefix, "%*s", blankCount, "");
+        
+        casprintf(&prefix2, "%s  Key:   ", blankPrefix);
         dumpValue(prefix2, keyP);
         strfree(prefix2);
 
-        casprintf(&blankPrefix, "%*s", blankCount, "");
-        
         casprintf(&prefix2, "%s  Value: ", blankPrefix);
         dumpValue(prefix2, valueP);
         strfree(prefix2);
