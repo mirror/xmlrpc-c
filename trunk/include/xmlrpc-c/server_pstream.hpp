@@ -46,6 +46,13 @@ public:
     void
     runOnce(bool * const eofP);
 
+    void
+    runOnceNoWait(bool * const eofP,
+                  bool * const didOneP);
+
+    void
+    runOnceNoWait(bool * const eofP);
+
 private:
 
     // 'registryP' is what we actually use; 'registryHolder' just holds a

@@ -360,6 +360,81 @@ testNormalCall(registry const& myRegistry) {
 
 
 
+static void
+testNoWaitCall(registry const& myRegistry) {
+
+    string const sampleAddGoodCallStream(
+        packetStart +
+        xmlPrologue +
+        "<methodCall>\r\n"
+        "<methodName>sample.add</methodName>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>5</i4></value></param>\r\n"
+        "<param><value><i4>7</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodCall>\r\n" +
+        packetEnd
+        );
+    
+
+    string const sampleAddGoodResponseStream(
+        packetStart +
+        xmlPrologue +
+        "<methodResponse>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>12</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodResponse>\r\n" +
+        packetEnd
+        );
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    bool eof;
+    bool gotOne;
+    string response;
+
+    server.runOnceNoWait(&eof, &gotOne);
+
+    TEST(!eof);
+    TEST(!gotOne);
+
+    server.runOnceNoWait(&eof);
+
+    TEST(!eof);
+
+    client.sendCall(sampleAddGoodCallStream);
+
+    server.runOnceNoWait(&eof, &gotOne);
+
+    TEST(!eof);
+    TEST(gotOne);
+
+    client.recvResp(&response);
+
+    TEST(response == sampleAddGoodResponseStream);
+    
+    client.sendCall(sampleAddGoodCallStream);
+
+    server.runOnce(&eof);
+
+    TEST(!eof);
+    client.recvResp(&response);
+    TEST(response == sampleAddGoodResponseStream);
+
+    client.hangup();
+
+    server.runOnce(&eof);
+
+    TEST(eof);
+}
+
+
+
 class serverPstreamConnTestSuite : public testSuite {
 
 public:
@@ -403,6 +478,8 @@ public:
         testEmptyPacket(myRegistry);
 
         testNormalCall(myRegistry);
+
+        testNoWaitCall(myRegistry);
     }
 };
 

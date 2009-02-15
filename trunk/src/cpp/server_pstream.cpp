@@ -184,4 +184,53 @@ serverPstreamConn::runOnce(bool * const eofP) {
 
 
 
+void
+serverPstreamConn::runOnceNoWait(bool * const eofP,
+                                 bool * const didOneP) {
+/*----------------------------------------------------------------------------
+   Get and execute one RPC from the client, unless none has been
+   received yet.  Return as *didOneP whether or not one has been
+   received.  Unless didOneP is NULL.
+-----------------------------------------------------------------------------*/
+    bool gotPacket;
+    packetPtr callPacketP;
+
+    try {
+        this->packetSocketP->read(eofP, &gotPacket, &callPacketP);
+    } catch (exception const& e) {
+        throwf("Error reading a packet from the packet socket.  %s",
+               e.what());
+    }
+    if (gotPacket) {
+        packetPtr responsePacketP;
+        try {
+            processCall(this->registryP, callPacketP, &responsePacketP);
+        } catch (exception const& e) {
+            throwf("Error executing received packet as an XML-RPC RPC.  %s",
+                   e.what());
+        }
+        try {
+            this->packetSocketP->writeWait(responsePacketP);
+        } catch (exception const& e) {
+            throwf("Failed to write the response to the packet socket.  %s",
+                   e.what());
+        }
+    }
+    if (didOneP)
+        *didOneP = gotPacket;
+}
+
+
+
+void
+serverPstreamConn::runOnceNoWait(bool * const eofP) {
+/*----------------------------------------------------------------------------
+   Get and execute one RPC from the client, unless none has been
+   received yet.
+-----------------------------------------------------------------------------*/
+    this->runOnceNoWait(eofP, NULL);
+}
+
+
+
 } // namespace
