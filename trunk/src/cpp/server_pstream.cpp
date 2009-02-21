@@ -35,11 +35,43 @@ using namespace std;
 namespace xmlrpc_c {
 
 
+struct constrOpt_impl {
+
+    constrOpt_impl();
+
+    struct value {
+        xmlrpc_c::registryPtr      registryPtr;
+        const xmlrpc_c::registry * registryP;
+        XMLRPC_SOCKET              socketFd;
+    } value;
+    struct {
+        bool registryPtr;
+        bool registryP;
+        bool socketFd;
+    } present;
+};
+
+
+
+constrOpt_impl::constrOpt_impl() {
+
+    this->present.socketFd    = false;
+    this->present.registryP   = false;
+    this->present.registryPtr = false;
+}
+
+
+
 serverPstreamConn::constrOpt::constrOpt() {
 
-    present.socketFd    = false;
-    present.registryP   = false;
-    present.registryPtr = false;
+    this->implP = new constrOpt_impl();
+}
+
+
+
+serverPstreamConn::constrOpt::~constrOpt() {
+
+    delete(this->implP);
 }
 
 
@@ -47,8 +79,8 @@ serverPstreamConn::constrOpt::constrOpt() {
 #define DEFINE_OPTION_SETTER(OPTION_NAME, TYPE) \
 serverPstreamConn::constrOpt & \
 serverPstreamConn::constrOpt::OPTION_NAME(TYPE const& arg) { \
-    this->value.OPTION_NAME = arg; \
-    this->present.OPTION_NAME = true; \
+    this->implP->value.OPTION_NAME = arg; \
+    this->implP->present.OPTION_NAME = true; \
     return *this; \
 }
 
@@ -60,8 +92,53 @@ DEFINE_OPTION_SETTER(registryPtr, xmlrpc_c::registryPtr);
 
 
 
+struct serverPstreamConn_impl {
+
+    serverPstreamConn_impl(constrOpt_impl const& opt);
+
+    ~serverPstreamConn_impl();
+
+    void
+    establishRegistry(constrOpt_impl const& opt);
+
+    void
+    establishPacketSocket(constrOpt_impl const& opt);
+
+    // 'registryP' is what we actually use; 'registryHolder' just holds a
+    // reference to 'registryP' so the registry doesn't disappear while
+    // this server exists.  But note that if the creator doesn't supply
+    // a registryPtr, 'registryHolder' is just a placeholder variable and
+    // the creator is responsible for making sure the registry doesn't
+    // go anywhere while the server exists.
+
+    registryPtr registryHolder;
+    const registry * registryP;
+
+    packetSocket * packetSocketP;
+        // The packet socket over which we received RPCs.
+        // This is permanently connected to our fixed client.
+};
+
+
+
+serverPstreamConn_impl::serverPstreamConn_impl(constrOpt_impl const& opt) {
+
+    this->establishRegistry(opt);
+
+    this->establishPacketSocket(opt);
+}
+
+
+
+serverPstreamConn_impl::~serverPstreamConn_impl() {
+
+    delete(this->packetSocketP);
+}
+
+
+
 void
-serverPstreamConn::establishRegistry(constrOpt const& opt) {
+serverPstreamConn_impl::establishRegistry(constrOpt_impl const& opt) {
 
     if (!opt.present.registryP && !opt.present.registryPtr)
         throwf("You must specify the 'registryP' or 'registryPtr' option");
@@ -81,7 +158,7 @@ serverPstreamConn::establishRegistry(constrOpt const& opt) {
 
 
 void
-serverPstreamConn::establishPacketSocket(constrOpt const& opt) {
+serverPstreamConn_impl::establishPacketSocket(constrOpt_impl const& opt) {
 
     if (!opt.present.socketFd)
         throwf("You must provide a 'socketFd' constructor option.");
@@ -103,21 +180,19 @@ serverPstreamConn::establishPacketSocket(constrOpt const& opt) {
 
 serverPstreamConn::serverPstreamConn(constrOpt const& opt) {
 
-    this->establishRegistry(opt);
-
-    this->establishPacketSocket(opt);
+    this->implP = new serverPstreamConn_impl(*opt.implP);
 }
 
 
 
 serverPstreamConn::~serverPstreamConn() {
 
-    delete(this->packetSocketP);
+    delete(this->implP);
 }
 
 
 
-void
+static void
 processCall(const registry * const  registryP,
             packetPtr        const& callPacketP,
             packetPtr *      const  responsePacketPP) {
@@ -147,8 +222,8 @@ serverPstreamConn::runOnce(volatile const int * const interruptP,
     packetPtr callPacketP;
 
     try {
-        this->packetSocketP->readWait(interruptP, eofP, &gotPacket,
-                                      &callPacketP);
+        this->implP->packetSocketP->readWait(interruptP, eofP, &gotPacket,
+                                             &callPacketP);
     } catch (exception const& e) {
         throwf("Error reading a packet from the packet socket.  %s",
                e.what());
@@ -156,13 +231,13 @@ serverPstreamConn::runOnce(volatile const int * const interruptP,
     if (gotPacket) {
         packetPtr responsePacketP;
         try {
-            processCall(this->registryP, callPacketP, &responsePacketP);
+            processCall(this->implP->registryP, callPacketP, &responsePacketP);
         } catch (exception const& e) {
             throwf("Error executing received packet as an XML-RPC RPC.  %s",
                    e.what());
         }
         try {
-            this->packetSocketP->writeWait(responsePacketP);
+            this->implP->packetSocketP->writeWait(responsePacketP);
         } catch (exception const& e) {
             throwf("Failed to write the response to the packet socket.  %s",
                    e.what());
@@ -196,7 +271,7 @@ serverPstreamConn::runOnceNoWait(bool * const eofP,
     packetPtr callPacketP;
 
     try {
-        this->packetSocketP->read(eofP, &gotPacket, &callPacketP);
+        this->implP->packetSocketP->read(eofP, &gotPacket, &callPacketP);
     } catch (exception const& e) {
         throwf("Error reading a packet from the packet socket.  %s",
                e.what());
@@ -204,13 +279,13 @@ serverPstreamConn::runOnceNoWait(bool * const eofP,
     if (gotPacket) {
         packetPtr responsePacketP;
         try {
-            processCall(this->registryP, callPacketP, &responsePacketP);
+            processCall(this->implP->registryP, callPacketP, &responsePacketP);
         } catch (exception const& e) {
             throwf("Error executing received packet as an XML-RPC RPC.  %s",
                    e.what());
         }
         try {
-            this->packetSocketP->writeWait(responsePacketP);
+            this->implP->packetSocketP->writeWait(responsePacketP);
         } catch (exception const& e) {
             throwf("Failed to write the response to the packet socket.  %s",
                    e.what());
