@@ -48,11 +48,7 @@ main(int           const,
 
     myRegistry.addMethod("sample.add", sampleAddMethodP);
 
-    xmlrpc_c::serverAbyss myAbyssServer(
-        myRegistry,
-        8080,              // TCP port on which to listen
-        "/tmp/xmlrpc_log"  // Log file
-        );
+    xmlrpc_c::serverAbyss myAbyssServer(myRegistry);
 
     myAbyssServer.runConn(STDIN_FILENO);
         /* This reads the HTTP POST request from Standard Input and

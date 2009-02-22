@@ -174,9 +174,9 @@ test_value_datetime_varytime(const char * const datestring,
     TEST_NO_FAULT(&env);
     TEST(streq(readBackString, datestring));
     strfree(readBackString);
-#endif
 
     xmlrpc_DECREF(v);
+#endif
 
 #if XMLRPC_HAVE_TIMESPEC
     /* Test xmlrpc_datetime_new_timespec */
