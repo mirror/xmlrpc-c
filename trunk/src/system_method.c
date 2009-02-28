@@ -324,10 +324,11 @@ system_methodExist(xmlrpc_env *   const envP,
 
     xmlrpc_decompose_value(envP, paramArrayP, "(s)", &methodName);
 
-    if (!envP->fault_occurred)
+    if (!envP->fault_occurred) {
         determineMethodExistence(envP, methodName, registryP, &retvalP);
 
-    xmlrpc_strfree(methodName);
+        xmlrpc_strfree(methodName);
+    }
 
     return retvalP;
 }
@@ -395,9 +396,9 @@ system_methodHelp(xmlrpc_env *   const envP,
                 "for security reasons");
         else
             getHelpString(envP, methodName, registryP, &retvalP);
-    }
 
-    xmlrpc_strfree(methodName);
+        xmlrpc_strfree(methodName);
+    }
 
     return retvalP;
 }
