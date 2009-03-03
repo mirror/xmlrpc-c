@@ -253,6 +253,17 @@ ConnReadInit(TConn * const connectionP) {
 
 
 
+static void
+traceReadTimeout(TConn * const connectionP,
+                 time_t  const deadline) {
+
+    if (connectionP->trace)
+        fprintf(stderr, "TIMED OUT waiting for data from client.  "
+                "deadline was datetime %ld\n", (long)deadline);
+}
+
+
+
 static size_t
 nextLineSize(const char * const string,
              size_t       const startPos,
@@ -342,6 +353,35 @@ bufferSpace(TConn * const connectionP) {
                     
 
 
+static void
+readFromChannel(TConn *  const connectionP,
+                bool *   const errorP) {
+/*----------------------------------------------------------------------------
+   Read some data from the channel of Connection *connectionP.
+
+   If there is none available to read, fail.
+-----------------------------------------------------------------------------*/
+    uint32_t bytesRead;
+
+    ChannelRead(connectionP->channelP,
+                connectionP->buffer.t + connectionP->buffersize,
+                bufferSpace(connectionP) - 1,
+                &bytesRead, errorP);
+
+    if (!*errorP) {
+        if (bytesRead > 0) {
+            traceChannelRead(connectionP, bytesRead);
+            connectionP->inbytes += bytesRead;
+            connectionP->buffersize += bytesRead;
+            connectionP->buffer.t[connectionP->buffersize] = '\0';
+        } else
+            /* Other end has disconnected */
+            *errorP = TRUE;
+    }
+}
+
+
+
 bool
 ConnRead(TConn *  const connectionP,
          uint32_t const timeout) {
@@ -364,9 +404,10 @@ ConnRead(TConn *  const connectionP,
     while (!gotData && !cantGetData) {
         int const timeLeft = (int)(deadline - time(NULL));
 
-        if (timeLeft <= 0)
+        if (timeLeft <= 0) {
+            traceReadTimeout(connectionP, deadline);
             cantGetData = TRUE;
-        else {
+        } else {
             bool const waitForRead  = TRUE;
             bool const waitForWrite = FALSE;
             
@@ -379,27 +420,9 @@ ConnRead(TConn *  const connectionP,
             if (failed)
                 cantGetData = TRUE;
             else {
-                uint32_t bytesRead;
-                bool readFailed;
-
-                ChannelRead(connectionP->channelP,
-                            connectionP->buffer.t + connectionP->buffersize,
-                            bufferSpace(connectionP) - 1,
-                            &bytesRead, &readFailed);
-
-                if (readFailed)
-                    cantGetData = TRUE;
-                else {
-                    if (bytesRead > 0) {
-                        traceChannelRead(connectionP, bytesRead);
-                        connectionP->inbytes += bytesRead;
-                        connectionP->buffersize += bytesRead;
-                        connectionP->buffer.t[connectionP->buffersize] = '\0';
-                        gotData = TRUE;
-                    } else
-                        /* Other end has disconnected */
-                        cantGetData = TRUE;
-                }
+                readFromChannel(connectionP, &cantGetData);
+                if (!cantGetData)
+                    gotData = TRUE;
             }
         }
     }

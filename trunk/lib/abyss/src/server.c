@@ -971,6 +971,8 @@ acceptAndProcessNextConnection(
                    destroy *channelP.
                 */
             } else {
+                TraceMsg("Failed to create an Abyss connection "
+                         "out of new channel %lx.  %s", channelP, error);
                 xmlrpc_strfree(error);
                 ChannelDestroy(channelP);
                 free(channelInfoP);
