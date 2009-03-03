@@ -433,14 +433,15 @@ readRequestHeader(TSession * const sessionP,
 
     skipToNonemptyLine(sessionP->conn, deadline, &error);
 
-    if (!error)
+    if (!error) {
         readHeader(sessionP->conn, deadline, &endOfHeaders, &line, &error);
 
-    /* End of headers is delimited by an empty line, and we skipped all
-       the empty lines above, so we could not have encountered EOH:
-    */
-    assert(!endOfHeaders);
-
+        /* End of headers is delimited by an empty line, and we skipped all
+           the empty lines above, so readHeader() could not have encountered
+           EOH:
+        */
+        assert(!endOfHeaders);
+    }
     if (error)
         *httpErrorCodeP = 408;  /* Request Timeout */
     else {
