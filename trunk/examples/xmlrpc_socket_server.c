@@ -7,7 +7,11 @@
    creates the socket itself.  Also see xmlrpc_inetd_server.c, which is
    the same thing except you give it a socket which is already connected
    to a client.
- */
+
+   Example:
+
+   $ socketexec -local_port=8080 ./xmlrpc_socket_server
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
