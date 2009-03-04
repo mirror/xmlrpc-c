@@ -90,9 +90,12 @@ ConnWrite(TConn *      const connectionP,
           const void * const buffer,
           uint32_t     const size);
 
-bool
-ConnRead(TConn *  const c,
-         uint32_t const timems);
+void
+ConnRead(TConn *       const connectionP,
+         uint32_t      const timeout,
+         bool *        const eofP,
+         bool *        const timedOutP,
+         const char ** const errorP);
 
 void
 ConnReadInit(TConn * const connectionP);

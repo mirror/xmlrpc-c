@@ -468,7 +468,7 @@ void
 ServerSetKeepaliveTimeout(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveTimeout) {
 
-    serverP->srvP->keepalivetimeout = keepaliveTimeout;
+    serverP->srvP->keepalivetimeout = MAX(keepaliveTimeout, 1);
 }
 
 
@@ -477,7 +477,7 @@ void
 ServerSetKeepaliveMaxConn(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveMaxConn) {
 
-    serverP->srvP->keepalivemaxconn = keepaliveMaxConn;
+    serverP->srvP->keepalivemaxconn = MAX(keepaliveMaxConn, 1);
 }
 
 
@@ -613,14 +613,21 @@ serverFunc(void * const userHandle) {
     connectionDone = FALSE;
 
     while (!connectionDone) {
-        bool success;
+        bool timedOut, eof;
+        const char * readError;
         
-        /* Wait to read until timeout */
-        success = ConnRead(connectionP, srvP->keepalivetimeout);
+        ConnRead(connectionP, srvP->keepalivetimeout,
+                 &timedOut, &eof, &readError);
 
-        if (!success)
+        if (readError) {
+            TraceMsg("Failed to read from Abyss connection.  %s", readError);
+            xmlrpc_strfree(readError);
             connectionDone = TRUE;
-        else {
+        } else if (timedOut) {
+            connectionDone = TRUE;
+        } else if (eof) {
+            connectionDone = TRUE;
+        } else {
             bool const lastReqOnConn =
                 requestCount + 1 >= srvP->keepalivemaxconn;
 

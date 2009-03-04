@@ -181,8 +181,14 @@ getLineInBuffer(TConn * const connectionP,
             error = TRUE;
         else {
             lfPos = firstLfPos(connectionP, lineStart);
-            if (!lfPos)
-                error = !ConnRead(connectionP, timeLeft);
+            if (!lfPos) {
+                const char * readError;
+                ConnRead(connectionP, timeLeft, NULL, NULL, &readError);
+                if (readError) {
+                    error = TRUE;
+                    xmlrpc_strfree(readError);
+                }
+            }
         }
     }    
     *errorP = error;
