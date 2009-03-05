@@ -69,8 +69,10 @@ ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   XML_PARSER_LIBDEP_DEP =
 else
   XMLRPC_XML_PARSER = xmlrpc_expat
-  XML_PARSER_LIBDEP = -L$(BLDDIR)/lib/expat/xmlparse -lxmlrpc_xmlparse
-  XML_PARSER_LIBDEP_DEP = $(LIBXMLRPC_XMLPARSE)
+  XML_PARSER_LIBDEP = \
+    -L$(BLDDIR)/lib/expat/xmlparse -lxmlrpc_xmlparse \
+    -L$(BLDDIR)/lib/expat/xmltok -lxmlrpc_xmltok
+  XML_PARSER_LIBDEP_DEP = $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLTOK)
 endif
 
 # LIBxxx_OBJS is the list of object files that make up library libxxx.
