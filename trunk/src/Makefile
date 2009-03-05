@@ -165,7 +165,7 @@ $(LIBXMLRPC_SERVER): \
   $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_SERVER): LIBOBJECTS = $(LIBXMLRPC_SERVER_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER): LIBDEP = \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -L. -lxmlrpc
+   -L. -lxmlrpc $(XML_PARSER_LIBDEP) -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPC_SERVER_ABYSS = $(call shlibfn, libxmlrpc_server_abyss)
 
@@ -177,10 +177,9 @@ $(LIBXMLRPC_SERVER_ABYSS): \
   $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_SERVER_ABYSS): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSS): LIBDEP = \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
   -L. -lxmlrpc_server \
   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
-  -lxmlrpc
+  -L. -lxmlrpc $(XML_PARSER_LIBDEP) -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPC_SERVER_CGI = $(call shlibfn, libxmlrpc_server_cgi)
 
@@ -191,7 +190,8 @@ $(LIBXMLRPC_SERVER_CGI): \
   $(call shliblefn, libxmlrpc)
 $(LIBXMLRPC_SERVER_CGI): LIBOBJECTS = $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_CGI): LIBDEP = \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -L. -lxmlrpc_server -lxmlrpc
+  -L. -lxmlrpc_server \
+  -L. -lxmlrpc $(XML_PARSER_LIBDEP) -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPC_CLIENT = $(call shlibfn, libxmlrpc_client)
 
@@ -204,10 +204,8 @@ $(LIBXMLRPC_CLIENT): LIBOBJECTS = \
   $(LIBXMLRPC_CLIENT_MODS:%=%.osh) \
   $(TRANSPORT_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENT): LIBDEP = \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-  -L. -lxmlrpc \
-  $(TRANSPORT_LIBDEP)
-
+  $(TRANSPORT_LIBDEP) \
+  -L. -lxmlrpc $(XML_PARSER_LIBDEP) -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 libxmlrpc.a: $(LIBXMLRPC_MODS:%=%.o)
 libxmlrpc.a: LIBOBJECTS = $(LIBXMLRPC_MODS:%=%.o)
