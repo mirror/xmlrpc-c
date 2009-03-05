@@ -5,7 +5,8 @@
 
 #include <stddef.h>
 #include <stdarg.h>
-#include <sys/time.h>
+#include <time.h>
+#include <sys/time.h>  /* struct timeval */
 #include <xmlrpc-c/util.h>
 #include <xmlrpc-c/config.h>
   /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_INT64 */
