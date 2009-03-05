@@ -51,17 +51,13 @@ UTIL_SHLIB = $(call shlibfn,libxmlrpc_util)
 UTIL_SHLIBLE = $(call shliblefn,libxmlrpc_util)
 #UTIL_SHLIBLE is e.g. libxmlrpc_util.so
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBS := $(UTIL_SHLIB) $(UTIL_SHLIBLE)
-  endif
-
 # This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
 $(SRCDIR)/common.mk: srcdir blddir
 
 .PHONY: all
-all: libxmlrpc_util.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_util.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 
 # Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
