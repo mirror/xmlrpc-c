@@ -48,7 +48,7 @@ INCLUDES = \
 # LIBDEP is the shared libraries on which libxmlrpc_abyss depends.
 # The runtime loader should load these libraries when it loads libxmlrpc_abyss.
 
-LIBDEP = $(LIBXMLRPC_XMLTOK)
+LIBDEP = $(LIBXMLRPC_XMLTOK) $(LIBXMLRPC_UTIL)
 
 XMLPARSE_SHLIB = $(call shlibfn,libxmlrpc_xmlparse)
 #XMLPARSE_SHLIB is e.g. libxmlrpc_xmlparse.so.3.1
