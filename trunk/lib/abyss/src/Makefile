@@ -59,20 +59,16 @@ ABYSS_SHLIB = $(call shlibfn,libxmlrpc_abyss)
 ABYSS_SHLIBLE = $(call shliblefn,libxmlrpc_abyss)
 #ABYSS_SHLIBLE is e.g. libxmlrpc_abyss.so
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBS := $(ABYSS_SHLIB) $(ABYSS_SHLIBLE)
-  endif
-
 # This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
 $(SRCDIR)/common.mk: srcdir blddir
 
 .PHONY: all
-all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 
 
-# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES
 $(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) \
 	$(LIBXMLRPC_UTIL)
 $(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)

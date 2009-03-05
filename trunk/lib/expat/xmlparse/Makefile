@@ -55,14 +55,10 @@ XMLPARSE_SHLIB = $(call shlibfn,libxmlrpc_xmlparse)
 XMLPARSE_SHLIBLE = $(call shliblefn,libxmlrpc_xmlparse)
 #XMLPARSE_SHLIBLE is e.g. libxmlrpc_xmlparse.so
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBS := $(XMLPARSE_SHLIB) $(XMLPARSE_SHLIBLE)
-  endif
-
 .PHONY: all
-all: libxmlrpc_xmlparse.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_xmlparse.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(XMLPARSE_SHLIB): $(TARGET_MODS:%=%.osh) $(LIBDEP)
 $(XMLPARSE_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh) $(LIBDEP)
 
