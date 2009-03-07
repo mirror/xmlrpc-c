@@ -8,10 +8,14 @@
 #include <time.h>
 #include <xmlrpc-c/util.h>
 #include <xmlrpc-c/config.h>
-  /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_INT64 */
+  /* Defines XMLRPC_HAVE_WCHAR, XMLRPC_INT64, XMLRPC_HAVE_TIMEVAL */
 
 #if XMLRPC_HAVE_WCHAR
 #include <wchar.h>
+#endif
+
+#if XMLRPC_HAVE_TIMEVAL
+#include <sys/time.h>
 #endif
 
 #ifdef __cplusplus

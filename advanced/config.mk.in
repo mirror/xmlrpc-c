@@ -284,8 +284,8 @@ ifeq ($(HOST_OS),cygwin)
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = N
   SHLIB_SUFFIX = dll
-  shlibfn = $(1:lib%=$(SHLIB_PREFIX)%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
-  shliblefn = $(1:%=%.shlibledummy)
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 

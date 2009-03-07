@@ -49,6 +49,14 @@ else
   LIBXML_INCLUDES = -Isrcdir/lib/expat/xmlparse
 endif
 
+ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
+  XML_PARSER_LIBDEP = $(shell xml2-config --libs)
+else
+  XML_PARSER_LIBDEP = \
+    -L$(BLDDIR)/lib/expat/xmlparse -lxmlrpc_xmlparse \
+    -L$(BLDDIR)/lib/expat/xmltok -lxmlrpc_xmltok
+endif
+
 LIBXMLRPCPP_MODS = \
   base64 env_wrap fault girerr girmem outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
@@ -115,7 +123,10 @@ LIBXMLRPC_CPP_SH = $(call shlibfn, libxmlrpc_cpp)
 $(LIBXMLRPC_CPP_SH): XmlRpcCpp.osh \
   $(LIBXMLRPC_UTIL)
 $(LIBXMLRPC_CPP_SH): LIBOBJECTS = XmlRpcCpp.osh
-$(LIBXMLRPC_CPP_SH): LIBDEP = -Lblddir/src -lxmlrpc -lxmlrpc_server -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+$(LIBXMLRPC_CPP_SH): LIBDEP = \
+  -Lblddir/src  -lxmlrpc_server -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPCPP_SH = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 
@@ -123,7 +134,10 @@ $(LIBXMLRPCPP_SH): $(LIBXMLRPCPP_MODS:%=%.osh) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_UTIL)
 $(LIBXMLRPCPP_SH): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
-$(LIBXMLRPCPP_SH): LIBDEP = -Lblddir/src -lxmlrpc -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+$(LIBXMLRPCPP_SH): LIBDEP = \
+  -Lblddir/src -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 
 LIBXMLRPC_SERVERPP_SH = $(call shlibfn, libxmlrpc_server++)
@@ -134,7 +148,11 @@ $(LIBXMLRPC_SERVERPP_SH): $(LIBXMLRPC_SERVERPP_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVERPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.osh)
-$(LIBXMLRPC_SERVERPP_SH): LIBDEP = -Lblddir/src -lxmlrpc_server -lxmlrpc -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -L. -l$(LIBXMLRPCPP_NAME)
+$(LIBXMLRPC_SERVERPP_SH): LIBDEP = \
+  -L. -l$(LIBXMLRPCPP_NAME) \
+  -Lblddir/src -lxmlrpc_server -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPC_SERVER_ABYSSPP_SH = $(call shlibfn, libxmlrpc_server_abyss++)
 
@@ -143,9 +161,11 @@ $(LIBXMLRPC_SERVER_ABYSSPP_SH): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \
-  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss -Lblddir/src -lxmlrpc
-
-LIBXMLRPC_SERVER_CGIPP_SH = $(call shlibfn, libxmlrpc_server_cgi++)
+   -L. -lxmlrpc_server++  -l$(LIBXMLRPCPP_NAME) \
+   -Lblddir/src -lxmlrpc_server_abyss -lxmlrpc_server -lxmlrpc \
+   $(XML_PARSER_LIBDEP) \
+   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
+   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
 
 $(LIBXMLRPC_SERVER_CGIPP_SH): $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh) \
   $(call shliblefn, libxmlrpc_server++) \
@@ -153,7 +173,10 @@ $(LIBXMLRPC_SERVER_CGIPP_SH): $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVER_CGIPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_CGIPP_SH): LIBDEP = \
-  -L. -lxmlrpc_server++ -l$(LIBXMLRPCPP_NAME) -Lblddir/src -lxmlrpc
+  -L. -lxmlrpc_server++  -l$(LIBXMLRPCPP_NAME) \
+  -Lblddir/src -lxmlrpc_server -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+ -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPC_SERVER_PSTREAMPP_SH = $(call shlibfn, libxmlrpc_server_pstream++)
 
@@ -164,7 +187,10 @@ $(LIBXMLRPC_SERVER_PSTREAMPP_SH): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh) \
   $(call shliblefn, libxmlrpc_server++)
 $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBDEP = \
-  -Lblddir/src -lxmlrpc_server -L. -lxmlrpc_packetsocket -lxmlrpc_server++ -l$(LIBXMLRPCPP_NAME)
+  -L. -lxmlrpc_server++ -l$(LIBXMLRPCPP_NAME) -lxmlrpc_packetsocket \
+  -Lblddir/src -lxmlrpc_server -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
 
 LIBXMLRPC_CLIENTPP_SH = $(call shlibfn, libxmlrpc_client++)
 
@@ -176,14 +202,21 @@ $(LIBXMLRPC_CLIENTPP_SH): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
   $(LIBXMLRPC_CLIENT)
 $(LIBXMLRPC_CLIENTPP_SH): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENTPP_SH): LIBDEP = \
-  -L. -l$(LIBXMLRPCPP_NAME) -lxmlrpc_packetsocket -Lblddir/src -lxmlrpc_client -lxmlrpc -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -L. -l$(LIBXMLRPCPP_NAME) -lxmlrpc_packetsocket \
+  -Lblddir/src -lxmlrpc_client -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 LIBXMLRPC_PACKETSOCKET_SH = $(call shlibfn, libxmlrpc_packetsocket)
 
 $(LIBXMLRPC_PACKETSOCKET_SH): $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME))
 $(LIBXMLRPC_PACKETSOCKET_SH): LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
-$(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = -L. -l$(LIBXMLRPCPP_NAME)
+$(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = \
+  -L. -l$(LIBXMLRPCPP_NAME) \
+  -Lblddir/src -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o

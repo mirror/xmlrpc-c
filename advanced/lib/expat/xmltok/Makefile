@@ -51,14 +51,10 @@ XMLTOK_SHLIB = $(call shlibfn,libxmlrpc_xmltok)
 XMLTOK_SHLIBLE = $(call shliblefn,libxmlrpc_xmltok)
 #XMLTOK_SHLIBLE is e.g. libxmlrpc_xmltok.so
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBS := $(XMLTOK_SHLIB) $(XMLTOK_SHLIBLE)
-  endif
-
 .PHONY: all
-all: libxmlrpc_xmltok.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_xmltok.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES
 $(XMLTOK_SHLIB): $(TARGET_MODS:%=%.osh)
 $(XMLTOK_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
 
