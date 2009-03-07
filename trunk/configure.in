@@ -681,7 +681,9 @@ fi
 
 
 if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-  AC_MSG_NOTICE([\n\n==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY.])
+  AC_MSG_NOTICE([==>])
+  AC_MSG_NOTICE([==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY.])
+  AC_MSG_NOTICE([==>])
 fi
 
 
