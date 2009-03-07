@@ -8664,8 +8664,12 @@ fi
 
 
 if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-  { echo "$as_me:$LINENO: \n\n==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY." >&5
-echo "$as_me: \n\n==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY." >&6;}
+  { echo "$as_me:$LINENO: ==>" >&5
+echo "$as_me: ==>" >&6;}
+  { echo "$as_me:$LINENO: ==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY." >&5
+echo "$as_me: ==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY." >&6;}
+  { echo "$as_me:$LINENO: ==>" >&5
+echo "$as_me: ==>" >&6;}
 fi
 
 
