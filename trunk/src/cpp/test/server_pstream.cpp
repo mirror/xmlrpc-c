@@ -129,7 +129,6 @@ public:
 
 private:
 
-    bool closed;
     int clientFd;
 };
 
@@ -155,7 +154,6 @@ client::client() {
 
         this->serverFd = sockets[SERVER];
         this->clientFd = sockets[CLIENT];
-        this->closed   = false;
     }
 }
 
@@ -163,8 +161,7 @@ client::client() {
 
 client::~client() {
 
-    if (!closed)
-        close(this->clientFd);
+    close(this->clientFd);
 
     close(this->serverFd);
 }
@@ -194,9 +191,22 @@ client::sendCall(string const& packetBytes) const {
 void
 client::hangup() {
 
-    close(this->clientFd);
+    // Closing the socket (close()) would be a better simulation of the
+    // real world, and easier, but we shut down just the client->server
+    // half of the socket and remain open to receive an RPC response.
+    // That's because this test program is lazy and does the client and
+    // server in the same thread, depending on socket buffering on the
+    // receive side to provide parallelism.  We need to be able to do the
+    // following sequence:
+    //
+    //   - Client sends call
+    //   - Client hangs up
+    //   - Server gets call
+    //   - Server sends response
+    //   - Client gets response
+    //   - Server notices hangup
 
-    this->closed = true;
+    shutdown(this->clientFd, 1);  // Shutdown for transmission only
 }
 
 
@@ -435,6 +445,70 @@ testNoWaitCall(registry const& myRegistry) {
 
 
 
+static void
+testMultiRpcRunNoRpc(registry const& myRegistry) {
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    client.hangup();
+
+    server.run();
+}
+
+
+
+static void
+testMultiRpcRunOneRpc(registry const& myRegistry) {
+
+    string const sampleAddGoodCallStream(
+        packetStart +
+        xmlPrologue +
+        "<methodCall>\r\n"
+        "<methodName>sample.add</methodName>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>5</i4></value></param>\r\n"
+        "<param><value><i4>7</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodCall>\r\n" +
+        packetEnd
+        );
+    
+
+    string const sampleAddGoodResponseStream(
+        packetStart +
+        xmlPrologue +
+        "<methodResponse>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>12</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodResponse>\r\n" +
+        packetEnd
+        );
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+
+    client.sendCall(sampleAddGoodCallStream);
+    client.hangup();
+
+    server.run();
+
+    string response;
+    client.recvResp(&response);
+
+    TEST(response == sampleAddGoodResponseStream);
+}
+
+
+
 class serverPstreamConnTestSuite : public testSuite {
 
 public:
@@ -480,6 +554,10 @@ public:
         testNormalCall(myRegistry);
 
         testNoWaitCall(myRegistry);
+
+        testMultiRpcRunNoRpc(myRegistry);
+
+        testMultiRpcRunOneRpc(myRegistry);
     }
 };
 

@@ -308,4 +308,13 @@ serverPstreamConn::runOnceNoWait(bool * const eofP) {
 
 
 
+void
+serverPstreamConn::run() {
+
+    for (bool clientHasDisconnected = false; !clientHasDisconnected;)
+        this->runOnce(&clientHasDisconnected);
+}
+
+
+
 } // namespace

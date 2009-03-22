@@ -47,6 +47,9 @@ public:
     void
     runOnceNoWait(bool * const eofP);
 
+    void
+    serverPstreamConn::run();
+
 private:
     struct serverPstreamConn_impl * implP;
 };
