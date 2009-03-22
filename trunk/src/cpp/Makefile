@@ -62,7 +62,7 @@ LIBXMLRPCPP_MODS = \
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
 LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi
-LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream
+LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream_conn
 LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet pstream
 LIBXMLRPC_PACKETSOCKET_MODS = packetsocket
 
