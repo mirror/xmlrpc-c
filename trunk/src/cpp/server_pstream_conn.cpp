@@ -309,10 +309,21 @@ serverPstreamConn::runOnceNoWait(bool * const eofP) {
 
 
 void
+serverPstreamConn::run(volatile const int * const interruptP) {
+
+    for (bool clientHasDisconnected = false;
+         !clientHasDisconnected && !*interruptP;)
+        this->runOnce(interruptP, &clientHasDisconnected);
+}
+
+
+
+void
 serverPstreamConn::run() {
 
-    for (bool clientHasDisconnected = false; !clientHasDisconnected;)
-        this->runOnce(&clientHasDisconnected);
+    int const interrupt(0);  // Never interrupt
+
+    this->run(&interrupt);
 }
 
 

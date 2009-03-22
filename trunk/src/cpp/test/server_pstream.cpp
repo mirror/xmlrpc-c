@@ -352,6 +352,11 @@ testNormalCall(registry const& myRegistry) {
     client.sendCall(sampleAddGoodCallStream);
 
     bool eof;
+
+    int interrupt(1);
+    server.runOnce(&interrupt, &eof); // returns without reading socket
+    TEST(!eof);
+
     server.runOnce(&eof);
 
     TEST(!eof);
@@ -499,7 +504,13 @@ testMultiRpcRunOneRpc(registry const& myRegistry) {
     client.sendCall(sampleAddGoodCallStream);
     client.hangup();
 
-    server.run();
+    int interrupt;
+
+    interrupt = 1;
+    server.run(&interrupt);  // Returns without reading socket
+
+    interrupt = 0;
+    server.run(&interrupt);  // Does the buffered RPC
 
     string response;
     client.recvResp(&response);

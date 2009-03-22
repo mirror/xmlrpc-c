@@ -48,6 +48,9 @@ public:
     runOnceNoWait(bool * const eofP);
 
     void
+    run(volatile const int * const interruptP);
+
+    void
     run();
 
 private:
