@@ -35,7 +35,7 @@ using namespace std;
 namespace xmlrpc_c {
 
 
-struct constrOpt_impl {
+struct serverPstreamConn::constrOpt_impl {
 
     constrOpt_impl();
 
@@ -53,7 +53,7 @@ struct constrOpt_impl {
 
 
 
-constrOpt_impl::constrOpt_impl() {
+serverPstreamConn::constrOpt_impl::constrOpt_impl() {
 
     this->present.socketFd    = false;
     this->present.registryP   = false;
@@ -94,15 +94,15 @@ DEFINE_OPTION_SETTER(registryPtr, xmlrpc_c::registryPtr);
 
 struct serverPstreamConn_impl {
 
-    serverPstreamConn_impl(constrOpt_impl const& opt);
+    serverPstreamConn_impl(serverPstreamConn::constrOpt_impl const& opt);
 
     ~serverPstreamConn_impl();
 
     void
-    establishRegistry(constrOpt_impl const& opt);
+    establishRegistry(serverPstreamConn::constrOpt_impl const& opt);
 
     void
-    establishPacketSocket(constrOpt_impl const& opt);
+    establishPacketSocket(serverPstreamConn::constrOpt_impl const& opt);
 
     // 'registryP' is what we actually use; 'registryHolder' just holds a
     // reference to 'registryP' so the registry doesn't disappear while
@@ -121,7 +121,8 @@ struct serverPstreamConn_impl {
 
 
 
-serverPstreamConn_impl::serverPstreamConn_impl(constrOpt_impl const& opt) {
+serverPstreamConn_impl::serverPstreamConn_impl(
+    serverPstreamConn::constrOpt_impl const& opt) {
 
     this->establishRegistry(opt);
 
@@ -138,7 +139,8 @@ serverPstreamConn_impl::~serverPstreamConn_impl() {
 
 
 void
-serverPstreamConn_impl::establishRegistry(constrOpt_impl const& opt) {
+serverPstreamConn_impl::establishRegistry(
+    serverPstreamConn::constrOpt_impl const& opt) {
 
     if (!opt.present.registryP && !opt.present.registryPtr)
         throwf("You must specify the 'registryP' or 'registryPtr' option");
@@ -158,7 +160,8 @@ serverPstreamConn_impl::establishRegistry(constrOpt_impl const& opt) {
 
 
 void
-serverPstreamConn_impl::establishPacketSocket(constrOpt_impl const& opt) {
+serverPstreamConn_impl::establishPacketSocket(
+    serverPstreamConn::constrOpt_impl const& opt) {
 
     if (!opt.present.socketFd)
         throwf("You must provide a 'socketFd' constructor option.");

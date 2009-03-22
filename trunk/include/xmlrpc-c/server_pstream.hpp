@@ -15,6 +15,8 @@ class serverPstreamConn {
 
 public:
 
+    struct constrOpt_impl;
+
     class constrOpt {
     public:
         constrOpt();
@@ -55,6 +57,51 @@ public:
 
 private:
     struct serverPstreamConn_impl * implP;
+};
+
+
+class serverPstream {
+
+public:
+
+    class constrOpt {
+    public:
+        constrOpt();
+        ~constrOpt();
+
+        constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
+        constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
+        constrOpt & socketFd          (XMLRPC_SOCKET  const& arg);
+
+    private:
+        struct constrOpt_impl * implP;
+        friend class serverPstream;
+    };
+
+    serverPstream(constrOpt const& opt);
+
+    ~serverPstream();
+
+    void
+    runSerial(volatile const int * const interruptP);
+
+    void
+    runSerial();
+
+    void
+    terminate();
+    
+    class shutdown : public xmlrpc_c::registry::shutdown {
+    public:
+        shutdown(xmlrpc_c::serverPstream * const severAbyssP);
+        virtual ~shutdown();
+        void doit(std::string const& comment, void * const callInfo) const;
+    private:
+        xmlrpc_c::serverPstream * const serverPstreamP;
+    };
+
+private:
+    struct serverPstream_impl * implP;
 };
 
 
