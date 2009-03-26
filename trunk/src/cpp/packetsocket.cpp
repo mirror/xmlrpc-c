@@ -153,7 +153,8 @@ socketx::~socketx() {
 void
 socketx::waitForReadable() const {
     /* Return when there is something to read from the socket
-       (an EOF indication counts as something to read).  Rarely,
+       (an EOF indication counts as something to read).  Also
+       return if there is a signal (handled, of course).  Rarely,
        it is OK to return when there isn't anything to read.
     */
 #ifdef  WIN32

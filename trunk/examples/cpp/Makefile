@@ -52,7 +52,7 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
   PROGS += $(SERVERPROGS_CGI) 
 endif
 
-PROGS += pstream_inetd_server
+PROGS += pstream_inetd_server pstream_serial_server
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   PROGS += pstream_client
@@ -93,7 +93,7 @@ pstream_client:%:%.o
 LIBS_PSTREAM_SERVER = \
   $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --libs)
 
-pstream_inetd_server:%:%.o
+pstream_inetd_server pstream_serial_server:%:%.o
 	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_SERVER) $(LDFLAGS)
 
 OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))

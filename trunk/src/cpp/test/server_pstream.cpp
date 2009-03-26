@@ -550,12 +550,6 @@ public:
                                      .registryP(&myRegistry));
             );
         
-        EXPECT_ERROR(  // No such file descriptor
-            serverPstreamConn server(serverPstreamConn::constrOpt()
-                                     .registryP(&myRegistry)
-                                     .socketFd(37));
-            );
-        
         testEmptyStream(myRegistry);
 
         testBrokenPacket(myRegistry);
@@ -574,6 +568,59 @@ public:
 
 
 
+static void
+testMultiConnInterrupt(registry const& myRegistry) {
+
+    // We use a nonexistent file descriptor, but the server won't
+    // ever access it, so it won't know.
+
+    serverPstream server(serverPstream::constrOpt()
+                         .registryP(&myRegistry)
+                         .socketFd(37));
+
+    int interrupt(1);  // interrupt immediately
+
+    server.runSerial(&interrupt);
+}
+
+
+
+class multiConnServerTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "multiConnServerTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        registryPtr myRegistryP(new registry);
+
+        myRegistryP->addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        EXPECT_ERROR(  // Empty options
+            serverPstream::constrOpt opt;
+            serverPstream server(opt);
+            );
+
+        EXPECT_ERROR(  // No registry
+            serverPstream server(serverPstream::constrOpt()
+                                 .socketFd(3));
+            );
+
+        EXPECT_ERROR(  // No socket fd
+            serverPstream server(serverPstream::constrOpt()
+                                 .registryP(&myRegistry));
+            );
+        
+        testMultiConnInterrupt(myRegistry);
+    }
+};
+
+
+
 string
 serverPstreamTestSuite::suiteName() {
     return "serverPstreamTestSuite";
@@ -585,5 +632,6 @@ serverPstreamTestSuite::runtests(unsigned int const indentation) {
 
     serverPstreamConnTestSuite().run(indentation + 1);
 
+    multiConnServerTestSuite().run(indentation + 1);
 }
 

@@ -64,6 +64,8 @@ class serverPstream {
 
 public:
 
+    struct constrOpt_impl;
+
     class constrOpt {
     public:
         constrOpt();
