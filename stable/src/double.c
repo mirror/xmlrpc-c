@@ -3,6 +3,7 @@
 #include <float.h>
 
 #include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 
 #include "double.h"
 
@@ -58,6 +59,23 @@ digitChar(unsigned int const digitValue) {
 
 
 
+static unsigned int
+leadDigit(double const arg,
+          double const precision) {
+/*----------------------------------------------------------------------------
+   Assuming 'arg' has one digit before the decimal point (which may be zero),
+   return that digit.
+
+   We assume the precision of 'arg' is plus or minus 'precision', and bias our
+   estimation of the first digit up.  We do that bias in order to bias toward
+   shorter decimal ciphers: It's cleaner to consider 2.9999999 to be 3 than to
+   consider 3 to be 2.999999.
+-----------------------------------------------------------------------------*/
+    return MIN(9, (unsigned int)(arg + precision));
+}
+
+
+
 static void
 floatWhole(double   const value,
            buffer * const formattedP,
@@ -88,7 +106,8 @@ floatWhole(double   const value,
             */
             leastValue = 0;
         } else
-            leastValue = (unsigned int)(value - nonLeastAmount * 10);
+            leastValue = leadDigit(value - nonLeastAmount * 10,
+                                   nonLeastPrecision * 10);
 
         bufferConcat(formattedP, digitChar(leastValue));
         
@@ -120,7 +139,7 @@ floatFractionPart(double   const value,
         unsigned int digitValue;
 
         d *= 10;
-        digitValue = (unsigned int) d;
+        digitValue = leadDigit(d, precision);
 
         d -= digitValue;
 
@@ -154,7 +173,7 @@ floatFraction(double   const value,
     precision = DBL_EPSILON;
 
     while (d > precision) {
-        unsigned int const digitValue = (unsigned int) d;
+        unsigned int const digitValue = leadDigit(d, precision);
 
         bufferConcat(formattedP, digitChar(digitValue));
 
