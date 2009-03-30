@@ -173,6 +173,7 @@ test_serialize_double(void) {
     testOneDouble(1);
     testOneDouble(0.3);
     testOneDouble(4.9);
+    testOneDouble(9.9999999);
     testOneDouble(-8);
     testOneDouble(-.7);
     testOneDouble(-2.5);
