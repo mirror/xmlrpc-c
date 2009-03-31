@@ -47,6 +47,22 @@ string const noElementFoundXml(
     "</methodResponse>\r\n"
     );
 
+string const invalidXMLCall(
+    xmlPrologue +
+    "<methodResponse>\r\n"
+    "<fault>\r\n"
+    "<value><struct>\r\n"
+    "<member><name>faultCode</name>\r\n"
+    "<value><i4>-503</i4></value></member>\r\n"
+    "<member><name>faultString</name>\r\n"
+    "<value><string>Call XML not a proper XML-RPC call.  "
+    "Call is not valid XML.  XML parsing failed</string></value>"
+    "</member>\r\n"
+    "</struct></value>\r\n"
+    "</fault>\r\n"
+    "</methodResponse>\r\n"
+    );
+
 string const sampleAddGoodCallXml(
     xmlPrologue +
     "<methodCall>\r\n"
@@ -219,6 +235,22 @@ public:
 
 
 
+static void
+testEmptyXmlDocCall(xmlrpc_c::registry const& myRegistry) {
+
+    string response;
+    myRegistry.processCall("", &response);
+
+#ifdef INTERNAL_EXPAT
+    TEST(response == noElementFoundXml);
+#else
+    // This is what we get with libxml2
+    TEST(response == invalidXMLCall);
+#endif
+}
+
+
+
 class registryRegMethodTestSuite : public testSuite {
 
 public:
@@ -233,11 +265,7 @@ public:
                              xmlrpc_c::methodPtr(new sampleAddMethod));
         
         myRegistry.disableIntrospection();
-        {
-            string response;
-            myRegistry.processCall("", &response);
-            TEST(response == noElementFoundXml);
-        }
+        testEmptyXmlDocCall(myRegistry);
         {
             string response;
             myRegistry.processCall(sampleAddGoodCallXml, &response);

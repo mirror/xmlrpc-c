@@ -213,15 +213,15 @@ digitStringMillionths(const char * const string,
 
 #if HAVE_REGEX
 static void
-parseDateNumbersRegex(xmlrpc_env *   const envP,
-                      const char *   const datetimeString,
-                      unsigned int * const YP,
-                      unsigned int * const MP,
-                      unsigned int * const DP,
-                      unsigned int * const hP,
-                      unsigned int * const mP,
-                      unsigned int * const sP,
-                      unsigned int * const uP) {
+parseDtNumbersRegex(xmlrpc_env *   const envP,
+                    const char *   const datetimeString,
+                    unsigned int * const YP,
+                    unsigned int * const MP,
+                    unsigned int * const DP,
+                    unsigned int * const hP,
+                    unsigned int * const mP,
+                    unsigned int * const sP,
+                    unsigned int * const uP) {
 
 
     int status;
@@ -266,15 +266,15 @@ parseDateNumbersRegex(xmlrpc_env *   const envP,
 
 
 static __inline__ void
-parseDateNumbersNoRegex(xmlrpc_env *   const envP,
-                        const char *   const datetimeString,
-                        unsigned int * const YP,
-                        unsigned int * const MP,
-                        unsigned int * const DP,
-                        unsigned int * const hP,
-                        unsigned int * const mP,
-                        unsigned int * const sP,
-                        unsigned int * const uP) {
+parseDtNumbersNoRegex(xmlrpc_env *   const envP,
+                      const char *   const datetimeString,
+                      unsigned int * const YP,
+                      unsigned int * const MP,
+                      unsigned int * const DP,
+                      unsigned int * const hP,
+                      unsigned int * const mP,
+                      unsigned int * const sP,
+                      unsigned int * const uP) {
 
     unsigned int const dtStrlen = strlen(datetimeString);
 
@@ -441,24 +441,24 @@ validateFormat(xmlrpc_env * const envP,
 
 
 static void
-parseDateNumbers(xmlrpc_env *   const envP,
-                 const char *   const datetimeString,
-                 unsigned int * const YP,
-                 unsigned int * const MP,
-                 unsigned int * const DP,
-                 unsigned int * const hP,
-                 unsigned int * const mP,
-                 unsigned int * const sP,
-                 unsigned int * const uP) {
+parseDtNumbers(xmlrpc_env *   const envP,
+               const char *   const datetimeString,
+               unsigned int * const YP,
+               unsigned int * const MP,
+               unsigned int * const DP,
+               unsigned int * const hP,
+               unsigned int * const mP,
+               unsigned int * const sP,
+               unsigned int * const uP) {
 
 #if HAVE_REGEX
-    parseDateNumbersRegex(envP, datetimeString, YP, MP, DP, hP, mP, sP, uP);
+    parseDtNumbersRegex(envP, datetimeString, YP, MP, DP, hP, mP, sP, uP);
 #else
     /* Note: validation is not as strong without regex */
     validateFormat(envP, datetimeString);
     if (!envP->fault_occurred)
-        parseDateNumbersNoRegex(envP, datetimeString,
-                                YP, MP, DP, hP, mP, sP, uP);
+        parseDtNumbersNoRegex(envP, datetimeString,
+                              YP, MP, DP, hP, mP, sP, uP);
 #endif
 }
 
@@ -492,7 +492,7 @@ parseDatetime(xmlrpc_env *   const envP,
     if (!envP->fault_occurred) {
         unsigned int Y, M, D, h, m, s, u;
         
-        parseDateNumbers(envP, datetimeString, &Y, &M, &D, &h, &m, &s, &u);
+        parseDtNumbers(envP, datetimeString, &Y, &M, &D, &h, &m, &s, &u);
 
         if (!envP->fault_occurred) {
             if (Y < 1970)

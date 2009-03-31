@@ -665,9 +665,9 @@ static struct systemMethodReg const methodShutdown = {
 =========================================================================*/
 
 static void
-getCapabilities(xmlrpc_env *      const envP,
-                xmlrpc_registry * const registryP ATTR_UNUSED,
-                xmlrpc_value **   const capabilitiesPP) {
+constructCapabilities(xmlrpc_env *      const envP,
+                      xmlrpc_registry * const registryP ATTR_UNUSED,
+                      xmlrpc_value **   const capabilitiesPP) {
 
     *capabilitiesPP =
         xmlrpc_build_value(
@@ -706,10 +706,11 @@ system_capabilities(xmlrpc_env *   const envP,
             envP, XMLRPC_INDEX_ERROR,
             "There are no parameters.  You supplied %u", paramCount);
     else
-        getCapabilities(envP, registryP, &retvalP);
+        constructCapabilities(envP, registryP, &retvalP);
 
     return retvalP;
 }
+
 
 
 static struct systemMethodReg const methodCapabilities = {
@@ -718,6 +719,72 @@ static struct systemMethodReg const methodCapabilities = {
     "S:",
     "Return the capabilities of XML-RPC server.  This includes the "
     "version number of the XML-RPC For C/C++ software"
+};
+
+
+
+/*=========================================================================
+  system.getCapabilities
+=========================================================================*/
+
+/* This implements a standard.
+   See http://tech.groups.yahoo.com/group/xml-rpc/message/2897 .
+*/
+
+static void
+listCapabilities(xmlrpc_env *      const envP,
+                 xmlrpc_registry * const registryP ATTR_UNUSED,
+                 xmlrpc_value **   const capabilitiesPP) {
+
+    *capabilitiesPP =
+        xmlrpc_build_value(
+            envP, "{s:{s:s,s:i}}",
+            "introspect",
+              "specUrl",
+                "http://xmlrpc-c.sourceforge.net/xmlrpc-c/introspection.html",
+              "specVersion",
+                 1
+            );
+}
+
+
+
+static xmlrpc_value *
+system_getCapabilities(xmlrpc_env *   const envP,
+                       xmlrpc_value * const paramArrayP,
+                       void *         const serverInfo,
+                       void *         const callInfo ATTR_UNUSED) {
+    
+    xmlrpc_registry * const registryP = serverInfo;
+
+    xmlrpc_value * retvalP;
+    
+    unsigned int paramCount;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(serverInfo);
+
+    paramCount = xmlrpc_array_size(envP, paramArrayP);
+
+    if (paramCount > 0)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INDEX_ERROR,
+            "There are no parameters.  You supplied %u", paramCount);
+    else
+        listCapabilities(envP, registryP, &retvalP);
+
+    return retvalP;
+}
+
+
+
+static struct systemMethodReg const methodGetCapabilities = {
+    "system.getCapabilities",
+    &system_getCapabilities,
+    "S:",
+    "Return the list of standard capabilities of XML-RPC server.  "
+    "See http://tech.groups.yahoo.com/group/xml-rpc/message/2897"
 };
 
 
@@ -774,6 +841,9 @@ xmlrpc_installSystemMethods(xmlrpc_env *      const envP,
 
     if (!envP->fault_occurred)
         registerSystemMethod(envP, registryP, methodCapabilities);
+
+    if (!envP->fault_occurred)
+        registerSystemMethod(envP, registryP, methodGetCapabilities);
 }
 
 

@@ -62,7 +62,7 @@ LIBXMLRPCPP_MODS = \
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
 LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi
-LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream
+LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream_conn server_pstream
 LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet pstream
 LIBXMLRPC_PACKETSOCKET_MODS = packetsocket
 
@@ -77,7 +77,7 @@ TARGET_MODS_PP = \
   $(LIBXMLRPC_PACKETSOCKET_MODS) \
 
 OMIT_CPP_LIB_RULES = Y
-MAJ=4
+MAJ = 5
   # Major number of shared libraries in this directory
 
 include $(SRCDIR)/common.mk
@@ -121,6 +121,9 @@ all: \
 LIBXMLRPC_CPP_SH = $(call shlibfn, libxmlrpc_cpp)
 
 $(LIBXMLRPC_CPP_SH): XmlRpcCpp.osh \
+  $(LIBXMLRPC_UTIL) \
+  $(LIBXMLRPC) \
+  $(LIBXMLRPC_SERVER) \
   $(LIBXMLRPC_UTIL)
 $(LIBXMLRPC_CPP_SH): LIBOBJECTS = XmlRpcCpp.osh
 $(LIBXMLRPC_CPP_SH): LIBDEP = \
@@ -158,6 +161,10 @@ LIBXMLRPC_SERVER_ABYSSPP_SH = $(call shlibfn, libxmlrpc_server_abyss++)
 
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
   $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC_SERVER_ABYSS) \
+  $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
+  $(call shlibfn, libxmlrpc_server++) \
+  $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \

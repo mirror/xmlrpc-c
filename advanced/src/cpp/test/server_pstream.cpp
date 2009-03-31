@@ -129,7 +129,6 @@ public:
 
 private:
 
-    bool closed;
     int clientFd;
 };
 
@@ -155,7 +154,6 @@ client::client() {
 
         this->serverFd = sockets[SERVER];
         this->clientFd = sockets[CLIENT];
-        this->closed   = false;
     }
 }
 
@@ -163,8 +161,7 @@ client::client() {
 
 client::~client() {
 
-    if (!closed)
-        close(this->clientFd);
+    close(this->clientFd);
 
     close(this->serverFd);
 }
@@ -194,9 +191,22 @@ client::sendCall(string const& packetBytes) const {
 void
 client::hangup() {
 
-    close(this->clientFd);
+    // Closing the socket (close()) would be a better simulation of the
+    // real world, and easier, but we shut down just the client->server
+    // half of the socket and remain open to receive an RPC response.
+    // That's because this test program is lazy and does the client and
+    // server in the same thread, depending on socket buffering on the
+    // receive side to provide parallelism.  We need to be able to do the
+    // following sequence:
+    //
+    //   - Client sends call
+    //   - Client hangs up
+    //   - Server gets call
+    //   - Server sends response
+    //   - Client gets response
+    //   - Server notices hangup
 
-    this->closed = true;
+    shutdown(this->clientFd, 1);  // Shutdown for transmission only
 }
 
 
@@ -342,6 +352,11 @@ testNormalCall(registry const& myRegistry) {
     client.sendCall(sampleAddGoodCallStream);
 
     bool eof;
+
+    int interrupt(1);
+    server.runOnce(&interrupt, &eof); // returns without reading socket
+    TEST(!eof);
+
     server.runOnce(&eof);
 
     TEST(!eof);
@@ -356,6 +371,151 @@ testNormalCall(registry const& myRegistry) {
     server.runOnce(&eof);
 
     TEST(eof);
+}
+
+
+
+static void
+testNoWaitCall(registry const& myRegistry) {
+
+    string const sampleAddGoodCallStream(
+        packetStart +
+        xmlPrologue +
+        "<methodCall>\r\n"
+        "<methodName>sample.add</methodName>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>5</i4></value></param>\r\n"
+        "<param><value><i4>7</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodCall>\r\n" +
+        packetEnd
+        );
+    
+
+    string const sampleAddGoodResponseStream(
+        packetStart +
+        xmlPrologue +
+        "<methodResponse>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>12</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodResponse>\r\n" +
+        packetEnd
+        );
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    bool eof;
+    bool gotOne;
+    string response;
+
+    server.runOnceNoWait(&eof, &gotOne);
+
+    TEST(!eof);
+    TEST(!gotOne);
+
+    server.runOnceNoWait(&eof);
+
+    TEST(!eof);
+
+    client.sendCall(sampleAddGoodCallStream);
+
+    server.runOnceNoWait(&eof, &gotOne);
+
+    TEST(!eof);
+    TEST(gotOne);
+
+    client.recvResp(&response);
+
+    TEST(response == sampleAddGoodResponseStream);
+    
+    client.sendCall(sampleAddGoodCallStream);
+
+    server.runOnce(&eof);
+
+    TEST(!eof);
+    client.recvResp(&response);
+    TEST(response == sampleAddGoodResponseStream);
+
+    client.hangup();
+
+    server.runOnce(&eof);
+
+    TEST(eof);
+}
+
+
+
+static void
+testMultiRpcRunNoRpc(registry const& myRegistry) {
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+    client.hangup();
+
+    server.run();
+}
+
+
+
+static void
+testMultiRpcRunOneRpc(registry const& myRegistry) {
+
+    string const sampleAddGoodCallStream(
+        packetStart +
+        xmlPrologue +
+        "<methodCall>\r\n"
+        "<methodName>sample.add</methodName>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>5</i4></value></param>\r\n"
+        "<param><value><i4>7</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodCall>\r\n" +
+        packetEnd
+        );
+    
+
+    string const sampleAddGoodResponseStream(
+        packetStart +
+        xmlPrologue +
+        "<methodResponse>\r\n"
+        "<params>\r\n"
+        "<param><value><i4>12</i4></value></param>\r\n"
+        "</params>\r\n"
+        "</methodResponse>\r\n" +
+        packetEnd
+        );
+
+    client client;
+
+    serverPstreamConn server(serverPstreamConn::constrOpt()
+                             .registryP(&myRegistry)
+                             .socketFd(client.serverFd));
+
+
+    client.sendCall(sampleAddGoodCallStream);
+    client.hangup();
+
+    int interrupt;
+
+    interrupt = 1;
+    server.run(&interrupt);  // Returns without reading socket
+
+    interrupt = 0;
+    server.run(&interrupt);  // Does the buffered RPC
+
+    string response;
+    client.recvResp(&response);
+
+    TEST(response == sampleAddGoodResponseStream);
 }
 
 
@@ -390,12 +550,6 @@ public:
                                      .registryP(&myRegistry));
             );
         
-        EXPECT_ERROR(  // No such file descriptor
-            serverPstreamConn server(serverPstreamConn::constrOpt()
-                                     .registryP(&myRegistry)
-                                     .socketFd(37));
-            );
-        
         testEmptyStream(myRegistry);
 
         testBrokenPacket(myRegistry);
@@ -403,6 +557,65 @@ public:
         testEmptyPacket(myRegistry);
 
         testNormalCall(myRegistry);
+
+        testNoWaitCall(myRegistry);
+
+        testMultiRpcRunNoRpc(myRegistry);
+
+        testMultiRpcRunOneRpc(myRegistry);
+    }
+};
+
+
+
+static void
+testMultiConnInterrupt(registry const& myRegistry) {
+
+    // We use a nonexistent file descriptor, but the server won't
+    // ever access it, so it won't know.
+
+    serverPstream server(serverPstream::constrOpt()
+                         .registryP(&myRegistry)
+                         .socketFd(37));
+
+    int interrupt(1);  // interrupt immediately
+
+    server.runSerial(&interrupt);
+}
+
+
+
+class multiConnServerTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "multiConnServerTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        registryPtr myRegistryP(new registry);
+
+        myRegistryP->addMethod("sample.add", methodPtr(new sampleAddMethod));
+
+        EXPECT_ERROR(  // Empty options
+            serverPstream::constrOpt opt;
+            serverPstream server(opt);
+            );
+
+        EXPECT_ERROR(  // No registry
+            serverPstream server(serverPstream::constrOpt()
+                                 .socketFd(3));
+            );
+
+        EXPECT_ERROR(  // No socket fd
+            serverPstream server(serverPstream::constrOpt()
+                                 .registryP(&myRegistry));
+            );
+        
+        testMultiConnInterrupt(myRegistry);
     }
 };
 
@@ -419,5 +632,6 @@ serverPstreamTestSuite::runtests(unsigned int const indentation) {
 
     serverPstreamConnTestSuite().run(indentation + 1);
 
+    multiConnServerTestSuite().run(indentation + 1);
 }
 
