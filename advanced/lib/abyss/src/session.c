@@ -35,16 +35,22 @@ SessionRefillBuffer(TSession * const sessionP) {
         failed = !HTTPWriteContinue(sessionP);
 
     if (!failed) {
+        const char * readError;
+
         sessionP->continueRequired = FALSE;
 
-        /* Read more network data into our buffer.  If we encounter a
-           timeout, exit immediately.  We're very forgiving about the
-           timeout here.  We allow a full timeout per network read, which
-           would allow somebody to keep a connection alive nearly
-           indefinitely.  But it's hard to do anything intelligent here
-           without very complicated code.
+        /* Read more network data into our buffer.  Fail if we time out before
+           client sends any data or client closes the connection or there's
+           some network error.  We're very forgiving about the timeout here.
+           We allow a full timeout per network read, which would allow
+           somebody to keep a connection alive nearly indefinitely.  But it's
+           hard to do anything intelligent here without very complicated code.
         */
-        failed = !ConnRead(sessionP->conn, srvP->timeout);	
+        ConnRead(sessionP->conn, srvP->timeout, NULL, NULL, &readError);	
+        if (readError) {
+            failed = TRUE;
+            xmlrpc_strfree(readError);
+        }
     }
     return !failed;
 }
@@ -139,11 +145,8 @@ SessionLog(TSession * const sessionP) {
     xmlrpc_strfree(peerInfo);
     xmlrpc_strfree(date);
     
-    if (logline) {
-        LogWrite(sessionP->conn->server, logline);
+    LogWrite(sessionP->conn->server, logline);
         
-        xmlrpc_strfree(logline);
-    }
     return true;
 }
 

@@ -253,6 +253,17 @@ ConnReadInit(TConn * const connectionP) {
 
 
 
+static void
+traceReadTimeout(TConn *  const connectionP,
+                 uint32_t const timeout) {
+
+    if (connectionP->trace)
+        fprintf(stderr, "TIMED OUT waiting over %u seconds "
+                "for data from client.\n", timeout);
+}
+
+
+
 static size_t
 nextLineSize(const char * const string,
              size_t       const startPos,
@@ -342,71 +353,123 @@ bufferSpace(TConn * const connectionP) {
                     
 
 
-bool
-ConnRead(TConn *  const connectionP,
-         uint32_t const timeout) {
+static void
+readFromChannel(TConn *       const connectionP,
+                bool *        const eofP,
+                const char ** const errorP) {
 /*----------------------------------------------------------------------------
-   Read some stuff on connection *connectionP from the channel.
+   Read some data from the channel of Connection *connectionP.
 
-   Don't wait more than 'timeout' seconds for data to arrive.  Fail if
-   nothing arrives within that time.
-
-   'timeout' must be before the end of time.
+   Iff there is none available to read, return *eofP == true.
 -----------------------------------------------------------------------------*/
-    time_t const deadline = time(NULL) + timeout;
+    uint32_t bytesRead;
+    bool readError;
 
-    bool cantGetData;
-    bool gotData;
+    ChannelRead(connectionP->channelP,
+                connectionP->buffer.t + connectionP->buffersize,
+                bufferSpace(connectionP) - 1,
+                &bytesRead, &readError);
 
-    cantGetData = FALSE;
-    gotData = FALSE;
-    
-    while (!gotData && !cantGetData) {
-        int const timeLeft = (int)(deadline - time(NULL));
-
-        if (timeLeft <= 0)
-            cantGetData = TRUE;
-        else {
-            bool const waitForRead  = TRUE;
-            bool const waitForWrite = FALSE;
-            
-            bool readyForRead;
-            bool failed;
-            
-            ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
-                        timeLeft * 1000, &readyForRead, NULL, &failed);
-            
-            if (failed)
-                cantGetData = TRUE;
-            else {
-                uint32_t bytesRead;
-                bool readFailed;
-
-                ChannelRead(connectionP->channelP,
-                            connectionP->buffer.t + connectionP->buffersize,
-                            bufferSpace(connectionP) - 1,
-                            &bytesRead, &readFailed);
-
-                if (readFailed)
-                    cantGetData = TRUE;
-                else {
-                    if (bytesRead > 0) {
-                        traceChannelRead(connectionP, bytesRead);
-                        connectionP->inbytes += bytesRead;
-                        connectionP->buffersize += bytesRead;
-                        connectionP->buffer.t[connectionP->buffersize] = '\0';
-                        gotData = TRUE;
-                    } else
-                        /* Other end has disconnected */
-                        cantGetData = TRUE;
-                }
-            }
-        }
+    if (readError)
+        xmlrpc_asprintf(errorP, "Error reading from channel");
+    else {
+        *errorP = NULL;
+        if (bytesRead > 0) {
+            *eofP = FALSE;
+            traceChannelRead(connectionP, bytesRead);
+            connectionP->inbytes += bytesRead;
+            connectionP->buffersize += bytesRead;
+            connectionP->buffer.t[connectionP->buffersize] = '\0';
+        } else
+            *eofP = TRUE;
     }
-    if (gotData)
-        return TRUE;
-    else
-        return FALSE;
+}
+
+
+
+static void
+dealWithReadTimeout(bool *        const timedOutP,
+                    bool          const timedOut,
+                    uint32_t      const timeout,
+                    const char ** const errorP) {
+
+    if (timedOutP)
+        *timedOutP = timedOut;
+    else {
+        if (timedOut)
+            xmlrpc_asprintf(errorP, "Read from Abyss client "
+                            "connection timed out after %u seconds",
+                            timeout);
+    }
+}
+
+
+
+static void
+dealWithReadEof(bool *        const eofP,
+                bool          const eof,
+                const char ** const errorP) {
+
+    if (eofP)
+        *eofP = eof;
+    else {
+        if (eof)
+            xmlrpc_asprintf(errorP, "Read from Abyss client "
+                            "connection failed because client closed the "
+                            "connection");
+    }
+}
+
+
+
+void
+ConnRead(TConn *       const connectionP,
+         uint32_t      const timeout,
+         bool *        const eofP,
+         bool *        const timedOutP,
+         const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Read some stuff on connection *connectionP from the channel.  Read it into
+   the connection's buffer.
+
+   Don't wait more than 'timeout' seconds for data to arrive.  If no data has
+   arrived by then and 'timedOutP' is null, fail.  If 'timedOut' is non-null,
+   return as *timedOutP whether 'timeout' seconds passed without any data
+   arriving.
+
+   If 'eofP' is non-null, return *eofP == true, without reading anything, iff
+   there will no more data forthcoming on the connection because client has
+   closed the connection.  If 'eofP' is null, fail in that case.
+-----------------------------------------------------------------------------*/
+    uint32_t const timeoutMs = timeout * 1000;
+
+    if (timeoutMs < timeout)
+        /* Arithmetic overflow */
+        xmlrpc_asprintf(errorP, "Timeout value is too large");
+    else {
+        bool const waitForRead  = TRUE;
+        bool const waitForWrite = FALSE;
+
+        bool timedOut, eof;
+        bool readyForRead;
+            
+        ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
+                    timeoutMs, &readyForRead, NULL, &timedOut);
+            
+        if (timedOut) {
+            traceReadTimeout(connectionP, timeout);
+            *errorP = NULL;
+            eof = FALSE;
+        } else {
+            assert(readyForRead);
+
+            readFromChannel(connectionP, &eof, errorP);
+        }
+        if (!*errorP)
+            dealWithReadTimeout(timedOutP, timedOut, timeout, errorP);
+        if (!*errorP)
+            dealWithReadEof(eofP, eof, errorP);
+    }
 }
 
 

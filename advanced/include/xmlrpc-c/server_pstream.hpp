@@ -15,24 +15,20 @@ class serverPstreamConn {
 
 public:
 
+    struct constrOpt_impl;
+
     class constrOpt {
     public:
         constrOpt();
+        ~constrOpt();
 
         constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
         constrOpt & socketFd          (XMLRPC_SOCKET  const& arg);
 
-        struct value {
-            xmlrpc_c::registryPtr      registryPtr;
-            const xmlrpc_c::registry * registryP;
-            XMLRPC_SOCKET              socketFd;
-        } value;
-        struct {
-            bool registryPtr;
-            bool registryP;
-            bool socketFd;
-        } present;
+    private:
+        struct constrOpt_impl * implP;
+        friend class serverPstreamConn;
     };
 
     serverPstreamConn(constrOpt const& opt);
@@ -46,27 +42,68 @@ public:
     void
     runOnce(bool * const eofP);
 
+    void
+    runOnceNoWait(bool * const eofP,
+                  bool * const didOneP);
+
+    void
+    runOnceNoWait(bool * const eofP);
+
+    void
+    run(volatile const int * const interruptP);
+
+    void
+    run();
+
 private:
+    struct serverPstreamConn_impl * implP;
+};
 
-    // 'registryP' is what we actually use; 'registryHolder' just holds a
-    // reference to 'registryP' so the registry doesn't disappear while
-    // this server exists.  But note that if the creator doesn't supply
-    // a registryPtr, 'registryHolder' is just a placeholder variable and
-    // the creator is responsible for making sure the registry doesn't
-    // go anywhere while the server exists.
 
-    registryPtr registryHolder;
-    const registry * registryP;
+class serverPstream {
 
-    packetSocket * packetSocketP;
-        // The packet socket over which we received RPCs.
-        // This is permanently connected to our fixed client.
+public:
+
+    struct constrOpt_impl;
+
+    class constrOpt {
+    public:
+        constrOpt();
+        ~constrOpt();
+
+        constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
+        constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
+        constrOpt & socketFd          (XMLRPC_SOCKET  const& arg);
+
+    private:
+        struct constrOpt_impl * implP;
+        friend class serverPstream;
+    };
+
+    serverPstream(constrOpt const& opt);
+
+    ~serverPstream();
 
     void
-    establishRegistry(constrOpt const& opt);
+    runSerial(volatile const int * const interruptP);
 
     void
-    establishPacketSocket(constrOpt const& opt);
+    runSerial();
+
+    void
+    terminate();
+    
+    class shutdown : public xmlrpc_c::registry::shutdown {
+    public:
+        shutdown(xmlrpc_c::serverPstream * const severAbyssP);
+        virtual ~shutdown();
+        void doit(std::string const& comment, void * const callInfo) const;
+    private:
+        xmlrpc_c::serverPstream * const serverPstreamP;
+    };
+
+private:
+    struct serverPstream_impl * implP;
 };
 
 

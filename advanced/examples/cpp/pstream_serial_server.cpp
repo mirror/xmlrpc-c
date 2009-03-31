@@ -1,8 +1,7 @@
 /* A simple standalone RPC server based on an Xmlrpc-c packet socket.
 
-   This program expects the invoker to provide an established connection
-   to a client as Standard Input (E.g. Inetd can do this).  It processes
-   RPCs from that connection until the client closes the connection.
+   This program expects the invoker to provide a socket in listen mode
+   as Standard Input.
 
    This is not an XML-RPC server, because it uses a simple packet socket
    instead of HTTP.  See xmlrpc_sample_add_server.cpp for an example of
@@ -14,7 +13,7 @@
 
    Here's an example of running this:
 
-     $ socketexec -accept -local_port=8080 ./pstream_inetd_server
+     $ socketexec -listen -local_port=8080 ./pstream_serial_server
 */
 
 #ifndef WIN32
@@ -71,12 +70,12 @@ main(int           const,
 
         myRegistry.addMethod("sample.add", sampleAddMethodP);
 
-        xmlrpc_c::serverPstreamConn server(
-            xmlrpc_c::serverPstreamConn::constrOpt()
+        xmlrpc_c::serverPstream server(
+            xmlrpc_c::serverPstream::constrOpt()
             .socketFd(STDIN_FILENO)
             .registryP(&myRegistry));
 
-        server.run();
+        server.runSerial();
 
     } catch (exception const& e) {
         cerr << "Something threw an error: " << e.what() << endl;
