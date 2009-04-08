@@ -59,7 +59,7 @@ struct curlTransaction {
 
 
 static void
-addHeader(xmlrpc_env * const envP,
+addHeader(xmlrpc_env *         const envP,
           struct curl_slist ** const headerListP,
           const char *         const headerText) {
 
@@ -175,6 +175,16 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
 
 
 static void
+addExpectHeader(xmlrpc_env *         const envP,
+                struct curl_slist ** const headerListP) {
+
+    addHeader(envP, headerListP, "Expect:\"\"");
+        /* Don't send Expect header.  See explanation above. */
+}
+
+
+
+static void
 createCurlHeaderList(xmlrpc_env *               const envP,
                      const char *               const authHdrValue,
                      const char *               const userAgent,
@@ -191,10 +201,8 @@ createCurlHeaderList(xmlrpc_env *               const envP,
             if (authHdrValue)
                 addAuthorizationHeader(envP, &headerList, authHdrValue);
         }
-        if (!envP->fault_occurred) {
-            addHeader(envP, headerListP, "Expect:\"\"");
-                /* Don't send Expect header.  See explanation above. */
-        }
+        if (!envP->fault_occurred)
+            addExpectHeader(envP, &headerList);
     }
     if (envP->fault_occurred)
         curl_slist_free_all(headerList);
