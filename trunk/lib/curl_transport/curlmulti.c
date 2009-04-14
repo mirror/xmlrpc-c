@@ -9,6 +9,8 @@
       requires the user to maintain them separately.
 =============================================================================*/
 
+#define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #include <stdlib.h>

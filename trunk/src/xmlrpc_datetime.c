@@ -1,5 +1,7 @@
 #include "xmlrpc_config.h"
 
+#define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
+
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>

@@ -16,6 +16,10 @@
   transports.
 =============================================================================*/
 
+#define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
+
+#include <string.h>
+
 #include "bool.h"
 #include "mallocvar.h"
 

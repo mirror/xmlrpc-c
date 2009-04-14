@@ -1,3 +1,5 @@
+#define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"  /* prereq for mallocvar.h -- defines __inline__ */
 
 #include <sys/types.h>

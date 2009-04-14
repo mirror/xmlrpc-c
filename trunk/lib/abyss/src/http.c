@@ -1,6 +1,6 @@
 /* Copyright information is at the end of the file */
 
-#define _BSD_SOURCE   /* For strcaseeq() */
+#define _BSD_SOURCE   /* For strcaseeq(), strdup() */
 
 #include <ctype.h>
 #include <assert.h>

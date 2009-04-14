@@ -1,3 +1,5 @@
+#define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

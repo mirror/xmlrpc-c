@@ -10,6 +10,8 @@
   Contributed to the public domain by its author.
 =========================================================================*/
 
+#define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #include <assert.h>

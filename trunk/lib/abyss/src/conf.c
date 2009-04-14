@@ -32,7 +32,7 @@
 **
 ******************************************************************************/
 
-#define _BSD_SOURCE   /* For strcaseeq() */
+#define _BSD_SOURCE   /* For strcaseeq(), strdup() */
 
 #include <stdlib.h>
 #include <stdio.h>
