@@ -1,5 +1,5 @@
 #define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
-#define _GNU_SOURCE
+#define _GNU_SOURCE  /* But only when HAVE_ASPRINTF */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

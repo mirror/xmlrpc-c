@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+#define _GNU_SOURCE   /* But only when HAVE_ASPRINTF */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

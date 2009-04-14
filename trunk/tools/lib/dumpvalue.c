@@ -6,7 +6,6 @@
 */
 
 #define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
-#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
