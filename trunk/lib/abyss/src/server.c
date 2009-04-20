@@ -1,6 +1,7 @@
 /* Copyright information is at end of file */
 
-#define _BSD_SOURCE  /* Make sure strdup() is in <string.h> */
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+#define _BSD_SOURCE  /* Make sure setgroups()is in <grp.h> */
 
 #include <assert.h>
 #include <stdio.h>
