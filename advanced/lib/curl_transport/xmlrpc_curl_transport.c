@@ -52,6 +52,8 @@
    such subordinate libraries as OpenSSL and Winsock.
 -----------------------------------------------------------------------------*/
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #include <string.h>

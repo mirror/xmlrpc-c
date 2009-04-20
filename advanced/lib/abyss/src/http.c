@@ -1,6 +1,7 @@
 /* Copyright information is at the end of the file */
 
-#define _BSD_SOURCE   /* For strcaseeq() */
+#define _XOPEN_SOURCE 600   /* For strdup() */
+#define _BSD_SOURCE   /* For xmlrpc_strcaseeq() */
 
 #include <ctype.h>
 #include <assert.h>

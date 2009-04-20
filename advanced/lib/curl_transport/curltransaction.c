@@ -2,6 +2,8 @@
     curlTransaction
 =============================================================================*/
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -59,7 +61,7 @@ struct curlTransaction {
 
 
 static void
-addHeader(xmlrpc_env * const envP,
+addHeader(xmlrpc_env *         const envP,
           struct curl_slist ** const headerListP,
           const char *         const headerText) {
 
@@ -144,6 +146,46 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
 
 
 
+/*
+  In HTTP 1.1, the client can send the header "Expect: 100-continue", which
+  tells the server that the client isn't going to send the body until the
+  server tells it to by sending a "continue" response (HTTP response code 100).
+  The server is obligated to send that response.
+
+  However, many servers are broken and don't send the Continue response.
+
+  Early libcurl did not send the Expect: header, thus worked fine with such
+  broken servers.  But as of ca. 2007, libcurl sends the Expect:, and waits
+  for the response, when the body is large.  It gives up after 3 seconds and
+  sends the body anyway.
+
+  To accomodate the broken servers and for backward compatibility, we always
+  force libcurl not to send the Expect and consequently not to wait for
+  the response, using the hackish (but according to libcurl design) method
+  of including an entry in our header list that looks like an Expect:
+  header with an empty argument.
+
+  We may find a case where the Expect/Continue protocol is desirable.  If we
+  do, we should add a transport option to request the function and let libcurl
+  do its thing when the user requests it.
+
+  The purpose of Expect/Continue is to save the client the trouble of
+  generating and/or sending the body when the server is just going to reject
+  the transaction based on the headers -- like maybe because the body is
+  too big.
+*/
+
+
+static void
+addExpectHeader(xmlrpc_env *         const envP,
+                struct curl_slist ** const headerListP) {
+
+    addHeader(envP, headerListP, "Expect:\"\"");
+        /* Don't send Expect header.  See explanation above. */
+}
+
+
+
 static void
 createCurlHeaderList(xmlrpc_env *               const envP,
                      const char *               const authHdrValue,
@@ -161,6 +203,8 @@ createCurlHeaderList(xmlrpc_env *               const envP,
             if (authHdrValue)
                 addAuthorizationHeader(envP, &headerList, authHdrValue);
         }
+        if (!envP->fault_occurred)
+            addExpectHeader(envP, &headerList);
     }
     if (envP->fault_occurred)
         curl_slist_free_all(headerList);

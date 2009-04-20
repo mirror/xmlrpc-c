@@ -35,7 +35,7 @@
 
 */
 
-#define _GNU_SOURCE
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 
 #include <stdlib.h>
 #include <stdio.h>

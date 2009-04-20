@@ -1,5 +1,7 @@
 /* Copyright information is at end of file */
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #undef PACKAGE
