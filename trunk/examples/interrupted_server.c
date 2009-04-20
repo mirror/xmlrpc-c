@@ -7,6 +7,7 @@
    simpler code, but it is not interruptible with SIGTERM.
 */
 
+#define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
