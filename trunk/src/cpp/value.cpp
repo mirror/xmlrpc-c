@@ -213,7 +213,7 @@ value::addToCStruct(xmlrpc_value * const structP,
 value::type_t 
 value::type() const {
     /* You'd think we could just cast from xmlrpc_type to
-       value:type_t, but Gcc warns if we do that.  So we have to do this
+       value::type_t, but Gcc warns if we do that.  So we have to do this
        even messier union nonsense.
     */
     union {
@@ -276,6 +276,14 @@ value_int::operator int() const {
 
 
 
+int
+value_int::cvalue() const {
+
+    return static_cast<int>(*this);
+}
+
+
+
 value_double::value_double(double const cppvalue) {
 
     class cWrapper {
@@ -323,6 +331,14 @@ value_double::operator double() const {
 
 
 
+double
+value_double::cvalue() const {
+
+    return static_cast<double>(*this);
+}
+
+
+
 value_boolean::value_boolean(bool const cppvalue) {
 
     class cWrapper {
@@ -347,6 +363,17 @@ value_boolean::value_boolean(bool const cppvalue) {
 
 
 
+value_boolean::value_boolean(xmlrpc_c::value const baseValue) {
+
+    if (baseValue.type() != xmlrpc_c::value::TYPE_BOOLEAN)
+        throw(error("Not boolean type.  See type() method"));
+    else {
+        this->instantiate(baseValue.cValueP);
+    }
+}
+
+
+
 value_boolean::operator bool() const {
 
     xmlrpc_bool retval;
@@ -361,13 +388,10 @@ value_boolean::operator bool() const {
 
 
 
-value_boolean::value_boolean(xmlrpc_c::value const baseValue) {
+bool
+value_boolean::cvalue() const {
 
-    if (baseValue.type() != xmlrpc_c::value::TYPE_BOOLEAN)
-        throw(error("Not boolean type.  See type() method"));
-    else {
-        this->instantiate(baseValue.cValueP);
-    }
+    return static_cast<bool>(*this);
 }
 
 
@@ -484,6 +508,14 @@ value_datetime::operator timespec() const {
 
 
 
+time_t
+value_datetime::cvalue() const {
+
+    return static_cast<time_t>(*this);
+}
+
+
+
 class cNewStringWrapper {
 public:
     xmlrpc_value * valueP;
@@ -583,6 +615,14 @@ value_string::operator string() const {
 
 
 
+std::string
+value_string::cvalue() const {
+
+    return static_cast<std::string>(*this);
+}
+
+
+
 value_bytestring::value_bytestring(
     vector<unsigned char> const& cppvalue) {
 
@@ -605,6 +645,17 @@ value_bytestring::value_bytestring(
     cWrapper wrapper(cppvalue);
     
     this->instantiate(wrapper.valueP);
+}
+
+
+
+value_bytestring::value_bytestring(xmlrpc_c::value const baseValue) {
+
+    if (baseValue.type() != xmlrpc_c::value::TYPE_BYTESTRING)
+        throw(error("Not byte string type.  See type() method"));
+    else {
+        this->instantiate(baseValue.cValueP);
+    }
 }
 
 
@@ -636,6 +687,14 @@ value_bytestring::vectorUcharValue() const {
 
 
 
+vector<unsigned char>
+value_bytestring::cvalue() const {
+
+    return this->vectorUcharValue();
+}
+
+
+
 size_t
 value_bytestring::length() const {
 
@@ -646,17 +705,6 @@ value_bytestring::length() const {
     throwIfError(env);
 
     return length;
-}
-
-
-
-value_bytestring::value_bytestring(xmlrpc_c::value const baseValue) {
-
-    if (baseValue.type() != xmlrpc_c::value::TYPE_BYTESTRING)
-        throw(error("Not byte string type.  See type() method"));
-    else {
-        this->instantiate(baseValue.cValueP);
-    }
 }
 
 
@@ -737,6 +785,14 @@ value_array::vectorValueValue() const {
     }
 
     return retval;
+}
+
+
+
+vector<xmlrpc_c::value>
+value_array::cvalue() const {
+
+    return this->vectorValueValue();
 }
 
 
@@ -844,6 +900,14 @@ value_struct::operator map<string, xmlrpc_c::value>() const {
 
 
 
+map<string, xmlrpc_c::value>
+value_struct::cvalue() const {
+
+    return static_cast<map<string, xmlrpc_c::value> >(*this);
+}
+
+
+
 value_nil::value_nil() {
     
     class cWrapper {
@@ -875,6 +939,14 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
     else {
         this->instantiate(baseValue.cValueP);
     }
+}
+
+
+
+void *
+value_nil::cvalue() const {
+
+    return NULL;
 }
 
 
@@ -923,6 +995,14 @@ value_i8::operator xmlrpc_int64() const {
     throwIfError(env);
 
     return retval;
+}
+
+
+
+xmlrpc_int64
+value_i8::cvalue() const {
+
+    return static_cast<xmlrpc_int64>(*this);
 }
 
 

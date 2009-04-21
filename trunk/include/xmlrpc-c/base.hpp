@@ -62,6 +62,8 @@ public:
 
     xmlrpc_value *
     cValue() const;
+        // Not to be confused with public 'cvalue' method that all the derived
+        // classes have.
 
     value(xmlrpc_value * const valueP);
 
@@ -83,6 +85,8 @@ public:
     value_int(xmlrpc_c::value const baseValue);
 
     operator int() const;
+
+    int cvalue() const;
 };
 
 
@@ -94,6 +98,8 @@ public:
     value_boolean(xmlrpc_c::value const baseValue);
 
     operator bool() const;
+
+    bool cvalue() const;
 };
 
 
@@ -113,6 +119,8 @@ public:
     crlfValue() const;
 
     operator std::string() const;
+
+    std::string cvalue() const;
 };
 
 
@@ -124,6 +132,8 @@ public:
     value_double(xmlrpc_c::value const baseValue);
 
     operator double() const;
+
+    double cvalue() const;
 };
 
 
@@ -144,6 +154,8 @@ public:
     value_datetime(xmlrpc_c::value const baseValue);
 
     operator time_t() const;
+
+    time_t cvalue() const;
 };
 
 
@@ -159,6 +171,8 @@ public:
     std::vector<unsigned char>
     vectorUcharValue() const;
 
+    std::vector<unsigned char> cvalue() const;
+
     size_t
     length() const;
 };
@@ -172,6 +186,8 @@ public:
     value_struct(xmlrpc_c::value const baseValue);
 
     operator std::map<std::string, xmlrpc_c::value>() const;
+
+    std::map<std::string, xmlrpc_c::value> cvalue() const;
 };
 
 
@@ -184,6 +200,8 @@ public:
 
     std::vector<xmlrpc_c::value>
     vectorValueValue() const;
+
+    std::vector<xmlrpc_c::value> cvalue() const;
 
     size_t
     size() const;
@@ -218,6 +236,8 @@ public:
     value_nil();
 
     value_nil(xmlrpc_c::value const baseValue);
+
+    void * cvalue() const;
 };
 
 
@@ -229,6 +249,8 @@ public:
     value_i8(xmlrpc_c::value const baseValue);
 
     operator xmlrpc_int64() const;
+
+    xmlrpc_int64 cvalue() const;
 };
 
 
