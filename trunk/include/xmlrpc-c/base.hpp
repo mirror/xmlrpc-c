@@ -356,7 +356,7 @@ fromValue(xmlrpc_c::value & y, xmlrpc_c::value const& x) {
     y = x;
 }
 
-template<class K, class V> std::map<K, V> &
+template<class K, class V> inline void
 fromValue(std::map<K, V> & y, xmlrpc_c::value const& x) {
 /*----------------------------------------------------------------------------
    Convert XML-RPC structure to C++ map.
@@ -371,7 +371,7 @@ fromValue(std::map<K, V> & y, xmlrpc_c::value const& x) {
     return y;
 }
 
-template<class T> std::vector<T> &
+template<class T> inline void
 fromValue(std::vector<T> & y, xmlrpc_c::value const& x) {
 /*----------------------------------------------------------------------------
    Convert XML-RPC array to C++ vector.
