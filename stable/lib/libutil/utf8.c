@@ -251,19 +251,6 @@ decode_utf8(xmlrpc_env * const envP,
 
 
 
-void 
-xmlrpc_validate_utf8(xmlrpc_env * const env,
-                     const char * const utf8_data,
-                     size_t       const utf8_len) {
-/*----------------------------------------------------------------------------
-   Validate that a string is valid UTF-8.
------------------------------------------------------------------------------*/
-
-    decode_utf8(env, utf8_data, utf8_len, NULL, NULL);
-}
-
-
-
 xmlrpc_mem_block *
 xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
                    const char * const utf8_data,
@@ -506,7 +493,18 @@ xmlrpc_force_to_xml_chars(char * const buffer) {
 
 
 
-
-
-
-
+void 
+xmlrpc_validate_utf8(xmlrpc_env * const env,
+                     const char * const utf8_data,
+                     size_t       const utf8_len) {
+/*----------------------------------------------------------------------------
+   Validate that a string is valid UTF-8.
+-----------------------------------------------------------------------------*/
+#if HAVE_UNICODE_WCHAR
+    decode_utf8(env, utf8_data, utf8_len, NULL, NULL);
+#else
+    /* We don't have a convenient way to validate, so we just fake it and
+       call it valid.
+    */
+#endif
+}
