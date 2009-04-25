@@ -559,24 +559,58 @@ runUserHandler(TSession *        const sessionP,
 
 
 static void
+handleReqTooNewHttpVersion(TSession * const sessionP) {
+
+    const char * msg;
+
+    ResponseStatus(sessionP, 505);
+
+    xmlrpc_asprintf(&msg, "Request is in HTTP Version %u"
+                    "We understand only HTTP 1",
+                    sessionP->version.major);
+    
+    ResponseError2(sessionP, msg);
+    
+    xmlrpc_strfree(msg);
+}
+
+
+
+static void
+handleReqInvalidURI(TSession * const sessionP) {
+
+    ResponseStatus(sessionP, 400);
+
+    ResponseError2(sessionP, "Invalid URI");
+}
+
+
+
+static void
 processDataFromClient(TConn *  const connectionP,
                       bool     const lastReqOnConn,
                       uint32_t const timeout,
                       bool *   const keepAliveP) {
 
     TSession session;
+    const char * error;
+    uint16_t httpErrorCode;
 
     RequestInit(&session, connectionP);
 
     session.serverDeniesKeepalive = lastReqOnConn;
         
-    RequestRead(&session, timeout);
+    RequestRead(&session, timeout, &error, &httpErrorCode);
 
-    if (session.status == 0) {
+    if (error) {
+        ResponseStatus(&session, httpErrorCode);
+        ResponseError2(&session, error);
+        xmlrpc_strfree(error);
+    } else {
         if (session.version.major >= 2)
-            ResponseStatus(&session, 505);
+            handleReqTooNewHttpVersion(&session);
         else if (!RequestValidURI(&session))
-            ResponseStatus(&session, 400);
+            handleReqInvalidURI(&session);
         else
             runUserHandler(&session, connectionP->server->srvP);
     }
