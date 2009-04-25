@@ -2,6 +2,7 @@
    both by timeout and by control-C.
 */
 
+#define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>

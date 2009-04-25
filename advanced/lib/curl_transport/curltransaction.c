@@ -180,7 +180,7 @@ static void
 addExpectHeader(xmlrpc_env *         const envP,
                 struct curl_slist ** const headerListP) {
 
-    addHeader(envP, headerListP, "Expect:\"\"");
+    addHeader(envP, headerListP, "Expect: \"\"");
         /* Don't send Expect header.  See explanation above. */
 }
 

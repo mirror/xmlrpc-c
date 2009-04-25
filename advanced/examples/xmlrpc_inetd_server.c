@@ -21,6 +21,7 @@
    respond to the client, then exit.
 */
 
+#define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
