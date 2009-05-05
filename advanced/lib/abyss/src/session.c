@@ -146,6 +146,8 @@ SessionLog(TSession * const sessionP) {
     xmlrpc_strfree(date);
     
     LogWrite(sessionP->conn->server, logline);
+
+    xmlrpc_strfree(logline);
         
     return true;
 }
