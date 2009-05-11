@@ -166,7 +166,7 @@ MUST_BUILD_SHLIBLE = N
 shlibfn = $(1:%=%.shlibdummy)
 shliblefn = $(1:%=%.shlibledummy)
 
-ifeq ($(HOST_OS),linux-gnu)
+ifeq ($(findstring linux-gnu,$(HOST_OS)),linux-gnu)
   # Assume linker is GNU Compiler (gcc)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
