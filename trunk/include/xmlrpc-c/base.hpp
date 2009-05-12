@@ -373,7 +373,6 @@ fromValue(std::map<K, V> & y, xmlrpc_c::value const& x) {
          ++p) {
         fromValue(y[p->first], p->second);
     }
-    return y;
 }
 
 template<class T> inline void
@@ -387,7 +386,6 @@ fromValue(std::vector<T> & y, xmlrpc_c::value const& x) {
     for (unsigned int i = 0; i < v.size(); ++i) {
         fromValue(y[i], v[i]);
     }
-    return y;
 }
 
 class fault {
