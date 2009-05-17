@@ -318,6 +318,40 @@ public:
 
 
 
+class dialectTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "dialectTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+
+        registry myRegistry;
+        string response;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        myRegistry.addMethod("echo", methodPtr(new echoMethod));
+
+        myRegistry.setDialect(xmlrpc_dialect_i8);
+
+        myRegistry.setDialect(xmlrpc_dialect_apache);
+
+        myRegistry.processCall(echoI8ApacheCall, &response);
+
+        TEST(response == echoI8ApacheResponse);
+
+        myRegistry.processCall(echoNilApacheCall, &response);
+
+        TEST(response == echoNilApacheResponse);
+
+        EXPECT_ERROR(  // invalid dialect
+            myRegistry.setDialect(static_cast<xmlrpc_dialect>(300));
+            );
+    }
+};
+
+
+
 class testShutdown : public xmlrpc_c::registry::shutdown {
 /*----------------------------------------------------------------------------
    This class is logically local to
@@ -372,29 +406,11 @@ registryTestSuite::runtests(unsigned int const indentation) {
     registryDefaultMethodTestSuite().run(indentation+1);
 
     registry myRegistry;
-        
-    myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-    myRegistry.addMethod("echo", methodPtr(new echoMethod));
-
-    string response;
 
     myRegistry.disableIntrospection();
 
-    myRegistry.setDialect(xmlrpc_dialect_i8);
-
-    myRegistry.setDialect(xmlrpc_dialect_apache);
+    dialectTestSuite().run(indentation+1);
 
     registryShutdownTestSuite().run(indentation+1);
 
-    myRegistry.processCall(echoI8ApacheCall, &response);
-
-    TEST(response == echoI8ApacheResponse);
-
-    myRegistry.processCall(echoNilApacheCall, &response);
-
-    TEST(response == echoNilApacheResponse);
-
-    EXPECT_ERROR(  // invalid dialect
-        myRegistry.setDialect(static_cast<xmlrpc_dialect>(300));
-        );
 }
