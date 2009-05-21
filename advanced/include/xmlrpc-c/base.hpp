@@ -1,12 +1,17 @@
 #ifndef XMLRPC_BASE_HPP_INCLUDED
 #define XMLRPC_BASE_HPP_INCLUDED
 
+#include <xmlrpc-c/config.h>
+
 #include <climits>
 #include <cfloat>
 #include <ctime>
 #include <vector>
 #include <map>
 #include <string>
+#if XMLRPC_HAVE_TIMEVAL
+#include <sys/time.h>
+#endif
 
 #include <xmlrpc-c/base.h>
 
