@@ -166,7 +166,10 @@ MUST_BUILD_SHLIBLE = N
 shlibfn = $(1:%=%.shlibdummy)
 shliblefn = $(1:%=%.shlibledummy)
 
-ifeq ($(findstring linux-gnu,$(HOST_OS)),linux-gnu)
+# HOST_OS is usually has a version number suffix, e.g. "aix5.3.0.0", so
+# we compare based on prefix.
+
+ifeq ($(patsubst linux-gnu%,linux-gnu,$(HOST_OS)),linux-gnu)
   # Assume linker is GNU Compiler (gcc)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
@@ -179,7 +182,7 @@ ifeq ($(findstring linux-gnu,$(HOST_OS)),linux-gnu)
   CFLAGS_SHLIB=-fPIC
 endif
 
-ifeq ($(findstring solaris,$(HOST_OS)),solaris)
+ifeq ($(patsubst solaris%,solaris,$(HOST_OS)),solaris)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -192,7 +195,7 @@ ifeq ($(findstring solaris,$(HOST_OS)),solaris)
   CFLAGS_SHLIB = -Kpic
 endif
 
-ifeq ($(HOST_OS),aix)
+ifeq ($(patsubst aix%,aix,$(HOST_OS)),aix)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -202,7 +205,7 @@ ifeq ($(HOST_OS),aix)
   LDFLAGS_SHLIB = -qmkshrobj
 endif
 
-ifeq ($(HOST_OS),hpux)
+ifeq ($(patsubst hpux%,hpux,$(HOST_OS)),hpux)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -212,7 +215,7 @@ ifeq ($(HOST_OS),hpux)
   LDFLAGS_SHLIB: -shared -fPIC
 endif
 
-ifeq ($(HOST_OS),osf)
+ifeq ($(patsubst osf%,osf,$(HOST_OS)),osf)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -222,7 +225,7 @@ ifeq ($(HOST_OS),osf)
   LDFLAGS_SHLIB = -shared -expect_unresolved
 endif
 
-ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
+ifeq ($(patsubst netbsd%,netbsd,$(HOST_OS)),netbsd)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   MUST_BUILD_SHLIB = Y
@@ -234,7 +237,7 @@ ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
   NEED_WL_RPATH=yes
 endif
 
-ifeq ($(findstring freebsd,$(HOST_OS)),freebsd)
+ifeq ($(patsubst freebsd%,freebsd,$(HOST_OS)),freebsd)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   MUST_BUILD_SHLIB = Y
@@ -246,7 +249,7 @@ ifeq ($(findstring freebsd,$(HOST_OS)),freebsd)
   NEED_WL_RPATH=yes
 endif
 
-ifeq ($(HOST_OS),dragonfly)
+ifeq ($(patsubst dragonfly%,dragonfly,$(HOST_OS)),dragonfly)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -257,7 +260,7 @@ ifeq ($(HOST_OS),dragonfly)
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
-ifeq ($(HOST_OS),beos)
+ifeq ($(patsubst beos%,beos,$(HOST_OS)),beos)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -268,7 +271,6 @@ ifeq ($(HOST_OS),beos)
 endif
 
 ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
-  # (I once saw a system that generated 'darwin8.10.1').
   SHARED_LIB_TYPE = dylib
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -279,7 +281,7 @@ ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
 	-flat_namespace $(SHLIB_CLIB)
 endif
 
-ifeq ($(HOST_OS),irix)
+ifeq ($(patsubst irix%,irix,$(HOST_OS)),irix)
   SHARED_LIB_TYPE = irix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -293,7 +295,7 @@ ifeq ($(HOST_OS),irix)
     -set_version $(shell perl -e '$(VERSIONPERLPROG)') -lc
 endif
 
-ifeq ($(HOST_OS),cygwin)
+ifeq ($(patsubst cygwin%,cygwin,$(HOST_OS)),cygwin)
   SHARED_LIB_TYPE = dll
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = N
