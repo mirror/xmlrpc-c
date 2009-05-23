@@ -1,6 +1,7 @@
 #ifndef REGISTRY_HPP_INCLUDED
 #define REGISTRY_HPP_INCLUDED
 
+#include <sys/types.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -11,6 +12,19 @@
 
 namespace xmlrpc_c {
 
+
+class callInfo {
+/*----------------------------------------------------------------------------
+   Information about how an XML-RPC call arrived.
+
+   This base class carries no information; Servers that don't have any
+   call information to provide might use this.  Servers that do have call
+   information to provide define a derived class of this that contains
+   information pertinent to that kind of server.
+-----------------------------------------------------------------------------*/
+public:
+    virtual ~callInfo() {};  // This makes it polymorphic
+};
 
 class method : public girmem::autoObject {
 /*----------------------------------------------------------------------------
@@ -68,6 +82,33 @@ protected:
 */
 
 
+class method2 : public method {
+/*----------------------------------------------------------------------------
+   An XML-RPC method.
+
+   This base class is abstract.  You can't create an object in it.
+   Define a useful method with this as a base class, with an
+   execute() method.
+
+   This differs from class 'method' in that the execute() method gets
+   call information ('callInfo').
+-----------------------------------------------------------------------------*/
+public:
+    method2();
+
+    virtual ~method2();
+
+    virtual void
+    execute(xmlrpc_c::paramList        const& paramList,
+            const xmlrpc_c::callInfo * const  callInfoP,
+            xmlrpc_c::value *          const  resultP) = 0;
+
+    void
+    execute(xmlrpc_c::paramList const& paramList,
+            xmlrpc_c::value *   const  resultP);
+
+};
+
 class methodPtr : public girmem::autoObjectPtr {
 
 public:
@@ -102,7 +143,7 @@ public:
     get() const;
 };
 
-
+class registry_impl;
 
 class registry : public girmem::autoObject {
 /*----------------------------------------------------------------------------
@@ -141,32 +182,20 @@ public:
     setDialect(xmlrpc_dialect const dialect);
     
     void
-    processCall(std::string   const& body,
-                std::string * const  responseP) const;
+    processCall(std::string   const& callXml,
+                std::string * const  responseXmlP) const;
 
-    xmlrpc_registry *
-    c_registry() const;
-        /* This is meant to be private except to other objects in the
-           Xmlrpc-c library.
-        */
+    void
+    processCall(std::string                const& callXml,
+                const xmlrpc_c::callInfo * const callInfoP,
+                std::string *              const  responseXmlP) const;
+        
+    size_t
+    maxStackSize() const;
 
 private:
 
-    xmlrpc_registry * c_registryP;
-        // Pointer to the C registry object we use to implement this
-        // object.
-
-    std::list<xmlrpc_c::methodPtr> methodList;
-        // This is a list of all the method objects (actually, pointers
-        // to them).  But since the real registry is the C registry object,
-        // all this list is for is to maintain references to the objects
-        // to which the C registry points so that they continue to exist.
-
-    xmlrpc_c::defaultMethodPtr defaultMethodP;
-        // The real identifier of the default method is the C registry
-        // object; this member exists only to maintain a reference to the
-        // object to which the C registry points so that it will continue
-        // to exist.
+    registry_impl * implP;
 };
 
 

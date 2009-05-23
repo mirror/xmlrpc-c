@@ -31,6 +31,7 @@ SERVERPROGS_ABYSS = \
   xmlrpc_inetd_server \
   xmlrpc_loop_server \
   xmlrpc_sample_add_server \
+  callinfo_abyss_server \
 
 CLIENTPROGS = \
   xmlrpc_sample_add_client \

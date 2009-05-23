@@ -277,6 +277,50 @@ public:
 
 
 
+class testCallInfoMethod : public method2 {
+public:
+    void
+    execute(paramList        const& paramList,
+            const callInfo * const  callInfoPtr,
+            value *          const  retvalP) {
+
+        const callInfo_serverAbyss * const callInfoP(
+            dynamic_cast<const callInfo_serverAbyss *>(callInfoPtr));
+
+        TEST(callInfoP != NULL);
+        
+        paramList.verifyEnd(0);
+
+        TEST(callInfoP->serverAbyssP != NULL);
+        TEST(callInfoP->abyssSessionP != NULL);
+        
+        *retvalP = value_nil();
+    }
+};
+
+
+
+class callInfoTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "callInfoTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new testCallInfoMethod));
+
+        serverAbyss abyssServer(serverAbyss::constrOpt()
+                                .registryP(&myRegistry)
+                                .portNumber(12345)
+            );
+    }
+};
+
+
+
 string
 serverAbyssTestSuite::suiteName() {
     return "serverAbyssTestSuite";
@@ -292,4 +336,5 @@ serverAbyssTestSuite::runtests(unsigned int const indentation) {
 
     createTestSuite().run(indentation+1);
 
+    callInfoTestSuite().run(indentation+1);
 }
