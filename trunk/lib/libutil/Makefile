@@ -29,6 +29,7 @@ SHARED_LIBS_TO_INSTALL := libxmlrpc_util
 
 TARGET_MODS = \
   asprintf \
+  base64 \
   error \
   make_printable \
   memblock \
