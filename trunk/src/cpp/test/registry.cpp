@@ -429,8 +429,6 @@ public:
             string response;
             callInfo_test const callInfo;
             myRegistry.processCall(testCallInfoCallXml, &callInfo, &response);
-            cout << response << endl;
-            cout << testCallInfoResponseXml <<endl;
             TEST(response == testCallInfoResponseXml);
         }
     }
