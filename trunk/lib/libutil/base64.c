@@ -1,6 +1,6 @@
-#include <inttypes.h>
 #include <string.h>
 
+#include "int.h"
 #include "xmlrpc-c/base64_int.h"
 
 
