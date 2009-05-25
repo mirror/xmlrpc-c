@@ -37,7 +37,7 @@ dieIfFailed(const char * const description,
 static xmlrpc_server_abyss_t * serverToTerminateP;
 
 static void 
-sigtermHandler(int const signalClass ATTR_UNUSED) {
+sigtermHandler(int const signalClass) {
     
     xmlrpc_env env;
 
@@ -83,8 +83,8 @@ restoreSigtermHandler(void){
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP, 
            xmlrpc_value * const paramArrayP,
-           void *         const serverInfo ATTR_UNUSED,
-           void *         const channelInfo ATTR_UNUSED) {
+           void *         const serverInfo,
+           void *         const channelInfo) {
     
     xmlrpc_int x, y, z;
 

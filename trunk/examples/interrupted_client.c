@@ -111,7 +111,7 @@ addInterruptibly(xmlrpc_client * const clientP,
 
 int 
 main(int           const argc, 
-     const char ** const argv ATTR_UNUSED) {
+     const char ** const argv) {
 
     const char * const serverUrl = "http://localhost:8080/RPC2";
 
