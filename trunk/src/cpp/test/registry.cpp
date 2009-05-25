@@ -246,7 +246,7 @@ public:
     }
     void
     execute(xmlrpc_c::paramList const& paramList,
-            const callInfo *,
+            const callInfo *    const,
             value *             const  retvalP) {
         
         int const addend(paramList.getInt(0));
