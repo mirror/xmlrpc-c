@@ -143,7 +143,7 @@ public:
     get() const;
 };
 
-class registry_impl;
+struct registry_impl;
 
 class registry : public girmem::autoObject {
 /*----------------------------------------------------------------------------

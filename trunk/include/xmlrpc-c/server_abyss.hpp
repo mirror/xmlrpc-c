@@ -12,7 +12,7 @@
 
 namespace xmlrpc_c {
 
-class serverAbyss_impl;
+struct serverAbyss_impl;
 
 class serverAbyss {
     
