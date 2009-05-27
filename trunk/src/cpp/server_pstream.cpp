@@ -14,7 +14,16 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+#include "xmlrpc_config.h"
+#if MSVCRT
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include <winsock.h>
+typedef int socklen_t;
+#else
 #include <sys/socket.h>
+#endif
 #include <errno.h>
 #include <cstring>
 #include <memory>
