@@ -147,6 +147,10 @@ SOURCE=..\src\cpp\server_abyss.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\cpp\server_pstream.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\cpp\server_pstream_conn.cpp
 # End Source File
 # Begin Source File
