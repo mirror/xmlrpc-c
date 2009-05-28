@@ -46,14 +46,13 @@ sigchld(int const ASSERT_ONLY_ARG(signalClass)) {
    This is a signal handler for a SIGCHLD signal (which informs us that
    one of our child processes has terminated).
 
-   We respond by reaping the zombie process.
-
-   Implementation note: In some systems, just setting the signal handler
-   to SIG_IGN (ignore signal) does this.  In some, the system does this
-   automatically if the signal is blocked.
+   The only child processes we have are those that belong to the Abyss
+   server (and then only if the Abyss server was configured to use
+   forking as a threading mechanism), so we respond by passing the
+   signal on to the Abyss server.  And reaping the dead child.
 -----------------------------------------------------------------------------*/
 #ifndef _WIN32
-    /* Reap zombie children until there aren't any more. */
+    // Reap zombie children / report to Abyss until there aren't any more.
 
     bool zombiesExist;
     bool error;
@@ -74,7 +73,8 @@ sigchld(int const ASSERT_ONLY_ARG(signalClass)) {
                 // This is OK - it's a ptrace notification
             } else
                 error = true;
-        }
+        } else
+            ServerHandleSigchld(pid);
     }
 #endif /* _WIN32 */
 }
@@ -515,6 +515,8 @@ serverAbyss::run() {
     signalHandlers oldHandlers;
 
     setupSignalHandlers(&oldHandlers);
+
+    ServerUseSigchld(&this->implP->cServer);
 
     ServerRun(&this->implP->cServer);
 
