@@ -71,7 +71,8 @@ sigchld(int const ASSERT_ONLY_ARG(signalClass)) {
                 // This is OK - it's a ptrace notification
             } else
                 error = true;
-        }
+        } else
+            ServerHandleSigchld(pid);
     }
 #endif /* _WIN32 */
 }
@@ -401,6 +402,8 @@ serverAbyss::run() {
     setupSignalHandlers(&oldHandlers);
 
     ServerRun(&this->cServer);
+
+    ServerUseSigchld(&this->cServer);
 
     restoreSignalHandlers(oldHandlers);
 }
