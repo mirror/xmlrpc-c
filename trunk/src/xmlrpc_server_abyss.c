@@ -1206,9 +1206,11 @@ sigchld(int const signalClass ATTR_UNUSED) {
    The only child processes we have are those that belong to the Abyss
    server (and then only if the Abyss server was configured to use
    forking as a threading mechanism), so we respond by passing the
-   signal on to the Abyss server.
+   signal on to the Abyss server.  And reaping the dead child.
 -----------------------------------------------------------------------------*/
 #ifndef WIN32
+    /* Reap zombie children / report to Abyss until there aren't any more. */
+
     bool childrenLeft;
     bool error;
 
