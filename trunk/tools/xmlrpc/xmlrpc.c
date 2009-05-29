@@ -260,6 +260,33 @@ buildString(xmlrpc_env *    const envP,
 
 
 static void
+interpretHex(xmlrpc_env *    const envP,
+             const char *    const valueString,
+             size_t          const valueStringSize,
+             unsigned char * const byteString) {
+
+    size_t bsCursor;
+    size_t strCursor;
+
+    for (strCursor = 0, bsCursor = 0;
+         strCursor < valueStringSize && !envP->fault_occurred;
+        ) {
+        int rc;
+
+        rc = sscanf(&valueString[strCursor], "%2hhx",
+                    &byteString[bsCursor++]);
+
+        if (rc != 1)
+            xmlrpc_faultf(envP, "Invalid hex data '%s'",
+                          &valueString[strCursor]);
+        else
+            strCursor += 2;
+    }
+}
+
+
+
+static void
 buildBytestring(xmlrpc_env *    const envP,
                 const char *    const valueString,
                 xmlrpc_value ** const paramPP) {
@@ -273,29 +300,21 @@ buildBytestring(xmlrpc_env *    const envP,
     else {
         size_t const byteStringSize = strlen(valueString)/2;
         
-        unsigned char byteString[byteStringSize];
-        size_t bsCursor;
-        size_t strCursor;
+        unsigned char * byteString;
 
-        strCursor = 0;
-        bsCursor = 0;
+        MALLOCARRAY(byteString, byteStringSize);
 
-        while (strCursor < valueStringSize && !envP->fault_occurred) {
-            int rc;
+        if (byteString == NULL)
+            xmlrpc_faultf(envP, "Failed to allocate %u-byte buffer",
+                          (unsigned)byteStringsize);
+        else {
+            interpretHex(envP, valueString, valueStringSize, byteString);
 
-            assert(bsCursor < byteStringSize);
+            if (!envP->fault_occurred)
+                *paramPP = xmlrpc_base64_new(envP, byteStringSize, byteString);
 
-            rc = sscanf(&valueString[strCursor], "%2hhx",
-                        &byteString[bsCursor++]);
-
-            if (rc != 1)
-                xmlrpc_faultf(envP, "Invalid hex data '%s'",
-                              &valueString[strCursor]);
-            else
-                strCursor += 2;
+            free(byteString);
         }
-        if (!envP->fault_occurred)
-            *paramPP = xmlrpc_base64_new(envP, byteStringSize, byteString);
     }
 }
 
