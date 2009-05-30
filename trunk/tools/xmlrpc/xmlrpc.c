@@ -306,7 +306,7 @@ buildBytestring(xmlrpc_env *    const envP,
 
         if (byteString == NULL)
             xmlrpc_faultf(envP, "Failed to allocate %u-byte buffer",
-                          (unsigned)byteStringsize);
+                          (unsigned)byteStringSize);
         else {
             interpretHex(envP, valueString, valueStringSize, byteString);
 
