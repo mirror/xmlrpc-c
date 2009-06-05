@@ -93,7 +93,7 @@ SOURCE=..\src\cpp\test\server_abyss.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\cpp\test\server_pstream_conn.cpp
+SOURCE=..\src\cpp\test\server_pstream.cpp
 # End Source File
 # Begin Source File
 

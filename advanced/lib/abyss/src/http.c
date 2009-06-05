@@ -16,6 +16,7 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/base64_int.h"
 #include "xmlrpc-c/abyss.h"
 
 #include "server.h"
@@ -1067,7 +1068,7 @@ RequestAuth(TSession *   const sessionP,
                 NextToken((const char **)&authHdrPtr);
 
                 xmlrpc_asprintf(&userPass, "%s:%s", user, pass);
-                Base64Encode(userPass, userPassEncoded);
+                xmlrpc_base64Encode(userPass, userPassEncoded);
                 xmlrpc_strfree(userPass);
 
                 if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
