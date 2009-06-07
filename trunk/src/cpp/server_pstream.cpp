@@ -234,7 +234,9 @@ serverPstream::runSerial(volatile const int * const interruptP) {
                     .socketFd(acceptedFd)
                     .registryP(this->implP->registryP));
 
-                connectionServer.run(interruptP);
+                callInfo_serverPstream callInfo(this, peerAddr, size);
+
+                connectionServer.run(&callInfo, interruptP);
             }
         }
     }
@@ -251,10 +253,26 @@ serverPstream::runSerial() {
 }
 
 
+
 void
 serverPstream::terminate() {
 
     this->implP->termRequested = true;
 }
+
+
+
+callInfo_serverPstream::callInfo_serverPstream(
+    serverPstream * const serverP,
+    struct sockaddr const clientAddr,
+    socklen_t const clientAddrSize) :
+
+    serverP(serverP),
+    clientAddr(clientAddr),
+    clientAddrSize(clientAddrSize)
+
+{}
+
+
 
 } // namespace

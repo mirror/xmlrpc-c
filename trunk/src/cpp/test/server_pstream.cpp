@@ -72,6 +72,14 @@ static string const
 packetEnd(ESC_STR "END");
 
 
+class callInfo_test : public callInfo {
+public:
+    callInfo_test() : info("this is a test") {}
+    string const info;
+};
+
+
+
 class sampleAddMethod : public method {
 public:
     sampleAddMethod() {
@@ -91,7 +99,66 @@ public:
     }
 };
 
+string const sampleAddCallXml(
+    xmlPrologue +
+    "<methodCall>\r\n"
+    "<methodName>sample.add</methodName>\r\n"
+    "<params>\r\n"
+    "<param><value><i4>5</i4></value></param>\r\n"
+    "<param><value><i4>7</i4></value></param>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n"
+    );
+    
+string const sampleAddResponseXml(
+    xmlPrologue +
+    "<methodResponse>\r\n"
+    "<params>\r\n"
+    "<param><value><i4>12</i4></value></param>\r\n"
+    "</params>\r\n"
+    "</methodResponse>\r\n"
+    );
 
+
+class testCallInfoMethod : public method2 {
+
+public:
+    virtual void
+    execute(paramList        const& paramList,
+            const callInfo * const  callInfoPtr,
+            value *          const  retvalP) {
+
+        const callInfo_test * const callInfoP(
+            dynamic_cast<const callInfo_test *>(callInfoPtr));
+
+        TEST(callInfoP != NULL);
+        
+        paramList.verifyEnd(0);
+
+        TEST(callInfoP->info == string("this is a test"));
+        
+        *retvalP = value_nil();
+    }
+};
+
+string const testCallInfoCallXml(
+    xmlPrologue +
+    "<methodCall>\r\n"
+    "<methodName>test.callinfo</methodName>\r\n"
+    "<params>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n"
+    );
+
+string const testCallInfoResponseXml(
+    xmlPrologue +
+    "<methodResponse>\r\n"
+    "<params>\r\n"
+    "<param><value><string>this is a test callInfo</string></value>"
+    "</param>\r\n"
+    "</params>\r\n"
+    "</methodResponse>\r\n"
+    );
 
 class client {
 /*----------------------------------------------------------------------------
@@ -316,31 +383,43 @@ testEmptyPacket(registry const& myRegistry) {
 
 
 static void
+testCallInfo(client *            const  clientP,
+             serverPstreamConn * const  serverP) {
+    
+    string const testCallInfoCallStream(
+        packetStart + testCallInfoCallXml + packetEnd
+        );
+
+    string const testCallInfoResponseStream(
+        packetStart + testCallInfoResponseXml + packetEnd
+        );
+
+    clientP->sendCall(testCallInfoCallStream);
+    
+    callInfo_test callInfo;
+    int nointerrupt(0);
+    bool eof;
+    serverP->runOnce(&callInfo, &nointerrupt, &eof);
+
+    TEST(!eof);
+
+    string response;
+    clientP->recvResp(&response);
+
+    TEST(response == testCallInfoResponseStream);
+}
+
+
+
+static void
 testNormalCall(registry const& myRegistry) {
 
     string const sampleAddGoodCallStream(
-        packetStart +
-        xmlPrologue +
-        "<methodCall>\r\n"
-        "<methodName>sample.add</methodName>\r\n"
-        "<params>\r\n"
-        "<param><value><i4>5</i4></value></param>\r\n"
-        "<param><value><i4>7</i4></value></param>\r\n"
-        "</params>\r\n"
-        "</methodCall>\r\n" +
-        packetEnd
+        packetStart + sampleAddCallXml + packetEnd
         );
-    
 
     string const sampleAddGoodResponseStream(
-        packetStart +
-        xmlPrologue +
-        "<methodResponse>\r\n"
-        "<params>\r\n"
-        "<param><value><i4>12</i4></value></param>\r\n"
-        "</params>\r\n"
-        "</methodResponse>\r\n" +
-        packetEnd
+        packetStart + sampleAddResponseXml + packetEnd
         );
 
     client client;
@@ -366,6 +445,8 @@ testNormalCall(registry const& myRegistry) {
 
     TEST(response == sampleAddGoodResponseStream);
     
+    testCallInfo(&client, &server);
+
     client.hangup();
 
     server.runOnce(&eof);
@@ -529,7 +610,10 @@ public:
     virtual void runtests(unsigned int const) {
         registry myRegistry;
         
-        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        myRegistry.addMethod("sample.add",
+                             methodPtr(new sampleAddMethod));
+        myRegistry.addMethod("test.callinfo",
+                             methodPtr(new testCallInfoMethod));
 
         registryPtr myRegistryP(new registry);
 
@@ -585,6 +669,62 @@ testMultiConnInterrupt(registry const& myRegistry) {
 
 
 
+class derivedServer : public xmlrpc_c::serverPstream {
+public:
+    derivedServer(serverPstream::constrOpt const& constrOpt) :
+        serverPstream(constrOpt),
+        info("this is my derived server") {}
+
+    string const info;
+};
+
+
+
+class multiTestCallInfoMethod : public method2 {
+
+// The test isn't sophisticated enough actually to do an RPC, so this
+// code never runs.  We just want to see if it compiles.
+
+public:
+    virtual void
+    execute(paramList        const& paramList,
+            const callInfo * const  callInfoPtr,
+            value *          const  retvalP) {
+
+        const callInfo_serverPstream * const callInfoP(
+            dynamic_cast<const callInfo_serverPstream *>(callInfoPtr));
+
+        TEST(callInfoP != NULL);
+        
+        paramList.verifyEnd(0);
+
+        derivedServer * const derivedServerP(
+            dynamic_cast<derivedServer *>(callInfoP->serverP));
+
+        TEST(derivedServerP->info == string("this is my derived server"));
+
+        TEST(callInfoP->clientAddr.sa_family == AF_INET);
+        TEST(callInfoP->clientAddrSize >= sizeof(struct sockaddr_in));
+        
+        *retvalP = value_nil();
+    }
+};
+
+static void
+testMultiConnCallInfo() {
+
+    registry myRegistry;
+        
+    myRegistry.addMethod("testCallInfo",
+                         methodPtr(new multiTestCallInfoMethod));
+
+    derivedServer server(serverPstream::constrOpt()
+                         .registryP(&myRegistry)
+                         .socketFd(37));
+}
+
+
+
 class multiConnServerTestSuite : public testSuite {
 
 public:
@@ -594,7 +734,8 @@ public:
     virtual void runtests(unsigned int const) {
         registry myRegistry;
         
-        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        myRegistry.addMethod("sample.add",
+                             methodPtr(new sampleAddMethod));
 
         registryPtr myRegistryP(new registry);
 
@@ -616,6 +757,8 @@ public:
             );
         
         testMultiConnInterrupt(myRegistry);
+
+        testMultiConnCallInfo();
     }
 };
 
