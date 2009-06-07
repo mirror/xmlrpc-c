@@ -118,9 +118,9 @@ public:
     callInfo_serverAbyss(xmlrpc_c::serverAbyss * const abyssServerP,
                          TSession *              const abyssSessionP);
 
-    xmlrpc_c::serverAbyss * serverAbyssP;
+    xmlrpc_c::serverAbyss * const serverAbyssP;
         // The server that is processing the RPC.
-    TSession * abyssSessionP;
+    TSession * const abyssSessionP;
         // The HTTP transaction that embodies the RPC.  You can ask this
         // object things like what the IP address of the client is.
 };
