@@ -17,9 +17,12 @@ struct serverAbyss_impl;
 class serverAbyss {
     
 public:
+    struct constrOpt_impl;
+
     class constrOpt {
     public:
         constrOpt();
+        ~constrOpt();
 
         constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
@@ -32,33 +35,12 @@ public:
         constrOpt & dontAdvertise     (bool           const& arg);
         constrOpt & uriPath           (std::string    const& arg);
         constrOpt & chunkResponse     (bool           const& arg);
+        constrOpt & serverOwnsSignals (bool           const& arg);
+        constrOpt & expectSigchld     (bool           const& arg);
 
-        struct value {
-            xmlrpc_c::registryPtr      registryPtr;
-            const xmlrpc_c::registry * registryP;
-            XMLRPC_SOCKET  socketFd;
-            unsigned int   portNumber;
-            std::string    logFileName;
-            unsigned int   keepaliveTimeout;
-            unsigned int   keepaliveMaxConn;
-            unsigned int   timeout;
-            bool           dontAdvertise;
-            std::string    uriPath;
-            bool           chunkResponse;
-        } value;
-        struct {
-            bool registryPtr;
-            bool registryP;
-            bool socketFd;
-            bool portNumber;
-            bool logFileName;
-            bool keepaliveTimeout;
-            bool keepaliveMaxConn;
-            bool timeout;
-            bool dontAdvertise;
-            bool uriPath;
-            bool chunkResponse;
-        } present;
+    private:
+        struct constrOpt_impl * implP;
+        friend class serverAbyss;
     };
 
     serverAbyss(constrOpt const& opt);
@@ -84,6 +66,9 @@ public:
 
     void
     runConn(int const socketFd);
+
+    void
+    sigchld(pid_t pid);
 
     void
     terminate();

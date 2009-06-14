@@ -170,6 +170,108 @@ callInfo_serverAbyss::callInfo_serverAbyss(
 
 
 
+struct serverAbyss::constrOpt_impl {
+
+    constrOpt_impl();
+
+    struct value {
+        xmlrpc_c::registryPtr      registryPtr;
+        const xmlrpc_c::registry * registryP;
+        XMLRPC_SOCKET  socketFd;
+        unsigned int   portNumber;
+        std::string    logFileName;
+        unsigned int   keepaliveTimeout;
+        unsigned int   keepaliveMaxConn;
+        unsigned int   timeout;
+        bool           dontAdvertise;
+        std::string    uriPath;
+        bool           chunkResponse;
+        bool           serverOwnsSignals;
+        bool           expectSigchld;
+    } value;
+    struct {
+        bool registryPtr;
+        bool registryP;
+        bool socketFd;
+        bool portNumber;
+        bool logFileName;
+        bool keepaliveTimeout;
+        bool keepaliveMaxConn;
+        bool timeout;
+        bool dontAdvertise;
+        bool uriPath;
+        bool chunkResponse;
+        bool serverOwnsSignals;
+        bool expectSigchld;
+    } present;
+};
+
+
+
+serverAbyss::constrOpt_impl::constrOpt_impl() {
+    present.registryPtr       = false;
+    present.registryP         = false;
+    present.socketFd          = false;
+    present.portNumber        = false;
+    present.logFileName       = false;
+    present.keepaliveTimeout  = false;
+    present.keepaliveMaxConn  = false;
+    present.timeout           = false;
+    present.dontAdvertise     = false;
+    present.uriPath           = false;
+    present.chunkResponse     = false;
+    present.serverOwnsSignals = false;
+    present.expectSigchld     = false;
+    
+    // Set default values
+    value.dontAdvertise     = false;
+    value.uriPath           = string("/RPC2");
+    value.chunkResponse     = false;
+    value.serverOwnsSignals = true;
+    value.expectSigchld     = false;
+}
+
+
+
+#define DEFINE_OPTION_SETTER(OPTION_NAME, TYPE) \
+serverAbyss::constrOpt & \
+serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
+    this->implP->value.OPTION_NAME = arg; \
+    this->implP->present.OPTION_NAME = true; \
+    return *this; \
+}
+
+DEFINE_OPTION_SETTER(registryPtr,       xmlrpc_c::registryPtr);
+DEFINE_OPTION_SETTER(registryP,         const registry *);
+DEFINE_OPTION_SETTER(socketFd,          XMLRPC_SOCKET);
+DEFINE_OPTION_SETTER(portNumber,        unsigned int);
+DEFINE_OPTION_SETTER(logFileName,       string);
+DEFINE_OPTION_SETTER(keepaliveTimeout,  unsigned int);
+DEFINE_OPTION_SETTER(keepaliveMaxConn,  unsigned int);
+DEFINE_OPTION_SETTER(timeout,           unsigned int);
+DEFINE_OPTION_SETTER(dontAdvertise,     bool);
+DEFINE_OPTION_SETTER(uriPath,           string);
+DEFINE_OPTION_SETTER(chunkResponse,     bool);
+DEFINE_OPTION_SETTER(serverOwnsSignals, bool);
+DEFINE_OPTION_SETTER(expectSigchld,     bool);
+
+#undef DEFINE_OPTION_SETTER
+
+
+serverAbyss::constrOpt::constrOpt() {
+
+    this->implP = new serverAbyss::constrOpt_impl();
+}
+
+
+
+serverAbyss::constrOpt::~constrOpt() {
+
+    delete(this->implP);
+}
+
+
+
 static void
 createServer(bool         const  logFileNameGiven,
              string       const& logFileName,
@@ -222,13 +324,16 @@ struct serverAbyss_impl {
 
     TServer cServer;
 
-    serverAbyss_impl(serverAbyss::constrOpt const& opt,
-                     serverAbyss *          const serverAbyssP);
+    serverAbyss_impl(serverAbyss::constrOpt_impl const& opt,
+                     serverAbyss *               const serverAbyssP);
 
     ~serverAbyss_impl();
 
     void
-    setAdditionalServerParms(serverAbyss::constrOpt const& opt);
+    setAdditionalServerParms(serverAbyss::constrOpt_impl const& opt);
+
+    void
+    run();
 
     void
     processCall(std::string   const& call,
@@ -237,6 +342,9 @@ struct serverAbyss_impl {
 
     serverAbyss * const serverAbyssP;
         // The server for which we are the implementation.
+
+    bool expectSigchld;
+    bool serverOwnsSignals;
 };
 
 
@@ -286,8 +394,28 @@ processXmlrpcCall(xmlrpc_env *        const envP,
 
 
 
-serverAbyss_impl::serverAbyss_impl(serverAbyss::constrOpt const& opt,
-                                   serverAbyss *          const serverAbyssP) :
+void
+serverAbyss_impl::setAdditionalServerParms(
+    serverAbyss::constrOpt_impl const& opt) {
+
+    // The following ought to be parameters on ServerCreate().
+
+    if (opt.present.keepaliveTimeout)
+        ServerSetKeepaliveTimeout(&this->cServer, opt.value.keepaliveTimeout);
+    if (opt.present.keepaliveMaxConn)
+        ServerSetKeepaliveMaxConn(&this->cServer, opt.value.keepaliveMaxConn);
+    if (opt.present.timeout)
+        ServerSetTimeout(&this->cServer, opt.value.timeout);
+    ServerSetAdvertise(&this->cServer, !opt.value.dontAdvertise);
+    if (opt.value.expectSigchld)
+        ServerUseSigchld(&this->cServer);
+}
+
+
+
+serverAbyss_impl::serverAbyss_impl(
+    serverAbyss::constrOpt_impl const& opt,
+    serverAbyss *          const serverAbyssP) :
     serverAbyssP(serverAbyssP) {
 
     if (!opt.present.registryP && !opt.present.registryPtr)
@@ -305,6 +433,12 @@ serverAbyss_impl::serverAbyss_impl(serverAbyss::constrOpt const& opt,
     }
     if (opt.present.portNumber && opt.present.socketFd)
         throwf("You can't specify both portNumber and socketFd options");
+
+    this->serverOwnsSignals = opt.value.serverOwnsSignals;
+    
+    if (opt.value.serverOwnsSignals && opt.value.expectSigchld)
+        throwf("You can't specify both expectSigchld "
+               "and serverOwnsSignals options");
 
     DateInit();
     
@@ -347,21 +481,45 @@ serverAbyss_impl::~serverAbyss_impl() {
 
 
 
-void
-serverAbyss_impl::setAdditionalServerParms(serverAbyss::constrOpt const& opt) {
+static void
+setupSignalsAndRunAbyss(TServer * const abyssServerP) {
 
-    /* The following ought to be parameters on ServerCreate(), but it
-       looks like plugging them straight into the TServer structure is
-       the only way to set them.  
+    /* We do some pretty ugly stuff for an object method: we set signal
+       handlers, which are process-global.
+
+       One example of where this can be hairy is: Caller has a child
+       process unrelated to the Abyss server.  That child dies.  We
+       get his death of a child signal and Caller never knows.
+
+       We really expect to be the only thing in the process, at least
+       for the time we're running.  If you want the Abyss Server
+       to behave more like an object and own the signals yourself,
+       use runOnce() in a loop instead of run().
     */
+    signalHandlers oldHandlers;
 
-    if (opt.present.keepaliveTimeout)
-        ServerSetKeepaliveTimeout(&this->cServer, opt.value.keepaliveTimeout);
-    if (opt.present.keepaliveMaxConn)
-        ServerSetKeepaliveMaxConn(&this->cServer, opt.value.keepaliveMaxConn);
-    if (opt.present.timeout)
-        ServerSetTimeout(&this->cServer, opt.value.timeout);
-    ServerSetAdvertise(&this->cServer, !opt.value.dontAdvertise);
+    setupSignalHandlers(&oldHandlers);
+
+    ServerUseSigchld(abyssServerP);
+
+    ServerRun(abyssServerP);
+
+    restoreSignalHandlers(oldHandlers);
+}
+
+
+
+void
+serverAbyss_impl::run() {
+
+    if (this->serverOwnsSignals)
+        setupSignalsAndRunAbyss(&this->cServer);
+    else {
+        if (this->expectSigchld)
+            ServerUseSigchld(&this->cServer);
+
+        ServerRun(&this->cServer);
+    }
 }
 
 
@@ -396,53 +554,10 @@ serverAbyss::shutdown::doit(string const&,
 
 
 
-serverAbyss::constrOpt::constrOpt() {
-    present.registryPtr      = false;
-    present.registryP        = false;
-    present.socketFd         = false;
-    present.portNumber       = false;
-    present.logFileName      = false;
-    present.keepaliveTimeout = false;
-    present.keepaliveMaxConn = false;
-    present.timeout          = false;
-    present.dontAdvertise    = false;
-    present.uriPath          = false;
-    present.chunkResponse    = false;
-    
-    // Set default values
-    value.dontAdvertise  = false;
-    value.uriPath        = string("/RPC2");
-    value.chunkResponse  = false;
-}
-
-
-
-#define DEFINE_OPTION_SETTER(OPTION_NAME, TYPE) \
-serverAbyss::constrOpt & \
-serverAbyss::constrOpt::OPTION_NAME(TYPE const& arg) { \
-    this->value.OPTION_NAME = arg; \
-    this->present.OPTION_NAME = true; \
-    return *this; \
-}
-
-DEFINE_OPTION_SETTER(registryPtr,      xmlrpc_c::registryPtr);
-DEFINE_OPTION_SETTER(registryP,        const registry *);
-DEFINE_OPTION_SETTER(socketFd,         XMLRPC_SOCKET);
-DEFINE_OPTION_SETTER(portNumber,       unsigned int);
-DEFINE_OPTION_SETTER(logFileName,      string);
-DEFINE_OPTION_SETTER(keepaliveTimeout, unsigned int);
-DEFINE_OPTION_SETTER(keepaliveMaxConn, unsigned int);
-DEFINE_OPTION_SETTER(timeout,          unsigned int);
-DEFINE_OPTION_SETTER(dontAdvertise,    bool);
-DEFINE_OPTION_SETTER(uriPath,          string);
-DEFINE_OPTION_SETTER(chunkResponse,    bool);
-
-
-
 void
 serverAbyss::initialize(constrOpt const& opt) {
 
-    this->implP = new serverAbyss_impl(opt, this);
+    this->implP = new serverAbyss_impl(*opt.implP, this);
 }
 
 
@@ -500,27 +615,7 @@ serverAbyss::~serverAbyss() {
 void
 serverAbyss::run() {
 
-    /* We do some pretty ugly stuff for an object method: we set signal
-       handlers, which are process-global.
-
-       One example of where this can be hairy is: Caller has a child
-       process unrelated to the Abyss server.  That child dies.  We
-       get his death of a child signal and Caller never knows.
-
-       We really expect to be the only thing in the process, at least
-       for the time we're running.  If you want the Abyss Server
-       to behave more like an object and own the signals yourself,
-       use runOnce() in a loop instead of run().
-    */
-    signalHandlers oldHandlers;
-
-    setupSignalHandlers(&oldHandlers);
-
-    ServerUseSigchld(&this->implP->cServer);
-
-    ServerRun(&this->implP->cServer);
-
-    restoreSignalHandlers(oldHandlers);
+    this->implP->run();
 }
  
 
@@ -537,6 +632,23 @@ void
 serverAbyss::runConn(int const socketFd) {
 
     ServerRunConn(&this->implP->cServer, socketFd);
+}
+
+
+
+void
+serverAbyss::sigchld(pid_t const pid) {
+
+    // There's a hole in the design here, because the Abyss server uses
+    // a process-global list of children (so there can't be more than one
+    // Abyss object in the process), so while this is an object method,
+    // it doesn't really refer to the object at all.
+
+    // We might conceivably fix Abyss some day, then this method would do
+    // what you expect -- affect only its own object.  But forking Abyss is
+    // obsolete anyway, so we just don't worry about it.
+
+    ServerHandleSigchld(pid);
 }
 
 

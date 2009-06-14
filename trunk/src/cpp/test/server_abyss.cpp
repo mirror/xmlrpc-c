@@ -262,6 +262,8 @@ public:
                                     .timeout(20)
                                     .dontAdvertise(true)
                                     .uriPath("/xmlrpc")
+                                    .serverOwnsSignals(false)
+                                    .expectSigchld(true)
                 );
     
         }
