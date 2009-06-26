@@ -195,8 +195,6 @@ MutexCreate(TMutex ** const mutexPP) {
 
     *mutexPP = mutexP;
 
-    TraceMsg( "Created Mutex %s\n", (succeeded ? "ok" : "FAILED") );
-
     return succeeded;
 }
  
