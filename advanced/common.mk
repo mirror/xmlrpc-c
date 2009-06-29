@@ -23,7 +23,15 @@ GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline
 GCC_C_WARNINGS = $(GCC_WARNINGS) \
   -Wmissing-declarations -Wstrict-prototypes -Wmissing-prototypes
 
-GCC_CXX_WARNINGS = $(GCC_WARNINGS) -Woverloaded-virtual -Wsynth
+GCC_CXX_WARNINGS = $(GCC_WARNINGS)  -Wsynth
+
+# Before 09.05.20, we had -Woverloaded-virtual, but it doesn't seem to do
+# anything useful.  It causes a warning that a method was hidden, but
+# experiments show nothing is actually hidden.  The GCC manual's description
+# of what it does does not match empirical evidence.  The option causes
+# warnings when a derived class of xmlrpc_c::method2 overrides one of the
+# execute() methods and not the other (as cpp/test/registry.cpp does), but the
+# code works fine.
 
 # The NDEBUG macro says not to build code that assumes there are no bugs.
 # This makes the code go faster.  The main thing it does is tell the C library

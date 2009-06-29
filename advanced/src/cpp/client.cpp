@@ -128,7 +128,7 @@ carriageParmPtr::operator->() const {
 
 carriageParm *
 carriageParmPtr::get() const {
-    return dynamic_cast<carriageParm *>(objectP);
+    return dynamic_cast<carriageParm *>(this->objectP);
 }
 
 

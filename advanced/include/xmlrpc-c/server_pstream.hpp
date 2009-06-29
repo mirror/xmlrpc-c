@@ -3,6 +3,8 @@
 
 #ifdef WIN32
 #include <winsock.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+#else
+#include <sys/socket.h>
 #endif
 
 #include <xmlrpc-c/config.h>  /* For XMLRPC_SOCKET */
@@ -36,6 +38,11 @@ public:
     ~serverPstreamConn();
 
     void
+    runOnce(xmlrpc_c::callInfo * const callInfoP,
+            volatile const int * const interruptP,
+            bool *               const eofP);
+
+    void
     runOnce(volatile const int * const interruptP,
             bool *               const eofP);
 
@@ -43,11 +50,20 @@ public:
     runOnce(bool * const eofP);
 
     void
+    runOnceNoWait(callInfo * const callInfoP,
+                  bool *     const eofP,
+                  bool *     const didOneP);
+
+    void
     runOnceNoWait(bool * const eofP,
                   bool * const didOneP);
 
     void
     runOnceNoWait(bool * const eofP);
+
+    void
+    run(xmlrpc_c::callInfo * const callInfoP,
+        volatile const int * const interruptP);
 
     void
     run(volatile const int * const interruptP);
@@ -82,7 +98,7 @@ public:
 
     serverPstream(constrOpt const& opt);
 
-    ~serverPstream();
+    virtual ~serverPstream();  // This makes it polymorphic
 
     void
     runSerial(volatile const int * const interruptP);
@@ -104,6 +120,40 @@ public:
 
 private:
     struct serverPstream_impl * implP;
+};
+
+// Note: there is no xmlrpc_c::callInfo_serverPstreamConn .  That's
+// because the serverPstreamConn server is so low-level that the user
+// defines his own derived class of xmlrpc_c::callInfo.  He creates an
+// object of that class and passes it to the 'runOnce' method.  The
+// server then passes it on through to the user's XML-RPC method 
+// execute() method.
+
+class callInfo_serverPstream : public xmlrpc_c::callInfo {
+/*----------------------------------------------------------------------------
+   This is information about how an XML-RPC call arrived to the server.  It is
+   available to the user's XML-RPC method execute() method, so for example an
+   XML-RPC method might execute differently depending upon the IP address of
+   the client.
+
+   This is for a user of a xmlrpc_c::serverPstream server.
+-----------------------------------------------------------------------------*/
+public:
+    callInfo_serverPstream(
+        xmlrpc_c::serverPstream * const serverP,
+        struct sockaddr           const clientAddr,
+        socklen_t                 const clientAddrSize);
+
+    xmlrpc_c::serverPstream * const serverP;
+        // The server that is processing the RPC.
+    struct sockaddr const clientAddr;
+        // The address (typically, IP address and TCP port) of the XML-RPC
+        // client.  This is a Unix OS type.
+    socklen_t const clientAddrSize;
+        // Size in bytes of the valid part of 'clientAddr'.  (Usually implied
+        // by type of socket, as well as the address type member of
+        // 'clientAddr', but here because it's technically part of the POSIX
+        // socket interface).
 };
 
 

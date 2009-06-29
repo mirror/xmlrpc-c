@@ -108,6 +108,24 @@ string const sampleAddBadResponseXml(
     "</methodResponse>\r\n"
     );
 
+string const testCallInfoCallXml(
+    xmlPrologue +
+    "<methodCall>\r\n"
+    "<methodName>test.callinfo</methodName>\r\n"
+    "<params>\r\n"
+    "</params>\r\n"
+    "</methodCall>\r\n"
+    );
+
+string const testCallInfoResponseXml(
+    xmlPrologue +
+    "<methodResponse>\r\n"
+    "<params>\r\n"
+    "<param><value><string>this is a test callInfo</string></value>"
+    "</param>\r\n"
+    "</params>\r\n"
+    "</methodResponse>\r\n"
+    );
 
 string const nonexistentMethodCallXml(
     xmlPrologue +
@@ -187,6 +205,18 @@ string const echoNilApacheResponse(
     );
 
 
+class callInfo_test : public callInfo {
+
+public:
+    callInfo_test() : data("this is a test callInfo") {}
+
+    callInfo_test(string const& data) : data(data) {};
+
+    string data;
+};
+
+
+
 class sampleAddMethod : public method {
 public:
     sampleAddMethod() {
@@ -203,6 +233,51 @@ public:
         paramList.verifyEnd(2);
         
         *retvalP = value_int(addend + adder);
+    }
+};
+
+
+
+class sampleAddMethod2 : public method2 {
+public:
+    sampleAddMethod2() {
+        this->_signature = "i:ii";
+        this->_help = "This method adds two integers together";
+    }
+    void
+    execute(xmlrpc_c::paramList const& paramList,
+            const callInfo *    const,
+            value *             const  retvalP) {
+        
+        int const addend(paramList.getInt(0));
+        int const adder(paramList.getInt(1));
+        
+        paramList.verifyEnd(2);
+        
+        *retvalP = value_int(addend + adder);
+    }
+};
+
+
+
+class testCallInfoMethod : public method2 {
+public:
+    testCallInfoMethod() {
+        this->_signature = "s:";
+    }
+    void
+    execute(xmlrpc_c::paramList const& paramList,
+            const callInfo *    const  callInfoPtr,
+            value *             const  retvalP) {
+        
+        const callInfo_test * const callInfoP(
+            dynamic_cast<const callInfo_test *>(callInfoPtr));
+
+        TEST(callInfoP != NULL);
+
+        paramList.verifyEnd(0);
+        
+        *retvalP = value_string(callInfoP->data);
     }
 };
 
@@ -276,6 +351,12 @@ public:
             myRegistry.processCall(sampleAddBadCallXml, &response);
             TEST(response == sampleAddBadResponseXml);
         }
+        {
+            string response;
+            callInfo const callInfo;
+            myRegistry.processCall(sampleAddBadCallXml, &callInfo, &response);
+            TEST(response == sampleAddBadResponseXml);
+        }
     }
 };
 
@@ -313,6 +394,77 @@ public:
             myRegistry.processCall(nonexistentMethodCallXml, &response);
             TEST(response == nonexistentMethodYesDefResponseXml);
         }
+    }
+};
+
+
+
+class method2TestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "method2TestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+
+        xmlrpc_c::registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", 
+                             xmlrpc_c::methodPtr(new sampleAddMethod2));
+        
+        myRegistry.addMethod("test.callinfo", 
+                             xmlrpc_c::methodPtr(new testCallInfoMethod));
+        
+        {
+            string response;
+            myRegistry.processCall(sampleAddGoodCallXml, &response);
+            TEST(response == sampleAddGoodResponseXml);
+        }
+        {
+            string response;
+            myRegistry.processCall(sampleAddBadCallXml, &response);
+            TEST(response == sampleAddBadResponseXml);
+        }
+        {
+            string response;
+            callInfo_test const callInfo;
+            myRegistry.processCall(testCallInfoCallXml, &callInfo, &response);
+            TEST(response == testCallInfoResponseXml);
+        }
+    }
+};
+
+
+
+class dialectTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "dialectTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+
+        registry myRegistry;
+        string response;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        myRegistry.addMethod("echo", methodPtr(new echoMethod));
+
+        myRegistry.setDialect(xmlrpc_dialect_i8);
+
+        myRegistry.setDialect(xmlrpc_dialect_apache);
+
+        myRegistry.processCall(echoI8ApacheCall, &response);
+
+        TEST(response == echoI8ApacheResponse);
+
+        myRegistry.processCall(echoNilApacheCall, &response);
+
+        TEST(response == echoNilApacheResponse);
+
+        EXPECT_ERROR(  // invalid dialect
+            myRegistry.setDialect(static_cast<xmlrpc_dialect>(300));
+            );
     }
 };
 
@@ -369,32 +521,19 @@ registryTestSuite::runtests(unsigned int const indentation) {
     }
 
     registryRegMethodTestSuite().run(indentation+1);
+
     registryDefaultMethodTestSuite().run(indentation+1);
 
-    registry myRegistry;
-        
-    myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-    myRegistry.addMethod("echo", methodPtr(new echoMethod));
+    method2TestSuite().run(indentation+1);
 
-    string response;
+    registry myRegistry;
 
     myRegistry.disableIntrospection();
 
-    myRegistry.setDialect(xmlrpc_dialect_i8);
-
-    myRegistry.setDialect(xmlrpc_dialect_apache);
+    dialectTestSuite().run(indentation+1);
 
     registryShutdownTestSuite().run(indentation+1);
 
-    myRegistry.processCall(echoI8ApacheCall, &response);
+    TEST(myRegistry.maxStackSize() >= 256);
 
-    TEST(response == echoI8ApacheResponse);
-
-    myRegistry.processCall(echoNilApacheCall, &response);
-
-    TEST(response == echoNilApacheResponse);
-
-    EXPECT_ERROR(  // invalid dialect
-        myRegistry.setDialect(static_cast<xmlrpc_dialect>(300));
-        );
 }

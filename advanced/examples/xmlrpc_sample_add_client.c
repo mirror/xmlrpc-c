@@ -1,6 +1,6 @@
 /* A simple synchronous XML-RPC client written in C, as an example of
    an Xmlrpc-c client.  This invokes the sample.add procedure that the
-   Xmlrpc-c example server.c server provides.  I.e. it adds to numbers
+   Xmlrpc-c example server.c server provides.  I.e. it adds two numbers
    together, the hard way.
 */
 
@@ -28,7 +28,7 @@ die_if_fault_occurred (xmlrpc_env * const envP) {
 
 int 
 main(int           const argc, 
-     const char ** const argv ATTR_UNUSED) {
+     const char ** const argv) {
 
     xmlrpc_env env;
     xmlrpc_value * resultP;

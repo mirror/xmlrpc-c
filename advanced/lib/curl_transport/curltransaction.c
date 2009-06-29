@@ -160,10 +160,12 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
   sends the body anyway.
 
   To accomodate the broken servers and for backward compatibility, we always
-  force libcurl not to send the Expect and consequently not to wait for
-  the response, using the hackish (but according to libcurl design) method
-  of including an entry in our header list that looks like an Expect:
-  header with an empty argument.
+  force libcurl not to send the Expect and consequently not to wait for the
+  response, using the hackish (but according to libcurl design) method of
+  including an entry in our explicit header list that is an Expect: header
+  with an empty argument.  This causes libcurl not to send any Expect: header.
+  This is since 1.19; we may find there are also servers and/or libcurl levels
+  that can't work with that.
 
   We may find a case where the Expect/Continue protocol is desirable.  If we
   do, we should add a transport option to request the function and let libcurl

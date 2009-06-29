@@ -35,7 +35,7 @@ static void
 handle_sample_add_response(const char *   const serverUrl,
                            const char *   const methodName,
                            xmlrpc_value * const paramArrayP,
-                           void *         const user_data ATTR_UNUSED,
+                           void *         const user_data,
                            xmlrpc_env *   const faultP,
                            xmlrpc_value * const resultP) {
 
@@ -70,7 +70,7 @@ handle_sample_add_response(const char *   const serverUrl,
 
 int 
 main(int           const argc, 
-     const char ** const argv ATTR_UNUSED) {
+     const char ** const argv) {
 
     const char * const serverUrl = "http://localhost:8080/RPC2";
     const char * const methodName = "sample.add";

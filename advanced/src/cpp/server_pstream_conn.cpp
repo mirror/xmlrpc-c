@@ -103,6 +103,10 @@ struct serverPstreamConn_impl {
 
     void
     establishPacketSocket(serverPstreamConn::constrOpt_impl const& opt);
+    
+    void
+    serverPstreamConn_impl::processRecdPacket(packetPtr  const callPacketP,
+                                              callInfo * const callInfoP);
 
     // 'registryP' is what we actually use; 'registryHolder' just holds a
     // reference to 'registryP' so the registry doesn't disappear while
@@ -198,6 +202,7 @@ serverPstreamConn::~serverPstreamConn() {
 static void
 processCall(const registry * const  registryP,
             packetPtr        const& callPacketP,
+            callInfo *       const  callInfoP,
             packetPtr *      const  responsePacketPP) {
 
     string const callXml(reinterpret_cast<char *>(callPacketP->getBytes()),
@@ -205,7 +210,7 @@ processCall(const registry * const  registryP,
 
     string responseXml;
 
-    registryP->processCall(callXml, &responseXml);
+    registryP->processCall(callXml, callInfoP, &responseXml);
 
     *responsePacketPP = packetPtr(new packet(responseXml.c_str(),
                                              responseXml.length()));
@@ -214,7 +219,29 @@ processCall(const registry * const  registryP,
 
 
 void
-serverPstreamConn::runOnce(volatile const int * const interruptP,
+serverPstreamConn_impl::processRecdPacket(packetPtr  const callPacketP,
+                                          callInfo * const callInfoP) {
+    
+    packetPtr responsePacketP;
+    try {
+        processCall(this->registryP, callPacketP, callInfoP, &responsePacketP);
+    } catch (exception const& e) {
+        throwf("Error executing received packet as an XML-RPC RPC.  %s",
+               e.what());
+    }
+    try {
+        this->packetSocketP->writeWait(responsePacketP);
+    } catch (exception const& e) {
+        throwf("Failed to write the response to the packet socket.  %s",
+               e.what());
+    }
+}
+
+
+
+void
+serverPstreamConn::runOnce(callInfo *           const callInfoP,
+                           volatile const int * const interruptP,
                            bool *               const eofP) {
 /*----------------------------------------------------------------------------
    Get and execute one RPC from the client.
@@ -231,21 +258,17 @@ serverPstreamConn::runOnce(volatile const int * const interruptP,
         throwf("Error reading a packet from the packet socket.  %s",
                e.what());
     }
-    if (gotPacket) {
-        packetPtr responsePacketP;
-        try {
-            processCall(this->implP->registryP, callPacketP, &responsePacketP);
-        } catch (exception const& e) {
-            throwf("Error executing received packet as an XML-RPC RPC.  %s",
-                   e.what());
-        }
-        try {
-            this->implP->packetSocketP->writeWait(responsePacketP);
-        } catch (exception const& e) {
-            throwf("Failed to write the response to the packet socket.  %s",
-                   e.what());
-        }
-    }
+    if (gotPacket)
+        this->implP->processRecdPacket(callPacketP, callInfoP);
+}
+
+
+
+void
+serverPstreamConn::runOnce(volatile const int * const interruptP,
+                           bool *               const eofP) {
+
+    this->runOnce(NULL, interruptP, eofP);
 }
 
 
@@ -263,8 +286,9 @@ serverPstreamConn::runOnce(bool * const eofP) {
 
 
 void
-serverPstreamConn::runOnceNoWait(bool * const eofP,
-                                 bool * const didOneP) {
+serverPstreamConn::runOnceNoWait(callInfo * const callInfoP,
+                                 bool *     const eofP,
+                                 bool *     const didOneP) {
 /*----------------------------------------------------------------------------
    Get and execute one RPC from the client, unless none has been
    received yet.  Return as *didOneP whether or not one has been
@@ -279,23 +303,20 @@ serverPstreamConn::runOnceNoWait(bool * const eofP,
         throwf("Error reading a packet from the packet socket.  %s",
                e.what());
     }
-    if (gotPacket) {
-        packetPtr responsePacketP;
-        try {
-            processCall(this->implP->registryP, callPacketP, &responsePacketP);
-        } catch (exception const& e) {
-            throwf("Error executing received packet as an XML-RPC RPC.  %s",
-                   e.what());
-        }
-        try {
-            this->implP->packetSocketP->writeWait(responsePacketP);
-        } catch (exception const& e) {
-            throwf("Failed to write the response to the packet socket.  %s",
-                   e.what());
-        }
-    }
+    if (gotPacket)
+        this->implP->processRecdPacket(callPacketP, callInfoP);
+
     if (didOneP)
         *didOneP = gotPacket;
+}
+
+
+
+void
+serverPstreamConn::runOnceNoWait(bool * const eofP,
+                                 bool * const didOneP) {
+
+    this->runOnceNoWait(NULL, eofP, didOneP);
 }
 
 
@@ -312,11 +333,20 @@ serverPstreamConn::runOnceNoWait(bool * const eofP) {
 
 
 void
-serverPstreamConn::run(volatile const int * const interruptP) {
+serverPstreamConn::run(callInfo *           const callInfoP,
+                       volatile const int * const interruptP) {
 
     for (bool clientHasDisconnected = false;
          !clientHasDisconnected && !*interruptP;)
-        this->runOnce(interruptP, &clientHasDisconnected);
+        this->runOnce(callInfoP, interruptP, &clientHasDisconnected);
+}
+
+
+
+void
+serverPstreamConn::run(volatile const int * const interruptP) {
+
+    this->run(NULL, interruptP);
 }
 
 

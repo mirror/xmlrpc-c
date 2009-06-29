@@ -5,18 +5,24 @@
 #include <winsock.h>   // For XMLRPC_SOCKET (= SOCKET)
 #endif
 
-#include "xmlrpc-c/config.h"  // For XMLRPC_SOCKET
-#include "xmlrpc-c/base.hpp"
-#include "abyss.h"
+#include <xmlrpc-c/config.h>  // For XMLRPC_SOCKET
+#include <xmlrpc-c/base.hpp>
+#include <xmlrpc-c/registry.hpp>
+#include <xmlrpc-c/abyss.h>
 
 namespace xmlrpc_c {
+
+struct serverAbyss_impl;
 
 class serverAbyss {
     
 public:
+    struct constrOpt_impl;
+
     class constrOpt {
     public:
         constrOpt();
+        ~constrOpt();
 
         constrOpt & registryPtr       (xmlrpc_c::registryPtr      const& arg);
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
@@ -29,33 +35,12 @@ public:
         constrOpt & dontAdvertise     (bool           const& arg);
         constrOpt & uriPath           (std::string    const& arg);
         constrOpt & chunkResponse     (bool           const& arg);
+        constrOpt & serverOwnsSignals (bool           const& arg);
+        constrOpt & expectSigchld     (bool           const& arg);
 
-        struct value {
-            xmlrpc_c::registryPtr      registryPtr;
-            const xmlrpc_c::registry * registryP;
-            XMLRPC_SOCKET  socketFd;
-            unsigned int   portNumber;
-            std::string    logFileName;
-            unsigned int   keepaliveTimeout;
-            unsigned int   keepaliveMaxConn;
-            unsigned int   timeout;
-            bool           dontAdvertise;
-            std::string    uriPath;
-            bool           chunkResponse;
-        } value;
-        struct {
-            bool registryPtr;
-            bool registryP;
-            bool socketFd;
-            bool portNumber;
-            bool logFileName;
-            bool keepaliveTimeout;
-            bool keepaliveMaxConn;
-            bool timeout;
-            bool dontAdvertise;
-            bool uriPath;
-            bool chunkResponse;
-        } present;
+    private:
+        struct constrOpt_impl * implP;
+        friend class serverAbyss;
     };
 
     serverAbyss(constrOpt const& opt);
@@ -83,6 +68,9 @@ public:
     runConn(int const socketFd);
 
     void
+    sigchld(pid_t pid);
+
+    void
     terminate();
     
     class shutdown : public xmlrpc_c::registry::shutdown {
@@ -95,24 +83,50 @@ public:
     };
 
 private:
-    // The user has the choice of supplying the registry by plain pointer
-    // (and managing the object's existence himself) or by autoObjectPtr
-    // (with automatic management).  'registryPtr' exists here only to
-    // maintain a reference count in the case that the user supplied an
-    // autoObjectPtr.  The object doesn't reference the C++ registry
-    // object except during construction, because the C registry is the
-    // real registry.
-    xmlrpc_c::registryPtr registryPtr;
 
-    TServer cServer;
-
-    void
-    setAdditionalServerParms(constrOpt const& opt);
+    serverAbyss_impl * implP;
 
     void
     initialize(constrOpt const& opt);
 };
 
+class callInfo_serverAbyss : public xmlrpc_c::callInfo {
+/*----------------------------------------------------------------------------
+   This is information about how an XML-RPC call arrived via an Abyss server.
+   It is available to the user's XML-RPC method execute() method, so for
+   example an XML-RPC method might execute differently depending upon the
+   IP address of the client.
+
+   This is for a user of a xmlrpc_c::serverAbyss server.
+-----------------------------------------------------------------------------*/
+public:
+    callInfo_serverAbyss(xmlrpc_c::serverAbyss * const abyssServerP,
+                         TSession *              const abyssSessionP);
+
+    xmlrpc_c::serverAbyss * const serverAbyssP;
+        // The server that is processing the RPC.
+    TSession * const abyssSessionP;
+        // The HTTP transaction that embodies the RPC.  You can ask this
+        // object things like what the IP address of the client is.
+};
+
+class callInfo_abyss : public xmlrpc_c::callInfo {
+/*----------------------------------------------------------------------------
+   This is information about how an XML-RPC call arrived via an Abyss server.
+   It is available to the user's XML-RPC method execute() method, so for
+   example an XML-RPC method might execute differently depending upon the
+   IP address of the client.
+
+   This is for a user with his own Abyss server, using
+   the "set_handlers" routines to make it into an XML-RPC server.
+-----------------------------------------------------------------------------*/
+public:
+    callInfo_abyss(TSession * const abyssSessionP);
+
+    TSession * abyssSessionP;
+        // The HTTP transaction that embodies the RPC.  You can ask this
+        // object things like what the IP address of the client is.
+};
 
 void
 server_abyss_set_handlers(TServer *          const  srvP,

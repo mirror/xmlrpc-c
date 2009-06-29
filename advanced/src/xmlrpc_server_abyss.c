@@ -461,7 +461,8 @@ traceHandlerCalled(TSession * const abyssSessionP) {
 static void
 processCall(TSession *        const abyssSessionP,
             size_t            const contentSize,
-            xmlrpc_registry * const registryP,
+            xmlrpc_call_processor   xmlProcessor,
+            void *            const xmlProcessorArg,
             bool              const wantChunk,
             const char *      const trace) {
 /*----------------------------------------------------------------------------
@@ -491,9 +492,10 @@ processCall(TSession *        const abyssSessionP,
         getBody(&env, abyssSessionP, contentSize, trace, &body);
         if (!env.fault_occurred) {
             xmlrpc_mem_block * output;
+
             /* Process the RPC. */
-            xmlrpc_registry_process_call2(
-                &env, registryP,
+            xmlProcessor(
+                &env, xmlProcessorArg,
                 XMLRPC_MEMBLOCK_CONTENTS(char, body),
                 XMLRPC_MEMBLOCK_SIZE(char, body),
                 abyssSessionP,
@@ -525,6 +527,25 @@ processCall(TSession *        const abyssSessionP,
 
 
 
+static void
+processXmlrpcCall(xmlrpc_env *        const envP,
+                  void *              const arg,
+                  const char *        const callXml,
+                  size_t              const callXmlLen,
+                  TSession *          const abyssSessionP,                  
+                  xmlrpc_mem_block ** const responseXmlPP) {
+
+    xmlrpc_registry * const registryP = arg;
+
+    xmlrpc_registry_process_call2(envP, registryP,
+                                  callXml, callXmlLen, abyssSessionP,
+                                  responseXmlPP);
+
+}
+
+
+
+
 /****************************************************************************
     Abyss handlers (to be registered with and called by Abyss)
 ****************************************************************************/
@@ -538,10 +559,12 @@ struct uriHandlerXmlrpc {
    This is the part of an Abyss HTTP request handler (aka URI handler)
    that is specific to the Xmlrpc-c handler.
 -----------------------------------------------------------------------------*/
-    xmlrpc_registry * registryP;
-    const char *      uriPath;  /* malloc'ed */
-    bool              chunkResponse;
+    xmlrpc_registry *       registryP;
+    const char *            uriPath;  /* malloc'ed */
+    bool                    chunkResponse;
         /* The handler should chunk its response whenever possible */
+    xmlrpc_call_processor * xmlProcessor;
+    void *                  xmlProcessorArg;
 };
 
 
@@ -628,7 +651,8 @@ handleXmlrpcReq(void *        const handlerArg,
                                       "XML-RPC call.");
                         else
                             processCall(abyssSessionP, contentSize,
-                                        uriHandlerXmlrpcP->registryP,
+                                        uriHandlerXmlrpcP->xmlProcessor,
+                                        uriHandlerXmlrpcP->xmlProcessorArg,
                                         uriHandlerXmlrpcP->chunkResponse,
                                         trace_abyss);
                     }
@@ -686,7 +710,9 @@ static void
 setHandler(xmlrpc_env *      const envP,
            TServer *         const srvP,
            const char *      const uriPath,
-           xmlrpc_registry * const registryP,
+           xmlrpc_call_processor   xmlProcessor,
+           void *            const xmlProcessorArg,
+           size_t            const xmlProcessorMaxStackSize,
            bool              const chunkResponse) {
     
     struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
@@ -696,13 +722,14 @@ setHandler(xmlrpc_env *      const envP,
                                  
     MALLOCVAR_NOFAIL(uriHandlerXmlrpcP);
 
-    uriHandlerXmlrpcP->registryP     = registryP;
-    uriHandlerXmlrpcP->uriPath       = strdup(uriPath);
-    uriHandlerXmlrpcP->chunkResponse = chunkResponse;
+    uriHandlerXmlrpcP->xmlProcessor    = xmlProcessor;
+    uriHandlerXmlrpcP->xmlProcessorArg = xmlProcessorArg;
+    uriHandlerXmlrpcP->uriPath         = strdup(uriPath);
+    uriHandlerXmlrpcP->chunkResponse   = chunkResponse;
     
     {
         size_t const stackSize = 
-            HANDLE_XMLRPC_REQ_STACK + xmlrpc_registry_max_stackSize(registryP);
+            HANDLE_XMLRPC_REQ_STACK + xmlProcessorMaxStackSize;
         struct ServerReqHandler3 const handlerDesc = {
             /* .term               = */ &termUriHandler,
             /* .handleReq          = */ &handleXmlrpcReq,
@@ -713,7 +740,7 @@ setHandler(xmlrpc_env *      const envP,
     }
     if (!success)
         xmlrpc_faultf(envP, "Abyss failed to register the Xmlrpc-c request "
-                      "handler.  ServerAddHandler2() failed.");
+                      "handler.  ServerAddHandler3() failed.");
 
     if (envP->fault_occurred)
         free(uriHandlerXmlrpcP);
@@ -727,31 +754,61 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                 const char *      const uriPath,
                                 xmlrpc_registry * const registryP) {
 
-    setHandler(envP, srvP, uriPath, registryP, false);
+    setHandler(envP, srvP, uriPath, &processXmlrpcCall, registryP,
+               xmlrpc_registry_max_stackSize(registryP), false);
 }
 
     
 
-static void
-setHandlers(TServer *         const srvP,
-            const char *      const uriPath,
-            xmlrpc_registry * const registryP,
-            bool              const chunkResponse) {
+void
+xmlrpc_server_abyss_set_handler2(
+    TServer *         const srvP,
+    const char *      const uriPath,
+    xmlrpc_call_processor   xmlProcessor,
+    void *            const xmlProcessorArg,
+    size_t            const xmlProcessorMaxStackSize,
+    xmlrpc_bool       const chunkResponse) {
 
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
 
     trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
-                                 
-    setHandler(&env, srvP, uriPath, registryP, chunkResponse);
+
+    setHandler(&env, srvP, uriPath, xmlProcessor, xmlProcessorArg,
+               xmlProcessorMaxStackSize,
+               chunkResponse);
     
     if (env.fault_occurred)
         abort();
 
-    ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
-
     xmlrpc_env_clean(&env);
+}
+
+
+
+void
+xmlrpc_server_abyss_set_default_handler(TServer * const srvP) {
+
+    ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
+}
+    
+
+
+static void
+setHandlersRegistry(TServer *         const srvP,
+                    const char *      const uriPath,
+                    xmlrpc_registry * const registryP,
+                    bool              const chunkResponse) {
+
+    xmlrpc_server_abyss_set_handler2(
+        srvP,
+        uriPath,
+        &processXmlrpcCall, registryP, 
+        xmlrpc_registry_max_stackSize(registryP),
+        chunkResponse);
+
+    xmlrpc_server_abyss_set_default_handler(srvP);
 }
 
 
@@ -761,7 +818,7 @@ xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
                                   const char *      const uriPath,
                                   xmlrpc_registry * const registryP) {
 
-    setHandlers(srvP, uriPath, registryP, false);
+    setHandlersRegistry(srvP, uriPath, registryP, false);
 }
 
 
@@ -770,7 +827,7 @@ void
 xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
                                  xmlrpc_registry * const registryP) {
 
-    setHandlers(srvP, "/RPC2", registryP, false);
+    setHandlersRegistry(srvP, "/RPC2", registryP, false);
 }
 
 
@@ -980,9 +1037,9 @@ createServer(xmlrpc_env *                      const envP,
     if (!envP->fault_occurred) {
         setAdditionalServerParms(parmsP, parmSize, abyssServerP);
         
-        setHandlers(abyssServerP, uriPathParm(parmsP, parmSize),
-                    parmsP->registryP,
-                    chunkResponseParm(parmsP, parmSize));
+        setHandlersRegistry(abyssServerP, uriPathParm(parmsP, parmSize),
+                            parmsP->registryP,
+                            chunkResponseParm(parmsP, parmSize));
         
         ServerInit(abyssServerP);
     }
@@ -1149,9 +1206,11 @@ sigchld(int const signalClass ATTR_UNUSED) {
    The only child processes we have are those that belong to the Abyss
    server (and then only if the Abyss server was configured to use
    forking as a threading mechanism), so we respond by passing the
-   signal on to the Abyss server.
+   signal on to the Abyss server.  And reaping the dead child.
 -----------------------------------------------------------------------------*/
 #ifndef WIN32
+    /* Reap zombie children / report to Abyss until there aren't any more. */
+
     bool childrenLeft;
     bool error;
 
@@ -1327,7 +1386,7 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP,
         
         assert(parmSize >= XMLRPC_APSIZE(registryP));
     
-        setHandlers(&server, "/RPC2", parmsP->registryP, false);
+        setHandlersRegistry(&server, "/RPC2", parmsP->registryP, false);
         
         ServerInit(&server);
     
@@ -1451,7 +1510,7 @@ xmlrpc_server_abyss_init_registry(void) {
     dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 
-    setHandlers(&globalSrv, "/RPC2", builtin_registryP, false);
+    setHandlersRegistry(&globalSrv, "/RPC2", builtin_registryP, false);
 }
 
 

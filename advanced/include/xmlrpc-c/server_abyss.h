@@ -139,6 +139,23 @@ xmlrpc_server_abyss_restore_sig(
 **  Functions to make an XML-RPC server out of your own Abyss server
 **=======================================================================*/
 
+typedef void
+xmlrpc_call_processor(xmlrpc_env *        const envP,
+                      void *              const processorArg,
+                      const char *        const callXml,
+                      size_t              const callXmlLen,
+                      TSession *          const abyssSessionP,
+                      xmlrpc_mem_block ** const responseXmlPP);
+
+void
+xmlrpc_server_abyss_set_handler2(
+    TServer *         const srvP,
+    const char *      const uriPath,
+    xmlrpc_call_processor   xmlProcessor,
+    void *            const xmlProcessorArg,
+    size_t            const xmlProcessorMaxStackSize,
+    xmlrpc_bool       const chunkResponse);
+
 void
 xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
                                   const char *      const filename,
@@ -153,6 +170,9 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                 TServer *         const serverP,
                                 const char *      const filename,
                                 xmlrpc_registry * const registryP);
+
+void
+xmlrpc_server_abyss_set_default_handler(TServer * const serverP);
 
 /*=========================================================================
 **  Handy Abyss Extensions

@@ -91,6 +91,10 @@ SOURCE=..\lib\libutil\asprintf.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\libutil\base64.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\libutil\error.c
 # End Source File
 # Begin Source File

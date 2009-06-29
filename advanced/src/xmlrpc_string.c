@@ -561,18 +561,6 @@ xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
 
 
 static void
-validateUtf(xmlrpc_env * const envP,
-            const char * const value,
-            size_t       const length) {
-
-#if HAVE_UNICODE_WCHAR
-    xmlrpc_validate_utf8(envP, value, length);
-#endif
-}
-
-
-
-static void
 copyLines(xmlrpc_env *       const envP,
           const char *       const src,
           size_t             const srcLen,
@@ -685,7 +673,7 @@ stringNew(xmlrpc_env *     const envP,
 
     xmlrpc_value * valP;
 
-    validateUtf(envP, value, length);
+    xmlrpc_validate_utf8(envP, value, length);
 
     if (!envP->fault_occurred) {
         xmlrpc_createXmlrpcValue(envP, &valP);
