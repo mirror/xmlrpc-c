@@ -174,6 +174,8 @@ $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \
    -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
    -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
 
+LIBXMLRPC_SERVER_CGIPP_SH = $(call shlibfn, libxmlrpc_server_cgi++)
+
 $(LIBXMLRPC_SERVER_CGIPP_SH): $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh) \
   $(call shliblefn, libxmlrpc_server++) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
