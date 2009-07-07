@@ -123,25 +123,29 @@ logClose(struct _TServer * const srvP) {
 static void
 initChanSwitchStuff(struct _TServer * const srvP,
                     bool              const noAccept,
-                    TChanSwitch *     const userSwitchP,
+                    TChanSwitch *     const chanSwitchP,
+                    bool              const userChanSwitch,
                     unsigned short    const port,
                     const char **     const errorP) {
     
-    if (userSwitchP) {
+
+    if (chanSwitchP) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
-        srvP->chanSwitchP = userSwitchP;
+        srvP->chanSwitchP = chanSwitchP;
+        srvP->weCreatedChanSwitch = !userChanSwitch;
     } else if (noAccept) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = FALSE;
         srvP->chanSwitchP = NULL;
+        srvP->weCreatedChanSwitch = FALSE;
     } else {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
         srvP->chanSwitchP = NULL;
+        srvP->weCreatedChanSwitch = FALSE;
         srvP->port = port;
     }
-    srvP->weCreatedChanSwitch = FALSE;
 }
 
 
@@ -149,7 +153,8 @@ initChanSwitchStuff(struct _TServer * const srvP,
 static void
 createServer(struct _TServer ** const srvPP,
              bool               const noAccept,
-             TChanSwitch *      const userChanSwitchP,
+             TChanSwitch *      const chanSwitchP,
+             bool               const userChanSwitch,
              unsigned short     const portNumber,             
              const char **      const errorP) {
 
@@ -163,8 +168,8 @@ createServer(struct _TServer ** const srvPP,
     } else {
         srvP->terminationRequested = false;
 
-        initChanSwitchStuff(srvP, noAccept, userChanSwitchP, portNumber,
-                            errorP);
+        initChanSwitchStuff(srvP, noAccept, chanSwitchP, userChanSwitch,
+                            portNumber, errorP);
 
         if (!*errorP) {
             srvP->builtinHandlerP = HandlerCreate();
@@ -234,11 +239,14 @@ ServerCreate(TServer *       const serverP,
              const char *    const logFileName) {
 
     bool const noAcceptFalse = FALSE;
+    bool const userChanSwitchFalse = FALSE;
 
     bool success;
     const char * error;
 
-    createServer(&serverP->srvP, noAcceptFalse, NULL, portNumber, &error);
+    createServer(&serverP->srvP, noAcceptFalse,
+                 NULL, userChanSwitchFalse,
+                 portNumber, &error);
 
     if (error) {
         TraceMsg(error);
@@ -307,10 +315,13 @@ ServerCreateSocket(TServer *    const serverP,
         xmlrpc_strfree(error);
     } else {
         bool const noAcceptFalse = FALSE;
+        bool const userChanSwitchFalse = FALSE;
 
         const char * error;
 
-        createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, &error);
+        createServer(&serverP->srvP, noAcceptFalse,
+                     chanSwitchP, userChanSwitchFalse,
+                     0, &error);
 
         if (error) {
             TraceMsg(error);
@@ -321,6 +332,8 @@ ServerCreateSocket(TServer *    const serverP,
             
             setNamePathLog(serverP, name, filesPath, logFileName);
         }
+        if (!success)
+            ChanSwitchDestroy(chanSwitchP);
     }
 
     return success;
@@ -335,11 +348,14 @@ ServerCreateNoAccept(TServer *    const serverP,
                      const char * const logFileName) {
 
     bool const noAcceptTrue = TRUE;
+    bool const userChanSwitchFalse = FALSE;
 
     bool success;
     const char * error;
 
-    createServer(&serverP->srvP, noAcceptTrue, NULL, 0, &error);
+    createServer(&serverP->srvP, noAcceptTrue,
+                 NULL, userChanSwitchFalse,
+                 0, &error);
 
     if (error) {
         TraceMsg(error);
@@ -361,11 +377,14 @@ ServerCreateSwitch(TServer *     const serverP,
                    const char ** const errorP) {
     
     bool const noAcceptFalse = FALSE;
+    bool const userChanSwitchTrue = TRUE;
 
     assert(serverP);
     assert(chanSwitchP);
 
-    createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, errorP);
+    createServer(&serverP->srvP, noAcceptFalse,
+                 chanSwitchP, userChanSwitchTrue,
+                 0, errorP);
 }
 
 
