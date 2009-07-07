@@ -15,6 +15,7 @@
 #include "xmlrpc_config.h"
 
 #include "int.h"
+#include "casprintf.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/abyss.h"
@@ -87,7 +88,7 @@ chanSwitchCreate(uint16_t       const portNumber,
 
 static void
 channelCreateFd(int const fd,
-                TChannel ** const channelPP,
+                TChannel **   const channelPP,
                 const char ** const errorP) {
 
 #ifdef WIN32
@@ -183,6 +184,8 @@ testChannel(void) {
         TEST(error);
 
         TEST(strstr(error, "not in connected"));
+
+        strfree(error);
     }
 }
 
