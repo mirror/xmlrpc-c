@@ -1564,6 +1564,10 @@ test_struct_decompose(xmlrpc_value * const testStructP) {
                            "foo", &sval,
                            "bar", &ival);
     TEST_NO_FAULT(&env);
+    TEST(ival == 1);
+    TEST(!bval);
+    TEST(streq(sval, "Hello!"));
+    free(sval);
 
     /* First value of wrong type */
     xmlrpc_decompose_value(&env, testStructP, "{s:b,s:i,*}",
