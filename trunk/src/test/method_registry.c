@@ -743,6 +743,7 @@ test_system_multicall(xmlrpc_registry * const registryP) {
     TEST(foo2_result == 42);
     xmlrpc_DECREF(multiP);
     free(bar_string);
+    free(nosuch_string);
     
 
     /* Now for some invalid multi calls */
