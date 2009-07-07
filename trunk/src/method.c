@@ -322,13 +322,15 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
         methodP->methodFnType1  = methodFnType1;
         methodP->methodFnType2  = methodFnType2;
         methodP->userData       = userData;
-        methodP->helpText       = strdup(helpText);
+        methodP->helpText       = xmlrpc_strdupsol(helpText);
         methodP->stackSize      = stackSize;
 
         makeSignatureList(envP, signatureString, &methodP->signatureListP);
 
-        if (envP->fault_occurred)
+        if (envP->fault_occurred) {
+            xmlrpc_strfree(methodP->helpText);
             free(methodP);
+        }
 
         *methodPP = methodP;
     }
