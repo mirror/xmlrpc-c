@@ -108,6 +108,8 @@ testObject(void) {
     xmlrpc_server_abyss_restore_sig(oldHandlersP);
     TEST_NO_FAULT(&env);
 
+    free(oldHandlersP);
+
     xmlrpc_server_abyss_destroy(serverP);
     
     xmlrpc_registry_free(registryP);
