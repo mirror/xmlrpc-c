@@ -297,6 +297,8 @@ test_system_methodSignature(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);
     TEST(streq(type0, "int"));
     TEST(streq(type1, "int"));
+    strfree(type0);
+    strfree(type1);
     xmlrpc_DECREF(resultP);
     xmlrpc_DECREF(argArrayP);
 
