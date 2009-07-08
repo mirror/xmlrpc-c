@@ -295,6 +295,8 @@ makeSignatureList(xmlrpc_env *            const envP,
     if (env.fault_occurred)
         xmlrpc_faultf(envP, "Can't interpret signature string '%s'.  %s",
                       signatureString, env.fault_string);
+
+    xmlrpc_env_clean(&env);
 }
 
 
