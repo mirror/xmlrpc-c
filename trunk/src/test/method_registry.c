@@ -533,19 +533,15 @@ test_system_methodExist(xmlrpc_registry * const registryP) {
 
 
 
-static void
-test_system_methodHelp(xmlrpc_registry * const registryP) {
-/*----------------------------------------------------------------------------
-   Test system.methodHelp
------------------------------------------------------------------------------*/
+static void 
+testNoHelp(xmlrpc_registry * const registryP) {
+
     xmlrpc_env env;
     xmlrpc_value * resultP;
     xmlrpc_value * argArrayP;
     const char * helpString;
 
     xmlrpc_env_init(&env);
-
-    printf("  Running system.methodHelp tests.");
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.foo");
     TEST_NO_FAULT(&env);
@@ -560,10 +556,26 @@ test_system_methodHelp(xmlrpc_registry * const registryP) {
 
     TEST(streq(helpString, "No help is available for this method."));
 
+    strfree(helpString);
+
     xmlrpc_DECREF(resultP);
 
     xmlrpc_DECREF(argArrayP);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void 
+testExistentHelp(xmlrpc_registry * const registryP) {
+
+    xmlrpc_env env;
+    xmlrpc_value * resultP;
+    xmlrpc_value * argArrayP;
+    const char * helpString;
+
+    xmlrpc_env_init(&env);
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.bar");
     TEST_NO_FAULT(&env);
@@ -578,11 +590,31 @@ test_system_methodHelp(xmlrpc_registry * const registryP) {
 
     TEST(streq(helpString, barHelp));
 
+    strfree(helpString);
+
     xmlrpc_DECREF(resultP);
 
     xmlrpc_DECREF(argArrayP);
 
     xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_system_methodHelp(xmlrpc_registry * const registryP) {
+/*----------------------------------------------------------------------------
+   Test system.methodHelp
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running system.methodHelp tests.");
+
+    testNoHelp(registryP);
+
+    testExistentHelp(registryP);
 
     printf("\n");
 }
