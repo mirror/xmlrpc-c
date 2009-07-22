@@ -229,6 +229,9 @@ xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
         }
         XMLRPC_MEMBLOCK_FREE(char, userNamePw64);
     }
+    if (serverInfoP->userNamePw)
+        xmlrpc_strfree(serverInfoP->userNamePw);
+
     serverInfoP->userNamePw = userNamePw;
 }
 

@@ -293,6 +293,8 @@ makeSignatureList(xmlrpc_env *            const envP,
     if (env.fault_occurred)
         xmlrpc_faultf(envP, "Can't interpret signature string '%s'.  %s",
                       signatureString, env.fault_string);
+
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -320,13 +322,15 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
         methodP->methodFnType1  = methodFnType1;
         methodP->methodFnType2  = methodFnType2;
         methodP->userData       = userData;
-        methodP->helpText       = strdup(helpText);
+        xmlrpc_asprintf(&methodP->helpText, "%s", helpText);
         methodP->stackSize      = stackSize;
 
         makeSignatureList(envP, signatureString, &methodP->signatureListP);
 
-        if (envP->fault_occurred)
+        if (envP->fault_occurred) {
+            xmlrpc_strfree(methodP->helpText);
             free(methodP);
+        }
 
         *methodPP = methodP;
     }
