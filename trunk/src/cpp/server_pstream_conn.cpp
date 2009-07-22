@@ -105,8 +105,8 @@ struct serverPstreamConn_impl {
     establishPacketSocket(serverPstreamConn::constrOpt_impl const& opt);
     
     void
-    serverPstreamConn_impl::processRecdPacket(packetPtr  const callPacketP,
-                                              callInfo * const callInfoP);
+    processRecdPacket(packetPtr  const callPacketP,
+                      callInfo * const callInfoP);
 
     // 'registryP' is what we actually use; 'registryHolder' just holds a
     // reference to 'registryP' so the registry doesn't disappear while
