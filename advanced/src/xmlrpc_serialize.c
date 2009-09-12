@@ -65,11 +65,11 @@ formatOut(xmlrpc_env *       const envP,
 
     count = XMLRPC_VSNPRINTF(buffer, SMALL_BUFFER_SZ, formatString, args);
 
-    /* Old C libraries return -1 if vsnprintf overflows its buffer.
-    ** New C libraries return the number of characters which *would* have
-    ** been printed if the error did not occur. This is impressively vile.
-    ** Thank the C99 committee for this bright idea. But wait! We also
-    ** need to keep track of the trailing NUL. */
+    /* Old vsnprintf() (and Windows) fails with return value -1 if the full
+       string doesn't fit in the buffer.  New vsnprintf() puts whatever will
+       fit in the buffer, and returns the length of the full string
+       regardless.  For us, this truncation is a failure.
+    */
 
     if (count < 0 || count >= (SMALL_BUFFER_SZ - 1))
         xmlrpc_faultf(envP, "formatOut() overflowed internal buffer");
