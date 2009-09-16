@@ -181,7 +181,7 @@ addServerHeader(TSession * const sessionP) {
 
     const char * serverValue;
 
-    xmlrpc_asprintf(&serverValue, "XMLRPC_ABYSS/%s", XMLRPC_C_VERSION);
+    xmlrpc_asprintf(&serverValue, "Xmlrpc-c_Abyss/%s", XMLRPC_C_VERSION);
 
     ResponseAddField(sessionP, "Server", serverValue);
 
