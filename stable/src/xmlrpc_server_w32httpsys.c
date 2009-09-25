@@ -665,7 +665,8 @@ SendHttpResponse(
 
     ADD_KNOWN_HEADER(response, HttpHeaderContentType, "text/html");
     
-    StringCchPrintfA(szServerHeader,20, "xmlrpc-c %s",XMLRPC_C_VERSION);
+    StringCchPrintfA(szServerHeader, sizeof(szServerHeader), "Xmlrpc-c/%s",
+                     XMLRPC_C_VERSION);
     ADD_KNOWN_HEADER(response, HttpHeaderServer, szServerHeader);
    
     if(pEntityString)
@@ -724,7 +725,8 @@ SendHttpResponseAuthRequired(
     ADD_KNOWN_HEADER(response, HttpHeaderWwwAuthenticate,
                      "Basic realm=\"xmlrpc\"");
     
-    StringCchPrintfA(szServerHeader,20, "xmlrpc-c %s",XMLRPC_C_VERSION);
+    StringCchPrintfA(szServerHeader, sizeof(szServerHeader), "Xmlrpc-c/%s",
+                     XMLRPC_C_VERSION);
     ADD_KNOWN_HEADER(response, HttpHeaderServer, szServerHeader);
    
     // Since we are sending all the entity body in one call, we don't have 
@@ -878,8 +880,8 @@ processRPCCall(
                     ADD_KNOWN_HEADER(response, HttpHeaderContentType,
                                      "text/xml");
                     
-                    StringCchPrintfA(szServerHeader,20,
-                                     "xmlrpc-c %s",XMLRPC_C_VERSION);
+                    StringCchPrintfA(szServerHeader, sizeof(szServerHeader),
+                                     "Xmlrpc-c/%s", XMLRPC_C_VERSION);
                     ADD_KNOWN_HEADER(response, HttpHeaderServer,
                                      szServerHeader);
 
