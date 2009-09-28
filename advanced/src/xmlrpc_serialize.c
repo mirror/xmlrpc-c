@@ -26,7 +26,6 @@
 #include "double.h"
 
 #define CRLF "\015\012"
-#define SMALL_BUFFER_SZ (128)
 #define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"CRLF
 #define APACHE_URL "http://ws.apache.org/xmlrpc/namespaces/extensions"
 #define XMLNS_APACHE "xmlns:ex=\"" APACHE_URL "\""
@@ -56,14 +55,14 @@ formatOut(xmlrpc_env *       const envP,
   particular, do NOT use this routine to print XML-RPC string values!
 -----------------------------------------------------------------------------*/
     va_list args;
-    char buffer[SMALL_BUFFER_SZ];
-    int count;
+    char buffer[128];
+    int rc;
 
     XMLRPC_ASSERT_ENV_OK(envP);
 
     va_start(args, formatString);
 
-    count = XMLRPC_VSNPRINTF(buffer, SMALL_BUFFER_SZ, formatString, args);
+    rc = XMLRPC_VSNPRINTF(buffer, sizeof(buffer), formatString, args);
 
     /* Old vsnprintf() (and Windows) fails with return value -1 if the full
        string doesn't fit in the buffer.  New vsnprintf() puts whatever will
@@ -71,11 +70,16 @@ formatOut(xmlrpc_env *       const envP,
        regardless.  For us, this truncation is a failure.
     */
 
-    if (count < 0 || count >= (SMALL_BUFFER_SZ - 1))
+    if (rc < 0)
         xmlrpc_faultf(envP, "formatOut() overflowed internal buffer");
-    else
-        XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, buffer, count);
+    else {
+        unsigned int const formattedLen = rc;
 
+        if (formattedLen + 1 >= (sizeof(buffer)))
+            xmlrpc_faultf(envP, "formatOut() overflowed internal buffer");
+        else
+            XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, buffer, formattedLen);
+    }
     va_end(args);
 }
 
