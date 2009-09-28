@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "xmlrpc_config.h"  /* For HAVE_ASPRINTF, __inline__ */
 #include "xmlrpc-c/string_int.h"
@@ -25,21 +26,30 @@ newVsnprintf(char *       const buffer,
    in the buffer, so in that case we just return something larger than the
    buffer.
 -----------------------------------------------------------------------------*/
-    ssize_t rc;
-
-    rc = XMLRPC_VSNPRINTF(buffer, bufferSize, fmt, varargs);
-
-    if (rc < 0) {
-        /* We have old vsnprintf() (or Windows) and the formatted value
-           doesn't fit in the buffer, but we don't know how big a buffer it
-           needs.
+    if (bufferSize > INT_MAX/2) {
+        /* There's a danger we won't be able to coerce the return value
+           of XMLRPC_VSNPRINTF to an integer (which we have to do because,
+           while for POSIX its return value is ssize_t, on Windows it is int),
+           or return double the buffer size.
         */
-        *formattedSizeP = bufferSize * 2;
+        *formattedSizeP = 0;
     } else {
-        /* Either the string fits in the buffer or we have new vsnprintf()
-           which tells us how big the string is regardless.
-        */
-        *formattedSizeP = rc;
+        int rc;
+
+        rc = XMLRPC_VSNPRINTF(buffer, bufferSize, fmt, varargs);
+
+        if (rc < 0) {
+            /* We have old vsnprintf() (or Windows) and the formatted value
+               doesn't fit in the buffer, but we don't know how big a buffer it
+               needs.
+            */
+            *formattedSizeP = bufferSize * 2;
+        } else {
+            /* Either the string fits in the buffer or we have new vsnprintf()
+               which tells us how big the string is regardless.
+            */
+            *formattedSizeP = rc;
+        }
     }
 }
 

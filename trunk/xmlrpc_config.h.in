@@ -123,6 +123,9 @@
   #define HAVE_TIMESPEC 1
 #endif
 
+/* Note that the return value of XMLRPC_VSNPRINTF is int on Windows,
+   ssize_t on POSIX.
+*/
 #if MSVCRT
   #define XMLRPC_VSNPRINTF _vsnprintf
 #else
