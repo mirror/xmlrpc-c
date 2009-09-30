@@ -54,6 +54,19 @@ typedef double xmlrpc_double;
        so it's probably clearer just to use that.  This typedef is here 
        for mathematical completeness.
     */
+typedef struct {
+    /* A datetime of the type defined by XML-RPC <dateTime.iso8601> with
+       a few extensions.  I.e. in the range 1-9999 AD with microsecond
+       resolution.
+    */
+        unsigned int Y;   /* 1-? */
+        unsigned int M;   /* 1-12 */
+        unsigned int D;   /* 1-31 */
+        unsigned int h;   /* 0-23 */
+        unsigned int m;   /* 0-59 */
+        unsigned int s;   /* 0-59 */
+        unsigned int u;   /* 0-999999 */
+} xmlrpc_datetime;
 
 /* xmlrpc_socket is just for backward compatibility, in case someone decided
    to use this in user code.  New code should use the native type for a
@@ -147,6 +160,10 @@ xmlrpc_read_double(xmlrpc_env *         const envP,
                    xmlrpc_double *      const doubleValueP);
 
 xmlrpc_value *
+xmlrpc_datetime_new(xmlrpc_env *    const envP, 
+                    xmlrpc_datetime const dt);
+
+xmlrpc_value *
 xmlrpc_datetime_new_str(xmlrpc_env * const envP,
                         const char * const value);
 
@@ -170,6 +187,11 @@ xmlrpc_value *
 xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
                              struct timespec const value);
 #endif
+
+void
+xmlrpc_read_datetime(xmlrpc_env *         const envP,
+                     const xmlrpc_value * const valueP,
+                     xmlrpc_datetime *    const dtP);
 
 void
 xmlrpc_read_datetime_str(xmlrpc_env *         const envP,

@@ -29,7 +29,7 @@ destroyValue(xmlrpc_value * const valueP) {
         break;
 
     case XMLRPC_TYPE_DATETIME:
-        xmlrpc_mem_block_clean(&valueP->_block);
+        xmlrpc_destroyDatetime(valueP);
         break;
 
     case XMLRPC_TYPE_STRING:
