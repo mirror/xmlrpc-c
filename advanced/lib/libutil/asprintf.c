@@ -128,12 +128,13 @@ xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...) {
 
 
 const char *
-xmlrpc_strdupnull(const char * const string) {
+xmlrpc_strdupsol(const char * const string) {
 
-    if (string)
-        return strdup(string);
-    else
-        return NULL;
+    const char * retvalOrNull;
+
+    retvalOrNull = strdup(string);
+
+    return retvalOrNull ? retvalOrNull : xmlrpc_strsol;
 }
 
 
@@ -143,6 +144,17 @@ xmlrpc_strfree(const char * const string) {
 
     if (string != xmlrpc_strsol)
         free((void *)string);
+}
+
+
+
+const char *
+xmlrpc_strdupnull(const char * const string) {
+
+    if (string)
+        return strdup(string);
+    else
+        return NULL;
 }
 
 

@@ -223,7 +223,7 @@ test_value_datetime_not_unix(const char * const datestring) {
 
 
 static void
-test_value_datetime_invalid(const char * const datestring) {
+test_value_datetime_str_invalid1(const char * const datestring) {
 
     /* Ideally, xmlrpc_datetime_new_str() would fail on these, but
        the code doesn't implement that today.  However,
@@ -248,6 +248,22 @@ test_value_datetime_invalid(const char * const datestring) {
     TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
 
     xmlrpc_DECREF(v);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_value_datetime_str_invalid2(const char * const datestring) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    v = xmlrpc_datetime_new_str(&env, datestring);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
 }
@@ -309,6 +325,42 @@ test_build_decomp_datetime(void) {
 
 
 
+
+static void
+test_value_datetime_basic(void) {
+
+    xmlrpc_value * v;
+    xmlrpc_env env;
+    xmlrpc_datetime dt;
+    xmlrpc_datetime readBackDt;
+
+    xmlrpc_env_init(&env);
+
+    dt.Y = 2001;
+    dt.M = 12;
+    dt.D = 25;
+    dt.h = 1;
+    dt.m = 2;
+    dt.s = 3;
+    dt.u = 4;
+
+    v = xmlrpc_datetime_new(&env, dt);
+
+    xmlrpc_read_datetime(&env, v, &readBackDt);
+    TEST_NO_FAULT(&env);
+    TEST(readBackDt.Y = dt.Y);
+    TEST(readBackDt.M = dt.M);
+    TEST(readBackDt.D = dt.D);
+    TEST(readBackDt.h = dt.h);
+    TEST(readBackDt.m = dt.m);
+    TEST(readBackDt.s = dt.s);
+    TEST(readBackDt.u = dt.u);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 void
 test_value_datetime(void) {
 
@@ -323,7 +375,11 @@ test_value_datetime(void) {
 
     TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DATETIME), "DATETIME"));
 
-    /* Valid datetime, generated from XML-RPC string */
+    test_value_datetime_basic();
+
+    /* Valid datetime, generated from XML-RPC string, time_t, and
+       time_t + microseconds
+    */
 
     test_value_datetime_varytime(datestring, datetime, 0);
 
@@ -350,14 +406,14 @@ test_value_datetime(void) {
     /* Note that the code today does a pretty weak job of validating datetimes,
        so we test only the validation that we know is implemented.
     */
-    test_value_datetime_invalid("19700101T25:00:00");
-    test_value_datetime_invalid("19700101T10:61:01");
-    test_value_datetime_invalid("19700101T10:59:61");
-    test_value_datetime_invalid("19700001T10:00:00");
-    test_value_datetime_invalid("19701301T10:00:00");
-    test_value_datetime_invalid("19700132T10:00:00");
-    test_value_datetime_invalid("19700132T10:00:00.");
-    test_value_datetime_invalid("19700132T10:00:00,123");
+    test_value_datetime_str_invalid1("19700101T25:00:00");
+    test_value_datetime_str_invalid1("19700101T10:61:01");
+    test_value_datetime_str_invalid1("19700101T10:59:61");
+    test_value_datetime_str_invalid1("19700001T10:00:00");
+    test_value_datetime_str_invalid1("19701301T10:00:00");
+    test_value_datetime_str_invalid1("19700132T10:00:00");
+    test_value_datetime_str_invalid2("19700132T10:00:00.");
+    test_value_datetime_str_invalid2("19700132T10:00:00,123");
 
     test_build_decomp_datetime();
 

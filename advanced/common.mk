@@ -144,10 +144,10 @@ endif
 
 #------ the actual rules ----------------------------------------------------
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
-	$(CCLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS)  $(LIBDEP) -o $@  
+	$(CCLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
 
 $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
-	$(CXXLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS)  $(LIBDEP) -o $@  
+	$(CXXLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
 #----------------------------------------------------------------------------
 
 LIBXMLRPC_UTIL_DIR = $(BLDDIR)/lib/libutil

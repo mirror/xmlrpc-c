@@ -324,7 +324,7 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
         methodP->methodFnType1  = methodFnType1;
         methodP->methodFnType2  = methodFnType2;
         methodP->userData       = userData;
-        xmlrpc_asprintf(&methodP->helpText, "%s", helpText);
+        methodP->helpText       = xmlrpc_strdupsol(helpText);
         methodP->stackSize      = stackSize;
 
         makeSignatureList(envP, signatureString, &methodP->signatureListP);

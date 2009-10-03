@@ -79,6 +79,7 @@ endif
 
 LIBXMLRPC_MODS = \
         double \
+	parse_datetime \
 	parse_value \
         resource \
 	trace \

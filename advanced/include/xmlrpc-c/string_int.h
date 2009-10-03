@@ -24,10 +24,13 @@ void XMLRPC_PRINTF_ATTR(2,3)
 xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...);
 
 const char *
-xmlrpc_strdupnull(const char * const string);
+xmlrpc_strdupsol(const char * const string);
 
 void
 xmlrpc_strfree(const char * const string);
+
+const char *
+xmlrpc_strdupnull(const char * const string);
 
 void
 xmlrpc_strfreenull(const char * const string);

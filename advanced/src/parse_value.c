@@ -15,6 +15,7 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/xmlparser.h"
+#include "parse_datetime.h"
 
 #include "parse_value.h"
 
@@ -663,7 +664,7 @@ parseSimpleValueCdata(xmlrpc_env *    const envP,
     else if (xmlrpc_streq(elementName, "double"))
         parseDouble(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "dateTime.iso8601"))
-        *valuePP = xmlrpc_datetime_new_str(envP, cdata);
+        xmlrpc_parseDatetime(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "string"))
         *valuePP = xmlrpc_string_new_lp(envP, cdataLength, cdata);
     else if (xmlrpc_streq(elementName, "base64"))

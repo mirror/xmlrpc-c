@@ -113,6 +113,8 @@ testCreateSeparateXport(void) {
                          &clientP);
     TEST_NO_FAULT(&env);
 
+    xmlrpc_client_destroy(clientP);
+
     clientParms1.transport = "curl";
     clientParms1.transportparmsP = &curlTransportParms1;
     clientParms1.transportparm_size = 0;
@@ -123,6 +125,8 @@ testCreateSeparateXport(void) {
                          &clientParms1, XMLRPC_CPSIZE(transportP),
                          &clientP);
     TEST_NO_FAULT(&env);
+
+    xmlrpc_client_destroy(clientP);
 
     clientParms1.transportP = transportP;
     xmlrpc_client_create(&env, 0, "", "",
@@ -149,6 +153,8 @@ testCreateSeparateXport(void) {
                          &clientP);
 
     TEST_NO_FAULT(&env);
+
+    xmlrpc_client_destroy(clientP);
 
     xmlrpc_curl_transport_ops.destroy(transportP);
 

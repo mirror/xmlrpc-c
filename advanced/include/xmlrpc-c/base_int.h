@@ -36,7 +36,8 @@ struct _xmlrpc_value {
         xmlrpc_int64 i8;
         xmlrpc_bool b;
         double d;
-        /* time_t t */
+        xmlrpc_datetime dt;
+           /* NOTE: may be invalid! e.g. February 30 */
         void * c_ptr;
     } _value;
     
@@ -77,6 +78,15 @@ struct _xmlrpc_value {
            This member is always NULL on a system that does not have
            Unicode wchar functions.
         */
+    void * _cache;
+        /* This is a hack to support the old style memory management in which
+           one gets a pointer into memory that belongs to the xmlrpc_value
+           object; i.e. the caller of xmlrpc_read_datetime_str_old() doesn't
+           get memory that he is responsible for freeing.
+
+           This is essentially a cached value of the result of a
+           xmlrpc_read_datetime_str_old().  NULL means nothing cached.
+        */
 };
 
 #define XMLRPC_ASSERT_VALUE_OK(val) \
@@ -111,6 +121,9 @@ xmlrpc_traceXml(const char * const label,
 
 void
 xmlrpc_destroyString(xmlrpc_value * const stringP);
+
+void
+xmlrpc_destroyDatetime(xmlrpc_value * const datetimeP);
 
 void
 xmlrpc_destroyStruct(xmlrpc_value * const structP);
