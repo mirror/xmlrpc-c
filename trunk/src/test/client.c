@@ -78,6 +78,14 @@ testCreateCurlParms(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
 
+    curlTransportParms1.dont_advertise = 1;
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(dont_advertise);
+    xmlrpc_client_create(&env, 0, "testprog", "1.0",
+                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+    xmlrpc_client_destroy(clientP);
+
     xmlrpc_env_clean(&env);
 #endif  /* MUST_BUILD_CURL_CLIENT */
 }

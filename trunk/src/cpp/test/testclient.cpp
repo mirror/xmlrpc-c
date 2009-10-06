@@ -263,6 +263,7 @@ public:
             .network_interface("eth0")
             .no_ssl_verifypeer(true)
             .no_ssl_verifyhost(true)
+            .dont_advertise(true)
             .user_agent("my user agent")
             .ssl_cert("/etc/sslcert")
             .sslcerttype("PEM")

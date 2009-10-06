@@ -199,11 +199,26 @@ struct xmlrpc_client_transport {
            
            This is constant (the handle, not the object).
         */
+    bool dontAdvertise;
+        /* Don't identify to the server the XML-RPC engine we are using.  If
+           false, include a User-Agent HTTP header in all requests that
+           identifies the Xmlrpc-c and Curl libraries.
+
+           See also 'userAgent'.
+
+           This is constant.
+        */
     const char * userAgent;
-        /* Prefix for the User-Agent HTTP header, reflecting facilities
-           outside of Xmlrpc-c.  The actual User-Agent header consists
-           of this prefix plus information about Xmlrpc-c.  NULL means
-           none.
+        /* Information to include in a User-Agent HTTP header, reflecting
+           facilities outside of Xmlrpc-c.  
+
+           Null means none.
+
+           The full User-Agent header value is this information (if
+           'userAgent' is non-null) followed by identification of Xmlrpc-c
+           and Curl (if 'dontAdvertise' is false).  If 'userAgent' is null
+           and 'dontAdvertise' is true, we put no User-Agent header at all
+           in the request.
 
            This is constant.
         */
@@ -653,6 +668,11 @@ getXportParms(xmlrpc_env *                          const envP,
         transportP->userAgent = NULL;
     else
         transportP->userAgent = strdup(curlXportParmsP->user_agent);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(dont_advertise))
+        transportP->dontAdvertise = false;
+    else
+        transportP->dontAdvertise = curlXportParmsP->dont_advertise;
     
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
         curlSetupP->networkInterface = NULL;
@@ -1104,6 +1124,7 @@ createRpc(xmlrpc_env *                     const envP,
                                curlSessionP,
                                serverP,
                                callXmlP, responseXmlP, 
+                               clientTransportP->dontAdvertise,
                                clientTransportP->userAgent,
                                &clientTransportP->curlSetupStuff,
                                rpcP,
