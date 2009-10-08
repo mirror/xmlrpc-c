@@ -548,6 +548,9 @@ setupCurlSession(xmlrpc_env *               const envP,
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);
 
+        if (curlSetupP->verbose)
+            curl_easy_setopt(curlSessionP, CURLOPT_VERBOSE, 1l);
+
         if (curlSetupP->timeout)
             setCurlTimeout(curlSessionP, curlSetupP->timeout);
 

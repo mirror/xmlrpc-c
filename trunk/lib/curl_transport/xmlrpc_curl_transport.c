@@ -632,6 +632,19 @@ getTimeoutParm(xmlrpc_env *                          const envP,
 
 
 static void
+setVerbose(bool * const verboseP) {
+
+    const char * const xmlrpcTraceCurl = getenv("XMLRPC_TRACE_CURL");
+
+    if (xmlrpcTraceCurl)
+        *verboseP = true;
+    else
+        *verboseP = false;
+}
+
+
+
+static void
 getXportParms(xmlrpc_env *                          const envP,
               const struct xmlrpc_curl_xportparms * const curlXportParmsP,
               size_t                                const parmSize,
@@ -944,6 +957,8 @@ create(xmlrpc_env *                      const envP,
     if (transportP == NULL)
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
+        setVerbose(&transportP->curlSetupStuff.verbose);
+
         transportP->interruptP = NULL;
 
         transportP->asyncCurlMultiP = curlMulti_create();

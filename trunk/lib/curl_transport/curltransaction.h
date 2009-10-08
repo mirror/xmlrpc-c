@@ -72,6 +72,7 @@ struct curlSetup {
     const char * sslCipherList;
     unsigned int timeout;
         /* 0 = no Curl timeout.  This is in milliseconds. */
+    bool verbose;
 };
 
 
