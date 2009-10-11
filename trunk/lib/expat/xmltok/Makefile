@@ -99,6 +99,6 @@ nametab.h: $(GENNMTAB)
 $(GENNMTAB):
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-xmltok.o xmltok.osh: nametab.h
+xmltok.o xmltok.osh: nametab.h xmltok_impl.c
 
 include depend.mk
