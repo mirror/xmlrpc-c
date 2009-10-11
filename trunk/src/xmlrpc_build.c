@@ -35,11 +35,11 @@ getString(xmlrpc_env *    const envP,
           xmlrpc_value ** const valPP) {
 
     const char * str;
-    unsigned int len;
+    size_t len;
     
     str = (const char*) va_arg(argsP->v, char*);
     if (**formatP == '#') {
-        (*formatP)++;
+        ++(*formatP);
         len = (size_t) va_arg(argsP->v, size_t);
     } else
         len = strlen(str);

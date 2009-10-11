@@ -4369,7 +4369,7 @@ parseFinalLen0(Parser * const parser,
 static void
 parseNoBuffer(Parser *     const parser,
               const char * const s,
-              int          const len,
+              size_t       const len,
               bool         const isFinal,
               int *        const succeededP) {
 
@@ -4377,8 +4377,8 @@ parseNoBuffer(Parser *     const parser,
     positionPtr = s;
 
     if (isFinal) {
-        processor(parser, s, parseEndPtr = s + len, 0,
-                  &errorCode, &errorString);
+        parseEndPtr = s + len;
+        processor(parser, s, parseEndPtr, 0, &errorCode, &errorString);
         if (errorCode == XML_ERROR_NONE)
             *succeededP = true;
         else {
@@ -4427,7 +4427,7 @@ parseNoBuffer(Parser *     const parser,
 int
 xmlrpc_XML_Parse(XML_Parser   const xmlParserP,
                  const char * const s,
-                 int          const len,
+                 size_t       const len,
                  int          const isFinal) {
 
     Parser * const parser = (Parser *) xmlParserP;
@@ -4487,40 +4487,49 @@ xmlrpc_XML_ParseBuffer(XML_Parser const xmlParserP,
     }
 }
 
+
+
 void *
-xmlrpc_XML_GetBuffer(XML_Parser parser, int len)
-{
-  if (len > bufferLim - bufferEnd) {
-    /* FIXME avoid integer overflow */
-    int neededSize = len + (bufferEnd - bufferPtr);
-    if (neededSize  <= bufferLim - buffer) {
-      memmove(buffer, bufferPtr, bufferEnd - bufferPtr);
-      bufferEnd = buffer + (bufferEnd - bufferPtr);
-      bufferPtr = buffer;
+xmlrpc_XML_GetBuffer(XML_Parser const xmlParserP,
+                     size_t     const len) {
+
+    Parser * const parser = (Parser *)xmlParserP;
+
+    assert(bufferLim >= bufferEnd);
+
+    if (len > (size_t)(bufferLim - bufferEnd)) {
+        /* FIXME avoid integer overflow */
+        size_t neededSize = len + (bufferEnd - bufferPtr);
+        assert(bufferLim >= buffer);
+        if (neededSize  <= (size_t)(bufferLim - buffer)) {
+            memmove(buffer, bufferPtr, bufferEnd - bufferPtr);
+            bufferEnd = buffer + (bufferEnd - bufferPtr);
+            bufferPtr = buffer;
+        } else {
+            size_t bufferSize;
+            char * newBuf;
+
+            bufferSize = bufferLim > bufferPtr ?
+                bufferLim - bufferPtr : INIT_BUFFER_SIZE;
+            
+            do {
+                bufferSize *= 2;
+            } while (bufferSize < neededSize);
+            newBuf = malloc(bufferSize);
+            if (newBuf == 0) {
+                errorCode = XML_ERROR_NO_MEMORY;
+                return 0;
+            }
+            bufferLim = newBuf + bufferSize;
+            if (bufferPtr) {
+                memcpy(newBuf, bufferPtr, bufferEnd - bufferPtr);
+                free(buffer);
+            }
+            bufferEnd = newBuf + (bufferEnd - bufferPtr);
+            bufferPtr = buffer = newBuf;
+        }
     }
-    else {
-      char *newBuf;
-      int bufferSize = bufferLim - bufferPtr;
-      if (bufferSize == 0)
-        bufferSize = INIT_BUFFER_SIZE;
-      do {
-        bufferSize *= 2;
-      } while (bufferSize < neededSize);
-      newBuf = malloc(bufferSize);
-      if (newBuf == 0) {
-        errorCode = XML_ERROR_NO_MEMORY;
-        return 0;
-      }
-      bufferLim = newBuf + bufferSize;
-      if (bufferPtr) {
-        memcpy(newBuf, bufferPtr, bufferEnd - bufferPtr);
-        free(buffer);
-      }
-      bufferEnd = newBuf + (bufferEnd - bufferPtr);
-      bufferPtr = buffer = newBuf;
-    }
-  }
-  return bufferEnd;
+    return bufferEnd;
 }
 
 

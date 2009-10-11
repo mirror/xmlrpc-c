@@ -100,11 +100,11 @@ accessStringValue(xmlrpc_env *         const envP,
     
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
-        unsigned int const size = 
+        size_t const size = 
             XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
         const char * const contents = 
             XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
-        unsigned int const len = size - 1;
+        size_t const len = size - 1;
             /* The memblock has a null character added to the end */
 
         verifyNoNulls(envP, contents, len);
@@ -253,7 +253,7 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
 
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
-        unsigned int const size = 
+        size_t const size = 
             XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
         const char * const contents = 
             XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
@@ -263,7 +263,7 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
         stringValue = malloc(size);
         if (stringValue == NULL)
             xmlrpc_faultf(envP, "Unable to allocate %u bytes for string.",
-                          size);
+                          (unsigned int)size);
         else {
             memcpy(stringValue, contents, size);
             *stringValueP = stringValue;
@@ -282,7 +282,7 @@ xmlrpc_read_string_lp_crlf(xmlrpc_env *         const envP,
 
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
-        unsigned int const size = 
+        size_t const size = 
             XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block); /* Includes NUL */
         const char * const contents = 
             XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);

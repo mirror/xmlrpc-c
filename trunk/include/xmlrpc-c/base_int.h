@@ -117,7 +117,7 @@ xmlrpc_typeName(xmlrpc_type const type);
 void
 xmlrpc_traceXml(const char * const label, 
                 const char * const xml,
-                unsigned int const xmlLength);
+                size_t       const xmlLength);
 
 void
 xmlrpc_destroyString(xmlrpc_value * const stringP);

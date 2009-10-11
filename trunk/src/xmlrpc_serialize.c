@@ -317,6 +317,34 @@ serializeDatetime(xmlrpc_env *       const envP,
 
 
 
+static void
+serializeStructMember(xmlrpc_env *       const envP,
+                      xmlrpc_mem_block * const outputP,
+                      xmlrpc_value *     const memberKeyP,
+                      xmlrpc_value *     const memberValueP,
+                      xmlrpc_dialect     const dialect) {
+    
+    addString(envP, outputP, "<member><name>");
+
+    if (!envP->fault_occurred) {
+        serializeUtf8MemBlock(envP, outputP, &memberKeyP->_block);
+
+        if (!envP->fault_occurred) {
+            addString(envP, outputP, "</name>"CRLF);
+
+            if (!envP->fault_occurred) {
+                xmlrpc_serialize_value2(envP, outputP, memberValueP, dialect);
+
+                if (!envP->fault_occurred) {
+                    addString(envP, outputP, "</member>"CRLF);
+                }
+            }
+        }
+    }
+}
+
+
+
 static void 
 serializeStruct(xmlrpc_env *       const envP,
                 xmlrpc_mem_block * const outputP,
@@ -326,37 +354,25 @@ serializeStruct(xmlrpc_env *       const envP,
    Add to *outputP the content of a <value> element to represent
    the structure value *valueP.  I.e. "<struct> ... </struct>".
 -----------------------------------------------------------------------------*/
-    size_t size;
-    size_t i;
-    xmlrpc_value * memberKeyP;
-    xmlrpc_value * memberValueP;
-
     addString(envP, outputP, "<struct>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(envP);
+    if (!envP->fault_occurred) {
+        unsigned int const size = xmlrpc_struct_size(envP, structP);
+        if (!envP->fault_occurred) {
+            unsigned int i;
+            for (i = 0; i < size && !envP->fault_occurred; ++i) {
+                xmlrpc_value * memberKeyP;
+                xmlrpc_value * memberValueP;
 
-    size = xmlrpc_struct_size(envP, structP);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    for (i = 0; i < size; ++i) {
-        xmlrpc_struct_get_key_and_value(envP, structP, i,
-                                        &memberKeyP, &memberValueP);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        addString(envP, outputP, "<member><name>");
-        XMLRPC_FAIL_IF_FAULT(envP);
-        serializeUtf8MemBlock(envP, outputP, &memberKeyP->_block);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        addString(envP, outputP, "</name>"CRLF);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        xmlrpc_serialize_value2(envP, outputP, memberValueP, dialect);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        addString(envP, outputP, "</member>"CRLF);
-        XMLRPC_FAIL_IF_FAULT(envP);
+                xmlrpc_struct_get_key_and_value(envP, structP, i,
+                                                &memberKeyP, &memberValueP);
+                if (!envP->fault_occurred) {
+                    serializeStructMember(envP, outputP,
+                                          memberKeyP, memberValueP, dialect);
+                }
+            }
+            addString(envP, outputP, "</struct>");
+        }
     }
-
-    addString(envP, outputP, "</struct>");
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-cleanup:
-    return;
 }
 
 
@@ -542,9 +558,9 @@ xmlrpc_serialize_params2(xmlrpc_env *       const envP,
     addString(envP, outputP, "<params>"CRLF);
     if (!envP->fault_occurred) {
         /* Serialize each parameter. */
-        size_t const paramCount = xmlrpc_array_size(envP, paramArrayP);
+        int const paramCount = xmlrpc_array_size(envP, paramArrayP);
         if (!envP->fault_occurred) {
-            size_t paramSeq;
+            int paramSeq;
             for (paramSeq = 0;
                  paramSeq < paramCount && !envP->fault_occurred;
                  ++paramSeq) {

@@ -73,12 +73,12 @@ parseArray(xmlrpc_env *    const envP,
 
     arrayP = xmlrpc_array_new(envP);
     if (!envP->fault_occurred) {
-        unsigned int const childCount = xml_element_children_size(arrayElemP);
+        size_t const childCount = xml_element_children_size(arrayElemP);
 
         if (childCount != 1)
             setParseFault(envP,
                           "<array> element has %u children.  Only one <data> "
-                          "makes sense.", childCount);
+                          "makes sense.", (unsigned int)childCount);
         else {
             xml_element * const dataElemP =
                 xml_element_children(arrayElemP)[0];
@@ -112,11 +112,11 @@ parseName(xmlrpc_env *    const envP,
           xml_element *   const nameElemP,
           xmlrpc_value ** const valuePP) {
 
-    unsigned int const childCount = xml_element_children_size(nameElemP);
+    size_t const childCount = xml_element_children_size(nameElemP);
 
     if (childCount > 0)
         setParseFault(envP, "<name> element has %u children.  "
-                      "Should have none.", childCount);
+                      "Should have none.", (unsigned int)childCount);
     else {
         const char * const cdata     = xml_element_cdata(nameElemP);
         size_t       const cdataSize = xml_element_cdata_size(nameElemP);
@@ -182,12 +182,12 @@ parseMember(xmlrpc_env *    const envP,
             xmlrpc_value ** const keyPP,
             xmlrpc_value ** const valuePP) {
 
-    unsigned int const childCount = xml_element_children_size(memberP);
+    size_t const childCount = xml_element_children_size(memberP);
 
     if (childCount != 2)
         setParseFault(envP,
                       "<member> element has %u children.  Only one <name> and "
-                      "one <value> make sense.", childCount);
+                      "one <value> make sense.", (unsigned int)childCount);
     else {
         xml_element * nameElemP;
 
@@ -687,13 +687,13 @@ parseSimpleValue(xmlrpc_env *    const envP,
                  xml_element *   const elemP,
                  xmlrpc_value ** const valuePP) {
     
-    unsigned int const childCount = xml_element_children_size(elemP);
+    size_t childCount = xml_element_children_size(elemP);
                     
     if (childCount > 0)
         setParseFault(envP, "The child of a <value> element "
                       "is neither <array> nor <struct>, "
                       "but has %u child elements of its own.",
-                      childCount);
+                      (unsigned int)childCount);
     else {
         const char * const elemName  = xml_element_name(elemP);
         const char * const cdata     = xml_element_cdata(elemP);
@@ -731,7 +731,7 @@ xmlrpc_parseValue(xmlrpc_env *    const envP,
                           "<%s> element where <value> expected",
                           xml_element_name(elemP));
         else {
-            unsigned int const childCount = xml_element_children_size(elemP);
+            size_t const childCount = xml_element_children_size(elemP);
 
             if (childCount == 0) {
                 /* We have no type element, so treat the value as a string. */
@@ -740,7 +740,8 @@ xmlrpc_parseValue(xmlrpc_env *    const envP,
                 *valuePP = xmlrpc_string_new_lp(envP, cdata_size, cdata);
             } else if (childCount > 1)
                 setParseFault(envP, "<value> has %u child elements.  "
-                              "Only zero or one make sense.", childCount);
+                              "Only zero or one make sense.",
+                              (unsigned int)childCount);
             else {
                 /* We should have a type tag inside our value tag. */
                 xml_element * const childP = xml_element_children(elemP)[0];

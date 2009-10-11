@@ -351,7 +351,7 @@ validateContentType(TSession *     const httpRequestP,
                         "You did not supply a content-type HTTP header");
     else {
         const char * const sempos = strchr(content_type, ';');
-        unsigned int baselen;
+        size_t baselen;
             /* Length of the base portion of the content type, e.g.
                "text/xml" int "text/xml;charset=utf-8"
             */
