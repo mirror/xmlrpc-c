@@ -15,7 +15,7 @@
    interface header files that get compiled as part of a user's program.
 
    This file just uses plain AC_SUBST substitution, the same as
-   Makefile.config.  Wherever you see @XXX@, that gets replaced by the
+   config.mk.  Wherever you see @XXX@, that gets replaced by the
    value of 'configure' variable XXX.
 
    Logical macros are 0 or 1 instead of the more traditional defined and
