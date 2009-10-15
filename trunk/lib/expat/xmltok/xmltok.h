@@ -130,7 +130,7 @@ struct encoding {
 	          const char *, const char *);
   int (*nameMatchesAscii)(const ENCODING *,
 			  const char *, const char *, const char *);
-  int (*nameLength)(const ENCODING *, const char *);
+  size_t (*nameLength)(const ENCODING *, const char *);
   const char *(*skipS)(const ENCODING *, const char *);
   int (*getAtts)(const ENCODING *enc, const char *ptr,
 	         int attsMax, ATTRIBUTE *atts);

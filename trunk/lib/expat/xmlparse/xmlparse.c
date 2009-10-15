@@ -139,7 +139,7 @@ typedef struct tag {
 typedef struct {
   const XML_Char *name;
   const XML_Char *textPtr;
-  int textLen;
+  size_t textLen;
   const XML_Char *systemId;
   const XML_Char *base;
   const XML_Char *publicId;
@@ -473,7 +473,7 @@ int poolGrow(STRING_POOL *pool)
     }
   }
   if (pool->blocks && pool->start == pool->blocks->s) {
-    int blockSize = (pool->end - pool->start)*2;
+    size_t const blockSize = (pool->end - pool->start)*2;
     pool->blocks = realloc(pool->blocks, offsetof(BLOCK, s) +
                            blockSize * sizeof(XML_Char));
     if (!pool->blocks)
@@ -484,12 +484,11 @@ int poolGrow(STRING_POOL *pool)
     pool->end = pool->start + blockSize;
   }
   else {
+    size_t const poolLen = pool->end - pool->start;
+    size_t const blockSize =
+        poolLen < INIT_BLOCK_SIZE ? INIT_BLOCK_SIZE : poolLen * 2;
     BLOCK *tem;
-    int blockSize = pool->end - pool->start;
-    if (blockSize < INIT_BLOCK_SIZE)
-      blockSize = INIT_BLOCK_SIZE;
-    else
-      blockSize *= 2;
+
     tem = malloc(offsetof(BLOCK, s) + blockSize * sizeof(XML_Char));
     if (!tem)
       return 0;
@@ -1123,16 +1122,14 @@ normalizeLines(XML_Char *s)
 static void
 reportDefault(XML_Parser       const xmlParserP,
               const ENCODING * const enc,
-              const char *     const startArg,
+              const char *     const start,
               const char *     const end) {
 
     Parser * const parser = (Parser *)xmlParserP;
 
-    const char * s;
+    if (MUST_CONVERT(enc, start)) {
+        const char * s;
 
-    s = startArg;
-
-    if (MUST_CONVERT(enc, s)) {
         const char **eventPP;
         const char **eventEndPP;
 
@@ -1144,16 +1141,23 @@ reportDefault(XML_Parser       const xmlParserP,
             eventPP = &(openInternalEntities->internalEventPtr);
             eventEndPP = &(openInternalEntities->internalEventEndPtr);
         }
+        s = start;
         do {
             ICHAR *dataPtr = (ICHAR *)dataBuf;
             XmlConvert(enc, &s, end, &dataPtr, (ICHAR *)dataBufEnd);
             *eventEndPP = s;
-            defaultHandler(handlerArg, dataBuf, dataPtr - (ICHAR *)dataBuf);
+            {
+                size_t const len = dataPtr - (ICHAR *)dataBuf;
+                assert((size_t)(int)len == len);   /* parser requirement */
+                defaultHandler(handlerArg, dataBuf, (int)len);
+            }
             *eventPP = s;
         } while (s != end);
-    } else
-        defaultHandler(handlerArg, (XML_Char *)s,
-                       (XML_Char *)end - (XML_Char *)s);
+    } else {
+        size_t const len = (XML_Char *)end - (XML_Char *)start;
+        assert((size_t)(int)len == len);  /* parser requirement */
+        defaultHandler(handlerArg, (XML_Char *)start, len);
+    }
 }
 
 
@@ -2151,16 +2155,21 @@ doCdataSection(XML_Parser       const xmlParserP,
             ICHAR *dataPtr = (ICHAR *)dataBuf;
             XmlConvert(enc, &s, next, &dataPtr, (ICHAR *)dataBufEnd);
             *eventEndPP = next;
-            characterDataHandler(handlerArg, dataBuf, dataPtr - (ICHAR *)dataBuf);
+            {
+                size_t const len = dataPtr - (ICHAR *)dataBuf;
+                assert((size_t)(int)len == len);   /* parser requirement */
+                characterDataHandler(handlerArg, dataBuf, (int)len);
+            }
             if (s == next)
               break;
             *eventPP = s;
           }
         }
-        else
-          characterDataHandler(handlerArg,
-                               (XML_Char *)s,
-                               (XML_Char *)next - (XML_Char *)s);
+        else {
+            size_t const len = (XML_Char *)next - (XML_Char *)s;
+            assert((size_t)(int)len == len);   /* parser requirement */
+            characterDataHandler(handlerArg, (XML_Char *)s, (int)len);
+        }                               
       }
       else if (defaultHandler)
         reportDefault(xmlParserP, enc, s, next);
@@ -2459,7 +2468,7 @@ doStartTagNoAtts(XML_Parser       const xmlParserP,
             if (fromPtr == rawNameEnd)
                 break;
             else {
-                int const bufSize = (tag->bufEnd - tag->buf) << 1;
+                size_t const bufSize = (tag->bufEnd - tag->buf) << 1;
                 tag->buf = realloc(tag->buf, bufSize);
                 if (!tag->buf) {
                     *errorCodeP = XML_ERROR_NO_MEMORY;
@@ -2777,12 +2786,16 @@ processContentToken(XML_Parser       const xmlParserP,
                     from = s;
                     dataPtr = (ICHAR *)dataBuf;
                     XmlConvert(enc, &from, end, &dataPtr, (ICHAR *)dataBufEnd);
-                    characterDataHandler(handlerArg, dataBuf,
-                                         dataPtr - (ICHAR *)dataBuf);
-                } else
-                    characterDataHandler(handlerArg,
-                                         (XML_Char *)s,
-                                         (XML_Char *)end - (XML_Char *)s);
+                    {
+                        size_t const len = dataPtr - (ICHAR *)dataBuf;
+                        assert((size_t)(int)len == len);   /* parser reqt */
+                        characterDataHandler(handlerArg, dataBuf, (int)len);
+                    }
+                } else {
+                    size_t const len = (XML_Char *)end - (XML_Char *)s;
+                    assert((size_t)(int)len == len);   /* parser reqt */
+                    characterDataHandler(handlerArg, (XML_Char *)s, (int)len);
+                }
             } else if (defaultHandler)
                 reportDefault(xmlParserP, enc, s, end);
 
@@ -2807,16 +2820,20 @@ processContentToken(XML_Parser       const xmlParserP,
                     XmlConvert(enc, &from, *nextP, &dataPtr,
                                (ICHAR *)dataBufEnd);
                     *eventEndPP = from;
-                    characterDataHandler(handlerArg, dataBuf,
-                                         dataPtr - (ICHAR *)dataBuf);
+                    {
+                        size_t const len = dataPtr - (ICHAR *)dataBuf;
+                        assert((size_t)(int)len == len);   /* parser reqt */
+                        characterDataHandler(handlerArg, dataBuf, (int)len);
+                    }
                     if (from == *nextP)
                         break;
                     *eventPP = from;
                 }
-            } else
-                characterDataHandler(handlerArg,
-                                     (XML_Char *)s,
-                                     (XML_Char *)*nextP - (XML_Char *)s);
+            } else {
+                size_t const len = (XML_Char *)*nextP - (XML_Char *)s;
+                assert((size_t)(int)len == len);   /* parser reqt */
+                characterDataHandler(handlerArg, (XML_Char *)s, len);
+            }
         } else if (defaultHandler)
             reportDefault(xmlParserP, enc, s, *nextP);
         break;
@@ -4556,19 +4573,40 @@ xmlrpc_XML_GetErrorString(XML_Parser const parser) {
 
 
 long
-xmlrpc_XML_GetCurrentByteIndex(XML_Parser parser)
-{
-  if (eventPtr)
-    return parseEndByteIndex - (parseEndPtr - eventPtr);
-  return -1;
+xmlrpc_XML_GetCurrentByteIndex(XML_Parser const parser) {
+
+    long retval;
+
+    if (eventPtr) {
+        size_t const bytesLeft = parseEndPtr - eventPtr;
+
+        if ((size_t)(long)(bytesLeft) != bytesLeft)
+            retval = -1;
+        else
+            retval = parseEndByteIndex - (long)bytesLeft;
+    } else
+        retval = -1;
+
+    return retval;
 }
 
+
+
 int
-xmlrpc_XML_GetCurrentByteCount(XML_Parser parser)
-{
-  if (eventEndPtr && eventPtr)
-    return eventEndPtr - eventPtr;
-  return 0;
+xmlrpc_XML_GetCurrentByteCount(XML_Parser const parser) {
+
+    int retval;
+
+    if (eventEndPtr && eventPtr) {
+        size_t const byteCount = eventEndPtr - eventPtr;
+
+        assert((size_t)(int)byteCount == byteCount);
+
+        retval = (int)byteCount;
+    } else 
+        retval = 0;
+
+    return retval;
 }
 
 
