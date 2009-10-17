@@ -105,7 +105,7 @@ channelCreateFd(int const fd,
 static void
 testChanSwitchOsSocket(void) {
 
-    int rc;
+    XMLRPC_SOCKET rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
     if (rc < 0) {
@@ -166,7 +166,7 @@ testChanSwitch(void) {
 static void
 testChannel(void) {
 
-    int rc;
+    XMLRPC_SOCKET rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
     if (rc < 0) {
@@ -194,7 +194,7 @@ testChannel(void) {
 static void
 testOsSocket(void) {
 
-    int rc;
+    XMLRPC_SOCKET rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
     if (rc < 0) {

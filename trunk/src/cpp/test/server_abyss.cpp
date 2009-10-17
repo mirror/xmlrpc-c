@@ -78,7 +78,7 @@ public:
         closesock(this->fd);
     }
 
-    int fd;
+    XMLRPC_SOCKET fd;
 };
 
 
