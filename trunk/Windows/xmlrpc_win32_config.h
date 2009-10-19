@@ -74,6 +74,7 @@
 #define HAVE_WCHAR_H 1
 #define HAVE_SYS_FILIO_H 0
 #define HAVE_SYS_IOCTL_H 0
+#define HAVE_SYS_SELECT_H 0
 
 #define VA_LIST_IS_ARRAY 0
 

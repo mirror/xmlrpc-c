@@ -61,7 +61,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <limits.h>
-#if !MSVCRT
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 #include <signal.h>

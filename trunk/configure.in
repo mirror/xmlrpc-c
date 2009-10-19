@@ -306,6 +306,14 @@ else
 fi
 AC_SUBST(HAVE_SYS_IOCTL_H_DEFINE)
 
+AC_CHECK_HEADERS(sys/select.h)
+if test x"$ac_cv_header_sys_select_h" = xyes; then
+  HAVE_SYS_SELECT_H_DEFINE=1
+else
+  HAVE_SYS_SELECT_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_SELECT_H_DEFINE)
+
 
 AC_CHECK_HEADERS(stdarg.h, , [
 AC_MSG_ERROR(stdarg.h is required to build this library)

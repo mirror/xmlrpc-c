@@ -1,7 +1,7 @@
 #ifndef SELECT_INT_H_INCLUDED
 #define SELECT_INT_H_INCLUDED
 
-#ifndef WIN32
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 #include <signal.h>
