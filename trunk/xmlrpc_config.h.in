@@ -62,8 +62,23 @@
 #ifndef HAVE_STRICMP
 #define HAVE_STRICMP 0
 #endif
-#ifndef HAVE__STRICMP
-#define HAVE__STRICMP 0
+#ifndef HAVE_STRTOLL
+#define HAVE_STRTOLL 0
+#endif
+#ifndef HAVE_STRTOQ
+#define HAVE_STRTOQ 0
+#endif
+#ifndef HAVE___STRTOLL
+#define HAVE__STRTOLL 0
+#endif
+#ifndef HAVE_STRTOUQ
+#define HAVE_STRTOUQ 0
+#endif
+#ifndef HAVE__STRTOULL
+#define HAVE__STRTOULL 0
+#endif
+#ifndef HAVE__STRTOUI64
+#define HAVE__STRTOUI64 0
 #endif
 
 #define HAVE_WCHAR_H @HAVE_WCHAR_H_DEFINE@
@@ -160,6 +175,26 @@
    we can't use it in portable code.
 */
 #pragma warning(disable:4996)
+#endif
+
+#if HAVE_STRTOLL
+  # define XMLRPC_STRTOLL strtoll
+#elif HAVE_STRTOQ
+  # define XMLRPC_STRTOLL strtoq /* Interix */
+#elif HAVE___STRTOLL
+  # define XMLRPC_STRTOLL __strtoll /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STROLL _strtoui64  /* Windows MSVC */
+#endif
+
+#if HAVE_STRTOULL
+  # define XMLRPC_STRTOULL strtoull
+#elif HAVE_STRTOUQ
+  # define XMLRPC_STRTOULL strtouq /* Interix */
+#elif HAVE___STRTOULL
+  # define XMLRPC_STRTOULL __strtoull /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STRTOULL _strtoui64  /* Windows MSVC */
 #endif
 
 #endif

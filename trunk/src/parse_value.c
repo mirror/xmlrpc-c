@@ -585,7 +585,7 @@ parseI8(xmlrpc_env *    const envP,
         char * tail;
 
         errno = 0;
-        i = strtoll(str, &tail, 10);
+        i = XMLRPC_STRTOLL(str, &tail, 10);
 
         if (errno == ERANGE)
             setParseFault(envP, "<i8> XML element value '%s' represents a "

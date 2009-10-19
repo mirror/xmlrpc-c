@@ -31,6 +31,8 @@
 /* From xmlrpc_amconfig.h */
 
 #define HAVE__STRICMP 1
+#define HAVE__STRTOUI64 1
+
 /* Name of package */
 #define PACKAGE "xmlrpc-c"
 /*----------------------------------*/
@@ -126,6 +128,9 @@
   #define HAVE_TIMESPEC 1
 #endif
 
+/* Note that the return value of XMLRPC_VSNPRINTF is int on Windows,
+   ssize_t on POSIX.
+*/
 #if MSVCRT
   #define XMLRPC_VSNPRINTF _vsnprintf
 #else
@@ -162,9 +167,27 @@
 #pragma warning(disable:4996)
 #endif
 
+#if HAVE_STRTOLL
+  # define XMLRPC_STRTOLL strtoll
+#elif HAVE_STRTOQ
+  # define XMLRPC_STRTOLL strtoq /* Interix */
+#elif HAVE___STRTOLL
+  # define XMLRPC_STRTOLL __strtoll /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STROLL _strtoui64  /* Windows MSVC */
+#endif
+
+#if HAVE_STRTOULL
+  # define XMLRPC_STRTOULL strtoull
+#elif HAVE_STRTOUQ
+  # define XMLRPC_STRTOULL strtouq /* Interix */
+#elif HAVE___STRTOULL
+  # define XMLRPC_STRTOULL __strtoull /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STRTOULL _strtoui64  /* Windows MSVC */
+#endif
+
 #define snprintf _snprintf
 #define popen _popen
-#define strtoll _strtoui64
-#define strtoull _strtoui64
 
 #endif

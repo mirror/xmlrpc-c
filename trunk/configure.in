@@ -363,7 +363,7 @@ AC_CHECK_FUNCS(setgroups)
 
 AC_CHECK_FUNCS(asprintf)
 
-AC_CHECK_FUNCS(setenv)
+AC_CHECK_FUNCS(setenv strtoll strtoull strtoq strtouq __strtoll __strtoull)
 
 dnl uclib doesn't have pselect
 AC_CHECK_FUNCS(pselect)
