@@ -113,7 +113,7 @@ subParseDtRegex_standardtzd(regmatch_t *      const matches,
 #endif  /* HAVE_REGEX */
 
 
-#ifdef HAVE_REGEX
+#if HAVE_REGEX
 
 typedef  void (*regparsefunc_t)(regmatch_t *      const matches,
                                 const char *      const datetimeString,
