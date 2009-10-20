@@ -49,6 +49,11 @@ typedef unsigned char     uint8_t;
 #define LL(x) x ## i64
 #define ULL(x) x ## u64
 
+#elif defined(__INTERIX)
+#  include <stdint.h>
+#  define PRId64 "I64d"
+#  define PRIu64 "I64u"
+
 #else
   /* Not Microsoft compiler */
   #include <inttypes.h>
