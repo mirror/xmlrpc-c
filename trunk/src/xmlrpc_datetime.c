@@ -301,7 +301,7 @@ xmlrpc_datetime_new(xmlrpc_env *    const envP,
 
     xmlrpc_value * valP;
 
-    const char ** readBufferP;
+    char ** readBufferP;
         
     MALLOCVAR(readBufferP);
 
