@@ -379,8 +379,8 @@ xmlrpc_struct_new(xmlrpc_env * const env);
 /* Return the number of key/value pairs in a struct.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
 int
-xmlrpc_struct_size (xmlrpc_env   * env, 
-                    xmlrpc_value * strct);
+xmlrpc_struct_size (xmlrpc_env   * const env, 
+                    xmlrpc_value * const strct);
 
 /* Returns true iff 'strct' contains 'key'.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
