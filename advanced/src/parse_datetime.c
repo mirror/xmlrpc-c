@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#include <string.h>
 
 #if HAVE_REGEX
 #include <sys/types.h>  /* Missing from regex.h in GNU libc */
