@@ -175,7 +175,7 @@
 #elif HAVE___STRTOLL
   # define XMLRPC_STRTOLL __strtoll /* HP-UX <= 11.11 */
 #elif HAVE__STRTOUI64
-  #define XMLRPC_STROLL _strtoui64  /* Windows MSVC */
+  #define XMLRPC_STRTOLL _strtoui64  /* Windows MSVC */
 #endif
 
 #if HAVE_STRTOULL
