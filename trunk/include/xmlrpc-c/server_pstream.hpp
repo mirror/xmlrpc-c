@@ -3,6 +3,7 @@
 
 #ifdef WIN32
 #include <winsock.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+typedef int socklen_t;
 #else
 #include <sys/socket.h>
 #endif
