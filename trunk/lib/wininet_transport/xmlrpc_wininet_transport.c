@@ -558,17 +558,20 @@ Again:
 
 
 
-static unsigned __stdcall 
+static void *
 doAsyncRpc(void * const arg) {
+
     rpc * const rpcP = arg;
+
     xmlrpc_env env;
     xmlrpc_env_init(&env);
+
     performWinInetTransaction(&env, rpcP->winInetTransactionP,
                               rpcP->clientTransportP );
-    rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
-    xmlrpc_env_clean(&env);
 
-    return 0;
+    rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
+
+    xmlrpc_env_clean(&env);
 }
 
 

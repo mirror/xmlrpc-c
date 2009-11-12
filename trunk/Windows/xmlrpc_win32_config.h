@@ -129,6 +129,19 @@
   #define HAVE_TIMESPEC 1
 #endif
 
+#if MSVCRT
+  #define HAVE_WINDOWS_THREAD 1
+#else
+  #define HAVE_WINDOWS_THREAD 0
+#endif
+
+/* Some people have and use pthreads on Windows.  See
+   http://sourceware.org/pthreads-win32 .  For that case, we can set
+   HAVE_PTHREAD to 1.  The builder prefers to use pthreads if it has
+   a choice.
+*/
+#define HAVE_PTHREAD 0
+
 /* Note that the return value of XMLRPC_VSNPRINTF is int on Windows,
    ssize_t on POSIX.
 */

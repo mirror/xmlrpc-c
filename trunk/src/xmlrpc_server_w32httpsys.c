@@ -1,14 +1,15 @@
 /* Copyright information is at end of file. */
+
 /* COMPILATION NOTE:
-   Note that the Platform SDK headers and
-   link libraries for Windows XP SP2 or newer are required to compile
-   xmlrpc-c for this module.  If you are not using this server, it is 
-   safe to exclude the xmlrpc_server_w32httpsys.c file from the xmlrpc
-   project and these dependencies will not be required.  You can get the 
-   latest platform SDK at 
-   http://www.microsoft.com/msdownload/platformsdk/sdkupdate/
-   Be sure after installation to choose the program to "register the PSDK
-   directories with Visual Studio" so the newer headers are found.
+
+   Note that the Platform SDK headers and link libraries for Windows XP SP2 or
+   newer are required to compile Xmlrpc-c for this module.  If you are not
+   using this XML-RPC server program, it is safe to exclude the
+   xmlrpc_server_w32httpsys.c file from the xmlrpc project and you will not
+   have this dependency.  You can get the latest platform SDK at
+   http://www.microsoft.com/msdownload/platformsdk/sdkupdate/ Be sure after
+   installation to choose the program to "register the PSDK directories with
+   Visual Studio" so the newer headers are found.
 */
 
 #ifndef UNICODE
