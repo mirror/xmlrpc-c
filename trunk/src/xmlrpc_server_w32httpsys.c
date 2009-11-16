@@ -20,7 +20,16 @@
 #define _UNICODE
 #endif
 
-/* See compilation note above if this header is not found! */
+/* Declare that we require the Windows XP SP2 or better version of the
+   interface to Windows.
+
+   Microsoft recommends defining NTDDI_VERSION instead of _WIN32_WINNT for
+   this purpose, but as it was invented recently, it's pretty useless.
+   Windows header files from old Windows SDKs won't know what to do with it.
+*/
+#define _WIN32_WINNT 0x0502
+
+/* See compilation note above if the compiler doesn't find this header file */
 #include <http.h>
 #include <strsafe.h>
 
