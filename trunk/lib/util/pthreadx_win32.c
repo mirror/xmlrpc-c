@@ -69,7 +69,7 @@ pthread_create(pthread_t *            const newThreadIdP,
 
     HANDLE hThread;
     DWORD dwThreadID;
-    struct winStartArg * const winStartArgP;
+    struct winStartArg * winStartArgP;
 
     MALLOCVAR_NOFAIL(winStartArgP);
 
