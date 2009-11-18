@@ -123,6 +123,7 @@ ThreadKill(TThread * const threadP) {
 void
 ThreadWaitAndRelease(TThread * const threadP) {
 
+    WaitForSingleObject(threadP->handle, INFINITE);
     ThreadRelease(threadP);
 }
 
