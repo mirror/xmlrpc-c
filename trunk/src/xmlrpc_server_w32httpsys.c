@@ -23,9 +23,11 @@
 /* Declare that we require the Windows XP SP2 or better version of the
    interface to Windows.
 
-   Microsoft recommends defining NTDDI_VERSION instead of _WIN32_WINNT for
-   this purpose, but as it was invented recently, it's pretty useless.
-   Windows header files from old Windows SDKs won't know what to do with it.
+   Microsoft recommends
+   (http://msdn.microsoft.com/en-us/library/aa383745(VS.85).aspx) defining
+   NTDDI_VERSION instead of _WIN32_WINNT for this purpose, but as it was
+   invented recently, it's pretty useless.  Windows header files from old
+   Windows SDKs won't know what to do with it.
 */
 #define _WIN32_WINNT 0x0502
 
