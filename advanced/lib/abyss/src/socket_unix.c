@@ -262,7 +262,7 @@ channelWait(TChannel * const channelP,
    one.
 
    We return before the requested condition holds if 'timeoutMs'
-   milliseconds pass.  timoutMs == TIME_INFINITE means infinity.
+   milliseconds pass.  timeoutMs == TIME_INFINITE means infinity.
 
    We return before the requested condition holds if the process receives
    (and catches) a signal, but only if it receives that signal a certain

@@ -122,7 +122,8 @@ convert_params(xmlrpc_env *        const envP,
     size = xml_element_children_size(elemP);
     params = xml_element_children(elemP);
     for (i = 0; i < size; ++i) {
-        unsigned int const maxNest = xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
+        unsigned int const maxNest = (unsigned int)
+            xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
 
         param = params[i];
         CHECK_NAME(envP, param, "param");
@@ -401,7 +402,7 @@ parseFaultElement(xmlrpc_env *        const envP,
                   int *               const faultCodeP,
                   const char **       const faultStringP) {
                   
-    unsigned int const maxRecursion =
+    unsigned int const maxRecursion = (unsigned int)
         xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
 
     XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(faultElement), "fault"));

@@ -20,10 +20,12 @@
   #define XMLRPC_SOCKET SOCKET
   #define XMLRPC_HAVE_TIMEVAL 0
   #define XMLRPC_HAVE_TIMESPEC 0
+  #define XMLRPC_HAVE_PTHREAD 0
 #else
   #define XMLRPC_SOCKET int
   #define XMLRPC_HAVE_TIMEVAL 1
   #define XMLRPC_HAVE_TIMESPEC 1
+  #define XMLRPC_HAVE_PTHREAD 1
 #endif
 
 #if defined(_MSC_VER)

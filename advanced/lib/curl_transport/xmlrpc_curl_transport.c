@@ -61,7 +61,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <limits.h>
-#if !MSVCRT
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 #include <signal.h>
@@ -199,11 +199,26 @@ struct xmlrpc_client_transport {
            
            This is constant (the handle, not the object).
         */
+    bool dontAdvertise;
+        /* Don't identify to the server the XML-RPC engine we are using.  If
+           false, include a User-Agent HTTP header in all requests that
+           identifies the Xmlrpc-c and Curl libraries.
+
+           See also 'userAgent'.
+
+           This is constant.
+        */
     const char * userAgent;
-        /* Prefix for the User-Agent HTTP header, reflecting facilities
-           outside of Xmlrpc-c.  The actual User-Agent header consists
-           of this prefix plus information about Xmlrpc-c.  NULL means
-           none.
+        /* Information to include in a User-Agent HTTP header, reflecting
+           facilities outside of Xmlrpc-c.  
+
+           Null means none.
+
+           The full User-Agent header value is this information (if
+           'userAgent' is non-null) followed by identification of Xmlrpc-c
+           and Curl (if 'dontAdvertise' is false).  If 'userAgent' is null
+           and 'dontAdvertise' is true, we put no User-Agent header at all
+           in the request.
 
            This is constant.
         */
@@ -617,6 +632,19 @@ getTimeoutParm(xmlrpc_env *                          const envP,
 
 
 static void
+setVerbose(bool * const verboseP) {
+
+    const char * const xmlrpcTraceCurl = getenv("XMLRPC_TRACE_CURL");
+
+    if (xmlrpcTraceCurl)
+        *verboseP = true;
+    else
+        *verboseP = false;
+}
+
+
+
+static void
 getXportParms(xmlrpc_env *                          const envP,
               const struct xmlrpc_curl_xportparms * const curlXportParmsP,
               size_t                                const parmSize,
@@ -653,6 +681,11 @@ getXportParms(xmlrpc_env *                          const envP,
         transportP->userAgent = NULL;
     else
         transportP->userAgent = strdup(curlXportParmsP->user_agent);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(dont_advertise))
+        transportP->dontAdvertise = false;
+    else
+        transportP->dontAdvertise = curlXportParmsP->dont_advertise;
     
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
         curlSetupP->networkInterface = NULL;
@@ -924,6 +957,8 @@ create(xmlrpc_env *                      const envP,
     if (transportP == NULL)
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
+        setVerbose(&transportP->curlSetupStuff.verbose);
+
         transportP->interruptP = NULL;
 
         transportP->asyncCurlMultiP = curlMulti_create();
@@ -1104,6 +1139,7 @@ createRpc(xmlrpc_env *                     const envP,
                                curlSessionP,
                                serverP,
                                callXmlP, responseXmlP, 
+                               clientTransportP->dontAdvertise,
                                clientTransportP->userAgent,
                                &clientTransportP->curlSetupStuff,
                                rpcP,

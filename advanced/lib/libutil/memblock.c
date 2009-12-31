@@ -171,19 +171,15 @@ xmlrpc_mem_block_append(xmlrpc_env *       const envP,
                         const void *       const data, 
                         size_t             const len) {
 
-    int size;
+    size_t const originalSize = blockP->_size;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(blockP != NULL);
 
-    size = blockP->_size;
-    xmlrpc_mem_block_resize(envP, blockP, size + len);
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-    memcpy(((unsigned char*) blockP->_block) + size, data, len);
-
- cleanup:
-    return;
+    xmlrpc_mem_block_resize(envP, blockP, originalSize + len);
+    if (!envP->fault_occurred) {
+        memcpy(((unsigned char*) blockP->_block) + originalSize, data, len);
+    }
 }
 
 

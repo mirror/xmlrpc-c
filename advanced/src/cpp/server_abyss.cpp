@@ -636,6 +636,7 @@ serverAbyss::runConn(int const socketFd) {
 
 
 
+#ifndef WIN32
 void
 serverAbyss::sigchld(pid_t const pid) {
 
@@ -650,6 +651,7 @@ serverAbyss::sigchld(pid_t const pid) {
 
     ServerHandleSigchld(pid);
 }
+#endif
 
 
 

@@ -132,6 +132,7 @@ clientXmlTransport_curl::constrOpt::constrOpt() {
     present.network_interface = false;
     present.no_ssl_verifypeer = false;
     present.no_ssl_verifyhost = false;
+    present.dont_advertise = false;
     present.user_agent = false;
     present.ssl_cert = false;
     present.sslcerttype = false;
@@ -163,6 +164,7 @@ clientXmlTransport_curl::constrOpt::OPTION_NAME(TYPE const& arg) { \
 DEFINE_OPTION_SETTER(network_interface, string);
 DEFINE_OPTION_SETTER(no_ssl_verifypeer, bool);
 DEFINE_OPTION_SETTER(no_ssl_verifyhost, bool);
+DEFINE_OPTION_SETTER(dont_advertise, bool);
 DEFINE_OPTION_SETTER(user_agent, string);
 DEFINE_OPTION_SETTER(ssl_cert, string);
 DEFINE_OPTION_SETTER(sslcerttype, string);
@@ -194,6 +196,8 @@ clientXmlTransport_curl::initialize(constrOpt const& opt) {
         opt.value.no_ssl_verifypeer         : false;
     transportParms.no_ssl_verifyhost = opt.present.no_ssl_verifyhost ? 
         opt.value.no_ssl_verifyhost         : false;
+    transportParms.dont_advertise    = opt.present.dont_advertise ?
+        opt.value.dont_advertise            : false;
     transportParms.user_agent        = opt.present.user_agent ?
         opt.value.user_agent.c_str()        : NULL;
     transportParms.ssl_cert          = opt.present.ssl_cert ?
@@ -233,7 +237,7 @@ clientXmlTransport_curl::initialize(constrOpt const& opt) {
 
     xmlrpc_curl_transport_ops.create(
         &env.env_c, 0, "", "",
-        &transportParms, XMLRPC_CXPSIZE(timeout),
+        &transportParms, XMLRPC_CXPSIZE(dont_advertise),
         &this->c_transportP);
 
     if (env.env_c.fault_occurred)

@@ -1421,7 +1421,7 @@ test_struct_get_element(xmlrpc_value * const structP,
 
 static void
 testStructReadout(xmlrpc_value * const structP,
-                  size_t         const expectedSize) {
+                  unsigned int   const expectedSize) {
 
     xmlrpc_env env;
     xmlrpc_value * keyP;

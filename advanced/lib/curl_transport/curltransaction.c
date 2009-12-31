@@ -86,39 +86,82 @@ addContentTypeHeader(xmlrpc_env *         const envP,
 
 
 
+static const char *
+xmlrpcUserAgentPart(bool const reportIt) {
+
+    const char * retval;
+    
+    if (reportIt) {
+        curl_version_info_data * const curlInfoP =
+            curl_version_info(CURLVERSION_NOW);
+        char curlVersion[32];
+        
+        snprintf(curlVersion, sizeof(curlVersion), "%u.%u.%u",
+                 (curlInfoP->version_num >> 16) && 0xff,
+                 (curlInfoP->version_num >>  8) && 0xff,
+                 (curlInfoP->version_num >>  0) && 0xff
+            );
+
+        xmlrpc_asprintf(&retval,
+                        "Xmlrpc-c/%s Curl/%s",
+                        XMLRPC_C_VERSION, curlVersion);
+    } else
+        xmlrpc_asprintf(&retval, "%s", "");
+
+    return retval;
+}
+
+
+
 static void
 addUserAgentHeader(xmlrpc_env *         const envP,
                    struct curl_slist ** const headerListP,
+                   bool                 const reportXmlrpc,
                    const char *         const userAgent) {
+/*----------------------------------------------------------------------------
+   Add a User-Agent HTTP header to the Curl header list *headerListP,
+   if appropriate.
+   
+   'reportXmlrpc' means we want to tell the client what XML-RPC agent
+   is being used -- Xmlrpc-c and layers below.
 
-    if (userAgent) {
+   'userAgent' is a string describing the layers above Xmlrpc-c.  We
+   assume it is in the proper format to be included in a User-Agent
+   header.  (We should probably fix that some day -- take ownership
+   of that format).
+-----------------------------------------------------------------------------*/
+    if (reportXmlrpc || userAgent) {
+        /* Add the header */
+
         /* Note: Curl has a CURLOPT_USERAGENT option that does some of this
            work.  We prefer to be totally in control, though, so we build
            the header explicitly.
         */
-    
-        curl_version_info_data * const curlInfoP =
-            curl_version_info(CURLVERSION_NOW);
-        char curlVersion[32];
-        const char * userAgentHeader;
-        
-        snprintf(curlVersion, sizeof(curlVersion), "%u.%u.%u",
-                (curlInfoP->version_num >> 16) && 0xff,
-                (curlInfoP->version_num >>  8) && 0xff,
-                (curlInfoP->version_num >>  0) && 0xff
-            );
-                  
-        xmlrpc_asprintf(&userAgentHeader,
-                        "User-Agent: %s Xmlrpc-c/%s Curl/%s",
-                        userAgent, XMLRPC_C_VERSION, curlVersion);
-        
-        if (userAgentHeader == xmlrpc_strsol)
+
+        const char * const xmlrpcPart = xmlrpcUserAgentPart(reportXmlrpc);
+
+        if (xmlrpcPart == xmlrpc_strsol)
             xmlrpc_faultf(envP, "Couldn't allocate memory for "
                           "User-Agent header");
         else {
-            addHeader(envP, headerListP, userAgentHeader);
+            const char * const userPart = userAgent ? userAgent : "";
+            const char * const space = userAgent && reportXmlrpc ? " " : "";
+
+            const char * userAgentHeader;
+
+            xmlrpc_asprintf(&userAgentHeader,
+                            "User-Agent: %s%s%s",
+                            userPart, space, xmlrpcPart);
+        
+            if (userAgentHeader == xmlrpc_strsol)
+                xmlrpc_faultf(envP, "Couldn't allocate memory for "
+                              "User-Agent header");
+            else {
+                addHeader(envP, headerListP, userAgentHeader);
             
-            xmlrpc_strfree(userAgentHeader);
+                xmlrpc_strfree(userAgentHeader);
+            }
+            xmlrpc_strfree(xmlrpcPart);
         }
     }
 }
@@ -191,6 +234,7 @@ addExpectHeader(xmlrpc_env *         const envP,
 static void
 createCurlHeaderList(xmlrpc_env *               const envP,
                      const char *               const authHdrValue,
+                     bool                       const dontAdvertise,
                      const char *               const userAgent,
                      struct curl_slist **       const headerListP) {
 
@@ -200,7 +244,7 @@ createCurlHeaderList(xmlrpc_env *               const envP,
 
     addContentTypeHeader(envP, &headerList);
     if (!envP->fault_occurred) {
-        addUserAgentHeader(envP, &headerList, userAgent);
+        addUserAgentHeader(envP, &headerList, !dontAdvertise, userAgent);
         if (!envP->fault_occurred) {
             if (authHdrValue)
                 addAuthorizationHeader(envP, &headerList, authHdrValue);
@@ -403,6 +447,7 @@ setupCurlSession(xmlrpc_env *               const envP,
                  xmlrpc_mem_block *         const callXmlP,
                  xmlrpc_mem_block *         const responseXmlP,
                  const xmlrpc_server_info * const serverInfoP,
+                 bool                       const dontAdvertise,
                  const char *               const userAgent,
                  const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
@@ -503,6 +548,9 @@ setupCurlSession(xmlrpc_env *               const envP,
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);
 
+        if (curlSetupP->verbose)
+            curl_easy_setopt(curlSessionP, CURLOPT_VERBOSE, 1l);
+
         if (curlSetupP->timeout)
             setCurlTimeout(curlSessionP, curlSetupP->timeout);
 
@@ -516,7 +564,8 @@ setupCurlSession(xmlrpc_env *               const envP,
             setupAuth(envP, curlSessionP, serverInfoP, &authHdrValue);
             if (!envP->fault_occurred) {
                 struct curl_slist * headerList;
-                createCurlHeaderList(envP, authHdrValue, userAgent,
+                createCurlHeaderList(envP, authHdrValue,
+                                     dontAdvertise, userAgent,
                                      &headerList);
                 if (!envP->fault_occurred) {
                     curl_easy_setopt(
@@ -538,6 +587,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
                        const xmlrpc_server_info * const serverP,
                        xmlrpc_mem_block *         const callXmlP,
                        xmlrpc_mem_block *         const responseXmlP,
+                       bool                       const dontAdvertise,
                        const char *               const userAgent,
                        const struct curlSetup *   const curlSetupStuffP,
                        void *                     const userContextP,
@@ -562,7 +612,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
         else {
             setupCurlSession(envP, curlTransactionP,
                              callXmlP, responseXmlP,
-                             serverP, userAgent,
+                             serverP, dontAdvertise, userAgent,
                              curlSetupStuffP);
             
             if (envP->fault_occurred)

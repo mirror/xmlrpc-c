@@ -333,7 +333,7 @@ static void
 parseDatetimeString(const char *      const datetimeString,
                     xmlrpc_datetime * const dtP) {
 
-    unsigned int const dtStrlen = strlen(datetimeString);
+    size_t const dtStrlen = strlen(datetimeString);
 
     char year[4+1];
     char month[2+1];
@@ -378,8 +378,8 @@ parseDatetimeString(const char *      const datetimeString,
     second[2] = '\0';
 
     if (dtStrlen > 17) {
-        unsigned int const pad = 24 - dtStrlen;
-        unsigned int i;
+        size_t const pad = 24 - dtStrlen;
+        size_t i;
 
         dtP->u = atoi(&datetimeString[18]);
         for (i = 0; i < pad; ++i)

@@ -256,6 +256,7 @@ public:
         constrOpt & network_interface (std::string  const& arg);
         constrOpt & no_ssl_verifypeer (bool         const& arg);
         constrOpt & no_ssl_verifyhost (bool         const& arg);
+        constrOpt & dont_advertise    (bool         const& arg);
         constrOpt & user_agent        (std::string  const& arg);
         constrOpt & ssl_cert          (std::string  const& arg);
         constrOpt & sslcerttype       (std::string  const& arg);
@@ -277,6 +278,7 @@ public:
             std::string  network_interface;
             bool         no_ssl_verifypeer;
             bool         no_ssl_verifyhost;
+            bool         dont_advertise;
             std::string  user_agent;
             std::string  ssl_cert;
             std::string  sslcerttype;
@@ -298,6 +300,7 @@ public:
             bool network_interface;
             bool no_ssl_verifypeer;
             bool no_ssl_verifyhost;
+            bool dont_advertise;
             bool user_agent;
             bool ssl_cert;
             bool sslcerttype;

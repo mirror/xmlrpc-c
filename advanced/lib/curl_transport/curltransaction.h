@@ -72,6 +72,7 @@ struct curlSetup {
     const char * sslCipherList;
     unsigned int timeout;
         /* 0 = no Curl timeout.  This is in milliseconds. */
+    bool verbose;
 };
 
 
@@ -81,6 +82,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
                        const xmlrpc_server_info * const serverP,
                        xmlrpc_mem_block *         const callXmlP,
                        xmlrpc_mem_block *         const responseXmlP,
+                       bool                       const dontAdvertise,
                        const char *               const userAgent,
                        const struct curlSetup *   const curlSetupStuffP,
                        void *                     const userContextP,

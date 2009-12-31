@@ -71,6 +71,7 @@ struct xmlrpc_curl_xportparms {
     const char * egdsocket;
     const char * ssl_cipher_list;
     unsigned int timeout;
+    xmlrpc_bool dont_advertise;
 };
 
 

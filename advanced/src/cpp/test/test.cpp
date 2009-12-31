@@ -218,7 +218,7 @@ void test_value (void) {
     TEST(strct.structSize() == 2);
     TEST(strct.structHasKey("bar"));
     TEST(!strct.structHasKey("nosuch"));
-    for (size_t i = 0; i < strct.structSize(); i++) {
+    for (int i = 0; i < (int)strct.structSize(); ++i) {
         string key;
         XmlRpcValue value;
         strct.structGetKeyAndValue(i, key, value);

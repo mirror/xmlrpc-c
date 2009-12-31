@@ -419,10 +419,14 @@ xmlrpc_XML_GetIdAttributeIndex(XML_Parser parser);
    len may be zero for this call (or any other).
 */
 int XMLPARSEAPI
-xmlrpc_XML_Parse(XML_Parser const parser, const char * const s, int const len, int const isFinal);
+xmlrpc_XML_Parse(XML_Parser   const xmlParserP,
+                 const char * const s,
+                 size_t       const len,
+                 int          const isFinal);
 
 void XMLPARSEAPI *
-xmlrpc_XML_GetBuffer(XML_Parser parser, int len);
+xmlrpc_XML_GetBuffer(XML_Parser const xmlParserP,
+                     size_t     const len);
 
 int XMLPARSEAPI
 xmlrpc_XML_ParseBuffer(XML_Parser const parser, int const len, int const isFinal);

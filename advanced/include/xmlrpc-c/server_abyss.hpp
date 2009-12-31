@@ -67,8 +67,10 @@ public:
     void
     runConn(int const socketFd);
 
+#ifndef WIN32
     void
     sigchld(pid_t pid);
+#endif
 
     void
     terminate();
