@@ -179,6 +179,20 @@
    we can't use it in portable code.
 */
 #pragma warning(disable:4996)
+/* Warning C4090 is "different 'const' qualifiers".
+
+   We disable this warning because MSVC erroneously issues it when there is
+   in fact no difference in const qualifiers:
+
+     const char ** p;
+     void * q;
+     q = p;
+
+   Note that both p and q are pointers to non-const.
+
+   We have seen this in MSVC8.
+*/
+#pragma warning(disable:4090)
 #endif
 
 #if HAVE_STRTOLL

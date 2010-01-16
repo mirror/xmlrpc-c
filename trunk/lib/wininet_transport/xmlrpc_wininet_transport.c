@@ -572,6 +572,8 @@ doAsyncRpc(void * const arg) {
     rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
 
     xmlrpc_env_clean(&env);
+
+    return NULL;
 }
 
 
