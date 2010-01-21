@@ -728,18 +728,20 @@ createChannelForAccept(int             const acceptedWinsock,
         if (!acceptedSocketP)
             xmlrpc_asprintf(errorP, "Unable to allocate memory");
         else {
-            acceptedSocketP->winsock = acceptedWinsock;
+            TChannel * channelP;
+
+            acceptedSocketP->winsock             = acceptedWinsock;
             acceptedSocketP->userSuppliedWinsock = FALSE;
                     
-            *channelInfoPP = channelInfoP;
-
             ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
             if (!channelP)
                 xmlrpc_asprintf(errorP,
                                 "Failed to create TChannel object.");
-            else
-                *errorP = NULL;
-                    
+            else {
+                *errorP        = NULL;
+                *channelPP     = channelP;
+                *channelInfoPP = channelInfoP;
+            }
             if (*errorP)
                 free(acceptedSocketP);
         }
