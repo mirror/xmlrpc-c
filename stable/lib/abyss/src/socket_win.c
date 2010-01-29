@@ -711,6 +711,45 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 
 
 
+static void
+createChannelForAccept(int             const acceptedWinsock,
+                       struct sockaddr const peerAddr,
+                       TChannel **     const channelPP,
+                       void **         const channelInfoPP,
+                       const char **   const errorP) {
+
+    struct abyss_win_chaninfo * channelInfoP;
+    makeChannelInfo(&channelInfoP, peerAddr, sizeof(peerAddr), errorP);
+    if (!*errorP) {
+        struct socketWin * acceptedSocketP;
+
+        MALLOCVAR(acceptedSocketP);
+
+        if (!acceptedSocketP)
+            xmlrpc_asprintf(errorP, "Unable to allocate memory");
+        else {
+            TChannel * channelP;
+
+            acceptedSocketP->winsock             = acceptedWinsock;
+            acceptedSocketP->userSuppliedWinsock = FALSE;
+                    
+            ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
+            if (!channelP)
+                xmlrpc_asprintf(errorP,
+                                "Failed to create TChannel object.");
+            else {
+                *errorP        = NULL;
+                *channelPP     = channelP;
+                *channelInfoPP = channelInfoP;
+            }
+            if (*errorP)
+                free(acceptedSocketP);
+        }
+    }
+}
+
+
+
 static SwitchAcceptImpl  chanSwitchAccept;
 
 static void
@@ -745,28 +784,10 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
         if (rc >= 0) {
             int const acceptedWinsock = rc;
-            struct socketWin * acceptedSocketP;
 
-            MALLOCVAR(acceptedSocketP);
+            createChannelForAccept(acceptedWinsock, peerAddr,
+                                   &channelP, channelInfoPP, errorP);
 
-            if (!acceptedSocketP)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory");
-            else {
-                acceptedSocketP->winsock = acceptedWinsock;
-                acceptedSocketP->userSuppliedWinsock = FALSE;
-                
-                *channelInfoPP = NULL;
-
-                ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
-                if (!channelP)
-                    xmlrpc_asprintf(errorP,
-                                    "Failed to create TChannel object.");
-                else
-                    *errorP = NULL;
-                
-                if (*errorP)
-                    free(acceptedSocketP);
-            }
             if (*errorP)
                 closesocket(acceptedWinsock);
         } else if (errno == EINTR)
