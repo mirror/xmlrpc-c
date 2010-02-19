@@ -96,10 +96,11 @@ static xmlrpc_value *
 convert_params(xmlrpc_env *        const envP,
                const xml_element * const elemP) {
 /*----------------------------------------------------------------------------
-   Convert an XML element representing a list of parameters (i.e.  a
-   <params> element) to an xmlrpc_value of type array.  Note that an
-   array is normally represented in XML by a <value> element.  We use
-   type xmlrpc_value to represent the parameter list just for convenience.
+   Convert an XML element representing a list of parameters (i.e.  a <params>
+   element) to an xmlrpc_value of type array.  Note that an xmlrpc_value is
+   normally represented in XML by a <value> element, not a <params> element.
+   We use type xmlrpc_value to represent the parameter list just for
+   convenience.
 -----------------------------------------------------------------------------*/
     xmlrpc_value *array, *item;
     int size, i;
