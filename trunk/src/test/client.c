@@ -437,6 +437,7 @@ test_client(void) {
     testGlobalConst();
     testCreateDestroy();
     testInitCleanup();
+    printf("\n");
     testServerInfo();
     testSynchCall();
 
