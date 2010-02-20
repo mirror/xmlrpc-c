@@ -164,19 +164,20 @@ public:
 };
 
 
+typedef std::vector<unsigned char> cbytestring;
 
 class value_bytestring : public value {
 public:
-    value_bytestring(std::vector<unsigned char> const& cvalue);
+    value_bytestring(cbytestring const& cvalue);
 
     value_bytestring(xmlrpc_c::value const baseValue);
 
     // You can't cast to a vector because the compiler can't tell which
     // constructor to use (complains about ambiguity).  So we have this:
-    std::vector<unsigned char>
+    cbytestring
     vectorUcharValue() const;
 
-    std::vector<unsigned char> cvalue() const;
+    cbytestring cvalue() const;
 
     size_t
     length() const;
@@ -184,29 +185,35 @@ public:
 
 
 
+typedef std::map<std::string, xmlrpc_c::value> cstruct;
+
 class value_struct : public value {
 public:
-    value_struct(std::map<std::string, xmlrpc_c::value> const& cvalue);
+    value_struct(cstruct const& cvalue);
 
     value_struct(xmlrpc_c::value const baseValue);
 
-    operator std::map<std::string, xmlrpc_c::value>() const;
+    operator cstruct() const;
 
-    std::map<std::string, xmlrpc_c::value> cvalue() const;
+    cstruct cvalue() const;
 };
 
 
 
+typedef std::vector<xmlrpc_c::value> carray;
+
 class value_array : public value {
 public:
-    value_array(std::vector<xmlrpc_c::value> const& cvalue);
+    value_array(carray const& cvalue);
 
     value_array(xmlrpc_c::value const baseValue);
 
-    std::vector<xmlrpc_c::value>
+    // You can't cast to a vector because the compiler can't tell which
+    // constructor to use (complains about ambiguity).  So we have this:
+    carray
     vectorValueValue() const;
 
-    std::vector<xmlrpc_c::value> cvalue() const;
+    carray cvalue() const;
 
     size_t
     size() const;
@@ -220,7 +227,7 @@ arrayValueSlice(InputIterator begin,
 /*----------------------------------------------------------------------------
   convert C++ iterator pair to XML-RPC array
 -----------------------------------------------------------------------------*/
-    std::vector<xmlrpc_c::value> ret;
+    carray ret;
     for (InputIterator p = begin; p != end; ++p) {
         ret.push_back(toValue(*p));
     }
@@ -285,7 +292,7 @@ toValue(double const x) {
 }
 
 inline xmlrpc_c::value_bytestring
-    toValue(std::vector<unsigned char> const& x) {
+    toValue(cbytestring const& x) {
     return xmlrpc_c::value_bytestring(x);
 }
 
@@ -304,7 +311,7 @@ toValue(std::map<K, V> const& in) {
 /*----------------------------------------------------------------------------
   convert C++ map to XML-RPC structure
 -----------------------------------------------------------------------------*/
-    std::map<std::string, xmlrpc_c::value> ret;
+    cstruct ret;
     for (typename std::map<std::string, V>::const_iterator p = in.begin();
          p != in.end();
          ++p) {
@@ -346,7 +353,7 @@ fromValue(double & y, xmlrpc_c::value const& x) {
 }
 
 inline void
-fromValue(std::vector<unsigned char> & y, xmlrpc_c::value const& x) {
+fromValue(cbytestring & y, xmlrpc_c::value const& x) {
     y = xmlrpc_c::value_bytestring(x).vectorUcharValue();
 }
 
@@ -366,7 +373,7 @@ fromValue(std::map<K, V> & y, xmlrpc_c::value const& x) {
 /*----------------------------------------------------------------------------
    Convert XML-RPC structure to C++ map.
 -----------------------------------------------------------------------------*/
-    std::map<std::string, xmlrpc_c::value> m = xmlrpc_c::value_struct(x);
+    cstruct m = xmlrpc_c::value_struct(x);
     y.clear();
     for (std::map<std::string, xmlrpc_c::value>::const_iterator p = m.begin();
          p != m.end();
@@ -380,8 +387,7 @@ fromValue(std::vector<T> & y, xmlrpc_c::value const& x) {
 /*----------------------------------------------------------------------------
    Convert XML-RPC array to C++ vector.
 -----------------------------------------------------------------------------*/
-    std::vector<xmlrpc_c::value> v =
-        xmlrpc_c::value_array(x).vectorValueValue();
+    carray v = xmlrpc_c::value_array(x).vectorValueValue();
     y.resize(v.size());
     for (unsigned int i = 0; i < v.size(); ++i) {
         fromValue(y[i], v[i]);
@@ -500,15 +506,15 @@ public:
     std::string
     getString(unsigned int const paramNumber) const;
 
-    std::vector<unsigned char>
+    cbytestring
     getBytestring(unsigned int const paramNumber) const;
 
-    std::vector<xmlrpc_c::value>
+    carray
     getArray(unsigned int const paramNumber,
              unsigned int const minSize = 0,
              unsigned int const maxSize = UINT_MAX) const;
 
-    std::map<std::string, xmlrpc_c::value>
+    cstruct
     getStruct(unsigned int const paramNumber) const;
 
     void
