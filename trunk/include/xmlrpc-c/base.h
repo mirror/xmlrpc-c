@@ -644,12 +644,19 @@ xmlrpc_serialize_fault(xmlrpc_env *       const envP,
 ** the output variables to NULL.
 ** The caller is responsible for calling free(*out_method_name) and
 ** xmlrpc_DECREF(*out_param_array). */
+
+void
+xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
+                       const char *    const xmlData,
+                       size_t          const xmlDataLen,
+                       xmlrpc_value ** const valuePP);
+
 void 
 xmlrpc_parse_call(xmlrpc_env *    const envP,
-                  const char *    const xml_data,
-                  size_t          const xml_len,
-                  const char **   const out_method_name,
-                  xmlrpc_value ** const out_param_array);
+                  const char *    const xmlData,
+                  size_t          const xmlDataLen,
+                  const char **   const methodNameP,
+                  xmlrpc_value ** const paramArrayP);
 
 void
 xmlrpc_parse_response2(xmlrpc_env *    const envP,
