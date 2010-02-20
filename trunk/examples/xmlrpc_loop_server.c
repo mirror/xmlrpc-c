@@ -1,6 +1,8 @@
 /* A simple standalone XML-RPC server based on Abyss that contains a
    simple one-thread request processing loop.  
 
+   This uses the "provide your own Abyss server" mode of operation.
+
    xmlrpc_sample_add_server.c is a server that does the same thing, but
    does it by running a full Abyss daemon in the background, so it has
    less control over how the requests are served.
