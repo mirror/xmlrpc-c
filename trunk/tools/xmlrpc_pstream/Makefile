@@ -29,7 +29,7 @@ all: xmlrpc_pstream
 
 OBJECTS = \
   xmlrpc_pstream.o \
-  blddir/lib/dumpvalue.o \
+  blddir/tools/lib/dumpvalue.o \
 
 LIBS = \
   $(LIBXMLRPC_CLIENTPP) \
