@@ -98,19 +98,19 @@ $(TARGET_STATIC_LIBRARIES):
 ##############################################################################
 
 ifeq ($(SHARED_LIB_TYPE),unix)
-  include $(SRCDIR)/unix-common.make
+  include $(SRCDIR)/unix-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),irix)
-  include $(SRCDIR)/irix-common.make
+  include $(SRCDIR)/irix-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),dll)
-  include $(SRCDIR)/dll-common.make
+  include $(SRCDIR)/dll-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),dylib)
-  include $(SRCDIR)/dylib-common.make
+  include $(SRCDIR)/dylib-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),NONE)
