@@ -83,7 +83,7 @@ version.h: $(SRCDIR)/version.mk
 	echo "#define XMLRPC_VERSION_MINOR $(MINOR)" >>$@
 	echo "#define XMLRPC_VERSION_POINT $(POINT)" >>$@
 
-include transport_config.make
+include transport_config.mk
 
 # shell_config is a fragment to place inside a Bourne shell program that
 # sets variables that tell how the build is configured.
