@@ -17,6 +17,6 @@ SHLIB_INSTALL_TARGETS = $(SHARED_LIBS_TO_INSTALL:%=%/install)
 
 install-shared-libraries: $(SHLIB_INSTALL_TARGETS)
 
-$(SHLIB_INSTALL_TARGETS):lib%/install:$(SHLIB_PREFIX)%.$(SHLIB_SUFFIX).$(MAJ).$(MIN)
-# $< is a library file name, e.g. cygfoo.so.3.1 .
+$(SHLIB_INSTALL_TARGETS):%/install:%.$(SHLIB_SUFFIX)
+# $< is a library file name, e.g. libfoo.dll .
 	$(INSTALL_SHLIB) $< $(DESTDIR)$(LIBINST_DIR)/$<
