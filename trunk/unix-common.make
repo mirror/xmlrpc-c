@@ -45,7 +45,10 @@
 # install-shared-libraries: install all shared libraries and the necessary
 # symbolic links.
 
-# SONAME is to be referenced by $(LDFLAGS_SHLIB) in $(SHLIB_RULE)
+# SONAME is to be referenced by $(LDFLAGS_SHLIB) in the rule to make
+# a shared library (in common.mk).  I.e. $@ is the name of the shared
+# library file.
+
 # SONAME is the name of the library file being built, with the minor
 #   version number cut off.  E.g. if we're building libfoo.so.1.2, SONAME
 #   is libfoo.so.1 .
