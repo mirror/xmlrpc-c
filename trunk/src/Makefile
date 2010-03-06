@@ -79,6 +79,7 @@ endif
 
 LIBXMLRPC_MODS = \
         double \
+	json \
 	parse_datetime \
 	parse_value \
         resource \
