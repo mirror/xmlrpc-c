@@ -964,6 +964,10 @@ xmlrpc_parse_json(xmlrpc_env * const envP,
 
 
 
+/*============================================================================
+      Serialize value to JSON
+============================================================================*/
+
 /* Borrowed from xmlrpc_serialize */
 
 static void
@@ -1003,101 +1007,158 @@ formatOut(xmlrpc_env *       const envP,
 
 
 static void
+indent(xmlrpc_env *       const envP,
+       unsigned int       const level,
+       xmlrpc_mem_block * const outP) {
+
+    unsigned int i;
+
+    for (i = 0; i < level * 2 && !envP->fault_occurred; ++i)
+        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, " ", 1);
+}
+
+
+
+/* Forward declaration for recursion */
+
+static void
 serializeValue(xmlrpc_env *       const envP,
                xmlrpc_value *     const valP,
-               xmlrpc_mem_block * const out,
-               unsigned int       const levelArg) {
+               unsigned int       const level,
+               xmlrpc_mem_block * const outP);
 
-    unsigned int level;
 
-    XMLRPC_ASSERT_ENV_OK(envP);
+
+static void
+serializeString(xmlrpc_env * const envP,
+                xmlrpc_value *     const valP,
+                xmlrpc_mem_block * const outP) {
+    
+    formatOut(envP, outP, "\"");
+    
+    makeJsonString(envP, valP, outP);
+    
+    formatOut(envP, outP, "\"");
+}
+    
+
+
+static void
+serializeDatetime(xmlrpc_env *       const envP,
+                  xmlrpc_value *     const valP,
+                  xmlrpc_mem_block * const outP) {
+
+    /* ISO 8601 time string as JSON does not have a datetime type */
+
+    formatOut(envP, outP, "\"%u%02u%02uT%02u:%02u:%02u\"",
+              valP->_value.dt.Y,
+              valP->_value.dt.M,
+              valP->_value.dt.D,
+              valP->_value.dt.h,
+              valP->_value.dt.m,
+              valP->_value.dt.s);
+}
+
+
         
-    level = levelArg;  /* initial value */
 
-    switch (valP->_type) {
-    case XMLRPC_TYPE_INT:
-        formatOut( envP, out, "%d", valP->_value.i);
-        break;
 
-    case XMLRPC_TYPE_I8:
-        formatOut( envP, out, "%" PRId64, valP->_value.i8 );
-        break;
+static void
+serializeBitstring(xmlrpc_env *       const envP,
+                   xmlrpc_value *     const valP,
+                   xmlrpc_mem_block * const outP) {
 
-    case XMLRPC_TYPE_BOOL:
-        formatOut(envP, out, "%s", valP->_value.b ? "true" : "false");
-        break;
+    /* Bit string as text whose ASCII coding is the the bit string,
+       since JSON does not have a bit string type
 
-    case XMLRPC_TYPE_DOUBLE:
-        formatOut(envP, out, "%e", valP->_value.d );
-        break;
-
-    case XMLRPC_TYPE_DATETIME:
-        /* ISO 8601 time string as json does not have a datetime type */
-        formatOut( envP, out, "\"%u%02u%02uT%02u:%02u:%02u\"",
-                 valP->_value.dt.Y,
-                 valP->_value.dt.M,
-                 valP->_value.dt.D,
-                 valP->_value.dt.h,
-                 valP->_value.dt.m,
-                 valP->_value.dt.s);
+       TODO: This should be in hexadecimal or base64 instead
+    */
+    
+    unsigned char * const contents =
+        XMLRPC_MEMBLOCK_CONTENTS(unsigned char, &valP->_block);
+    size_t const size =
+        XMLRPC_MEMBLOCK_SIZE(unsigned char, &valP->_block);
+            
+    if (!envP->fault_occurred) {
+        formatOut(envP, outP, "\"");
+            
+        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, contents, size);
         
-        break;
-
-    case XMLRPC_TYPE_STRING:
-        formatOut( envP, out, "\"" );
-        
-        makeJsonString( envP, valP, out );
-
-        formatOut( envP, out, "\"" );
-        break;
-
-    case XMLRPC_TYPE_BASE64: { /* json string too */
-        unsigned char * const contents =
-            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, &valP->_block);
-        size_t const size =
-            XMLRPC_MEMBLOCK_SIZE(unsigned char, &valP->_block);
-            
-        if (!envP->fault_occurred) {
-            formatOut( envP, out, "\"" );
-            
-            XMLRPC_MEMBLOCK_APPEND(char, envP, out, contents, size);
-            
-            formatOut( envP, out, "\"" );
-        }
+        formatOut(envP, outP, "\"");
     }
-        break;      
+}
 
-    case XMLRPC_TYPE_ARRAY: {
-        int const size = xmlrpc_array_size(envP, valP);
 
-        if (!envP->fault_occurred) {
-            int i;
 
-            formatOut(envP, out, "%*s[\n", level, "" );
-            level++;    
-            for (i = 0; i < size && !envP->fault_occurred; ++i) {
-                xmlrpc_value * const itemP =
-                    xmlrpc_array_get_item(envP, valP, i);
+static void
+serializeArray(xmlrpc_env *       const envP,
+               xmlrpc_value *     const valP,
+               unsigned int       const level,
+               xmlrpc_mem_block * const outP) {
+
+    unsigned int const size = xmlrpc_array_size(envP, valP);
+
+    if (!envP->fault_occurred) {
+        unsigned int i;
+
+        formatOut(envP, outP, "[\n");
+
+        for (i = 0; i < size && !envP->fault_occurred; ++i) {
+            xmlrpc_value * const itemP =
+                xmlrpc_array_get_item(envP, valP, i);
                     
+            if (!envP->fault_occurred) {
                 if (!envP->fault_occurred) {
-                    if( i > 0 )
-                        formatOut(envP, out, ",\n" );
+                    serializeValue(envP, itemP, level + 1, outP);
 
-                    formatOut( envP, out, "%*s", level, "" );
-                    serializeValue(envP, itemP, out, level );
+                    XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
                 }
             }
-            --level;
-            
-            if (!envP->fault_occurred) 
-                formatOut(envP, out, "\n%*s]", level, "" );
+        }
+        if (!envP->fault_occurred) {
+            indent(envP, level, outP);
+            if (!envP->fault_occurred) {
+                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "]", 1);
+            }
         }
     }
-        break;
+} 
 
-    case XMLRPC_TYPE_STRUCT: {
-        formatOut( envP, out, "%*s{\n", level, "" );
-        level++;
+
+
+static void
+serializeStructMember(xmlrpc_env *       const envP,
+                      xmlrpc_value *     const memberKeyP,
+                      xmlrpc_value *     const memberValueP,
+                      unsigned int       const level,
+                      xmlrpc_mem_block * const outP) {
+
+    serializeValue(envP, memberKeyP, level, outP);
+                    
+    if (!envP->fault_occurred) {
+        formatOut(envP, outP, ":\n");
+        
+        if (!envP->fault_occurred) {
+            serializeValue(envP, memberValueP, level + 1, outP);
+
+            if (!envP->fault_occurred)
+                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
+        }
+    }
+}
+
+
+ 
+static void
+serializeStruct(xmlrpc_env *       const envP,
+                xmlrpc_value *     const valP,
+                unsigned int       const level,
+                xmlrpc_mem_block * const outP) {
+
+    indent(envP, level, outP);
+
+    if (!envP->fault_occurred) {
+        formatOut(envP, outP, "{\n");
         if (!envP->fault_occurred) {
             unsigned int const size = xmlrpc_struct_size(envP, valP);
             
@@ -1110,35 +1171,64 @@ serializeValue(xmlrpc_env *       const envP,
                     xmlrpc_struct_get_key_and_value(envP, valP, i,
                                                     &memberKeyP,
                                                     &memberValueP);
-                    if (!envP->fault_occurred) {
-                        if( i > 0 )
-                            formatOut( envP, out, ",\n" );
-
-                        formatOut( envP, out, "%*s", level, "" );
-                        serializeValue( envP, memberKeyP, out, level );
-                        
-                        if (envP->fault_occurred)
-                            break;
-                            
-                        formatOut( envP, out, ":" );
-
-                        if (envP->fault_occurred)
-                            break;
-                            
-                        serializeValue(envP, memberValueP, out, level);
-                        
-                        if (envP->fault_occurred)
-                            break;
-                    }
+                    if (!envP->fault_occurred)
+                        serializeStructMember(envP, memberKeyP, memberValueP,
+                                              level + 1, outP);
                 }
-
                 if (!envP->fault_occurred) 
-                    formatOut(envP, out, "\n%*s}", level, "" );
-
-                --level;
+                    XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "}", 1);
             }
         }
     }
+}
+
+
+
+static void
+serializeValue(xmlrpc_env *       const envP,
+               xmlrpc_value *     const valP,
+               unsigned int       const level,
+               xmlrpc_mem_block * const outP) {
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+
+    indent(envP, level, outP);
+        
+    switch (valP->_type) {
+    case XMLRPC_TYPE_INT:
+        formatOut(envP, outP, "%d", valP->_value.i);
+        break;
+
+    case XMLRPC_TYPE_I8:
+        formatOut(envP, outP, "%" PRId64, valP->_value.i8);
+        break;
+
+    case XMLRPC_TYPE_BOOL:
+        formatOut(envP, outP, "%s", valP->_value.b ? "true" : "false");
+        break;
+
+    case XMLRPC_TYPE_DOUBLE:
+        formatOut(envP, outP, "%e", valP->_value.d);
+        break;
+
+    case XMLRPC_TYPE_DATETIME:
+        serializeDatetime(envP, valP, outP);
+        break;
+
+    case XMLRPC_TYPE_STRING:
+        serializeString(envP, valP, outP);
+        break;
+
+    case XMLRPC_TYPE_BASE64:
+        serializeBitstring(envP, valP, outP);
+        break;      
+
+    case XMLRPC_TYPE_ARRAY:
+        serializeArray(envP, valP, level, outP);
+        break;
+
+    case XMLRPC_TYPE_STRUCT:
+        serializeStruct(envP, valP, level, outP);
         break;
 
     case XMLRPC_TYPE_C_PTR:
@@ -1146,7 +1236,7 @@ serializeValue(xmlrpc_env *       const envP,
         break;
 
     case XMLRPC_TYPE_NIL:
-        formatOut( envP, out, "null");
+        formatOut(envP, outP, "null");
         break;
 
     case XMLRPC_TYPE_DEAD:
@@ -1154,7 +1244,7 @@ serializeValue(xmlrpc_env *       const envP,
         break;
 
     default:
-        xmlrpc_faultf(envP, "Invalid xmlrpc_value type: %d", valP->_type);
+        xmlrpc_faultf(envP, "Invalid xmlrpc_value type: 0x%x", valP->_type);
     }
 }
 
@@ -1163,12 +1253,12 @@ serializeValue(xmlrpc_env *       const envP,
 void
 xmlrpc_serialize_json(xmlrpc_env *       const envP,
                       xmlrpc_value *     const valP,
-                      xmlrpc_mem_block * const out) {
+                      xmlrpc_mem_block * const outP) {
 
-    serializeValue(envP, valP, out, 0);
+    serializeValue(envP, valP, 0, outP);
 
     if (!envP->fault_occurred) {
         /* Append terminating NUL */
-        XMLRPC_MEMBLOCK_APPEND(char, envP, out, "", 1);
+        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "", 1);
     }
 }
