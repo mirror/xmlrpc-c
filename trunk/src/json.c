@@ -1003,10 +1003,10 @@ formatOut(xmlrpc_env *       const envP,
 
 
 static void
-serializeWork(xmlrpc_env *       const envP,
-              xmlrpc_value *     const valP,
-              xmlrpc_mem_block * const out,
-              unsigned int       const levelArg) {
+serializeValue(xmlrpc_env *       const envP,
+               xmlrpc_value *     const valP,
+               xmlrpc_mem_block * const out,
+               unsigned int       const levelArg) {
 
     unsigned int level;
 
@@ -1084,7 +1084,7 @@ serializeWork(xmlrpc_env *       const envP,
                         formatOut(envP, out, ",\n" );
 
                     formatOut( envP, out, "%*s", level, "" );
-                    serializeWork(envP, itemP, out, level );
+                    serializeValue(envP, itemP, out, level );
                 }
             }
             --level;
@@ -1115,7 +1115,7 @@ serializeWork(xmlrpc_env *       const envP,
                             formatOut( envP, out, ",\n" );
 
                         formatOut( envP, out, "%*s", level, "" );
-                        serializeWork( envP, memberKeyP, out, level );
+                        serializeValue( envP, memberKeyP, out, level );
                         
                         if (envP->fault_occurred)
                             break;
@@ -1125,7 +1125,7 @@ serializeWork(xmlrpc_env *       const envP,
                         if (envP->fault_occurred)
                             break;
                             
-                        serializeWork( envP, memberValueP, out, level );
+                        serializeValue(envP, memberValueP, out, level);
                         
                         if (envP->fault_occurred)
                             break;
@@ -1165,5 +1165,10 @@ xmlrpc_serialize_json(xmlrpc_env *       const envP,
                       xmlrpc_value *     const valP,
                       xmlrpc_mem_block * const out) {
 
-    serializeWork(envP, valP, out, 0);
+    serializeValue(envP, valP, out, 0);
+
+    if (!envP->fault_occurred) {
+        /* Append terminating NUL */
+        XMLRPC_MEMBLOCK_APPEND(char, envP, out, "", 1);
+    }
 }
