@@ -289,10 +289,9 @@ isFloat(const char * const token,
 static bool
 isWordChar(char const candidate) {
 /*----------------------------------------------------------------------------
-   Return true iff 'candidate' is a character that can be in a "word"
-   token.  A word token is a multi-character token that is either a
-   JSON keyword, an alphanumeric object member name, or a number
-   (integer or floating point).
+   Return true iff 'candidate' is a character that can be in a "word" token.
+   A word token is a multi-character token that is either a JSON keyword or a
+   number.
 -----------------------------------------------------------------------------*/
     return (isalnum(candidate) || candidate == '.' || candidate == '-');
 }
