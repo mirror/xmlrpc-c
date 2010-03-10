@@ -206,7 +206,7 @@ finishStringToken(xmlrpc_env *   const envP,
 
             default:
                 setParseErr(envP, tokP, "unknown escape character "
-                            "after backslash: %c", *tokP->end);
+                            "after backslash: '%c'", *tokP->end);
             }
         } else
             ++tokP->end;
@@ -286,12 +286,25 @@ isFloat(const char * const token,
 
 
 
+static bool
+isWordChar(char const candidate) {
+/*----------------------------------------------------------------------------
+   Return true iff 'candidate' is a character that can be in a "word"
+   token.  A word token is a multi-character token that is either a
+   JSON keyword, an alphanumeric object member name, or a number
+   (integer or floating point).
+-----------------------------------------------------------------------------*/
+    return (isalnum(candidate) || candidate == '.' || candidate == '-');
+}
+
+
+
 static void
 finishAlphanumericWordToken(Tokenizer * const tokP) {
 
     ++tokP->end;
 
-    while(isalnum(*tokP->end) || *tokP->end == '.' || *tokP->end == '-')
+    while (isWordChar(*tokP->end))
         ++tokP->end;
 
     tokP->size = tokP->end - tokP->begin;
@@ -351,7 +364,7 @@ getToken(xmlrpc_env *   const envP,
             if (!envP->fault_occurred)
                 tokP->type = typeString;
         } else {
-            if (isalnum(*tokP->begin)) {
+            if (isWordChar(*tokP->begin)) {
                 finishAlphanumericWordToken(tokP);
 
                 if (isInteger(tokP->begin, tokP->size))
@@ -370,7 +383,7 @@ getToken(xmlrpc_env *   const envP,
                                 "number, 'null', 'true', or 'false'");
             } else {
                 setParseErr(envP, tokP,
-                            "Not a valid token -- starts with %c; "
+                            "Not a valid token -- starts with '%c'; "
                             "a valid token starts with "
                             "one of []{}:,\"-. or digit or letter",
                             *tokP->begin);
@@ -470,7 +483,7 @@ getBackslashSequence(xmlrpc_env *       const envP,
     }
     default:
         xmlrpc_faultf(envP, "Invalid character after backslash "
-                      "escape: %c", *cur);
+                      "escape: '%c'", *cur);
         tsize = 0; /* quiet compiler warning */
     }
     if (!envP->fault_occurred)
