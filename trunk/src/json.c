@@ -1106,17 +1106,56 @@ makeJsonStringFromXmlRpc(xmlrpc_env *         const envP,
 
 
 static void
-serializeString(xmlrpc_env * const envP,
+serializeInt(xmlrpc_env *       const envP,
+             xmlrpc_value *     const valP,
+             xmlrpc_mem_block * const outP) {
+
+    int value;
+
+    xmlrpc_read_int(envP, valP, &value);
+
+    formatOut(envP, outP, "%d", value);
+}
+
+
+
+static void
+serializeI8(xmlrpc_env *       const envP,
+            xmlrpc_value *     const valP,
+            xmlrpc_mem_block * const outP) {
+
+    xmlrpc_int64 value;
+    xmlrpc_read_i8(envP, valP, &value);
+            
+    formatOut(envP, outP, "%" PRId64, value);
+}
+
+
+
+static void
+serializeBool(xmlrpc_env *       const envP,
+              xmlrpc_value *     const valP,
+              xmlrpc_mem_block * const outP) {
+    
+    xmlrpc_bool value;
+    xmlrpc_read_bool(envP, valP, &value);
+
+    formatOut(envP, outP, "%s", value ? "true" : "false");
+}
+
+
+
+static void
+serializeDouble(xmlrpc_env *       const envP,
                 xmlrpc_value *     const valP,
                 xmlrpc_mem_block * const outP) {
     
-    formatOut(envP, outP, "\"");
-    
-    makeJsonStringFromXmlRpc(envP, valP, outP);
-    
-    formatOut(envP, outP, "\"");
+    xmlrpc_double value;
+    xmlrpc_read_double(envP, valP, &value);
+
+    formatOut(envP, outP, "%e", value);
 }
-    
+
 
 
 static void
@@ -1137,6 +1176,17 @@ serializeDatetime(xmlrpc_env *       const envP,
 
 
         
+static void
+serializeString(xmlrpc_env * const envP,
+                xmlrpc_value *     const valP,
+                xmlrpc_mem_block * const outP) {
+    
+    formatOut(envP, outP, "\"");
+    
+    makeJsonStringFromXmlRpc(envP, valP, outP);
+    
+    formatOut(envP, outP, "\"");
+}
 
 
 static void
@@ -1270,21 +1320,21 @@ serializeValue(xmlrpc_env *       const envP,
 
     indent(envP, level, outP);
         
-    switch (valP->_type) {
+    switch (xmlrpc_value_type(valP)) {
     case XMLRPC_TYPE_INT:
-        formatOut(envP, outP, "%d", valP->_value.i);
+        serializeInt(envP, valP, outP);
         break;
 
     case XMLRPC_TYPE_I8:
-        formatOut(envP, outP, "%" PRId64, valP->_value.i8);
+        serializeI8(envP, valP, outP);
         break;
 
     case XMLRPC_TYPE_BOOL:
-        formatOut(envP, outP, "%s", valP->_value.b ? "true" : "false");
+        serializeBool(envP, valP, outP);
         break;
 
     case XMLRPC_TYPE_DOUBLE:
-        formatOut(envP, outP, "%e", valP->_value.d);
+        serializeDouble(envP, valP, outP);
         break;
 
     case XMLRPC_TYPE_DATETIME:
@@ -1320,7 +1370,8 @@ serializeValue(xmlrpc_env *       const envP,
         break;
 
     default:
-        xmlrpc_faultf(envP, "Invalid xmlrpc_value type: 0x%x", valP->_type);
+        xmlrpc_faultf(envP, "Invalid xmlrpc_value type: 0x%x",
+                      xmlrpc_value_type(valP));
     }
 }
 
