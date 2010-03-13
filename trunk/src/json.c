@@ -3,14 +3,6 @@
    library, and using the xmlrpc-c memory handling and type system.
 
    Json : rfc-4627
-
-   This is not the first json converter written, but the goal of this
-   code is to reuse the minimalistic serup that xmlrpc-c provides
-   and to be the base for a json-rpc (smd) extention, that can be
-   used from existing programs using this system.
-
-   This library will be fast and reentrant, and when user properly thread
-   ready.
 */
 #include "xmlrpc_config.h"
 
@@ -84,8 +76,8 @@ typedef struct {
 
 
 static void
-initializeTokenizer(Tokenizer * const tokP,
-                    const char *   const str) {
+initializeTokenizer(Tokenizer *  const tokP,
+                    const char * const str) {
 
     tokP->original = str;
     tokP->end      = str;  /* end of the "previous" token */
@@ -255,8 +247,10 @@ isFloat(const char * const token,
 
     unsigned int i;
     bool seenPeriod;
+    bool seenDigit;
 
     seenPeriod = false;
+    seenDigit  = false;
     i = 0;
 
     if (tokSize >= 1 && token[0] == '-')
@@ -267,21 +261,23 @@ isFloat(const char * const token,
 
         if (c == 'e')
             return isInteger(&token[i], tokSize - i);
-
-        if (c == '.') {
+        else if (c == '.') {
             if (seenPeriod) {
                 /* It's a second period */
                 return false;
             } else {
                 seenPeriod = true;
-                break;
             }
-        }
-        if (!isdigit(c))
+        } else if (isdigit(c))
+            seenDigit = true;
+        else
             return false;
         ++i;
     }
-    return true;
+    if (seenDigit)
+        return true;
+    else
+        return false;
 }
 
 
