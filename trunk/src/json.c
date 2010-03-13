@@ -316,6 +316,55 @@ finishDelimiterToken(Tokenizer * const tokP) {
 
 
 
+static bool
+atComment(Tokenizer * const tokP) {
+
+    return (*tokP->begin == '/' && *(tokP->begin + 1) == '/');
+}
+
+
+
+static void
+advancePastWhiteSpace(Tokenizer * const tokP) {
+
+    while (isspace(*tokP->begin))
+        ++tokP->begin;
+}
+
+
+
+static void
+advancePastComments(Tokenizer * const tokP) {
+/*----------------------------------------------------------------------------
+   Advance the pointer over any comments.
+-----------------------------------------------------------------------------*/
+    while (atComment(tokP)) {
+        /* A comment ends at a newline or end of document */
+        while (*tokP->begin != '\n' && *tokP->begin != '\0')
+            ++tokP->begin;
+    }
+}
+
+
+
+static void
+advanceToNextToken(Tokenizer * const tokP) {
+/*----------------------------------------------------------------------------
+   Advance the pointer over any white space and comments to the next
+   token, or end of document, whichever comes first.
+-----------------------------------------------------------------------------*/
+
+    while (*tokP->begin != '\0' &&
+           (isspace(*tokP->begin) || atComment(tokP))) {
+        
+        advancePastWhiteSpace(tokP);
+
+        advancePastComments(tokP);
+    }
+}
+
+
+
 static void
 getToken(xmlrpc_env *   const envP,
          Tokenizer * const tokP) {
@@ -323,12 +372,10 @@ getToken(xmlrpc_env *   const envP,
     /* The token starts where the last one left off */
     tokP->begin = tokP->end;
 
-    /* Remove white space */
-    while (isspace(*tokP->begin))
-        ++tokP->begin;
+    advanceToNextToken(tokP);
 
     if (*tokP->begin == '\0') {
-        /* End of string */
+        /* End of document */
         tokP->end = tokP->begin;
         tokP->type = typeEof;
         tokP->size = tokP->end - tokP->begin;
