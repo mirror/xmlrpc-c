@@ -42,7 +42,7 @@ enum ttype {
     typeComma,
     typeString,
     typeInteger,
-    typeNumber,
+    typeFloat,
     typeNull,
     typeTrue,
     typeFalse,
@@ -62,7 +62,7 @@ tokTypeName(enum ttype const type) {
     case typeComma:        return "Comma";
     case typeString:       return "String";
     case typeInteger:      return "Integer";
-    case typeNumber:       return "Number";
+    case typeFloat:        return "Float";
     case typeNull:         return "Null";
     case typeTrue:         return "True";
     case typeFalse:        return "False";
@@ -369,7 +369,7 @@ getToken(xmlrpc_env *   const envP,
                 if (isInteger(tokP->begin, tokP->size))
                     tokP->type = typeInteger;
                 else if (isFloat(tokP->begin, tokP->size))
-                    tokP->type = typeNumber;
+                    tokP->type = typeFloat;
                 else if (strncmp(tokP->begin,  "null", tokP->size ) == 0)
                     tokP->type = typeNull;
                 else if(strncmp(tokP->begin, "false", tokP->size) == 0)
@@ -837,7 +837,7 @@ parseValue(xmlrpc_env *   const envP,
         retval = xmlrpc_int_new(envP, atoi(tokP->begin));
         break;
         
-    case typeNumber:
+    case typeFloat:
         retval = xmlrpc_double_new(envP, strtod(tokP->begin, NULL));
         break;
 
