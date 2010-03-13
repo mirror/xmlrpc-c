@@ -640,11 +640,6 @@ xmlrpc_serialize_fault(xmlrpc_env *       const envP,
 **  Decoding XML
 **=======================================================================*/
 
-/* Parse an XML-RPC call. If an error occurs, set a fault and set
-** the output variables to NULL.
-** The caller is responsible for calling free(*out_method_name) and
-** xmlrpc_DECREF(*out_param_array). */
-
 void
 xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
                        const char *    const xmlData,

@@ -17,7 +17,7 @@ extern "C" {
 */
 xmlrpc_value *
 xmlrpc_parse_json(xmlrpc_env * const envP,
-                  const char * const buf);
+                  const char * const json);
 
 
 /*
@@ -30,7 +30,7 @@ xmlrpc_parse_json(xmlrpc_env * const envP,
 void
 xmlrpc_serialize_json(xmlrpc_env *       const envP,
                       xmlrpc_value *     const valP,
-                      xmlrpc_mem_block * const out);
+                      xmlrpc_mem_block * const jsonP);
 
 #ifdef __cplusplus
 }
