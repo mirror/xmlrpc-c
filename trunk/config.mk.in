@@ -326,12 +326,12 @@ endif
 ##############################################################################
 
 # BUILDTOOL_CC is the compiler to use to generate build tools, which we
-# will then run to build product.  The typical reason this would be
+# will then run to build the product.  The typical reason this would be
 # different from CC is that you're cross-compiling: the product will run
 # in Environment A, but you're building in Environment B, so you must
-# build the build toos for Environment B.
+# build the build tools for Environment B.
 
-# The cross compiling user can update Makefile.config or override
+# The cross compiling user can update config.mk or override
 # BUILDTOOL_CC on a make command.
 
 BUILDTOOL_CC = $(CC)
