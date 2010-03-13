@@ -132,14 +132,19 @@ xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP,
                int          const intValue);
 
+void 
+xmlrpc_read_int(xmlrpc_env *         const envP,
+                const xmlrpc_value * const valueP,
+                int *                const intValueP);
+
 xmlrpc_value *
 xmlrpc_i8_new(xmlrpc_env * const envP, 
               xmlrpc_int64 const value);
 
 void 
-xmlrpc_read_int(xmlrpc_env *         const envP,
-                const xmlrpc_value * const valueP,
-                int *                const intValueP);
+xmlrpc_read_i8(xmlrpc_env *         const envP,
+               const xmlrpc_value * const valueP,
+               xmlrpc_int64 *       const intValueP);
 
 xmlrpc_value *
 xmlrpc_bool_new(xmlrpc_env * const envP,
@@ -513,12 +518,6 @@ void
 xmlrpc_read_nil(xmlrpc_env *   const envP,
                 xmlrpc_value * const valueP);
                 
-
-void 
-xmlrpc_read_i8(xmlrpc_env *         const envP,
-               const xmlrpc_value * const valueP,
-               xmlrpc_int64 *       const intValueP);
-
 
 xmlrpc_value *
 xmlrpc_cptr_new(xmlrpc_env * const envP,
