@@ -1005,16 +1005,15 @@ serializeValue(xmlrpc_env *       const envP,
 
 
 static void
-makeJsonString(xmlrpc_env *         const envP,
-               const xmlrpc_value * const valP,
-               xmlrpc_mem_block *   const out) {
+makeJsonString(xmlrpc_env *       const envP,
+               const char *       const value,
+               size_t             const length,
+               xmlrpc_mem_block * const outP) {
 /*----------------------------------------------------------------------------
-    Convert an string xmlrpc value type to a mem_block, and make sure 
-    it is json escaped, and outputted to the mem_block given.
+  Create a JSON representation of a string, appended to *outP.
 -----------------------------------------------------------------------------*/
-    const char * const begin = XMLRPC_MEMBLOCK_CONTENTS(char, &valP->_block);
-    const char * const end   =
-        begin + XMLRPC_MEMBLOCK_SIZE(char, &valP->_block);
+    const char * const begin = &value[0];
+    const char * const end   = begin + length;
 
     const char * cur;
     const char * last;
@@ -1022,68 +1021,86 @@ makeJsonString(xmlrpc_env *         const envP,
     last = cur = begin;
     
     while (cur != end && !envP->fault_occurred) {
-        if (*cur != '\0') {
-            if (strchr( "\"/\\\b\f\n\r", *cur) ||
-                ((unsigned char)*cur) < 0x1F) {
+        if (strchr("\"/\\\b\f\n\r", *cur) ||
+            ((unsigned char)*cur) < 0x1F) {
 
-                unsigned int size;
-                char buffer[8];
+            unsigned int size;
+            char buffer[8];
 
-                switch (*cur) {
-                case '\"':
-                    buffer[1] = '"';
-                    size = 2;
-                    break;
-                case '/':
-                    buffer[1] = '/';
-                    size = 2;
-                    break;
-                case '\\':
-                    buffer[1] = '\\';
-                    size = 2;
-                    break;
-                case '\b':
-                    buffer[1] = 'b';
-                    size = 2;
-                    break;
-                case '\f':
-                    buffer[1] = 'f';
-                    size = 2;
-                    break;
-                case '\n':
-                    buffer[1] = 'n';
-                    size = 2;
-                    break;
-                case '\r':
-                    buffer[1] = 'r';
-                    size = 2;
-                    break;
-                default: {
+            switch (*cur) {
+            case '\"':
+                buffer[1] = '"';
+                size = 2;
+                break;
+            case '/':
+                buffer[1] = '/';
+                size = 2;
+                break;
+            case '\\':
+                buffer[1] = '\\';
+                size = 2;
+                break;
+            case '\b':
+                buffer[1] = 'b';
+                size = 2;
+                break;
+            case '\f':
+                buffer[1] = 'f';
+                size = 2;
+                break;
+            case '\n':
+                buffer[1] = 'n';
+                size = 2;
+                break;
+            case '\r':
+                buffer[1] = 'r';
+                size = 2;
+                break;
+            default: {
                     unsigned char const c = (unsigned char)*cur;
 
                     assert(c < 0x1F);
                     size = sprintf(buffer, "\\u%04x", c);
-                    }
-                }
-                if (cur != last) {
-                    XMLRPC_MEMBLOCK_APPEND(char, envP, out, last, cur - last);
-                    if (!envP->fault_occurred)
-                        last = cur;
-                }
-                if (!envP->fault_occurred){
-                    buffer[0] = '\\';
-                    XMLRPC_MEMBLOCK_APPEND(char, envP, out, buffer, size);
                 }
             }
-            ++cur;
+            if (cur != last) {
+                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, last, cur - last);
+                if (!envP->fault_occurred)
+                    last = cur;
+            }
+            if (!envP->fault_occurred){
+                buffer[0] = '\\';
+                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, buffer, size);
+            }
         }
+        ++cur;
     }
 
     if (cur != last)
-        XMLRPC_MEMBLOCK_APPEND(char, envP, out, last, cur - last);
+        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, last, cur - last);
 
     if (envP->fault_occurred)
-        XMLRPC_MEMBLOCK_CLEAN(char, out);
+        XMLRPC_MEMBLOCK_CLEAN(char, outP);
+}
+
+
+
+static void
+makeJsonStringFromXmlRpc(xmlrpc_env *         const envP,
+                         const xmlrpc_value * const valP,
+                         xmlrpc_mem_block *   const outP) {
+/*----------------------------------------------------------------------------
+  Convert a string XML-RPC value to JSON, appended to *outP.
+-----------------------------------------------------------------------------*/
+    const char * value;
+    size_t length;
+
+    xmlrpc_read_string_lp(envP, valP, &length, &value);
+    if (!envP->fault_occurred) {
+        makeJsonString(envP, value, length, outP);
+
+        xmlrpc_strfree(value);
+    }
 }
 
 
@@ -1095,7 +1112,7 @@ serializeString(xmlrpc_env * const envP,
     
     formatOut(envP, outP, "\"");
     
-    makeJsonString(envP, valP, outP);
+    makeJsonStringFromXmlRpc(envP, valP, outP);
     
     formatOut(envP, outP, "\"");
 }
