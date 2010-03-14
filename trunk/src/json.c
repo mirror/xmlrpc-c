@@ -1193,24 +1193,34 @@ static void
 serializeBitstring(xmlrpc_env *       const envP,
                    xmlrpc_value *     const valP,
                    xmlrpc_mem_block * const outP) {
+/*----------------------------------------------------------------------------
+   Append to *outP a JSON string whose value is the bit string *valP in
+   base64 ASCII.
+-----------------------------------------------------------------------------*/
+    const unsigned char * bytes;
+    size_t size;
 
-    /* Bit string as text whose ASCII coding is the the bit string,
-       since JSON does not have a bit string type
+    xmlrpc_read_base64(envP, valP, &size, &bytes);
 
-       TODO: This should be in hexadecimal or base64 instead
-    */
-    
-    unsigned char * const contents =
-        XMLRPC_MEMBLOCK_CONTENTS(unsigned char, &valP->_block);
-    size_t const size =
-        XMLRPC_MEMBLOCK_SIZE(unsigned char, &valP->_block);
-            
     if (!envP->fault_occurred) {
-        formatOut(envP, outP, "\"");
+        xmlrpc_mem_block * const base64P =
+            xmlrpc_base64_encode(envP, bytes, size);
+
+        if (!envP->fault_occurred) {
+
+            formatOut(envP, outP, "\"");
             
-        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, contents, size);
-        
-        formatOut(envP, outP, "\"");
+            XMLRPC_MEMBLOCK_APPEND(
+                char, envP, outP,
+                XMLRPC_MEMBLOCK_CONTENTS(char, base64P),
+                XMLRPC_MEMBLOCK_SIZE(char, base64P));
+            
+            if (!envP->fault_occurred)
+                formatOut(envP, outP, "\"");
+
+            XMLRPC_MEMBLOCK_FREE(char, base64P);
+        }
+        free((unsigned char*)bytes);
     }
 }
 
