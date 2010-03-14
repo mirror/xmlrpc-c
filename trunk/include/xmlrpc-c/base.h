@@ -679,22 +679,22 @@ xmlrpc_parse_response(xmlrpc_env * const envP,
 /* This routine inserts newlines every 76 characters, as required by the
 ** Base64 specification. */
 xmlrpc_mem_block *
-xmlrpc_base64_encode(xmlrpc_env *    env,
-                     unsigned char * bin_data,
-                     size_t          bin_len);
+xmlrpc_base64_encode(xmlrpc_env *          const envP,
+                     const unsigned char * const binData,
+                     size_t                const binLen);
 
 /* This routine encodes everything in one line. This is needed for HTTP
 ** authentication and similar tasks. */
 xmlrpc_mem_block *
-xmlrpc_base64_encode_without_newlines(xmlrpc_env *    env,
-                                      unsigned char * bin_data,
-                                      size_t          bin_len);
+xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
+                                      const unsigned char * const binData,
+                                      size_t                const binLen);
 
 /* This decodes Base64 data with or without newlines. */
 extern xmlrpc_mem_block *
 xmlrpc_base64_decode(xmlrpc_env * const envP,
-                     const char * const ascii_data,
-                     size_t       const ascii_len);
+                     const char * const asciiData,
+                     size_t       const asciiLen);
 
 
 /*=========================================================================

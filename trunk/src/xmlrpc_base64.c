@@ -96,10 +96,10 @@ static unsigned char const table_b2a_base64[] =
 
 
 static xmlrpc_mem_block *
-base64Encode(xmlrpc_env *    const envP,
+base64Encode(xmlrpc_env *          const envP,
              const unsigned char * const binData,
-             size_t          const binLen,
-             bool            const wantNewlines) {
+             size_t                const binLen,
+             bool                  const wantNewlines) {
 
     size_t chunkStart, chunkLeft;
     unsigned char * asciiData;
@@ -179,9 +179,9 @@ base64Encode(xmlrpc_env *    const envP,
 
 
 xmlrpc_mem_block *
-xmlrpc_base64_encode(xmlrpc_env *    const envP,
-                     unsigned char * const binData,
-                     size_t          const binLen) {
+xmlrpc_base64_encode(xmlrpc_env *          const envP,
+                     const unsigned char * const binData,
+                     size_t                const binLen) {
 
     return base64Encode(envP, binData, binLen, true);
 }
@@ -189,9 +189,9 @@ xmlrpc_base64_encode(xmlrpc_env *    const envP,
 
 
 xmlrpc_mem_block *
-xmlrpc_base64_encode_without_newlines(xmlrpc_env *    const envP,
-                                      unsigned char * const binData,
-                                      size_t          const binLen) {
+xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
+                                      const unsigned char * const binData,
+                                      size_t                const binLen) {
 
     return base64Encode(envP, binData, binLen, false);
 }
