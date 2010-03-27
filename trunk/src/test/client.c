@@ -10,6 +10,7 @@
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
 
+#include "bool.h"
 #include "test.h"
 #include "client.h"
 
@@ -78,7 +79,22 @@ testCreateCurlParms(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
 
-    curlTransportParms1.dont_advertise = 1;
+    curlTransportParms1.ssl_cert          = NULL;
+    curlTransportParms1.sslcerttype       = NULL;
+    curlTransportParms1.sslcertpasswd     = NULL;
+    curlTransportParms1.sslkey            = NULL;
+    curlTransportParms1.sslkeytype        = NULL;
+    curlTransportParms1.sslkeypasswd      = NULL;
+    curlTransportParms1.sslengine         = NULL;
+    curlTransportParms1.sslengine_default = false;
+    curlTransportParms1.sslversion        = XMLRPC_SSLVERSION_DEFAULT;
+    curlTransportParms1.cainfo            = NULL;
+    curlTransportParms1.capath            = NULL;
+    curlTransportParms1.randomfile        = NULL;
+    curlTransportParms1.egdsocket         = NULL;
+    curlTransportParms1.ssl_cipher_list   = NULL;
+    curlTransportParms1.timeout           = 0;
+    curlTransportParms1.dont_advertise    = 1;
     clientParms1.transportparm_size = XMLRPC_CXPSIZE(dont_advertise);
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
                          &clientParms1, XMLRPC_CPSIZE(transportparm_size),
