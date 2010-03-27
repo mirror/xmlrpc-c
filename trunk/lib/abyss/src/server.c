@@ -606,11 +606,20 @@ handleReqInvalidURI(TSession * const sessionP) {
 
 
 static void
-processDataFromClient(TConn *  const connectionP,
-                      bool     const lastReqOnConn,
-                      uint32_t const timeout,
-                      bool *   const keepAliveP) {
+processRequestFromClient(TConn *  const connectionP,
+                         bool     const lastReqOnConn,
+                         uint32_t const timeout,
+                         bool *   const keepAliveP) {
+/*----------------------------------------------------------------------------
+   Get and execute one HTTP request from client connection *connectionP,
+   through the connection buffer.  I.e. Some of the request may already be in
+   the connection buffer, and we may leave some of later requests in the
+   connection buffer.
 
+   In fact, due to timeing considerations, we assume the client has begun
+   sending the request, which as a practical matter means Caller has already
+   deposited some of it in the connection buffer.
+-----------------------------------------------------------------------------*/
     TSession session;
     const char * error;
     uint16_t httpErrorCode;
@@ -673,6 +682,11 @@ serverFunc(void * const userHandle) {
         bool timedOut, eof;
         const char * readError;
         
+        /* Wait for and get beginning (at least ) of next request.  We do
+           this separately from getting the rest of the request because we
+           treat dead time between requests differently from dead time in
+           the middle of a request.
+        */
         ConnRead(connectionP, srvP->keepalivetimeout,
                  &timedOut, &eof, &readError);
 
@@ -690,8 +704,8 @@ serverFunc(void * const userHandle) {
 
             bool keepalive;
             
-            processDataFromClient(connectionP, lastReqOnConn, srvP->timeout,
-                                  &keepalive);
+            processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
+                                     &keepalive);
             
             ++requestCount;
 
