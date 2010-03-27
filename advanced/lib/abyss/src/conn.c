@@ -398,7 +398,8 @@ dealWithReadTimeout(bool *        const timedOutP,
     else {
         if (timedOut)
             xmlrpc_asprintf(errorP, "Read from Abyss client "
-                            "connection timed out after %u seconds",
+                            "connection timed out after %u seconds "
+                            "or was interrupted",
                             timeout);
     }
 }
@@ -437,6 +438,11 @@ ConnRead(TConn *       const connectionP,
    return as *timedOutP whether 'timeout' seconds passed without any data
    arriving.
 
+   Also, stop waiting upon any interruption and treat it the same as a
+   timeout.  An interruption is either a signal received (and caught) at
+   an appropriate time or a ChannelInterrupt() call before or during the
+   wait.
+
    If 'eofP' is non-null, return *eofP == true, without reading anything, iff
    there will no more data forthcoming on the connection because client has
    closed the connection.  If 'eofP' is null, fail in that case.
@@ -450,25 +456,32 @@ ConnRead(TConn *       const connectionP,
         bool const waitForRead  = TRUE;
         bool const waitForWrite = FALSE;
 
-        bool timedOut, eof;
         bool readyForRead;
+        bool failed;
             
         ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
-                    timeoutMs, &readyForRead, NULL, &timedOut);
+                    timeoutMs, &readyForRead, NULL, &failed);
             
-        if (timedOut) {
-            traceReadTimeout(connectionP, timeout);
-            *errorP = NULL;
-            eof = FALSE;
-        } else {
-            assert(readyForRead);
-
-            readFromChannel(connectionP, &eof, errorP);
+        if (failed)
+            xmlrpc_asprintf(errorP,
+                            "Wait for stuff to arrive from client failed.");
+        else {
+            bool eof;
+            if (readyForRead) {
+                readFromChannel(connectionP, &eof, errorP);
+            } else {
+                /* Wait was interrupted, either by our requested timeout,
+                   a (caught) signal, or a ChannelInterrupt().
+                */
+                traceReadTimeout(connectionP, timeout);
+                *errorP = NULL;
+                eof = FALSE;
+            }
+            if (!*errorP)
+                dealWithReadTimeout(timedOutP, !readyForRead, timeout, errorP);
+            if (!*errorP)
+                dealWithReadEof(eofP, eof, errorP);
         }
-        if (!*errorP)
-            dealWithReadTimeout(timedOutP, timedOut, timeout, errorP);
-        if (!*errorP)
-            dealWithReadEof(eofP, eof, errorP);
     }
 }
 
