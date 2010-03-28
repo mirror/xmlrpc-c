@@ -1,7 +1,7 @@
 # -*-makefile-*-    <-- an Emacs control
 
-# See unix-common.make for an explanation of this file.  This file is
-# analogous to unix-common.make, but is for a Windows system
+# See unix-common.mk for an explanation of this file.  This file is
+# analogous to unix-common.mk, but is for a Windows system
 
 SONAME = $@
 IMPLIB = $(@:%:%.dll.a)

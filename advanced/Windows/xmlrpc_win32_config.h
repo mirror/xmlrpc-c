@@ -180,6 +180,20 @@
 */
 #pragma warning(disable:4996)
 #endif
+/* Warning C4090 is "different 'const' qualifiers".
+
+   We disable this warning because MSVC erroneously issues it when there is
+   in fact no difference in const qualifiers:
+
+     const char ** p;
+     void * q;
+     q = p;
+
+   Note that both p and q are pointers to non-const.
+
+   We have seen this in MSVC 7.1, 8, and 9 (but not 6).
+*/
+#pragma warning(disable:4090)
 
 #if HAVE_STRTOLL
   # define XMLRPC_STRTOLL strtoll

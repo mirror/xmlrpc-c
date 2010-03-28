@@ -69,13 +69,13 @@
 #define HAVE_STRTOQ 0
 #endif
 #ifndef HAVE___STRTOLL
-#define HAVE__STRTOLL 0
+#define HAVE___STRTOLL 0
 #endif
 #ifndef HAVE_STRTOUQ
 #define HAVE_STRTOUQ 0
 #endif
-#ifndef HAVE__STRTOULL
-#define HAVE__STRTOULL 0
+#ifndef HAVE___STRTOULL
+#define HAVE___STRTOULL 0
 #endif
 #ifndef HAVE__STRTOUI64
 #define HAVE__STRTOUI64 0

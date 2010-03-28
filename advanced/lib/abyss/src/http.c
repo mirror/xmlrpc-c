@@ -1081,14 +1081,14 @@ RequestAuth(TSession *   const sessionP,
 /*----------------------------------------------------------------------------
    Authenticate requester, in a very simplistic fashion.
 
-   If the request specifies basic authentication (via Authorization
-   header) with username 'user', password 'pass', then return TRUE.
-   Else, return FALSE and set up an authorization failure response
-   (HTTP response status 401) that says user must supply an identity
-   in the 'credential' domain.
+   If the request executing on session *sessionP specifies basic
+   authentication (via Authorization header) with username 'user', password
+   'pass', then return TRUE.  Else, return FALSE and set up an authorization
+   failure response (HTTP response status 401) that says user must supply an
+   identity in the 'credential' domain.
 
-   When we return TRUE, we also set the username in the request info
-   to 'user' so that a future SessionGetRequestInfo can get it.
+   When we return TRUE, we also set the username in the request info for the
+   session to 'user' so that a future SessionGetRequestInfo can get it.
 -----------------------------------------------------------------------------*/
     bool authorized;
     char * authHdrPtr;

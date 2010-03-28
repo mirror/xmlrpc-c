@@ -252,12 +252,11 @@ public:
     }
     virtual void runtests(unsigned int const) {
         unsigned char bytestringArray[] = {0x10, 0x11, 0x12, 0x13, 0x14};
-        vector<unsigned char> 
+        cbytestring
             bytestringData(&bytestringArray[0], &bytestringArray[4]);
         value_bytestring bytestring1(bytestringData);
 
-        vector<unsigned char> const dataReadBack1(
-            bytestring1.vectorUcharValue());
+        cbytestring const dataReadBack1(bytestring1.vectorUcharValue());
         TEST(dataReadBack1 == bytestringData);
         value val1(bytestring1);
         TEST(val1.type() == value::TYPE_BYTESTRING);
@@ -335,7 +334,7 @@ public:
         return "structTestSuite";
     }
     virtual void runtests(unsigned int const) {
-        map<string, value> structData;
+        cstruct structData;
         pair<string, value> member("the_integer", value_int(9));
         structData.insert(member);
         
@@ -378,7 +377,7 @@ public:
         return "arrayTestSuite";
     }
     virtual void runtests(unsigned int const) {
-        vector<value> arrayData;
+        carray arrayData;
         arrayData.push_back(value_int(7));
         arrayData.push_back(value_double(2.78));
         arrayData.push_back(value_string("hello world"));

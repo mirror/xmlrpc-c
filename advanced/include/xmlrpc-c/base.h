@@ -132,14 +132,19 @@ xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP,
                int          const intValue);
 
+void 
+xmlrpc_read_int(xmlrpc_env *         const envP,
+                const xmlrpc_value * const valueP,
+                int *                const intValueP);
+
 xmlrpc_value *
 xmlrpc_i8_new(xmlrpc_env * const envP, 
               xmlrpc_int64 const value);
 
 void 
-xmlrpc_read_int(xmlrpc_env *         const envP,
-                const xmlrpc_value * const valueP,
-                int *                const intValueP);
+xmlrpc_read_i8(xmlrpc_env *         const envP,
+               const xmlrpc_value * const valueP,
+               xmlrpc_int64 *       const intValueP);
 
 xmlrpc_value *
 xmlrpc_bool_new(xmlrpc_env * const envP,
@@ -514,12 +519,6 @@ xmlrpc_read_nil(xmlrpc_env *   const envP,
                 xmlrpc_value * const valueP);
                 
 
-void 
-xmlrpc_read_i8(xmlrpc_env *         const envP,
-               const xmlrpc_value * const valueP,
-               xmlrpc_int64 *       const intValueP);
-
-
 xmlrpc_value *
 xmlrpc_cptr_new(xmlrpc_env * const envP,
                 void *       const value);
@@ -640,16 +639,18 @@ xmlrpc_serialize_fault(xmlrpc_env *       const envP,
 **  Decoding XML
 **=======================================================================*/
 
-/* Parse an XML-RPC call. If an error occurs, set a fault and set
-** the output variables to NULL.
-** The caller is responsible for calling free(*out_method_name) and
-** xmlrpc_DECREF(*out_param_array). */
+void
+xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
+                       const char *    const xmlData,
+                       size_t          const xmlDataLen,
+                       xmlrpc_value ** const valuePP);
+
 void 
 xmlrpc_parse_call(xmlrpc_env *    const envP,
-                  const char *    const xml_data,
-                  size_t          const xml_len,
-                  const char **   const out_method_name,
-                  xmlrpc_value ** const out_param_array);
+                  const char *    const xmlData,
+                  size_t          const xmlDataLen,
+                  const char **   const methodNameP,
+                  xmlrpc_value ** const paramArrayP);
 
 void
 xmlrpc_parse_response2(xmlrpc_env *    const envP,
@@ -678,22 +679,22 @@ xmlrpc_parse_response(xmlrpc_env * const envP,
 /* This routine inserts newlines every 76 characters, as required by the
 ** Base64 specification. */
 xmlrpc_mem_block *
-xmlrpc_base64_encode(xmlrpc_env *    env,
-                     unsigned char * bin_data,
-                     size_t          bin_len);
+xmlrpc_base64_encode(xmlrpc_env *          const envP,
+                     const unsigned char * const binData,
+                     size_t                const binLen);
 
 /* This routine encodes everything in one line. This is needed for HTTP
 ** authentication and similar tasks. */
 xmlrpc_mem_block *
-xmlrpc_base64_encode_without_newlines(xmlrpc_env *    env,
-                                      unsigned char * bin_data,
-                                      size_t          bin_len);
+xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
+                                      const unsigned char * const binData,
+                                      size_t                const binLen);
 
 /* This decodes Base64 data with or without newlines. */
 extern xmlrpc_mem_block *
 xmlrpc_base64_decode(xmlrpc_env * const envP,
-                     const char * const ascii_data,
-                     size_t       const ascii_len);
+                     const char * const asciiData,
+                     size_t       const asciiLen);
 
 
 /*=========================================================================
