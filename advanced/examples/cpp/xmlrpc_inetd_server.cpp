@@ -5,11 +5,11 @@
    A typical example of where this would be useful is with an Inetd
    "super server."
 
-   xmlrpc_sample_add_server.c is a server that does the same thing,
-   but you give it a TCP port number and it listens for TCP connecitons
+   xmlrpc_sample_add_server.cpp is a server that does the same thing,
+   but you give it a TCP port number and it listens for TCP connections
    and processes RPCs ad infinitum.  xmlrpc_socket_server.c is halfway
    in between those -- you give it an already bound and listening
-   socket, and it lists for TCP connections and processes RPCs ad
+   socket, and it listens for TCP connections and processes RPCs ad
    infinitum.
 
    Here is an easy way to test this program:
@@ -67,7 +67,9 @@ main(int           const,
 
     myRegistry.addMethod("sample.add", sampleAddMethodP);
 
-    xmlrpc_c::serverAbyss myAbyssServer(myRegistry);
+    xmlrpc_c::serverAbyss myAbyssServer(
+         xmlrpc_c::serverAbyss::constrOpt()
+         .registryP(&myRegistry));
 
     myAbyssServer.runConn(STDIN_FILENO);
         /* This reads the HTTP POST request from Standard Input and
