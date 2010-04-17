@@ -48,7 +48,9 @@ main(int           const,
 
     myRegistry.addMethod("sample.add", sampleAddMethodP);
 
-    xmlrpc_c::serverAbyss myAbyssServer(myRegistry);
+    xmlrpc_c::serverAbyss myAbyssServer(
+         xmlrpc_c::serverAbyss::constrOpt()
+         .registryP(&myRegistry));
 
     myAbyssServer.runConn(STDIN_FILENO);
         /* This reads the HTTP POST request from Standard Input and

@@ -302,12 +302,12 @@ parseInt(xmlrpc_env *    const envP,
             /* Look for out-of-range errors which didn't produce ERANGE. */
             if (i < XMLRPC_INT32_MIN)
                 setParseFault(envP,
-                              "<int> value %d is below the range allowed "
+                              "<int> value %ld is below the range allowed "
                               "by XML-RPC (minimum is %d)",
                               i, XMLRPC_INT32_MIN);
             else if (i > XMLRPC_INT32_MAX)
                 setParseFault(envP,
-                              "<int> value %d is above the range allowed "
+                              "<int> value %ld is above the range allowed "
                               "by XML-RPC (maximum is %d)",
                               i, XMLRPC_INT32_MAX);
             else {
