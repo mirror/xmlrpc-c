@@ -212,15 +212,8 @@ class rpc : public clientTransaction {
    does not specify in any way how the method name and parameters get
    turned into a result.  It does not presume XML or HTTP.
 
-   You don't create an object of this class directly.  All references to
-   an rpc object should be by an rpcPtr object.  Create a new RPC by
-   creating a new rpcPtr.  Accordingly, our constructors and destructors
-   are protected, but available to our friend class rpcPtr.
-
    In order to do asynchronous RPCs, you normally have to create a derived
-   class that defines a useful notifyComplete().  If you do that, you'll
-   want to make sure the derived class objects get accessed only via rpcPtrs
-   as well.
+   class that defines a useful notifyComplete().
 -----------------------------------------------------------------------------*/
     friend class xmlrpc_c::rpcPtr;
 
