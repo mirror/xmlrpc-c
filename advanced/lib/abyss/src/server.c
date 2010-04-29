@@ -616,9 +616,16 @@ processRequestFromClient(TConn *  const connectionP,
    the connection buffer, and we may leave some of later requests in the
    connection buffer.
 
-   In fact, due to timeing considerations, we assume the client has begun
+   In fact, due to timing considerations, we assume the client has begun
    sending the request, which as a practical matter means Caller has already
    deposited some of it in the connection buffer.
+
+   If there isn't one full request in the buffer now, we wait for one full
+   request to come through the buffer, up to 'timeout'.
+
+   We return as *keepAliveP whether Caller should keep the connection
+   alive for a while for possible future requests from the client, based
+   on 'lastReqOnConn' and the content of the HTTP request.
 -----------------------------------------------------------------------------*/
     TSession session;
     const char * error;
@@ -697,6 +704,8 @@ serverFunc(void * const userHandle) {
         } else if (timedOut) {
             connectionDone = TRUE;
         } else if (eof) {
+            connectionDone = TRUE;
+        } else if (srvP->terminationRequested) {
             connectionDone = TRUE;
         } else {
             bool const lastReqOnConn =
