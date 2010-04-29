@@ -133,10 +133,12 @@ install-compat-hdr: install-headers
 .PHONY: install
 install: install-common install-compat-hdr
 
-.PHONY: clean distclean dep
+.PHONY: clean
 clean:
 	rm -f xmlrpc-c/config.h
-distclean:
+
+.PHONY: distclean
+distclean: clean
 
 .PHONY: check
 check:
