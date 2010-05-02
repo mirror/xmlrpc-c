@@ -399,10 +399,12 @@ xmlrpc_build_value(xmlrpc_env * const envP,
 
     if (!envP->fault_occurred) {
         if (*suffix != '\0')
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-                "specifier: '%s'.  There must be exactly one arument.",
-                suffix);
+            xmlrpc_faultf(envP, "Junk after the format specifier: '%s'.  "
+                          "The format string must describe exactly "
+                          "one XML-RPC value "
+                          "(but it might be a compound value "
+                          "such as an array)",
+                          suffix);
     
         if (envP->fault_occurred)
             xmlrpc_DECREF(retval);

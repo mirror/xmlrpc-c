@@ -10,6 +10,7 @@
 #ifndef  XMLRPC_CLIENT_H_INCLUDED
 #define  XMLRPC_CLIENT_H_INCLUDED
 
+#include <stdarg.h>
 #include <xmlrpc-c/base.h>
 
 #ifdef __cplusplus
@@ -252,6 +253,15 @@ xmlrpc_client_call2f(xmlrpc_env *    const envP,
                      const char *    const format,
                      ...);
 
+void
+xmlrpc_client_call2f_va(xmlrpc_env *               const envP,
+                        xmlrpc_client *            const clientP,
+                        const char *               const serverUrl,
+                        const char *               const methodName,
+                        const char *               const format,
+                        xmlrpc_value **            const resultPP,
+                        va_list                          args);
+
 void 
 xmlrpc_client_event_loop_finish(xmlrpc_client * const clientP);
 
@@ -260,13 +270,13 @@ xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
                                         unsigned long   const milliseconds);
 
 void
-xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
-                        struct xmlrpc_client *   const clientP,
-                        xmlrpc_server_info *     const serverInfoP,
-                        const char *             const methodName,
-                        xmlrpc_value *           const argP,
-                        xmlrpc_response_handler        responseHandler,
-                        void *                   const userData);
+xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
+                        struct xmlrpc_client *     const clientP,
+                        const xmlrpc_server_info * const serverInfoP,
+                        const char *               const methodName,
+                        xmlrpc_value *             const argP,
+                        xmlrpc_response_handler          responseHandler,
+                        void *                     const userData);
 
 void 
 xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
@@ -277,6 +287,16 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          void *          const userData,
                          const char *    const format,
                          ...);
+
+void
+xmlrpc_client_start_rpcf_va(xmlrpc_env *    const envP,
+                            xmlrpc_client * const clientP,
+                            const char *    const serverUrl,
+                            const char *    const methodName,
+                            xmlrpc_response_handler responseHandler,
+                            void *          const userData,
+                            const char *    const format,
+                            va_list               args);
 
 void
 xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
