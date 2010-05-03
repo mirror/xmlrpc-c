@@ -134,7 +134,7 @@ install: install-common install-compat-hdr
 .PHONY: clean distclean dep
 clean:
 	rm -f xmlrpc-c/config.h
-distclean:
+distclean: clean
 
 .PHONY: check
 check:

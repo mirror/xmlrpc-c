@@ -560,6 +560,56 @@ processDataFromClient(TConn *  const connectionP,
                       uint32_t const timeout,
                       bool *   const keepAliveP) {
 
+<<<<<<< .working
+=======
+    const char * msg;
+
+    ResponseStatus(sessionP, 505);
+
+    xmlrpc_asprintf(&msg, "Request is in HTTP Version %u"
+                    "We understand only HTTP 1",
+                    sessionP->version.major);
+    
+    ResponseError2(sessionP, msg);
+    
+    xmlrpc_strfree(msg);
+}
+
+
+
+static void
+handleReqInvalidURI(TSession * const sessionP) {
+
+    ResponseStatus(sessionP, 400);
+
+    ResponseError2(sessionP, "Invalid URI");
+}
+
+
+
+static void
+processRequestFromClient(TConn *  const connectionP,
+                         bool     const lastReqOnConn,
+                         uint32_t const timeout,
+                         bool *   const keepAliveP) {
+/*----------------------------------------------------------------------------
+   Get and execute one HTTP request from client connection *connectionP,
+   through the connection buffer.  I.e. Some of the request may already be in
+   the connection buffer, and we may leave some of later requests in the
+   connection buffer.
+
+   In fact, due to timing considerations, we assume the client has begun
+   sending the request, which as a practical matter means Caller has already
+   deposited some of it in the connection buffer.
+
+   If there isn't one full request in the buffer now, we wait for one full
+   request to come through the buffer, up to 'timeout'.
+
+   We return as *keepAliveP whether Caller should keep the connection
+   alive for a while for possible future requests from the client, based
+   on 'lastReqOnConn' and the content of the HTTP request.
+-----------------------------------------------------------------------------*/
+>>>>>>> .merge-right.r1911
     TSession session;
 
     RequestInit(&session, connectionP);
@@ -618,9 +668,11 @@ serverFunc(void * const userHandle) {
         /* Wait to read until timeout */
         success = ConnRead(connectionP, srvP->keepalivetimeout);
 
-        if (!success)
+        if (!success) {
             connectionDone = TRUE;
-        else {
+        } else if (srvP->terminationRequested) {
+            connectionDone = TRUE;
+        } else {
             bool const lastReqOnConn =
                 requestCount + 1 >= srvP->keepalivemaxconn;
 
