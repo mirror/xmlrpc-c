@@ -819,6 +819,9 @@ PREFIX(processBtRsqb)(const ENCODING * const enc ATTR_UNUSED,
                     *countP = 2 * MINBPC(enc);
                     *invalidP = true;
                 }
+            } else {
+                *countP   = 0;
+                *invalidP = false;
             }
         }
     } else {
