@@ -6,6 +6,7 @@
   XML-RPC XML text.  It then re-generates JSON from the intermediate
   parsed information and displays that.
 */
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <xmlrpc-c/json.h>
