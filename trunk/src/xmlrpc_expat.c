@@ -375,9 +375,8 @@ createParser(xmlrpc_env *   const envP,
         xmlrpc_XML_SetCharacterDataHandler(
             parser,
             (XML_CharacterDataHandler) characterData);
-        
-        *parserP = parser;
     }
+    *parserP = parser;
 }
 
 

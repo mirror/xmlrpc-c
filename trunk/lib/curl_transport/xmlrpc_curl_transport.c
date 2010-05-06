@@ -345,10 +345,8 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
    wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
     unsigned int const million = 1000000;
-    unsigned int selectTimeoutMillisec;
+    unsigned int selectTimeoutMillisec = selectTimeoutMillisec;
     xmlrpc_timespec retval;
-
-    selectTimeoutMillisec = 0; /* quiet compiler warning */
 
     /* We assume there is work to do at least every 3 seconds, because
        the Curl multi manager often has retries and other scheduled work
@@ -394,7 +392,7 @@ processCurlMessages(xmlrpc_env * const envP,
                 curlTransaction * curlTransactionP;
 
                 curl_easy_getinfo(curlMsg.easy_handle, CURLINFO_PRIVATE,
-                                  &curlTransactionP);
+                                  (void *)&curlTransactionP);
 
                 curlTransaction_finish(envP,
                                        curlTransactionP, curlMsg.data.result);
@@ -616,7 +614,7 @@ getTimeoutParm(xmlrpc_env *                          const envP,
     else {
         if (curlHasNosignal()) {
             /* libcurl takes a 'long' in milliseconds for the timeout value */
-            if ((curlXportParmsP->timeout + 999) / 1000 > LONG_MAX)
+            if ((long)(curlXportParmsP->timeout) != curlXportParmsP->timeout)
                 xmlrpc_faultf(envP, "Timeout value %u is too large.",
                               curlXportParmsP->timeout);
             else

@@ -307,7 +307,7 @@ packet::initialize(const unsigned char * const data,
     this->bytes = reinterpret_cast<unsigned char *>(malloc(dataLength));
 
     if (this->bytes == NULL)
-        throwf("Can't get storage for a %u-byte packet.", dataLength);
+        throwf("Can't get storage for a %u-byte packet", (unsigned)dataLength);
 
     this->allocSize = dataLength;
 
@@ -359,7 +359,7 @@ packet::addData(const unsigned char * const data,
             realloc(this->bytes, neededSize));
 
     if (this->bytes == NULL)
-        throwf("Can't get storage for a %u-byte packet.", neededSize);
+        throwf("Can't get storage for a %u-byte packet", (unsigned)neededSize);
 
     memcpy(this->bytes + this->length, data, dataLength);
 
@@ -611,7 +611,7 @@ packetSocket_impl::verifyNothingAccumulated() {
     if (this->inPacket)
         throwf("Stream socket closed in the middle of a packet "
                "(%u bytes of packet received; no END marker to mark "
-               "end of packet)", this->packetAccumP->getLength());
+               "end of packet)", (unsigned)this->packetAccumP->getLength());
 }
 
 

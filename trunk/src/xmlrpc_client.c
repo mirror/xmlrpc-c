@@ -426,12 +426,12 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
            thread-safe.
         */
     } else {
-        const char * transportName;
-        struct xportParms transportparms;
+        const char * transportName = transportName;
+        struct xportParms transportparms = transportparms;
         const struct xmlrpc_client_transport_ops * transportOpsP;
         xmlrpc_client_transport * transportP;
         xmlrpc_dialect dialect;
-        
+
         getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
                          &transportparms, &transportOpsP, &transportP);
         
@@ -563,7 +563,7 @@ xmlrpc_client_call2(xmlrpc_env *               const envP,
                     xmlrpc_value *             const paramArrayP,
                     xmlrpc_value **            const resultPP) {
 
-    xmlrpc_mem_block * callXmlP;
+    xmlrpc_mem_block * callXmlP = callXmlP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(clientP);
@@ -705,29 +705,6 @@ xmlrpc_client_call_server2_va(xmlrpc_env *               const envP,
 
 
 
-static void
-validateArgArray(xmlrpc_env *   const envP,
-                 xmlrpc_value * const paramArrayP) {
-/*----------------------------------------------------------------------------
-   Validate that *paramArrayP is valid as the "parameters" array argument
-   to xmlrpc_client_call2f().
-
-   Note that it is a common user error to specify the format string as a
-   single or string of argument types, instead of as an array of argument
-   types.  E.g. "i" or "ii" instead of "(i)" and "(ii)".  Our check here is
-   supposed to help the user discover that error.
------------------------------------------------------------------------------*/
-    if (xmlrpc_value_type(paramArrayP) != XMLRPC_TYPE_ARRAY)
-        xmlrpc_faultf(envP, "You must specify the parameter list as an "
-                      "XML-RPC array value, "
-                      "each element of which is a parameter of the RPC.  "
-                      "But your format string specifies an XML-RPC %s, not "
-                      "an array",
-                      xmlrpc_type_name(xmlrpc_value_type(paramArrayP)));
-}
-
-
-
 void
 xmlrpc_client_call2f_va(xmlrpc_env *               const envP,
                         xmlrpc_client *            const clientP,
@@ -847,7 +824,7 @@ callInfoCreate(xmlrpc_env *               const envP,
     if (callInfoP == NULL)
         xmlrpc_faultf(envP, "Couldn't allocate memory for xmlrpc_call_info");
     else {
-        xmlrpc_mem_block * callXmlP;
+        xmlrpc_mem_block * callXmlP = callXmlP;
 
         makeCallXml(envP, methodName, paramArrayP, dialect, &callXmlP);
 
@@ -858,8 +835,6 @@ callInfoCreate(xmlrpc_env *               const envP,
             
             callInfoP->serialized_xml = callXmlP;
             
-            *callInfoPP = callInfoP;
-
             callInfoSetCompletion(envP, callInfoP, serverUrl, methodName,
                                   paramArrayP, completionFn, userData);
 
@@ -867,6 +842,7 @@ callInfoCreate(xmlrpc_env *               const envP,
                 free(callInfoP);
         }
     }
+    *callInfoPP = callInfoP;
 }
 
 
@@ -929,11 +905,9 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
    failed the request.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
-    xmlrpc_value * resultP;
+    xmlrpc_value * resultP = resultP;
 
     xmlrpc_env_init(&env);
-
-    resultP = NULL;  /* Just to quiet compiler warning */
 
     if (transportEnv.fault_occurred)
         xmlrpc_env_set_fault_formatted(

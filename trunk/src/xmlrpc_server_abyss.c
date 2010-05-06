@@ -302,9 +302,8 @@ getBody(xmlrpc_env *        const envP,
         }
         if (envP->fault_occurred)
             xmlrpc_mem_block_free(body);
-        else
-            *bodyP = body;
     }
+    *bodyP = body;
 }
 
 
@@ -391,6 +390,7 @@ processContentLength(TSession *    const httpRequestP,
         *errorP = NULL;
     } else {
         *missingP = FALSE;
+        *inputLenP = 0;  /* quiet compiler warning */
         if (content_length[0] == '\0')
             xmlrpc_asprintf(errorP, "The value in your content-length "
                             "HTTP header value is a null string");
@@ -485,7 +485,7 @@ processCall(TSession *        const abyssSessionP,
     if (contentSize > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
         xmlrpc_env_set_fault_formatted(
             &env, XMLRPC_LIMIT_EXCEEDED_ERROR,
-            "XML-RPC request too large (%d bytes)", contentSize);
+            "XML-RPC request too large (%u bytes)", (unsigned)contentSize);
     else {
         xmlrpc_mem_block * body;
         /* Read XML data off the wire. */

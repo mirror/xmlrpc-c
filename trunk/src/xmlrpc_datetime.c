@@ -470,7 +470,7 @@ validateFormat(xmlrpc_env * const envP,
         xmlrpc_faultf(envP,
                       "Invalid length of %u of datetime string.  "
                       "Must be at least 17 characters",
-                      strlen(dt));
+                      (unsigned)strlen(dt));
     else {
         validateFirst17(envP, dt);
 
@@ -493,7 +493,7 @@ xmlrpc_datetime_new_str(xmlrpc_env * const envP,
    Do not extend this.  The user should use more normal C representations
    of datetimes.
 -----------------------------------------------------------------------------*/
-    xmlrpc_value * retval;
+    xmlrpc_value * retval = retval;
 
     validateFormat(envP, datetimeString);
     if (!envP->fault_occurred) {
@@ -508,8 +508,7 @@ xmlrpc_datetime_new_str(xmlrpc_env * const envP,
            xmlrpc_value has to deal with it.
         */
         retval = xmlrpc_datetime_new(envP, dt);
-    } else
-        retval = NULL;  /* quiet compiler warning */
+    }
 
     return retval;
 }
@@ -521,13 +520,12 @@ xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
                          time_t       const secs,
                          unsigned int const usecs) {
 
-    xmlrpc_value * valueP;
+    xmlrpc_value * valueP = valueP;
 
-    if (usecs >= 1000000) {
+    if (usecs >= 1000000)
         xmlrpc_faultf(envP, "Number of fractional microseconds must be less "
                       "than one million.  You specified %u", usecs);
-        valueP = NULL;  /* quiet compiler warning */
-    } else {
+    else {
         struct tm brokenTime;
         xmlrpc_datetime dt;
 

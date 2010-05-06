@@ -279,7 +279,7 @@ decode_utf8(xmlrpc_env * const envP,
                         envP, XMLRPC_INVALID_UTF8_ERROR,
                         "Invalid UTF-8 sequence indicates a %u-byte sequence "
                         "when only %u bytes are left in the string",
-                        length, utf8_len - utf8Cursor);
+                        (unsigned)length, (unsigned)(utf8_len - utf8Cursor));
                 } else {
                     decodeMultibyte(envP, &utf8_data[utf8Cursor], length, &wc);
                     

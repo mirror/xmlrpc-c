@@ -155,9 +155,7 @@ xmlrpc_client_call_server(xmlrpc_env *               const envP,
                           const char *               const format, 
                           ...) {
 
-    xmlrpc_value * resultP;
-    
-    resultP = NULL;  /* quiet compiler warning */
+    xmlrpc_value * resultP = resultP;
 
     validateGlobalClientExists(envP);
 

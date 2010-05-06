@@ -296,7 +296,7 @@ buildBytestring(xmlrpc_env *    const envP,
     if (valueStringSize / 2 * 2 != valueStringSize)
         xmlrpc_faultf(envP, "Hexadecimal text is not an even "
                       "number of characters (it is %u characters)",
-                      strlen(valueString));
+                      (unsigned)strlen(valueString));
     else {
         size_t const byteStringSize = strlen(valueString)/2;
         
@@ -465,7 +465,7 @@ computeParamArray(xmlrpc_env *    const envP,
     paramArrayP = xmlrpc_array_new(envP);
 
     for (i = 0; i < paramCount && !envP->fault_occurred; ++i) {
-        xmlrpc_value * paramP;
+        xmlrpc_value * paramP = paramP;
 
         computeParameter(envP, params[i], &paramP);
 
@@ -581,10 +581,10 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
-    struct cmdlineInfo cmdline;
+    struct cmdlineInfo cmdline = cmdline;
     xmlrpc_env env;
     xmlrpc_value * paramArrayP;
-    xmlrpc_value * resultP;
+    xmlrpc_value * resultP = resultP;
     const char * url;
     xmlrpc_server_info * serverInfoP;
 

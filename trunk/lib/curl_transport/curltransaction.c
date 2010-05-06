@@ -254,8 +254,8 @@ createCurlHeaderList(xmlrpc_env *               const envP,
     }
     if (envP->fault_occurred)
         curl_slist_free_all(headerList);
-    else
-        *headerListP = headerList;
+
+    *headerListP = headerList;
 }
 
 

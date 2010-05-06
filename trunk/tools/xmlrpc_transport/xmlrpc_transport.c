@@ -243,7 +243,7 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
-    struct cmdlineInfo cmdline;
+    struct cmdlineInfo cmdline = cmdline;
     xmlrpc_env env;
     xmlrpc_mem_block * callXmlP;
     xmlrpc_mem_block * respXmlP;

@@ -284,14 +284,14 @@ getRestOfHeader(TConn *       const connectionP,
                 headerEnd = nextLineEnd;
             } else {
                 gotWholeHeader = TRUE;
-                *headerEndP = headerEnd;
 
                 /* NUL-terminate the whole header */
                 convertLineEnd(headerEnd, headerStart, '\0');
             }
         }
     }
-    *errorP = error;
+    *headerEndP = headerEnd;
+    *errorP     = error;
 }
 
 
@@ -821,9 +821,9 @@ getFieldNameToken(char **       const pP,
             strtolower(fieldName);
             
             *errorP = NULL;
-            *fieldNameP = fieldName;
         }
     }
+    *fieldNameP = fieldName;
 }
 
 

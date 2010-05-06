@@ -320,6 +320,16 @@ traceBuffer(const char *          const label,
 
 
 static void
+traceBufferText(const char * const label,
+                const char * const buffer,
+                unsigned int const size) {
+
+    traceBuffer(label, (const unsigned char *)buffer, size);
+}
+
+
+
+static void
 traceChannelRead(TConn *      const connectionP,
                  unsigned int const size) {
 
@@ -339,7 +349,7 @@ traceChannelWrite(TConn *      const connectionP,
     if (connectionP->trace) {
         const char * const label =
             failed ? "FAILED TO WRITE TO CHANNEL" : "WROTE TO CHANNEL";
-        traceBuffer(label, buffer, size);
+        traceBufferText(label, buffer, size);
     }
 }
 
@@ -366,7 +376,7 @@ readFromChannel(TConn *       const connectionP,
     bool readError;
 
     ChannelRead(connectionP->channelP,
-                connectionP->buffer.t + connectionP->buffersize,
+                connectionP->buffer.b + connectionP->buffersize,
                 bufferSpace(connectionP) - 1,
                 &bytesRead, &readError);
 

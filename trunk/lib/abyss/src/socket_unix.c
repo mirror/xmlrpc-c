@@ -192,9 +192,13 @@ channelWrite(TChannel *            const channelP,
             else if (rc == 0)
                 fprintf(stderr, "Abyss channel: send() failed.  "
                         "Socket closed.\n");
-            else
+            else {
+                size_t const bytesTransferred = rc;
                 fprintf(stderr, "Abyss channel: sent %u bytes: '%.*s'\n",
-                        rc, rc, &buffer[len-bytesLeft]);
+                        (unsigned)bytesTransferred,
+                        (int)(MIN(bytesTransferred, 4096)),
+                        &buffer[len-bytesLeft]);
+            }
         }
         if (rc <= 0)
             /* 0 means connection closed; < 0 means severe error */
@@ -468,10 +472,9 @@ makeChannelInfo(struct abyss_unix_chaninfo ** const channelInfoPP,
         channelInfoP->peerAddrLen = peerAddrLen;
         channelInfoP->peerAddr    = peerAddr;
         
-        *channelInfoPP = channelInfoP;
-
         *errorP = NULL;
     }
+    *channelInfoPP = channelInfoP;
 }
 
 
