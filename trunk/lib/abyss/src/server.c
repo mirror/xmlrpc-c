@@ -825,8 +825,7 @@ ServerInit(TServer * const serverP) {
         }
     }
     if (retError) {
-        TraceMsg("ServerInit() failed.  %s", retError);
-        exit(1);
+        TraceExit("ServerInit() failed.  %s", retError);
         xmlrpc_strfree(retError);
     }
 }
