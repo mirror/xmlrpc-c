@@ -51,6 +51,29 @@ enum xmlrpc_sslversion {
     XMLRPC_SSLVERSION_SSLv3
 };
 
+
+enum xmlrpc_httpauthtype {
+    /* These are just constants.  They can be or'ed as integers to create
+       a set.
+    */
+    XMLRPC_HTTPAUTH_BASIC         = (1<<0),
+    XMLRPC_HTTPAUTH_DIGEST        = (1<<1),
+    XMLRPC_HTTPAUTH_GSSNEGOTIATE  = (1<<2),
+    XMLRPC_HTTPAUTH_NTLM          = (1<<3), 
+};
+
+/* The following are useful combinations of the HTTP authentication types
+   above.
+*/
+#define XMLRPC_HTTPAUTH_NONE 0
+#define XMLRPC_HTTPAUTH_ANY  ~0
+#define XMLRPC_HTTPAUTH_ANYSAFE (~XMLRPC_HTTPAUTH_BASIC)
+
+enum xmlrpc_httpproxytype {
+    XMLRPC_HTTPPROXY_HTTP   = 0,
+    XMLRPC_HTTPPROXY_SOCKS5 = 5
+};
+
 struct xmlrpc_curl_xportparms {
     /* This is designed so that zero values are always the defaults. */
     const char * network_interface;
@@ -73,6 +96,14 @@ struct xmlrpc_curl_xportparms {
     const char * ssl_cipher_list;
     unsigned int timeout;
     xmlrpc_bool dont_advertise;
+    const char * proxy;
+    unsigned int proxy_port;
+    enum xmlrpc_httpproxytype proxy_type;
+    unsigned int proxy_auth;
+        /* A set of authentication schemes -- an OR of
+           enum xmlrpc_httpproxyauth values
+        */
+    const char * proxy_userpwd;
 };
 
 

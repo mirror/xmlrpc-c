@@ -1,7 +1,10 @@
-/* A simple synchronous XML-RPC client written in C, as an example of
-   an Xmlrpc-c client.  This invokes the sample.add procedure that the
-   Xmlrpc-c example server.c server provides.  I.e. it adds two numbers
-   together, the hard way.
+/* A simple synchronous XML-RPC client written in C, as an example of an
+   Xmlrpc-c client.  This invokes the sample.add procedure that the Xmlrpc-c
+   example xmlrpc_sample_add_server.c server provides.  I.e. it adds two
+   numbers together, the hard way.
+
+   This sends the RPC to the server running on the local system ("localhost"),
+   HTTP Port 8080.
 */
 
 #include <stdlib.h>

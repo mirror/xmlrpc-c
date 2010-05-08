@@ -70,8 +70,18 @@ struct curlSetup {
     const char * randomFile;
     const char * egdSocket;
     const char * sslCipherList;
+
+    const char * proxy;
+    unsigned int proxyPort;
+    unsigned int proxyAuth;
+        /* e.g. CURLAUTH_BASIC, CURLAUTH_NTLM, ... */
+    const char * proxyUserPwd;
+    unsigned int proxyType;
+        /* see enum curl_proxytype: CURLPROXY_HTTP, CURLPROXY_SOCKS4, ... */
+
     unsigned int timeout;
         /* 0 = no Curl timeout.  This is in milliseconds. */
+
     bool verbose;
 };
 

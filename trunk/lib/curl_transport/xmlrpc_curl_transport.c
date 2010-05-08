@@ -614,7 +614,8 @@ getTimeoutParm(xmlrpc_env *                          const envP,
     else {
         if (curlHasNosignal()) {
             /* libcurl takes a 'long' in milliseconds for the timeout value */
-            if ((long)(curlXportParmsP->timeout) != curlXportParmsP->timeout)
+            if ((unsigned)(long)(curlXportParmsP->timeout) !=
+                curlXportParmsP->timeout)
                 xmlrpc_faultf(envP, "Timeout value %u is too large.",
                               curlXportParmsP->timeout);
             else
@@ -739,7 +740,7 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->sslKeyType = strdup(curlXportParmsP->sslkeytype);
     
-        if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeypasswd))
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeypasswd))
         curlSetupP->sslKeyPasswd = NULL;
     else if (curlXportParmsP->sslkeypasswd == NULL)
         curlSetupP->sslKeyPasswd = NULL;
@@ -798,6 +799,35 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->sslCipherList = strdup(curlXportParmsP->ssl_cipher_list);
 
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy))
+        curlSetupP->proxy = NULL;
+    else if (curlXportParmsP->proxy == NULL)
+        curlSetupP->proxy = NULL;
+    else
+        curlSetupP->proxy = strdup(curlXportParmsP->proxy);
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_port))
+        curlSetupP->proxyPort = 8080;
+    else
+        curlSetupP->proxyPort = curlXportParmsP->proxy_port;
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_auth))
+        curlSetupP->proxyAuth = CURLAUTH_BASIC;
+    else
+        curlSetupP->proxyAuth = curlXportParmsP->proxy_auth;
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_userpwd))
+        curlSetupP->proxyUserPwd = NULL;
+    else if (curlXportParmsP->proxy_userpwd == NULL)
+        curlSetupP->proxyUserPwd = NULL;
+    else
+        curlSetupP->proxyUserPwd = strdup(curlXportParmsP->proxy_userpwd);
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_type))
+        curlSetupP->proxyType = CURLPROXY_HTTP;
+    else
+        curlSetupP->proxyType = curlXportParmsP->proxy_type;
+
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
 }
 
@@ -836,6 +866,10 @@ freeXportParms(const struct xmlrpc_client_transport * const transportP) {
         xmlrpc_strfree(curlSetupP->networkInterface);
     if (transportP->userAgent)
         xmlrpc_strfree(transportP->userAgent);
+    if (curlSetupP->proxy)
+        xmlrpc_strfree(curlSetupP->proxy);
+    if (curlSetupP->proxyUserPwd)
+        xmlrpc_strfree(curlSetupP->proxyUserPwd);
 }
 
 

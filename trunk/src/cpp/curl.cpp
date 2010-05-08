@@ -149,6 +149,11 @@ clientXmlTransport_curl::constrOpt::constrOpt() {
     present.egdsocket = false;
     present.ssl_cipher_list = false;
     present.timeout = false;
+    present.proxy = false;
+    present.proxy_port = false;
+    present.proxy_auth = false;
+    present.proxy_userpwd = false;
+    present.proxy_type = false;
 }
 
 
@@ -181,6 +186,11 @@ DEFINE_OPTION_SETTER(randomfile, string);
 DEFINE_OPTION_SETTER(egdsocket, string);
 DEFINE_OPTION_SETTER(ssl_cipher_list, string);
 DEFINE_OPTION_SETTER(timeout, unsigned int);
+DEFINE_OPTION_SETTER(proxy, string);
+DEFINE_OPTION_SETTER(proxy_port, unsigned int);
+DEFINE_OPTION_SETTER(proxy_auth, unsigned int);
+DEFINE_OPTION_SETTER(proxy_userpwd, string);
+DEFINE_OPTION_SETTER(proxy_type, xmlrpc_httpproxytype);
 
 #undef DEFINE_OPTION_SETTER
 
@@ -230,6 +240,16 @@ clientXmlTransport_curl::initialize(constrOpt const& opt) {
         opt.value.ssl_cipher_list.c_str()   : NULL;
     transportParms.timeout           = opt.present.timeout ? 
         opt.value.timeout                   : 0;
+    transportParms.proxy             = opt.present.proxy ? 
+        opt.value.proxy.c_str()             : NULL;
+    transportParms.proxy_port        = opt.present.proxy_port ? 
+        opt.value.proxy_port                : 0;
+    transportParms.proxy_auth        = opt.present.proxy_auth ? 
+        opt.value.proxy_auth                : XMLRPC_HTTPAUTH_NONE;
+    transportParms.proxy_userpwd     = opt.present.proxy_userpwd ? 
+        opt.value.proxy_userpwd.c_str()     : NULL;
+    transportParms.proxy_type        = opt.present.proxy_type ? 
+        opt.value.proxy_type                : XMLRPC_HTTPPROXY_HTTP;
 
     this->c_transportOpsP = &xmlrpc_curl_transport_ops;
 

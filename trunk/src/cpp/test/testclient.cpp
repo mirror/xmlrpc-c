@@ -279,6 +279,10 @@ public:
             .randomfile("/dev/random")
             .egdsocket("/tmp/egdsocket")
             .ssl_cipher_list("RC4-SHA:DEFAULT")
+            .proxy("example.com")
+            .proxy_port(8080)
+            .proxy_userpwd("password")
+            .proxy_type(XMLRPC_HTTPPROXY_SOCKS5)
             );            
 
         clientXmlTransport_curl transport5(
