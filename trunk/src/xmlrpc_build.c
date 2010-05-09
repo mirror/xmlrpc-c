@@ -17,16 +17,6 @@
 #include "xmlrpc-c/string_int.h"
 
 
-/*=========================================================================
-**  Creating XML-RPC values.
-**=========================================================================
-**  Build new XML-RPC values from a format string. This code is heavily
-**  inspired by Py_BuildValue from Python 1.5.2. In particular, our
-**  particular abuse of the va_list data type is copied from the equivalent
-**  Python code in modsupport.c. Since Python is portable, our code should
-**  (in theory) also be portable.
-*/
-
 
 static void
 getString(xmlrpc_env *    const envP,
@@ -38,7 +28,7 @@ getString(xmlrpc_env *    const envP,
     size_t len;
     
     str = (const char*) va_arg(argsP->v, char*);
-    if (**formatP == '#') {
+    if (*(*formatP) == '#') {
         ++(*formatP);
         len = (size_t) va_arg(argsP->v, size_t);
     } else
