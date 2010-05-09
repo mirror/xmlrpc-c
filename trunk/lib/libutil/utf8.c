@@ -1,5 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
 /* Copyright (C) 2001 by Eric Kidd. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
