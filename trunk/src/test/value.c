@@ -522,7 +522,7 @@ test_value_string_wide_build(void) {
     xmlrpc_env_init(&env);
 
     /* Build with build_value w# */
-    valueP = xmlrpc_build_value(&env, "w#", wcs_data, 3);
+    valueP = xmlrpc_build_value(&env, "w#", wcs_data, (size_t)3);
     TEST_NO_FAULT(&env);
     TEST(valueP != NULL);
 
@@ -1276,7 +1276,7 @@ test_value_parse_value(void) {
 
     valueP = xmlrpc_build_value(&env, "(idb8ss#6(i){s:i}np(i))",
                                 7, 3.14, (xmlrpc_bool)1, datestring,
-                                "hello world", "a\0b", 3, 
+                                "hello world", "a\0b", (size_t)3,
                                 "base64 data", strlen("base64 data"),
                                 15, "member9", 9, &valueP, -5);
     
