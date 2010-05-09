@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <stdio.h>
 /* Copyright (C) 2001 by Eric Kidd. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -52,31 +54,33 @@
 **  UTF-8 data.
 */
 
-/* The number of bytes in a UTF-8 sequence starting with the character used
-** as the array index.  A zero entry indicates an illegal initial byte.
-** This table was generated using a Perl script and information from the
-** UTF-8 standard.
-**
-** Fredrik Lundh's UTF-8 decoder Python 2.0 uses a similar table.  But
-** since Python 2.0 has the icky CNRI license, I regenerated this
-** table from scratch and wrote my own decoder. */
-static unsigned char utf8_seq_length[256] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 0, 0
+static unsigned char utf8SeqLength[256] = {
+
+  /* utf8SeqLength[B] is the number of bytes in a UTF-8 sequence that starts
+     with byte B.  Except zero indicates an illegal initial byte.
+
+     Fredrik Lundh's UTF-8 decoder Python 2.0 uses a similar table.  But since
+     Python 2.0 has the icky CNRI license, I generated this table from scratch
+     and wrote my own decoder.
+  */
+
+          /* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  */
+  /* 0 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 1 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 2 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 3 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 4 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 5 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 6 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 7 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 8 */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 9 */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* A */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* B */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* C */    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  /* D */    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  /* E */    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+  /* F */    4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 0, 0
 };
 
 /* The minimum legal character value for a UTF-8 sequence of the given
@@ -161,9 +165,7 @@ decodeMultibyte(xmlrpc_env * const envP,
 
    Return the character in UTF-16 format as *wcP.
 -----------------------------------------------------------------------------*/
-    wchar_t wc;
-
-    wc = 0; /* Defeat compiler warning: used before set */
+    wchar_t wc = wc;
 
     assert(utf8_seq[0] & 0x80); /* High bit set: this is multibyte seq */
 
@@ -228,11 +230,11 @@ decodeMultibyte(xmlrpc_env * const envP,
 
 
 static void 
-decode_utf8(xmlrpc_env * const envP,
-            const char * const utf8_data,
-            size_t       const utf8_len,
-            wchar_t *    const ioBuff,
-            size_t *     const outBuffLenP) {
+decodeUtf8(xmlrpc_env * const envP,
+           const char * const utf8_data,
+           size_t       const utf8_len,
+           wchar_t *    const ioBuff,
+           size_t *     const outBuffLenP) {
 /*----------------------------------------------------------------------------
   Decode to UCS-2 (or validate as UTF-8 that can be decoded to UCS-2)
   a UTF-8 string.  To validate, set ioBuff and outBuffLenP to NULL.
@@ -255,8 +257,9 @@ decode_utf8(xmlrpc_env * const envP,
         ) {
 
         char const init = utf8_data[utf8Cursor];
+            /* Initial byte of the UTF-8 sequence */
 
-        wchar_t wc;
+        wchar_t wc = wc;
 
         if ((init & 0x80) == 0x00) {
             /* Convert ASCII character to wide character. */
@@ -264,10 +267,8 @@ decode_utf8(xmlrpc_env * const envP,
             ++utf8Cursor;
         } else {
             /* Look up the length of this UTF-8 sequence. */
-            size_t const length = utf8_seq_length[(unsigned char) init];
+            size_t const length = utf8SeqLength[(unsigned char) init];
 
-            wc = 0;     /* Suppress unset variable warning */
-                    
             if (length == 0)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INVALID_UTF8_ERROR,
@@ -324,9 +325,9 @@ xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
     wcsP = XMLRPC_MEMBLOCK_NEW(wchar_t, envP, utf8_len);
     if (!envP->fault_occurred) {
         /* Decode the UTF-8 data. */
-        decode_utf8(envP, utf8_data, utf8_len,
-                    XMLRPC_MEMBLOCK_CONTENTS(wchar_t, wcsP),
-                    &wcs_length);
+        decodeUtf8(envP, utf8_data, utf8_len,
+                   XMLRPC_MEMBLOCK_CONTENTS(wchar_t, wcsP),
+                   &wcs_length);
         if (!envP->fault_occurred) {
             /* We can't have overrun our buffer. */
             XMLRPC_ASSERT(wcs_length <= utf8_len);
@@ -440,13 +441,12 @@ xmlrpc_force_to_utf8(char * const buffer) {
     char * p;
 
     for (p = &buffer[0]; *p;) {
-        unsigned int const length = utf8_seq_length[(unsigned char) *p];
+        unsigned int const length = utf8SeqLength[(unsigned char) *p];
 
         bool forceDel;
-        uint32_t decoded;
+        uint32_t decoded = decoded;
 
-        forceDel = false;
-        decoded  = 0;  /* suppress compiler warning; valid when !forceDel */
+        forceDel = false;  /* initial value */
 
         switch (length) {
         case 1:
@@ -521,7 +521,7 @@ xmlrpc_force_to_xml_chars(char * const buffer) {
     char * p;
 
     for (p = &buffer[0]; *p;) {
-        unsigned int const length = utf8_seq_length[(unsigned char) *p];
+        unsigned int const length = utf8SeqLength[(unsigned char) *p];
 
         if (length == 1) {
             if (*p < 0x20 && *p != '\r' && *p != '\n' && *p != '\t')
@@ -545,17 +545,30 @@ xmlrpc_force_to_xml_chars(char * const buffer) {
 
 
 void 
-xmlrpc_validate_utf8(xmlrpc_env * const env,
+xmlrpc_validate_utf8(xmlrpc_env * const envP,
                      const char * const utf8_data,
                      size_t       const utf8_len) {
 /*----------------------------------------------------------------------------
    Validate that a string is valid UTF-8.
 -----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
 #if HAVE_UNICODE_WCHAR
-    decode_utf8(env, utf8_data, utf8_len, NULL, NULL);
+    decodeUtf8(&env, utf8_data, utf8_len, NULL, NULL);
 #else
     /* We don't have a convenient way to validate, so we just fake it and
        call it valid.
     */
 #endif
+
+    if (env.fault_occurred) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INVALID_UTF8_ERROR,
+            "%" XMLRPC_PRId64 "-byte "
+            "supposed UTF-8 string is not valid UTF-8.  %s",
+            (XMLRPC_INT64)utf8_len, env.fault_string);
+    }
+    xmlrpc_env_clean(&env);
 }
