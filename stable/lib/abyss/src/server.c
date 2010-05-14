@@ -560,8 +560,6 @@ processDataFromClient(TConn *  const connectionP,
                       uint32_t const timeout,
                       bool *   const keepAliveP) {
 
-<<<<<<< .working
-=======
     const char * msg;
 
     ResponseStatus(sessionP, 505);
