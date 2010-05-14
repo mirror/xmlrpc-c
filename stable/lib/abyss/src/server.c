@@ -555,27 +555,6 @@ runUserHandler(TSession *        const sessionP,
 
 
 static void
-processDataFromClient(TConn *  const connectionP,
-                      bool     const lastReqOnConn,
-                      uint32_t const timeout,
-                      bool *   const keepAliveP) {
-
-    const char * msg;
-
-    ResponseStatus(sessionP, 505);
-
-    xmlrpc_asprintf(&msg, "Request is in HTTP Version %u"
-                    "We understand only HTTP 1",
-                    sessionP->version.major);
-    
-    ResponseError2(sessionP, msg);
-    
-    xmlrpc_strfree(msg);
-}
-
-
-
-static void
 handleReqInvalidURI(TSession * const sessionP) {
 
     ResponseStatus(sessionP, 400);
@@ -607,7 +586,6 @@ processRequestFromClient(TConn *  const connectionP,
    alive for a while for possible future requests from the client, based
    on 'lastReqOnConn' and the content of the HTTP request.
 -----------------------------------------------------------------------------*/
->>>>>>> .merge-right.r1911
     TSession session;
 
     RequestInit(&session, connectionP);
@@ -676,8 +654,8 @@ serverFunc(void * const userHandle) {
 
             bool keepalive;
             
-            processDataFromClient(connectionP, lastReqOnConn, srvP->timeout,
-                                  &keepalive);
+            processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
+                                     &keepalive);
             
             ++requestCount;
 
