@@ -191,7 +191,7 @@ void test_value (void) {
     XmlRpcValue::makeArray().getArray();
     XmlRpcValue::makeStruct().getStruct();
 
-    // Test Base64 values.
+    // Test byte string values.
     const unsigned char *b64_data;
     size_t b64_len;
     XmlRpcValue val6 = XmlRpcValue::makeBase64((unsigned char*) "a\0\0b", 4);
