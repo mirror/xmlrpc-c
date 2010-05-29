@@ -4,7 +4,10 @@
 
   This is the interface to the libxmlrpc_util library, which contains
   utility routines that have nothing to do with XML-RPC.  The library
-  exists because other Xmlrpc-c libraries use the utilities.
+  exists primarily because other Xmlrpc-c libraries use the utilities,
+  but the utilities are also documented for use by Xmlrpc-c users.
+  For use by Xmlrpc-c users, they are considered to be part of the
+  libxmlrpc library.  libxmlrpc_util is a prerequisite of libxmlrpc.
 
   By Bryan Henderson, San Jose, CA 05.09.21.
 

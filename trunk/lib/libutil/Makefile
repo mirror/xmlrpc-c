@@ -1,7 +1,9 @@
 ###############################################################################
 # This directory builds libxmlrpc_util, which contains utility
-# functions that are used by the Xmlprc-c # libraries, and also
-# directly by Xmlrpc-c programs.
+# functions that are used by the Xmlprc-c libraries, and also
+# directly by Xmlrpc-c programs.  Some of them are documented for use
+# by Xmlrpc-c users, as facilities of the libxmlrpc library (which
+# prerequires libxmlrpc_util).
 #
 # The functions in this library are characterized by being general purpose
 # programming functions, such as one might wish were in the standard C
