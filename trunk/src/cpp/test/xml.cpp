@@ -20,6 +20,7 @@ using namespace xmlrpc_c;
 using namespace std;
 
 
+namespace  {
 
 class callTestSuite : public testSuite {
 
@@ -76,6 +77,10 @@ public:
         TEST((int)value_int(result) == (int)value_int(outcome0.getResult()));
     }
 };
+
+
+
+}  // unnamed namespace
 
 
 

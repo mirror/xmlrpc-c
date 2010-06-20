@@ -45,6 +45,7 @@ using namespace xmlrpc_c;
 using namespace std;
 
 
+namespace {
 
 static void
 setNonBlocking(XMLRPC_SOCKET const socket) {
@@ -761,6 +762,10 @@ public:
         testMultiConnCallInfo();
     }
 };
+
+
+
+} // unnamed namespace
 
 
 

@@ -33,6 +33,7 @@ using namespace std;
 
 
 namespace {
+
 class sampleAddMethod : public method {
 public:
     sampleAddMethod() {
