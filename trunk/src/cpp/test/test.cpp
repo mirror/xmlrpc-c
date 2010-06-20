@@ -15,6 +15,7 @@ using girerr::error;
 #include "xmlrpc-c/registry.hpp"
 
 #include "base64.hpp"
+#include "xml.hpp"
 #include "value.hpp"
 #include "testclient.hpp"
 #include "registry.hpp"
@@ -353,6 +354,7 @@ main(int argc, char**) {
     try {
         // Add your test suites here.
         base64TestSuite().run(0);
+        xmlTestSuite().run(0);
         valueTestSuite().run(0);
         paramListTestSuite().run(0);
         registryTestSuite().run(0);

@@ -46,6 +46,7 @@ TEST_OBJS = \
   server_pstream.o \
   tools.o \
   value.o \
+  xml.o \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
