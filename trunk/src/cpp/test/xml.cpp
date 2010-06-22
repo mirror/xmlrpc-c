@@ -37,10 +37,10 @@ public:
 
         xml::generateCall(methodName0, paramList(), &callXml);
 
-        paramList paramList;
         string methodName;
+        paramList paramList;
 
-        xml::parseCall(callXml, &paramList, &methodName);
+        xml::parseCall(callXml, &methodName, &paramList);
 
         TEST(methodName == methodName0);
         TEST(paramList.size() == paramList0.size());

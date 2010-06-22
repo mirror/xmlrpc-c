@@ -168,8 +168,8 @@ generateCall(string    const& methodName,
 
 void
 parseCall(string      const& callXml,
-          paramList * const  paramListP,
-          string *    const  methodNameP) {
+          string *    const  methodNameP,
+          paramList * const  paramListP) {
 
     env_wrap env;
     const char * c_methodName;
