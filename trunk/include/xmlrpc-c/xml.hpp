@@ -20,8 +20,8 @@ generateCall(std::string         const& methodName,
     
 void
 parseCall(std::string           const& callXml,
-          xmlrpc_c::paramList * const  paramListP,
-          std::string *         const  methodNameP);
+          std::string *         const  methodNameP,
+          xmlrpc_c::paramList * const  paramListP);
 
 void
 generateResponse(xmlrpc_c::rpcOutcome const& outcome,
