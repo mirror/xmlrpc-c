@@ -28,6 +28,7 @@ all: $(PROGS)
 LDFLAGS = $(LADD)
 
 TEST_OBJS = \
+  testtool.o \
   test.o \
   abyss.o \
   cgi.o \

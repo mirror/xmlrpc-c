@@ -5,27 +5,26 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "xmlrpc_config.h"
-#include "xmlrpc-c/util.h"
-#include "xmlrpc-c/util_int.h"
-
 extern int total_tests;
 extern int total_failures;
 
 
-/* This is a good place to set a breakpoint. */
-static __inline__ void
+void
 test_failure(const char * const file,
              unsigned int const line,
              const char * const label,
-             const char * const statement) {
+             const char * const statement);
 
-    ++total_failures;
-    printf("\n%s:%u: test failure: %s (%s)\n", file, line, label, statement);
-    abort();
-}
+void
+test_fault(xmlrpc_env * const envP,
+           int          const expectedCode,
+           const char * const fileName,
+           unsigned int const lineNumber);
 
-
+void
+test_null_string(const char * const string,
+                 const char * const fileName,
+                 unsigned int const lineNumber);
 
 #define TEST(statement) \
 do { \
@@ -57,46 +56,10 @@ do { \
 #define TESTFLOATEQUAL(comparand, comparator) \
     TEST(FLOATEQUAL(comparand, comparator))
 
-static __inline__ void
-test_fault(xmlrpc_env * const envP,
-           int          const expectedCode,
-           const char * const fileName,
-           unsigned int const lineNumber) {
-
-    ++total_tests;
-
-    if (!envP->fault_occurred)
-        test_failure(fileName, lineNumber, "no fault occurred", "");
-    else if (envP->fault_code != expectedCode)
-        test_failure(fileName, lineNumber, "wrong fault occurred",
-                     envP->fault_string);
-    else
-        printf(".");
-
-    xmlrpc_env_clean(envP);
-    xmlrpc_env_init(envP);
-}
-
-
 #define TEST_FAULT(envP, code) \
     do { test_fault(envP, code, __FILE__, __LINE__); } while(0)
 
 ;
-
-
-static __inline__ void
-test_null_string(const char * const string,
-                 const char * const fileName,
-                 unsigned int const lineNumber) {
-
-    ++total_tests;
-
-    if (string != NULL)
-        test_failure(fileName, lineNumber, "string not null", string);
-    else
-        printf(".");
-}
-
 
 #define TEST_NULL_STRING(string) \
     do { test_null_string(string, __FILE__, __LINE__); } while(0)
