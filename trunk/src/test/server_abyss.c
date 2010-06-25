@@ -8,7 +8,7 @@
 #include "xmlrpc-c/abyss.h"
 #include "xmlrpc-c/server_abyss.h"
 
-#include "test.h"
+#include "testtool.h"
 
 #include "server_abyss.h"
 

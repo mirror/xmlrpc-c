@@ -20,7 +20,7 @@
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/abyss.h"
 
-#include "test.h"
+#include "testtool.h"
 
 #include "abyss.h"
 

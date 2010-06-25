@@ -1,3 +1,6 @@
+#ifndef TESTTOOL_H_INCLUDED
+#define TESTTOOL_H_INCLUDED
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -107,3 +110,5 @@ do { \
    } while (0)
 
 ;
+
+#endif

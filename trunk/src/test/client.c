@@ -11,7 +11,7 @@
 #include "xmlrpc-c/transport.h"
 
 #include "bool.h"
-#include "test.h"
+#include "testtool.h"
 #include "client.h"
 
 

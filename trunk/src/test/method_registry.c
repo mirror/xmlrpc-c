@@ -10,7 +10,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "xml_data.h"
 #include "method_registry.h"
 

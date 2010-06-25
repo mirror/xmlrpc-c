@@ -13,7 +13,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/string_int.h"
 
-#include "test.h"
+#include "testtool.h"
 
 #include "value_datetime.h"
 
