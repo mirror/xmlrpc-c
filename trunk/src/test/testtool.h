@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
+
 extern int total_tests;
 extern int total_failures;
 
