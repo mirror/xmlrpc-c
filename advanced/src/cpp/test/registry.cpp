@@ -20,6 +20,9 @@ using namespace xmlrpc_c;
 using namespace std;
 
 
+
+namespace {
+
 static string const
 xmlPrologue("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n");
 
@@ -30,7 +33,6 @@ static string const
 xmlnsApache("xmlns:ex=\"" + apacheUrl + "\"");
 
 
-namespace {
 string const noElementFoundXml(
     xmlPrologue +
     "<methodResponse>\r\n"
@@ -163,7 +165,6 @@ string const nonexistentMethodNoDefResponseXml(
     "</methodResponse>\r\n"
     );
 
-} // namespace
 
 
 string const echoI8ApacheCall(
@@ -501,6 +502,10 @@ public:
         myRegistry.setShutdown(&shutdown);
     }
 };
+
+
+
+} // unnamed namespace
 
 
 

@@ -211,16 +211,18 @@ class rpc : public clientTransaction {
    An RPC.  An RPC consists of method name, parameters, and result.  It
    does not specify in any way how the method name and parameters get
    turned into a result.  It does not presume XML or HTTP.
-
-   You don't create an object of this class directly.  All references to
-   an rpc object should be by an rpcPtr object.  Create a new RPC by
-   creating a new rpcPtr.  Accordingly, our constructors and destructors
-   are protected, but available to our friend class rpcPtr.
-
+  
+   You don't normally create or reference an object of this class directly,
+   but rather via an 'rpcPtr' object.  That takes care of deleting the object
+   when you are done with it (but not before).  This is critical if you plan
+   to use the 'start' method, because without an rpcPtr reference, the system
+   will destroy the object under the covers when the RPC finishes, and there
+   is no way for you to guarantee you won't still access it after it finishes
+   (because of accesses within Xmlrpc-c calls such as the call that finishes
+   the RPC or just rpc::start).
+ 
    In order to do asynchronous RPCs, you normally have to create a derived
-   class that defines a useful notifyComplete().  If you do that, you'll
-   want to make sure the derived class objects get accessed only via rpcPtrs
-   as well.
+   class that defines a useful notifyComplete().
 -----------------------------------------------------------------------------*/
     friend class xmlrpc_c::rpcPtr;
 

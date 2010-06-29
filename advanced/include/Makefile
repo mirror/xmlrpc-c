@@ -47,9 +47,11 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	@echo '#if defined(_MSC_VER)'                                     >>$@
 	@echo '  /* Newer MSVC has long long, but MSVC 6 does not */'     >>$@
 	@echo '  #define XMLRPC_INT64 __int64'				  >>$@
+	@echo '  #define XMLRPC_PRId64 "I64"'                             >>$@
 	@echo '  #define XMLRPC_INT32 __int32'				  >>$@
 	@echo '#else'							  >>$@
 	@echo '  #define XMLRPC_INT64 long long'	                  >>$@
+	@echo '  #define XMLRPC_PRId64 "lld"'                             >>$@
 	@echo '  #define XMLRPC_INT32 int'		                  >>$@
 	@echo '#endif'                                                    >>$@
 	@echo '#endif'                                                    >>$@
@@ -133,9 +135,11 @@ install-compat-hdr: install-headers
 .PHONY: install
 install: install-common install-compat-hdr
 
-.PHONY: clean distclean dep
+.PHONY: clean
 clean:
 	rm -f xmlrpc-c/config.h
+
+.PHONY: distclean
 distclean: clean
 
 .PHONY: check

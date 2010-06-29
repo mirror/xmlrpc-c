@@ -6,7 +6,7 @@
 
 #include "xmlrpc-c/base.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "girstring.h"
 
 #include "serialize_value.h"

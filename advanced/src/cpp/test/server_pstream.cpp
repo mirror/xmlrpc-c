@@ -45,6 +45,7 @@ using namespace xmlrpc_c;
 using namespace std;
 
 
+namespace {
 
 static void
 setNonBlocking(XMLRPC_SOCKET const socket) {
@@ -154,7 +155,7 @@ string const testCallInfoResponseXml(
     xmlPrologue +
     "<methodResponse>\r\n"
     "<params>\r\n"
-    "<param><value><string>this is a test callInfo</string></value>"
+    "<param><value><nil/></value>"
     "</param>\r\n"
     "</params>\r\n"
     "</methodResponse>\r\n"
@@ -761,6 +762,10 @@ public:
         testMultiConnCallInfo();
     }
 };
+
+
+
+} // unnamed namespace
 
 
 

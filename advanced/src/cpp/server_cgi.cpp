@@ -241,7 +241,7 @@ writeNormalHttpResp(FILE * const  fileP,
         fprintf(fileP, "Set-Cookie: auth=%s\n", authCookie.c_str());
 
     fprintf(fileP, "Content-type: text/xml; charset=\"utf-8\"\n");
-    fprintf(fileP, "Content-length: %u\n", httpBody.size());
+    fprintf(fileP, "Content-length: %u\n", (unsigned)httpBody.size());
     fprintf(fileP, "\n");
 
     // HTTP body

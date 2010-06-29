@@ -254,8 +254,8 @@ createCurlHeaderList(xmlrpc_env *               const envP,
     }
     if (envP->fault_occurred)
         curl_slist_free_all(headerList);
-    else
-        *headerListP = headerList;
+
+    *headerListP = headerList;
 }
 
 
@@ -434,9 +434,17 @@ assertConstantsMatch(void) {
    formally.
 -----------------------------------------------------------------------------*/
     assert(XMLRPC_SSLVERSION_DEFAULT == CURL_SSLVERSION_DEFAULT);
-    assert(XMLRPC_SSLVERSION_TLSv1   == CURL_SSLVERSION_TLSv1);
-    assert(XMLRPC_SSLVERSION_SSLv2   == CURL_SSLVERSION_SSLv2);
-    assert(XMLRPC_SSLVERSION_SSLv3   == CURL_SSLVERSION_SSLv3);
+    assert(XMLRPC_SSLVERSION_TLSv1   == CURL_SSLVERSION_TLSv1  );
+    assert(XMLRPC_SSLVERSION_SSLv2   == CURL_SSLVERSION_SSLv2  );
+    assert(XMLRPC_SSLVERSION_SSLv3   == CURL_SSLVERSION_SSLv3  );
+
+    assert(XMLRPC_HTTPAUTH_BASIC        == CURLAUTH_BASIC       );
+    assert(XMLRPC_HTTPAUTH_DIGEST       == CURLAUTH_DIGEST      );
+    assert(XMLRPC_HTTPAUTH_GSSNEGOTIATE == CURLAUTH_GSSNEGOTIATE);
+    assert(XMLRPC_HTTPAUTH_NTLM         == CURLAUTH_NTLM        );
+
+    assert(XMLRPC_HTTPPROXY_HTTP   == CURLPROXY_HTTP   );
+    assert(XMLRPC_HTTPPROXY_SOCKS5 == CURLPROXY_SOCKS5 );
 }
 
 
@@ -474,6 +482,14 @@ setupCurlSession(xmlrpc_env *               const envP,
        tell us that something finished on a particular session, not that
        a particular transaction finished.
     */
+
+    /* It is out policy to do a libcurl call only where necessary, I.e.  not
+       to set what is the default anyhow.  The reduction in calls may save
+       some time, but mostly, it will save us encountering rare bugs or
+       suffering from backward incompatibilities in future libcurl.  I.e. we
+       don't exercise any more of libcurl than we have to.
+    */
+
     curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, curlTransactionP);
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
@@ -547,6 +563,26 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->sslCipherList)
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);
+
+        if (curlSetupP->proxy)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXY, curlSetupP->proxy);
+        if (curlSetupP->proxyAuth != CURLAUTH_BASIC)
+            /* Note that the Xmlrpc-c default and the Curl default are
+               different.  Xmlrpc-c is none, while Curl is basic.  One reason
+               for this is that it makes our extensible parameter list scheme,
+               wherein zero always means default, easier.
+            */
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYAUTH,
+                             curlSetupP->proxyAuth);
+        if (curlSetupP->proxyPort)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYPORT,
+                             curlSetupP->proxyPort);
+        if (curlSetupP->proxyUserPwd)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYUSERPWD,
+                             curlSetupP->proxyUserPwd);
+        if (curlSetupP->proxyType)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYTYPE,
+                             curlSetupP->proxyType);
 
         if (curlSetupP->verbose)
             curl_easy_setopt(curlSessionP, CURLOPT_VERBOSE, 1l);

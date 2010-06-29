@@ -407,13 +407,13 @@ dumpI8(const char *   const prefix,
     xmlrpc_env_init(&env);
 
     xmlrpc_read_i8(&env, valueP, &value);
-    
+
     if (env.fault_occurred)
         printf("Internal error: unable to extract value of "
                "64-bit integer xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
-        printf("%s64-bit integer: %" PRId64 "\n", prefix, value);
+        printf("%s64-bit integer: %" XMLRPC_PRId64 "\n", prefix, value);
 
     xmlrpc_env_clean(&env);
 }

@@ -19,7 +19,7 @@
 #include "xmlrpc-c/server.h"
 
 #include "bool.h"
-#include "test.h"
+#include "testtool.h"
 #include "value.h"
 #include "serialize.h"
 #include "parse_xml.h"

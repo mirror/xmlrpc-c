@@ -10,6 +10,7 @@
 #ifndef  XMLRPC_CLIENT_H_INCLUDED
 #define  XMLRPC_CLIENT_H_INCLUDED
 
+#include <stdarg.h>
 #include <xmlrpc-c/base.h>
 
 #ifdef __cplusplus
@@ -50,6 +51,29 @@ enum xmlrpc_sslversion {
     XMLRPC_SSLVERSION_SSLv3
 };
 
+
+enum xmlrpc_httpauthtype {
+    /* These are just constants.  They can be or'ed as integers to create
+       a set.
+    */
+    XMLRPC_HTTPAUTH_BASIC         = (1<<0),
+    XMLRPC_HTTPAUTH_DIGEST        = (1<<1),
+    XMLRPC_HTTPAUTH_GSSNEGOTIATE  = (1<<2),
+    XMLRPC_HTTPAUTH_NTLM          = (1<<3), 
+};
+
+/* The following are useful combinations of the HTTP authentication types
+   above.
+*/
+#define XMLRPC_HTTPAUTH_NONE 0
+#define XMLRPC_HTTPAUTH_ANY  ~0
+#define XMLRPC_HTTPAUTH_ANYSAFE (~XMLRPC_HTTPAUTH_BASIC)
+
+enum xmlrpc_httpproxytype {
+    XMLRPC_HTTPPROXY_HTTP   = 0,
+    XMLRPC_HTTPPROXY_SOCKS5 = 5
+};
+
 struct xmlrpc_curl_xportparms {
     /* This is designed so that zero values are always the defaults. */
     const char * network_interface;
@@ -72,6 +96,14 @@ struct xmlrpc_curl_xportparms {
     const char * ssl_cipher_list;
     unsigned int timeout;
     xmlrpc_bool dont_advertise;
+    const char * proxy;
+    unsigned int proxy_port;
+    enum xmlrpc_httpproxytype proxy_type;
+    unsigned int proxy_auth;
+        /* A set of authentication schemes -- an OR of
+           enum xmlrpc_httpproxyauth values
+        */
+    const char * proxy_userpwd;
 };
 
 
@@ -252,6 +284,15 @@ xmlrpc_client_call2f(xmlrpc_env *    const envP,
                      const char *    const format,
                      ...);
 
+void
+xmlrpc_client_call2f_va(xmlrpc_env *               const envP,
+                        xmlrpc_client *            const clientP,
+                        const char *               const serverUrl,
+                        const char *               const methodName,
+                        const char *               const format,
+                        xmlrpc_value **            const resultPP,
+                        va_list                          args);
+
 void 
 xmlrpc_client_event_loop_finish(xmlrpc_client * const clientP);
 
@@ -260,13 +301,13 @@ xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
                                         unsigned long   const milliseconds);
 
 void
-xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
-                        struct xmlrpc_client *   const clientP,
-                        xmlrpc_server_info *     const serverInfoP,
-                        const char *             const methodName,
-                        xmlrpc_value *           const argP,
-                        xmlrpc_response_handler        responseHandler,
-                        void *                   const userData);
+xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
+                        struct xmlrpc_client *     const clientP,
+                        const xmlrpc_server_info * const serverInfoP,
+                        const char *               const methodName,
+                        xmlrpc_value *             const argP,
+                        xmlrpc_response_handler          responseHandler,
+                        void *                     const userData);
 
 void 
 xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
@@ -277,6 +318,16 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          void *          const userData,
                          const char *    const format,
                          ...);
+
+void
+xmlrpc_client_start_rpcf_va(xmlrpc_env *    const envP,
+                            xmlrpc_client * const clientP,
+                            const char *    const serverUrl,
+                            const char *    const methodName,
+                            xmlrpc_response_handler responseHandler,
+                            void *          const userData,
+                            const char *    const format,
+                            va_list               args);
 
 void
 xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,

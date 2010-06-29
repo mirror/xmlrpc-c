@@ -59,6 +59,7 @@ translateTypeSpecifierToName(xmlrpc_env *  const envP,
                       "Method registry contains invalid signature "
                       "data.  It contains the type specifier '%c'",
                       typeSpecifier);
+        *typeNameP = NULL;  /* quiet compiler warning */
     }
 }
                 
@@ -177,9 +178,8 @@ parseOneSignature(xmlrpc_env *               const envP,
         }
         if (envP->fault_occurred)
             free(signatureP);
-        else
-            *signaturePP = signatureP;
     }
+    *signaturePP = signatureP;
 }    
 
 

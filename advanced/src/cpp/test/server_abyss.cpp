@@ -37,6 +37,9 @@ using namespace xmlrpc_c;
 using namespace std;
 
 
+
+namespace {
+
 static void
 closesock(int const fd) {
 #ifdef WIN32
@@ -320,6 +323,10 @@ public:
             );
     }
 };
+
+
+
+} // unnamed namespace
 
 
 

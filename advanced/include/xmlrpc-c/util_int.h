@@ -1,6 +1,15 @@
 #ifndef XMLRPC_C_UTIL_INT_H_INCLUDED
 #define XMLRPC_C_UTIL_INT_H_INCLUDED
 
+/* This file contains facilities for use by Xmlrpc-c code, but not intended
+   to be included in a user compilation.
+
+   Names in here might conflict with other names in a user's compilation
+   if included in a user compilation.
+
+   The facilities may change in future releases.
+*/
+
 #include "util.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))

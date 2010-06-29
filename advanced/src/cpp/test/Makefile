@@ -40,11 +40,13 @@ include $(SRCDIR)/common.mk
 
 TEST_OBJS = \
   test.o \
+  base64.o \
   registry.o \
   server_abyss.o \
   server_pstream.o \
   tools.o \
   value.o \
+  xml.o \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o

@@ -526,6 +526,7 @@ getBackslashSequence(xmlrpc_env *       const envP,
     default:
         xmlrpc_faultf(envP, "Invalid character after backslash "
                       "escape: '%c'", *cur);
+        *nBytesConsumedP = 0;  /* quiet compiler warning */
         tsize = 0; /* quiet compiler warning */
     }
     if (!envP->fault_occurred)
@@ -551,7 +552,6 @@ unescapeString(xmlrpc_env *       const envP,
             
         while (cur != end && !envP->fault_occurred) {
             if (*cur == '\\') {
-                unsigned int nBytesConsumed;
                 if (cur != last) {
                     XMLRPC_MEMBLOCK_APPEND(
                         char, envP, memBlockP, last, cur - last );
@@ -559,6 +559,8 @@ unescapeString(xmlrpc_env *       const envP,
                         last = cur;
                 }
                 if (!envP->fault_occurred) {
+                    unsigned int nBytesConsumed;
+
                     cur += 1;
 
                     getBackslashSequence(envP, cur, memBlockP,
@@ -905,7 +907,7 @@ xmlrpc_value *
 xmlrpc_parse_json(xmlrpc_env * const envP,
                   const char * const str) {
 
-    xmlrpc_value * retval;
+    xmlrpc_value * retval = retval;
     Tokenizer tok;
     
     XMLRPC_ASSERT_ENV_OK(envP);
@@ -929,8 +931,7 @@ xmlrpc_parse_json(xmlrpc_env * const envP,
             if (envP->fault_occurred)
                 xmlrpc_DECREF(retval);
         }
-    } else 
-        retval = NULL;  /* quiet compiler warning */
+    }
 
     terminateTokenizer(&tok);
 
@@ -1127,7 +1128,7 @@ serializeI8(xmlrpc_env *       const envP,
     xmlrpc_int64 value;
     xmlrpc_read_i8(envP, valP, &value);
             
-    formatOut(envP, outP, "%" PRId64, value);
+    formatOut(envP, outP, "%" XMLRPC_PRId64, value);
 }
 
 

@@ -273,6 +273,11 @@ public:
         constrOpt & egdsocket         (std::string  const& arg);
         constrOpt & ssl_cipher_list   (std::string  const& arg);
         constrOpt & timeout           (unsigned int const& arg);
+        constrOpt & proxy             (std::string  const& arg);
+        constrOpt & proxy_port        (unsigned int const& arg);
+        constrOpt & proxy_auth        (unsigned int const& arg);
+        constrOpt & proxy_userpwd     (std::string  const& arg);
+        constrOpt & proxy_type        (xmlrpc_httpproxytype const& arg);
 
         struct {
             std::string  network_interface;
@@ -295,6 +300,11 @@ public:
             std::string  egdsocket;
             std::string  ssl_cipher_list;
             unsigned int timeout;
+            std::string  proxy;
+            unsigned int proxy_auth;
+            unsigned int proxy_port;
+            std::string  proxy_userpwd;
+            xmlrpc_httpproxytype proxy_type;
         } value;
         struct {
             bool network_interface;
@@ -317,6 +327,11 @@ public:
             bool egdsocket;
             bool ssl_cipher_list;
             bool timeout;
+            bool proxy;
+            bool proxy_auth;
+            bool proxy_port;
+            bool proxy_userpwd;
+            bool proxy_type;
         } present;
     };
 

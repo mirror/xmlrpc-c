@@ -8,7 +8,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/xmlparser.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "xml_data.h"
 #include "parse_xml.h"
 

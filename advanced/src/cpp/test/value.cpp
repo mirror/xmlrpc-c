@@ -24,6 +24,8 @@ using namespace std;
 
 
 
+namespace {
+
 class intTestSuite : public testSuite {
 public:
     virtual string suiteName() {
@@ -424,6 +426,8 @@ public:
     }
 };
 
+
+} // unnamed namespace
 
 
 string

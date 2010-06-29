@@ -467,9 +467,6 @@ if test $MUST_BUILD_WININET_CLIENT = yes; then
     WININET_LDADD="`$WININET_CONFIG --libs`"
     AC_SUBST(WININET_LDADD)
 
-    dnl Oh, such massive brain damage! Because there may be another copy
-    dnl of libwww in the default dynamic loader search path, we need to
-    dnl adjust the search patch manually. Just gag me with a backquote, OK?
     AC_MSG_CHECKING(for wininet library directory)
     if $WININET_CONFIG --rpath-dir > /dev/null 2>&1; then
        dnl Yay! We're using our smart version of wininet.
@@ -538,9 +535,6 @@ if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
     LIBWWW_LDADD="`$LIBWWW_CONFIG --libs`"
     AC_SUBST(LIBWWW_LDADD)
 
-    dnl Oh, such massive brain damage! Because there may be another copy
-    dnl of libwww in the default dynamic loader search path, we need to
-    dnl adjust the search patch manually. Just gag me with a backquote, OK?
     AC_MSG_CHECKING(for libwww library directory)
     if $LIBWWW_CONFIG --rpath-dir > /dev/null 2>&1; then
        dnl Yay! We're using our smart version of libwww.
@@ -567,12 +561,12 @@ fi # MUST_BUILD_LIBWWW_CLIENT
 
 
 dnl =======================================================================
-dnl Finding cURL
+dnl Finding Curl
 dnl =======================================================================
 
 if test $MUST_BUILD_CURL_CLIENT = yes; then
 
-    dnl First of all, locate the curl config program.
+    dnl First of all, locate the Curl config program.
     dnl You can control which of these gets chosen by fooling around with PATH.
     AC_PATH_PROGS(CURL_CONFIG, curl-xmlrpc-config curl-config, no)
     if test "x$CURL_CONFIG" = "xno"; then
@@ -581,7 +575,7 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
     
     dnl There used to be code here to check the Curl version and make sure
     dnl it is at least 7.8.  But there were bugs both in the code and in 
-    dnl curl (curl-config --vernum, at least in older versios of Curl,
+    dnl curl (curl-config --vernum, at least in older versions of Curl,
     dnl omits the leading zero).  So it didn't work.  Plus, checking version
     dnl numbers isn't a good idea.  Better to check for feature presence.
     dnl So we don't do any check now.  If we find out there's a problem with
@@ -594,11 +588,9 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
     CURL_LDADD=`$CURL_CONFIG --libs`
     AC_SUBST(CURL_LDADD)
 
-    dnl Oh, such massive brain damage! Because there may be another copy
-    dnl of curl in the default dynamic loader search path, we need to
-    dnl adjust the search path manually. Just gag me with a backquote, OK?
-    AC_MSG_CHECKING(for curl library directory)
-    dnl Yawn. We're using the regular boring version.
+    AC_MSG_CHECKING(for Curl library directory)
+    dnl Curl-config doesn't know about rpath, so we just make some
+    dnl assumptions:
     CURL_LIBDIR="`$CURL_CONFIG --prefix`/lib"
 
     AC_MSG_RESULT($CURL_LIBDIR)

@@ -109,13 +109,13 @@ public:
 
 namespace xmlrpc_c {
 
-value::value() {
+value::value() {   // default constructor
     this->cValueP = NULL;
 }
 
 
 
-value::value(xmlrpc_value * const valueP) {  // default constructor
+value::value(xmlrpc_value * const valueP) {
 
     this->instantiate(valueP);
 }

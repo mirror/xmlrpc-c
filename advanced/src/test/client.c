@@ -11,7 +11,7 @@
 #include "xmlrpc-c/transport.h"
 
 #include "bool.h"
-#include "test.h"
+#include "testtool.h"
 #include "client.h"
 
 
@@ -95,7 +95,11 @@ testCreateCurlParms(void) {
     curlTransportParms1.ssl_cipher_list   = NULL;
     curlTransportParms1.timeout           = 0;
     curlTransportParms1.dont_advertise    = 1;
-    clientParms1.transportparm_size = XMLRPC_CXPSIZE(dont_advertise);
+    curlTransportParms1.proxy             = NULL;
+    curlTransportParms1.proxy_port        = 0;
+    curlTransportParms1.proxy_type        = XMLRPC_HTTPPROXY_HTTP;
+    curlTransportParms1.proxy_auth        = XMLRPC_HTTPAUTH_NONE;
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(proxy_auth);
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
                          &clientParms1, XMLRPC_CPSIZE(transportparm_size),
                          &clientP);
