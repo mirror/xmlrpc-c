@@ -42,7 +42,7 @@
 #endif  /* WIN32 */
 
 #ifdef _UNIX
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/wait.h>
 #endif
 

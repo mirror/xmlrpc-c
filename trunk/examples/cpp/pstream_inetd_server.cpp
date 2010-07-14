@@ -22,7 +22,7 @@
 #endif
 #include <cassert>
 #include <iostream>
-#include <sys/signal.h>
+#include <signal.h>
 
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
