@@ -127,93 +127,33 @@ carriageParm_curl0Ptr::operator->() const {
 
 
 
-struct clientXmlTransport_curl::constrOpt_impl {
-
-    constrOpt_impl();
-
-    struct {
-        std::string  network_interface;
-        bool         no_ssl_verifypeer;
-        bool         no_ssl_verifyhost;
-        bool         dont_advertise;
-        std::string  user_agent;
-        std::string  ssl_cert;
-        std::string  sslcerttype;
-        std::string  sslcertpasswd;
-        std::string  sslkey;
-        std::string  sslkeytype;
-        std::string  sslkeypasswd;
-        std::string  sslengine;
-        bool         sslengine_default;
-        xmlrpc_sslversion sslversion;
-        std::string  cainfo;
-        std::string  capath;
-        std::string  randomfile;
-        std::string  egdsocket;
-        std::string  ssl_cipher_list;
-        unsigned int timeout;
-        std::string  proxy;
-        unsigned int proxy_auth;
-        unsigned int proxy_port;
-        std::string  proxy_userpwd;
-        xmlrpc_httpproxytype proxy_type;
-    } value;
-    struct {
-        bool network_interface;
-        bool no_ssl_verifypeer;
-        bool no_ssl_verifyhost;
-        bool dont_advertise;
-        bool user_agent;
-        bool ssl_cert;
-        bool sslcerttype;
-        bool sslcertpasswd;
-        bool sslkey;
-        bool sslkeytype;
-        bool sslkeypasswd;
-        bool sslengine;
-        bool sslengine_default;
-        bool sslversion;
-        bool cainfo;
-        bool capath;
-        bool randomfile;
-        bool egdsocket;
-        bool ssl_cipher_list;
-        bool timeout;
-        bool proxy;
-        bool proxy_auth;
-        bool proxy_port;
-        bool proxy_userpwd;
-        bool proxy_type;
-    } present;
-};
-
-clientXmlTransport_curl::constrOpt_impl::constrOpt_impl() {
+clientXmlTransport_curl::constrOpt::constrOpt() {
 
     present.network_interface = false;
     present.no_ssl_verifypeer = false;
     present.no_ssl_verifyhost = false;
-    present.dont_advertise    = false;
-    present.user_agent        = false;
-    present.ssl_cert          = false;
-    present.sslcerttype       = false;
-    present.sslcertpasswd     = false;
-    present.sslkey            = false;
-    present.sslkeytype        = false;
-    present.sslkeypasswd      = false;
-    present.sslengine         = false;
+    present.dont_advertise = false;
+    present.user_agent = false;
+    present.ssl_cert = false;
+    present.sslcerttype = false;
+    present.sslcertpasswd = false;
+    present.sslkey = false;
+    present.sslkeytype = false;
+    present.sslkeypasswd = false;
+    present.sslengine = false;
     present.sslengine_default = false;
-    present.sslversion        = false;
-    present.cainfo            = false;
-    present.capath            = false;
-    present.randomfile        = false;
-    present.egdsocket         = false;
-    present.ssl_cipher_list   = false;
-    present.timeout           = false;
-    present.proxy             = false;
-    present.proxy_port        = false;
-    present.proxy_auth        = false;
-    present.proxy_userpwd     = false;
-    present.proxy_type        = false;
+    present.sslversion = false;
+    present.cainfo = false;
+    present.capath = false;
+    present.randomfile = false;
+    present.egdsocket = false;
+    present.ssl_cipher_list = false;
+    present.timeout = false;
+    present.proxy = false;
+    present.proxy_port = false;
+    present.proxy_auth = false;
+    present.proxy_userpwd = false;
+    present.proxy_type = false;
 }
 
 
@@ -221,8 +161,8 @@ clientXmlTransport_curl::constrOpt_impl::constrOpt_impl() {
 #define DEFINE_OPTION_SETTER(OPTION_NAME, TYPE) \
 clientXmlTransport_curl::constrOpt & \
 clientXmlTransport_curl::constrOpt::OPTION_NAME(TYPE const& arg) { \
-    this->implP->value.OPTION_NAME = arg; \
-    this->implP->present.OPTION_NAME = true; \
+    this->value.OPTION_NAME = arg; \
+    this->present.OPTION_NAME = true; \
     return *this; \
 }
 
@@ -254,33 +194,10 @@ DEFINE_OPTION_SETTER(proxy_type, xmlrpc_httpproxytype);
 
 #undef DEFINE_OPTION_SETTER
 
-clientXmlTransport_curl::constrOpt::constrOpt() {
-
-    this->implP = new clientXmlTransport_curl::constrOpt_impl();
-}
-
-
-
-clientXmlTransport_curl::constrOpt::~constrOpt() {
-
-    delete(this->implP);
-}
-
-
-
-clientXmlTransport_curl::constrOpt::constrOpt(constrOpt& arg) {
-
-    this->implP = new constrOpt_impl(*arg.implP);
-}
-
-
-
 #if MUST_BUILD_CURL_CLIENT
 
 void
-clientXmlTransport_curl::initialize(constrOpt const& optExt) {
-    constrOpt_impl const opt(*optExt.implP);
-
+clientXmlTransport_curl::initialize(constrOpt const& opt) {
     struct xmlrpc_curl_xportparms transportParms; 
 
     transportParms.network_interface = opt.present.network_interface ?
