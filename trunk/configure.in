@@ -534,15 +534,16 @@ if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
     AC_MSG_RESULT($LIBWWW_LIBDIR)
     AC_SUBST(LIBWWW_LIBDIR)
 
-    # Some ancient rpath stuff, now disabled.  I turned this off because it
-    # breaks Debian (and Mandrake?) policy, and we don't use it anymore.
-    # If you have multiple copies of w3c-libwww lying around, you can turn
-    # it back on.
-    #LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
-    LIBWWW_RPATH=""
+    # Before Xmlrpc-c 1.24 (September 2010), this code was disabled
+    # with LIBWWW_RPATH and LIBWWW_WL_RPATH set to null, saying that the
+    # code is ancient, "we don't use it anymore," and it violates
+    # Debian policy.  However, we do use it, and we have a "NEED_RPATH"
+    # thing that wasn't around when that comment was written.  Also, we
+    # have always done the same thing with Curl, and whatever is right for
+    # one must be right for the other.
+    LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
     AC_SUBST(LIBWWW_RPATH)
-    #LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
-    LIBWWW_WL_RPATH=""
+    LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
     AC_SUBST(LIBWWW_WL_RPATH)
 
 fi # MUST_BUILD_LIBWWW_CLIENT
