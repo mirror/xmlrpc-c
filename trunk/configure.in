@@ -468,13 +468,7 @@ if test $MUST_BUILD_WININET_CLIENT = yes; then
     AC_SUBST(WININET_LDADD)
 
     AC_MSG_CHECKING(for wininet library directory)
-    if $WININET_CONFIG --rpath-dir > /dev/null 2>&1; then
-       dnl Yay! We're using our smart version of wininet.
-       WININET_LIBDIR="`$WININET_CONFIG --rpath-dir`"
-    else
-       dnl Yawn. We're using the regular boring version.
-       WININET_LIBDIR="`$WININET_CONFIG --prefix`/lib"
-    fi
+    WININET_LIBDIR="`$WININET_CONFIG --prefix`/lib"
     AC_MSG_RESULT($WININET_LIBDIR)
     AC_SUBST(WININET_LIBDIR)
     WININET_RPATH="-rpath $WININET_LIBDIR"
