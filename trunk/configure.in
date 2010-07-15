@@ -422,7 +422,7 @@ dnl you will need to configure this way..
 
 if test $MUST_BUILD_WININET_CLIENT = yes; then
 
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(WININET_CONFIG, wininet-xmlrpc-config wininet-config, no)
     if test "x$WININET_CONFIG" = "xno"; then
         AC_MSG_ERROR(wininet lib not found; see './configure --help')
@@ -495,7 +495,7 @@ dnl necessary.
 if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
 
     dnl First of all, locate the semi-broken libwww config program.
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(LIBWWW_CONFIG, libwww-xmlrpc-config libwww-config, no)
     if test "x$LIBWWW_CONFIG" = "xno"; then
         AC_MSG_ERROR(w3c-libwww not found; see './configure --help')
@@ -567,7 +567,7 @@ dnl =======================================================================
 if test $MUST_BUILD_CURL_CLIENT = yes; then
 
     dnl First of all, locate the Curl config program.
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(CURL_CONFIG, curl-xmlrpc-config curl-config, no)
     if test "x$CURL_CONFIG" = "xno"; then
         AC_MSG_ERROR(cURL not found; see './configure --help')
@@ -581,10 +581,6 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
     dnl So we don't do any check now.  If we find out there's a problem with
     dnl older Curls, we will revisit that.
 
-    dnl Get the huge list of libraries we need to link against.
-    dnl MRB-20010516-For some reason, curl-config
-    dnl does not list itself '-lcurl'.  2004.12.12.  It seems to do so
-    dnl now.
     CURL_LDADD=`$CURL_CONFIG --libs`
     AC_SUBST(CURL_LDADD)
 
