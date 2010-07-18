@@ -425,19 +425,19 @@ if test $MUST_BUILD_WININET_CLIENT = yes; then
     dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(WININET_CONFIG, wininet-xmlrpc-config wininet-config, no)
     if test "x$WININET_CONFIG" = "xno"; then
-        AC_MSG_ERROR(wininet lib not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first wininet-config found, then not found)
     fi
 
     dnl Get our wininet version.
     dnl Adapted from a macro which called gtk-config.
     AC_MSG_CHECKING(for wininet version >= 1.0.0)
-    W3VER=`$WININET_CONFIG --version`
+    W3VER=$($WININET_CONFIG --version)
     WININET_MAJOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/')
     WININET_MINOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/')
     WININET_MICRO=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     AC_MSG_RESULT($WININET_MAJOR.$WININET_MINOR.$WININET_MICRO)
 
     dnl Check to make sure our version is OK.
@@ -459,52 +459,44 @@ if test $MUST_BUILD_WININET_CLIENT = yes; then
     fi
 
     dnl Get the necessary CFLAGS, and merge them into our master list.
-    WININET_CFLAGS="`$WININET_CONFIG --cflags`"
+    WININET_CFLAGS=$($WININET_CONFIG --cflags)
     AC_SUBST(WININET_CFLAGS)
     CFLAGS="$CFLAGS $WININET_CFLAGS" 
 
     dnl Get the huge list of libraries we need to link against.
-    WININET_LDADD="`$WININET_CONFIG --libs`"
+    WININET_LDADD=$($WININET_CONFIG --libs)
     AC_SUBST(WININET_LDADD)
 
     AC_MSG_CHECKING(for wininet library directory)
-    WININET_LIBDIR="`$WININET_CONFIG --prefix`/lib"
+    WININET_LIBDIR="$($WININET_CONFIG --prefix)/lib"
     AC_MSG_RESULT($WININET_LIBDIR)
     AC_SUBST(WININET_LIBDIR)
-    WININET_RPATH="-rpath $WININET_LIBDIR"
-    AC_SUBST(WININET_RPATH)
-    WININET_WL_RPATH="-Wl,--rpath -Wl,$WININET_LIBDIR"
-    AC_SUBST(WININET_WL_RPATH)
 
 fi # MUST_BUILD_WININET_CLIENT
 
 dnl =======================================================================
 dnl Finding w3c-libwww
 dnl =======================================================================
-dnl Once upon a time, we used a patched copy of libwww that needed to
-dnl co-exist with the system copy of libwww. We have some vestigal function
-dnl for keeping track of libwww's rpath, although this is no longer really
-dnl necessary.
 
 if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
 
-    dnl First of all, locate the semi-broken libwww config program.
+    dnl First of all, locate the libwww config program.
     dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(LIBWWW_CONFIG, libwww-xmlrpc-config libwww-config, no)
     if test "x$LIBWWW_CONFIG" = "xno"; then
-        AC_MSG_ERROR(w3c-libwww not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first libwww-config found, then not found)
     fi
 
     dnl Get our libwww version.
     dnl Adapted from a macro which called gtk-config.
     AC_MSG_CHECKING(for w3c-libwww version >= 5.2.8)
-    W3VER=`$LIBWWW_CONFIG --version`
+    W3VER=$($LIBWWW_CONFIG --version)
     LIBWWW_MAJOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/')
     LIBWWW_MINOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/')
     LIBWWW_MICRO=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     AC_MSG_RESULT($LIBWWW_MAJOR.$LIBWWW_MINOR.$LIBWWW_MICRO)
 
     dnl Check to make sure our version is OK.
@@ -526,25 +518,13 @@ if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
     fi
 
     dnl Get the huge list of libraries we need to link against.
-    LIBWWW_LDADD="`$LIBWWW_CONFIG --libs`"
+    LIBWWW_LDADD=$(LIBWWW_CONFIG --libs)
     AC_SUBST(LIBWWW_LDADD)
 
     AC_MSG_CHECKING(for libwww library directory)
-    LIBWWW_LIBDIR="`$LIBWWW_CONFIG --prefix`/lib"
+    LIBWWW_LIBDIR="$(LIBWWW_CONFIG --prefix)/lib"
     AC_MSG_RESULT($LIBWWW_LIBDIR)
     AC_SUBST(LIBWWW_LIBDIR)
-
-    # Before Xmlrpc-c 1.24 (September 2010), this code was disabled
-    # with LIBWWW_RPATH and LIBWWW_WL_RPATH set to null, saying that the
-    # code is ancient, "we don't use it anymore," and it violates
-    # Debian policy.  However, we do use it, and we have a "NEED_RPATH"
-    # thing that wasn't around when that comment was written.  Also, we
-    # have always done the same thing with Curl, and whatever is right for
-    # one must be right for the other.
-    LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
-    AC_SUBST(LIBWWW_RPATH)
-    LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
-    AC_SUBST(LIBWWW_WL_RPATH)
 
 fi # MUST_BUILD_LIBWWW_CLIENT
 
@@ -559,7 +539,7 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
     dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(CURL_CONFIG, curl-xmlrpc-config curl-config, no)
     if test "x$CURL_CONFIG" = "xno"; then
-        AC_MSG_ERROR(cURL not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first curl-config found, then not found)
     fi
     
     dnl There used to be code here to check the Curl version and make sure
@@ -570,20 +550,14 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
     dnl So we don't do any check now.  If we find out there's a problem with
     dnl older Curls, we will revisit that.
 
-    CURL_LDADD=`$CURL_CONFIG --libs`
+    CURL_LDADD=$($CURL_CONFIG --libs)
     AC_SUBST(CURL_LDADD)
 
     AC_MSG_CHECKING(for Curl library directory)
-    dnl Curl-config doesn't know about rpath, so we just make some
-    dnl assumptions:
-    CURL_LIBDIR="`$CURL_CONFIG --prefix`/lib"
+    CURL_LIBDIR="$($CURL_CONFIG --prefix)/lib"
 
     AC_MSG_RESULT($CURL_LIBDIR)
     AC_SUBST(CURL_LIBDIR)
-    CURL_RPATH="-rpath $CURL_LIBDIR"
-    AC_SUBST(CURL_RPATH)
-    CURL_WL_RPATH="-Wl,--rpath -Wl,$CURL_LIBDIR"
-    AC_SUBST(CURL_WL_RPATH)
 
 fi # MUST_BUILD_CURL_CLIENT
 
@@ -639,7 +613,7 @@ CPP_WARN_FLAGS=
 AC_SUBST(CPP_WARN_FLAGS)
 
 
-BUILDDIR=`pwd`
+BUILDDIR=$(pwd)
 AC_SUBST(BUILDDIR)
 
 

@@ -31,14 +31,11 @@ BUILD_TOOLS  = @BUILD_TOOLS@
 BUILD_XMLRPC_PSTREAM  = @BUILD_XMLRPC_PSTREAM@
 LSOCKET = @LSOCKET@
 WININET_LDADD = @WININET_LDADD@
-WININET_RPATH = @WININET_RPATH@
-WININET_WL_RPATH = @WININET_WL_RPATH@
+WININET_LIBDIR = @WININET_LIBDIR@
 CURL_LDADD = @CURL_LDADD@
-CURL_RPATH = @CURL_RPATH@
-CURL_WL_RPATH = @CURL_WL_RPATH@
+CURL_LIBDIR = @CURL_LIBDIR@
 LIBWWW_LDADD = @LIBWWW_LDADD@
-LIBWWW_RPATH = @LIBWWW_RPATH@
-LIBWWW_WL_RPATH = @LIBWWW_WL_RPATH@
+LIBWWW_LIBDIR = @LIBWWW_LIBDIR@
 FEATURE_LIST = @FEATURE_LIST@
 ABS_SRCDIR = @abs_srcdir@
 PREFIX = @prefix@
@@ -191,12 +188,16 @@ ifeq ($(patsubst solaris%,solaris,$(HOST_OS)),solaris)
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   # We assume Sun compiler and linker here.  It isn't clear what to do
   # about a user who uses GNU compiler and Ld instead.  For that, the
-  # options should be the same as "linux-gnu" platform, above.
+  # options should be the same as "linux-gnu" platform, above, except
+  # with NEED_WL_RPATH.  If the user uses the GNU compiler but the Sun
+  # linker, it's even more complicated: we need an rpath option of the
+  # form -Wl,-R .
 
   # Solaris compiler (Sun C 5.5) can't take multiple ld options as
   # -Wl,-a,-b .  Ld sees -a,-b in that case.
   LDFLAGS_SHLIB = -Wl,-Bdynamic -Wl,-G -Wl,-h -Wl,$(SONAME)
   CFLAGS_SHLIB = -Kpic
+  NEED_RPATH=yes
 endif
 
 ifeq ($(patsubst aix%,aix,$(HOST_OS)),aix)
