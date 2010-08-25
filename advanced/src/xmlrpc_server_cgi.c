@@ -206,9 +206,15 @@ xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP) {
         code = 405; message = "Method Not Allowed";
         XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Expected HTTP method POST");
     }
-    if (!type || 0 != strcmp(type, "text/xml")) {
+    if (!type || 0 != strncmp(type, "text/xml", strlen("text/xml"))) {
+	char *template = "Expected content type: \"text/xml\", received: \"%s\"";
+	size_t err_len = strlen(template) + strlen(type) + 1;
+	char *err = malloc(err_len);
+
+	(void)snprintf(err, err_len, template, type);
         code = 400; message = "Bad Request";
-        XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Expected text/xml content");
+        XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, err);
+	free(err);
     }
     if (!length_str) {
         code = 411; message = "Length Required";
