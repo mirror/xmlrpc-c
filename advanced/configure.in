@@ -422,22 +422,22 @@ dnl you will need to configure this way..
 
 if test $MUST_BUILD_WININET_CLIENT = yes; then
 
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(WININET_CONFIG, wininet-xmlrpc-config wininet-config, no)
     if test "x$WININET_CONFIG" = "xno"; then
-        AC_MSG_ERROR(wininet lib not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first wininet-config found, then not found)
     fi
 
     dnl Get our wininet version.
     dnl Adapted from a macro which called gtk-config.
     AC_MSG_CHECKING(for wininet version >= 1.0.0)
-    W3VER=`$WININET_CONFIG --version`
+    W3VER=$($WININET_CONFIG --version)
     WININET_MAJOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/')
     WININET_MINOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/')
     WININET_MICRO=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     AC_MSG_RESULT($WININET_MAJOR.$WININET_MINOR.$WININET_MICRO)
 
     dnl Check to make sure our version is OK.
@@ -459,58 +459,44 @@ if test $MUST_BUILD_WININET_CLIENT = yes; then
     fi
 
     dnl Get the necessary CFLAGS, and merge them into our master list.
-    WININET_CFLAGS="`$WININET_CONFIG --cflags`"
+    WININET_CFLAGS=$($WININET_CONFIG --cflags)
     AC_SUBST(WININET_CFLAGS)
     CFLAGS="$CFLAGS $WININET_CFLAGS" 
 
     dnl Get the huge list of libraries we need to link against.
-    WININET_LDADD="`$WININET_CONFIG --libs`"
+    WININET_LDADD=$($WININET_CONFIG --libs)
     AC_SUBST(WININET_LDADD)
 
     AC_MSG_CHECKING(for wininet library directory)
-    if $WININET_CONFIG --rpath-dir > /dev/null 2>&1; then
-       dnl Yay! We're using our smart version of wininet.
-       WININET_LIBDIR="`$WININET_CONFIG --rpath-dir`"
-    else
-       dnl Yawn. We're using the regular boring version.
-       WININET_LIBDIR="`$WININET_CONFIG --prefix`/lib"
-    fi
+    WININET_LIBDIR="$($WININET_CONFIG --prefix)/lib"
     AC_MSG_RESULT($WININET_LIBDIR)
     AC_SUBST(WININET_LIBDIR)
-    WININET_RPATH="-rpath $WININET_LIBDIR"
-    AC_SUBST(WININET_RPATH)
-    WININET_WL_RPATH="-Wl,--rpath -Wl,$WININET_LIBDIR"
-    AC_SUBST(WININET_WL_RPATH)
 
 fi # MUST_BUILD_WININET_CLIENT
 
 dnl =======================================================================
 dnl Finding w3c-libwww
 dnl =======================================================================
-dnl Once upon a time, we used a patched copy of libwww that needed to
-dnl co-exist with the system copy of libwww. We have some vestigal function
-dnl for keeping track of libwww's rpath, although this is no longer really
-dnl necessary.
 
 if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
 
-    dnl First of all, locate the semi-broken libwww config program.
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl First of all, locate the libwww config program.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(LIBWWW_CONFIG, libwww-xmlrpc-config libwww-config, no)
     if test "x$LIBWWW_CONFIG" = "xno"; then
-        AC_MSG_ERROR(w3c-libwww not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first libwww-config found, then not found)
     fi
 
     dnl Get our libwww version.
     dnl Adapted from a macro which called gtk-config.
     AC_MSG_CHECKING(for w3c-libwww version >= 5.2.8)
-    W3VER=`$LIBWWW_CONFIG --version`
+    W3VER=$($LIBWWW_CONFIG --version)
     LIBWWW_MAJOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/')
     LIBWWW_MINOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/')
     LIBWWW_MICRO=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     AC_MSG_RESULT($LIBWWW_MAJOR.$LIBWWW_MINOR.$LIBWWW_MICRO)
 
     dnl Check to make sure our version is OK.
@@ -532,30 +518,13 @@ if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
     fi
 
     dnl Get the huge list of libraries we need to link against.
-    LIBWWW_LDADD="`$LIBWWW_CONFIG --libs`"
+    LIBWWW_LDADD=$(LIBWWW_CONFIG --libs)
     AC_SUBST(LIBWWW_LDADD)
 
     AC_MSG_CHECKING(for libwww library directory)
-    if $LIBWWW_CONFIG --rpath-dir > /dev/null 2>&1; then
-       dnl Yay! We're using our smart version of libwww.
-       LIBWWW_LIBDIR="`$LIBWWW_CONFIG --rpath-dir`"
-    else
-       dnl Yawn. We're using the regular boring version.
-       LIBWWW_LIBDIR="`$LIBWWW_CONFIG --prefix`/lib"
-    fi
+    LIBWWW_LIBDIR="$(LIBWWW_CONFIG --prefix)/lib"
     AC_MSG_RESULT($LIBWWW_LIBDIR)
     AC_SUBST(LIBWWW_LIBDIR)
-
-    # Some ancient rpath stuff, now disabled.  I turned this off because it
-    # breaks Debian (and Mandrake?) policy, and we don't use it anymore.
-    # If you have multiple copies of w3c-libwww lying around, you can turn
-    # it back on.
-    #LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
-    LIBWWW_RPATH=""
-    AC_SUBST(LIBWWW_RPATH)
-    #LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
-    LIBWWW_WL_RPATH=""
-    AC_SUBST(LIBWWW_WL_RPATH)
 
 fi # MUST_BUILD_LIBWWW_CLIENT
 
@@ -567,10 +536,10 @@ dnl =======================================================================
 if test $MUST_BUILD_CURL_CLIENT = yes; then
 
     dnl First of all, locate the Curl config program.
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(CURL_CONFIG, curl-xmlrpc-config curl-config, no)
     if test "x$CURL_CONFIG" = "xno"; then
-        AC_MSG_ERROR(cURL not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first curl-config found, then not found)
     fi
     
     dnl There used to be code here to check the Curl version and make sure
@@ -581,24 +550,14 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
     dnl So we don't do any check now.  If we find out there's a problem with
     dnl older Curls, we will revisit that.
 
-    dnl Get the huge list of libraries we need to link against.
-    dnl MRB-20010516-For some reason, curl-config
-    dnl does not list itself '-lcurl'.  2004.12.12.  It seems to do so
-    dnl now.
-    CURL_LDADD=`$CURL_CONFIG --libs`
+    CURL_LDADD=$($CURL_CONFIG --libs)
     AC_SUBST(CURL_LDADD)
 
     AC_MSG_CHECKING(for Curl library directory)
-    dnl Curl-config doesn't know about rpath, so we just make some
-    dnl assumptions:
-    CURL_LIBDIR="`$CURL_CONFIG --prefix`/lib"
+    CURL_LIBDIR="$($CURL_CONFIG --prefix)/lib"
 
     AC_MSG_RESULT($CURL_LIBDIR)
     AC_SUBST(CURL_LIBDIR)
-    CURL_RPATH="-rpath $CURL_LIBDIR"
-    AC_SUBST(CURL_RPATH)
-    CURL_WL_RPATH="-Wl,--rpath -Wl,$CURL_LIBDIR"
-    AC_SUBST(CURL_WL_RPATH)
 
 fi # MUST_BUILD_CURL_CLIENT
 
@@ -654,7 +613,7 @@ CPP_WARN_FLAGS=
 AC_SUBST(CPP_WARN_FLAGS)
 
 
-BUILDDIR=`pwd`
+BUILDDIR=$(pwd)
 AC_SUBST(BUILDDIR)
 
 

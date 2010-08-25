@@ -77,7 +77,7 @@ TARGET_MODS_PP = \
   $(LIBXMLRPC_PACKETSOCKET_MODS) \
 
 OMIT_CPP_LIB_RULES = Y
-MAJ = 6
+MAJ = 7
   # Major number of shared libraries in this directory
 
 include $(SRCDIR)/common.mk

@@ -249,9 +249,13 @@ public:
 class clientXmlTransport_curl : public xmlrpc_c::clientXmlTransport_http {
 
 public:
+    struct constrOpt_impl;
+
     class constrOpt {
     public:
         constrOpt();
+        ~constrOpt();
+        constrOpt(constrOpt&);
 
         constrOpt & network_interface (std::string  const& arg);
         constrOpt & no_ssl_verifypeer (bool         const& arg);
@@ -279,60 +283,9 @@ public:
         constrOpt & proxy_userpwd     (std::string  const& arg);
         constrOpt & proxy_type        (xmlrpc_httpproxytype const& arg);
 
-        struct {
-            std::string  network_interface;
-            bool         no_ssl_verifypeer;
-            bool         no_ssl_verifyhost;
-            bool         dont_advertise;
-            std::string  user_agent;
-            std::string  ssl_cert;
-            std::string  sslcerttype;
-            std::string  sslcertpasswd;
-            std::string  sslkey;
-            std::string  sslkeytype;
-            std::string  sslkeypasswd;
-            std::string  sslengine;
-            bool         sslengine_default;
-            xmlrpc_sslversion sslversion;
-            std::string  cainfo;
-            std::string  capath;
-            std::string  randomfile;
-            std::string  egdsocket;
-            std::string  ssl_cipher_list;
-            unsigned int timeout;
-            std::string  proxy;
-            unsigned int proxy_auth;
-            unsigned int proxy_port;
-            std::string  proxy_userpwd;
-            xmlrpc_httpproxytype proxy_type;
-        } value;
-        struct {
-            bool network_interface;
-            bool no_ssl_verifypeer;
-            bool no_ssl_verifyhost;
-            bool dont_advertise;
-            bool user_agent;
-            bool ssl_cert;
-            bool sslcerttype;
-            bool sslcertpasswd;
-            bool sslkey;
-            bool sslkeytype;
-            bool sslkeypasswd;
-            bool sslengine;
-            bool sslengine_default;
-            bool sslversion;
-            bool cainfo;
-            bool capath;
-            bool randomfile;
-            bool egdsocket;
-            bool ssl_cipher_list;
-            bool timeout;
-            bool proxy;
-            bool proxy_auth;
-            bool proxy_port;
-            bool proxy_userpwd;
-            bool proxy_type;
-        } present;
+    private:
+        struct constrOpt_impl * implP;
+        friend class clientXmlTransport_curl;
     };
 
     clientXmlTransport_curl(constrOpt const& opt);
@@ -434,18 +387,19 @@ public:
 class clientXmlTransport_pstream : public xmlrpc_c::clientXmlTransport {
 
 public:
+    struct constrOpt_impl;
+
     class constrOpt {
     public:
         constrOpt();
+        ~constrOpt();
+        constrOpt(constrOpt&);
 
         constrOpt & fd                (int         const& arg);
 
-        struct {
-            int         fd;
-        } value;
-        struct {
-            bool fd;
-        } present;
+    private:
+        struct constrOpt_impl * implP;
+        friend class clientXmlTransport_pstream;
     };
 
     clientXmlTransport_pstream(constrOpt const& opt);
