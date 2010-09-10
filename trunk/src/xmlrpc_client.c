@@ -829,10 +829,6 @@ callInfoCreate(xmlrpc_env *               const envP,
         makeCallXml(envP, methodName, paramArrayP, dialect, &callXmlP);
 
         if (!envP->fault_occurred) {
-            xmlrpc_traceXml("XML-RPC CALL", 
-                            XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
-                            XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
-            
             callInfoP->serialized_xml = callXmlP;
             
             callInfoSetCompletion(envP, callInfoP, serverUrl, methodName,
@@ -971,12 +967,17 @@ xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
                    serverInfoP->serverUrl, completionFn, userData,
                    &callInfoP);
 
-    if (!envP->fault_occurred)
+    if (!envP->fault_occurred) {
+        xmlrpc_traceXml(
+            "XML-RPC CALL", 
+            XMLRPC_MEMBLOCK_CONTENTS(char, callInfoP->serialized_xml),
+            XMLRPC_MEMBLOCK_SIZE(char, callInfoP->serialized_xml));
+            
         clientP->transportOps.send_request(
             envP, clientP->transportP, serverInfoP,
             callInfoP->serialized_xml,
             &asynchComplete, callInfoP);
-    
+    }    
     if (envP->fault_occurred)
         callInfoDestroy(callInfoP);
     else {
