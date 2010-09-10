@@ -426,8 +426,8 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
            thread-safe.
         */
     } else {
-        const char * transportName = transportName;
-        struct xportParms transportparms = transportparms;
+        const char * transportName;
+        struct xportParms transportparms;
         const struct xmlrpc_client_transport_ops * transportOpsP;
         xmlrpc_client_transport * transportP;
         xmlrpc_dialect dialect;
@@ -563,7 +563,7 @@ xmlrpc_client_call2(xmlrpc_env *               const envP,
                     xmlrpc_value *             const paramArrayP,
                     xmlrpc_value **            const resultPP) {
 
-    xmlrpc_mem_block * callXmlP = callXmlP;
+    xmlrpc_mem_block * callXmlP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(clientP);
@@ -824,7 +824,7 @@ callInfoCreate(xmlrpc_env *               const envP,
     if (callInfoP == NULL)
         xmlrpc_faultf(envP, "Couldn't allocate memory for xmlrpc_call_info");
     else {
-        xmlrpc_mem_block * callXmlP = callXmlP;
+        xmlrpc_mem_block * callXmlP;
 
         makeCallXml(envP, methodName, paramArrayP, dialect, &callXmlP);
 
@@ -905,7 +905,7 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
    failed the request.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
-    xmlrpc_value * resultP = resultP;
+    xmlrpc_value * resultP;
 
     xmlrpc_env_init(&env);
 
