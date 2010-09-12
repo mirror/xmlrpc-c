@@ -74,6 +74,18 @@ enum xmlrpc_httpproxytype {
     XMLRPC_HTTPPROXY_SOCKS5 = 5
 };
 
+struct xmlrpc_transfer_progress {
+    double total;
+    double now;
+};
+
+struct xmlrpc_curl_progress_data {
+    struct xmlrpc_transfer_progress call;
+    struct xmlrpc_transfer_progress response;
+};
+
+typedef void xmlrpc_curl_progress_fn(struct xmlrpc_curl_progress_data const);
+
 struct xmlrpc_curl_xportparms {
     /* This is designed so that zero values are always the defaults. */
     const char * network_interface;
@@ -104,6 +116,7 @@ struct xmlrpc_curl_xportparms {
            enum xmlrpc_httpproxyauth values
         */
     const char * proxy_userpwd;
+    xmlrpc_curl_progress_fn * progress_fn;
 };
 
 

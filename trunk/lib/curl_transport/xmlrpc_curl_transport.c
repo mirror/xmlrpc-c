@@ -229,6 +229,16 @@ struct xmlrpc_client_transport {
            the transport to give up on whatever it is doing and return ASAP.
 
            NULL means none -- transport never gives up.
+
+           This is constant.
+        */
+    xmlrpc_curl_progress_fn * progress;
+        /* A function that we call every second while transferring data
+           to or from the server.
+
+           NULL means none -- we don't call anything every second.
+
+           This is constant.
         */
 };
 
@@ -828,6 +838,11 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->proxyType = curlXportParmsP->proxy_type;
 
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(progress_fn))
+        transportP->progress = NULL;
+    else
+        transportP->progress = curlXportParmsP->progress_fn;
+
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
 }
 
@@ -1260,14 +1275,43 @@ static curlt_progressFn curlTransactionProgress;
 
 static void
 curlTransactionProgress(void * const context,
+                        double const dlTotal,
+                        double const dlNow,
+                        double const ulTotal,
+                        double const ulNow,
                         bool * const abortP) {
+/*----------------------------------------------------------------------------
+   This is equivalent to a Curl "progress function" (the curlTransaction
+   object just passes through the call from libcurl).
 
+   The curlTransaction calls this once a second telling us how much
+   data has transferred.  If the transport user has set up a progress
+   function, we call that with this progress information.  That 
+   function might e.g. display a progress bar.
+
+   Additionally, the curlTransaction gives us the opportunity to tell it
+   to abort the transaction, which we do if the user has set his
+   "interrupt" flag (which he registered with the transport when he
+   created it).
+-----------------------------------------------------------------------------*/
     rpc * const rpcP = context;
+    struct xmlrpc_client_transport * const transportP = rpcP->transportP;
 
     assert(rpcP);
+    assert(transportP);
 
-    if (rpcP->transportP->interruptP)
-        *abortP = *rpcP->transportP->interruptP;
+    struct xmlrpc_curl_progress_data progressData;
+
+    progressData.response.total = dlTotal;
+    progressData.response.now   = dlNow;
+    progressData.call.total     = ulTotal;
+    progressData.call.now       = ulNow;
+
+    if (transportP->progress)
+        transportP->progress(progressData);
+
+    if (transportP->interruptP)
+        *abortP = *transportP->interruptP;
     else
         *abortP = false;
 }

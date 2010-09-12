@@ -292,42 +292,40 @@ collect(void *  const ptr,
 
 static int
 curlProgress(void * const contextP,
-             double const dltotal  ATTR_UNUSED,
-             double const dlnow    ATTR_UNUSED,
-             double const ultotal  ATTR_UNUSED,
-             double const ulnow    ATTR_UNUSED) {
+             double const dltotal,
+             double const dlnow,
+             double const ultotal,
+             double const ulnow) {
 /*----------------------------------------------------------------------------
-   This is a Curl "progress function."  It's something various Curl
-   functions call every so often, including whenever something gets
-   interrupted by the process receiving, and catching, a signal.
-   There are two purposes of a Curl progress function: 1) lets us log
-   the progress of a long-running transaction such as a big download,
-   e.g. by displaying a progress bar somewhere.  In Xmlrpc-c, we don't
-   implement this purpose.  2) allows us to tell the Curl function,
-   via our return code, that calls it that we don't want to wait
-   anymore for the operation to complete.
+   This is a Curl "progress function."  It's something various Curl functions
+   call every so often, including whenever something gets interrupted by the
+   process receiving, and catching, a signal.  There are two purposes of a
+   Curl progress function: 1) lets us log the progress of a long-running
+   transaction such as a big download, e.g. by displaying a progress bar
+   somewhere.  2) allows us to tell the Curl function, via our return code,
+   that calls it that we don't want to wait anymore for the operation to
+   complete.
 
-   In Curl versions before March 2007, we get called once per second
-   and signals have no effect.  In current Curl, we usually get called
-   immediately after a signal gets caught while Curl is waiting to
-   receive a response from the server.  But Curl doesn't properly
-   synchronize with signals, so it may miss one and then we don't get
-   called until the next scheduled one-per-second call.
+   In Curl versions before March 2007, we get called once per second and
+   signals have no effect.  In current Curl, we usually get called immediately
+   after a signal gets caught while Curl is waiting to receive a response from
+   the server.  But Curl doesn't properly synchronize with signals, so it may
+   miss one and then we don't get called until the next scheduled
+   one-per-second call.
 
-   All we do is tell Caller it's time to give up if the transport's
-   client says it is via his "interrupt" flag.
+   All we do is pass the call through to the curlTransaction's progress
+   function (the one that the creator of the curlTransaction registered).
 
-   This function is not as important as it once was.  This module used
-   to use curl_easy_perform(), which can be interrupted only via this
-   progress function.  But because of the above-mentioned failure of
-   Curl to properly synchronize signals (and Bryan's failure to get
-   Curl developers to accept code to fix it), we now use the Curl
-   "multi" facility instead and do our own pselect().  But
-   This function still normally gets called by curl_multi_perform(),
-   which the transport tries to call even when the user has requested
-   interruption, because we don't trust our ability to abort a running
-   Curl transaction.  curl_multi_perform() reliably winds up a Curl
-   transaction when this function tells it to.
+   This function is not as important as it once was for interrupting purposes.
+   This module used to use curl_easy_perform(), which can be interrupted only
+   via this progress function.  But because of the above-mentioned failure of
+   Curl to properly synchronize signals (and Bryan's failure to get Curl
+   developers to accept code to fix it), we now use the Curl "multi" facility
+   instead and do our own pselect().  But This function still normally gets
+   called by curl_multi_perform(), which the transport tries to call even when
+   the user has requested interruption, because we don't trust our ability to
+   abort a running Curl transaction.  curl_multi_perform() reliably winds up a
+   Curl transaction when this function tells it to.
 -----------------------------------------------------------------------------*/
     curlTransaction * const curlTransactionP = contextP;
 
@@ -339,7 +337,9 @@ curlProgress(void * const contextP,
     assert(curlTransactionP);
     assert(curlTransactionP->progress);
 
-    curlTransactionP->progress(curlTransactionP->userContextP, &abort);
+    curlTransactionP->progress(curlTransactionP->userContextP,
+                               dltotal, dlnow, ultotal, ulnow,
+                               &abort);
 
     return abort;
 }
