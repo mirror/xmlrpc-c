@@ -39,12 +39,14 @@ testGlobalConst(void) {
 
 
 
-static xmlrpc_curl_progress_fn myProgress;
+static xmlrpc_progress_fn myProgress;
 
 static void
-myProgress(struct xmlrpc_curl_progress_data const data) {
+myProgress(void *                      const userHandle,
+           struct xmlrpc_progress_data const data) {
 
-    printf("Progress: %f, %f, %f, %f\n",
+    printf("Progress of %p: %f, %f, %f, %f\n",
+           userHandle,
            data.call.total,
            data.call.now,
            data.response.total,
@@ -113,8 +115,7 @@ testCreateCurlParms(void) {
     curlTransportParms1.proxy_port        = 0;
     curlTransportParms1.proxy_type        = XMLRPC_HTTPPROXY_HTTP;
     curlTransportParms1.proxy_auth        = XMLRPC_HTTPAUTH_NONE;
-    curlTransportParms1.progress_fn       = &myProgress;
-    clientParms1.transportparm_size = XMLRPC_CXPSIZE(progress_fn);
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(proxy_auth);
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
                          &clientParms1, XMLRPC_CPSIZE(transportparm_size),
                          &clientP);
@@ -251,8 +252,9 @@ testCreateDestroy(void) {
     clientParms1.transportOpsP = NULL;
     clientParms1.transportP    = NULL;
     clientParms1.dialect       = xmlrpc_dialect_apache;
+    clientParms1.progressFn    = &myProgress;
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
-                         &clientParms1, XMLRPC_CPSIZE(dialect),
+                         &clientParms1, XMLRPC_CPSIZE(progressFn),
                          &clientP);
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);

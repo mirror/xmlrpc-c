@@ -42,6 +42,7 @@ struct xmlrpc_client {
     struct xmlrpc_client_transport *   transportP;
     struct xmlrpc_client_transport_ops transportOps;
     xmlrpc_dialect                     dialect;
+    xmlrpc_progress_fn *               progressFn;
 };
 
 
@@ -56,17 +57,21 @@ struct xmlrpc_call_info {
        storage, and we need to keep this info in our own.
     */
 
+    void * userHandle;
+        /* This is a handle for this call that is meaningful to our
+           user.
+        */
+    xmlrpc_progress_fn * progressFn;
     struct {
-        /* This are arguments to pass to the completion function.  It
+        /* These are arguments to pass to the completion function.  It
            doesn't make sense to use them for anything else.  In fact, it
            really doesn't make sense for them to be arguments to the
            completion function, but they are historically.  */
         const char *   serverUrl;
         const char *   methodName;
         xmlrpc_value * paramArrayP;
-        void *         userData;
     } completionArgs;
-    xmlrpc_response_handler completionFn;
+    xmlrpc_response_handler * completionFn;
 
     
     /* The serialized XML data passed to this call. We keep this around
@@ -336,6 +341,7 @@ clientCreate(
     const struct xmlrpc_client_transport_ops * const transportOpsP,
     struct xmlrpc_client_transport *           const transportP,
     xmlrpc_dialect                             const dialect,
+    xmlrpc_progress_fn *                       const progressFn,
     xmlrpc_client **                           const clientPP) {
 
     XMLRPC_ASSERT_PTR_OK(transportOpsP);
@@ -362,6 +368,7 @@ clientCreate(
             clientP->transportOps = *transportOpsP;
             clientP->transportP   = transportP;
             clientP->dialect      = dialect;
+            clientP->progressFn   = progressFn;
             
             *clientPP = clientP;
         }
@@ -372,15 +379,16 @@ clientCreate(
 
 static void
 createTransportAndClient(
-    xmlrpc_env *     const envP,
-    const char *     const transportName,
-    const void *     const transportparmsP,
-    size_t           const transportparmSize,
-    int              const flags,
-    const char *     const appname,
-    const char *     const appversion,
-    xmlrpc_dialect   const dialect,
-    xmlrpc_client ** const clientPP) {
+    xmlrpc_env *         const envP,
+    const char *         const transportName,
+    const void *         const transportparmsP,
+    size_t               const transportparmSize,
+    int                  const flags,
+    const char *         const appname,
+    const char *         const appversion,
+    xmlrpc_dialect       const dialect,
+    xmlrpc_progress_fn * const progressFn,
+    xmlrpc_client **     const clientPP) {
 
     const struct xmlrpc_client_transport_ops * transportOpsP;
 
@@ -397,7 +405,7 @@ createTransportAndClient(
             bool const myTransportTrue = true;
 
             clientCreate(envP, myTransportTrue, transportOpsP, transportP,
-                         dialect, clientPP);
+                         dialect, progressFn, clientPP);
             
             if (envP->fault_occurred)
                 transportOpsP->destroy(transportP);
@@ -431,11 +439,14 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
         const struct xmlrpc_client_transport_ops * transportOpsP;
         xmlrpc_client_transport * transportP;
         xmlrpc_dialect dialect;
+        xmlrpc_progress_fn * progressFn;
 
         getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
                          &transportparms, &transportOpsP, &transportP);
         
         getDialectFromClientParms(clientparmsP, parmSize, &dialect);
+
+        progressFn = parmSize >= XMLRPC_CPSIZE(progressFn) ? progressFn : NULL;
             
         if (!envP->fault_occurred) {
             if (transportName)
@@ -443,11 +454,13 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
                                          transportparms.parmsP,
                                          transportparms.size,
                                          flags, appname, appversion, dialect,
+                                         progressFn,
                                          clientPP);
             else {
                 bool myTransportFalse = false;
                 clientCreate(envP, myTransportFalse,
-                             transportOpsP, transportP, dialect, clientPP);
+                             transportOpsP, transportP, dialect, progressFn,
+                             clientPP);
             }
         }
     }
@@ -778,10 +791,15 @@ callInfoSetCompletion(xmlrpc_env *              const envP,
                       const char *              const methodName,
                       xmlrpc_value *            const paramArrayP,
                       xmlrpc_response_handler         completionFn,
-                      void *                    const userData) {
-
+                      xmlrpc_progress_fn              progressFn,
+                      void *                    const userHandle) {
+/*----------------------------------------------------------------------------
+   Set the members of callinfo structure *callInfoP that are used for
+   the completion and progress calls from the transport to us.
+-----------------------------------------------------------------------------*/
     callInfoP->completionFn = completionFn;
-    callInfoP->completionArgs.userData = userData;
+    callInfoP->progressFn   = progressFn;
+    callInfoP->userHandle   = userHandle;
     callInfoP->completionArgs.serverUrl = strdup(serverUrl);
     if (callInfoP->completionArgs.serverUrl == NULL)
         xmlrpc_faultf(envP, "Couldn't get memory to store server URL");
@@ -807,7 +825,8 @@ callInfoCreate(xmlrpc_env *               const envP,
                xmlrpc_dialect             const dialect,
                const char *               const serverUrl,
                xmlrpc_response_handler          completionFn,
-               void *                     const userData,
+               xmlrpc_progress_fn               progressFn,
+               void *                     const userHandle,
                struct xmlrpc_call_info ** const callInfoPP) {
 /*----------------------------------------------------------------------------
    Create a call_info object.  A call_info object represents an XML-RPC
@@ -832,7 +851,8 @@ callInfoCreate(xmlrpc_env *               const envP,
             callInfoP->serialized_xml = callXmlP;
             
             callInfoSetCompletion(envP, callInfoP, serverUrl, methodName,
-                                  paramArrayP, completionFn, userData);
+                                  paramArrayP,
+                                  completionFn, progressFn, userHandle);
 
             if (envP->fault_occurred)
                 free(callInfoP);
@@ -933,7 +953,7 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
     (*callInfoP->completionFn)(callInfoP->completionArgs.serverUrl, 
                                callInfoP->completionArgs.methodName, 
                                callInfoP->completionArgs.paramArrayP,
-                               callInfoP->completionArgs.userData,
+                               callInfoP->userHandle,
                                &env, resultP);
 
     if (!env.fault_occurred)
@@ -946,14 +966,28 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
 
 
 
+static void
+progress(struct xmlrpc_call_info *    const callInfoP,
+         struct xmlrpc_progress_data  const progressData) {
+
+    /* We wouldn't have asked the transport to call our progress
+       function if we didn't have a user progress function to call:
+    */
+    assert(callInfoP->progressFn);
+
+    callInfoP->progressFn(callInfoP->userHandle, progressData);
+}
+
+
+
 void
 xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
                         struct xmlrpc_client *     const clientP,
                         const xmlrpc_server_info * const serverInfoP,
                         const char *               const methodName,
-                        xmlrpc_value *             const argP,
+                        xmlrpc_value *             const paramArrayP,
                         xmlrpc_response_handler          completionFn,
-                        void *                     const userData) {
+                        void *                     const userHandle) {
     
     struct xmlrpc_call_info * callInfoP;
 
@@ -961,10 +995,11 @@ xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
     XMLRPC_ASSERT_PTR_OK(clientP);
     XMLRPC_ASSERT_PTR_OK(serverInfoP);
     XMLRPC_ASSERT_PTR_OK(methodName);
-    XMLRPC_ASSERT_VALUE_OK(argP);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
 
-    callInfoCreate(envP, methodName, argP, clientP->dialect,
-                   serverInfoP->serverUrl, completionFn, userData,
+    callInfoCreate(envP, methodName, paramArrayP, clientP->dialect,
+                   serverInfoP->serverUrl,
+                   completionFn, clientP->progressFn, userHandle,
                    &callInfoP);
 
     if (!envP->fault_occurred) {
@@ -976,7 +1011,8 @@ xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
         clientP->transportOps.send_request(
             envP, clientP->transportP, serverInfoP,
             callInfoP->serialized_xml,
-            &asynchComplete, callInfoP);
+            &asynchComplete, clientP->progressFn ? &progress : NULL,
+            callInfoP);
     }    
     if (envP->fault_occurred)
         callInfoDestroy(callInfoP);
@@ -994,7 +1030,7 @@ xmlrpc_client_start_rpcf_server_va(
     const xmlrpc_server_info * const serverInfoP,
     const char *               const methodName,
     xmlrpc_response_handler responseHandler,
-    void *                     const userData,
+    void *                     const userHandle,
     const char *               const format,
     va_list                    args) {
     
@@ -1012,7 +1048,7 @@ xmlrpc_client_start_rpcf_server_va(
     if (!envP->fault_occurred) {
         xmlrpc_client_start_rpc(envP, clientP,
                                 serverInfoP, methodName, paramArrayP,
-                                responseHandler, userData);
+                                responseHandler, userHandle);
         
         xmlrpc_DECREF(paramArrayP);
     }
@@ -1026,7 +1062,7 @@ xmlrpc_client_start_rpcf_va(xmlrpc_env *    const envP,
                             const char *    const serverUrl,
                             const char *    const methodName,
                             xmlrpc_response_handler responseHandler,
-                            void *          const userData,
+                            void *          const userHandle,
                             const char *    const format,
                             va_list               args) {
 
@@ -1037,7 +1073,7 @@ xmlrpc_client_start_rpcf_va(xmlrpc_env *    const envP,
         xmlrpc_client_start_rpcf_server_va(
             envP, clientP,
             serverInfoP, methodName,
-            responseHandler, userData,
+            responseHandler, userHandle,
             format, args);
         
         xmlrpc_server_info_free(serverInfoP);
@@ -1052,7 +1088,7 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          const char *    const serverUrl,
                          const char *    const methodName,
                          xmlrpc_response_handler responseHandler,
-                         void *          const userData,
+                         void *          const userHandle,
                          const char *    const format,
                          ...) {
 
@@ -1063,7 +1099,7 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
     va_start(args, format);
     xmlrpc_client_start_rpcf_va(envP, clientP, serverUrl, methodName,
                                 responseHandler,
-                                userData, format, args);
+                                userHandle, format, args);
     va_end(args);
 }
 

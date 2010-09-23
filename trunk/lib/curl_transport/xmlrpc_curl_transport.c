@@ -232,14 +232,6 @@ struct xmlrpc_client_transport {
 
            This is constant.
         */
-    xmlrpc_curl_progress_fn * progress;
-        /* A function that we call every second while transferring data
-           to or from the server.
-
-           NULL means none -- we don't call anything every second.
-
-           This is constant.
-        */
 };
 
 
@@ -260,6 +252,10 @@ struct rpc {
     xmlrpc_transport_asynch_complete complete;
         /* Routine to call to complete the RPC after it is complete HTTP-wise.
            NULL if none.
+        */
+    xmlrpc_transport_progress progress;
+        /* Routine to call periodically to report the progress of transporting
+           the call and response.  NULL if none.
         */
     struct xmlrpc_call_info * callInfoP;
         /* User's identifier for this RPC */
@@ -838,11 +834,6 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->proxyType = curlXportParmsP->proxy_type;
 
-    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(progress_fn))
-        transportP->progress = NULL;
-    else
-        transportP->progress = curlXportParmsP->progress_fn;
-
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
 }
 
@@ -1167,6 +1158,7 @@ createRpc(xmlrpc_env *                     const envP,
           xmlrpc_mem_block *               const callXmlP,
           xmlrpc_mem_block *               const responseXmlP,
           xmlrpc_transport_asynch_complete       complete, 
+          xmlrpc_transport_progress              progress,
           struct xmlrpc_call_info *        const callInfoP,
           rpc **                           const rpcPP) {
 
@@ -1180,6 +1172,7 @@ createRpc(xmlrpc_env *                     const envP,
         rpcP->curlSessionP = curlSessionP;
         rpcP->callInfoP    = callInfoP;
         rpcP->complete     = complete;
+        rpcP->progress     = progress;
         rpcP->responseXmlP = responseXmlP;
 
         curlTransaction_create(envP,
@@ -1191,7 +1184,7 @@ createRpc(xmlrpc_env *                     const envP,
                                &clientTransportP->curlSetupStuff,
                                rpcP,
                                complete ? &finishRpcCurlTransaction : NULL,
-                               &curlTransactionProgress,
+                               progress ? &curlTransactionProgress : NULL,
                                &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (envP->fault_occurred)
@@ -1299,16 +1292,16 @@ curlTransactionProgress(void * const context,
 
     assert(rpcP);
     assert(transportP);
+    assert(rpcP->progress);
 
-    struct xmlrpc_curl_progress_data progressData;
+    struct xmlrpc_progress_data progressData;
 
     progressData.response.total = dlTotal;
     progressData.response.now   = dlNow;
     progressData.call.total     = ulTotal;
     progressData.call.now       = ulNow;
 
-    if (transportP->progress)
-        transportP->progress(progressData);
+    rpcP->progress(rpcP->callInfoP, progressData);
 
     if (transportP->interruptP)
         *abortP = *transportP->interruptP;
@@ -1324,6 +1317,7 @@ sendRequest(xmlrpc_env *                     const envP,
             const xmlrpc_server_info *       const serverP,
             xmlrpc_mem_block *               const callXmlP,
             xmlrpc_transport_asynch_complete       complete,
+            xmlrpc_transport_progress              progress,
             struct xmlrpc_call_info *        const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
@@ -1346,7 +1340,7 @@ sendRequest(xmlrpc_env *                     const envP,
                           "curl_easy_init() failed.");
         else {
             createRpc(envP, clientTransportP, curlSessionP, serverP,
-                      callXmlP, responseXmlP, complete, callInfoP,
+                      callXmlP, responseXmlP, complete, progress, callInfoP,
                       &rpcP);
             
             if (!envP->fault_occurred) {
@@ -1469,7 +1463,7 @@ call(xmlrpc_env *                     const envP,
         createRpc(envP, clientTransportP, clientTransportP->syncCurlSessionP,
                   serverP,
                   callXmlP, responseXmlP,
-                  NULL, NULL,
+                  NULL, NULL, NULL,
                   &rpcP);
 
         if (!envP->fault_occurred) {

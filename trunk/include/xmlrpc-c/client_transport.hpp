@@ -59,6 +59,9 @@ public:
     virtual void
     finishErr(girerr::error const& error) const;
 
+    virtual void
+    progress(struct xmlrpc_progress_data const& progressData) const;
+
 protected:
     xmlTransaction();
 };
@@ -104,6 +107,11 @@ public:
         struct xmlrpc_call_info * const callInfoP,
         xmlrpc_mem_block *        const responseXmlMP,
         xmlrpc_env                const transportEnv);
+
+    static void
+    progress(
+        struct xmlrpc_call_info *   const callInfoP,
+        struct xmlrpc_progress_data const progressData);
 
     virtual void
     setInterrupt(int * const interruptP);

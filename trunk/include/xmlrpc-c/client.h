@@ -74,18 +74,6 @@ enum xmlrpc_httpproxytype {
     XMLRPC_HTTPPROXY_SOCKS5 = 5
 };
 
-struct xmlrpc_transfer_progress {
-    double total;
-    double now;
-};
-
-struct xmlrpc_curl_progress_data {
-    struct xmlrpc_transfer_progress call;
-    struct xmlrpc_transfer_progress response;
-};
-
-typedef void xmlrpc_curl_progress_fn(struct xmlrpc_curl_progress_data const);
-
 struct xmlrpc_curl_xportparms {
     /* This is designed so that zero values are always the defaults. */
     const char * network_interface;
@@ -116,7 +104,6 @@ struct xmlrpc_curl_xportparms {
            enum xmlrpc_httpproxyauth values
         */
     const char * proxy_userpwd;
-    xmlrpc_curl_progress_fn * progress_fn;
 };
 
 
@@ -134,6 +121,19 @@ struct xmlrpc_wininet_xportparms {
 
 /* XMLRPC_WXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
 
+struct xmlrpc_transfer_progress {
+    double total;
+    double now;
+};
+
+struct xmlrpc_progress_data {
+    struct xmlrpc_transfer_progress call;
+    struct xmlrpc_transfer_progress response;
+};
+
+typedef void xmlrpc_progress_fn(void * const,
+                                struct xmlrpc_progress_data const);
+
 struct xmlrpc_clientparms {
     /* (transport, transportparmsP, transportparm_size) and
        (transportOpsP, transportP) are mutually exclusive.
@@ -146,6 +146,7 @@ struct xmlrpc_clientparms {
     const struct xmlrpc_client_transport_ops * transportOpsP;
     xmlrpc_client_transport *  transportP;
     xmlrpc_dialect             dialect;
+    xmlrpc_progress_fn *       progressFn;
 };
 
 #define XMLRPC_CPSIZE(mbrname) \
@@ -163,18 +164,18 @@ xmlrpc_client_get_default_transport(xmlrpc_env * const env);
 
 /* A callback function to handle the response to an asynchronous call.
 ** If 'fault->fault_occurred' is true, then response will be NULL. All
-** arguments except 'user_data' will be deallocated internally; please do
+** arguments except 'userHandle' will be deallocated internally; please do
 ** not free any of them yourself.
-** WARNING: param_array may (or may not) be NULL if fault->fault_occurred
+** WARNING: 'paramArray' may (or may not) be NULL if fault->fault_occurred
 ** is true, and you set up the call using xmlrpc_client_call_asynch.
 ** WARNING: If asynchronous calls are still pending when the library is
 ** shut down, your handler may (or may not) be called with a fault. */
-typedef void (*xmlrpc_response_handler) (const char *server_url,
-                                         const char *method_name,
-                                         xmlrpc_value *param_array,
-                                         void *user_data,
-                                         xmlrpc_env *fault,
-                                         xmlrpc_value *result);
+typedef void xmlrpc_response_handler(const char *   serverUrl,
+                                     const char *   methodName,
+                                     xmlrpc_value * paramArray,
+                                     void *         userHandle,
+                                     xmlrpc_env *   fault,
+                                     xmlrpc_value * result);
 
 
 /*=========================================================================
@@ -318,7 +319,7 @@ xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
                         struct xmlrpc_client *     const clientP,
                         const xmlrpc_server_info * const serverInfoP,
                         const char *               const methodName,
-                        xmlrpc_value *             const argP,
+                        xmlrpc_value *             const paramArrayP,
                         xmlrpc_response_handler          responseHandler,
                         void *                     const userData);
 
@@ -327,7 +328,7 @@ xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          xmlrpc_client * const clientP,
                          const char *    const serverUrl,
                          const char *    const methodName,
-                         xmlrpc_response_handler callback,
+                         xmlrpc_response_handler responseHandler,
                          void *          const userData,
                          const char *    const format,
                          ...);

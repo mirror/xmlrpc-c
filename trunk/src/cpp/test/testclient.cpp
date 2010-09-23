@@ -160,6 +160,64 @@ public:
 
 
 
+class MyRpc : public rpc {
+
+public:
+    MyRpc(std::string const  methodName,
+          paramList   const& paramList) :
+        rpc(methodName, paramList) {}
+
+    void
+    progress(struct xmlrpc_progress_data const& data) const {
+
+        // The way the tests are currently written, this never actually
+        // runs; we're just testing for ability to compile.
+
+        cout << "Progress of " << this << ": "
+             << data.call.total << " "
+             << data.call.now << " "
+             << data.response.total << " "
+             << data.response.now
+             << endl;
+    }
+};
+
+
+
+class clientDerivedRpcTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+  The object of this class tests the ability to derive a class
+  from xmlrpc_c::rpc in order to override certain methods.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "clientDerivedRpcTestSuite";
+    }
+    virtual void runtests(unsigned int const ) {
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        
+        carriageParm_direct carriageParmDirect(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        client_xml clientDirect(&transportDirect);
+        paramList paramListSampleAdd;
+        paramListSampleAdd.add(value_int(5));
+        paramListSampleAdd.add(value_int(7));
+        {
+            /* Test a successful RPC */
+            rpcPtr rpcSampleAddP(new MyRpc("sample.add", paramListSampleAdd));
+            rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcSampleAddP->isFinished());
+            TEST(rpcSampleAddP->isSuccessful());
+            value_int const resultDirect(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(resultDirect) == 12);
+        }
+    }
+};
+
+
+
 class clientDirectTestSuite : public testSuite {
 /*----------------------------------------------------------------------------
   The object of this class tests the client facilities by using a
@@ -243,6 +301,8 @@ public:
             // Same as above
         
         clientDirectAsyncTestSuite().run(indentation+1);
+
+        clientDerivedRpcTestSuite().run(indentation+1);
     }
 };
 
