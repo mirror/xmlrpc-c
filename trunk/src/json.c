@@ -1,9 +1,18 @@
-/**
-   This json parser are written in c to be ar part of the xmlrpc
-   library, and using the xmlrpc-c memory handling and type system.
+/*=============================================================================
+                               json.c
+===============================================================================
 
-   Json : rfc-4627
-*/
+  Bo Lorentsen (bl@lue.dk) had the idea to do XML-RPC values in JSON
+  and wrote the original version of this code in February and March
+  2010.
+
+  Bryan Henderson restructured the code and improved diagnostic information
+  (made it tell you where the JSON is screwed up) before its first release
+  in XML-RPC for C and C++ in Release 1.22.
+
+  JSON: RFC-4627
+=============================================================================*/
+
 #include "xmlrpc_config.h"
 
 #include <assert.h>
@@ -1376,9 +1385,4 @@ xmlrpc_serialize_json(xmlrpc_env *       const envP,
                       xmlrpc_mem_block * const outP) {
 
     serializeValue(envP, valP, 0, outP);
-
-    if (!envP->fault_occurred) {
-        /* Append terminating NUL */
-        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "", 1);
-    }
 }
