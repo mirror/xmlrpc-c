@@ -1006,6 +1006,21 @@ serializeValue(xmlrpc_env *       const envP,
 
 
 static void
+appendEscapeSeq(xmlrpc_env *       const envP,
+                xmlrpc_mem_block * const outP,
+                unsigned char      const c) {
+
+    unsigned int size;
+    char buffer[8];
+
+    size = sprintf(buffer, "\\u%04x", c);
+
+    XMLRPC_MEMBLOCK_APPEND(char, envP, outP, buffer, size);
+}
+
+
+
+static void
 makeJsonString(xmlrpc_env *       const envP,
                const char *       const value,
                size_t             const length,
@@ -1022,61 +1037,28 @@ makeJsonString(xmlrpc_env *       const envP,
     last = cur = begin;
     
     while (cur != end && !envP->fault_occurred) {
-        if (strchr("\"/\\\b\f\n\r", *cur) ||
-            ((unsigned char)*cur) < 0x1F) {
+        unsigned char const c = *cur;
 
-            unsigned int size;
-            char buffer[8];
+        if (c < 0x1F || c == '"' || c == '/' || c == '\\') {
+            /* This characters needs to be escaped.  Put a \uxxxx escape
+               sequence in the output for this character, after copying all
+               the characters before it to the output.
+            */
+            if (cur - last > 1) 
+                XMLRPC_MEMBLOCK_APPEND(char, envP, outP,
+                                       last, (cur - last) - 1);
+            
+            if (!envP->fault_occurred) {
+                appendEscapeSeq(envP, outP, c);
 
-            switch (*cur) {
-            case '\"':
-                buffer[1] = '"';
-                size = 2;
-                break;
-            case '/':
-                buffer[1] = '/';
-                size = 2;
-                break;
-            case '\\':
-                buffer[1] = '\\';
-                size = 2;
-                break;
-            case '\b':
-                buffer[1] = 'b';
-                size = 2;
-                break;
-            case '\f':
-                buffer[1] = 'f';
-                size = 2;
-                break;
-            case '\n':
-                buffer[1] = 'n';
-                size = 2;
-                break;
-            case '\r':
-                buffer[1] = 'r';
-                size = 2;
-                break;
-            default: {
-                    unsigned char const c = (unsigned char)*cur;
-
-                    assert(c < 0x1F);
-                    size = sprintf(buffer, "\\u%04x", c);
-                }
+                ++cur;
+                last = cur;
             }
-            if (cur != last) {
-                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, last, cur - last);
-                if (!envP->fault_occurred)
-                    last = cur;
-            }
-            if (!envP->fault_occurred){
-                buffer[0] = '\\';
-                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, buffer, size);
-            }
-        }
-        ++cur;
+        } else
+            ++cur;
     }
 
+    /* Copy all characters since the last escaped character to the output */
     if (cur != last)
         XMLRPC_MEMBLOCK_APPEND(char, envP, outP, last, cur - last);
 
