@@ -71,6 +71,7 @@ HEADERS_TO_INSTALL = \
   xmlrpc-c/c_util.h \
   xmlrpc-c/util.h \
   xmlrpc-c/base.h \
+  xmlrpc-c/json.h \
   xmlrpc-c/abyss.h \
   xmlrpc-c/abyss_unixsock.h \
   xmlrpc-c/abyss_winsock.h \
