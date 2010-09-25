@@ -1290,11 +1290,11 @@ curlTransactionProgress(void * const context,
     rpc * const rpcP = context;
     struct xmlrpc_client_transport * const transportP = rpcP->transportP;
 
+    struct xmlrpc_progress_data progressData;
+
     assert(rpcP);
     assert(transportP);
     assert(rpcP->progress);
-
-    struct xmlrpc_progress_data progressData;
 
     progressData.response.total = dlTotal;
     progressData.response.now   = dlNow;
