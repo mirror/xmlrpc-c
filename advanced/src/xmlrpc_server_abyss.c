@@ -340,7 +340,7 @@ validateContentType(TSession *     const httpRequestP,
    If the client didn't specify a content-type of "text/xml", fail.
    We can't allow the client to default this header, because some
    firewall software may rely on all XML-RPC requests using the POST
-   method and a content-type of "text/xml".x
+   method and a content-type of "text/xml".
 -----------------------------------------------------------------------------*/
     const char * const content_type =
         RequestHeaderValue(httpRequestP, "content-type");

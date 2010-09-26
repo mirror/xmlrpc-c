@@ -9,7 +9,9 @@
 typedef struct curlTransaction curlTransaction;
 
 typedef void curlt_finishFn(xmlrpc_env * const, void * const);
-typedef void curlt_progressFn(void * const, bool * const);
+typedef void curlt_progressFn(
+    void * const, double const, double const, double const, double const,
+    bool * const);
 
 struct curlSetup {
 

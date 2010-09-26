@@ -243,8 +243,8 @@ parseStruct(xmlrpc_env *    const envP,
                 setParseFault(envP, "<%s> element found where only <member> "
                               "makes sense", elemName);
             else {
-                xmlrpc_value * keyP = keyP;
-                xmlrpc_value * valueP = valueP;
+                xmlrpc_value * keyP;
+                xmlrpc_value * valueP;
 
                 parseMember(envP, members[i], maxRecursion, &keyP, &valueP);
 
@@ -501,7 +501,7 @@ parseDouble(xmlrpc_env *    const envP,
    'str' is that content.
 -----------------------------------------------------------------------------*/
     xmlrpc_env parseEnv;
-    double valueDouble = valueDouble;
+    double valueDouble;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(str);

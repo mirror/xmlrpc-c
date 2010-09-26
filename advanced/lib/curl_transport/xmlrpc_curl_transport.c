@@ -229,6 +229,8 @@ struct xmlrpc_client_transport {
            the transport to give up on whatever it is doing and return ASAP.
 
            NULL means none -- transport never gives up.
+
+           This is constant.
         */
 };
 
@@ -250,6 +252,10 @@ struct rpc {
     xmlrpc_transport_asynch_complete complete;
         /* Routine to call to complete the RPC after it is complete HTTP-wise.
            NULL if none.
+        */
+    xmlrpc_transport_progress progress;
+        /* Routine to call periodically to report the progress of transporting
+           the call and response.  NULL if none.
         */
     struct xmlrpc_call_info * callInfoP;
         /* User's identifier for this RPC */
@@ -345,7 +351,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
    wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
     unsigned int const million = 1000000;
-    unsigned int selectTimeoutMillisec = selectTimeoutMillisec;
+    unsigned int selectTimeoutMillisec;
     xmlrpc_timespec retval;
 
     /* We assume there is work to do at least every 3 seconds, because
@@ -1152,6 +1158,7 @@ createRpc(xmlrpc_env *                     const envP,
           xmlrpc_mem_block *               const callXmlP,
           xmlrpc_mem_block *               const responseXmlP,
           xmlrpc_transport_asynch_complete       complete, 
+          xmlrpc_transport_progress              progress,
           struct xmlrpc_call_info *        const callInfoP,
           rpc **                           const rpcPP) {
 
@@ -1165,6 +1172,7 @@ createRpc(xmlrpc_env *                     const envP,
         rpcP->curlSessionP = curlSessionP;
         rpcP->callInfoP    = callInfoP;
         rpcP->complete     = complete;
+        rpcP->progress     = progress;
         rpcP->responseXmlP = responseXmlP;
 
         curlTransaction_create(envP,
@@ -1176,7 +1184,7 @@ createRpc(xmlrpc_env *                     const envP,
                                &clientTransportP->curlSetupStuff,
                                rpcP,
                                complete ? &finishRpcCurlTransaction : NULL,
-                               &curlTransactionProgress,
+                               progress ? &curlTransactionProgress : NULL,
                                &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (envP->fault_occurred)
@@ -1260,14 +1268,43 @@ static curlt_progressFn curlTransactionProgress;
 
 static void
 curlTransactionProgress(void * const context,
+                        double const dlTotal,
+                        double const dlNow,
+                        double const ulTotal,
+                        double const ulNow,
                         bool * const abortP) {
+/*----------------------------------------------------------------------------
+   This is equivalent to a Curl "progress function" (the curlTransaction
+   object just passes through the call from libcurl).
 
+   The curlTransaction calls this once a second telling us how much
+   data has transferred.  If the transport user has set up a progress
+   function, we call that with this progress information.  That 
+   function might e.g. display a progress bar.
+
+   Additionally, the curlTransaction gives us the opportunity to tell it
+   to abort the transaction, which we do if the user has set his
+   "interrupt" flag (which he registered with the transport when he
+   created it).
+-----------------------------------------------------------------------------*/
     rpc * const rpcP = context;
+    struct xmlrpc_client_transport * const transportP = rpcP->transportP;
+
+    struct xmlrpc_progress_data progressData;
 
     assert(rpcP);
+    assert(transportP);
+    assert(rpcP->progress);
 
-    if (rpcP->transportP->interruptP)
-        *abortP = *rpcP->transportP->interruptP;
+    progressData.response.total = dlTotal;
+    progressData.response.now   = dlNow;
+    progressData.call.total     = ulTotal;
+    progressData.call.now       = ulNow;
+
+    rpcP->progress(rpcP->callInfoP, progressData);
+
+    if (transportP->interruptP)
+        *abortP = *transportP->interruptP;
     else
         *abortP = false;
 }
@@ -1280,6 +1317,7 @@ sendRequest(xmlrpc_env *                     const envP,
             const xmlrpc_server_info *       const serverP,
             xmlrpc_mem_block *               const callXmlP,
             xmlrpc_transport_asynch_complete       complete,
+            xmlrpc_transport_progress              progress,
             struct xmlrpc_call_info *        const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
@@ -1302,7 +1340,7 @@ sendRequest(xmlrpc_env *                     const envP,
                           "curl_easy_init() failed.");
         else {
             createRpc(envP, clientTransportP, curlSessionP, serverP,
-                      callXmlP, responseXmlP, complete, callInfoP,
+                      callXmlP, responseXmlP, complete, progress, callInfoP,
                       &rpcP);
             
             if (!envP->fault_occurred) {
@@ -1425,7 +1463,7 @@ call(xmlrpc_env *                     const envP,
         createRpc(envP, clientTransportP, clientTransportP->syncCurlSessionP,
                   serverP,
                   callXmlP, responseXmlP,
-                  NULL, NULL,
+                  NULL, NULL, NULL,
                   &rpcP);
 
         if (!envP->fault_occurred) {

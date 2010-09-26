@@ -26,6 +26,9 @@ public:
     virtual void
     finishErr(girerr::error const& error) = 0;
 
+    virtual void
+    progress(struct xmlrpc_progress_data const& progressData) const = 0;
+
 protected:
     clientTransaction();
 };
@@ -190,6 +193,10 @@ public:
 
     void
     finishErr(girerr::error const& error) const;
+
+    void
+    progress(xmlrpc_progress_data const& progressData) const;
+
 private:
     xmlrpc_c::clientTransactionPtr const tranP;
 };
@@ -249,6 +256,9 @@ public:
 
     virtual void
     notifyComplete();
+
+    virtual void
+    progress(struct xmlrpc_progress_data const& progressData) const;
 
     bool
     isFinished() const;

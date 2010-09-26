@@ -465,7 +465,7 @@ computeParamArray(xmlrpc_env *    const envP,
     paramArrayP = xmlrpc_array_new(envP);
 
     for (i = 0; i < paramCount && !envP->fault_occurred; ++i) {
-        xmlrpc_value * paramP = paramP;
+        xmlrpc_value * paramP;
 
         computeParameter(envP, params[i], &paramP);
 
@@ -581,10 +581,10 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
-    struct cmdlineInfo cmdline = cmdline;
+    struct cmdlineInfo cmdline;
     xmlrpc_env env;
     xmlrpc_value * paramArrayP;
-    xmlrpc_value * resultP = resultP;
+    xmlrpc_value * resultP;
     const char * url;
     xmlrpc_server_info * serverInfoP;
 
