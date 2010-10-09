@@ -1053,9 +1053,7 @@ makeJsonString(xmlrpc_env *       const envP,
                sequence in the output for this character, after copying all
                the characters before it to the output.
             */
-            if (cur - last > 1) 
-                XMLRPC_MEMBLOCK_APPEND(char, envP, outP,
-                                       last, (cur - last) - 1);
+            XMLRPC_MEMBLOCK_APPEND(char, envP, outP, last, cur - last);
             
             if (!envP->fault_occurred) {
                 appendEscapeSeq(envP, outP, c);
@@ -1179,6 +1177,7 @@ serializeString(xmlrpc_env * const envP,
     
     formatOut(envP, outP, "\"");
 }
+
 
 
 static void
