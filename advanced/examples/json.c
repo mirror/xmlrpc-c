@@ -40,7 +40,9 @@ printAsXml(xmlrpc_value * const valP) {
 
     printf("XML-RPC XML:\n");
 
-    printf("%s\n", XMLRPC_MEMBLOCK_CONTENTS(char, &out));
+    printf("%.*s\n",
+           XMLRPC_MEMBLOCK_SIZE(char, &out),
+           XMLRPC_MEMBLOCK_CONTENTS(char, &out));
 
     XMLRPC_MEMBLOCK_CLEAN(char, &out);
     xmlrpc_env_clean(&env);
@@ -67,7 +69,9 @@ printAsJson(xmlrpc_value * const valP) {
 
     printf("JSON:\n");
 
-    printf("%s\n", XMLRPC_MEMBLOCK_CONTENTS(char, &out));
+    printf("%.*s\n",
+           XMLRPC_MEMBLOCK_SIZE(char, &out),
+           XMLRPC_MEMBLOCK_CONTENTS(char, &out));
 
     XMLRPC_MEMBLOCK_CLEAN(char, &out);
     xmlrpc_env_clean(&env);
