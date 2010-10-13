@@ -189,18 +189,22 @@ finishStringToken(xmlrpc_env *   const envP,
             case 'n':
             case 'r':
             case 't':
-                tokP->end++;
+                ++tokP->end;
                 break;
             case 'u': {
-                const char *cur = ++tokP->end;
-                    
-                while( isxdigit(*cur))
+                const char * cur;
+
+                ++tokP->end;
+
+                cur = tokP->end;
+
+                while (isxdigit(*cur) && cur - tokP->end < 4)
                     ++cur;
                 
-                if (cur - tokP->end != 4)
+                if (cur - tokP->end < 4)
                     setParseErr(envP, tokP,
                                 "hex unicode must contain 4 digits.  "
-                                "There are %u here", cur - tokP->end);
+                                "There are only %u here", cur - tokP->end);
                 else
                     tokP->end = cur;
             } break;
