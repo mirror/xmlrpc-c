@@ -32,9 +32,11 @@
   /* Newer MSVC has long long, but MSVC 6 does not */
   #define XMLRPC_INT64 __int64
   #define XMLRPC_INT32 __int32
+  #define XMLRPC_PRId64 PRId64
 #else
   #define XMLRPC_INT64 long long
   #define XMLRPC_INT32 int
+  #define XMLRPC_PRId64 "I64d"
 #endif
 #endif
 
