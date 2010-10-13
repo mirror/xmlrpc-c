@@ -524,12 +524,17 @@ getBackslashSequence(xmlrpc_env *       const envP,
         tsize = 1;
         *nBytesConsumedP = 1;
         break;
+    case 't':
+        buffer[0] = '\t';
+        tsize = 1;
+        *nBytesConsumedP = 1;
+        break;    
     case 'u': {
         long digit;
         strncpy(buffer, cur + 1, 4);
         digit = strtol(buffer, NULL, 16);
         tsize = utf8Decode(digit, buffer);
-        *nBytesConsumedP = 4;
+        *nBytesConsumedP = 5;  /* uXXXX */
         break;
     }
     default:
@@ -570,7 +575,7 @@ unescapeString(xmlrpc_env *       const envP,
                 if (!envP->fault_occurred) {
                     unsigned int nBytesConsumed;
 
-                    cur += 1;
+                    cur += 1;  /* consume slash */
 
                     getBackslashSequence(envP, cur, memBlockP,
                                          &nBytesConsumed);
