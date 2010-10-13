@@ -1,8 +1,8 @@
-# Since the programs in this directories are examples for the user, this
-# make file should be as ordinary as possible.  It should not rely heavily
-# on included make files or configuration parameters.  It should not use
-# libtool.  Also, we don't try to build or rebuild the libraries on which
-# these programs depend.
+# Since the programs in this directory are examples for the user, this make
+# file should be as ordinary as possible.  It should not rely heavily on
+# included make files or configuration parameters.  Also, we don't try to
+# build or rebuild the libraries on which these programs depend or even
+# recognize that they've changed on their own.
 
 
 ifeq ($(SRCDIR),)
