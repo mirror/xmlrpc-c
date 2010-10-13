@@ -1023,11 +1023,36 @@ static void
 appendEscapeSeq(xmlrpc_env *       const envP,
                 xmlrpc_mem_block * const outP,
                 unsigned char      const c) {
+/*----------------------------------------------------------------------------
+   Append to *outP the escaped representation of 'c'.
 
+   This is e.g. "\t" for tab, or "\u001C" for something exotic.
+-----------------------------------------------------------------------------*/
     unsigned int size;
-    char buffer[8];
+    char buffer[6];
+    char slashChar;
+        /* Character that goes after the backslash, including 'u' for \uHHHH */
+    
+    switch (c) {
+    case '"' : slashChar = '"';  break; /* U+0022 */
+    case '\\': slashChar = '\\'; break; /* U+005C */
+    case '\b': slashChar = 'b';  break; /* U+0008 */
+    case '\f': slashChar = 'f';  break; /* U+000C */
+    case '\n': slashChar = 'n';  break; /* U+000A */
+    case '\r': slashChar = 'r';  break; /* U+000D */
+    case '\t': slashChar = 't';  break; /* U+0009 */
+    default:
+        slashChar = 'u';
+    };
 
-    size = sprintf(buffer, "\\u%04x", c);
+    buffer[0] = '\\';
+    buffer[1] = slashChar;
+    
+    if (slashChar == 'u') {
+        sprintf(&buffer[2], "%04x", c);
+        size = 6;  /* \u1234 */
+    } else
+        size = 2;
 
     XMLRPC_MEMBLOCK_APPEND(char, envP, outP, buffer, size);
 }
@@ -1053,8 +1078,8 @@ makeJsonString(xmlrpc_env *       const envP,
     while (cur != end && !envP->fault_occurred) {
         unsigned char const c = *cur;
 
-        if (c < 0x1F || c == '"' || c == '/' || c == '\\') {
-            /* This characters needs to be escaped.  Put a \uxxxx escape
+        if (c < 0x1F || c == '"' || c == '\\') {
+            /* This characters needs to be escaped.  Put a backslash escape
                sequence in the output for this character, after copying all
                the characters before it to the output.
             */
