@@ -446,7 +446,8 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
         
         getDialectFromClientParms(clientparmsP, parmSize, &dialect);
 
-        progressFn = parmSize >= XMLRPC_CPSIZE(progressFn) ? progressFn : NULL;
+        progressFn = parmSize >= XMLRPC_CPSIZE(progressFn) ?
+            clientparmsP->progressFn : NULL;
             
         if (!envP->fault_occurred) {
             if (transportName)
