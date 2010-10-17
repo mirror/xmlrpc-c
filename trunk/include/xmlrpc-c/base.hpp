@@ -79,6 +79,10 @@ public:
 
     xmlrpc_value * cValueP;
         // NULL means this is merely a placeholder object.
+
+protected:
+    void
+    validateInstantiated() const;
 };
 
 
