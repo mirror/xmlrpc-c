@@ -163,7 +163,7 @@ decodeMultibyte(xmlrpc_env * const envP,
 
    Return the character in UTF-16 format as *wcP.
 -----------------------------------------------------------------------------*/
-    wchar_t wc = wc;
+    wchar_t wc;
 
     assert(utf8_seq[0] & 0x80); /* High bit set: this is multibyte seq */
 
@@ -257,7 +257,7 @@ decodeUtf8(xmlrpc_env * const envP,
         char const init = utf8_data[utf8Cursor];
             /* Initial byte of the UTF-8 sequence */
 
-        wchar_t wc = wc;
+        wchar_t wc;
 
         if ((init & 0x80) == 0x00) {
             /* Convert ASCII character to wide character. */
@@ -442,7 +442,7 @@ xmlrpc_force_to_utf8(char * const buffer) {
         unsigned int const length = utf8SeqLength[(unsigned char) *p];
 
         bool forceDel;
-        uint32_t decoded = decoded;
+        uint32_t decoded;
 
         forceDel = false;  /* initial value */
 

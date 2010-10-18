@@ -161,7 +161,6 @@ xmlrpc_client_call_server(xmlrpc_env *               const envP,
 
     if (!envP->fault_occurred) {
         va_list args;
-        xmlrpc_value * resultP;
 
         va_start(args, format);
 
