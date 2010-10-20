@@ -132,7 +132,7 @@ addAuthCookie(xmlrpc_env * const envP,
     
     xmlrpc_asprintf(&cookieResponse, "auth=%s", authCookie);
     
-    if (cookieResponse == xmlrpc_strsol)
+    if (xmlrpc_strnomem(cookieResponse))
         xmlrpc_faultf(envP, "Insufficient memory to generate cookie "
                       "response header.");
     else {

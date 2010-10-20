@@ -750,7 +750,7 @@ xmlrpc_string_new_va(xmlrpc_env * const envP,
     
     xmlrpc_vasprintf(&formattedString, format, args);
 
-    if (formattedString == xmlrpc_strsol) {
+    if (xmlrpc_strnomem(formattedString)) {
         xmlrpc_faultf(envP, "Out of memory building formatted string");
         retvalP = NULL;  /* defeat compiler warning */
     } else

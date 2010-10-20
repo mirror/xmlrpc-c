@@ -140,7 +140,7 @@ addUserAgentHeader(xmlrpc_env *         const envP,
 
         const char * const xmlrpcPart = xmlrpcUserAgentPart(reportXmlrpc);
 
-        if (xmlrpcPart == xmlrpc_strsol)
+        if (xmlrpc_strnomem(xmlrpcPart))
             xmlrpc_faultf(envP, "Couldn't allocate memory for "
                           "User-Agent header");
         else {
@@ -153,7 +153,7 @@ addUserAgentHeader(xmlrpc_env *         const envP,
                             "User-Agent: %s%s%s",
                             userPart, space, xmlrpcPart);
         
-            if (userAgentHeader == xmlrpc_strsol)
+            if (xmlrpc_strnomem(userAgentHeader))
                 xmlrpc_faultf(envP, "Couldn't allocate memory for "
                               "User-Agent header");
             else {
@@ -177,7 +177,7 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
             
     xmlrpc_asprintf(&authorizationHeader, "Authorization: %s", hdrValue);
     
-    if (authorizationHeader == xmlrpc_strsol)
+    if (xmlrpc_strnomem(authorizationHeader))
         xmlrpc_faultf(envP, "Couldn't allocate memory for "
                       "Authorization header");
     else {

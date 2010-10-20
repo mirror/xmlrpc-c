@@ -13,7 +13,8 @@
 extern "C" {
 #endif
 
-extern const char * const xmlrpc_strsol;
+bool
+xmlrpc_strnomem(const char * const string);
 
 void
 xmlrpc_vasprintf(const char ** const retvalP,
