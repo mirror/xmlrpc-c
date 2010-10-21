@@ -395,12 +395,13 @@ test_xml_size_limit(void) {
 **  We use these files to test strange-but-legal encodings, illegal-but-
 **  allowed-by-Xmlrpc-c encodings, etc.
 */
-#ifdef WIN32
-/* usually compiled in 'Windows' folder */
-#define TESTDATA_DIR ".." DIRECTORY_SEPARATOR "bin" DIRECTORY_SEPARATOR "data"
-#else
+
+/* The test program is designed to be run with the 'test' source directory
+   (which also contains the test program itself) as the current
+   directory.  Except on Windows, where the Bin directory (which also contains
+   the test program itself) is supposed to be the current directory.
+*/
 #define TESTDATA_DIR "data"
-#endif
 
 static const char * goodRequests[] = {
     TESTDATA_DIR DIRECTORY_SEPARATOR "req_out_of_order.xml",
