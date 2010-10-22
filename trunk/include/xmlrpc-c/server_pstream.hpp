@@ -9,12 +9,9 @@ typedef int socklen_t;
 #endif
 
 #include <xmlrpc-c/config.h>  /* For XMLRPC_SOCKET */
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/packetsocket.hpp>
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 namespace xmlrpc_c {
 

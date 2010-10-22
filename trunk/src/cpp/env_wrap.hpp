@@ -1,13 +1,10 @@
 #ifndef ENV_INT_HPP_INCLUDED
 #define ENV_INT_HPP_INCLUDED
 
+#include "xmlrpc-c/c_util.h"
 #include "xmlrpc-c/util.h"
 
 namespace xmlrpc_c {
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 class XMLRPC_DLLEXPORT env_wrap {
 /*----------------------------------------------------------------------------

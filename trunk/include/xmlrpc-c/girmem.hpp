@@ -2,6 +2,7 @@
 #define GIRMEM_HPP_INCLUDED
 
 #include <xmlrpc-c/config.h>
+#include <xmlrpc-c/c_util.h>
 
 /* The following pthread crap mirrors what is in pthreadx.h, which is
    what girmem.cpp uses to declare the lock interface.  We can't simply
@@ -25,10 +26,6 @@
 #endif
 
 namespace girmem {
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 class XMLRPC_DLLEXPORT autoObjectPtr;
 

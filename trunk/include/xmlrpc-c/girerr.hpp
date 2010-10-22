@@ -3,15 +3,12 @@
 
 #include <string>
 #include <exception>
+
 #include <xmlrpc-c/c_util.h>
 
 #define HAVE_GIRERR_ERROR
 
 namespace girerr {
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 class XMLRPC_DLLEXPORT error : public std::exception {
 public:

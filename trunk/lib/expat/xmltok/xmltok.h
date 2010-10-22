@@ -3,15 +3,13 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
-#ifndef XmlTok_INCLUDED
-#define XmlTok_INCLUDED 1
+#ifndef XMLTOK_H_INCLUDED
+#define XMLTOK_H_INCLUDED
+
+#include "xmlrpc-c/c_util.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
 #endif
 
 /* The following token may be returned by XmlContentTok */

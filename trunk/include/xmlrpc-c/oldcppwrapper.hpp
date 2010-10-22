@@ -27,13 +27,11 @@
 
 #include <cstdlib>
 #include <string>
+
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 #include <xmlrpc-c/server.h>
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 //=========================================================================
 //  XmlRpcFault

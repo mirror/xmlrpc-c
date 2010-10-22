@@ -1,11 +1,8 @@
 #ifndef SERVER_CGI_HPP_INCLUDED
 #define SERVER_CGI_HPP_INCLUDED
 
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/registry.hpp>
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 namespace xmlrpc_c {
 

@@ -3,9 +3,10 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
-#ifndef XmlRole_INCLUDED
-#define XmlRole_INCLUDED 1
+#ifndef XMLROLE_H_INCLUDED
+#define XMLROLE_H_INCLUDED
 
+#include "xmlrpc-c/c_util.h"
 #include "xmltok.h"
 
 #ifdef __cplusplus

@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/util.h>
 #include <xmlrpc-c/client.h>
 #include <xmlrpc-c/girerr.hpp>
@@ -10,10 +12,6 @@
 #include <xmlrpc-c/timeout.hpp>
 
 namespace xmlrpc_c {
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 class XMLRPC_DLLEXPORT carriageParmPtr;
 

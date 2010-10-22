@@ -6,12 +6,10 @@
 #ifndef XMLPARSE_H_INCLUDED
 #define XMLPARSE_H_INCLUDED
 
+#include "xmlrpc-c/c_util.h"
+
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
 #endif
 
 typedef void *XML_Parser;

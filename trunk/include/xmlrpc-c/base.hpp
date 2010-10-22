@@ -13,11 +13,8 @@
 #include <sys/time.h>
 #endif
 
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/base.h>
-
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
 
 namespace xmlrpc_c {
 

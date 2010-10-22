@@ -4,9 +4,7 @@
 #include <string>
 #include <vector>
 
-#ifndef XMLRPC_DLLEXPORT
-#define XMLRPC_DLLEXPORT /* as nothing */
-#endif
+#include <xmlrpc-c/c_util.h>
 
 namespace xmlrpc_c {
 

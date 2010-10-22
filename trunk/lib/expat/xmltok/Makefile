@@ -27,7 +27,7 @@ include $(BLDDIR)/config.mk
 CFLAGS_LOCAL = -DXML_BYTE_ORDER=0
 
 # -I. is necessary when blddir != srcdir
-INCLUDES = -I. -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
+INCLUDES = -I. -I$(BLDDIR) -I$(SRCDIR)/lib/util/include -I$(SRCDIR)/include
 
 default: all
 
