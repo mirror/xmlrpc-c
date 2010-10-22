@@ -10,16 +10,20 @@
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/abyss.h>
 
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
+
 namespace xmlrpc_c {
 
 struct serverAbyss_impl;
 
-class serverAbyss {
+class XMLRPC_DLLEXPORT serverAbyss {
     
 public:
     struct constrOpt_impl;
 
-    class constrOpt {
+    class XMLRPC_DLLEXPORT constrOpt {
     public:
         constrOpt();
         ~constrOpt();
@@ -75,7 +79,7 @@ public:
     void
     terminate();
     
-    class shutdown : public xmlrpc_c::registry::shutdown {
+    class XMLRPC_DLLEXPORT shutdown : public xmlrpc_c::registry::shutdown {
     public:
         shutdown(xmlrpc_c::serverAbyss * const severAbyssP);
         virtual ~shutdown();
@@ -92,7 +96,7 @@ private:
     initialize(constrOpt const& opt);
 };
 
-class callInfo_serverAbyss : public xmlrpc_c::callInfo {
+class XMLRPC_DLLEXPORT callInfo_serverAbyss : public xmlrpc_c::callInfo {
 /*----------------------------------------------------------------------------
    This is information about how an XML-RPC call arrived via an Abyss server.
    It is available to the user's XML-RPC method execute() method, so for
@@ -112,7 +116,7 @@ public:
         // object things like what the IP address of the client is.
 };
 
-class callInfo_abyss : public xmlrpc_c::callInfo {
+class XMLRPC_DLLEXPORT callInfo_abyss : public xmlrpc_c::callInfo {
 /*----------------------------------------------------------------------------
    This is information about how an XML-RPC call arrived via an Abyss server.
    It is available to the user's XML-RPC method execute() method, so for
@@ -130,16 +134,19 @@ public:
         // object things like what the IP address of the client is.
 };
 
+XMLRPC_DLLEXPORT
 void
 server_abyss_set_handlers(TServer *          const  srvP,
                           xmlrpc_c::registry const& registry,
                           std::string        const& uriPath = "/RPC2");
 
+XMLRPC_DLLEXPORT
 void
 server_abyss_set_handlers(TServer *                  const  srvP,
                           const xmlrpc_c::registry * const  registryP,
                           std::string                const& uriPath = "/RPC2");
 
+XMLRPC_DLLEXPORT
 void
 server_abyss_set_handlers(TServer *             const srvP,
                           xmlrpc_c::registryPtr const registryPtr,

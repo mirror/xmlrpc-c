@@ -11,9 +11,13 @@
 
 namespace xmlrpc_c {
 
-class carriageParmPtr;
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
 
-class carriageParm : public girmem::autoObject {
+class XMLRPC_DLLEXPORT carriageParmPtr;
+
+class XMLRPC_DLLEXPORT carriageParm : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    The parameter to a client for an individual RPC.  It tells specifics
    of how to carry the call to the server and the response back.  For
@@ -30,7 +34,7 @@ protected:
     carriageParm();
 };
 
-class carriageParmPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT carriageParmPtr : public girmem::autoObjectPtr {
 
 public:
     carriageParmPtr();
@@ -46,9 +50,9 @@ public:
 
 //----------------------------------------------------------------------------
 
-class xmlTransactionPtr;
+class XMLRPC_DLLEXPORT xmlTransactionPtr;
 
-class xmlTransaction : public girmem::autoObject {
+class XMLRPC_DLLEXPORT xmlTransaction : public girmem::autoObject {
 
     friend class xmlTransactionPtr;
 
@@ -66,7 +70,7 @@ protected:
     xmlTransaction();
 };
 
-class xmlTransactionPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT xmlTransactionPtr : public girmem::autoObjectPtr {
 public:
     xmlTransactionPtr();
 
@@ -78,7 +82,7 @@ public:
 
 //----------------------------------------------------------------------------
 
-class clientXmlTransport : public girmem::autoObject {
+class XMLRPC_DLLEXPORT clientXmlTransport : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An object which transports XML to and from an XML-RPC server for an
    XML-RPC client.
@@ -117,7 +121,7 @@ public:
     setInterrupt(int * const interruptP);
 };
 
-class clientXmlTransportPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT clientXmlTransportPtr : public girmem::autoObjectPtr {
     
 public:
     clientXmlTransportPtr();
@@ -135,7 +139,7 @@ public:
                            HTTP
 ===========================================================================*/
 
-class carriageParm_http0 : public xmlrpc_c::carriageParm {
+class XMLRPC_DLLEXPORT carriageParm_http0 : public xmlrpc_c::carriageParm {
 
 public:
     carriageParm_http0(std::string const serverUrl);
@@ -187,7 +191,7 @@ protected:
     instantiate(std::string const serverUrl);
 };
 
-class carriageParm_http0Ptr : public xmlrpc_c::carriageParmPtr {
+class XMLRPC_DLLEXPORT carriageParm_http0Ptr : public xmlrpc_c::carriageParmPtr {
 
 public:
     carriageParm_http0Ptr();
@@ -197,7 +201,7 @@ public:
     operator->() const;
 };
 
-class clientXmlTransport_http : public xmlrpc_c::clientXmlTransport {
+class XMLRPC_DLLEXPORT clientXmlTransport_http : public xmlrpc_c::clientXmlTransport {
 /*----------------------------------------------------------------------------
    A base class for client XML transports that use the simple, classic
    C HTTP transports.
@@ -238,13 +242,13 @@ protected:
                            curl
 ===========================================================================*/
 
-class carriageParm_curl0 : public xmlrpc_c::carriageParm_http0 {
+class XMLRPC_DLLEXPORT carriageParm_curl0 : public xmlrpc_c::carriageParm_http0 {
 
 public:
     carriageParm_curl0(std::string const serverUrl);
 };
 
-class carriageParm_curl0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+class XMLRPC_DLLEXPORT carriageParm_curl0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
 
 public:
     carriageParm_curl0Ptr();
@@ -254,7 +258,7 @@ public:
     operator->() const;
 };
 
-class clientXmlTransport_curl : public xmlrpc_c::clientXmlTransport_http {
+class XMLRPC_DLLEXPORT clientXmlTransport_curl : public xmlrpc_c::clientXmlTransport_http {
 
 public:
     struct constrOpt_impl;
@@ -314,14 +318,14 @@ private:
                            libwww
 ===========================================================================*/
 
-class carriageParm_libwww0 : public xmlrpc_c::carriageParm_http0 {
+class XMLRPC_DLLEXPORT carriageParm_libwww0 : public xmlrpc_c::carriageParm_http0 {
 
 public:
     carriageParm_libwww0(std::string const serverUrl);
 
 };
 
-class carriageParm_libwww0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+class XMLRPC_DLLEXPORT carriageParm_libwww0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
 
 public:
     carriageParm_libwww0Ptr();
@@ -331,7 +335,7 @@ public:
     operator->() const;
 };
 
-class clientXmlTransport_libwww : public xmlrpc_c::clientXmlTransport_http {
+class XMLRPC_DLLEXPORT clientXmlTransport_libwww : public xmlrpc_c::clientXmlTransport_http {
     
 public:
     clientXmlTransport_libwww(std::string const appname = "",
@@ -344,14 +348,14 @@ public:
                            wininet
 ===========================================================================*/
 
-class carriageParm_wininet0 : public xmlrpc_c::carriageParm_http0 {
+class XMLRPC_DLLEXPORT carriageParm_wininet0 : public xmlrpc_c::carriageParm_http0 {
 
 public:
     carriageParm_wininet0(std::string const serverUrl);
 
 };
 
-class carriageParm_wininet0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
+class XMLRPC_DLLEXPORT carriageParm_wininet0Ptr : public xmlrpc_c::carriageParm_http0Ptr {
 
 public:
     carriageParm_wininet0Ptr();
@@ -361,7 +365,7 @@ public:
     operator->() const;
 };
 
-class clientXmlTransport_wininet : public xmlrpc_c::clientXmlTransport_http {
+class XMLRPC_DLLEXPORT clientXmlTransport_wininet : public xmlrpc_c::clientXmlTransport_http {
 
 public:
     clientXmlTransport_wininet(bool const allowInvalidSslCerts = false);
@@ -373,15 +377,15 @@ public:
                            pstream
 ===========================================================================*/
 
-class packetSocket;
+class XMLRPC_DLLEXPORT packetSocket;
 
-class carriageParm_pstream : public xmlrpc_c::carriageParm {
+class XMLRPC_DLLEXPORT carriageParm_pstream : public xmlrpc_c::carriageParm {
 
     // There are no parameters for carrying an RPC on a packet stream.
     // There's only one way to carry it.
 };
 
-class carriageParm_pstreamPtr : public xmlrpc_c::carriageParmPtr {
+class XMLRPC_DLLEXPORT carriageParm_pstreamPtr : public xmlrpc_c::carriageParmPtr {
 
 public:
     carriageParm_pstreamPtr();
@@ -392,7 +396,7 @@ public:
     operator->() const;
 };
 
-class clientXmlTransport_pstream : public xmlrpc_c::clientXmlTransport {
+class XMLRPC_DLLEXPORT clientXmlTransport_pstream : public xmlrpc_c::clientXmlTransport {
 
 public:
     struct constrOpt_impl;

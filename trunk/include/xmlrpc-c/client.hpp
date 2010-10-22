@@ -13,9 +13,13 @@
 
 namespace xmlrpc_c {
 
-class clientTransactionPtr;
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
 
-class clientTransaction : public girmem::autoObject {
+class XMLRPC_DLLEXPORT clientTransactionPtr;
+
+class XMLRPC_DLLEXPORT clientTransaction : public girmem::autoObject {
 
     friend class clientTransactionPtr;
 
@@ -33,7 +37,7 @@ protected:
     clientTransaction();
 };
 
-class clientTransactionPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT clientTransactionPtr : public girmem::autoObjectPtr {
     
 public:
     clientTransactionPtr();
@@ -46,9 +50,9 @@ public:
     operator->() const;
 };
 
-class clientPtr;
+class XMLRPC_DLLEXPORT clientPtr;
 
-class client : public girmem::autoObject {
+class XMLRPC_DLLEXPORT client : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    A generic client -- a means of performing an RPC.  This is so generic
    that it can be used for clients that are not XML-RPC.
@@ -80,7 +84,7 @@ public:
     setInterrupt(int *);
 };
 
-class clientPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT clientPtr : public girmem::autoObjectPtr {
 public:
     clientPtr();
 
@@ -93,7 +97,7 @@ public:
     get() const;
 };
 
-class serverAccessor : public girmem::autoObject {
+class XMLRPC_DLLEXPORT serverAccessor : public girmem::autoObject {
     
 public:
     serverAccessor(xmlrpc_c::clientPtr       const clientP,
@@ -109,7 +113,7 @@ private:
     xmlrpc_c::carriageParmPtr const carriageParmP;
 };
 
-class serverAccessorPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT serverAccessorPtr : public girmem::autoObjectPtr {
 public:
     serverAccessorPtr();
 
@@ -123,7 +127,7 @@ public:
     get() const;
 };
 
-class connection {
+class XMLRPC_DLLEXPORT connection {
 /*----------------------------------------------------------------------------
    A nexus of a particular client and a particular server, along with
    carriage parameters for performing RPCs between the two.
@@ -143,7 +147,7 @@ public:
     xmlrpc_c::carriageParm * carriageParmP;
 };
 
-class client_xml : public xmlrpc_c::client {
+class XMLRPC_DLLEXPORT client_xml : public xmlrpc_c::client {
 /*----------------------------------------------------------------------------
    A client that uses XML-RPC XML in the RPC.  This class does not define
    how the XML gets transported, though (i.e. does not require HTTP).
@@ -183,7 +187,7 @@ private:
     struct client_xml_impl * implP;
 };
 
-class xmlTransaction_client : public xmlrpc_c::xmlTransaction {
+class XMLRPC_DLLEXPORT xmlTransaction_client : public xmlrpc_c::xmlTransaction {
 
 public:
     xmlTransaction_client(xmlrpc_c::clientTransactionPtr const& tranP);
@@ -201,7 +205,7 @@ private:
     xmlrpc_c::clientTransactionPtr const tranP;
 };
 
-class xmlTransaction_clientPtr : public xmlTransactionPtr {
+class XMLRPC_DLLEXPORT xmlTransaction_clientPtr : public xmlTransactionPtr {
 public:
     xmlTransaction_clientPtr();
     
@@ -213,7 +217,7 @@ public:
 
 class rpcPtr;
 
-class rpc : public clientTransaction {
+class XMLRPC_DLLEXPORT rpc : public clientTransaction {
 /*----------------------------------------------------------------------------
    An RPC.  An RPC consists of method name, parameters, and result.  It
    does not specify in any way how the method name and parameters get
@@ -281,7 +285,7 @@ private:
     struct rpc_impl * implP;
 };
 
-class rpcPtr : public clientTransactionPtr {
+class XMLRPC_DLLEXPORT rpcPtr : public clientTransactionPtr {
 public:
     rpcPtr();
 

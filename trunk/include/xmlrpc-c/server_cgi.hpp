@@ -3,13 +3,17 @@
 
 #include <xmlrpc-c/registry.hpp>
 
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
+
 namespace xmlrpc_c {
 
-class serverCgi {
+class XMLRPC_DLLEXPORT serverCgi {
 
 public:
 
-    class constrOpt {
+    class XMLRPC_DLLEXPORT constrOpt {
     public:
         constrOpt();
 

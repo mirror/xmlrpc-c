@@ -8,8 +8,11 @@
 
 namespace xmlrpc_c {
 
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
 
-class clientSimple {
+class XMLRPC_DLLEXPORT clientSimple {
 
 public:
     clientSimple();

@@ -26,9 +26,13 @@
 
 namespace girmem {
 
-class autoObjectPtr;
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
 
-class autoObject {
+class XMLRPC_DLLEXPORT autoObjectPtr;
+
+class XMLRPC_DLLEXPORT autoObject {
     friend class autoObjectPtr;
 
 public:
@@ -44,7 +48,7 @@ private:
     unsigned int refcount;
 };
 
-class autoObjectPtr {
+class XMLRPC_DLLEXPORT autoObjectPtr {
 public:
     autoObjectPtr();
     autoObjectPtr(girmem::autoObject * objectP);

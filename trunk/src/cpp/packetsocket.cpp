@@ -79,7 +79,7 @@ using girerr::throwf;
 #define ESC 0x1B   //  ASCII Escape character
 #define ESC_STR "\x1B"
 
-class socketx {
+class XMLRPC_DLLEXPORT socketx {
 
 public:
     socketx(int const sockFd);

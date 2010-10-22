@@ -19,7 +19,11 @@
 
 namespace xmlrpc_c {
 
-class packet : public girmem::autoObject {
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
+
+class XMLRPC_DLLEXPORT packet : public girmem::autoObject {
 
 public:
     packet();
@@ -54,7 +58,7 @@ private:
 
 
 
-class packetPtr: public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT packetPtr: public girmem::autoObjectPtr {
 
 public:
     packetPtr();
@@ -67,9 +71,9 @@ public:
 
 
 
-class packetSocket_impl;
+class XMLRPC_DLLEXPORT packetSocket_impl;
 
-class packetSocket {
+class XMLRPC_DLLEXPORT packetSocket {
 /*----------------------------------------------------------------------------
    This is an Internet communication vehicle that transmits individual
    variable-length packets of text.

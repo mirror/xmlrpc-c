@@ -3,7 +3,11 @@
 
 namespace xmlrpc_c {
 
-struct timeout {
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
+
+struct XMLRPC_DLLEXPORT timeout {
 
     timeout() : finite(false) {}
 

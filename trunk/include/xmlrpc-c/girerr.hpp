@@ -9,7 +9,11 @@
 
 namespace girerr {
 
-class error : public std::exception {
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
+
+class XMLRPC_DLLEXPORT error : public std::exception {
 public:
     error(std::string const& what_arg) : _what(what_arg) {}
 
@@ -24,6 +28,7 @@ private:
 
 // throwf() always throws a girerr::error .
 
+XMLRPC_DLLEXPORT
 void
 throwf(const char * const format, ...)
   XMLRPC_PRINTF_ATTR(1,2)

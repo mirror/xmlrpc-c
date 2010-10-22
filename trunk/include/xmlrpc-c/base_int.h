@@ -18,13 +18,13 @@
 #include "bool.h"
 #include "int.h"
 
-#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/util_int.h>
+#include <xmlrpc-c/base.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 struct _xmlrpc_value {
     xmlrpc_type _type;
@@ -107,27 +107,34 @@ typedef struct {
 } _struct_member;
 
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
                          xmlrpc_value ** const valPP);
 
+XMLRPC_DLLEXPORT
 const char *
 xmlrpc_typeName(xmlrpc_type const type);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_traceXml(const char * const label, 
                 const char * const xml,
                 size_t       const xmlLength);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_destroyString(xmlrpc_value * const stringP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_destroyDatetime(xmlrpc_value * const datetimeP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_destroyStruct(xmlrpc_value * const structP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
 
@@ -143,16 +150,19 @@ xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
    new memory for them.
 -----------------------------------------------------------------------------*/
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_read_datetime_str_old(xmlrpc_env *         const envP,
                              const xmlrpc_value * const valueP,
                              const char **        const stringValueP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_read_string_old(xmlrpc_env *         const envP,
                        const xmlrpc_value * const valueP,
                        const char **        const stringValueP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           const xmlrpc_value * const valueP,
@@ -160,11 +170,13 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           const char **        const stringValueP);
 
 #if XMLRPC_HAVE_WCHAR
+XMLRPC_DLLEXPORT
 void
 xmlrpc_read_string_w_old(xmlrpc_env *     const envP,
                          xmlrpc_value *   const valueP,
                          const wchar_t ** const stringValueP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
                             xmlrpc_value *   const valueP,
@@ -172,6 +184,7 @@ xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
                             const wchar_t ** const stringValueP);
 #endif
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_read_base64_old(xmlrpc_env *           const envP,
                        const xmlrpc_value *   const valueP,

@@ -5,7 +5,11 @@
 
 namespace xmlrpc_c {
 
-class env_wrap {
+#ifndef XMLRPC_DLLEXPORT
+#define XMLRPC_DLLEXPORT /* as nothing */
+#endif
+
+class XMLRPC_DLLEXPORT env_wrap {
 /*----------------------------------------------------------------------------
    A wrapper to assist in using the Xmlrpc-c C libraries in
    Xmlrpc-c C++ code.
