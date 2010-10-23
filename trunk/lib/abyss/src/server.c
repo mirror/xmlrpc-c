@@ -626,6 +626,13 @@ processRequestFromClient(TConn *  const connectionP,
    We return as *keepAliveP whether Caller should keep the connection
    alive for a while for possible future requests from the client, based
    on 'lastReqOnConn' and the content of the HTTP request.
+
+   Executing the request consists primarily of calling the URI handlers that
+   are associated with the connection (*connectionP), passing each the request
+   information we read.  Each handler can respond according to the HTTP method
+   (GET, POST, etc) and URL etc, and that response may be either to
+   execute the request and send the response or refuse the request and let
+   us call the next one in the list.
 -----------------------------------------------------------------------------*/
     TSession session;
     const char * error;
