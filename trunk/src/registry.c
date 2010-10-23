@@ -36,6 +36,19 @@ unsigned int const xmlrpc_server_version_minor = XMLRPC_VERSION_MINOR;
 unsigned int const xmlrpc_server_version_point = XMLRPC_VERSION_POINT;
 
 
+
+void
+xmlrpc_server_version(unsigned int * const majorP,
+                      unsigned int * const minorP,
+                      unsigned int * const pointP) {
+
+    *majorP = XMLRPC_VERSION_MAJOR;
+    *minorP = XMLRPC_VERSION_MINOR;
+    *pointP = XMLRPC_VERSION_POINT;
+}
+
+
+
 xmlrpc_registry *
 xmlrpc_registry_new(xmlrpc_env * const envP) {
 

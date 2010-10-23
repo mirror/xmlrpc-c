@@ -15,6 +15,25 @@
 #include "client.h"
 
 
+
+static void
+testVersion(void) {
+
+    unsigned int major, minor, point;
+
+    xmlrpc_client_version(&major, &minor, &point);
+
+#ifndef WIN32    
+    /* xmlrpc_client_version_major, etc. are not exported from a Windows DLL */
+
+    TEST(major = xmlrpc_client_version_major);
+    TEST(minor = xmlrpc_client_version_minor);
+    TEST(point = xmlrpc_client_version_point);
+#endif
+}
+
+
+
 static void
 testGlobalConst(void) {
 
@@ -471,6 +490,7 @@ test_client(void) {
 
     printf("Running client tests.");
 
+    testVersion();
     testGlobalConst();
     testCreateDestroy();
     testInitCleanup();

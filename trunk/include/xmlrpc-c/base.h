@@ -26,12 +26,19 @@ extern "C" {
 /*=========================================================================
 **  Version of libxmlrpc
 **=======================================================================*/
-XMLRPC_DLLEXPORT
+
+/* These are for backward compatibility -- they can't be exported from a
+   Windows DLL.  xmlrpc_server_version() is preferred.
+*/
 extern unsigned int const xmlrpc_version_major;
-XMLRPC_DLLEXPORT
 extern unsigned int const xmlrpc_version_minor;
-XMLRPC_DLLEXPORT
 extern unsigned int const xmlrpc_version_point;
+
+XMLRPC_DLLEXPORT
+void
+xmlrpc_version(unsigned int * const majorP,
+               unsigned int * const minorP,
+               unsigned int * const pointP);
 
 /*=========================================================================
 **  C types equivalent to XML-RPC types

@@ -269,12 +269,18 @@ void
 xmlrpc_server_info_disallow_auth_ntlm(xmlrpc_env *         const envP,
                                       xmlrpc_server_info * const sP);
 
-XMLRPC_DLLEXPORT
+/* These are for backward compatibility -- they can't be exported from a
+   Windows DLL.  xmlrpc_server_version() is preferred.
+*/
 extern unsigned int const xmlrpc_client_version_major;
-XMLRPC_DLLEXPORT
 extern unsigned int const xmlrpc_client_version_minor;
-XMLRPC_DLLEXPORT
 extern unsigned int const xmlrpc_client_version_point;
+
+XMLRPC_DLLEXPORT
+void
+xmlrpc_client_version(unsigned int * const majorP,
+                      unsigned int * const minorP,
+                      unsigned int * const pointP);
 
 XMLRPC_DLLEXPORT
 void

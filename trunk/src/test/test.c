@@ -76,8 +76,26 @@ static int test_int_array_3[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 **=========================================================================
 */
 
-static void test_env(void)
-{
+static void
+testVersion(void) {
+
+    unsigned int major, minor, point;
+
+    xmlrpc_version(&major, &minor, &point);
+
+#ifndef WIN32    
+    /* xmlrpc_version_major, etc. are not exported from a Windows DLL */
+
+    TEST(major = xmlrpc_version_major);
+    TEST(minor = xmlrpc_version_minor);
+    TEST(point = xmlrpc_version_point);
+#endif
+}
+
+
+
+static void
+testEnv(void) {
     xmlrpc_env env, env2;
 
     /* Test xmlrpc_env_init. */
@@ -113,8 +131,10 @@ static void test_env(void)
     xmlrpc_env_clean(&env2);
 }
 
-static void test_mem_block (void)
-{
+
+
+static void
+testMemBlock(void) {
     xmlrpc_env env;
     xmlrpc_mem_block* block;
 
@@ -190,6 +210,8 @@ static void test_mem_block (void)
     xmlrpc_env_clean(&env);
 }
 
+
+
 static char *(base64_triplets[]) = {
     "", "", "\r\n",
     "a", "YQ==", "YQ==\r\n",
@@ -204,8 +226,11 @@ static char *(base64_triplets[]) = {
     "ZmdoaWprbG1ub3BxcnN0dXZ3eHl6QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=\r\n",
     NULL};
 
+
+
 static void
-test_base64_conversion(void) {
+testBase64Conversion(void) {
+
     xmlrpc_env env;
     char ** triplet;
 
@@ -280,8 +305,9 @@ test_base64_conversion(void) {
 
 
 
-static void test_bounds_checks (void)
-{
+static void
+testBoundsChecks(void) {
+
     xmlrpc_env env;
     xmlrpc_value *array;
     int i1, i2, i3, i4;
@@ -310,8 +336,9 @@ static void test_bounds_checks (void)
 
 
 
-static void test_nesting_limit (void)
-{
+static void
+testNestingLimit(void) {
+
     xmlrpc_env env;
     xmlrpc_value *val;
 
@@ -346,7 +373,7 @@ static void test_nesting_limit (void)
 
 
 static void
-test_xml_size_limit(void) {
+testXmlSizeLimit(void) {
 
     xmlrpc_env env;
     const char * methodName;
@@ -714,18 +741,19 @@ main(int     argc,
         fprintf(stderr, "There are no arguments.\n");
         retval = 1;
     } else {
-        test_env();
-        test_mem_block();
-        test_base64_conversion();
+        testVersion();
+        testEnv();
+        testMemBlock();
+        testBase64Conversion();
         printf("\n");
         test_value();
-        test_bounds_checks();
+        testBoundsChecks();
         printf("\n");
         test_serialize();
         test_parse_xml();
         test_method_registry();
-        test_nesting_limit();
-        test_xml_size_limit();
+        testNestingLimit();
+        testXmlSizeLimit();
         testSampleFiles();
         printf("\n");
         test_server_cgi_maybe();

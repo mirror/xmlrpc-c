@@ -38,9 +38,18 @@ typedef xmlrpc_value *
                          xmlrpc_value * const paramArrayP,
                          void *         const serverInfo);
 
+/* These are for backward compatibility -- they can't be exported from a
+   Windows DLL.  xmlrpc_server_version() is preferred.
+*/
 extern unsigned int const xmlrpc_server_version_major;
 extern unsigned int const xmlrpc_server_version_minor;
 extern unsigned int const xmlrpc_server_version_point;
+
+XMLRPC_DLLEXPORT
+void
+xmlrpc_server_version(unsigned int * const majorP,
+                      unsigned int * const minorP,
+                      unsigned int * const pointP);
 
 XMLRPC_DLLEXPORT
 xmlrpc_registry *

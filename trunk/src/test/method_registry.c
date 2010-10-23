@@ -26,6 +26,25 @@
 static const char * const barHelp = "This is the help for Method test.bar.";
 
 
+
+static void
+testVersion(void) {
+
+    unsigned int major, minor, point;
+
+    xmlrpc_server_version(&major, &minor, &point);
+
+#ifndef WIN32    
+    /* xmlrpc_server_version_major, etc. are not exported from a Windows DLL */
+
+    TEST(major = xmlrpc_server_version_major);
+    TEST(minor = xmlrpc_server_version_minor);
+    TEST(point = xmlrpc_server_version_point);
+#endif
+}
+
+
+
 static xmlrpc_value *
 test_foo(xmlrpc_env *   const envP,
          xmlrpc_value * const paramArrayP,
@@ -1034,6 +1053,8 @@ test_method_registry(void) {
     xmlrpc_mem_block * responseP;
 
     xmlrpc_env_init(&env);
+
+    testVersion();
 
     printf("Running method registry tests.");
 
