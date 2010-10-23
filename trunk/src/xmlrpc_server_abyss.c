@@ -581,9 +581,66 @@ termUriHandler(void * const arg) {
 
 
 static void
-handleXmlrpcReq(void *        const handlerArg,
-                TSession *    const abyssSessionP,
-                abyss_bool *  const handledP) {
+handleXmlRpcReq(TSession *           const abyssSessionP,
+                const TRequestInfo * const requestInfoP,
+                xmlrpc_call_processor      xmlProcessor,
+                void *               const xmlProcessorArg,
+                bool                 const wantChunk) {
+/*----------------------------------------------------------------------------
+   Handle the HTTP request described by *requestInfoP, which arrived over
+   Abyss HTTP session *abyssSessionP, which is an XML-RPC call
+   (i.e. a POST request to /RPC2 or whatever other URI our server is
+   supposed to handle).
+
+   Handle it by feeding the XML which is its content to 'xmlProcessor'
+   along with argument 'xmlProcessorArg'.
+-----------------------------------------------------------------------------*/
+    const char * error;
+
+    assert(requestInfoP->method == m_post);
+
+    storeCookies(abyssSessionP, &error);
+    if (error) {
+        sendError(abyssSessionP, 400, error);
+        xmlrpc_strfree(error);
+    } else {
+        const char * error;
+        validateContentType(abyssSessionP, &error);
+        if (error) {
+            sendError(abyssSessionP, 400, error);
+                /* 400 = Bad Request */
+            xmlrpc_strfree(error);
+        } else {
+            const char * error;
+            bool missing;
+            size_t contentSize;
+
+            processContentLength(abyssSessionP, 
+                                 &contentSize, &missing, &error);
+            if (error) {
+                sendError(abyssSessionP, 400, error);
+                xmlrpc_strfree(error);
+            } else {
+                if (missing)
+                    sendError(abyssSessionP, 411, "You must send a "
+                              "content-length HTTP header in an "
+                              "XML-RPC call.");
+                else
+                    processCall(abyssSessionP, contentSize,
+                                xmlProcessor, xmlProcessorArg,
+                                wantChunk,
+                                trace_abyss);
+            }
+        }
+    }
+}
+
+
+
+static void
+handleIfXmlrpcReq(void *        const handlerArg,
+                  TSession *    const abyssSessionP,
+                  abyss_bool *  const handledP) {
 /*----------------------------------------------------------------------------
    Our job is to look at this HTTP request that the Abyss server is
    trying to process and see if we can handle it.  If it's an XML-RPC
@@ -609,8 +666,8 @@ handleXmlrpcReq(void *        const handlerArg,
     /* Note that requestInfoP->uri is not the whole URI.  It is just
        the "file name" part of it.
     */
-    if (strcmp(requestInfoP->uri, uriHandlerXmlrpcP->uriPath) != 0)
-        /* It's for the path (e.g. "/RPC2") that we're supposed to
+    if (!xmlrpc_streq(requestInfoP->uri, uriHandlerXmlrpcP->uriPath))
+        /* It's not for the path (e.g. "/RPC2") that we're supposed to
            handle.
         */
         *handledP = FALSE;
@@ -621,44 +678,11 @@ handleXmlrpcReq(void *        const handlerArg,
             sendError(abyssSessionP, 405,
                       "POST is the only HTTP method this server understands");
                 /* 405 = Method Not Allowed */
-        else {
-            const char * error;
-            storeCookies(abyssSessionP, &error);
-            if (error) {
-                sendError(abyssSessionP, 400, error);
-                xmlrpc_strfree(error);
-            } else {
-                const char * error;
-                validateContentType(abyssSessionP, &error);
-                if (error) {
-                    sendError(abyssSessionP, 400, error);
-                        /* 400 = Bad Request */
-                    xmlrpc_strfree(error);
-                } else {
-                    const char * error;
-                    bool missing;
-                    size_t contentSize;
-
-                    processContentLength(abyssSessionP, 
-                                         &contentSize, &missing, &error);
-                    if (error) {
-                        sendError(abyssSessionP, 400, error);
-                        xmlrpc_strfree(error);
-                    } else {
-                        if (missing)
-                            sendError(abyssSessionP, 411, "You must send a "
-                                      "content-length HTTP header in an "
-                                      "XML-RPC call.");
-                        else
-                            processCall(abyssSessionP, contentSize,
-                                        uriHandlerXmlrpcP->xmlProcessor,
-                                        uriHandlerXmlrpcP->xmlProcessorArg,
-                                        uriHandlerXmlrpcP->chunkResponse,
-                                        trace_abyss);
-                    }
-                }
-            }
-        }
+        else
+            handleXmlRpcReq(abyssSessionP, requestInfoP,
+                            uriHandlerXmlrpcP->xmlProcessor,
+                            uriHandlerXmlrpcP->xmlProcessorArg,
+                            uriHandlerXmlrpcP->chunkResponse);
     }
     if (trace_abyss)
         fprintf(stderr, "xmlrpc_server_abyss URI path handler returning.\n");
@@ -732,7 +756,7 @@ setHandler(xmlrpc_env *      const envP,
             HANDLE_XMLRPC_REQ_STACK + xmlProcessorMaxStackSize;
         struct ServerReqHandler3 const handlerDesc = {
             /* .term               = */ &termUriHandler,
-            /* .handleReq          = */ &handleXmlrpcReq,
+            /* .handleReq          = */ &handleIfXmlrpcReq,
             /* .userdata           = */ uriHandlerXmlrpcP,
             /* .handleReqStackSize = */ stackSize
         };
