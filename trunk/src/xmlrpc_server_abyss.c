@@ -145,11 +145,11 @@ addAuthCookie(xmlrpc_env * const envP,
 
 
 static void 
-sendXmlData(xmlrpc_env * const envP,
-            TSession *   const abyssSessionP, 
-            const char * const body, 
-            size_t       const len,
-            bool         const chunked) {
+sendResponseXmlData(xmlrpc_env * const envP,
+                    TSession *   const abyssSessionP, 
+                    const char * const body, 
+                    size_t       const len,
+                    bool         const chunked) {
 /*----------------------------------------------------------------------------
    Generate an HTTP response containing body 'body' of length 'len'
    characters.
@@ -502,10 +502,10 @@ processCall(TSession *        const abyssSessionP,
                 &output);
             if (!env.fault_occurred) {
                 /* Send out the result. */
-                sendXmlData(&env, abyssSessionP, 
-                            XMLRPC_MEMBLOCK_CONTENTS(char, output),
-                            XMLRPC_MEMBLOCK_SIZE(char, output),
-                            wantChunk);
+                sendResponseXmlData(&env, abyssSessionP, 
+                                    XMLRPC_MEMBLOCK_CONTENTS(char, output),
+                                    XMLRPC_MEMBLOCK_SIZE(char, output),
+                                    wantChunk);
                 
                 XMLRPC_MEMBLOCK_FREE(char, output);
             }
@@ -581,11 +581,11 @@ termUriHandler(void * const arg) {
 
 
 static void
-handleXmlRpcReq(TSession *           const abyssSessionP,
-                const TRequestInfo * const requestInfoP,
-                xmlrpc_call_processor      xmlProcessor,
-                void *               const xmlProcessorArg,
-                bool                 const wantChunk) {
+handleXmlRpcCallReq(TSession *           const abyssSessionP,
+                    const TRequestInfo * const requestInfoP,
+                    xmlrpc_call_processor      xmlProcessor,
+                    void *               const xmlProcessorArg,
+                    bool                 const wantChunk) {
 /*----------------------------------------------------------------------------
    Handle the HTTP request described by *requestInfoP, which arrived over
    Abyss HTTP session *abyssSessionP, which is an XML-RPC call
@@ -638,6 +638,21 @@ handleXmlRpcReq(TSession *           const abyssSessionP,
 
 
 static void
+handleXmlRpcOptionsReq(TSession *           const abyssSessionP,
+                       const TRequestInfo * const requestInfoP ATTR_UNUSED) {
+
+    /* We should implement this for real; it should be analogous to
+       sendResponseXmlData()
+    */
+
+    sendError(abyssSessionP, 405,
+              "This server does not understand the OPTIONS method");
+        /* 405 = Method Not Allowed */
+}
+
+
+
+static void
 handleIfXmlrpcReq(void *        const handlerArg,
                   TSession *    const abyssSessionP,
                   abyss_bool *  const handledP) {
@@ -674,15 +689,21 @@ handleIfXmlrpcReq(void *        const handlerArg,
     else {
         *handledP = TRUE;
 
-        if (requestInfoP->method != m_post)
+        switch (requestInfoP->method) {
+        case m_post:
+            handleXmlRpcCallReq(abyssSessionP, requestInfoP,
+                                uriHandlerXmlrpcP->xmlProcessor,
+                                uriHandlerXmlrpcP->xmlProcessorArg,
+                                uriHandlerXmlrpcP->chunkResponse);
+            break;
+        case m_options:
+            handleXmlRpcOptionsReq(abyssSessionP, requestInfoP);
+            break;
+        default:
             sendError(abyssSessionP, 405,
                       "POST is the only HTTP method this server understands");
                 /* 405 = Method Not Allowed */
-        else
-            handleXmlRpcReq(abyssSessionP, requestInfoP,
-                            uriHandlerXmlrpcP->xmlProcessor,
-                            uriHandlerXmlrpcP->xmlProcessorArg,
-                            uriHandlerXmlrpcP->chunkResponse);
+        }
     }
     if (trace_abyss)
         fprintf(stderr, "xmlrpc_server_abyss URI path handler returning.\n");
