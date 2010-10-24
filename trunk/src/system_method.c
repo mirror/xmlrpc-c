@@ -529,6 +529,15 @@ getSignatureList(xmlrpc_env *      const envP,
 
 
 
+/* Microsoft Visual C in debug mode produces code that complains about
+   returning an undefined value from system_methodSignature().  It's a bogus
+   complaint, because this function is defined to return nothing meaningful
+   those cases.  So we disable the check.
+*/
+#pragma runtime_check("u", off)
+
+
+
 static xmlrpc_value *
 system_methodSignature(xmlrpc_env *   const envP,
                        xmlrpc_value * const paramArrayP,
@@ -575,6 +584,10 @@ system_methodSignature(xmlrpc_env *   const envP,
 
     return retvalP;
 }
+
+
+
+#pragma runtime_check("u", restore)
 
 
 

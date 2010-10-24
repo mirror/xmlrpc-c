@@ -916,6 +916,15 @@ xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
 
 
 
+/* Microsoft Visual C in debug mode produces code that complains about
+   passing an undefined value of 'resultP' to xmlrpc_parse_response2().
+   It's a bogus complaint, because this function knows in those cases
+   that the value of 'resultP' is meaningless.  So we disable the check.
+*/
+#pragma runtime_check("u", off)
+
+
+
 static void
 asynchComplete(struct xmlrpc_call_info * const callInfoP,
                xmlrpc_mem_block *        const responseXmlP,
@@ -975,6 +984,10 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
 
     xmlrpc_env_clean(&env);
 }
+
+
+
+#pragma runtime_check("u", restore)
 
 
 

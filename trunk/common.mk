@@ -17,7 +17,8 @@ include $(SRCDIR)/version.mk
 # fully made.
 .DELETE_ON_ERROR:
 
-GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit -Winline
+GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit -Winline \
+  -Wno-unknown-pragmas
   # We need -Wwrite-strings after we fix all the missing consts
   #
   # -Wuninitialized catches some great bugs, but it also flags a whole lot
