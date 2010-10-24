@@ -162,7 +162,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib Wininet.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateManifest="true"
 				IgnoreDefaultLibraryNames=""
@@ -292,4 +292,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-
