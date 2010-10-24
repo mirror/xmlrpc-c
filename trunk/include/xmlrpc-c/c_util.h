@@ -22,7 +22,7 @@
 /* XMLRPC_DLLEXPORT is an attribute of an external symbols that says it
    is to be exported from a library that contains it.
 */
-#ifdef MSVC
+#if defined(_DLL) &&  defined(_MSC_VER) && _MSC_VER >= 1500
 #define XMLRPC_DLLEXPORT __declspec(dllexport)
 #else
 #define XMLRPC_DLLEXPORT
