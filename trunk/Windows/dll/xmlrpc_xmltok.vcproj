@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..,..\..\lib\util\include"
+				AdditionalIncludeDirectories="..\..;..\..\lib\util\include;..\..\include"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;XML_DTD;XML_NS;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -126,7 +126,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..,..\..\lib\util\include"
+				AdditionalIncludeDirectories="..\..,..\..\lib\util\include,..\..\include"
 				PreprocessorDefinitions="NDEBUG;XML_NS;WIN32;_WINDOWS;XML_DTD;_LIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -276,4 +276,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-
