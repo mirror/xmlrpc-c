@@ -6,24 +6,14 @@ xmlrpc_win32_socketpair(int    const domain,
                         int    const type,
                         int    const protocol,
                         SOCKET       socks[2]) {
+    bool error;
 
-    DWORD const flags = WSA_FLAG_OVERLAPPED;
-
-    int error;
-
-    error = 0;  // initial value
-
-    if (domain != AF_INET)
-        return -1;
-    if (type != SOCK_STREAM)
-        return -1;
-    if (protocol != 0)
-        return -1;
+    error = false;  // initial value
 
     SOCKET listener;
     listener = socket(AF_INET, SOCK_STREAM, 0);
     if (listener == INVALID_SOCKET)
-        error = 1;
+        error = true;
     else {
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
@@ -33,36 +23,42 @@ xmlrpc_win32_socketpair(int    const domain,
 
         int rc;
         rc = bind(listener, (const struct sockaddr*) &addr, sizeof(addr));
-        if (rc != SOCKET_ERROR)
-            error = 1;
+        if (rc == SOCKET_ERROR)
+            error = true;
         else {
-            int addrlen = sizeof(addr);
+            int addrlen;
             int rc;
+            addrlen = sizeof(addr);  // initial value
             rc = getsockname(listener, (struct sockaddr*) &addr, &addrlen);
             if (rc == SOCKET_ERROR)
-                error = 1;
+                error = true;
             else {
                 int rc;
 
                 rc = listen(listener, 1);
                 if (rc == SOCKET_ERROR)
-                    error = 1;
+                    error = true;
                 else {
-                    socks[0] = WSASocket(AF_INET, SOCK_STREAM, 0,
-                                         NULL, 0, flags);
+                    socks[0] = socket(AF_INET, SOCK_STREAM, 0);
                     if (socks[0] == INVALID_SOCKET)
-                        error = 1;
+                        error = true;
                     else {
                         int rc;
                         rc = connect(socks[0],
                                      (const struct sockaddr*) &addr,
                                      sizeof(addr));
                         if (rc == SOCKET_ERROR)
-                            error = 1;
+                            error = true;
                         else {
                             socks[1] = accept(listener, NULL, NULL);
                             if (socks[1] == INVALID_SOCKET)
-                                error = 1;
+                                error = true;
+                            else {
+                                unsigned int const timeout = 50;
+                                setsockopt(socks[0], SOL_SOCKET, SO_RCVTIMEO,
+                                           (const char*)&timeout,
+                                           sizeof(timeout));
+                            }
                         }
                         if (error)
                             closesocket(socks[0]);
