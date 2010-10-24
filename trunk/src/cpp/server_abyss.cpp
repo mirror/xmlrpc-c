@@ -4,7 +4,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <iostream>
-#ifndef _WIN32
+#ifndef MSVCRT
 #include <sys/wait.h>
 #endif
 

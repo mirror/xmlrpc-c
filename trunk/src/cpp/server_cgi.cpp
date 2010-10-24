@@ -185,7 +185,7 @@ serverCgi::~serverCgi() {
 
 
 
-#ifdef _WIN32
+#ifdef MSCVRT
 #define FILEVAR fileP
 #else
 #define FILEVAR
@@ -194,7 +194,7 @@ serverCgi::~serverCgi() {
 static void
 setModeBinary(FILE * const FILEVAR) {
 
-#ifdef _WIN32 
+#ifdef MSVCRT 
     /* Fix from Jeff Stewart: NT opens stdin and stdout in text mode
        by default, badly confusing our length calculations.  So we need
        to set the file handle to binary. 

@@ -56,7 +56,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#ifndef WIN32
+#ifndef MSCVRT
 # include <unistd.h>
 # include <poll.h>
 # include <sys/socket.h>
@@ -115,7 +115,7 @@ private:
 */
 
 socketx::socketx(int const sockFd) {
-#ifdef WIN32        
+#ifdef MSVCRT        
     // We don't have any way to duplicate; we'll just have to borrow.
     this->fdIsBorrowed = true;
     this->fd = sockFd;
@@ -140,7 +140,7 @@ socketx::socketx(int const sockFd) {
 socketx::~socketx() {
 
     if (!this->fdIsBorrowed) {
-#ifdef WIN32
+#ifdef MSVCRT
         ::closesocket(SOCKET(this->fd));
 #else
         close(this->fd);
@@ -157,7 +157,7 @@ socketx::waitForReadable() const {
        return if there is a signal (handled, of course).  Rarely,
        it is OK to return when there isn't anything to read.
     */
-#ifdef  WIN32
+#ifdef  MSVCRT
     // poll() is not available; settle for select().
     // Starting in Windows Vista, there is WSApoll()
     fd_set rd_set;
@@ -182,7 +182,7 @@ socketx::waitForReadable() const {
 void
 socketx::waitForWritable() const {
     /* Return when socket is able to be written to. */
-#ifdef  WIN32
+#ifdef MSVCRT
     fd_set wr_set;
     FD_ZERO(&wr_set);
     FD_SET(this->fd, &wr_set);
