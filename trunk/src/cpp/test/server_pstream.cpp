@@ -229,8 +229,9 @@ client::client() {
 
 client::~client() {
 
-    XMLRPC_CLOSESOCKET(this->clientFd);
-    XMLRPC_CLOSESOCKET(this->serverFd);
+    close(this->clientFd);
+
+    close(this->serverFd);
 }
 
 
