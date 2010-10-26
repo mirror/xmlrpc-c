@@ -921,7 +921,7 @@ xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
    It's a bogus complaint, because this function knows in those cases
    that the value of 'resultP' is meaningless.  So we disable the check.
 */
-#pragma runtime_check("u", off)
+#pragma runtime_checks("u", off)
 
 
 
@@ -987,7 +987,7 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
 
 
 
-#pragma runtime_check("u", restore)
+#pragma runtime_checks("u", restore)
 
 
 

@@ -486,7 +486,7 @@ validateFormat(xmlrpc_env * const envP,
    complaint, because this function is defined to return nothing meaningful
    those cases.  So we disable the check.
 */
-#pragma runtime_check("u", off)
+#pragma runtime_checks("u", off)
 
 
 
@@ -524,7 +524,7 @@ xmlrpc_datetime_new_str(xmlrpc_env * const envP,
 
 
 
-#pragma runtime_check("u", restore)
+#pragma runtime_checks("u", restore)
 
 
 
