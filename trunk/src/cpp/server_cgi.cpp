@@ -12,6 +12,14 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+#include "xmlrpc_config.h"
+#if MSVCRT
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include <io.h>
+#include <fcntl.h>
+#endif
 #include <cstdlib>  // for getenv
 #include <memory>
 #include <stdio.h>
@@ -185,7 +193,7 @@ serverCgi::~serverCgi() {
 
 
 
-#ifdef MSCVRT
+#if MSVCRT
 #define FILEVAR fileP
 #else
 #define FILEVAR
@@ -194,7 +202,7 @@ serverCgi::~serverCgi() {
 static void
 setModeBinary(FILE * const FILEVAR) {
 
-#ifdef MSVCRT 
+#if MSVCRT 
     /* Fix from Jeff Stewart: NT opens stdin and stdout in text mode
        by default, badly confusing our length calculations.  So we need
        to set the file handle to binary. 

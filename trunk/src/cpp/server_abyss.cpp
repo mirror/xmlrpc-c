@@ -1,10 +1,11 @@
+#include "xmlrpc_config.h"
 #include <cstdlib>
 #include <string>
 #include <memory>
 #include <signal.h>
 #include <errno.h>
 #include <iostream>
-#ifndef MSVCRT
+#if !MSVCRT
 #include <sys/wait.h>
 #endif
 

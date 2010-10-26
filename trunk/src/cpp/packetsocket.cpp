@@ -45,6 +45,7 @@
   example, an unplugged TCP/IP network cable.  It's probably better
   to use the TCP keepalive facility for that.
 ============================================================================*/
+#include "xmlrpc_config.h"
 
 #include <cassert>
 #include <string>
@@ -56,14 +57,14 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#ifndef MSCVRT
-# include <unistd.h>
-# include <poll.h>
-# include <sys/socket.h>
-#else
+#if MSVCRT
 # include <winsock2.h>
 # include <io.h>
 # define EWOULDBLOCK  WSAEWOULDBLOCK 
+#else
+# include <unistd.h>
+# include <poll.h>
+# include <sys/socket.h>
 #endif
 
 #include <sys/types.h>
@@ -115,7 +116,7 @@ private:
 */
 
 socketx::socketx(int const sockFd) {
-#ifdef MSVCRT        
+#if MSVCRT        
     // We don't have any way to duplicate; we'll just have to borrow.
     this->fdIsBorrowed = true;
     this->fd = sockFd;
@@ -140,7 +141,7 @@ socketx::socketx(int const sockFd) {
 socketx::~socketx() {
 
     if (!this->fdIsBorrowed) {
-#ifdef MSVCRT
+#if MSVCRT
         ::closesocket(SOCKET(this->fd));
 #else
         close(this->fd);
@@ -157,7 +158,7 @@ socketx::waitForReadable() const {
        return if there is a signal (handled, of course).  Rarely,
        it is OK to return when there isn't anything to read.
     */
-#ifdef  MSVCRT
+#if  MSVCRT
     // poll() is not available; settle for select().
     // Starting in Windows Vista, there is WSApoll()
     fd_set rd_set;
@@ -182,7 +183,7 @@ socketx::waitForReadable() const {
 void
 socketx::waitForWritable() const {
     /* Return when socket is able to be written to. */
-#ifdef MSVCRT
+#if MSVCRT
     fd_set wr_set;
     FD_ZERO(&wr_set);
     FD_SET(this->fd, &wr_set);
