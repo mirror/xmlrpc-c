@@ -527,6 +527,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\src\cpp\server_cgi.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\cpp\server_pstream.cpp"
 				>
 				<FileConfiguration
@@ -736,4 +740,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-
