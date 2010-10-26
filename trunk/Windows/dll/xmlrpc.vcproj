@@ -206,6 +206,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\version.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\xmlrpc_array.c"
 				>
 			</File>
@@ -303,4 +307,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-
