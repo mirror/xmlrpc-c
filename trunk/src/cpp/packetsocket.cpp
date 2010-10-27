@@ -60,7 +60,6 @@
 #if MSVCRT
 # include <winsock2.h>
 # include <io.h>
-# define EWOULDBLOCK  WSAEWOULDBLOCK 
 #else
 # include <unistd.h>
 # include <poll.h>
@@ -76,6 +75,7 @@ using girerr::throwf;
 
 #include "xmlrpc-c/packetsocket.hpp"
 
+using namespace std;
 
 #define ESC 0x1B   //  ASCII Escape character
 #define ESC_STR "\x1B"
@@ -201,6 +201,58 @@ socketx::waitForWritable() const {
 
 
 
+static bool
+wouldBlock() {
+/*----------------------------------------------------------------------------
+   The most recently executed system socket function, which we assume failed,
+   failed because the situation was such that it wanted to block, but the
+   socket had the nonblocking option.
+-----------------------------------------------------------------------------*/
+#if MSVCRT
+    return (WSAGetLastError() == WSAEWOULDBLOCK);
+#else
+    return (errno == EWOULDBLOCK);
+#endif
+}
+
+
+
+static bool
+insufficientResourceNow() {
+/*----------------------------------------------------------------------------
+   The most recently executed system socket function, which we assume failed,
+   failed because it could not allocate enough of some resource, but may be
+   able to later.
+-----------------------------------------------------------------------------*/
+#if MSVCRT
+    return (WSAGetLastError() == WSAEGAIN);
+#else
+    return (errno == EAGAIN);
+#endif
+}
+
+
+
+static string
+lastErrorDesc() {
+/*----------------------------------------------------------------------------
+   A description suitable for an error message of why the most recent
+   failed system socket function failed.
+-----------------------------------------------------------------------------*/
+    ostringstream msg;
+#if MSVCRT
+    int const lastError = WSAGetLastError();
+    msg << "winsock error code " << lastError << " "
+        << "(" << strerror(lastError) << ")";
+#else
+    msg << "errno = " << errno << ", (" << strerror(errno);
+#endif
+    return msg.str();
+}
+
+
+
+
 void
 socketx::read(unsigned char * const buffer,
               size_t          const bufferSize,
@@ -215,12 +267,11 @@ socketx::read(unsigned char * const buffer,
     rc = recv(this->fd, (char *)buffer, bufferSize, 0);
 
     if (rc < 0) {
-        if (errno == EWOULDBLOCK) {
+        if (wouldBlock()) {
             *wouldblockP = true;
             *bytesReadP  = 0;
         } else
-            throwf("read() of socket failed with errno %d (%s)",
-                   errno, strerror(errno));
+            throwf("read() of socket failed with %s", lastErrorDesc().c_str());
     } else {
         *wouldblockP = false;
         *bytesReadP  = rc;
@@ -248,11 +299,11 @@ writeFd(int                   const fd,
                   size - totalBytesWritten, 0);
 
         if (rc < 0) {
-            if (errno == EAGAIN)
+            if (insufficientResourceNow())
                 full = true;
             else
-                throwf("write() of socket failed with errno %d (%s)",
-                       errno, strerror(errno));
+                throwf("write() of socket failed with %s",
+                       lastErrorDesc().c_str());
         } else if (rc == 0)
             throwf("Zero byte short write.");
         else {
