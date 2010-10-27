@@ -53,12 +53,6 @@ xmlrpc_win32_socketpair(int    const domain,
                             socks[1] = accept(listener, NULL, NULL);
                             if (socks[1] == INVALID_SOCKET)
                                 error = true;
-                            else {
-                                unsigned int const timeout = 50;
-                                setsockopt(socks[0], SOL_SOCKET, SO_RCVTIMEO,
-                                           (const char*)&timeout,
-                                           sizeof(timeout));
-                            }
                         }
                         if (error)
                             closesocket(socks[0]);
