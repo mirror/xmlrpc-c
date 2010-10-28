@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="xmlrpc_server_cgi"
+	Name="libxmlrpc_server_cgi"
 	ProjectGUID="{A2AAAF37-F382-4A11-8D86-53B589921616}"
 	TargetFrameworkVersion="0"
 	>
@@ -230,4 +230,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-

@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="xmlrpc_abyss"
+	Name="libxmlrpc_abyss"
 	ProjectGUID="{20A8F64B-F738-4D32-A798-A65AD8291541}"
 	RootNamespace="xmlrpc_abyss"
 	TargetFrameworkVersion="0"
@@ -763,4 +763,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-

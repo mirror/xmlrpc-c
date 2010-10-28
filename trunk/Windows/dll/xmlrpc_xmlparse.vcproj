@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="xmlrpc_xmlparse"
+	Name="libxmlrpc_xmlparse"
 	ProjectGUID="{40B0756D-AFEE-4A38-9F38-A372CE431404}"
 	RootNamespace="xmlparse"
 	TargetFrameworkVersion="0"
@@ -227,4 +227,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-

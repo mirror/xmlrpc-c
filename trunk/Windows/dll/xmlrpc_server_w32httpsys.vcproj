@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="xmlrpc_server_w32httpsys"
+	Name="libxmlrpc_server_w32httpsys"
 	ProjectGUID="{0EECB080-FC8F-4C46-9FB7-5DB22F9D1622}"
 	TargetFrameworkVersion="0"
 	>
@@ -234,4 +234,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-

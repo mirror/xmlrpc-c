@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="xmlrpc_xmltok"
+	Name="libxmlrpc_xmltok"
 	ProjectGUID="{BD9F6041-A272-462D-8C41-87CEF1F11408}"
 	RootNamespace="xmltok"
 	TargetFrameworkVersion="0"

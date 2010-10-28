@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="xmlrpc_util"
+	Name="libxmlrpc_util"
 	ProjectGUID="{29FBABB6-E36A-4559-9514-B3DAF6AE1416}"
 	TargetFrameworkVersion="0"
 	>
@@ -262,4 +262,3 @@
 	<Globals>
 	</Globals>
 </VisualStudioProject>
-
