@@ -211,23 +211,11 @@ wouldBlock() {
 #if MSVCRT
     return (WSAGetLastError() == WSAEWOULDBLOCK);
 #else
-    return (errno == EWOULDBLOCK);
-#endif
-}
-
-
-
-static bool
-insufficientResourceNow() {
-/*----------------------------------------------------------------------------
-   The most recently executed system socket function, which we assume failed,
-   failed because it could not allocate enough of some resource, but may be
-   able to later.
------------------------------------------------------------------------------*/
-#if MSVCRT
-    return (WSAGetLastError() == WSAEGAIN);
-#else
-    return (errno == EAGAIN);
+    /* EWOULDBLOCK and EAGAIN are normally synonyms, but POSIX allows them
+       to be separate and allows the OS to return whichever one it wants
+       for the "would block" condition.
+    */
+    return (errno == EWOULDBLOCK || errno == EAGAIN);
 #endif
 }
 
@@ -299,7 +287,7 @@ writeFd(int                   const fd,
                   size - totalBytesWritten, 0);
 
         if (rc < 0) {
-            if (insufficientResourceNow())
+            if (wouldBlock())
                 full = true;
             else
                 throwf("write() of socket failed with %s",
