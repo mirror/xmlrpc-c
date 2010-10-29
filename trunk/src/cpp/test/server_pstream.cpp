@@ -34,6 +34,7 @@
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
+#include "xmlrpc-c/sleep_int.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/registry.hpp"
 #include "xmlrpc-c/server_pstream.hpp"
@@ -161,6 +162,37 @@ string const testCallInfoResponseXml(
     "</methodResponse>\r\n"
     );
 
+
+
+static void
+waitForNetworkTransport() {
+/*----------------------------------------------------------------------------
+   Wait for a message to travel through the network.
+
+   This is part of our hack to allow us to test client/server communication
+   without the bother of a separate thread for each.  One party writes
+   to a socket, causing the OS to buffer the message, then the other party
+   reads from the socket, getting the buffered message.  We never wait
+   to send or receive, because with only one thread to do both, we would
+   deadlock.  Instead, we just count on the buffer being big enough.
+
+   But on some systems, the message doesn't immediately travel like this.  It
+   takes action by an independent thread (provided by the OS) to move the
+   message.  In particular, we've seen this behavior on Windows (2010.10).
+
+   So we just sleep for a small amount of time to let the message move.
+-----------------------------------------------------------------------------*/
+
+    // xmlrpc_millisecond_sleep() is allowed to return early, and on Windows
+    // it does that in preference to returning late insofar as the clock
+    // resolution doesn't allow returning at the exact time.  It is rumored
+    // that Windows clock period may be as long as 40 milliseconds.
+
+    xmlrpc_millisecond_sleep(50);
+}
+
+
+
 class client {
 /*----------------------------------------------------------------------------
    This is an object you can use as a client to test a packet stream
@@ -283,6 +315,8 @@ client::recvResp(string * const packetBytesP) const {
 
     char buffer[4096];
     int rc;
+
+    waitForNetworkTransport();
 
     rc = recv(this->clientFd, buffer, sizeof(buffer), 0);
 
