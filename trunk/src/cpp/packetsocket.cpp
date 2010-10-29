@@ -209,7 +209,8 @@ wouldBlock() {
    socket had the nonblocking option.
 -----------------------------------------------------------------------------*/
 #if MSVCRT
-    return (WSAGetLastError() == WSAEWOULDBLOCK);
+    return (WSAGetLastError() == WSAEWOULDBLOCK ||
+            WSAGetLastError() == WSAEINPROGRESS);
 #else
     /* EWOULDBLOCK and EAGAIN are normally synonyms, but POSIX allows them
        to be separate and allows the OS to return whichever one it wants
