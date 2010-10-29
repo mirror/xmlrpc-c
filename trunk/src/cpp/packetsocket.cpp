@@ -120,6 +120,8 @@ socketx::socketx(int const sockFd) {
     // We don't have any way to duplicate; we'll just have to borrow.
     this->fdIsBorrowed = true;
     this->fd = sockFd;
+    u_long iMode(1);  // Nonblocking mode yes
+    ioctlsocket(this->fd, FIONBIO, &iMode);  // Make socket nonblocking
 #else
     this->fdIsBorrowed = false;
 
@@ -131,7 +133,7 @@ socketx::socketx(int const sockFd) {
         throwf("dup() failed.  errno=%d (%s)", errno, strerror(errno));
     else {
         this->fd = dupRc;
-        fcntl(this->fd, F_SETFL, O_NONBLOCK);
+        fcntl(this->fd, F_SETFL, O_NONBLOCK);  // Make socket nonblocking
     }
 #endif
 }
