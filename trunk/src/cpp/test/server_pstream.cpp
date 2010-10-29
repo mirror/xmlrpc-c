@@ -274,6 +274,8 @@ client::sendCall(string const& packetBytes) const {
 
     rc = send(this->clientFd, packetBytes.c_str(), packetBytes.length(), 0);
 
+    waitForNetworkTransport();
+
     if (rc < 0)
         throwf("send() of test data to socket failed, errno=%d (%s)",
                errno, strerror(errno));
