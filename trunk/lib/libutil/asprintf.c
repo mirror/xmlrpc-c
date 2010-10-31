@@ -105,6 +105,14 @@ xmlrpc_strnomem(const char * const string) {
 
 
 
+const char *
+xmlrpc_strnomemval() {
+
+    return xmlrpc_strsol;
+}
+
+
+
 void
 xmlrpc_vasprintf(const char ** const retvalP,
                  const char *  const fmt,

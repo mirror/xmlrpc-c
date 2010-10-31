@@ -18,6 +18,10 @@ bool
 xmlrpc_strnomem(const char * const string);
 
 XMLRPC_DLLEXPORT
+const char *
+xmlrpc_strnomemval(void);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_vasprintf(const char ** const retvalP,
                  const char *  const fmt,
