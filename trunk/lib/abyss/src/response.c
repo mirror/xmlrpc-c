@@ -56,7 +56,7 @@ ResponseError2(TSession *   const sessionP,
                     "</HTML>",
                     sessionP->status, sessionP->status, explanation);
     
-    ConnWrite(sessionP->conn, errorDocument, strlen(errorDocument)); 
+    ConnWrite(sessionP->connP, errorDocument, strlen(errorDocument)); 
 
     xmlrpc_strfree(errorDocument);
 }
@@ -132,15 +132,15 @@ ResponseAddField(TSession *   const sessionP,
                  const char * const name,
                  const char * const value) {
 
-    return TableAdd(&sessionP->response_headers, name, value);
+    return TableAdd(&sessionP->responseHeaderFields, name, value);
 }
 
 
 
 static void
-addConnectionHeader(TSession * const sessionP) {
+addConnectionHeaderFld(TSession * const sessionP) {
 
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+    struct _TServer * const srvP = ConnServer(sessionP->connP)->srvP;
 
     if (HTTPKeepalive(sessionP)) {
         const char * keepaliveValue;
@@ -160,7 +160,7 @@ addConnectionHeader(TSession * const sessionP) {
 
 
 static void
-addDateHeader(TSession * const sessionP) {
+addDateHeaderFld(TSession * const sessionP) {
 
     if (sessionP->status >= 200) {
         const char * dateValue;
@@ -177,7 +177,7 @@ addDateHeader(TSession * const sessionP) {
 
 
 static void
-addServerHeader(TSession * const sessionP) {
+addServerHeaderFld(TSession * const sessionP) {
 
     const char * serverValue;
 
@@ -190,6 +190,26 @@ addServerHeader(TSession * const sessionP) {
 
 
 
+static void
+sendHeader(TConn * const connP,
+           TTable  const fields) {
+/*----------------------------------------------------------------------------
+   Send the HTTP response header whose fields are fields[].
+
+   Don't include the blank line that separates the header from the body.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
+    for (i = 0; i < fields.size; ++i) {
+        TTableItem * const ti = &fields.item[i];
+        const char * line;
+        xmlrpc_asprintf(&line, "%s: %s\r\n", ti->name, ti->value);
+        ConnWrite(connP, line, strlen(line));
+        xmlrpc_strfree(line);
+    }
+}
+
+
 void
 ResponseWriteStart(TSession * const sessionP) {
 /*----------------------------------------------------------------------------
@@ -198,9 +218,7 @@ ResponseWriteStart(TSession * const sessionP) {
 
    As part of this, send the entire HTTP header for the response.
 -----------------------------------------------------------------------------*/
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
-
-    unsigned int i;
+    struct _TServer * const srvP = ConnServer(sessionP->connP)->srvP;
 
     assert(!sessionP->responseStarted);
 
@@ -218,30 +236,23 @@ ResponseWriteStart(TSession * const sessionP) {
         const char * const reason = HTTPReasonByStatus(sessionP->status);
         const char * line;
         xmlrpc_asprintf(&line,"HTTP/1.1 %u %s\r\n", sessionP->status, reason);
-        ConnWrite(sessionP->conn, line, strlen(line));
+        ConnWrite(sessionP->connP, line, strlen(line));
         xmlrpc_strfree(line);
     }
 
-    addConnectionHeader(sessionP);
+    addConnectionHeaderFld(sessionP);
 
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode)
         ResponseAddField(sessionP, "Transfer-Encoding", "chunked");
 
-    addDateHeader(sessionP);
+    addDateHeaderFld(sessionP);
 
     if (srvP->advertise)
-        addServerHeader(sessionP);
+        addServerHeaderFld(sessionP);
 
-    /* send all the fields */
-    for (i = 0; i < sessionP->response_headers.size; ++i) {
-        TTableItem * const ti = &sessionP->response_headers.item[i];
-        const char * line;
-        xmlrpc_asprintf(&line, "%s: %s\r\n", ti->name, ti->value);
-        ConnWrite(sessionP->conn, line, strlen(line));
-        xmlrpc_strfree(line);
-    }
+    sendHeader(sessionP->connP, sessionP->responseHeaderFields);
 
-    ConnWrite(sessionP->conn, "\r\n", 2);  
+    ConnWrite(sessionP->connP, "\r\n", 2);  
 }
 
 

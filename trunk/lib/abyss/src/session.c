@@ -23,13 +23,13 @@ SessionRefillBuffer(TSession * const sessionP) {
 
    I.e. read data from the socket.
 -----------------------------------------------------------------------------*/
-    struct _TServer * const srvP = sessionP->conn->server->srvP;
+    struct _TServer * const srvP = sessionP->connP->server->srvP;
     bool failed;
 
     failed = FALSE;  /* initial value */
             
     /* Reset our read buffer & flush data from previous reads. */
-    ConnReadInit(sessionP->conn);
+    ConnReadInit(sessionP->connP);
 
     if (sessionP->continueRequired)
         failed = !HTTPWriteContinue(sessionP);
@@ -46,7 +46,7 @@ SessionRefillBuffer(TSession * const sessionP) {
            somebody to keep a connection alive nearly indefinitely.  But it's
            hard to do anything intelligent here without very complicated code.
         */
-        ConnRead(sessionP->conn, srvP->timeout, NULL, NULL, &readError);	
+        ConnRead(sessionP->connP, srvP->timeout, NULL, NULL, &readError);	
         if (readError) {
             failed = TRUE;
             xmlrpc_strfree(readError);
@@ -60,7 +60,7 @@ SessionRefillBuffer(TSession * const sessionP) {
 size_t
 SessionReadDataAvail(TSession * const sessionP) {
 
-    return sessionP->conn->buffersize - sessionP->conn->bufferpos;
+    return sessionP->connP->buffersize - sessionP->connP->bufferpos;
 
 }
 
@@ -79,18 +79,18 @@ SessionGetReadData(TSession *    const sessionP,
    We return a pointer to the first byte as *outStartP, and the length in
    bytes as *outLenP.  The memory pointed to belongs to the session.
 -----------------------------------------------------------------------------*/
-    uint32_t const bufferPos = sessionP->conn->bufferpos;
+    uint32_t const bufferPos = sessionP->connP->bufferpos;
 
-    *outStartP = &sessionP->conn->buffer.t[bufferPos];
+    *outStartP = &sessionP->connP->buffer.t[bufferPos];
 
-    assert(bufferPos <= sessionP->conn->buffersize);
+    assert(bufferPos <= sessionP->connP->buffersize);
 
-    *outLenP = MIN(max, sessionP->conn->buffersize - bufferPos);
+    *outLenP = MIN(max, sessionP->connP->buffersize - bufferPos);
 
     /* move pointer past the bytes we are returning */
-    sessionP->conn->bufferpos += *outLenP;
+    sessionP->connP->bufferpos += *outLenP;
 
-    assert(sessionP->conn->bufferpos <= sessionP->conn->buffersize);
+    assert(sessionP->connP->bufferpos <= sessionP->connP->buffersize);
 }
 
 
@@ -108,7 +108,7 @@ void
 SessionGetChannelInfo(TSession * const sessionP,
                       void **    const channelInfoPP) {
     
-    *channelInfoPP = sessionP->conn->channelInfoP;
+    *channelInfoPP = sessionP->connP->channelInfoP;
 }
 
 
@@ -131,7 +131,7 @@ SessionLog(TSession * const sessionP) {
     
     DateToLogString(sessionP->date, &date);
     
-    ConnFormatClientAddr(sessionP->conn, &peerInfo);
+    ConnFormatClientAddr(sessionP->connP, &peerInfo);
     
     xmlrpc_asprintf(&logline, "%s - %s - [%s] \"%s\" %d %u",
                     peerInfo,
@@ -140,12 +140,12 @@ SessionLog(TSession * const sessionP) {
                     sessionP->validRequest ?
                         sessionP->requestInfo.requestline : "???",
                     sessionP->status,
-                    sessionP->conn->outbytes
+                    sessionP->connP->outbytes
         );
     xmlrpc_strfree(peerInfo);
     xmlrpc_strfree(date);
     
-    LogWrite(sessionP->conn->server, logline);
+    LogWrite(sessionP->connP->server, logline);
 
     xmlrpc_strfree(logline);
         
@@ -157,7 +157,7 @@ SessionLog(TSession * const sessionP) {
 void *
 SessionGetDefaultHandlerCtx(TSession * const sessionP) {
 
-    struct _TServer * const srvP = sessionP->conn->server->srvP;
+    struct _TServer * const srvP = sessionP->connP->server->srvP;
 
     return srvP->defaultHandlerContext;
 }
