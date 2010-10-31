@@ -21,7 +21,7 @@ xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP);
 
 XMLRPC_DLLEXPORT
 extern void
-xmlrpc_cgi_init (int const flags ATTR_UNUSED);
+xmlrpc_cgi_init(int const flags);
 
 XMLRPC_DLLEXPORT
 extern xmlrpc_registry *
