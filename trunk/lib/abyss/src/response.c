@@ -127,12 +127,55 @@ ResponseStatusErrno(TSession * const sessionP) {
 
 
 
+static bool
+isValidHttpToken(const char * const token) {
+
+    char const separators[] = "()<>@,;:\\\"/[]?={} \t";
+    const char * p;
+    bool valid;
+
+    for (p = &token[0], valid = true; *p; ++p) {
+        if (!isprint(*p) || strchr(separators, *p))
+            valid = false;
+    }
+    return valid;
+}
+
+
+
+
+static bool
+isValidHttpText(const char * const text) {
+
+    const char * p;
+    bool valid;
+
+    for (p = &text[0], valid = true; *p; ++p) {
+        if (!isprint(*p))
+            valid = false;
+    }
+    return valid;
+}
+
+
+
 abyss_bool
 ResponseAddField(TSession *   const sessionP,
                  const char * const name,
                  const char * const value) {
 
-    return TableAdd(&sessionP->responseHeaderFields, name, value);
+    abyss_bool succeeded;
+    
+    if (!isValidHttpToken(name)) {
+        TraceMsg("Supplied HTTP header field name is not a valid HTTP token");
+        succeeded = false;
+    } else if (!isValidHttpText(value)) {
+        TraceMsg("Supplied HTTP header field value is not valid HTTP text");
+        succeeded = false;
+    } else {
+        succeeded = TableAdd(&sessionP->responseHeaderFields, name, value);
+    }
+    return succeeded;
 }
 
 
@@ -190,6 +233,60 @@ addServerHeaderFld(TSession * const sessionP) {
 
 
 
+static unsigned int
+leadingWsCt(const char * const arg) {
+
+    unsigned int i;
+
+    for (i = 0; arg[i] && isspace(arg[i]); ++i);
+
+    return i;
+}
+
+
+
+static unsigned int
+trailingWsPos(const char * const arg) {
+
+    unsigned int i;
+
+    for (i = strlen(arg); i > 0 && isspace(arg[i-1]); --i);
+
+    return i;
+}
+
+
+
+static const char *
+formatFieldValue(const char * const unformatted) {
+/*----------------------------------------------------------------------------
+   Return the string of characters that goes after the colon on the
+   HTTP header field line, given that 'unformatted' is its basic value.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+
+    /* An HTTP header field value may not have leading or trailing white
+       space.
+    */
+    char * buffer;
+
+    buffer = malloc(strlen(unformatted) + 1);
+
+    if (buffer == NULL)
+        retval = xmlrpc_strnomemval();
+    else {
+        unsigned int const lead  = leadingWsCt(unformatted);
+        unsigned int const trail = trailingWsPos(unformatted);
+        assert(trail >= lead);
+        strncpy(buffer, &unformatted[lead], trail - lead);
+        buffer[trail - lead] = '\0';
+        retval = buffer;
+    }
+    return retval;
+}
+
+
+
 static void
 sendHeader(TConn * const connP,
            TTable  const fields) {
@@ -197,15 +294,23 @@ sendHeader(TConn * const connP,
    Send the HTTP response header whose fields are fields[].
 
    Don't include the blank line that separates the header from the body.
+
+   fields[] contains syntactically valid HTTP header field names and values.
+   But to the extent that int contains undefined field names or semantically
+   invalid values, the header we send is invalid.
 -----------------------------------------------------------------------------*/
     unsigned int i;
 
     for (i = 0; i < fields.size; ++i) {
-        TTableItem * const ti = &fields.item[i];
+        TTableItem * const fieldP = &fields.item[i];
+        const char * const fieldValue = formatFieldValue(fieldP->value);
+
         const char * line;
-        xmlrpc_asprintf(&line, "%s: %s\r\n", ti->name, ti->value);
+
+        xmlrpc_asprintf(&line, "%s: %s\r\n", fieldP->name, fieldValue);
         ConnWrite(connP, line, strlen(line));
         xmlrpc_strfree(line);
+        xmlrpc_strfree(fieldValue);
     }
 }
 
@@ -250,6 +355,10 @@ ResponseWriteStart(TSession * const sessionP) {
     if (srvP->advertise)
         addServerHeaderFld(sessionP);
 
+    /* Note that sessionP->responseHeaderFields is defined to contain
+       syntactically but not necessarily semantically valid header
+       field names and values.
+    */
     sendHeader(sessionP->connP, sessionP->responseHeaderFields);
 
     ConnWrite(sessionP->connP, "\r\n", 2);  
