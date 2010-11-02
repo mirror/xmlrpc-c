@@ -10,7 +10,6 @@
 #include <string.h>
 #include <assert.h>
 #include <winsock.h>
-#include <errno.h>
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util_int.h"
@@ -430,9 +429,9 @@ channelWait(TChannel * const channelP,
             timedOut = TRUE;
             break;
         case -1:  /* socket error */
-            if (errno != EINTR)
+            if (WSAGetLastError() != WSAEINTR)
                 failed = TRUE;
-            break;
+        break;
         default:
             if (FD_ISSET(socketWinP->winsock, &rfds))
                 readRdy = TRUE;
@@ -484,7 +483,7 @@ ChannelWinGetPeerName(TChannel *           const channelP,
 
     if (rc != 0) {
         int const lastError = WSAGetLastError();
-        xmlrpc_asprintf(errorP, "getpeername() failed.  WSAERROR = %d (%s)",
+        xmlrpc_asprintf(errorP, "getpeername() failed.  WSA error = %d (%s)",
                         lastError, getWSAError(lastError));
     } else {
         if (addrlen != sizeof(sockAddr))
@@ -790,11 +789,16 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
             if (*errorP)
                 closesocket(acceptedWinsock);
-        } else if (errno == EINTR)
-            interrupted = TRUE;
-        else
-            xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
-                            errno, strerror(errno));
+        } else {
+            int const lastError = WSAGetLastError();
+
+            if (lastError == WSAEINTR)
+                interrupted = TRUE;
+            else
+                xmlrpc_asprintf(errorP,
+                                "accept() failed, WSA error = %d (%s)",
+                                lastError, getWSAError(lastError));
+        }
     }
     *channelPP = channelP;
 }
