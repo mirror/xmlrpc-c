@@ -641,13 +641,9 @@ static void
 handleXmlRpcOptionsReq(TSession *           const abyssSessionP,
                        const TRequestInfo * const requestInfoP ATTR_UNUSED) {
 
-    /* We should implement this for real; it should be analogous to
-       sendResponseXmlData()
-    */
-
-    sendError(abyssSessionP, 405,
-              "This server does not understand the OPTIONS method");
-        /* 405 = Method Not Allowed */
+    ResponseAddField(abyssSessionP, "Allow", "POST");
+    ResponseContentLength(abyssSessionP, 0);
+    ResponseStatus(abyssSessionP, 200);
 }
 
 
