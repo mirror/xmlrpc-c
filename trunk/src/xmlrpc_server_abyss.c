@@ -886,11 +886,6 @@ setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
                          unsigned int                      const parmSize,
                          TServer *                         const serverP) {
 
-    /* The following ought to be parameters on ServerCreate(), but it
-       looks like plugging them straight into the TServer structure is
-       the only way to set them.  
-    */
-
     if (parmSize >= XMLRPC_APSIZE(keepalive_timeout) &&
         parmsP->keepalive_timeout > 0)
         ServerSetKeepaliveTimeout(serverP, parmsP->keepalive_timeout);
