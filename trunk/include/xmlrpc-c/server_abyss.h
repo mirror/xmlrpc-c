@@ -92,7 +92,7 @@ XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parms,
-                    unsigned int                      const parm_size);
+                    unsigned int                      const parmSize);
 
 /*=========================================================================
 **  Object-oriented XML-RPC server with Abyss under the covers
@@ -158,6 +158,36 @@ xmlrpc_call_processor(xmlrpc_env *        const envP,
                       size_t              const callXmlLen,
                       TSession *          const abyssSessionP,
                       xmlrpc_mem_block ** const responseXmlPP);
+
+typedef struct {
+    xmlrpc_call_processor * xml_processor;
+    void *                  xml_processor_arg;
+    size_t                  xml_processor_max_stack;
+    const char *            uri_path;
+    xmlrpc_bool             chunk_response;
+    const char *            allow_origin;
+        /* NULL means don't answer HTTP access control query */
+} xmlrpc_server_abyss_handler_parms;
+
+#define XMLRPC_AHPSIZE(MBRNAME) \
+    XMLRPC_STRUCTSIZE(xmlrpc_server_abyss_handler_parms, MBRNAME)
+
+/* XMLRPC_AHPSIZE(xyz) is the minimum size a struct
+   xmlrpc_server_abyss_handler_parms must be to include the 'xyz' member.
+   This is essential to forward and backward compatibility, as new members
+   will be added to the end of the struct in future releases.  This is how the
+   callee knows whether or not the caller is new enough to have supplied a
+   certain parameter.
+*/
+
+
+XMLRPC_DLLEXPORT
+void
+xmlrpc_server_abyss_set_handler3(
+    xmlrpc_env *                              const envP,
+    TServer *                                 const srvP,
+    const xmlrpc_server_abyss_handler_parms * const parms,
+    unsigned int                              const parmSize);
 
 XMLRPC_DLLEXPORT
 void
