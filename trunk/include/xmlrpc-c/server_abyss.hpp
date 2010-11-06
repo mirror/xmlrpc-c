@@ -37,6 +37,7 @@ public:
         constrOpt & uriPath           (std::string    const& arg);
         constrOpt & chunkResponse     (bool           const& arg);
         constrOpt & allowOrigin       (std::string    const& arg);
+        constrOpt & accessCtlMaxAge (unsigned int const& arg);
         constrOpt & serverOwnsSignals (bool           const& arg);
         constrOpt & expectSigchld     (bool           const& arg);
 

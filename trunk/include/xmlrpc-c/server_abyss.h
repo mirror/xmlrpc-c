@@ -72,6 +72,8 @@ typedef struct {
     xmlrpc_bool       chunk_response;
     xmlrpc_bool       enable_shutdown;
     const char *      allow_origin;
+    xmlrpc_bool       access_ctl_expires;
+    unsigned int      access_ctl_max_age;
 } xmlrpc_server_abyss_parms;
 
 
@@ -168,6 +170,8 @@ typedef struct {
     xmlrpc_bool             chunk_response;
     const char *            allow_origin;
         /* NULL means don't answer HTTP access control query */
+    xmlrpc_bool             access_ctl_expires;
+    unsigned int            access_ctl_max_age;
 } xmlrpc_server_abyss_handler_parms;
 
 #define XMLRPC_AHPSIZE(MBRNAME) \

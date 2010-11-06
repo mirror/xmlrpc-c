@@ -572,6 +572,14 @@ struct httpAccessCtl {
     
            NULL means not to say anything about access control to the client.
         */
+    bool expires;
+        /* The permissions herein expire after a certain period from now.
+           'maxAge' is that period.
+        */
+    unsigned int maxAge;
+        /* Meaningful only when 'expires' is true.  The expiration period
+           in seconds.  Zero is valid.
+        */
 };
 
 struct uriHandlerXmlrpc {
@@ -591,12 +599,20 @@ struct uriHandlerXmlrpc {
 
 
 static void
+termAccessControl(struct httpAccessCtl * const accessCtlP) {
+
+    xmlrpc_strfreenull(accessCtlP->allowOrigin);
+}
+
+
+
+static void
 termUriHandler(void * const arg) {
 
     struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = arg;
 
     xmlrpc_strfree(uriHandlerXmlrpcP->uriPath);
-    xmlrpc_strfreenull(uriHandlerXmlrpcP->accessControl.allowOrigin);
+    termAccessControl(&uriHandlerXmlrpcP->accessControl);
     free(uriHandlerXmlrpcP);
 }
 
@@ -670,6 +686,12 @@ handleXmlRpcOptionsReq(TSession *           const abyssSessionP,
                          accessControl.allowOrigin);
         ResponseAddField(abyssSessionP, "Access-Control-Allow-Methods",
                          "POST");
+        if (accessControl.expires) {
+            char buffer[64];
+            sprintf(buffer, "%u", accessControl.maxAge);
+            ResponseAddField(abyssSessionP, "Access-Control-Max-Age",
+                             buffer);
+        }
     }
     ResponseContentLength(abyssSessionP, 0);
     ResponseStatus(abyssSessionP, 200);
@@ -807,6 +829,30 @@ setHandler(xmlrpc_env *              const envP,
 
 
 
+static void
+interpretHttpAccessControl(
+    const xmlrpc_server_abyss_handler_parms * const parmsP,
+    unsigned int                              const parmSize,
+    struct httpAccessCtl *                    const accessCtlP) {
+
+    if (parmSize >= XMLRPC_AHPSIZE(allow_origin) && parmsP->allow_origin)
+        accessCtlP->allowOrigin = xmlrpc_strdupsol(parmsP->allow_origin);
+    else
+        accessCtlP->allowOrigin = NULL;
+
+    if (parmSize >= XMLRPC_AHPSIZE(access_ctl_expires)
+        && parmsP->access_ctl_expires) {
+        accessCtlP->expires = true;
+
+        if (parmSize >= XMLRPC_AHPSIZE(access_ctl_max_age))
+            accessCtlP->maxAge = parmsP->access_ctl_max_age;
+        else
+            accessCtlP->maxAge = 0;
+    }            
+}
+
+
+
 void
 xmlrpc_server_abyss_set_handler3(
     xmlrpc_env *                              const envP,
@@ -852,11 +898,11 @@ xmlrpc_server_abyss_set_handler3(
         else
             uriHandlerXmlrpcP->chunkResponse = false;
         
-        if (parmSize >= XMLRPC_AHPSIZE(allow_origin) && parmsP->allow_origin)
-            uriHandlerXmlrpcP->accessControl.allowOrigin =
-                xmlrpc_strdupsol(parmsP->allow_origin);
-        else
-            uriHandlerXmlrpcP->accessControl.allowOrigin = NULL;
+        interpretHttpAccessControl(parmsP, parmSize,
+                                   &uriHandlerXmlrpcP->accessControl);
+
+        if (envP->fault_occurred)
+            termAccessControl(&uriHandlerXmlrpcP->accessControl);
     }
     if (!envP->fault_occurred)
         setHandler(envP, srvP, uriHandlerXmlrpcP, xmlProcessorMaxStackSize);
@@ -930,7 +976,9 @@ setHandlersRegistry(TServer *         const srvP,
                     const char *      const uriPath,
                     xmlrpc_registry * const registryP,
                     bool              const chunkResponse,
-                    const char *      const allowOrigin) {
+                    const char *      const allowOrigin,
+                    bool              const expires,
+                    unsigned int      const maxAge) {
 
     xmlrpc_env env;
     xmlrpc_server_abyss_handler_parms parms;
@@ -943,9 +991,11 @@ setHandlersRegistry(TServer *         const srvP,
     parms.uri_path = uriPath;
     parms.chunk_response = chunkResponse;
     parms.allow_origin = allowOrigin;
+    parms.access_ctl_expires = expires;
+    parms.access_ctl_max_age = maxAge;
 
-    xmlrpc_server_abyss_set_handler3(&env, srvP,
-                                     &parms, XMLRPC_AHPSIZE(allow_origin));
+    xmlrpc_server_abyss_set_handler3(
+        &env, srvP, &parms, XMLRPC_AHPSIZE(access_ctl_max_age));
     
     if (env.fault_occurred)
         abort();
@@ -962,7 +1012,7 @@ xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
                                   const char *      const uriPath,
                                   xmlrpc_registry * const registryP) {
 
-    setHandlersRegistry(srvP, uriPath, registryP, false, NULL);
+    setHandlersRegistry(srvP, uriPath, registryP, false, NULL, false, 0);
 }
 
 
@@ -971,7 +1021,7 @@ void
 xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
                                  xmlrpc_registry * const registryP) {
 
-    setHandlersRegistry(srvP, "/RPC2", registryP, false, NULL);
+    setHandlersRegistry(srvP, "/RPC2", registryP, false, NULL, false, 0);
 }
 
 
@@ -1137,6 +1187,22 @@ createServerBare(xmlrpc_env *                      const envP,
 
 
 
+static const char *
+uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
+            unsigned int                      const parmSize) {
+    
+    const char * uriPath;
+
+    if (parmSize >= XMLRPC_APSIZE(uri_path) && parmsP->uri_path)
+        uriPath = parmsP->uri_path;
+    else
+        uriPath = "/RPC2";
+
+    return uriPath;
+}
+
+
+
 static bool
 chunkResponseParm(const xmlrpc_server_abyss_parms * const parmsP,
                   unsigned int                      const parmSize) {
@@ -1159,19 +1225,25 @@ allowOriginParm(const xmlrpc_server_abyss_parms * const parmsP,
 
 
 
-static const char *
-uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
+static bool
+expiresParm(const xmlrpc_server_abyss_parms * const parmsP,
             unsigned int                      const parmSize) {
-    
-    const char * uriPath;
 
-    if (parmSize >= XMLRPC_APSIZE(uri_path) && parmsP->uri_path)
-        uriPath = parmsP->uri_path;
-    else
-        uriPath = "/RPC2";
+    return
+        parmSize >= XMLRPC_APSIZE(access_ctl_expires) ?
+        parmsP->access_ctl_expires : false;
+}    
 
-    return uriPath;
-}
+
+
+static unsigned int
+maxAgeParm(const xmlrpc_server_abyss_parms * const parmsP,
+           unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(access_ctl_max_age) ?
+        parmsP->access_ctl_max_age : 0;
+}    
 
 
 
@@ -1190,7 +1262,9 @@ createServer(xmlrpc_env *                      const envP,
         setHandlersRegistry(abyssServerP, uriPathParm(parmsP, parmSize),
                             parmsP->registryP,
                             chunkResponseParm(parmsP, parmSize),
-                            allowOriginParm(parmsP, parmSize));
+                            allowOriginParm(parmsP, parmSize),
+                            expiresParm(parmsP, parmSize),
+                            maxAgeParm(parmsP, parmSize));
         
         ServerInit(abyssServerP);
     }
@@ -1537,7 +1611,8 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP,
         
         assert(parmSize >= XMLRPC_APSIZE(registryP));
     
-        setHandlersRegistry(&server, "/RPC2", parmsP->registryP, false, NULL);
+        setHandlersRegistry(&server, "/RPC2", parmsP->registryP, false, NULL,
+                            false, 0);
         
         ServerInit(&server);
     
@@ -1661,7 +1736,8 @@ xmlrpc_server_abyss_init_registry(void) {
     dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 
-    setHandlersRegistry(&globalSrv, "/RPC2", builtin_registryP, false, NULL);
+    setHandlersRegistry(&globalSrv, "/RPC2", builtin_registryP, false, NULL,
+                        false, 0);
 }
 
 

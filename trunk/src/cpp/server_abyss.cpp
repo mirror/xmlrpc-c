@@ -189,6 +189,7 @@ struct serverAbyss::constrOpt_impl {
         std::string    uriPath;
         bool           chunkResponse;
         std::string    allowOrigin;
+        unsigned int   accessCtlMaxAge;
         bool           serverOwnsSignals;
         bool           expectSigchld;
     } value;
@@ -205,6 +206,7 @@ struct serverAbyss::constrOpt_impl {
         bool uriPath;
         bool chunkResponse;
         bool allowOrigin;
+        bool accessCtlMaxAge;
         bool serverOwnsSignals;
         bool expectSigchld;
     } present;
@@ -225,6 +227,7 @@ serverAbyss::constrOpt_impl::constrOpt_impl() {
     present.uriPath           = false;
     present.chunkResponse     = false;
     present.allowOrigin       = false;
+    present.accessCtlMaxAge  = false;
     present.serverOwnsSignals = false;
     present.expectSigchld     = false;
     
@@ -258,6 +261,7 @@ DEFINE_OPTION_SETTER(dontAdvertise,     bool);
 DEFINE_OPTION_SETTER(uriPath,           string);
 DEFINE_OPTION_SETTER(chunkResponse,     bool);
 DEFINE_OPTION_SETTER(allowOrigin,       string);
+DEFINE_OPTION_SETTER(accessCtlMaxAge,   unsigned int);
 DEFINE_OPTION_SETTER(serverOwnsSignals, bool);
 DEFINE_OPTION_SETTER(expectSigchld,     bool);
 
@@ -339,10 +343,12 @@ struct serverAbyss_impl {
     setAdditionalServerParms(serverAbyss::constrOpt_impl const& opt);
 
     void
-    setHttpReqHandlers(string const& uriPath,
-                       bool   const  chunkResponse,
-                       bool   const  doHttpAccessControl,
-                       string const& allowOrigin);
+    setHttpReqHandlers(string       const& uriPath,
+                       bool         const  chunkResponse,
+                       bool         const  doHttpAccessControl,
+                       string       const& allowOrigin,
+                       bool         const  accessCtlExpires,
+                       unsigned int const  accessCtlMaxAge);
     void
     run();
 
@@ -425,10 +431,12 @@ serverAbyss_impl::setAdditionalServerParms(
 
 
 void
-serverAbyss_impl::setHttpReqHandlers(string const& uriPath,
-                                     bool   const  chunkResponse,
-                                     bool   const  doHttpAccessControl,
-                                     string const& allowOrigin) {
+serverAbyss_impl::setHttpReqHandlers(string       const& uriPath,
+                                     bool         const  chunkResponse,
+                                     bool         const  doHttpAccessControl,
+                                     string       const& allowOrigin,
+                                     bool         const  accessCtlExpires,
+                                     unsigned int const  accessCtlMaxAge) {
 /*----------------------------------------------------------------------------
    This is a constructor helper.  Don't assume *this is complete.
 -----------------------------------------------------------------------------*/
@@ -441,9 +449,12 @@ serverAbyss_impl::setHttpReqHandlers(string const& uriPath,
     parms.uri_path = uriPath.c_str();
     parms.chunk_response = chunkResponse;
     parms.allow_origin = doHttpAccessControl ? allowOrigin.c_str() : NULL;
+    parms.access_ctl_expires = accessCtlExpires;
+    parms.access_ctl_max_age = accessCtlMaxAge;
 
-    xmlrpc_server_abyss_set_handler3(&env.env_c, &this->cServer,
-                                     &parms, XMLRPC_AHPSIZE(allow_origin));
+    xmlrpc_server_abyss_set_handler3(
+        &env.env_c, &this->cServer,
+        &parms, XMLRPC_AHPSIZE(access_ctl_max_age));
     
     if (env.env_c.fault_occurred)
         throwf("Failed to register the HTTP handler for XML-RPC "
@@ -496,7 +507,9 @@ serverAbyss_impl::serverAbyss_impl(
         this->setHttpReqHandlers(opt.value.uriPath,
                                  opt.value.chunkResponse,
                                  opt.present.allowOrigin,
-                                 opt.value.allowOrigin);
+                                 opt.value.allowOrigin,
+                                 opt.present.accessCtlMaxAge,
+                                 opt.value.accessCtlMaxAge);
 
 
         if (opt.present.portNumber || opt.present.socketFd)
