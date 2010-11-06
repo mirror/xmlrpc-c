@@ -929,14 +929,28 @@ static void
 setHandlersRegistry(TServer *         const srvP,
                     const char *      const uriPath,
                     xmlrpc_registry * const registryP,
-                    bool              const chunkResponse) {
+                    bool              const chunkResponse,
+                    const char *      const allowOrigin) {
 
-    xmlrpc_server_abyss_set_handler2(
-        srvP,
-        uriPath,
-        &processXmlrpcCall, registryP, 
-        xmlrpc_registry_max_stackSize(registryP),
-        chunkResponse);
+    xmlrpc_env env;
+    xmlrpc_server_abyss_handler_parms parms;
+
+    xmlrpc_env_init(&env);
+
+    parms.xml_processor = &processXmlrpcCall;
+    parms.xml_processor_arg = registryP;
+    parms.xml_processor_max_stack = xmlrpc_registry_max_stackSize(registryP),
+    parms.uri_path = uriPath;
+    parms.chunk_response = chunkResponse;
+    parms.allow_origin = allowOrigin;
+
+    xmlrpc_server_abyss_set_handler3(&env, srvP,
+                                     &parms, XMLRPC_AHPSIZE(allow_origin));
+    
+    if (env.fault_occurred)
+        abort();
+
+    xmlrpc_env_clean(&env);
 
     xmlrpc_server_abyss_set_default_handler(srvP);
 }
@@ -948,7 +962,7 @@ xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
                                   const char *      const uriPath,
                                   xmlrpc_registry * const registryP) {
 
-    setHandlersRegistry(srvP, uriPath, registryP, false);
+    setHandlersRegistry(srvP, uriPath, registryP, false, NULL);
 }
 
 
@@ -957,7 +971,7 @@ void
 xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
                                  xmlrpc_registry * const registryP) {
 
-    setHandlersRegistry(srvP, "/RPC2", registryP, false);
+    setHandlersRegistry(srvP, "/RPC2", registryP, false, NULL);
 }
 
 
@@ -1135,6 +1149,17 @@ chunkResponseParm(const xmlrpc_server_abyss_parms * const parmsP,
 
 
 static const char *
+allowOriginParm(const xmlrpc_server_abyss_parms * const parmsP,
+                unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(allow_origin) ?
+        parmsP->allow_origin : NULL;
+}    
+
+
+
+static const char *
 uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
             unsigned int                      const parmSize) {
     
@@ -1164,7 +1189,8 @@ createServer(xmlrpc_env *                      const envP,
         
         setHandlersRegistry(abyssServerP, uriPathParm(parmsP, parmSize),
                             parmsP->registryP,
-                            chunkResponseParm(parmsP, parmSize));
+                            chunkResponseParm(parmsP, parmSize),
+                            allowOriginParm(parmsP, parmSize));
         
         ServerInit(abyssServerP);
     }
@@ -1511,7 +1537,7 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP,
         
         assert(parmSize >= XMLRPC_APSIZE(registryP));
     
-        setHandlersRegistry(&server, "/RPC2", parmsP->registryP, false);
+        setHandlersRegistry(&server, "/RPC2", parmsP->registryP, false, NULL);
         
         ServerInit(&server);
     
@@ -1635,7 +1661,7 @@ xmlrpc_server_abyss_init_registry(void) {
     dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 
-    setHandlersRegistry(&globalSrv, "/RPC2", builtin_registryP, false);
+    setHandlersRegistry(&globalSrv, "/RPC2", builtin_registryP, false, NULL);
 }
 
 

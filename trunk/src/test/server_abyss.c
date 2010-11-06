@@ -49,8 +49,11 @@ testSetHandlers(TServer * const abyssServerP) {
     parms.chunk_response = true;
     parms.allow_origin = "*";
 
-    xmlrpc_server_abyss_set_handler3(&env, abyssServerP,
-                                     &parms, XMLRPC_AHPSIZE(allow_origin));
+    xmlrpc_server_abyss_set_handler3(
+        &env, abyssServerP, &parms, XMLRPC_AHPSIZE(xml_processor_arg));
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);  /* Parms too short */
+    xmlrpc_server_abyss_set_handler3(
+        &env, abyssServerP, &parms, XMLRPC_AHPSIZE(allow_origin));
     TEST_NO_FAULT(&env);
 
     xmlrpc_server_abyss_set_handler2(abyssServerP, "/RPC5",
@@ -92,6 +95,7 @@ testServerParms(void) {
     parms.dont_advertise = TRUE;
     parms.uri_path = "/RPC9";
     parms.chunk_response = TRUE;
+    parms.allow_origin = "*";
 };
 
 

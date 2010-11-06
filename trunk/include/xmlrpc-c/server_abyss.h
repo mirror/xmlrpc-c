@@ -71,6 +71,7 @@ typedef struct {
     const char *      uri_path;
     xmlrpc_bool       chunk_response;
     xmlrpc_bool       enable_shutdown;
+    const char *      allow_origin;
 } xmlrpc_server_abyss_parms;
 
 

@@ -20,6 +20,7 @@ using girerr::throwf;
 #include "xmlrpc-c/abyss.h"
 #include "xmlrpc-c/server_abyss.h"
 #include "xmlrpc-c/registry.hpp"
+#include "env_wrap.hpp"
 
 #include "xmlrpc-c/server_abyss.hpp"
 
@@ -187,6 +188,7 @@ struct serverAbyss::constrOpt_impl {
         bool           dontAdvertise;
         std::string    uriPath;
         bool           chunkResponse;
+        std::string    allowOrigin;
         bool           serverOwnsSignals;
         bool           expectSigchld;
     } value;
@@ -202,6 +204,7 @@ struct serverAbyss::constrOpt_impl {
         bool dontAdvertise;
         bool uriPath;
         bool chunkResponse;
+        bool allowOrigin;
         bool serverOwnsSignals;
         bool expectSigchld;
     } present;
@@ -221,6 +224,7 @@ serverAbyss::constrOpt_impl::constrOpt_impl() {
     present.dontAdvertise     = false;
     present.uriPath           = false;
     present.chunkResponse     = false;
+    present.allowOrigin       = false;
     present.serverOwnsSignals = false;
     present.expectSigchld     = false;
     
@@ -253,6 +257,7 @@ DEFINE_OPTION_SETTER(timeout,           unsigned int);
 DEFINE_OPTION_SETTER(dontAdvertise,     bool);
 DEFINE_OPTION_SETTER(uriPath,           string);
 DEFINE_OPTION_SETTER(chunkResponse,     bool);
+DEFINE_OPTION_SETTER(allowOrigin,       string);
 DEFINE_OPTION_SETTER(serverOwnsSignals, bool);
 DEFINE_OPTION_SETTER(expectSigchld,     bool);
 
@@ -334,6 +339,11 @@ struct serverAbyss_impl {
     setAdditionalServerParms(serverAbyss::constrOpt_impl const& opt);
 
     void
+    setHttpReqHandlers(string const& uriPath,
+                       bool   const  chunkResponse,
+                       bool   const  doHttpAccessControl,
+                       string const& allowOrigin);
+    void
     run();
 
     void
@@ -414,6 +424,38 @@ serverAbyss_impl::setAdditionalServerParms(
 
 
 
+void
+serverAbyss_impl::setHttpReqHandlers(string const& uriPath,
+                                     bool   const  chunkResponse,
+                                     bool   const  doHttpAccessControl,
+                                     string const& allowOrigin) {
+/*----------------------------------------------------------------------------
+   This is a constructor helper.  Don't assume *this is complete.
+-----------------------------------------------------------------------------*/
+    env_wrap env;
+    xmlrpc_server_abyss_handler_parms parms;
+
+    parms.xml_processor = &processXmlrpcCall;
+    parms.xml_processor_arg = this;
+    parms.xml_processor_max_stack = this->registryP->maxStackSize();
+    parms.uri_path = uriPath.c_str();
+    parms.chunk_response = chunkResponse;
+    parms.allow_origin = doHttpAccessControl ? allowOrigin.c_str() : NULL;
+
+    xmlrpc_server_abyss_set_handler3(&env.env_c, &this->cServer,
+                                     &parms, XMLRPC_AHPSIZE(allow_origin));
+    
+    if (env.env_c.fault_occurred)
+        throwf("Failed to register the HTTP handler for XML-RPC "
+               "with the underlying Abyss HTTP server.  "
+               "xmlrpc_server_abyss_set_handler3() failed with:  %s",
+               env.env_c.fault_string);
+
+    xmlrpc_server_abyss_set_default_handler(&this->cServer);
+}
+        
+
+
 serverAbyss_impl::serverAbyss_impl(
     serverAbyss::constrOpt_impl const& opt,
     serverAbyss *          const serverAbyssP) :
@@ -451,20 +493,12 @@ serverAbyss_impl::serverAbyss_impl(
     try {
         this->setAdditionalServerParms(opt);
 
-        // chunked response implementation is incomplete.  We must
-        // eventually get away from libxmlrpc_server_abyss and
-        // register our own handler with the Abyss server.  At that
-        // time, we'll have some place to pass
-        // opt.value.chunkResponse.
+        this->setHttpReqHandlers(opt.value.uriPath,
+                                 opt.value.chunkResponse,
+                                 opt.present.allowOrigin,
+                                 opt.value.allowOrigin);
 
-        xmlrpc_server_abyss_set_handler2(&this->cServer,
-                                         opt.value.uriPath.c_str(),
-                                         processXmlrpcCall, this,
-                                         this->registryP->maxStackSize(),
-                                         false);
 
-        xmlrpc_server_abyss_set_default_handler(&this->cServer);
-        
         if (opt.present.portNumber || opt.present.socketFd)
             ServerInit(&this->cServer);
     } catch (...) {
