@@ -620,7 +620,7 @@ termUriHandler(void * const arg) {
 
 static void
 handleXmlRpcCallReq(TSession *           const abyssSessionP,
-                    const TRequestInfo * const requestInfoP,
+                    const TRequestInfo * const requestInfoP ATTR_UNUSED,
                     xmlrpc_call_processor      xmlProcessor,
                     void *               const xmlProcessorArg,
                     bool                 const wantChunk) {
