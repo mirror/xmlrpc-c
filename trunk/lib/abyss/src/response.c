@@ -405,6 +405,26 @@ ResponseContentLength(TSession *      const sessionP,
 }
 
 
+
+void
+ResponseAccessControl(TSession *        const abyssSessionP, 
+                      ResponseAccessCtl const accessControl) {
+
+    if (accessControl.allowOrigin) {
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Origin",
+                         accessControl.allowOrigin);
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Methods",
+                         "POST");
+        if (accessControl.expires) {
+            char buffer[64];
+            sprintf(buffer, "%u", accessControl.maxAge);
+            ResponseAddField(abyssSessionP, "Access-Control-Max-Age", buffer);
+        }
+    }
+}
+
+
+
 /*********************************************************************
 ** MIMEType
 *********************************************************************/

@@ -475,6 +475,40 @@ abyss_bool
 ResponseContentLength(TSession *      const sessionP,
                       xmlrpc_uint64_t const len);
 
+typedef struct {
+/*----------------------------------------------------------------------------
+   These are parameters to control the HTTP "Access Control functions.  That's
+   where the client asks whether it is OK to send a request that some other
+   server asked the client to send (e.g. a person web browses a page at
+   a.example.com, and it sends a script that executes on the user's computer
+   and tries to perform an XML-RPC RPC on b.example.com.  The user's browser
+   first asks b.example.com if it is OK to do an RPC that is really initiated
+   by a.example.com.
+-----------------------------------------------------------------------------*/
+    const char * allowOrigin;
+        /* This tells what original servers (a.example.com in the example
+           above) are allowed to submit RPCs indirectly to us.  The value is a
+           verbatim value for an HTTP Access-Control-Allow-Origin header field
+           (just the value part of the field, not the whole field).  "*"
+           therefore means everyone is allowed.  "" means no one.
+    
+           NULL means not to say anything about access control to the client.
+        */
+    abyss_bool expires;
+        /* The permissions herein expire after a certain period from now.
+           'maxAge' is that period.
+        */
+    unsigned int maxAge;
+        /* Meaningful only when 'expires' is true.  The expiration period
+           in seconds.  Zero is valid.
+        */
+} ResponseAccessCtl;
+
+XMLRPC_DLLEXPORT
+void
+ResponseAccessControl(TSession *        const abyssSessionP, 
+                      ResponseAccessCtl const accessControl);
+
 XMLRPC_DLLEXPORT
 void
 ResponseError2(TSession *   const sessionP,

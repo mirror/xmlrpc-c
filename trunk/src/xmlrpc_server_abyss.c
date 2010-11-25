@@ -144,63 +144,13 @@ addAuthCookie(xmlrpc_env * const envP,
     
 
 
-struct httpAccessCtl {
-/*----------------------------------------------------------------------------
-   These are parameters to control the HTTP "Access Control functions.  That's
-   where the client asks whether it is OK to send a request that some other
-   server asked the client to send (e.g. a person web browses a page at
-   a.example.com, and it sends a script that executes on the user's computer
-   and tries to perform an XML-RPC RPC on b.example.com.  The user's browser
-   first asks b.example.com if it is OK to do an RPC that is really initiated
-   by a.example.com.
------------------------------------------------------------------------------*/
-    const char * allowOrigin;
-        /* This tells what original servers (a.example.com in the example
-           above) are allowed to submit RPCs indirectly to us.  The value is a
-           verbatim value for an HTTP Access-Control-Allow-Origin header field
-           (just the value part of the field, not the whole field).  "*"
-           therefore means everyone is allowed.  "" means no one.
-    
-           NULL means not to say anything about access control to the client.
-        */
-    bool expires;
-        /* The permissions herein expire after a certain period from now.
-           'maxAge' is that period.
-        */
-    unsigned int maxAge;
-        /* Meaningful only when 'expires' is true.  The expiration period
-           in seconds.  Zero is valid.
-        */
-};
-
-
-
-static void
-setResponseAccessControl(TSession *           const abyssSessionP, 
-                         struct httpAccessCtl const accessControl) {
-
-    if (accessControl.allowOrigin) {
-        ResponseAddField(abyssSessionP, "Access-Control-Allow-Origin",
-                         accessControl.allowOrigin);
-        ResponseAddField(abyssSessionP, "Access-Control-Allow-Methods",
-                         "POST");
-        if (accessControl.expires) {
-            char buffer[64];
-            sprintf(buffer, "%u", accessControl.maxAge);
-            ResponseAddField(abyssSessionP, "Access-Control-Max-Age", buffer);
-        }
-    }
-}
-
-
-
 static void 
-sendResponse(xmlrpc_env *         const envP,
-             TSession *           const abyssSessionP, 
-             const char *         const body, 
-             size_t               const len,
-             bool                 const chunked,
-             struct httpAccessCtl const accessControl) {
+sendResponse(xmlrpc_env *      const envP,
+             TSession *        const abyssSessionP, 
+             const char *      const body, 
+             size_t            const len,
+             bool              const chunked,
+             ResponseAccessCtl const accessControl) {
 /*----------------------------------------------------------------------------
    Generate an HTTP response containing body 'body' of length 'len'
    characters.
@@ -242,7 +192,7 @@ sendResponse(xmlrpc_env *         const envP,
         /* See discussion below of quotes around "utf-8" */
         ResponseContentType(abyssSessionP, "text/xml; charset=utf-8");
         ResponseContentLength(abyssSessionP, abyssLen);
-        setResponseAccessControl(abyssSessionP, accessControl);
+        ResponseAccessControl(abyssSessionP, accessControl);
         
         ResponseWriteStart(abyssSessionP);
         ResponseWriteBody(abyssSessionP, body, abyssLen);
@@ -511,13 +461,13 @@ traceHandlerCalled(TSession * const abyssSessionP) {
 
 
 static void
-processCall(TSession *           const abyssSessionP,
-            size_t               const contentSize,
-            xmlrpc_call_processor      xmlProcessor,
-            void *               const xmlProcessorArg,
-            bool                 const wantChunk,
-            struct httpAccessCtl const accessControl,
-            const char *         const trace) {
+processCall(TSession *            const abyssSessionP,
+            size_t                const contentSize,
+            xmlrpc_call_processor       xmlProcessor,
+            void *                const xmlProcessorArg,
+            bool                  const wantChunk,
+            ResponseAccessCtl     const accessControl,
+            const char *          const trace) {
 /*----------------------------------------------------------------------------
    Handle an RPC request.  This is an HTTP request that has the proper form
    to be an XML-RPC call.
@@ -612,13 +562,13 @@ struct uriHandlerXmlrpc {
         /* The handler should chunk its response whenever possible */
     xmlrpc_call_processor * xmlProcessor;
     void *                  xmlProcessorArg;
-    struct httpAccessCtl    accessControl;
+    ResponseAccessCtl       accessControl;
 };
 
 
 
 static void
-termAccessControl(struct httpAccessCtl * const accessCtlP) {
+termAccessControl(ResponseAccessCtl * const accessCtlP) {
 
     xmlrpc_strfreenull(accessCtlP->allowOrigin);
 }
@@ -643,7 +593,7 @@ handleXmlRpcCallReq(TSession *           const abyssSessionP,
                     xmlrpc_call_processor      xmlProcessor,
                     void *               const xmlProcessorArg,
                     bool                 const wantChunk,
-                    struct httpAccessCtl const accessControl) {
+                    ResponseAccessCtl    const accessControl) {
 /*----------------------------------------------------------------------------
    Handle the HTTP request described by *requestInfoP, which arrived over
    Abyss HTTP session *abyssSessionP, which is an XML-RPC call
@@ -696,12 +646,12 @@ handleXmlRpcCallReq(TSession *           const abyssSessionP,
 
 
 static void
-handleXmlRpcOptionsReq(TSession *           const abyssSessionP,
-                       struct httpAccessCtl const accessControl) {
+handleXmlRpcOptionsReq(TSession *        const abyssSessionP,
+                       ResponseAccessCtl const accessControl) {
 
     ResponseAddField(abyssSessionP, "Allow", "POST");
     
-    setResponseAccessControl(abyssSessionP, accessControl);
+    ResponseAccessControl(abyssSessionP, accessControl);
     ResponseContentLength(abyssSessionP, 0);
     ResponseStatus(abyssSessionP, 200);
     ResponseWriteStart(abyssSessionP);
@@ -843,7 +793,7 @@ static void
 interpretHttpAccessControl(
     const xmlrpc_server_abyss_handler_parms * const parmsP,
     unsigned int                              const parmSize,
-    struct httpAccessCtl *                    const accessCtlP) {
+    ResponseAccessCtl *                       const accessCtlP) {
 
     if (parmSize >= XMLRPC_AHPSIZE(allow_origin) && parmsP->allow_origin)
         accessCtlP->allowOrigin = xmlrpc_strdupsol(parmsP->allow_origin);
