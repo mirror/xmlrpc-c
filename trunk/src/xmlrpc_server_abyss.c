@@ -336,44 +336,6 @@ storeCookies(TSession *     const httpRequestP,
 
 
 static void
-validateContentType(TSession *     const httpRequestP,
-                    const char **  const errorP) {
-/*----------------------------------------------------------------------------
-   If the client didn't specify a content-type of "text/xml", fail.
-   We can't allow the client to default this header, because some
-   firewall software may rely on all XML-RPC requests using the POST
-   method and a content-type of "text/xml".
------------------------------------------------------------------------------*/
-    const char * const content_type =
-        RequestHeaderValue(httpRequestP, "content-type");
-
-    if (content_type == NULL)
-        xmlrpc_asprintf(errorP,
-                        "You did not supply a content-type HTTP header");
-    else {
-        const char * const sempos = strchr(content_type, ';');
-        size_t baselen;
-            /* Length of the base portion of the content type, e.g.
-               "text/xml" int "text/xml;charset=utf-8"
-            */
-
-        if (sempos)
-            baselen = sempos - content_type;
-        else
-            baselen = strlen(content_type);
-
-        if (!xmlrpc_strneq(content_type, "text/xml", baselen))
-            xmlrpc_asprintf(errorP, "Your content-type HTTP header value '%s' "
-                            "does not have a base type of 'text/xml'",
-                            content_type);
-        else
-            *errorP = NULL;
-    }
-}
-
-
-
-static void
 processContentLength(TSession *    const httpRequestP,
                      size_t *      const inputLenP,
                      bool *        const missingP,
@@ -603,6 +565,11 @@ handleXmlRpcCallReq(TSession *           const abyssSessionP,
    Handle it by feeding the XML which is its content to 'xmlProcessor'
    along with argument 'xmlProcessorArg'.
 -----------------------------------------------------------------------------*/
+    /* We used to reject the call if content-type was not present and
+       text/xml, on some security theory (a firewall may block text/xml with
+       the intent of blocking XML-RPC.  Now, we believe that is silly, and we
+       have seen an incorrectly implemented client that says text/plain.
+    */
     const char * error;
 
     assert(requestInfoP->method == m_post);
@@ -613,32 +580,24 @@ handleXmlRpcCallReq(TSession *           const abyssSessionP,
         xmlrpc_strfree(error);
     } else {
         const char * error;
-        validateContentType(abyssSessionP, &error);
+        bool missing;
+        size_t contentSize;
+
+        processContentLength(abyssSessionP, 
+                             &contentSize, &missing, &error);
         if (error) {
             sendError(abyssSessionP, 400, error);
-                /* 400 = Bad Request */
             xmlrpc_strfree(error);
         } else {
-            const char * error;
-            bool missing;
-            size_t contentSize;
-
-            processContentLength(abyssSessionP, 
-                                 &contentSize, &missing, &error);
-            if (error) {
-                sendError(abyssSessionP, 400, error);
-                xmlrpc_strfree(error);
-            } else {
-                if (missing)
-                    sendError(abyssSessionP, 411, "You must send a "
-                              "content-length HTTP header in an "
-                              "XML-RPC call.");
-                else
-                    processCall(abyssSessionP, contentSize,
-                                xmlProcessor, xmlProcessorArg,
-                                wantChunk, accessControl,
-                                trace_abyss);
-            }
+            if (missing)
+                sendError(abyssSessionP, 411, "You must send a "
+                          "content-length HTTP header in an "
+                          "XML-RPC call.");
+            else
+                processCall(abyssSessionP, contentSize,
+                            xmlProcessor, xmlProcessorArg,
+                            wantChunk, accessControl,
+                            trace_abyss);
         }
     }
 }
