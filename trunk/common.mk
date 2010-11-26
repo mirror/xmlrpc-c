@@ -309,11 +309,6 @@ $(TARGET_MODS_PP:%=%.osh):%.osh:%.cpp
 # to rebuild the symbolic link.  So we don't make $(SRCDIR) a
 # dependency of 'srcdir'.
 
-# We should do the same for 'blddir'.  We did once before, then undid
-# it in an erroneous effort to enable parallel make.  It's a little harder
-# with blddir; when we did it before, we had to use the non-symlink
-# version in a few places.
-
 srcdir:
 	$(LN_S) $(SRCDIR) $@
 blddir:
