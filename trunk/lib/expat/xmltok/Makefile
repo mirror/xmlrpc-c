@@ -27,7 +27,7 @@ include $(BLDDIR)/config.mk
 CFLAGS_LOCAL = -DXML_BYTE_ORDER=0
 
 # -I. is necessary when blddir != srcdir
-INCLUDES = -I. -I$(BLDDIR) -I$(SRCDIR)/lib/util/include -I$(SRCDIR)/include
+INCLUDES = -I. -I$(BLDDIR) -Isrcdir/lib/util/include -Isrcdir/include
 
 default: all
 
@@ -45,6 +45,11 @@ MAJ=3
   # Major number of shared libraries in this directory
 
 include $(SRCDIR)/common.mk
+
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
 
 XMLTOK_SHLIB = $(call shlibfn,libxmlrpc_xmltok)
 #XMLTOK_SHLIB is e.g. libxmlrpc_xmltok.so.3.1

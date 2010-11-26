@@ -11,7 +11,7 @@ include $(BLDDIR)/config.mk
 
 LDFLAGS = $(LADD)
 
-INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
+INCLUDES = -I$(BLDDIR) -Isrcdir/lib/util/include
 
 default: all
 

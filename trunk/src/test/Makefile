@@ -19,7 +19,7 @@ LDADD_CGI_SERVER = \
 
 default: all
 
-INCLUDES = -I$(BLDDIR) -I $(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
+INCLUDES = -I$(BLDDIR) -Isrcdir/include -Isrcdir/lib/util/include \
 
 PROGS = test cgitest1
 
@@ -50,6 +50,11 @@ else
 endif
 
 include $(SRCDIR)/common.mk
+
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
 
 test: \
   $(XMLRPC_C_CONFIG) \
