@@ -45,6 +45,7 @@ enum ttype {
     typeInteger,
     typeFloat,
     typeNull,
+    typeUndefined,
     typeTrue,
     typeFalse,
     typeEof,
@@ -65,6 +66,7 @@ tokTypeName(enum ttype const type) {
     case typeInteger:      return "Integer";
     case typeFloat:        return "Float";
     case typeNull:         return "Null";
+    case typeUndefined:    return "Undefined";
     case typeTrue:         return "True";
     case typeFalse:        return "False";
     case typeEof:          return "Eof";
@@ -428,6 +430,8 @@ getToken(xmlrpc_env *   const envP,
                     tokP->type = typeFloat;
                 else if (xmlrpc_strneq(tokP->begin, "null", tokP->size))
                     tokP->type = typeNull;
+                else if (xmlrpc_strneq(tokP->begin, "undefined", tokP->size))
+                    tokP->type = typeUndefined;
                 else if(xmlrpc_strneq(tokP->begin, "false", tokP->size))
                     tokP->type = typeFalse;
                 else if(xmlrpc_strneq(tokP->begin, "true", tokP->size))
@@ -885,6 +889,10 @@ parseValue(xmlrpc_env *   const envP,
         break;
             
     case typeNull:
+        retval = xmlrpc_nil_new(envP);
+        break;
+
+    case typeUndefined:
         retval = xmlrpc_nil_new(envP);
         break;
 
