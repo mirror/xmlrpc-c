@@ -791,7 +791,7 @@ test_system_multicall(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);    
     TEST(foo1_result == 42);
     TEST(bar_code == 123);
-    TEST(strcmp(bar_string, "Test fault") == 0);
+    TEST(xmlrpc_streq(bar_string, "Test fault"));
     TEST(nosuch_code == XMLRPC_NO_SUCH_METHOD_ERROR);
     TEST(foo2_result == 42);
     xmlrpc_DECREF(multiP);
@@ -900,7 +900,7 @@ testCall(xmlrpc_registry * const registryP) {
     doRpc(&env2, registryP, "test.bar", argArrayP, BAR_CALLINFO, &valueP);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == 123);
-    TEST(env2.fault_string && strcmp(env2.fault_string, "Test fault") == 0);
+    TEST(env2.fault_string && xmlrpc_streq(env2.fault_string, "Test fault"));
     xmlrpc_env_clean(&env2);
 
     /* Call a non-existant method and check the result. */

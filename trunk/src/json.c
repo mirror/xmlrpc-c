@@ -426,11 +426,11 @@ getToken(xmlrpc_env *   const envP,
                     tokP->type = typeInteger;
                 else if (isFloat(tokP->begin, tokP->size))
                     tokP->type = typeFloat;
-                else if (strncmp(tokP->begin,  "null", tokP->size ) == 0)
+                else if (xmlrpc_strneq(tokP->begin, "null", tokP->size))
                     tokP->type = typeNull;
-                else if(strncmp(tokP->begin, "false", tokP->size) == 0)
+                else if(xmlrpc_strneq(tokP->begin, "false", tokP->size))
                     tokP->type = typeFalse;
-                else if(strncmp(tokP->begin, "true", tokP->size) == 0)
+                else if(xmlrpc_strneq(tokP->begin, "true", tokP->size))
                     tokP->type = typeTrue;
                 else
                     setParseErr(envP, tokP, "Invalid word token -- "

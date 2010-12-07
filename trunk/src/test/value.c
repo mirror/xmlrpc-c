@@ -660,7 +660,7 @@ test_value_string_wide(void) {
         TEST(str != NULL);
         TEST(len == 4);
         TEST(str[len] == '\0');
-        TEST(0 == strncmp(str, utf8_data, len));
+        TEST(xmlrpc_strneq(str, utf8_data, len));
         free((void*)str);
     }
 

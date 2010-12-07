@@ -1051,10 +1051,10 @@ RequestValidURIPath(TSession * const sessionP) {
             if (*(p++) == '/') {
                 if (*p == '/')
                     break;
-                else if ((strncmp(p,"./",2) == 0) || (strcmp(p, ".") == 0))
+                else if ((xmlrpc_strneq(p,"./", 2)) || (xmlrpc_streq(p, ".")))
                     ++p;
-                else if ((strncmp(p, "../", 2) == 0) ||
-                         (strcmp(p, "..") == 0)) {
+                else if ((xmlrpc_strneq(p, "../", 2)) ||
+                         (xmlrpc_streq(p, ".."))) {
                     p += 2;
                     --i;
                     if (i == 0)

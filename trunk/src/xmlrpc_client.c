@@ -219,15 +219,15 @@ getTransportOps(
     if (false) {
     }
 #if MUST_BUILD_WININET_CLIENT
-    else if (strcmp(transportName, "wininet") == 0)
+    else if (xmlrpc_streq(transportName, "wininet"))
         *opsPP = &xmlrpc_wininet_transport_ops;
 #endif
 #if MUST_BUILD_CURL_CLIENT
-    else if (strcmp(transportName, "curl") == 0)
+    else if (xmlrpc_streq(transportName, "curl"))
         *opsPP = &xmlrpc_curl_transport_ops;
 #endif
 #if MUST_BUILD_LIBWWW_CLIENT
-    else if (strcmp(transportName, "libwww") == 0)
+    else if (xmlrpc_streq(transportName, "libwww"))
         *opsPP = &xmlrpc_libwww_transport_ops;
 #endif
     else

@@ -17,6 +17,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
+#include "xmlrpc-c/string_int.h"
 
 #include "bool.h"
 #include "testtool.h"
@@ -109,19 +110,19 @@ testEnv(void) {
     TEST(env.fault_occurred);
     TEST(env.fault_code == 1);
     TEST(env.fault_string != test_string_1);
-    TEST(strcmp(env.fault_string, test_string_1) == 0);
+    TEST(xmlrpc_streq(env.fault_string, test_string_1));
 
     /* Change an existing fault. */
     xmlrpc_env_set_fault(&env, 2, test_string_2);
     TEST(env.fault_occurred);
     TEST(env.fault_code == 2);
-    TEST(strcmp(env.fault_string, test_string_2) == 0);    
+    TEST(xmlrpc_streq(env.fault_string, test_string_2));
 
     /* Set a fault with a format string. */
     xmlrpc_env_set_fault_formatted(&env, 3, "a%s%d", "bar", 9);
     TEST(env.fault_occurred);
     TEST(env.fault_code == 3);
-    TEST(strcmp(env.fault_string, "abar9") == 0);
+    TEST(xmlrpc_streq(env.fault_string, "abar9"));
 
     /* Test cleanup code (with help from memprof). */
     xmlrpc_env_clean(&env);
@@ -161,7 +162,7 @@ testMemBlock(void) {
     xmlrpc_mem_block_resize(&env, block, 10000);
     TEST_NO_FAULT(&env);
     TEST(xmlrpc_mem_block_size(block) == 10000);
-    TEST(strcmp(xmlrpc_mem_block_contents(block), test_string_1) == 0);
+    TEST(xmlrpc_streq(xmlrpc_mem_block_contents(block), test_string_1));
 
     /* Test cleanup code (with help from memprof). */
     xmlrpc_mem_block_free(block);
@@ -677,9 +678,8 @@ test_utf8_coding(void) {
         TEST_NO_FAULT(&env);
         TEST(output != NULL);
         TEST(strlen(utf8) == XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output));
-        TEST(0 ==
-             strncmp(utf8, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
-                     strlen(utf8)));
+        TEST(xmlrpc_strneq(utf8, XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output),
+                           strlen(utf8)));
         xmlrpc_mem_block_free(output);
     }
 
