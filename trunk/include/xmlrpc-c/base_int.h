@@ -38,7 +38,11 @@ struct _xmlrpc_value {
         double d;
         xmlrpc_datetime dt;
            /* NOTE: may be invalid! e.g. February 30 */
-        void * c_ptr;
+        struct {
+            void *              objectP;
+            xmlrpc_cptr_dtor_fn dtor;   // NULL if none
+            void *              dtorContext;
+        } cptr;
     } _value;
     
     /* Other data types use a memory block.

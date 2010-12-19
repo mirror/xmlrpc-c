@@ -587,6 +587,29 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    const env,
                                 xmlrpc_value ** const out_keyval,
                                 xmlrpc_value ** const out_value);
 
+/* The "C pointer" type has no relation to XML-RPC.  It is here for the
+   convenience of programs that use xmlrpc_value for XML-RPC purposes
+   and can benefit from using it for non-XML-RPC purposes as well.
+
+   Also, some people use libxmlrpc for xmlrpc_value alone, because sometimes
+   you need to work with basic data types in richer ways than the C types
+   (int, time_t, etc) allow.
+*/
+
+XMLRPC_DLLEXPORT
+xmlrpc_value *
+xmlrpc_cptr_new(xmlrpc_env * const envP,
+                void *       const value);
+
+typedef void (*xmlrpc_cptr_dtor_fn)(void *, void *);
+
+XMLRPC_DLLEXPORT
+xmlrpc_value *
+xmlrpc_cptr_new_dtor(xmlrpc_env *        const envP,
+                     void *              const value,
+                     xmlrpc_cptr_dtor_fn const dtor,
+                     void *              const dtorContext);
+
 XMLRPC_DLLEXPORT
 void
 xmlrpc_read_cptr(xmlrpc_env *         const envP,
@@ -598,12 +621,6 @@ void
 xmlrpc_read_nil(xmlrpc_env *   const envP,
                 xmlrpc_value * const valueP);
                 
-
-XMLRPC_DLLEXPORT
-xmlrpc_value *
-xmlrpc_cptr_new(xmlrpc_env * const envP,
-                void *       const value);
-
 XMLRPC_DLLEXPORT
 xmlrpc_value *
 xmlrpc_nil_new(xmlrpc_env * const envP);
