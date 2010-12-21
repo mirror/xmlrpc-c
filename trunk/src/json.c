@@ -27,6 +27,7 @@
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/string_number.h"
 
 
 
@@ -643,8 +644,8 @@ makeUtf8String(xmlrpc_env * const envP,
 
 
 static xmlrpc_value *
-stringTokenValue(xmlrpc_env *   const envP,
-                 Tokenizer * const tokP) {
+stringTokenValue(xmlrpc_env * const envP,
+                 Tokenizer *  const tokP) {
 
     xmlrpc_env env;
     xmlrpc_value * valP;
@@ -665,6 +666,32 @@ stringTokenValue(xmlrpc_env *   const envP,
 
     return valP;
 }
+
+
+
+static xmlrpc_value *
+integerTokenValue(xmlrpc_env * const envP,
+                  Tokenizer *  const tokP) {
+
+    xmlrpc_env env;
+    xmlrpc_value * valP;
+    xmlrpc_int64 value;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_int64(&env, tokP->begin, &value);
+
+    if (env.fault_occurred)
+        setParseErr(envP, tokP, "Error in integer token value '%s': %s",
+                    tokP->begin, env.fault_string);
+    else
+        valP = xmlrpc_i8_new(envP, value);
+
+    xmlrpc_env_clean(&env);
+
+    return valP;
+}
+
 
 
 /* Forward declarations for recursion: */
@@ -870,9 +897,11 @@ parseObject(xmlrpc_env *   const envP,
 
 
 
+
+
 static xmlrpc_value *
-parseValue(xmlrpc_env *   const envP,
-           Tokenizer * const tokP) {
+parseValue(xmlrpc_env * const envP,
+           Tokenizer *  const tokP) {
 
     xmlrpc_value * retval;
     
@@ -905,7 +934,7 @@ parseValue(xmlrpc_env *   const envP,
         break;
 
     case typeInteger:
-        retval = xmlrpc_i8_new(envP, atoll(tokP->begin));
+        retval = integerTokenValue(envP, tokP);
         break;
         
     case typeFloat:
