@@ -905,7 +905,7 @@ parseValue(xmlrpc_env *   const envP,
         break;
 
     case typeInteger:
-        retval = xmlrpc_int_new(envP, atoi(tokP->begin));
+        retval = xmlrpc_i8_new(envP, atoll(tokP->begin));
         break;
         
     case typeFloat:
@@ -1142,11 +1142,11 @@ serializeInt(xmlrpc_env *       const envP,
              xmlrpc_value *     const valP,
              xmlrpc_mem_block * const outP) {
 
-    int value;
+    xmlrpc_int64 value;
 
-    xmlrpc_read_int(envP, valP, &value);
+    xmlrpc_read_i8(envP, valP, &value);
 
-    formatOut(envP, outP, "%d", value);
+    formatOut(envP, outP, XMLRPC_PRId64, value);
 }
 
 
