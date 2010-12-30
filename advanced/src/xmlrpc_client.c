@@ -194,6 +194,17 @@ unsigned int const xmlrpc_client_version_major = XMLRPC_VERSION_MAJOR;
 unsigned int const xmlrpc_client_version_minor = XMLRPC_VERSION_MINOR;
 unsigned int const xmlrpc_client_version_point = XMLRPC_VERSION_POINT;
 
+void
+xmlrpc_client_version(unsigned int * const majorP,
+                      unsigned int * const minorP,
+                      unsigned int * const pointP) {
+
+    *majorP = XMLRPC_VERSION_MAJOR;
+    *minorP = XMLRPC_VERSION_MINOR;
+    *pointP = XMLRPC_VERSION_POINT;
+}
+
+
 
 /*=========================================================================
    Client Create/Destroy
@@ -208,15 +219,15 @@ getTransportOps(
     if (false) {
     }
 #if MUST_BUILD_WININET_CLIENT
-    else if (strcmp(transportName, "wininet") == 0)
+    else if (xmlrpc_streq(transportName, "wininet"))
         *opsPP = &xmlrpc_wininet_transport_ops;
 #endif
 #if MUST_BUILD_CURL_CLIENT
-    else if (strcmp(transportName, "curl") == 0)
+    else if (xmlrpc_streq(transportName, "curl"))
         *opsPP = &xmlrpc_curl_transport_ops;
 #endif
 #if MUST_BUILD_LIBWWW_CLIENT
-    else if (strcmp(transportName, "libwww") == 0)
+    else if (xmlrpc_streq(transportName, "libwww"))
         *opsPP = &xmlrpc_libwww_transport_ops;
 #endif
     else
@@ -905,6 +916,15 @@ xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
 
 
 
+/* Microsoft Visual C in debug mode produces code that complains about
+   passing an undefined value of 'resultP' to xmlrpc_parse_response2().
+   It's a bogus complaint, because this function knows in those cases
+   that the value of 'resultP' is meaningless.  So we disable the check.
+*/
+#pragma runtime_checks("u", off)
+
+
+
 static void
 asynchComplete(struct xmlrpc_call_info * const callInfoP,
                xmlrpc_mem_block *        const responseXmlP,
@@ -964,6 +984,10 @@ asynchComplete(struct xmlrpc_call_info * const callInfoP,
 
     xmlrpc_env_clean(&env);
 }
+
+
+
+#pragma runtime_checks("u", restore)
 
 
 

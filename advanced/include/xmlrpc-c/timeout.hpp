@@ -1,9 +1,11 @@
 #ifndef XMLRPC_TIMEOUT_H_INCLUDED
 #define XMLRPC_TIMEOUT_H_INCLUDED
 
+#include <xmlrpc-c/c_util.h>
+
 namespace xmlrpc_c {
 
-struct timeout {
+struct XMLRPC_DLLEXPORT timeout {
 
     timeout() : finite(false) {}
 

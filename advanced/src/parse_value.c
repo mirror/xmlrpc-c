@@ -13,6 +13,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/string_number.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/xmlparser.h"
 #include "parse_datetime.h"
@@ -582,39 +583,20 @@ parseI8(xmlrpc_env *    const envP,
                       "<i8> content '%s' starts with white space", str);
     else {
         xmlrpc_int64 i;
-        char * tail;
+        xmlrpc_env env;
 
-        errno = 0;
-        i = XMLRPC_STRTOLL(str, &tail, 10);
+        xmlrpc_env_init(&env);
 
-        if (errno == ERANGE)
-            setParseFault(envP, "<i8> XML element value '%s' represents a "
-                          "number beyond the range that "
-                          "XML-RPC allows (%d - %d)", str,
-                          XMLRPC_INT64_MIN, XMLRPC_INT64_MAX);
-        else if (errno != 0)
-            setParseFault(envP, "unexpected error parsing <i8> XML element "
-                          "value '%s'.  strtoll() failed with errno %d (%s)",
-                          str, errno, strerror(errno));
-        else {
-            /* Look for out-of-range errors which didn't produce ERANGE. */
-            if (i < XMLRPC_INT64_MIN)
-                setParseFault(envP, "<i8> value %d is below the range allowed "
-                           "by XML-RPC (minimum is %d)",
-                           i, XMLRPC_INT64_MIN);
-            else if (i > XMLRPC_INT64_MAX)
-                setParseFault(envP, "<i8> value %d is above the range allowed "
-                              "by XML-RPC (maximum is %d)",
-                              i, XMLRPC_INT64_MAX);
-            else {
-                if (tail[0] != '\0')
-                    setParseFault(envP,
-                                  "<i8> value '%s' contains non-numerical "
-                                  "junk: '%s'", str, tail);
-                else
-                    *valuePP = xmlrpc_i8_new(envP, i);
-            }
-        }
+        xmlrpc_parse_int64(&env, str, &i);
+
+        if (env.fault_occurred)
+            setParseFault(envP, "<i8> XML element value '%s' is invalid "
+                          "because it does not represent "
+                          "a 64 bit integer.  %s", env.fault_string);
+        else
+            *valuePP = xmlrpc_i8_new(envP, i);
+
+        xmlrpc_env_clean(&env);
     }
 }
 

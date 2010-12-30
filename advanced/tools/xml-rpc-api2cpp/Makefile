@@ -22,7 +22,7 @@ include $(SRCDIR)/tools/common.mk
 # so we disable warnings for that:
 CFLAGS_LOCAL = -Wno-inline
 
-INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
+INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 
 LDFLAGS = $(LADD)
 

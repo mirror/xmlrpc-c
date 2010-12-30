@@ -17,8 +17,8 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/expat/xmlparse
 
-XMLTOKDIR = $(SRCDIR)/lib/expat/xmltok
-UTILDIR = $(SRCDIR)/lib/util
+XMLTOKDIR = srcdir/lib/expat/xmltok
+UTILDIR = srcdir/lib/util
 
 default: all
 
@@ -43,7 +43,7 @@ INCLUDES = \
   -I$(BLDDIR) \
   -I$(XMLTOKDIR) \
   -I$(UTILDIR)/include \
-  -I$(SRCDIR)/include \
+  -Isrcdir/include \
 
 # LIBDEP is the shared libraries on which libxmlrpc_abyss depends.
 # The runtime loader should load these libraries when it loads libxmlrpc_abyss.

@@ -22,13 +22,18 @@ OMIT_LIBWWW_TRANSPORT_RULE=Y
 
 include $(SRCDIR)/common.mk
 
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
+
 LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include \
   $(LIBWWW_INCLUDES)
 
 .PHONY: clean

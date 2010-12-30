@@ -55,6 +55,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
+#include "xmlrpc-c/string_int.h"
 
 #define NAME "xmlrpc command line program"
 #define VERSION "1.0"
@@ -428,19 +429,19 @@ computeParameter(xmlrpc_env *    const envP,
                  const char *    const paramArg,
                  xmlrpc_value ** const paramPP) {
 
-    if (strncmp(paramArg, "s/", 2) == 0)
+    if (xmlrpc_strneq(paramArg, "s/", 2))
         buildString(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "h/", 2) == 0)
+    else if (xmlrpc_strneq(paramArg, "h/", 2))
         buildBytestring(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "i/", 2) == 0) 
+    else if (xmlrpc_strneq(paramArg, "i/", 2)) 
         buildInt(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "I/", 2) == 0) 
+    else if (xmlrpc_strneq(paramArg, "I/", 2)) 
         buildI8(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "d/", 2) == 0) 
+    else if (xmlrpc_strneq(paramArg, "d/", 2)) 
         buildDouble(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "b/", 2) == 0)
+    else if (xmlrpc_strneq(paramArg, "b/", 2))
         buildBool(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "n/", 2) == 0)
+    else if (xmlrpc_strneq(paramArg, "n/", 2))
         buildNil(envP, &paramArg[2], paramPP);
     else {
         /* It's not in normal type/value format, so we take it to be

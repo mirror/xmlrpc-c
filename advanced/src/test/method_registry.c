@@ -26,6 +26,25 @@
 static const char * const barHelp = "This is the help for Method test.bar.";
 
 
+
+static void
+testVersion(void) {
+
+    unsigned int major, minor, point;
+
+    xmlrpc_server_version(&major, &minor, &point);
+
+#ifndef WIN32    
+    /* xmlrpc_server_version_major, etc. are not exported from a Windows DLL */
+
+    TEST(major = xmlrpc_server_version_major);
+    TEST(minor = xmlrpc_server_version_minor);
+    TEST(point = xmlrpc_server_version_point);
+#endif
+}
+
+
+
 static xmlrpc_value *
 test_foo(xmlrpc_env *   const envP,
          xmlrpc_value * const paramArrayP,
@@ -772,7 +791,7 @@ test_system_multicall(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);    
     TEST(foo1_result == 42);
     TEST(bar_code == 123);
-    TEST(strcmp(bar_string, "Test fault") == 0);
+    TEST(streq(bar_string, "Test fault"));
     TEST(nosuch_code == XMLRPC_NO_SUCH_METHOD_ERROR);
     TEST(foo2_result == 42);
     xmlrpc_DECREF(multiP);
@@ -881,7 +900,7 @@ testCall(xmlrpc_registry * const registryP) {
     doRpc(&env2, registryP, "test.bar", argArrayP, BAR_CALLINFO, &valueP);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == 123);
-    TEST(env2.fault_string && strcmp(env2.fault_string, "Test fault") == 0);
+    TEST(env2.fault_string && streq(env2.fault_string, "Test fault"));
     xmlrpc_env_clean(&env2);
 
     /* Call a non-existant method and check the result. */
@@ -1034,6 +1053,8 @@ test_method_registry(void) {
     xmlrpc_mem_block * responseP;
 
     xmlrpc_env_init(&env);
+
+    testVersion();
 
     printf("Running method registry tests.");
 

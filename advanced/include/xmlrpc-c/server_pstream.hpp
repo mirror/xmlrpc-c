@@ -9,18 +9,19 @@ typedef int socklen_t;
 #endif
 
 #include <xmlrpc-c/config.h>  /* For XMLRPC_SOCKET */
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/packetsocket.hpp>
 
 namespace xmlrpc_c {
 
-class serverPstreamConn {
+class XMLRPC_DLLEXPORT serverPstreamConn {
 
 public:
 
     struct constrOpt_impl;
 
-    class constrOpt {
+    class XMLRPC_DLLEXPORT constrOpt {
     public:
         constrOpt();
         ~constrOpt();
@@ -77,13 +78,13 @@ private:
 };
 
 
-class serverPstream {
+class XMLRPC_DLLEXPORT serverPstream {
 
 public:
 
     struct constrOpt_impl;
 
-    class constrOpt {
+    class XMLRPC_DLLEXPORT constrOpt {
     public:
         constrOpt();
         ~constrOpt();
@@ -130,7 +131,7 @@ private:
 // server then passes it on through to the user's XML-RPC method 
 // execute() method.
 
-class callInfo_serverPstream : public xmlrpc_c::callInfo {
+class XMLRPC_DLLEXPORT callInfo_serverPstream : public xmlrpc_c::callInfo {
 /*----------------------------------------------------------------------------
    This is information about how an XML-RPC call arrived to the server.  It is
    available to the user's XML-RPC method execute() method, so for example an

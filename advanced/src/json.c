@@ -27,6 +27,7 @@
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/string_number.h"
 
 
 
@@ -45,6 +46,7 @@ enum ttype {
     typeInteger,
     typeFloat,
     typeNull,
+    typeUndefined,
     typeTrue,
     typeFalse,
     typeEof,
@@ -65,6 +67,7 @@ tokTypeName(enum ttype const type) {
     case typeInteger:      return "Integer";
     case typeFloat:        return "Float";
     case typeNull:         return "Null";
+    case typeUndefined:    return "Undefined";
     case typeTrue:         return "True";
     case typeFalse:        return "False";
     case typeEof:          return "Eof";
@@ -426,11 +429,13 @@ getToken(xmlrpc_env *   const envP,
                     tokP->type = typeInteger;
                 else if (isFloat(tokP->begin, tokP->size))
                     tokP->type = typeFloat;
-                else if (strncmp(tokP->begin,  "null", tokP->size ) == 0)
+                else if (xmlrpc_strneq(tokP->begin, "null", tokP->size))
                     tokP->type = typeNull;
-                else if(strncmp(tokP->begin, "false", tokP->size) == 0)
+                else if (xmlrpc_strneq(tokP->begin, "undefined", tokP->size))
+                    tokP->type = typeUndefined;
+                else if(xmlrpc_strneq(tokP->begin, "false", tokP->size))
                     tokP->type = typeFalse;
-                else if(strncmp(tokP->begin, "true", tokP->size) == 0)
+                else if(xmlrpc_strneq(tokP->begin, "true", tokP->size))
                     tokP->type = typeTrue;
                 else
                     setParseErr(envP, tokP, "Invalid word token -- "
@@ -639,8 +644,8 @@ makeUtf8String(xmlrpc_env * const envP,
 
 
 static xmlrpc_value *
-stringTokenValue(xmlrpc_env *   const envP,
-                 Tokenizer * const tokP) {
+stringTokenValue(xmlrpc_env * const envP,
+                 Tokenizer *  const tokP) {
 
     xmlrpc_env env;
     xmlrpc_value * valP;
@@ -661,6 +666,32 @@ stringTokenValue(xmlrpc_env *   const envP,
 
     return valP;
 }
+
+
+
+static xmlrpc_value *
+integerTokenValue(xmlrpc_env * const envP,
+                  Tokenizer *  const tokP) {
+
+    xmlrpc_env env;
+    xmlrpc_value * valP;
+    xmlrpc_int64 value;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_parse_int64(&env, tokP->begin, &value);
+
+    if (env.fault_occurred)
+        setParseErr(envP, tokP, "Error in integer token value '%s': %s",
+                    tokP->begin, env.fault_string);
+    else
+        valP = xmlrpc_i8_new(envP, value);
+
+    xmlrpc_env_clean(&env);
+
+    return valP;
+}
+
 
 
 /* Forward declarations for recursion: */
@@ -866,9 +897,11 @@ parseObject(xmlrpc_env *   const envP,
 
 
 
+
+
 static xmlrpc_value *
-parseValue(xmlrpc_env *   const envP,
-           Tokenizer * const tokP) {
+parseValue(xmlrpc_env * const envP,
+           Tokenizer *  const tokP) {
 
     xmlrpc_value * retval;
     
@@ -888,6 +921,10 @@ parseValue(xmlrpc_env *   const envP,
         retval = xmlrpc_nil_new(envP);
         break;
 
+    case typeUndefined:
+        retval = xmlrpc_nil_new(envP);
+        break;
+
     case typeFalse:
         retval = xmlrpc_bool_new(envP, (xmlrpc_bool)false);
         break;
@@ -897,7 +934,7 @@ parseValue(xmlrpc_env *   const envP,
         break;
 
     case typeInteger:
-        retval = xmlrpc_int_new(envP, atoi(tokP->begin));
+        retval = integerTokenValue(envP, tokP);
         break;
         
     case typeFloat:
@@ -1027,11 +1064,36 @@ static void
 appendEscapeSeq(xmlrpc_env *       const envP,
                 xmlrpc_mem_block * const outP,
                 unsigned char      const c) {
+/*----------------------------------------------------------------------------
+   Append to *outP the escaped representation of 'c'.
 
+   This is e.g. "\t" for tab, or "\u001C" for something exotic.
+-----------------------------------------------------------------------------*/
     unsigned int size;
-    char buffer[8];
+    char buffer[6];
+    char slashChar;
+        /* Character that goes after the backslash, including 'u' for \uHHHH */
+    
+    switch (c) {
+    case '"' : slashChar = '"';  break; /* U+0022 */
+    case '\\': slashChar = '\\'; break; /* U+005C */
+    case '\b': slashChar = 'b';  break; /* U+0008 */
+    case '\f': slashChar = 'f';  break; /* U+000C */
+    case '\n': slashChar = 'n';  break; /* U+000A */
+    case '\r': slashChar = 'r';  break; /* U+000D */
+    case '\t': slashChar = 't';  break; /* U+0009 */
+    default:
+        slashChar = 'u';
+    };
 
-    size = sprintf(buffer, "\\u%04x", c);
+    buffer[0] = '\\';
+    buffer[1] = slashChar;
+    
+    if (slashChar == 'u') {
+        sprintf(&buffer[2], "%04x", c);
+        size = 6;  /* \u1234 */
+    } else
+        size = 2;
 
     XMLRPC_MEMBLOCK_APPEND(char, envP, outP, buffer, size);
 }
@@ -1057,8 +1119,8 @@ makeJsonString(xmlrpc_env *       const envP,
     while (cur != end && !envP->fault_occurred) {
         unsigned char const c = *cur;
 
-        if (c < 0x1F || c == '"' || c == '/' || c == '\\') {
-            /* This characters needs to be escaped.  Put a \uxxxx escape
+        if (c < 0x1F || c == '"' || c == '\\') {
+            /* This characters needs to be escaped.  Put a backslash escape
                sequence in the output for this character, after copying all
                the characters before it to the output.
             */
@@ -1109,11 +1171,11 @@ serializeInt(xmlrpc_env *       const envP,
              xmlrpc_value *     const valP,
              xmlrpc_mem_block * const outP) {
 
-    int value;
+    xmlrpc_int64 value;
 
-    xmlrpc_read_int(envP, valP, &value);
+    xmlrpc_read_i8(envP, valP, &value);
 
-    formatOut(envP, outP, "%d", value);
+    formatOut(envP, outP, XMLRPC_PRId64, value);
 }
 
 

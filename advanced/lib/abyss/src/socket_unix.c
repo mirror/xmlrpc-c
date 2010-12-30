@@ -612,8 +612,12 @@ waitForConnection(struct socketUnix * const listenSocketP,
 
    We return before the requested condition holds if the process receives
    (and catches) a signal, but only if it receives that signal a certain
-   time after we start running.  (That means this function isn't useful
+   time after we start running.  (That means this behavior isn't useful
    for most purposes).
+
+   We furthermore return before the requested condition holds if someone sends
+   a byte through the listening socket's interrupt pipe (or has sent one
+   previously since the most recent time the pipe was drained).
 
    Return *interruptedP == true if we return before there is a connection
    ready to accept.

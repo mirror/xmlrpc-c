@@ -33,6 +33,11 @@ OMIT_UTILS_RULE = Y
 
 include $(SRCDIR)/common.mk
 
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
+
 LIBOBJS = \
   casprintf.o \
   cmdline_parser.o \
@@ -44,7 +49,7 @@ LIBOBJS = \
 .PHONY: all
 all: $(LIBOBJS)
 
-INCLUDES = -I$(SRCDIR)/$(SUBDIR)/include -I$(BLDDIR)
+INCLUDES = -Isrcdir/$(SUBDIR)/include -I$(BLDDIR)
 
 %.o:%.c
 	$(CC) -c $(CFLAGS_ALL) $<

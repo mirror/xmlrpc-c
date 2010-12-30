@@ -95,7 +95,7 @@ RequestInit(TSession * const sessionP,
 
     time(&sessionP->date);
 
-    sessionP->conn = connectionP;
+    sessionP->connP = connectionP;
 
     sessionP->responseStarted = FALSE;
 
@@ -106,8 +106,8 @@ RequestInit(TSession * const sessionP,
 
     ListInit(&sessionP->cookies);
     ListInit(&sessionP->ranges);
-    TableInit(&sessionP->request_headers);
-    TableInit(&sessionP->response_headers);
+    TableInit(&sessionP->requestHeaderFields);
+    TableInit(&sessionP->responseHeaderFields);
 
     sessionP->status = 0;  /* No status from handler yet */
 
@@ -124,8 +124,8 @@ RequestFree(TSession * const sessionP) {
 
     ListFree(&sessionP->cookies);
     ListFree(&sessionP->ranges);
-    TableFree(&sessionP->request_headers);
-    TableFree(&sessionP->response_headers);
+    TableFree(&sessionP->requestHeaderFields);
+    TableFree(&sessionP->responseHeaderFields);
     StringFree(&(sessionP->header));
 }
 
@@ -439,10 +439,10 @@ readRequestHeader(TSession * const sessionP,
     bool error;
     bool endOfHeaders;
 
-    skipToNonemptyLine(sessionP->conn, deadline, &error);
+    skipToNonemptyLine(sessionP->connP, deadline, &error);
 
     if (!error) {
-        readHeader(sessionP->conn, deadline, &endOfHeaders, &line, &error);
+        readHeader(sessionP->connP, deadline, &endOfHeaders, &line, &error);
 
         /* End of headers is delimited by an empty line, and we skipped all
            the empty lines above, so readHeader() could not have encountered
@@ -914,7 +914,7 @@ readAndProcessHeaders(TSession *    const sessionP,
     while (!endOfHeaders && !*errorP) {
         char * header;
         bool error;
-        readHeader(sessionP->conn, deadline, &endOfHeaders, &header, &error);
+        readHeader(sessionP->connP, deadline, &endOfHeaders, &header, &error);
         if (error) {
             xmlrpc_asprintf(errorP, "Failed to read headers from "
                             "client connection.");
@@ -933,7 +933,7 @@ readAndProcessHeaders(TSession *    const sessionP,
                     
                     fieldValue = p;
 
-                    TableAdd(&sessionP->request_headers,
+                    TableAdd(&sessionP->requestHeaderFields,
                              fieldName, fieldValue);
                     
                     processHeader(fieldName, fieldValue, sessionP, errorP,
@@ -1013,7 +1013,7 @@ char *
 RequestHeaderValue(TSession *   const sessionP,
                    const char * const name) {
 
-    return (TableFind(&sessionP->request_headers, name));
+    return (TableFind(&sessionP->requestHeaderFields, name));
 }
 
 
@@ -1051,10 +1051,10 @@ RequestValidURIPath(TSession * const sessionP) {
             if (*(p++) == '/') {
                 if (*p == '/')
                     break;
-                else if ((strncmp(p,"./",2) == 0) || (strcmp(p, ".") == 0))
+                else if ((xmlrpc_strneq(p,"./", 2)) || (xmlrpc_streq(p, ".")))
                     ++p;
-                else if ((strncmp(p, "../", 2) == 0) ||
-                         (strcmp(p, "..") == 0)) {
+                else if ((xmlrpc_strneq(p, "../", 2)) ||
+                         (xmlrpc_streq(p, ".."))) {
                     p += 2;
                     --i;
                     if (i == 0)
@@ -1268,14 +1268,14 @@ HTTPWriteBodyChunk(TSession *   const sessionP,
         sprintf(chunkHeader, "%x\r\n", len);
 
         succeeded =
-            ConnWrite(sessionP->conn, chunkHeader, strlen(chunkHeader));
+            ConnWrite(sessionP->connP, chunkHeader, strlen(chunkHeader));
         if (succeeded) {
-            succeeded = ConnWrite(sessionP->conn, buffer, len);
+            succeeded = ConnWrite(sessionP->connP, buffer, len);
             if (succeeded)
-                succeeded = ConnWrite(sessionP->conn, "\r\n", 2);
+                succeeded = ConnWrite(sessionP->connP, "\r\n", 2);
         }
     } else
-        succeeded = ConnWrite(sessionP->conn, buffer, len);
+        succeeded = ConnWrite(sessionP->connP, buffer, len);
 
     return succeeded;
 }
@@ -1290,7 +1290,7 @@ HTTPWriteEndChunk(TSession * const sessionP) {
     if (sessionP->chunkedwritemode && sessionP->chunkedwrite) {
         /* May be one day trailer dumping will be added */
         sessionP->chunkedwritemode = FALSE;
-        retval = ConnWrite(sessionP->conn, "0\r\n\r\n", 5);
+        retval = ConnWrite(sessionP->connP, "0\r\n\r\n", 5);
     } else
         retval = TRUE;
 
@@ -1318,7 +1318,7 @@ HTTPWriteContinue(TSession * const sessionP) {
     char const continueStatus[] = "HTTP/1.1 100 continue\r\n\r\n";
         /* This is a status line plus an end-of-headers empty line */
 
-    return ConnWrite(sessionP->conn, continueStatus, strlen(continueStatus));
+    return ConnWrite(sessionP->connP, continueStatus, strlen(continueStatus));
 }
 
 

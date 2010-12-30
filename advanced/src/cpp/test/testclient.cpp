@@ -80,7 +80,15 @@ public:
 
 
 class clientXmlTransport_direct : public clientXmlTransport {
+/*----------------------------------------------------------------------------
+   Though this fills the shoes of a client XML transport, it's really a
+   simulation, because it doesn't transport anything anywhere.  The call()
+   method, which is supposed to transport a call to a server and then
+   transport the response back, actually just executes the method itself.
 
+   Part of a carriage parameter for a transport of this class is the handle
+   of a method registry, so the transport knows how to execute the method.
+-----------------------------------------------------------------------------*/
 public:    
     void
     call(xmlrpc_c::carriageParm * const  carriageParmP,

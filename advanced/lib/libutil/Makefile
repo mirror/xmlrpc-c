@@ -37,6 +37,7 @@ TARGET_MODS = \
   memblock \
   select \
   sleep \
+  string_number \
   time \
   utf8 \
 

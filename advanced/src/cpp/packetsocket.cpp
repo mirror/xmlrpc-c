@@ -45,6 +45,7 @@
   example, an unplugged TCP/IP network cable.  It's probably better
   to use the TCP keepalive facility for that.
 ============================================================================*/
+#include "xmlrpc_config.h"
 
 #include <cassert>
 #include <string>
@@ -56,14 +57,13 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#ifndef WIN32
+#if MSVCRT
+# include <winsock2.h>
+# include <io.h>
+#else
 # include <unistd.h>
 # include <poll.h>
 # include <sys/socket.h>
-#else
-# include <winsock2.h>
-# include <io.h>
-# define EWOULDBLOCK  WSAEWOULDBLOCK 
 #endif
 
 #include <sys/types.h>
@@ -75,11 +75,12 @@ using girerr::throwf;
 
 #include "xmlrpc-c/packetsocket.hpp"
 
+using namespace std;
 
 #define ESC 0x1B   //  ASCII Escape character
 #define ESC_STR "\x1B"
 
-class socketx {
+class XMLRPC_DLLEXPORT socketx {
 
 public:
     socketx(int const sockFd);
@@ -115,10 +116,12 @@ private:
 */
 
 socketx::socketx(int const sockFd) {
-#ifdef WIN32        
+#if MSVCRT        
     // We don't have any way to duplicate; we'll just have to borrow.
     this->fdIsBorrowed = true;
     this->fd = sockFd;
+    u_long iMode(1);  // Nonblocking mode yes
+    ioctlsocket(this->fd, FIONBIO, &iMode);  // Make socket nonblocking
 #else
     this->fdIsBorrowed = false;
 
@@ -130,7 +133,7 @@ socketx::socketx(int const sockFd) {
         throwf("dup() failed.  errno=%d (%s)", errno, strerror(errno));
     else {
         this->fd = dupRc;
-        fcntl(this->fd, F_SETFL, O_NONBLOCK);
+        fcntl(this->fd, F_SETFL, O_NONBLOCK);  // Make socket nonblocking
     }
 #endif
 }
@@ -140,7 +143,7 @@ socketx::socketx(int const sockFd) {
 socketx::~socketx() {
 
     if (!this->fdIsBorrowed) {
-#ifdef WIN32
+#if MSVCRT
         ::closesocket(SOCKET(this->fd));
 #else
         close(this->fd);
@@ -157,7 +160,7 @@ socketx::waitForReadable() const {
        return if there is a signal (handled, of course).  Rarely,
        it is OK to return when there isn't anything to read.
     */
-#ifdef  WIN32
+#if  MSVCRT
     // poll() is not available; settle for select().
     // Starting in Windows Vista, there is WSApoll()
     fd_set rd_set;
@@ -182,7 +185,7 @@ socketx::waitForReadable() const {
 void
 socketx::waitForWritable() const {
     /* Return when socket is able to be written to. */
-#ifdef  WIN32
+#if MSVCRT
     fd_set wr_set;
     FD_ZERO(&wr_set);
     FD_SET(this->fd, &wr_set);
@@ -200,6 +203,47 @@ socketx::waitForWritable() const {
 
 
 
+static bool
+wouldBlock() {
+/*----------------------------------------------------------------------------
+   The most recently executed system socket function, which we assume failed,
+   failed because the situation was such that it wanted to block, but the
+   socket had the nonblocking option.
+-----------------------------------------------------------------------------*/
+#if MSVCRT
+    return (WSAGetLastError() == WSAEWOULDBLOCK ||
+            WSAGetLastError() == WSAEINPROGRESS);
+#else
+    /* EWOULDBLOCK and EAGAIN are normally synonyms, but POSIX allows them
+       to be separate and allows the OS to return whichever one it wants
+       for the "would block" condition.
+    */
+    return (errno == EWOULDBLOCK || errno == EAGAIN);
+#endif
+}
+
+
+
+static string
+lastErrorDesc() {
+/*----------------------------------------------------------------------------
+   A description suitable for an error message of why the most recent
+   failed system socket function failed.
+-----------------------------------------------------------------------------*/
+    ostringstream msg;
+#if MSVCRT
+    int const lastError = WSAGetLastError();
+    msg << "winsock error code " << lastError << " "
+        << "(" << strerror(lastError) << ")";
+#else
+    msg << "errno = " << errno << ", (" << strerror(errno);
+#endif
+    return msg.str();
+}
+
+
+
+
 void
 socketx::read(unsigned char * const buffer,
               size_t          const bufferSize,
@@ -214,12 +258,11 @@ socketx::read(unsigned char * const buffer,
     rc = recv(this->fd, (char *)buffer, bufferSize, 0);
 
     if (rc < 0) {
-        if (errno == EWOULDBLOCK) {
+        if (wouldBlock()) {
             *wouldblockP = true;
             *bytesReadP  = 0;
         } else
-            throwf("read() of socket failed with errno %d (%s)",
-                   errno, strerror(errno));
+            throwf("read() of socket failed with %s", lastErrorDesc().c_str());
     } else {
         *wouldblockP = false;
         *bytesReadP  = rc;
@@ -247,11 +290,11 @@ writeFd(int                   const fd,
                   size - totalBytesWritten, 0);
 
         if (rc < 0) {
-            if (errno == EAGAIN)
+            if (wouldBlock())
                 full = true;
             else
-                throwf("write() of socket failed with errno %d (%s)",
-                       errno, strerror(errno));
+                throwf("write() of socket failed with %s",
+                       lastErrorDesc().c_str());
         } else if (rc == 0)
             throwf("Zero byte short write.");
         else {

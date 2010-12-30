@@ -1,5 +1,6 @@
 #include "unistdx.h"
 #include <stdio.h>
+#include "bool.h"
 
 #include "xmlrpc_config.h"
 
@@ -13,11 +14,27 @@
 #include "server_abyss.h"
 
 
+static xmlrpc_call_processor myXmlProcessor;
+
+static void
+myXmlProcessor(xmlrpc_env *        const envP ATTR_UNUSED,
+               void *              const processorArg ATTR_UNUSED,
+               const char *        const callXml ATTR_UNUSED,
+               size_t              const callXmlLen ATTR_UNUSED,
+               TSession *          const abyssSessionP ATTR_UNUSED, 
+               xmlrpc_mem_block ** const responseXmlPP ATTR_UNUSED) {
+
+    printf("XML processor running\n");
+}
+
+
+
 static void
 testSetHandlers(TServer * const abyssServerP) {
 
     xmlrpc_env env;
     xmlrpc_registry * registryP;
+    xmlrpc_server_abyss_handler_parms parms;
 
     xmlrpc_env_init(&env);
 
@@ -25,10 +42,31 @@ testSetHandlers(TServer * const abyssServerP) {
     TEST_NO_FAULT(&env);
     TEST(registryP != NULL);
 
+    parms.xml_processor = &myXmlProcessor;
+    parms.xml_processor_arg = NULL;
+    parms.xml_processor_max_stack = 512;
+    parms.uri_path = "/RPC6";
+    parms.chunk_response = true;
+    parms.allow_origin = "*";
+
+    xmlrpc_server_abyss_set_handler3(
+        &env, abyssServerP, &parms, XMLRPC_AHPSIZE(xml_processor_arg));
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);  /* Parms too short */
+    xmlrpc_server_abyss_set_handler3(
+        &env, abyssServerP, &parms, XMLRPC_AHPSIZE(allow_origin));
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_abyss_set_handler2(abyssServerP, "/RPC5",
+                                     &myXmlProcessor, NULL, 512, true);
+
     xmlrpc_server_abyss_set_handler(&env, abyssServerP, "/RPC3", registryP);
     TEST_NO_FAULT(&env);
 
     xmlrpc_server_abyss_set_handlers2(abyssServerP, "/RPC4", registryP);
+
+    xmlrpc_server_abyss_set_handlers(abyssServerP, registryP);
+    
+    xmlrpc_server_abyss_set_default_handler(abyssServerP);
 
     xmlrpc_registry_free(registryP);
 
@@ -57,6 +95,7 @@ testServerParms(void) {
     parms.dont_advertise = TRUE;
     parms.uri_path = "/RPC9";
     parms.chunk_response = TRUE;
+    parms.allow_origin = "*";
 };
 
 

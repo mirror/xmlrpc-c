@@ -164,8 +164,10 @@
 
 #if MSVCRT
   #define XMLRPC_SOCKETPAIR xmlrpc_win32_socketpair
+  #define XMLRPC_CLOSESOCKET closesocket
 #else
   #define XMLRPC_SOCKETPAIR socketpair
+  #define XMLRPC_CLOSESOCKET close
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)

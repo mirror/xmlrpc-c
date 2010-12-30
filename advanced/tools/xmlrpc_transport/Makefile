@@ -17,8 +17,8 @@ include $(SRCDIR)/tools/common.mk
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include
 
 LDFLAGS = $(LADD)
 

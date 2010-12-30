@@ -6,6 +6,7 @@
 #include <vector>
 #include <list>
 
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/girmem.hpp>
 #include <xmlrpc-c/base.hpp>
@@ -13,7 +14,7 @@
 namespace xmlrpc_c {
 
 
-class callInfo {
+class XMLRPC_DLLEXPORT callInfo {
 /*----------------------------------------------------------------------------
    Information about how an XML-RPC call arrived.
 
@@ -26,7 +27,7 @@ public:
     virtual ~callInfo() {};  // This makes it polymorphic
 };
 
-class method : public girmem::autoObject {
+class XMLRPC_DLLEXPORT method : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An XML-RPC method.
 
@@ -82,7 +83,7 @@ protected:
 */
 
 
-class method2 : public method {
+class XMLRPC_DLLEXPORT method2 : public method {
 /*----------------------------------------------------------------------------
    An XML-RPC method.
 
@@ -109,7 +110,7 @@ public:
 
 };
 
-class methodPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT methodPtr : public girmem::autoObjectPtr {
 
 public:
     methodPtr(xmlrpc_c::method * const methodP);
@@ -118,7 +119,7 @@ public:
     operator->() const;
 };
 
-class defaultMethod : public girmem::autoObject {
+class XMLRPC_DLLEXPORT defaultMethod : public girmem::autoObject {
 
 public:
     virtual ~defaultMethod();
@@ -129,7 +130,7 @@ public:
             xmlrpc_c::value *   const  resultP) = 0;
 };
 
-class defaultMethodPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT defaultMethodPtr : public girmem::autoObjectPtr {
 
 public:
     defaultMethodPtr();
@@ -145,7 +146,7 @@ public:
 
 struct registry_impl;
 
-class registry : public girmem::autoObject {
+class XMLRPC_DLLEXPORT registry : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An Xmlrpc-c server method registry.  An Xmlrpc-c server transport
    (e.g.  an HTTP server) uses this object to process an incoming
@@ -167,7 +168,7 @@ public:
     void
     disableIntrospection();
 
-    class shutdown {
+    class XMLRPC_DLLEXPORT shutdown {
     public:
         virtual ~shutdown() = 0;
         virtual void
@@ -199,7 +200,7 @@ private:
 };
 
 
-class registryPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT registryPtr : public girmem::autoObjectPtr {
 
 public:
     registryPtr();

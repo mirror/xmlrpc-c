@@ -56,7 +56,7 @@ ResponseError2(TSession *   const sessionP,
                     "</HTML>",
                     sessionP->status, sessionP->status, explanation);
     
-    ConnWrite(sessionP->conn, errorDocument, strlen(errorDocument)); 
+    ConnWrite(sessionP->connP, errorDocument, strlen(errorDocument)); 
 
     xmlrpc_strfree(errorDocument);
 }
@@ -127,20 +127,63 @@ ResponseStatusErrno(TSession * const sessionP) {
 
 
 
+static bool
+isValidHttpToken(const char * const token) {
+
+    char const separators[] = "()<>@,;:\\\"/[]?={} \t";
+    const char * p;
+    bool valid;
+
+    for (p = &token[0], valid = true; *p; ++p) {
+        if (!isprint(*p) || strchr(separators, *p))
+            valid = false;
+    }
+    return valid;
+}
+
+
+
+
+static bool
+isValidHttpText(const char * const text) {
+
+    const char * p;
+    bool valid;
+
+    for (p = &text[0], valid = true; *p; ++p) {
+        if (!isprint(*p))
+            valid = false;
+    }
+    return valid;
+}
+
+
+
 abyss_bool
 ResponseAddField(TSession *   const sessionP,
                  const char * const name,
                  const char * const value) {
 
-    return TableAdd(&sessionP->response_headers, name, value);
+    abyss_bool succeeded;
+    
+    if (!isValidHttpToken(name)) {
+        TraceMsg("Supplied HTTP header field name is not a valid HTTP token");
+        succeeded = false;
+    } else if (!isValidHttpText(value)) {
+        TraceMsg("Supplied HTTP header field value is not valid HTTP text");
+        succeeded = false;
+    } else {
+        succeeded = TableAdd(&sessionP->responseHeaderFields, name, value);
+    }
+    return succeeded;
 }
 
 
 
 static void
-addConnectionHeader(TSession * const sessionP) {
+addConnectionHeaderFld(TSession * const sessionP) {
 
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+    struct _TServer * const srvP = ConnServer(sessionP->connP)->srvP;
 
     if (HTTPKeepalive(sessionP)) {
         const char * keepaliveValue;
@@ -160,7 +203,7 @@ addConnectionHeader(TSession * const sessionP) {
 
 
 static void
-addDateHeader(TSession * const sessionP) {
+addDateHeaderFld(TSession * const sessionP) {
 
     if (sessionP->status >= 200) {
         const char * dateValue;
@@ -177,7 +220,7 @@ addDateHeader(TSession * const sessionP) {
 
 
 static void
-addServerHeader(TSession * const sessionP) {
+addServerHeaderFld(TSession * const sessionP) {
 
     const char * serverValue;
 
@@ -190,6 +233,88 @@ addServerHeader(TSession * const sessionP) {
 
 
 
+static unsigned int
+leadingWsCt(const char * const arg) {
+
+    unsigned int i;
+
+    for (i = 0; arg[i] && isspace(arg[i]); ++i);
+
+    return i;
+}
+
+
+
+static unsigned int
+trailingWsPos(const char * const arg) {
+
+    unsigned int i;
+
+    for (i = strlen(arg); i > 0 && isspace(arg[i-1]); --i);
+
+    return i;
+}
+
+
+
+static const char *
+formatFieldValue(const char * const unformatted) {
+/*----------------------------------------------------------------------------
+   Return the string of characters that goes after the colon on the
+   HTTP header field line, given that 'unformatted' is its basic value.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+
+    /* An HTTP header field value may not have leading or trailing white
+       space.
+    */
+    char * buffer;
+
+    buffer = malloc(strlen(unformatted) + 1);
+
+    if (buffer == NULL)
+        retval = xmlrpc_strnomemval();
+    else {
+        unsigned int const lead  = leadingWsCt(unformatted);
+        unsigned int const trail = trailingWsPos(unformatted);
+        assert(trail >= lead);
+        strncpy(buffer, &unformatted[lead], trail - lead);
+        buffer[trail - lead] = '\0';
+        retval = buffer;
+    }
+    return retval;
+}
+
+
+
+static void
+sendHeader(TConn * const connP,
+           TTable  const fields) {
+/*----------------------------------------------------------------------------
+   Send the HTTP response header whose fields are fields[].
+
+   Don't include the blank line that separates the header from the body.
+
+   fields[] contains syntactically valid HTTP header field names and values.
+   But to the extent that int contains undefined field names or semantically
+   invalid values, the header we send is invalid.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+
+    for (i = 0; i < fields.size; ++i) {
+        TTableItem * const fieldP = &fields.item[i];
+        const char * const fieldValue = formatFieldValue(fieldP->value);
+
+        const char * line;
+
+        xmlrpc_asprintf(&line, "%s: %s\r\n", fieldP->name, fieldValue);
+        ConnWrite(connP, line, strlen(line));
+        xmlrpc_strfree(line);
+        xmlrpc_strfree(fieldValue);
+    }
+}
+
+
 void
 ResponseWriteStart(TSession * const sessionP) {
 /*----------------------------------------------------------------------------
@@ -198,9 +323,7 @@ ResponseWriteStart(TSession * const sessionP) {
 
    As part of this, send the entire HTTP header for the response.
 -----------------------------------------------------------------------------*/
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
-
-    unsigned int i;
+    struct _TServer * const srvP = ConnServer(sessionP->connP)->srvP;
 
     assert(!sessionP->responseStarted);
 
@@ -218,30 +341,27 @@ ResponseWriteStart(TSession * const sessionP) {
         const char * const reason = HTTPReasonByStatus(sessionP->status);
         const char * line;
         xmlrpc_asprintf(&line,"HTTP/1.1 %u %s\r\n", sessionP->status, reason);
-        ConnWrite(sessionP->conn, line, strlen(line));
+        ConnWrite(sessionP->connP, line, strlen(line));
         xmlrpc_strfree(line);
     }
 
-    addConnectionHeader(sessionP);
+    addConnectionHeaderFld(sessionP);
 
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode)
         ResponseAddField(sessionP, "Transfer-Encoding", "chunked");
 
-    addDateHeader(sessionP);
+    addDateHeaderFld(sessionP);
 
     if (srvP->advertise)
-        addServerHeader(sessionP);
+        addServerHeaderFld(sessionP);
 
-    /* send all the fields */
-    for (i = 0; i < sessionP->response_headers.size; ++i) {
-        TTableItem * const ti = &sessionP->response_headers.item[i];
-        const char * line;
-        xmlrpc_asprintf(&line, "%s: %s\r\n", ti->name, ti->value);
-        ConnWrite(sessionP->conn, line, strlen(line));
-        xmlrpc_strfree(line);
-    }
+    /* Note that sessionP->responseHeaderFields is defined to contain
+       syntactically but not necessarily semantically valid header
+       field names and values.
+    */
+    sendHeader(sessionP->connP, sessionP->responseHeaderFields);
 
-    ConnWrite(sessionP->conn, "\r\n", 2);  
+    ConnWrite(sessionP->connP, "\r\n", 2);  
 }
 
 
@@ -283,6 +403,26 @@ ResponseContentLength(TSession *      const sessionP,
 
     return ResponseAddField(sessionP, "Content-length", contentLengthValue);
 }
+
+
+
+void
+ResponseAccessControl(TSession *        const abyssSessionP, 
+                      ResponseAccessCtl const accessControl) {
+
+    if (accessControl.allowOrigin) {
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Origin",
+                         accessControl.allowOrigin);
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Methods",
+                         "POST");
+        if (accessControl.expires) {
+            char buffer[64];
+            sprintf(buffer, "%u", accessControl.maxAge);
+            ResponseAddField(abyssSessionP, "Access-Control-Max-Age", buffer);
+        }
+    }
+}
+
 
 
 /*********************************************************************

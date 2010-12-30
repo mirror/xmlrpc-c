@@ -265,6 +265,8 @@ public:
                                     .timeout(20)
                                     .dontAdvertise(true)
                                     .uriPath("/xmlrpc")
+                                    .chunkResponse(true)
+                                    .allowOrigin("*")
                                     .serverOwnsSignals(false)
                                     .expectSigchld(true)
                 );

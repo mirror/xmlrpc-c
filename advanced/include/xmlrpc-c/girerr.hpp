@@ -3,13 +3,14 @@
 
 #include <string>
 #include <exception>
+
 #include <xmlrpc-c/c_util.h>
 
 #define HAVE_GIRERR_ERROR
 
 namespace girerr {
 
-class error : public std::exception {
+class XMLRPC_DLLEXPORT error : public std::exception {
 public:
     error(std::string const& what_arg) : _what(what_arg) {}
 
@@ -24,6 +25,7 @@ private:
 
 // throwf() always throws a girerr::error .
 
+XMLRPC_DLLEXPORT
 void
 throwf(const char * const format, ...)
   XMLRPC_PRINTF_ATTR(1,2)

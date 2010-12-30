@@ -13,12 +13,12 @@
 #include <sys/time.h>
 #endif
 
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/base.h>
 
 namespace xmlrpc_c {
 
-
-class value {
+class XMLRPC_DLLEXPORT value {
     // This is a handle.  You don't want to create a pointer to this;
     // it is in fact a pointer itself.
 public:
@@ -86,8 +86,7 @@ protected:
 };
 
 
-
-class value_int : public value {
+class XMLRPC_DLLEXPORT value_int : public value {
 public:
     value_int(int const cvalue);
 
@@ -99,8 +98,7 @@ public:
 };
 
 
-
-class value_boolean : public value {
+class XMLRPC_DLLEXPORT value_boolean : public value {
 public:
     value_boolean(bool const cvalue);
 
@@ -112,8 +110,7 @@ public:
 };
 
 
-
-class value_string : public value {
+class XMLRPC_DLLEXPORT value_string : public value {
 public:
     enum nlCode {nlCode_all, nlCode_lf};
 
@@ -133,8 +130,7 @@ public:
 };
 
 
-
-class value_double : public value {
+class XMLRPC_DLLEXPORT value_double : public value {
 public:
     value_double(double const cvalue);
 
@@ -146,8 +142,7 @@ public:
 };
 
 
-
-class value_datetime : public value {
+class XMLRPC_DLLEXPORT value_datetime : public value {
 public:
     value_datetime(std::string const cvalue);
     value_datetime(time_t const cvalue);
@@ -170,7 +165,7 @@ public:
 
 typedef std::vector<unsigned char> cbytestring;
 
-class value_bytestring : public value {
+class XMLRPC_DLLEXPORT value_bytestring : public value {
 public:
     value_bytestring(cbytestring const& cvalue);
 
@@ -191,7 +186,7 @@ public:
 
 typedef std::map<std::string, xmlrpc_c::value> cstruct;
 
-class value_struct : public value {
+class XMLRPC_DLLEXPORT value_struct : public value {
 public:
     value_struct(cstruct const& cvalue);
 
@@ -206,7 +201,7 @@ public:
 
 typedef std::vector<xmlrpc_c::value> carray;
 
-class value_array : public value {
+class XMLRPC_DLLEXPORT value_array : public value {
 public:
     value_array(carray const& cvalue);
 
@@ -247,7 +242,7 @@ arrayValueArray(const MemberClass * const in,
     return arrayValueSlice(in, in + size);
 }
 
-class value_nil : public value {
+class XMLRPC_DLLEXPORT value_nil : public value {
 public:
     value_nil();
 
@@ -257,8 +252,7 @@ public:
 };
 
 
-
-class value_i8 : public value {
+class XMLRPC_DLLEXPORT value_i8 : public value {
 public:
     value_i8(xmlrpc_int64 const cvalue);
 
@@ -398,7 +392,7 @@ fromValue(std::vector<T> & y, xmlrpc_c::value const& x) {
     }
 }
 
-class fault {
+class XMLRPC_DLLEXPORT fault {
 /*----------------------------------------------------------------------------
    This is an XML-RPC fault.
 
@@ -442,7 +436,7 @@ private:
     std::string             description;
 };
 
-class rpcOutcome {
+class XMLRPC_DLLEXPORT rpcOutcome {
 /*----------------------------------------------------------------------------
   The outcome of a validly executed RPC -- either an XML-RPC fault
   or an XML-RPC value of the result.
@@ -464,7 +458,7 @@ private:
     xmlrpc_c::fault fault;   // valid if not 'succeeded'
 };
 
-class paramList {
+class XMLRPC_DLLEXPORT paramList {
 /*----------------------------------------------------------------------------
    A parameter list of an XML-RPC call.
 -----------------------------------------------------------------------------*/

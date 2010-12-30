@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <winsock.h>
+#include <winsock2.h>
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util_int.h"
@@ -248,6 +248,7 @@ struct socketWin {
     SOCKET winsock;
     bool userSuppliedWinsock;
         /* 'socket' was supplied by the user; it belongs to him */
+    HANDLE interruptEvent;
 };
 
 static
@@ -320,6 +321,8 @@ channelDestroy(TChannel * const channelP) {
 
     if (!socketWinP->userSuppliedWinsock)
         closesocket(socketWinP->winsock);
+
+    CloseHandle(socketWinP->interruptEvent);
 
     free(socketWinP);
 }
@@ -459,7 +462,9 @@ channelInterrupt(TChannel * const channelP) {
   now or in the future.
 
   Actually, this is just a no-op because we don't yet know how to
-  accomplish that.
+  accomplish that.  (But we could probably do it the same way
+  chanSwitchInterrupt() works -- no one has needed it enough yet to do that
+  work).
 -----------------------------------------------------------------------------*/
 
 }
@@ -580,7 +585,8 @@ makeChannelFromWinsock(SOCKET        const winsock,
         
         socketWinP->winsock = winsock;
         socketWinP->userSuppliedWinsock = TRUE;
-        
+        socketWinP->interruptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
         ChannelCreate(&channelVtbl, socketWinP, &channelP);
         
         if (channelP == NULL)
@@ -590,8 +596,10 @@ makeChannelFromWinsock(SOCKET        const winsock,
             *channelPP = channelP;
             *errorP = NULL;
         }
-        if (*errorP)
+        if (*errorP) {
+            CloseHandle(socketWinP->interruptEvent);
             free(socketWinP);
+        }
     }
 }
 
@@ -675,6 +683,8 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
     if (!socketWinP->userSuppliedWinsock)
         closesocket(socketWinP->winsock);
 
+    CloseHandle(socketWinP->interruptEvent);
+
     free(socketWinP);
 }
 
@@ -731,7 +741,9 @@ createChannelForAccept(int             const acceptedWinsock,
 
             acceptedSocketP->winsock             = acceptedWinsock;
             acceptedSocketP->userSuppliedWinsock = FALSE;
-                    
+            acceptedSocketP->interruptEvent      =
+                CreateEvent(NULL, FALSE, FALSE, NULL);
+
             ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
             if (!channelP)
                 xmlrpc_asprintf(errorP,
@@ -741,8 +753,10 @@ createChannelForAccept(int             const acceptedWinsock,
                 *channelPP     = channelP;
                 *channelInfoPP = channelInfoP;
             }
-            if (*errorP)
+            if (*errorP) {
+                CloseHandle(acceptedSocketP->interruptEvent);
                 free(acceptedSocketP);
+            }
         }
     }
 }
@@ -766,7 +780,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
    *channelPP == NULL.
 -----------------------------------------------------------------------------*/
     struct socketWin * const listenSocketP = chanSwitchP->implP;
-
+    HANDLE acceptEvent = WSACreateEvent();
     bool interrupted;
     TChannel * channelP;
 
@@ -774,10 +788,20 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
     channelP    = NULL;  /* No connection yet */
     *errorP     = NULL;  /* No error yet */
 
+    WSAEventSelect(listenSocketP->winsock, acceptEvent,
+                   FD_ACCEPT | FD_CLOSE | FD_READ);
+
     while (!channelP && !*errorP && !interrupted) {
+        HANDLE interrupts[2] = {acceptEvent, listenSocketP->interruptEvent};
+        int rc;
         struct sockaddr peerAddr;
         socklen_t size = sizeof(peerAddr);
-        int rc;
+
+        rc = WaitForMultipleObjects(2, interrupts, FALSE, INFINITE);
+        if (WAIT_OBJECT_0 + 1 == rc) {
+            interrupted = TRUE;
+            continue;
+        };
 
         rc = accept(listenSocketP->winsock, &peerAddr, &size);
 
@@ -801,6 +825,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
         }
     }
     *channelPP = channelP;
+    CloseHandle(acceptEvent);
 }
 
 
@@ -812,11 +837,10 @@ chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
 /*----------------------------------------------------------------------------
   Interrupt any waiting that a thread might be doing in chanSwitchAccept()
   now or in the future.
-
-  Actually, this is just a no-op because we don't yet know how to
-  accomplish that.
 -----------------------------------------------------------------------------*/
+    struct socketWin * const listenSocketP = chanSwitchP->implP;
 
+    SetEvent(listenSocketP->interruptEvent);
 }
 
 
@@ -908,6 +932,7 @@ ChanSwitchWinCreate(uint16_t       const portNumber,
         } else {
             socketWinP->winsock = winsock;
             socketWinP->userSuppliedWinsock = FALSE;
+            socketWinP->interruptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
             
             setSocketOptions(socketWinP->winsock, errorP);
             if (!*errorP) {
@@ -918,8 +943,10 @@ ChanSwitchWinCreate(uint16_t       const portNumber,
                                      chanSwitchPP);
             }
 
-            if (*errorP)
+            if (*errorP) {
+                CloseHandle(socketWinP->interruptEvent);
                 closesocket(winsock);
+            }
         }
         if (*errorP)
             free(socketWinP);
@@ -948,7 +975,8 @@ ChanSwitchWinCreateWinsock(SOCKET         const winsock,
 
             socketWinP->winsock = winsock;
             socketWinP->userSuppliedWinsock = TRUE;
-            
+            socketWinP->interruptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
             ChanSwitchCreate(&chanSwitchVtbl, socketWinP, &chanSwitchP);
 
             if (chanSwitchP == NULL)
@@ -958,8 +986,10 @@ ChanSwitchWinCreateWinsock(SOCKET         const winsock,
                 *chanSwitchPP = chanSwitchP;
                 *errorP = NULL;
             }
-            if (*errorP)
+            if (*errorP) {
+                CloseHandle(socketWinP->interruptEvent);
                 free(socketWinP);
+            }
         }
     }
 }

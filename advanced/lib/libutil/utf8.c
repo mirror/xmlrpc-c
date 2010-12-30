@@ -152,6 +152,13 @@ validateUtf16(xmlrpc_env * const envP,
 
 
 
+/* Microsoft Visual C in debug mode produces code that complains about
+   returning an undefined value from xmlrpc_datetime_new_str().  It's a bogus
+   complaint, because this function is defined to return nothing meaningful
+   those cases.  So we disable the check.
+*/
+#pragma runtime_checks("u", off)
+
 static void
 decodeMultibyte(xmlrpc_env * const envP,
                 const char * const utf8_seq,
@@ -224,6 +231,8 @@ decodeMultibyte(xmlrpc_env * const envP,
 
     *wcP = wc;
 }
+
+#pragma runtime_checks("u", restore)
 
 
 
