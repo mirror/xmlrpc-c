@@ -571,7 +571,7 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
 
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_NETWORK_ERROR, "libcurl failed to execute the "
-            "HTTP POST transaction.  %s", explanation);
+            "HTTP POST transaction, explaining:  %s", explanation);
 
         xmlrpc_strfree(explanation);
     } else {
