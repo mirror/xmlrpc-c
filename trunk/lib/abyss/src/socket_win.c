@@ -462,7 +462,9 @@ channelInterrupt(TChannel * const channelP) {
   now or in the future.
 
   Actually, this is just a no-op because we don't yet know how to
-  accomplish that.
+  accomplish that.  (But we could probably do it the same way
+  chanSwitchInterrupt() works -- no one has needed it enough yet to do that
+  work).
 -----------------------------------------------------------------------------*/
 
 }
@@ -739,7 +741,8 @@ createChannelForAccept(int             const acceptedWinsock,
 
             acceptedSocketP->winsock             = acceptedWinsock;
             acceptedSocketP->userSuppliedWinsock = FALSE;
-            acceptedSocketP->interruptEvent      = CreateEvent(NULL, FALSE, FALSE, NULL);
+            acceptedSocketP->interruptEvent      =
+                CreateEvent(NULL, FALSE, FALSE, NULL);
 
             ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
             if (!channelP)
@@ -785,13 +788,14 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
     channelP    = NULL;  /* No connection yet */
     *errorP     = NULL;  /* No error yet */
 
-    WSAEventSelect(listenSocketP->winsock, acceptEvent, FD_ACCEPT | FD_CLOSE | FD_READ);
+    WSAEventSelect(listenSocketP->winsock, acceptEvent,
+                   FD_ACCEPT | FD_CLOSE | FD_READ);
 
     while (!channelP && !*errorP && !interrupted) {
+        HANDLE interrupts[2] = {acceptEvent, listenSocketP->interruptEvent};
+        int rc;
         struct sockaddr peerAddr;
         socklen_t size = sizeof(peerAddr);
-        int rc;
-        HANDLE interrupts[2] = {acceptEvent, listenSocketP->interruptEvent};
 
         rc = WaitForMultipleObjects(2, interrupts, FALSE, INFINITE);
         if (WAIT_OBJECT_0 + 1 == rc) {
