@@ -673,22 +673,35 @@ static xmlrpc_value *
 integerTokenValue(xmlrpc_env * const envP,
                   Tokenizer *  const tokP) {
 
-    xmlrpc_env env;
     xmlrpc_value * valP;
-    xmlrpc_int64 value;
+    char * valueString;
 
-    xmlrpc_env_init(&env);
+    valueString = malloc(tokP->size + 1);
 
-    xmlrpc_parse_int64(&env, tokP->begin, &value);
+    if (valueString == NULL)
+        setParseErr(envP, tokP, "Could not allocate memory to process a "
+                    "%lu-character integer token", (unsigned long)tokP->size);
+    else {
+        xmlrpc_env env;
+        xmlrpc_int64 value;
 
-    if (env.fault_occurred)
-        setParseErr(envP, tokP, "Error in integer token value '%s': %s",
-                    tokP->begin, env.fault_string);
-    else
-        valP = xmlrpc_i8_new(envP, value);
+        xmlrpc_env_init(&env);
 
-    xmlrpc_env_clean(&env);
+        memcpy(valueString, tokP->begin, tokP->size);
+        valueString[tokP->size] = '\0';
 
+        xmlrpc_parse_int64(&env, valueString, &value);
+
+        if (env.fault_occurred)
+            setParseErr(envP, tokP, "Error in integer token value '%s': %s",
+                        tokP->begin, env.fault_string);
+        else
+            valP = xmlrpc_i8_new(envP, value);
+
+        free(valueString);
+
+        xmlrpc_env_clean(&env);
+    }
     return valP;
 }
 
