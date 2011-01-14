@@ -1175,11 +1175,11 @@ serializeInt(xmlrpc_env *       const envP,
              xmlrpc_value *     const valP,
              xmlrpc_mem_block * const outP) {
 
-    xmlrpc_int64 value;
+    xmlrpc_int value;
 
-    xmlrpc_read_i8(envP, valP, &value);
+    xmlrpc_read_int(envP, valP, &value);
 
-    formatOut(envP, outP, XMLRPC_PRId64, value);
+    formatOut(envP, outP, "%d", value);
 }
 
 
@@ -1190,6 +1190,7 @@ serializeI8(xmlrpc_env *       const envP,
             xmlrpc_mem_block * const outP) {
 
     xmlrpc_int64 value;
+
     xmlrpc_read_i8(envP, valP, &value);
             
     formatOut(envP, outP, "%" XMLRPC_PRId64, value);
