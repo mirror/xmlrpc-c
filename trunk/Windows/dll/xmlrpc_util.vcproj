@@ -397,6 +397,10 @@
 				RelativePath="..\..\lib\libutil\sleep.c"
 				>
 			</File>
+ 			<File
+				RelativePath="..\..\lib\libutil\string_number.c"
+				>
+			</File>
 			<File
 				RelativePath="..\..\lib\libutil\time.c"
 				>
@@ -424,6 +428,10 @@
 			</File>
 			<File
 				RelativePath="..\..\include\xmlrpc-c\string_int.h"
+				>
+			</File>
+ 			<File
+				RelativePath="..\..\include\xmlrpc-c\string_number.h"
 				>
 			</File>
 			<File
