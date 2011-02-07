@@ -4,7 +4,6 @@
   This file contains utilities for dealing with text string representation
   of numbers.
 ============================================================================*/
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -13,6 +12,7 @@
 #include <xmlrpc-c/util.h>
 #include <xmlrpc-c/string_int.h>
 #include "xmlrpc_config.h"
+#include "int.h"
 
 #include <xmlrpc-c/string_number.h>
 
