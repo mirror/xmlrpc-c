@@ -249,6 +249,15 @@ value::type() const {
 
 
 
+ostream& operator<<(ostream& out, value::type_t const& type) {
+
+    string typeName;
+
+    return out << string(xmlrpc_type_name((xmlrpc_type)type));
+}
+
+
+
 value_int::value_int(int const cppvalue) {
 
     class cWrapper {

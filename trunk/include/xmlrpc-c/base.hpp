@@ -31,6 +31,8 @@ public:
     ~value();
 
     enum type_t {
+        // These are designed to be identical to the values for
+        // enum xmlrpc_type in the C library.
         TYPE_INT        = 0,
         TYPE_BOOLEAN    = 1,
         TYPE_DOUBLE     = 2,
@@ -84,6 +86,10 @@ protected:
     void
     validateInstantiated() const;
 };
+
+
+std::ostream& operator<<(std::ostream& out,
+                         xmlrpc_c::value::type_t const& type);
 
 
 class XMLRPC_DLLEXPORT value_int : public value {
