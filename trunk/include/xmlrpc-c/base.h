@@ -116,7 +116,6 @@ typedef enum {
 
 #define XMLRPC_HAVE_I8 1
 
-/* These are *always* allocated on the heap. No exceptions. */
 typedef struct _xmlrpc_value xmlrpc_value;
 
 XMLRPC_DLLEXPORT
