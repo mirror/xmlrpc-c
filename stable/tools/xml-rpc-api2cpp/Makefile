@@ -18,7 +18,8 @@ CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 LDFLAGS = $(LADD)
 
-LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
+LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -L$(BLDDIR)/src -lxmlrpc_server \
+  $(CLIENT_LDLIBS)
 
 PROGS :=
 
