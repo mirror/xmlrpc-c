@@ -1314,11 +1314,13 @@ serializeArray(xmlrpc_env *       const envP,
                 if (!envP->fault_occurred) {
                     serializeValue(envP, itemP, level + 1, outP);
 
-                    XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
+                    if (i < size - 1)
+                        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
                 }
             }
         }
         if (!envP->fault_occurred) {
+            XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "\n", 1);
             indent(envP, level, outP);
             if (!envP->fault_occurred) {
                 XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "]", 1);
@@ -1339,14 +1341,10 @@ serializeStructMember(xmlrpc_env *       const envP,
     serializeValue(envP, memberKeyP, level, outP);
                     
     if (!envP->fault_occurred) {
-        formatOut(envP, outP, ":\n");
+        formatOut(envP, outP, ":");
         
-        if (!envP->fault_occurred) {
-            serializeValue(envP, memberValueP, level + 1, outP);
-
-            if (!envP->fault_occurred)
-                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
-        }
+        if (!envP->fault_occurred)
+            serializeValue(envP, memberValueP, level, outP);
     }
 }
 
@@ -1357,8 +1355,6 @@ serializeStruct(xmlrpc_env *       const envP,
                 xmlrpc_value *     const valP,
                 unsigned int       const level,
                 xmlrpc_mem_block * const outP) {
-
-    indent(envP, level, outP);
 
     if (!envP->fault_occurred) {
         formatOut(envP, outP, "{\n");
@@ -1374,12 +1370,19 @@ serializeStruct(xmlrpc_env *       const envP,
                     xmlrpc_struct_get_key_and_value(envP, valP, i,
                                                     &memberKeyP,
                                                     &memberValueP);
-                    if (!envP->fault_occurred)
+                    if (!envP->fault_occurred) {
                         serializeStructMember(envP, memberKeyP, memberValueP,
                                               level + 1, outP);
+                        
+                        if (!envP->fault_occurred && i < size - 1)
+                            XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
+                    }
                 }
-                if (!envP->fault_occurred) 
+                if (!envP->fault_occurred) {
+                    XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "\n", 1);
+                    indent(envP, level, outP);
                     XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "}", 1);
+                }
             }
         }
     }
