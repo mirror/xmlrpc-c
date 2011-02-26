@@ -1,4 +1,4 @@
-/* A simple asynchronous XML-RPC client written in C, as an example of
+/* A simple asynchronous XML-RPC client program written in C, as an example of
    Xmlrpc-c asynchronous RPC facilities.  This is the same as the 
    simpler synchronous client xmlprc_sample_add_client.c, except that
    it adds 3 different pairs of numbers with the summation RPCs going on

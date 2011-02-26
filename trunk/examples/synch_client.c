@@ -1,4 +1,4 @@
-/* A simple synchronous XML-RPC client written in C. */
+/* A simple synchronous XML-RPC client program written in C. */
 
 #include <stdlib.h>
 #include <stdio.h>

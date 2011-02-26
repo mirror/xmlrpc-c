@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server based on Abyss that contains a
+/* A simple standalone XML-RPC server program based on Abyss that contains a
    simple one-thread request processing loop.  
 
    This uses the "provide your own Abyss server" mode of operation.

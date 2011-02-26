@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server based on Abyss.
+/* A simple standalone XML-RPC server program based on Abyss.
 
    You can terminate this server in controlled fashion with a SIGTERM
    signal.
