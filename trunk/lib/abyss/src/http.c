@@ -47,8 +47,8 @@ initRequestInfo(TRequestInfo * const requestInfoP,
                 const char *   const query) {
 /*----------------------------------------------------------------------------
   Set up the request info structure.  For information that is
-  controlled by headers, use the defaults -- I.e. the value that
-  applies if the request contains no applicable header.
+  controlled by the header, use the defaults -- I.e. the value that
+  applies if the request contains no applicable header field.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_PTR_OK(requestLine);
     XMLRPC_ASSERT_PTR_OK(path);
