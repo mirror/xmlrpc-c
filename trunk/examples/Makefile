@@ -25,6 +25,7 @@ XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 CLIENTPROGS = \
   auth_client \
+  compound_value_client \
   synch_client \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
@@ -37,6 +38,7 @@ SERVERPROGS_CGI = \
   xmlrpc_sample_add_server.cgi
 
 SERVERPROGS_ABYSS = \
+  compound_value_server \
   interrupted_server \
   xmlrpc_inetd_server \
   xmlrpc_socket_server \
