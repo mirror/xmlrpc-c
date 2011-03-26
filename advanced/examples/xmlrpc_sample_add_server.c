@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server written in C. */
+/* A simple standalone XML-RPC server program written in C. */
 
 /* This server knows one RPC class (besides the system classes):
    "sample.add".

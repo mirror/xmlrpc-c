@@ -371,7 +371,7 @@ typedef struct {
     const char * query;
         /* The query part of the URI (stuff after '?').  NULL if none. */
     const char * host;
-        /* NOT the value of the host: header.  Rather, the name of the
+        /* NOT the value of the host: header field.  Rather, the name of the
            target host (could be part of the host: value; could be from the
            URI).  No port number.  NULL if request does not specify a host
            name.
@@ -381,7 +381,7 @@ typedef struct {
     const char * referer;
     const char * requestline;
     const char * user;
-        /* Requesting user (from authorization: header).  NULL if
+        /* Requesting user (from authorization: header field).  NULL if
            request doesn't specify or handler has not authenticated it.
         */
     xmlrpc_uint16_t port;

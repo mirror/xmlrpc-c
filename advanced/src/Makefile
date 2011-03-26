@@ -278,12 +278,15 @@ check:
 .PHONY: install
 install: install-common $(SUBDIRS:%=%/install)
 
-.PHONY: clean clean-local distclean
-clean: clean-common clean-local $(SUBDIRS:%=%/clean)
+.PHONY: clean clean-local distclean distclean-local
+clean: clean-common clean-local
 clean-local:
 	$(MAKE) -C test clean
 
-distclean: clean-common clean-local distclean-common $(SUBDIRS:%=%/distclean)
+distclean: clean distclean-local distclean-common
+
+distclean-local:
+	$(MAKE) -C test distclean
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BLDDIR)/transport_config.h dep-common

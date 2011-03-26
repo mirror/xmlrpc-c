@@ -1,5 +1,5 @@
-/* A simple standalone XML-RPC server written in C as an example of use of
-   the Xmlrpc-c libraries.
+/* A simple standalone XML-RPC server program written in C as an example of
+   use of the Xmlrpc-c libraries.
 
    This example expects an already bound socket on Standard Input, ready to
    be listened on for client connections.  Also see xmlrpc_sample_add_server,

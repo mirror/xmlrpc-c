@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server based on Abyss that processes a
+/* A simple standalone XML-RPC server program based on Abyss that processes a
    single RPC from an existing TCP connection on Standard Input.
 
    A typical example of where this would be useful is with an Inetd

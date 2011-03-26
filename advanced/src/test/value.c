@@ -803,6 +803,7 @@ test_value_array(void) {
     xmlrpc_value *v;
     xmlrpc_env env;
     size_t len;
+    xmlrpc_value * itemP;
 
     /* Basic array-building test. */
 
@@ -816,6 +817,16 @@ test_value_array(void) {
     len = xmlrpc_array_size(&env, v);
     TEST_NO_FAULT(&env);
     TEST(len == 0);
+
+    itemP = xmlrpc_int_new(&env, 7);
+    TEST_NO_FAULT(&env);
+    xmlrpc_array_append_item(&env, v, itemP);
+    TEST_NO_FAULT(&env);
+    len = xmlrpc_array_size(&env, v);
+    TEST_NO_FAULT(&env);
+    TEST(len == 1);
+    xmlrpc_DECREF(itemP);
+
     xmlrpc_DECREF(v);
 
     v = xmlrpc_build_value(&env, "()");
