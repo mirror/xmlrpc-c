@@ -1,4 +1,8 @@
 /* Copyright information is at end of file */
+
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+#define _BSD_SOURCE  /* Make sure setgroups()is in <grp.h> */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,25 +123,29 @@ logClose(struct _TServer * const srvP) {
 static void
 initChanSwitchStuff(struct _TServer * const srvP,
                     bool              const noAccept,
-                    TChanSwitch *     const userSwitchP,
+                    TChanSwitch *     const chanSwitchP,
+                    bool              const userChanSwitch,
                     unsigned short    const port,
                     const char **     const errorP) {
     
-    if (userSwitchP) {
+
+    if (chanSwitchP) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
-        srvP->chanSwitchP = userSwitchP;
+        srvP->chanSwitchP = chanSwitchP;
+        srvP->weCreatedChanSwitch = !userChanSwitch;
     } else if (noAccept) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = FALSE;
         srvP->chanSwitchP = NULL;
+        srvP->weCreatedChanSwitch = FALSE;
     } else {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
         srvP->chanSwitchP = NULL;
+        srvP->weCreatedChanSwitch = FALSE;
         srvP->port = port;
     }
-    srvP->weCreatedChanSwitch = FALSE;
 }
 
 
@@ -145,7 +153,8 @@ initChanSwitchStuff(struct _TServer * const srvP,
 static void
 createServer(struct _TServer ** const srvPP,
              bool               const noAccept,
-             TChanSwitch *      const userChanSwitchP,
+             TChanSwitch *      const chanSwitchP,
+             bool               const userChanSwitch,
              unsigned short     const portNumber,             
              const char **      const errorP) {
 
@@ -159,8 +168,8 @@ createServer(struct _TServer ** const srvPP,
     } else {
         srvP->terminationRequested = false;
 
-        initChanSwitchStuff(srvP, noAccept, userChanSwitchP, portNumber,
-                            errorP);
+        initChanSwitchStuff(srvP, noAccept, chanSwitchP, userChanSwitch,
+                            portNumber, errorP);
 
         if (!*errorP) {
             srvP->builtinHandlerP = HandlerCreate();
@@ -230,11 +239,14 @@ ServerCreate(TServer *       const serverP,
              const char *    const logFileName) {
 
     bool const noAcceptFalse = FALSE;
+    bool const userChanSwitchFalse = FALSE;
 
     bool success;
     const char * error;
 
-    createServer(&serverP->srvP, noAcceptFalse, NULL, portNumber, &error);
+    createServer(&serverP->srvP, noAcceptFalse,
+                 NULL, userChanSwitchFalse,
+                 portNumber, &error);
 
     if (error) {
         TraceMsg(error);
@@ -303,10 +315,13 @@ ServerCreateSocket(TServer *    const serverP,
         xmlrpc_strfree(error);
     } else {
         bool const noAcceptFalse = FALSE;
+        bool const userChanSwitchFalse = FALSE;
 
         const char * error;
 
-        createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, &error);
+        createServer(&serverP->srvP, noAcceptFalse,
+                     chanSwitchP, userChanSwitchFalse,
+                     0, &error);
 
         if (error) {
             TraceMsg(error);
@@ -317,6 +332,8 @@ ServerCreateSocket(TServer *    const serverP,
             
             setNamePathLog(serverP, name, filesPath, logFileName);
         }
+        if (!success)
+            ChanSwitchDestroy(chanSwitchP);
     }
 
     return success;
@@ -331,11 +348,14 @@ ServerCreateNoAccept(TServer *    const serverP,
                      const char * const logFileName) {
 
     bool const noAcceptTrue = TRUE;
+    bool const userChanSwitchFalse = FALSE;
 
     bool success;
     const char * error;
 
-    createServer(&serverP->srvP, noAcceptTrue, NULL, 0, &error);
+    createServer(&serverP->srvP, noAcceptTrue,
+                 NULL, userChanSwitchFalse,
+                 0, &error);
 
     if (error) {
         TraceMsg(error);
@@ -357,11 +377,14 @@ ServerCreateSwitch(TServer *     const serverP,
                    const char ** const errorP) {
     
     bool const noAcceptFalse = FALSE;
+    bool const userChanSwitchTrue = TRUE;
 
     assert(serverP);
     assert(chanSwitchP);
 
-    createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, errorP);
+    createServer(&serverP->srvP, noAcceptFalse,
+                 chanSwitchP, userChanSwitchTrue,
+                 0, errorP);
 }
 
 
@@ -468,7 +491,7 @@ void
 ServerSetKeepaliveTimeout(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveTimeout) {
 
-    serverP->srvP->keepalivetimeout = keepaliveTimeout;
+    serverP->srvP->keepalivetimeout = MAX(keepaliveTimeout, 1);
 }
 
 
@@ -477,7 +500,7 @@ void
 ServerSetKeepaliveMaxConn(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveMaxConn) {
 
-    serverP->srvP->keepalivemaxconn = keepaliveMaxConn;
+    serverP->srvP->keepalivemaxconn = MAX(keepaliveMaxConn, 1);
 }
 
 
@@ -555,6 +578,24 @@ runUserHandler(TSession *        const sessionP,
 
 
 static void
+handleReqTooNewHttpVersion(TSession * const sessionP) {
+
+    const char * msg;
+
+    ResponseStatus(sessionP, 505);
+
+    xmlrpc_asprintf(&msg, "Request is in HTTP Version %u"
+                    "We understand only HTTP 1",
+                    sessionP->version.major);
+    
+    ResponseError2(sessionP, msg);
+    
+    xmlrpc_strfree(msg);
+}
+
+
+
+static void
 handleReqInvalidURI(TSession * const sessionP) {
 
     ResponseStatus(sessionP, 400);
@@ -585,20 +626,33 @@ processRequestFromClient(TConn *  const connectionP,
    We return as *keepAliveP whether Caller should keep the connection
    alive for a while for possible future requests from the client, based
    on 'lastReqOnConn' and the content of the HTTP request.
+
+   Executing the request consists primarily of calling the URI handlers that
+   are associated with the connection (*connectionP), passing each the request
+   information we read.  Each handler can respond according to the HTTP method
+   (GET, POST, etc) and URL etc, and that response may be either to
+   execute the request and send the response or refuse the request and let
+   us call the next one in the list.
 -----------------------------------------------------------------------------*/
     TSession session;
+    const char * error;
+    uint16_t httpErrorCode;
 
     RequestInit(&session, connectionP);
 
     session.serverDeniesKeepalive = lastReqOnConn;
         
-    RequestRead(&session, timeout);
+    RequestRead(&session, timeout, &error, &httpErrorCode);
 
-    if (session.status == 0) {
+    if (error) {
+        ResponseStatus(&session, httpErrorCode);
+        ResponseError2(&session, error);
+        xmlrpc_strfree(error);
+    } else {
         if (session.version.major >= 2)
-            ResponseStatus(&session, 505);
+            handleReqTooNewHttpVersion(&session);
         else if (!RequestValidURI(&session))
-            ResponseStatus(&session, 400);
+            handleReqInvalidURI(&session);
         else
             runUserHandler(&session, connectionP->server->srvP);
     }
@@ -639,12 +693,24 @@ serverFunc(void * const userHandle) {
     connectionDone = FALSE;
 
     while (!connectionDone) {
-        bool success;
+        bool timedOut, eof;
+        const char * readError;
         
-        /* Wait to read until timeout */
-        success = ConnRead(connectionP, srvP->keepalivetimeout);
+        /* Wait for and get beginning (at least ) of next request.  We do
+           this separately from getting the rest of the request because we
+           treat dead time between requests differently from dead time in
+           the middle of a request.
+        */
+        ConnRead(connectionP, srvP->keepalivetimeout,
+                 &timedOut, &eof, &readError);
 
-        if (!success) {
+        if (readError) {
+            TraceMsg("Failed to read from Abyss connection.  %s", readError);
+            xmlrpc_strfree(readError);
+            connectionDone = TRUE;
+        } else if (timedOut) {
+            connectionDone = TRUE;
+        } else if (eof) {
             connectionDone = TRUE;
         } else if (srvP->terminationRequested) {
             connectionDone = TRUE;
@@ -766,8 +832,7 @@ ServerInit(TServer * const serverP) {
         }
     }
     if (retError) {
-        TraceMsg("ServerInit() failed.  %s", retError);
-        exit(1);
+        TraceExit("ServerInit() failed.  %s", retError);
         xmlrpc_strfree(retError);
     }
 }
@@ -999,6 +1064,8 @@ acceptAndProcessNextConnection(
                    destroy *channelP.
                 */
             } else {
+                TraceMsg("Failed to create an Abyss connection "
+                         "out of new channel %lx.  %s", channelP, error);
                 xmlrpc_strfree(error);
                 ChannelDestroy(channelP);
                 free(channelInfoP);

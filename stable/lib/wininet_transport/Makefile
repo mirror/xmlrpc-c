@@ -22,13 +22,16 @@ OMIT_WININET_TRANSPORT_RULE=Y
 
 include $(SRCDIR)/common.mk
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
 
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include \
 
 .PHONY: clean
 clean: clean-common

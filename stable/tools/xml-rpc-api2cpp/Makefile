@@ -10,24 +10,24 @@ default: all
 
 include $(BLDDIR)/config.mk
 
+PROGS := xml-rpc-api2cpp
+PROGRAMS_TO_INSTALL := $(PROGS)
+MAN_FILES_TO_INSTALL := xml-rpc-api2cpp.1
+
+all: $(PROGS)
+
 include $(SRCDIR)/tools/common.mk
 
-INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
+# <sstream.h> in Glibc 2.2 has a bug that results in inlining failure,
+# so we disable warnings for that:
+CFLAGS_LOCAL = -Wno-inline
 
-CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 
 LDFLAGS = $(LADD)
 
 LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -L$(BLDDIR)/src -lxmlrpc_server \
   $(CLIENT_LDLIBS)
-
-PROGS :=
-
-ifeq ($(MUST_BUILD_CLIENT),yes)
-  PROGS += xml-rpc-api2cpp
-endif
-
-all: $(PROGS)
 
 OBJECTS = \
   xml-rpc-api2cpp.o \
@@ -47,7 +47,7 @@ xml-rpc-api2cpp: \
 	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS)
 
 %.o:%.cpp
-	$(CXX) -c $(CXXFLAGS) $<
+	$(CXX) -c $(CXXFLAGS_ALL) $<
 
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.

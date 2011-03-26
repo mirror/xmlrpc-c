@@ -2,6 +2,8 @@
     curlTransaction
 =============================================================================*/
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -59,7 +61,7 @@ struct curlTransaction {
 
 
 static void
-addHeader(xmlrpc_env * const envP,
+addHeader(xmlrpc_env *         const envP,
           struct curl_slist ** const headerListP,
           const char *         const headerText) {
 
@@ -84,39 +86,82 @@ addContentTypeHeader(xmlrpc_env *         const envP,
 
 
 
+static const char *
+xmlrpcUserAgentPart(bool const reportIt) {
+
+    const char * retval;
+    
+    if (reportIt) {
+        curl_version_info_data * const curlInfoP =
+            curl_version_info(CURLVERSION_NOW);
+        char curlVersion[32];
+        
+        snprintf(curlVersion, sizeof(curlVersion), "%u.%u.%u",
+                 (curlInfoP->version_num >> 16) && 0xff,
+                 (curlInfoP->version_num >>  8) && 0xff,
+                 (curlInfoP->version_num >>  0) && 0xff
+            );
+
+        xmlrpc_asprintf(&retval,
+                        "Xmlrpc-c/%s Curl/%s",
+                        XMLRPC_C_VERSION, curlVersion);
+    } else
+        xmlrpc_asprintf(&retval, "%s", "");
+
+    return retval;
+}
+
+
+
 static void
 addUserAgentHeader(xmlrpc_env *         const envP,
                    struct curl_slist ** const headerListP,
+                   bool                 const reportXmlrpc,
                    const char *         const userAgent) {
+/*----------------------------------------------------------------------------
+   Add a User-Agent HTTP header to the Curl header list *headerListP,
+   if appropriate.
+   
+   'reportXmlrpc' means we want to tell the client what XML-RPC agent
+   is being used -- Xmlrpc-c and layers below.
 
-    if (userAgent) {
+   'userAgent' is a string describing the layers above Xmlrpc-c.  We
+   assume it is in the proper format to be included in a User-Agent
+   header.  (We should probably fix that some day -- take ownership
+   of that format).
+-----------------------------------------------------------------------------*/
+    if (reportXmlrpc || userAgent) {
+        /* Add the header */
+
         /* Note: Curl has a CURLOPT_USERAGENT option that does some of this
            work.  We prefer to be totally in control, though, so we build
            the header explicitly.
         */
-    
-        curl_version_info_data * const curlInfoP =
-            curl_version_info(CURLVERSION_NOW);
-        char curlVersion[32];
-        const char * userAgentHeader;
-        
-        snprintf(curlVersion, sizeof(curlVersion), "%u.%u.%u",
-                (curlInfoP->version_num >> 16) && 0xff,
-                (curlInfoP->version_num >>  8) && 0xff,
-                (curlInfoP->version_num >>  0) && 0xff
-            );
-                  
-        xmlrpc_asprintf(&userAgentHeader,
-                        "User-Agent: %s Xmlrpc-c/%s Curl/%s",
-                        userAgent, XMLRPC_C_VERSION, curlVersion);
-        
-        if (userAgentHeader == xmlrpc_strsol)
+
+        const char * const xmlrpcPart = xmlrpcUserAgentPart(reportXmlrpc);
+
+        if (xmlrpc_strnomem(xmlrpcPart))
             xmlrpc_faultf(envP, "Couldn't allocate memory for "
                           "User-Agent header");
         else {
-            addHeader(envP, headerListP, userAgentHeader);
+            const char * const userPart = userAgent ? userAgent : "";
+            const char * const space = userAgent && reportXmlrpc ? " " : "";
+
+            const char * userAgentHeader;
+
+            xmlrpc_asprintf(&userAgentHeader,
+                            "User-Agent: %s%s%s",
+                            userPart, space, xmlrpcPart);
+        
+            if (xmlrpc_strnomem(userAgentHeader))
+                xmlrpc_faultf(envP, "Couldn't allocate memory for "
+                              "User-Agent header");
+            else {
+                addHeader(envP, headerListP, userAgentHeader);
             
-            xmlrpc_strfree(userAgentHeader);
+                xmlrpc_strfree(userAgentHeader);
+            }
+            xmlrpc_strfree(xmlrpcPart);
         }
     }
 }
@@ -132,7 +177,7 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
             
     xmlrpc_asprintf(&authorizationHeader, "Authorization: %s", hdrValue);
     
-    if (authorizationHeader == xmlrpc_strsol)
+    if (xmlrpc_strnomem(authorizationHeader))
         xmlrpc_faultf(envP, "Couldn't allocate memory for "
                       "Authorization header");
     else {
@@ -144,9 +189,52 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
 
 
 
+/*
+  In HTTP 1.1, the client can send the header "Expect: 100-continue", which
+  tells the server that the client isn't going to send the body until the
+  server tells it to by sending a "continue" response (HTTP response code 100).
+  The server is obligated to send that response.
+
+  However, many servers are broken and don't send the Continue response.
+
+  Early libcurl did not send the Expect: header, thus worked fine with such
+  broken servers.  But as of ca. 2007, libcurl sends the Expect:, and waits
+  for the response, when the body is large.  It gives up after 3 seconds and
+  sends the body anyway.
+
+  To accomodate the broken servers and for backward compatibility, we always
+  force libcurl not to send the Expect and consequently not to wait for the
+  response, using the hackish (but according to libcurl design) method of
+  including an entry in our explicit header list that is an Expect: header
+  with an empty argument.  This causes libcurl not to send any Expect: header.
+  This is since 1.19; we may find there are also servers and/or libcurl levels
+  that can't work with that.
+
+  We may find a case where the Expect/Continue protocol is desirable.  If we
+  do, we should add a transport option to request the function and let libcurl
+  do its thing when the user requests it.
+
+  The purpose of Expect/Continue is to save the client the trouble of
+  generating and/or sending the body when the server is just going to reject
+  the transaction based on the headers -- like maybe because the body is
+  too big.
+*/
+
+
+static void
+addExpectHeader(xmlrpc_env *         const envP,
+                struct curl_slist ** const headerListP) {
+
+    addHeader(envP, headerListP, "Expect:");
+        /* Don't send Expect header.  See explanation above. */
+}
+
+
+
 static void
 createCurlHeaderList(xmlrpc_env *               const envP,
                      const char *               const authHdrValue,
+                     bool                       const dontAdvertise,
                      const char *               const userAgent,
                      struct curl_slist **       const headerListP) {
 
@@ -156,16 +244,18 @@ createCurlHeaderList(xmlrpc_env *               const envP,
 
     addContentTypeHeader(envP, &headerList);
     if (!envP->fault_occurred) {
-        addUserAgentHeader(envP, &headerList, userAgent);
+        addUserAgentHeader(envP, &headerList, !dontAdvertise, userAgent);
         if (!envP->fault_occurred) {
             if (authHdrValue)
                 addAuthorizationHeader(envP, &headerList, authHdrValue);
         }
+        if (!envP->fault_occurred)
+            addExpectHeader(envP, &headerList);
     }
     if (envP->fault_occurred)
         curl_slist_free_all(headerList);
-    else
-        *headerListP = headerList;
+
+    *headerListP = headerList;
 }
 
 
@@ -202,42 +292,40 @@ collect(void *  const ptr,
 
 static int
 curlProgress(void * const contextP,
-             double const dltotal  ATTR_UNUSED,
-             double const dlnow    ATTR_UNUSED,
-             double const ultotal  ATTR_UNUSED,
-             double const ulnow    ATTR_UNUSED) {
+             double const dltotal,
+             double const dlnow,
+             double const ultotal,
+             double const ulnow) {
 /*----------------------------------------------------------------------------
-   This is a Curl "progress function."  It's something various Curl
-   functions call every so often, including whenever something gets
-   interrupted by the process receiving, and catching, a signal.
-   There are two purposes of a Curl progress function: 1) lets us log
-   the progress of a long-running transaction such as a big download,
-   e.g. by displaying a progress bar somewhere.  In Xmlrpc-c, we don't
-   implement this purpose.  2) allows us to tell the Curl function,
-   via our return code, that calls it that we don't want to wait
-   anymore for the operation to complete.
+   This is a Curl "progress function."  It's something various Curl functions
+   call every so often, including whenever something gets interrupted by the
+   process receiving, and catching, a signal.  There are two purposes of a
+   Curl progress function: 1) lets us log the progress of a long-running
+   transaction such as a big download, e.g. by displaying a progress bar
+   somewhere.  2) allows us to tell the Curl function, via our return code,
+   that calls it that we don't want to wait anymore for the operation to
+   complete.
 
-   In Curl versions before March 2007, we get called once per second
-   and signals have no effect.  In current Curl, we usually get called
-   immediately after a signal gets caught while Curl is waiting to
-   receive a response from the server.  But Curl doesn't properly
-   synchronize with signals, so it may miss one and then we don't get
-   called until the next scheduled one-per-second call.
+   In Curl versions before March 2007, we get called once per second and
+   signals have no effect.  In current Curl, we usually get called immediately
+   after a signal gets caught while Curl is waiting to receive a response from
+   the server.  But Curl doesn't properly synchronize with signals, so it may
+   miss one and then we don't get called until the next scheduled
+   one-per-second call.
 
-   All we do is tell Caller it's time to give up if the transport's
-   client says it is via his "interrupt" flag.
+   All we do is pass the call through to the curlTransaction's progress
+   function (the one that the creator of the curlTransaction registered).
 
-   This function is not as important as it once was.  This module used
-   to use curl_easy_perform(), which can be interrupted only via this
-   progress function.  But because of the above-mentioned failure of
-   Curl to properly synchronize signals (and Bryan's failure to get
-   Curl developers to accept code to fix it), we now use the Curl
-   "multi" facility instead and do our own pselect().  But
-   This function still normally gets called by curl_multi_perform(),
-   which the transport tries to call even when the user has requested
-   interruption, because we don't trust our ability to abort a running
-   Curl transaction.  curl_multi_perform() reliably winds up a Curl
-   transaction when this function tells it to.
+   This function is not as important as it once was for interrupting purposes.
+   This module used to use curl_easy_perform(), which can be interrupted only
+   via this progress function.  But because of the above-mentioned failure of
+   Curl to properly synchronize signals (and Bryan's failure to get Curl
+   developers to accept code to fix it), we now use the Curl "multi" facility
+   instead and do our own pselect().  But This function still normally gets
+   called by curl_multi_perform(), which the transport tries to call even when
+   the user has requested interruption, because we don't trust our ability to
+   abort a running Curl transaction.  curl_multi_perform() reliably winds up a
+   Curl transaction when this function tells it to.
 -----------------------------------------------------------------------------*/
     curlTransaction * const curlTransactionP = contextP;
 
@@ -249,7 +337,9 @@ curlProgress(void * const contextP,
     assert(curlTransactionP);
     assert(curlTransactionP->progress);
 
-    curlTransactionP->progress(curlTransactionP->userContextP, &abort);
+    curlTransactionP->progress(curlTransactionP->userContextP,
+                               dltotal, dlnow, ultotal, ulnow,
+                               &abort);
 
     return abort;
 }
@@ -344,9 +434,17 @@ assertConstantsMatch(void) {
    formally.
 -----------------------------------------------------------------------------*/
     assert(XMLRPC_SSLVERSION_DEFAULT == CURL_SSLVERSION_DEFAULT);
-    assert(XMLRPC_SSLVERSION_TLSv1   == CURL_SSLVERSION_TLSv1);
-    assert(XMLRPC_SSLVERSION_SSLv2   == CURL_SSLVERSION_SSLv2);
-    assert(XMLRPC_SSLVERSION_SSLv3   == CURL_SSLVERSION_SSLv3);
+    assert(XMLRPC_SSLVERSION_TLSv1   == CURL_SSLVERSION_TLSv1  );
+    assert(XMLRPC_SSLVERSION_SSLv2   == CURL_SSLVERSION_SSLv2  );
+    assert(XMLRPC_SSLVERSION_SSLv3   == CURL_SSLVERSION_SSLv3  );
+
+    assert(XMLRPC_HTTPAUTH_BASIC        == CURLAUTH_BASIC       );
+    assert(XMLRPC_HTTPAUTH_DIGEST       == CURLAUTH_DIGEST      );
+    assert(XMLRPC_HTTPAUTH_GSSNEGOTIATE == CURLAUTH_GSSNEGOTIATE);
+    assert(XMLRPC_HTTPAUTH_NTLM         == CURLAUTH_NTLM        );
+
+    assert(XMLRPC_HTTPPROXY_HTTP   == CURLPROXY_HTTP   );
+    assert(XMLRPC_HTTPPROXY_SOCKS5 == CURLPROXY_SOCKS5 );
 }
 
 
@@ -357,6 +455,7 @@ setupCurlSession(xmlrpc_env *               const envP,
                  xmlrpc_mem_block *         const callXmlP,
                  xmlrpc_mem_block *         const responseXmlP,
                  const xmlrpc_server_info * const serverInfoP,
+                 bool                       const dontAdvertise,
                  const char *               const userAgent,
                  const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
@@ -383,6 +482,14 @@ setupCurlSession(xmlrpc_env *               const envP,
        tell us that something finished on a particular session, not that
        a particular transaction finished.
     */
+
+    /* It is out policy to do a libcurl call only where necessary, I.e.  not
+       to set what is the default anyhow.  The reduction in calls may save
+       some time, but mostly, it will save us encountering rare bugs or
+       suffering from backward incompatibilities in future libcurl.  I.e. we
+       don't exercise any more of libcurl than we have to.
+    */
+
     curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, curlTransactionP);
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
@@ -457,6 +564,29 @@ setupCurlSession(xmlrpc_env *               const envP,
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);
 
+        if (curlSetupP->proxy)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXY, curlSetupP->proxy);
+        if (curlSetupP->proxyAuth != CURLAUTH_BASIC)
+            /* Note that the Xmlrpc-c default and the Curl default are
+               different.  Xmlrpc-c is none, while Curl is basic.  One reason
+               for this is that it makes our extensible parameter list scheme,
+               wherein zero always means default, easier.
+            */
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYAUTH,
+                             curlSetupP->proxyAuth);
+        if (curlSetupP->proxyPort)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYPORT,
+                             curlSetupP->proxyPort);
+        if (curlSetupP->proxyUserPwd)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYUSERPWD,
+                             curlSetupP->proxyUserPwd);
+        if (curlSetupP->proxyType)
+            curl_easy_setopt(curlSessionP, CURLOPT_PROXYTYPE,
+                             curlSetupP->proxyType);
+
+        if (curlSetupP->verbose)
+            curl_easy_setopt(curlSessionP, CURLOPT_VERBOSE, 1l);
+
         if (curlSetupP->timeout)
             setCurlTimeout(curlSessionP, curlSetupP->timeout);
 
@@ -470,7 +600,8 @@ setupCurlSession(xmlrpc_env *               const envP,
             setupAuth(envP, curlSessionP, serverInfoP, &authHdrValue);
             if (!envP->fault_occurred) {
                 struct curl_slist * headerList;
-                createCurlHeaderList(envP, authHdrValue, userAgent,
+                createCurlHeaderList(envP, authHdrValue,
+                                     dontAdvertise, userAgent,
                                      &headerList);
                 if (!envP->fault_occurred) {
                     curl_easy_setopt(
@@ -492,6 +623,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
                        const xmlrpc_server_info * const serverP,
                        xmlrpc_mem_block *         const callXmlP,
                        xmlrpc_mem_block *         const responseXmlP,
+                       bool                       const dontAdvertise,
                        const char *               const userAgent,
                        const struct curlSetup *   const curlSetupStuffP,
                        void *                     const userContextP,
@@ -516,7 +648,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
         else {
             setupCurlSession(envP, curlTransactionP,
                              callXmlP, responseXmlP,
-                             serverP, userAgent,
+                             serverP, dontAdvertise, userAgent,
                              curlSetupStuffP);
             
             if (envP->fault_occurred)

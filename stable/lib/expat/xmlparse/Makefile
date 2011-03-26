@@ -17,8 +17,8 @@ ifeq ($(SRCDIR),)
 endif
 SUBDIR := lib/expat/xmlparse
 
-XMLTOKDIR = $(SRCDIR)/lib/expat/xmltok
-UTILDIR = $(SRCDIR)/lib/util
+XMLTOKDIR = srcdir/lib/expat/xmltok
+UTILDIR = srcdir/lib/util
 
 default: all
 
@@ -39,13 +39,11 @@ MAJ=3
 
 include $(SRCDIR)/common.mk
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(XMLTOKDIR) \
   -I$(UTILDIR)/include \
-  -I$(SRCDIR)/include \
+  -Isrcdir/include \
 
 # LIBDEP is the shared libraries on which libxmlrpc_abyss depends.
 # The runtime loader should load these libraries when it loads libxmlrpc_abyss.
@@ -57,14 +55,10 @@ XMLPARSE_SHLIB = $(call shlibfn,libxmlrpc_xmlparse)
 XMLPARSE_SHLIBLE = $(call shliblefn,libxmlrpc_xmlparse)
 #XMLPARSE_SHLIBLE is e.g. libxmlrpc_xmlparse.so
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBS := $(XMLPARSE_SHLIB) $(XMLPARSE_SHLIBLE)
-  endif
-
 .PHONY: all
-all: libxmlrpc_xmlparse.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_xmlparse.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(XMLPARSE_SHLIB): $(TARGET_MODS:%=%.osh) $(LIBDEP)
 $(XMLPARSE_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh) $(LIBDEP)
 

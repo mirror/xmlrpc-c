@@ -192,9 +192,13 @@ channelWrite(TChannel *            const channelP,
             else if (rc == 0)
                 fprintf(stderr, "Abyss channel: send() failed.  "
                         "Socket closed.\n");
-            else
+            else {
+                size_t const bytesTransferred = rc;
                 fprintf(stderr, "Abyss channel: sent %u bytes: '%.*s'\n",
-                        rc, rc, &buffer[len-bytesLeft]);
+                        (unsigned)bytesTransferred,
+                        (int)(MIN(bytesTransferred, 4096)),
+                        &buffer[len-bytesLeft]);
+            }
         }
         if (rc <= 0)
             /* 0 means connection closed; < 0 means severe error */
@@ -262,7 +266,7 @@ channelWait(TChannel * const channelP,
    one.
 
    We return before the requested condition holds if 'timeoutMs'
-   milliseconds pass.  timoutMs == TIME_INFINITE means infinity.
+   milliseconds pass.  timeoutMs == TIME_INFINITE means infinity.
 
    We return before the requested condition holds if the process receives
    (and catches) a signal, but only if it receives that signal a certain
@@ -468,10 +472,9 @@ makeChannelInfo(struct abyss_unix_chaninfo ** const channelInfoPP,
         channelInfoP->peerAddrLen = peerAddrLen;
         channelInfoP->peerAddr    = peerAddr;
         
-        *channelInfoPP = channelInfoP;
-
         *errorP = NULL;
     }
+    *channelInfoPP = channelInfoP;
 }
 
 
@@ -609,8 +612,12 @@ waitForConnection(struct socketUnix * const listenSocketP,
 
    We return before the requested condition holds if the process receives
    (and catches) a signal, but only if it receives that signal a certain
-   time after we start running.  (That means this function isn't useful
+   time after we start running.  (That means this behavior isn't useful
    for most purposes).
+
+   We furthermore return before the requested condition holds if someone sends
+   a byte through the listening socket's interrupt pipe (or has sent one
+   previously since the most recent time the pipe was drained).
 
    Return *interruptedP == true if we return before there is a connection
    ready to accept.

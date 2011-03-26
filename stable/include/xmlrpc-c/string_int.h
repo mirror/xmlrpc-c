@@ -13,22 +13,37 @@
 extern "C" {
 #endif
 
-extern const char * const xmlrpc_strsol;
+XMLRPC_DLLEXPORT
+bool
+xmlrpc_strnomem(const char * const string);
 
+XMLRPC_DLLEXPORT
+const char *
+xmlrpc_strnomemval(void);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_vasprintf(const char ** const retvalP,
                  const char *  const fmt,
                  va_list             varargs);
 
-void GNU_PRINTF_ATTR(2,3)
+XMLRPC_DLLEXPORT
+void XMLRPC_PRINTF_ATTR(2,3)
 xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...);
 
+XMLRPC_DLLEXPORT
 const char *
-xmlrpc_strdupnull(const char * const string);
+xmlrpc_strdupsol(const char * const string);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_strfree(const char * const string);
 
+XMLRPC_DLLEXPORT
+const char *
+xmlrpc_strdupnull(const char * const string);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_strfreenull(const char * const string);
 
@@ -73,13 +88,16 @@ xmlrpc_strneq(const char * const a,
     return (strncmp(a, b, len) == 0);
 }
 
+XMLRPC_DLLEXPORT
 const char * 
 xmlrpc_makePrintable(const char * const input);
 
+XMLRPC_DLLEXPORT
 const char *
 xmlrpc_makePrintable_lp(const char * const input,
                         size_t       const inputLength);
 
+XMLRPC_DLLEXPORT
 const char *
 xmlrpc_makePrintableChar(char const input);
 

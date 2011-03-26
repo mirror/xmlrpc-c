@@ -8,7 +8,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/xmlparser.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "xml_data.h"
 #include "parse_xml.h"
 
@@ -503,7 +503,7 @@ testParseFaultResponse(void) {
 
 
 static void
-test_parse_xml_call(void) {
+testParseXmlCall(void) {
 
     xmlrpc_env env;
     const char *method_name;
@@ -554,6 +554,38 @@ test_parse_xml_call(void) {
 
 
 
+static void
+testParseXmlValue(void) {
+
+    const char * const xmlInt7 = "<value><int>7</int ></value>";
+    const char * const xmlBadVal1 = "hello";
+    const char * const xmlBadVal2 = "<junk/>";
+
+    xmlrpc_value * valueP;
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);    
+
+    xmlrpc_parse_value_xml(&env, xmlInt7, strlen(xmlInt7), &valueP);
+
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_DECREF(valueP);
+
+    xmlrpc_parse_value_xml(&env, xmlBadVal1, strlen(xmlBadVal1), &valueP);
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+    xmlrpc_parse_value_xml(&env, xmlBadVal2, strlen(xmlBadVal2), &valueP);
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+
+    xmlrpc_env_clean(&env);    
+}
+
+
+
 void
 test_parse_xml(void) {
 
@@ -564,7 +596,8 @@ test_parse_xml(void) {
     testParseGoodResponse();
     testParseFaultResponse();
     testParseBadResponse();
-    test_parse_xml_call();
+    testParseXmlCall();
+    testParseXmlValue();
     printf("\n");
     printf("XML parsing tests done.\n");
 }

@@ -10,7 +10,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "xml_data.h"
 #include "method_registry.h"
 
@@ -24,6 +24,25 @@
 #define DEFAULT_CALLINFO   ((void*) 0xDC0)
 
 static const char * const barHelp = "This is the help for Method test.bar.";
+
+
+
+static void
+testVersion(void) {
+
+    unsigned int major, minor, point;
+
+    xmlrpc_server_version(&major, &minor, &point);
+
+#ifndef WIN32    
+    /* xmlrpc_server_version_major, etc. are not exported from a Windows DLL */
+
+    TEST(major = xmlrpc_server_version_major);
+    TEST(minor = xmlrpc_server_version_minor);
+    TEST(point = xmlrpc_server_version_point);
+#endif
+}
+
 
 
 static xmlrpc_value *
@@ -297,6 +316,8 @@ test_system_methodSignature(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);
     TEST(streq(type0, "int"));
     TEST(streq(type1, "int"));
+    strfree(type0);
+    strfree(type1);
     xmlrpc_DECREF(resultP);
     xmlrpc_DECREF(argArrayP);
 
@@ -415,6 +436,7 @@ static const char * const expectedMethodName[] = {
     "system.multicall",
     "system.shutdown",
     "system.capabilities",
+    "system.getCapabilities",
     "test.foo",
     "test.bar"
 };
@@ -451,12 +473,12 @@ test_system_listMethods(xmlrpc_registry * const registryP) {
 
     TEST(size == ARRAY_SIZE(expectedMethodName));
 
-    xmlrpc_decompose_value(&env, resultP, "(sssssssss)",
+    xmlrpc_decompose_value(&env, resultP, "(ssssssssss)",
                            &methodName[0], &methodName[1],
                            &methodName[2], &methodName[3],
                            &methodName[4], &methodName[5],
                            &methodName[6], &methodName[7],
-                           &methodName[8]);
+                           &methodName[8], &methodName[9]);
 
     TEST_NO_FAULT(&env);
 
@@ -532,19 +554,15 @@ test_system_methodExist(xmlrpc_registry * const registryP) {
 
 
 
-static void
-test_system_methodHelp(xmlrpc_registry * const registryP) {
-/*----------------------------------------------------------------------------
-   Test system.methodHelp
------------------------------------------------------------------------------*/
+static void 
+testNoHelp(xmlrpc_registry * const registryP) {
+
     xmlrpc_env env;
     xmlrpc_value * resultP;
     xmlrpc_value * argArrayP;
     const char * helpString;
 
     xmlrpc_env_init(&env);
-
-    printf("  Running system.methodHelp tests.");
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.foo");
     TEST_NO_FAULT(&env);
@@ -559,10 +577,26 @@ test_system_methodHelp(xmlrpc_registry * const registryP) {
 
     TEST(streq(helpString, "No help is available for this method."));
 
+    strfree(helpString);
+
     xmlrpc_DECREF(resultP);
 
     xmlrpc_DECREF(argArrayP);
 
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void 
+testExistentHelp(xmlrpc_registry * const registryP) {
+
+    xmlrpc_env env;
+    xmlrpc_value * resultP;
+    xmlrpc_value * argArrayP;
+    const char * helpString;
+
+    xmlrpc_env_init(&env);
 
     argArrayP = xmlrpc_build_value(&env, "(s)", "test.bar");
     TEST_NO_FAULT(&env);
@@ -577,11 +611,31 @@ test_system_methodHelp(xmlrpc_registry * const registryP) {
 
     TEST(streq(helpString, barHelp));
 
+    strfree(helpString);
+
     xmlrpc_DECREF(resultP);
 
     xmlrpc_DECREF(argArrayP);
 
     xmlrpc_env_clean(&env);
+}
+
+
+
+static void
+test_system_methodHelp(xmlrpc_registry * const registryP) {
+/*----------------------------------------------------------------------------
+   Test system.methodHelp
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running system.methodHelp tests.");
+
+    testNoHelp(registryP);
+
+    testExistentHelp(registryP);
 
     printf("\n");
 }
@@ -620,6 +674,53 @@ test_system_capabilities(xmlrpc_registry * const registryP) {
 
     TEST(streq(facility, "xmlrpc-c"));
     TEST(protocol_version == 2);
+
+    strfree(facility);
+
+    xmlrpc_DECREF(resultP);
+
+    xmlrpc_DECREF(argArrayP);
+
+    xmlrpc_env_clean(&env);
+
+    printf("\n");
+}
+
+
+
+static void
+test_system_getCapabilities(xmlrpc_registry * const registryP) {
+/*----------------------------------------------------------------------------
+   Test system.getCapabilities
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * resultP;
+    xmlrpc_value * argArrayP;
+    const char * specUrl;
+    int specVersion;
+
+    xmlrpc_env_init(&env);
+
+    printf("  Running system.getCapabilities tests.");
+
+    argArrayP = xmlrpc_array_new(&env);
+    TEST_NO_FAULT(&env);
+
+    doRpc(&env, registryP, "system.getCapabilities", argArrayP, NULL,
+          &resultP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_decompose_value(&env, resultP, "{s:{s:s,s:i,*},*}",
+                           "introspect",
+                           "specUrl", &specUrl,
+                           "specVersion", &specVersion);
+    TEST_NO_FAULT(&env);
+
+    TEST(streq(specUrl,
+               "http://xmlrpc-c.sourceforge.net/xmlrpc-c/introspection.html"));
+    TEST(specVersion == 1);
+
+    strfree(specUrl);
 
     xmlrpc_DECREF(resultP);
 
@@ -690,11 +791,12 @@ test_system_multicall(xmlrpc_registry * const registryP) {
     TEST_NO_FAULT(&env);    
     TEST(foo1_result == 42);
     TEST(bar_code == 123);
-    TEST(strcmp(bar_string, "Test fault") == 0);
+    TEST(streq(bar_string, "Test fault"));
     TEST(nosuch_code == XMLRPC_NO_SUCH_METHOD_ERROR);
     TEST(foo2_result == 42);
     xmlrpc_DECREF(multiP);
     free(bar_string);
+    free(nosuch_string);
     
 
     /* Now for some invalid multi calls */
@@ -798,7 +900,7 @@ testCall(xmlrpc_registry * const registryP) {
     doRpc(&env2, registryP, "test.bar", argArrayP, BAR_CALLINFO, &valueP);
     TEST(env2.fault_occurred);
     TEST(env2.fault_code == 123);
-    TEST(env2.fault_string && strcmp(env2.fault_string, "Test fault") == 0);
+    TEST(env2.fault_string && streq(env2.fault_string, "Test fault"));
     xmlrpc_env_clean(&env2);
 
     /* Call a non-existant method and check the result. */
@@ -952,6 +1054,8 @@ test_method_registry(void) {
 
     xmlrpc_env_init(&env);
 
+    testVersion();
+
     printf("Running method registry tests.");
 
     /* Create a new registry. */
@@ -998,6 +1102,8 @@ test_method_registry(void) {
     test_system_methodHelp(registryP);
 
     test_system_capabilities(registryP);
+
+    test_system_getCapabilities(registryP);
 
     test_signature();
 

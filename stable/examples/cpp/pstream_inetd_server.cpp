@@ -76,12 +76,7 @@ main(int           const,
             .socketFd(STDIN_FILENO)
             .registryP(&myRegistry));
 
-        for (bool clientHasDisconnected = false; !clientHasDisconnected;)
-            server.runOnce(&clientHasDisconnected);
-                // This reads one packet (containing an XML-RPC call message)
-                // from Standard Input, executes the indicated RPC, and writes
-                // one packet containing the XML-RPC response message to
-                // Standard Input.
+        server.run();
 
     } catch (exception const& e) {
         cerr << "Something threw an error: " << e.what() << endl;

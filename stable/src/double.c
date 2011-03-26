@@ -35,8 +35,8 @@ bufferConcat(buffer * const bufferP,
 
     if (bufferP->bytes) {
         if (bufferP->next >= bufferP->end) {
-            unsigned int const oldSize = bufferP->end - bufferP->bytes;
-            unsigned int const newSize = oldSize + 64;
+            size_t const oldSize = bufferP->end - bufferP->bytes;
+            size_t const newSize = oldSize + 64;
             bufferP->bytes = realloc(bufferP->bytes, newSize);
             bufferP->next = bufferP->bytes + oldSize;
             bufferP->end  = bufferP->bytes + newSize;

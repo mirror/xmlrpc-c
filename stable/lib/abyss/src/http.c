@@ -1,6 +1,7 @@
 /* Copyright information is at the end of the file */
 
-#define _BSD_SOURCE   /* For strcaseeq() */
+#define _XOPEN_SOURCE 600   /* For strdup() */
+#define _BSD_SOURCE   /* For xmlrpc_strcaseeq() */
 
 #include <ctype.h>
 #include <assert.h>
@@ -15,6 +16,7 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/base64_int.h"
 #include "xmlrpc-c/abyss.h"
 
 #include "server.h"
@@ -93,7 +95,7 @@ RequestInit(TSession * const sessionP,
 
     time(&sessionP->date);
 
-    sessionP->conn = connectionP;
+    sessionP->connP = connectionP;
 
     sessionP->responseStarted = FALSE;
 
@@ -104,8 +106,8 @@ RequestInit(TSession * const sessionP,
 
     ListInit(&sessionP->cookies);
     ListInit(&sessionP->ranges);
-    TableInit(&sessionP->request_headers);
-    TableInit(&sessionP->response_headers);
+    TableInit(&sessionP->requestHeaderFields);
+    TableInit(&sessionP->responseHeaderFields);
 
     sessionP->status = 0;  /* No status from handler yet */
 
@@ -122,8 +124,8 @@ RequestFree(TSession * const sessionP) {
 
     ListFree(&sessionP->cookies);
     ListFree(&sessionP->ranges);
-    TableFree(&sessionP->request_headers);
-    TableFree(&sessionP->response_headers);
+    TableFree(&sessionP->requestHeaderFields);
+    TableFree(&sessionP->responseHeaderFields);
     StringFree(&(sessionP->header));
 }
 
@@ -181,8 +183,14 @@ getLineInBuffer(TConn * const connectionP,
             error = TRUE;
         else {
             lfPos = firstLfPos(connectionP, lineStart);
-            if (!lfPos)
-                error = !ConnRead(connectionP, timeLeft);
+            if (!lfPos) {
+                const char * readError;
+                ConnRead(connectionP, timeLeft, NULL, NULL, &readError);
+                if (readError) {
+                    error = TRUE;
+                    xmlrpc_strfree(readError);
+                }
+            }
         }
     }    
     *errorP = error;
@@ -276,14 +284,14 @@ getRestOfHeader(TConn *       const connectionP,
                 headerEnd = nextLineEnd;
             } else {
                 gotWholeHeader = TRUE;
-                *headerEndP = headerEnd;
 
                 /* NUL-terminate the whole header */
                 convertLineEnd(headerEnd, headerStart, '\0');
             }
         }
     }
-    *errorP = error;
+    *headerEndP = headerEnd;
+    *errorP     = error;
 }
 
 
@@ -431,10 +439,10 @@ readRequestHeader(TSession * const sessionP,
     bool error;
     bool endOfHeaders;
 
-    skipToNonemptyLine(sessionP->conn, deadline, &error);
+    skipToNonemptyLine(sessionP->connP, deadline, &error);
 
     if (!error) {
-        readHeader(sessionP->conn, deadline, &endOfHeaders, &line, &error);
+        readHeader(sessionP->connP, deadline, &endOfHeaders, &line, &error);
 
         /* End of headers is delimited by an empty line, and we skipped all
            the empty lines above, so readHeader() could not have encountered
@@ -505,6 +513,7 @@ static void
 parseHostPort(const char *     const hostport,
               const char **    const hostP,
               unsigned short * const portP,
+              const char **    const errorP,
               uint16_t *       const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    Parse a 'hostport', a string in the form www.acme.com:8080 .
@@ -530,17 +539,20 @@ parseHostPort(const char *     const hostport,
              isdigit(*p) && port < 65535;
              (port = port * 10 + (*p - '0')), ++p);
             
-        if (*p || port == 0)
+        if (*p || port == 0) {
+            xmlrpc_asprintf(errorP, "There is nothing, or something "
+                            "non-numeric for the port number after the "
+                            "colon in '%s'", hostport);
             *httpErrorCodeP = 400;  /* Bad Request */
-        else {
+        } else {
             *hostP = strdup(buffer);
             *portP = port;
-            *httpErrorCodeP = 0;
+            *errorP = NULL;
         }
     } else {
         *hostP          = strdup(buffer);
         *portP          = 80;
-        *httpErrorCodeP = 0;
+        *errorP = NULL;
     }
     free(buffer);
 }
@@ -641,8 +653,15 @@ parseRequestUri(char *           const requestUri,
                     hostport = hostportpath;
                     *httpErrorCodeP = 0;
                 }
-                if (!*httpErrorCodeP)
-                    parseHostPort(hostport, &host, &port, httpErrorCodeP);
+                if (!*httpErrorCodeP) {
+                    const char * error;
+                    parseHostPort(hostport, &host, &port,
+                                  &error, httpErrorCodeP);
+                    if (error)
+                        xmlrpc_strfree(error);
+                    else
+                        *httpErrorCodeP = 0;
+                }
                 if (*httpErrorCodeP)
                     xmlrpc_strfree(path);
 
@@ -771,9 +790,10 @@ strtolower(char * const s) {
 
 
 static void
-getFieldNameToken(char **    const pP,
-                  char **    const fieldNameP,
-                  uint16_t * const httpErrorCodeP) {
+getFieldNameToken(char **       const pP,
+                  char **       const fieldNameP,
+                  const char ** const errorP,
+                  uint16_t *    const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    Assuming that *pP points to the place in an HTTP header where the field
    name belongs, return the field name and advance *pP past that token.
@@ -786,30 +806,34 @@ getFieldNameToken(char **    const pP,
     NextToken((const char **)pP);
     
     fieldName = GetToken(pP);
-    if (!fieldName)
+    if (!fieldName) {
+        xmlrpc_asprintf(errorP, "The header has no field name token");
         *httpErrorCodeP = 400;  /* Bad Request */
-    else {
-        if (fieldName[strlen(fieldName)-1] != ':')
+    } else {
+        if (fieldName[strlen(fieldName)-1] != ':') {
             /* Not a valid field name */
+            xmlrpc_asprintf(errorP, "The field name token '%s' "
+                            "does not end with a colon (:)", fieldName);
             *httpErrorCodeP = 400;  /* Bad Request */
-        else {
+        } else {
             fieldName[strlen(fieldName)-1] = '\0';  /* remove trailing colon */
 
             strtolower(fieldName);
             
-            *httpErrorCodeP = 0;  /* no error */
-            *fieldNameP = fieldName;
+            *errorP = NULL;
         }
     }
+    *fieldNameP = fieldName;
 }
 
 
 
 static void
-processHeader(const char * const fieldName,
-              char *       const fieldValue,
-              TSession *   const sessionP,
-              uint16_t *   const httpErrorCodeP) {
+processHeader(const char *  const fieldName,
+              char *        const fieldValue,
+              TSession *    const sessionP,
+              const char ** const errorP,
+              uint16_t *    const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    We may modify *fieldValue, and we put pointers to *fieldValue and
    *fieldName into *sessionP.
@@ -817,7 +841,7 @@ processHeader(const char * const fieldName,
    We must fix this some day.  *sessionP should point to individual
    malloc'ed strings.
 -----------------------------------------------------------------------------*/
-    *httpErrorCodeP = 0;  /* initial assumption */
+    *errorP = NULL;  /* initial assumption */
 
     if (xmlrpc_streq(fieldName, "connection")) {
         if (xmlrpc_strcaseeq(fieldValue, "keep-alive"))
@@ -830,7 +854,7 @@ processHeader(const char * const fieldName,
             sessionP->requestInfo.host = NULL;
         }
         parseHostPort(fieldValue, &sessionP->requestInfo.host,
-                      &sessionP->requestInfo.port, httpErrorCodeP);
+                      &sessionP->requestInfo.port, errorP, httpErrorCodeP);
     } else if (xmlrpc_streq(fieldName, "from"))
         sessionP->requestInfo.from = fieldValue;
     else if (xmlrpc_streq(fieldName, "user-agent"))
@@ -841,12 +865,21 @@ processHeader(const char * const fieldName,
         if (xmlrpc_strneq(fieldValue, "bytes=", 6)) {
             bool succeeded;
             succeeded = ListAddFromString(&sessionP->ranges, &fieldValue[6]);
-            *httpErrorCodeP = succeeded ? 0 : 400;
+            if (!succeeded) {
+                xmlrpc_asprintf(errorP, "ListAddFromString() failed for "
+                                "\"range: bytes=...\" header value '%s'",
+                                &fieldValue[6]);
+                *httpErrorCodeP = 400;
+            }
         }
     } else if (xmlrpc_streq(fieldName, "cookies")) {
         bool succeeded;
         succeeded = ListAddFromString(&sessionP->cookies, fieldValue);
-        *httpErrorCodeP = succeeded ? 0 : 400;
+        if (!succeeded) {
+            xmlrpc_asprintf(errorP, "ListAddFromString() failed for "
+                            "cookies: header value '%s'", fieldValue);
+            *httpErrorCodeP = 400;
+        }
     } else if (xmlrpc_streq(fieldName, "expect")) {
         if (xmlrpc_strcaseeq(fieldValue, "100-continue"))
             sessionP->continueRequired = TRUE;
@@ -856,50 +889,54 @@ processHeader(const char * const fieldName,
 
 
 static void
-readAndProcessHeaders(TSession * const sessionP,
-                      time_t     const deadline,
-                      uint16_t * const httpErrorCodeP) {
+readAndProcessHeaders(TSession *    const sessionP,
+                      time_t        const deadline,
+                      const char ** const errorP,
+                      uint16_t *    const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    Read all the HTTP headers from the session *sessionP, which has at
    least one header coming.  Update *sessionP to reflect the
    information in the headers.
 
-   If we find an error in the headers or while trying to read them, we
-   return an appropriate HTTP error code as *httpErrorCodeP.  Otherwise,
-   we return *httpErrorCodeP = 0.
+   If we find an error in the headers or while trying to read them, we return
+   a text explanation of the problem as *errorP and an appropriate HTTP error
+   code as *httpErrorCodeP.  Otherwise, we return *errorP = NULL and nothing
+   as *httpErrorCodeP.
 -----------------------------------------------------------------------------*/
     bool endOfHeaders;
 
     assert(!sessionP->validRequest);
         /* Calling us doesn't make sense if there is already a valid request */
 
-    *httpErrorCodeP = 0;  /* initial assumption */
+    *errorP = NULL;  /* initial assumption */
     endOfHeaders = false;  /* Caller assures us there is at least one header */
 
-    while (!endOfHeaders && !*httpErrorCodeP) {
+    while (!endOfHeaders && !*errorP) {
         char * header;
         bool error;
-        readHeader(sessionP->conn, deadline, &endOfHeaders, &header, &error);
-        if (error)
+        readHeader(sessionP->connP, deadline, &endOfHeaders, &header, &error);
+        if (error) {
+            xmlrpc_asprintf(errorP, "Failed to read headers from "
+                            "client connection.");
             *httpErrorCodeP = 408;  /* Request Timeout */
-        else {
+        } else {
             if (!endOfHeaders) {
                 char * p;
                 char * fieldName;
 
                 p = &header[0];
-                getFieldNameToken(&p, &fieldName, httpErrorCodeP);
-                if (!*httpErrorCodeP) {
+                getFieldNameToken(&p, &fieldName, errorP, httpErrorCodeP);
+                if (!*errorP) {
                     char * fieldValue;
                     
                     NextToken((const char **)&p);
                     
                     fieldValue = p;
 
-                    TableAdd(&sessionP->request_headers,
+                    TableAdd(&sessionP->requestHeaderFields,
                              fieldName, fieldValue);
                     
-                    processHeader(fieldName, fieldValue, sessionP,
+                    processHeader(fieldName, fieldValue, sessionP, errorP,
                                   httpErrorCodeP);
                 }
             }
@@ -910,8 +947,10 @@ readAndProcessHeaders(TSession * const sessionP,
 
 
 void
-RequestRead(TSession * const sessionP,
-            uint32_t   const timeout) {
+RequestRead(TSession *    const sessionP,
+            uint32_t      const timeout,
+            const char ** const errorP,
+            uint16_t *    const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    Read the headers of a new HTTP request (assuming nothing has yet been
    read on the session).
@@ -928,7 +967,10 @@ RequestRead(TSession * const sessionP,
     char * requestLine;  /* In connection;s internal buffer */
 
     readRequestHeader(sessionP, deadline, &requestLine, &httpErrorCode);
-    if (!httpErrorCode) {
+    if (httpErrorCode) {
+        xmlrpc_asprintf(errorP, "Problem getting the request header");
+        *httpErrorCodeP = httpErrorCode;
+    } else {
         TMethod httpMethod;
         const char * host;
         const char * path;
@@ -940,15 +982,22 @@ RequestRead(TSession * const sessionP,
                          &host, &port, &path, &query,
                          &moreHeaders, &httpErrorCode);
 
-        if (!httpErrorCode) {
+        if (httpErrorCode) {
+            xmlrpc_asprintf(errorP, "Unable to parse the request header "
+                            "'%s'", requestLine);
+            *httpErrorCodeP = httpErrorCode;
+        } else {
             initRequestInfo(&sessionP->requestInfo, sessionP->version,
                             requestLine,
                             httpMethod, host, port, path, query);
 
-            if (moreHeaders)
-                readAndProcessHeaders(sessionP, deadline, &httpErrorCode);
+            if (moreHeaders) {
+                readAndProcessHeaders(sessionP, deadline,
+                                      errorP, httpErrorCodeP);
+            } else
+                *errorP = NULL;
 
-            if (httpErrorCode == 0)
+            if (!*errorP)
                 sessionP->validRequest = true;
 
             xmlrpc_strfreenull(host);
@@ -956,8 +1005,6 @@ RequestRead(TSession * const sessionP,
             xmlrpc_strfreenull(query);
         }
     }
-    if (httpErrorCode)
-        ResponseStatus(sessionP, httpErrorCode);
 }
 
 
@@ -966,7 +1013,7 @@ char *
 RequestHeaderValue(TSession *   const sessionP,
                    const char * const name) {
 
-    return (TableFind(&sessionP->request_headers, name));
+    return (TableFind(&sessionP->requestHeaderFields, name));
 }
 
 
@@ -1004,10 +1051,10 @@ RequestValidURIPath(TSession * const sessionP) {
             if (*(p++) == '/') {
                 if (*p == '/')
                     break;
-                else if ((strncmp(p,"./",2) == 0) || (strcmp(p, ".") == 0))
+                else if ((xmlrpc_strneq(p,"./", 2)) || (xmlrpc_streq(p, ".")))
                     ++p;
-                else if ((strncmp(p, "../", 2) == 0) ||
-                         (strcmp(p, "..") == 0)) {
+                else if ((xmlrpc_strneq(p, "../", 2)) ||
+                         (xmlrpc_streq(p, ".."))) {
                     p += 2;
                     --i;
                     if (i == 0)
@@ -1034,14 +1081,14 @@ RequestAuth(TSession *   const sessionP,
 /*----------------------------------------------------------------------------
    Authenticate requester, in a very simplistic fashion.
 
-   If the request specifies basic authentication (via Authorization
-   header) with username 'user', password 'pass', then return TRUE.
-   Else, return FALSE and set up an authorization failure response
-   (HTTP response status 401) that says user must supply an identity
-   in the 'credential' domain.
+   If the request executing on session *sessionP specifies basic
+   authentication (via Authorization header) with username 'user', password
+   'pass', then return TRUE.  Else, return FALSE and set up an authorization
+   failure response (HTTP response status 401) that says user must supply an
+   identity in the 'credential' domain.
 
-   When we return TRUE, we also set the username in the request info
-   to 'user' so that a future SessionGetRequestInfo can get it.
+   When we return TRUE, we also set the username in the request info for the
+   session to 'user' so that a future SessionGetRequestInfo can get it.
 -----------------------------------------------------------------------------*/
     bool authorized;
     char * authHdrPtr;
@@ -1060,7 +1107,7 @@ RequestAuth(TSession *   const sessionP,
                 NextToken((const char **)&authHdrPtr);
 
                 xmlrpc_asprintf(&userPass, "%s:%s", user, pass);
-                Base64Encode(userPass, userPassEncoded);
+                xmlrpc_base64Encode(userPass, userPassEncoded);
                 xmlrpc_strfree(userPass);
 
                 if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
@@ -1221,14 +1268,14 @@ HTTPWriteBodyChunk(TSession *   const sessionP,
         sprintf(chunkHeader, "%x\r\n", len);
 
         succeeded =
-            ConnWrite(sessionP->conn, chunkHeader, strlen(chunkHeader));
+            ConnWrite(sessionP->connP, chunkHeader, strlen(chunkHeader));
         if (succeeded) {
-            succeeded = ConnWrite(sessionP->conn, buffer, len);
+            succeeded = ConnWrite(sessionP->connP, buffer, len);
             if (succeeded)
-                succeeded = ConnWrite(sessionP->conn, "\r\n", 2);
+                succeeded = ConnWrite(sessionP->connP, "\r\n", 2);
         }
     } else
-        succeeded = ConnWrite(sessionP->conn, buffer, len);
+        succeeded = ConnWrite(sessionP->connP, buffer, len);
 
     return succeeded;
 }
@@ -1243,7 +1290,7 @@ HTTPWriteEndChunk(TSession * const sessionP) {
     if (sessionP->chunkedwritemode && sessionP->chunkedwrite) {
         /* May be one day trailer dumping will be added */
         sessionP->chunkedwritemode = FALSE;
-        retval = ConnWrite(sessionP->conn, "0\r\n\r\n", 5);
+        retval = ConnWrite(sessionP->connP, "0\r\n\r\n", 5);
     } else
         retval = TRUE;
 
@@ -1271,7 +1318,7 @@ HTTPWriteContinue(TSession * const sessionP) {
     char const continueStatus[] = "HTTP/1.1 100 continue\r\n\r\n";
         /* This is a status line plus an end-of-headers empty line */
 
-    return ConnWrite(sessionP->conn, continueStatus, strlen(continueStatus));
+    return ConnWrite(sessionP->connP, continueStatus, strlen(continueStatus));
 }
 
 

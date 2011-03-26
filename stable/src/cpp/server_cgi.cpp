@@ -12,9 +12,17 @@
    Contributed to the public domain by its author.
 =============================================================================*/
 
+#include "xmlrpc_config.h"
+#if MSVCRT
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include <io.h>
+#include <fcntl.h>
+#endif
+#include <cstdlib>  // for getenv
 #include <memory>
 #include <stdio.h>
-#include <cstdlib>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::throwf;
@@ -185,7 +193,7 @@ serverCgi::~serverCgi() {
 
 
 
-#ifdef _WIN32
+#if MSVCRT
 #define FILEVAR fileP
 #else
 #define FILEVAR
@@ -194,7 +202,7 @@ serverCgi::~serverCgi() {
 static void
 setModeBinary(FILE * const FILEVAR) {
 
-#ifdef _WIN32 
+#if MSVCRT 
     /* Fix from Jeff Stewart: NT opens stdin and stdout in text mode
        by default, badly confusing our length calculations.  So we need
        to set the file handle to binary. 
@@ -241,7 +249,7 @@ writeNormalHttpResp(FILE * const  fileP,
         fprintf(fileP, "Set-Cookie: auth=%s\n", authCookie.c_str());
 
     fprintf(fileP, "Content-type: text/xml; charset=\"utf-8\"\n");
-    fprintf(fileP, "Content-length: %u\n", httpBody.size());
+    fprintf(fileP, "Content-length: %u\n", (unsigned)httpBody.size());
     fprintf(fileP, "\n");
 
     // HTTP body

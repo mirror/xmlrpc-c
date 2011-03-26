@@ -17,13 +17,27 @@ include $(SRCDIR)/version.mk
 # fully made.
 .DELETE_ON_ERROR:
 
-GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline
+GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit -Winline \
+  -Wno-unknown-pragmas
   # We need -Wwrite-strings after we fix all the missing consts
+  #
+  # -Wuninitialized catches some great bugs, but it also flags a whole lot
+  # of perfectly good code that can't be written any better.  Too bad there's
+  # no way to annotate particular variables as being OK, so we could turn
+  # on -Wuninitialized for all the others.
 
 GCC_C_WARNINGS = $(GCC_WARNINGS) \
   -Wmissing-declarations -Wstrict-prototypes -Wmissing-prototypes
 
-GCC_CXX_WARNINGS = $(GCC_WARNINGS) -Woverloaded-virtual -Wsynth
+GCC_CXX_WARNINGS = $(GCC_WARNINGS)  -Wsynth
+
+# Before 09.05.20, we had -Woverloaded-virtual, but it doesn't seem to do
+# anything useful.  It causes a warning that a method was hidden, but
+# experiments show nothing is actually hidden.  The GCC manual's description
+# of what it does does not match empirical evidence.  The option causes
+# warnings when a derived class of xmlrpc_c::method2 overrides one of the
+# execute() methods and not the other (as cpp/test/registry.cpp does), but the
+# code works fine.
 
 # The NDEBUG macro says not to build code that assumes there are no bugs.
 # This makes the code go faster.  The main thing it does is tell the C library
@@ -90,19 +104,19 @@ $(TARGET_STATIC_LIBRARIES):
 ##############################################################################
 
 ifeq ($(SHARED_LIB_TYPE),unix)
-  include $(SRCDIR)/unix-common.make
+  include $(SRCDIR)/unix-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),irix)
-  include $(SRCDIR)/irix-common.make
+  include $(SRCDIR)/irix-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),dll)
-  include $(SRCDIR)/dll-common.make
+  include $(SRCDIR)/dll-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),dylib)
-  include $(SRCDIR)/dylib-common.make
+  include $(SRCDIR)/dylib-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),NONE)
@@ -136,10 +150,10 @@ endif
 
 #------ the actual rules ----------------------------------------------------
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
-	$(CCLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS)  $(LIBDEP) -o $@  
+	$(CCLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
 
 $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
-	$(CXXLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS)  $(LIBDEP) -o $@  
+	$(CXXLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
 #----------------------------------------------------------------------------
 
 LIBXMLRPC_UTIL_DIR = $(BLDDIR)/lib/libutil
@@ -252,25 +266,35 @@ endif
 #
 # For C++ source files, use TARGET_MODS_PP instead.
 
-# CFLAGS and CXXFLAGS are designed to be overridden on the make command
-# line.  We pile all the options except -I into these variables so the
-# user can override them all if he wants.
+# CFLAGS and CXXFLAGS are designed to be picked up as environment
+# variables.  The user may use them to add inclusion search directories
+# (-I) or control 32/64 bitness or the like.  Using these is always
+# iffy, because the options one might include can interact in unpredictable
+# ways with what the make file is trying to do.  But at least some users
+# get useful results.
+
+CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+
+CXXFLAGS_ALL = $(CXXFLAGS_COMMON) $(CFLAGS_LOCAL) $(CXXFLAGS) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+
 
 $(TARGET_MODS:%=%.o):%.o:%.c
-	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS_ALL) $<
 
 $(TARGET_MODS:%=%.osh): CFLAGS_COMMON += $(CFLAGS_SHLIB)
 
 $(TARGET_MODS:%=%.osh):%.osh:%.c
-	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $(CFLAGS_SHLIB) $<
+	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS_ALL) $(CFLAGS_SHLIB) $<
 
 $(TARGET_MODS_PP:%=%.o):%.o:%.cpp
-	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 $(TARGET_MODS_PP:%=%.osh): CXXFLAGS_COMMON += $(CFLAGS_SHLIB)
 
 $(TARGET_MODS_PP:%=%.osh):%.osh:%.cpp
-	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 
 ##############################################################################
@@ -284,11 +308,6 @@ $(TARGET_MODS_PP:%=%.osh):%.osh:%.cpp
 # is a dependency is newer than the symbolic link pointing to it and wants
 # to rebuild the symbolic link.  So we don't make $(SRCDIR) a
 # dependency of 'srcdir'.
-
-# We should do the same for 'blddir'.  We did once before, then undid
-# it in an erroneous effort to enable parallel make.  It's a little harder
-# with blddir; when we did it before, we had to use the non-symlink
-# version in a few places.
 
 srcdir:
 	$(LN_S) $(SRCDIR) $@
@@ -487,10 +506,10 @@ $(SUBDIRS:%=$(CURDIR)/%):
 
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
-.PHONY: install-common install-headers install-bin
+.PHONY: install-common install-headers install-bin install-man
 install-common: \
   install-static-libraries install-shared-libraries \
-  install-headers install-bin
+  install-headers install-bin install-man
 
 INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
@@ -536,6 +555,16 @@ install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
 $(DESTDIR)$(PROGRAMINST_DIR):
 	$(MKINSTALLDIRS) $@
 
+MANDESTDIR = $(DESTDIR)$(MANINST_DIR)
+INSTALL_MAN_CMD = $(INSTALL_DATA) $$p $(MANDESTDIR)/$$p
+
+install-man: $(MAN_FILES_TO_INSTALL)
+	$(MKINSTALLDIRS) $(MANDESTDIR)
+	@list='$(MAN_FILES_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(MAN_FILES_TO_INSTALL)"; \
+	   $(INSTALL_MAN_CMD); \
+	 done
 
 ##############################################################################
 #                           MISCELLANEOUS RULES                              #

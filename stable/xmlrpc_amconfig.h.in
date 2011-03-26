@@ -22,6 +22,12 @@
 #undef HAVE_STRCASECMP
 #undef HAVE_STRICMP
 #undef HAVE__STRICMP
+#undef HAVE_STRTOLL
+#undef HAVE_STRTOQ
+#undef HAVE___STRTOLL
+#undef HAVE_STRTOULL
+#undef HAVE_STRTOUQ
+#undef HAVE___STRTOULL
 
 
 /* Define if you have the socket library (-lsocket).  */

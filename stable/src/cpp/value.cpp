@@ -109,13 +109,13 @@ public:
 
 namespace xmlrpc_c {
 
-value::value() {
+value::value() {   // default constructor
     this->cValueP = NULL;
 }
 
 
 
-value::value(xmlrpc_value * const valueP) {  // default constructor
+value::value(xmlrpc_value * const valueP) {
 
     this->instantiate(valueP);
 }
@@ -151,10 +151,24 @@ value::~value() {
 bool
 value::isInstantiated() const {
 /*----------------------------------------------------------------------------
-   Return whether the value is actually a value, as opposed to a placeholder
+   Return whether the object is actually a value, as opposed to a placeholder
    variable waiting to be assigned a value.
 -----------------------------------------------------------------------------*/
     return (this->cValueP != NULL);
+}
+
+
+
+void
+value::validateInstantiated() const {    // private
+/*----------------------------------------------------------------------------
+   Throw an exception if the object is just a placeholder, rather than an
+   actual XML-RPC value.
+-----------------------------------------------------------------------------*/
+    if (!this->cValueP)
+        throw(error("Reference to xmlrpc_c::value that has not been "
+                    "instantiated.  (xmlrpc_c::value::isInstantiated may be "
+                    "useful in diagnosing)"));
 }
 
 
@@ -184,6 +198,8 @@ value::appendToCArray(xmlrpc_value * const arrayP) const {
 /*----------------------------------------------------------------------------
   Append this value to the C array 'arrayP'.
 ----------------------------------------------------------------------------*/
+    this->validateInstantiated();
+
     env_wrap env;
 
     xmlrpc_array_append_item(&env.env_c, arrayP, this->cValueP);
@@ -199,6 +215,8 @@ value::addToCStruct(xmlrpc_value * const structP,
 /*----------------------------------------------------------------------------
   Add this value to the C array 'arrayP' with key 'key'.
 ----------------------------------------------------------------------------*/
+    this->validateInstantiated();
+
     env_wrap env;
 
     xmlrpc_struct_set_value_n(&env.env_c, structP,
@@ -212,8 +230,11 @@ value::addToCStruct(xmlrpc_value * const structP,
 
 value::type_t 
 value::type() const {
+
+    this->validateInstantiated();
+
     /* You'd think we could just cast from xmlrpc_type to
-       value:type_t, but Gcc warns if we do that.  So we have to do this
+       value::type_t, but Gcc warns if we do that.  So we have to do this
        even messier union nonsense.
     */
     union {
@@ -265,6 +286,8 @@ value_int::value_int(xmlrpc_c::value const baseValue) {
 
 value_int::operator int() const {
 
+    this->validateInstantiated();
+
     int retval;
     env_wrap env;
 
@@ -272,6 +295,14 @@ value_int::operator int() const {
     throwIfError(env);
 
     return retval;
+}
+
+
+
+int
+value_int::cvalue() const {
+
+    return static_cast<int>(*this);
 }
 
 
@@ -311,6 +342,8 @@ value_double::value_double(xmlrpc_c::value const baseValue) {
 
 value_double::operator double() const {
 
+    this->validateInstantiated();
+
     double retval;
 
     env_wrap env;
@@ -319,6 +352,14 @@ value_double::operator double() const {
     throwIfError(env);
 
     return retval;
+}
+
+
+
+double
+value_double::cvalue() const {
+
+    return static_cast<double>(*this);
 }
 
 
@@ -347,7 +388,20 @@ value_boolean::value_boolean(bool const cppvalue) {
 
 
 
+value_boolean::value_boolean(xmlrpc_c::value const baseValue) {
+
+    if (baseValue.type() != xmlrpc_c::value::TYPE_BOOLEAN)
+        throw(error("Not boolean type.  See type() method"));
+    else {
+        this->instantiate(baseValue.cValueP);
+    }
+}
+
+
+
 value_boolean::operator bool() const {
+
+    this->validateInstantiated();
 
     xmlrpc_bool retval;
 
@@ -361,13 +415,10 @@ value_boolean::operator bool() const {
 
 
 
-value_boolean::value_boolean(xmlrpc_c::value const baseValue) {
+bool
+value_boolean::cvalue() const {
 
-    if (baseValue.type() != xmlrpc_c::value::TYPE_BOOLEAN)
-        throw(error("Not boolean type.  See type() method"));
-    else {
-        this->instantiate(baseValue.cValueP);
-    }
+    return static_cast<bool>(*this);
 }
 
 
@@ -441,6 +492,8 @@ value_datetime::value_datetime(xmlrpc_c::value const baseValue) {
 
 value_datetime::operator time_t() const {
 
+    this->validateInstantiated();
+
     time_t retval;
     env_wrap env;
 
@@ -455,6 +508,8 @@ value_datetime::operator time_t() const {
 #if XMLRPC_HAVE_TIMEVAL
 
 value_datetime::operator timeval() const {
+
+    this->validateInstantiated();
 
     struct timeval retval;
     env_wrap env;
@@ -472,6 +527,8 @@ value_datetime::operator timeval() const {
 
 value_datetime::operator timespec() const {
 
+    this->validateInstantiated();
+
     struct timespec retval;
     env_wrap env;
 
@@ -481,6 +538,14 @@ value_datetime::operator timespec() const {
     return retval;
 }
 #endif
+
+
+
+time_t
+value_datetime::cvalue() const {
+
+    return static_cast<time_t>(*this);
+}
 
 
 
@@ -565,6 +630,8 @@ value_string::crlfValue() const {
         }
     };
     
+    this->validateInstantiated();
+
     cWrapper wrapper(this->cValueP);
 
     return string(wrapper.str, wrapper.length);
@@ -574,11 +641,19 @@ value_string::crlfValue() const {
 
 value_string::operator string() const {
 
-    env_wrap env;
+    this->validateInstantiated();
 
     cStringWrapper adapter(this->cValueP);
 
     return string(adapter.str, adapter.length);
+}
+
+
+
+std::string
+value_string::cvalue() const {
+
+    return static_cast<std::string>(*this);
 }
 
 
@@ -609,6 +684,17 @@ value_bytestring::value_bytestring(
 
 
 
+value_bytestring::value_bytestring(xmlrpc_c::value const baseValue) {
+
+    if (baseValue.type() != xmlrpc_c::value::TYPE_BYTESTRING)
+        throw(error("Not byte string type.  See type() method"));
+    else {
+        this->instantiate(baseValue.cValueP);
+    }
+}
+
+
+
 vector<unsigned char>
 value_bytestring::vectorUcharValue() const {
 
@@ -628,6 +714,8 @@ value_bytestring::vectorUcharValue() const {
         }
     };
     
+    this->validateInstantiated();
+
     cWrapper wrapper(this->cValueP);
 
     return vector<unsigned char>(&wrapper.contents[0], 
@@ -636,8 +724,18 @@ value_bytestring::vectorUcharValue() const {
 
 
 
+vector<unsigned char>
+value_bytestring::cvalue() const {
+
+    return this->vectorUcharValue();
+}
+
+
+
 size_t
 value_bytestring::length() const {
+
+    this->validateInstantiated();
 
     env_wrap env;
     size_t length;
@@ -646,17 +744,6 @@ value_bytestring::length() const {
     throwIfError(env);
 
     return length;
-}
-
-
-
-value_bytestring::value_bytestring(xmlrpc_c::value const baseValue) {
-
-    if (baseValue.type() != xmlrpc_c::value::TYPE_BYTESTRING)
-        throw(error("Not byte string type.  See type() method"));
-    else {
-        this->instantiate(baseValue.cValueP);
-    }
 }
 
 
@@ -703,6 +790,8 @@ value_array::value_array(xmlrpc_c::value const baseValue) {
 vector<xmlrpc_c::value>
 value_array::vectorValueValue() const {
 
+    this->validateInstantiated();
+
     env_wrap env;
 
     unsigned int arraySize;
@@ -741,8 +830,18 @@ value_array::vectorValueValue() const {
 
 
 
+vector<xmlrpc_c::value>
+value_array::cvalue() const {
+
+    return this->vectorValueValue();
+}
+
+
+
 size_t
 value_array::size() const {
+
+    this->validateInstantiated();
 
     env_wrap env;
     unsigned int arraySize;
@@ -800,6 +899,8 @@ value_struct::value_struct(xmlrpc_c::value const baseValue) {
 
 value_struct::operator map<string, xmlrpc_c::value>() const {
 
+    this->validateInstantiated();
+
     env_wrap env;
     unsigned int structSize;
 
@@ -844,6 +945,14 @@ value_struct::operator map<string, xmlrpc_c::value>() const {
 
 
 
+map<string, xmlrpc_c::value>
+value_struct::cvalue() const {
+
+    return static_cast<map<string, xmlrpc_c::value> >(*this);
+}
+
+
+
 value_nil::value_nil() {
     
     class cWrapper {
@@ -875,6 +984,14 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
     else {
         this->instantiate(baseValue.cValueP);
     }
+}
+
+
+
+void *
+value_nil::cvalue() const {
+
+    return NULL;
 }
 
 
@@ -916,6 +1033,8 @@ value_i8::value_i8(xmlrpc_c::value const baseValue) {
 
 value_i8::operator xmlrpc_int64() const {
 
+    this->validateInstantiated();
+
     xmlrpc_int64 retval;
     env_wrap env;
 
@@ -923,6 +1042,14 @@ value_i8::operator xmlrpc_int64() const {
     throwIfError(env);
 
     return retval;
+}
+
+
+
+xmlrpc_int64
+value_i8::cvalue() const {
+
+    return static_cast<xmlrpc_int64>(*this);
 }
 
 

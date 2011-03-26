@@ -23,6 +23,10 @@ SUBDIRS = include lib src tools examples
 
 DEFAULT_SUBDIRS = include lib src
 
+ifeq ($(BUILD_TOOLS),yes)
+  DEFAULT_SUBDIRS += tools
+endif
+
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 
 default: xmlrpc-c-config xmlrpc-c-config.test $(DEFAULT_SUBDIRS:%=%/all)
@@ -79,7 +83,7 @@ version.h: $(SRCDIR)/version.mk
 	echo "#define XMLRPC_VERSION_MINOR $(MINOR)" >>$@
 	echo "#define XMLRPC_VERSION_POINT $(POINT)" >>$@
 
-include transport_config.make
+include transport_config.mk
 
 # shell_config is a fragment to place inside a Bourne shell program that
 # sets variables that tell how the build is configured.
@@ -97,18 +101,15 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'MUST_BUILD_CURL_CLIENT="$(MUST_BUILD_CURL_CLIENT)"'	>>$@
 	@echo 'MUST_BUILD_LIBWWW_CLIENT="$(MUST_BUILD_LIBWWW_CLIENT)"'	>>$@
 	@echo 'NEED_RPATH="$(NEED_RPATH)"'				>>$@
-	@echo 'NEED_WL_RPATH="$(NEED_WL)RPATH)"'			>>$@
+	@echo 'NEED_WL_RPATH="$(NEED_WL_RPATH)"'			>>$@
 	@echo 'LIBXMLRPCPP_NAME="$(LIBXMLRPCPP_NAME)"'                  >>$@
 	@echo 'LSOCKET="$(LSOCKET)"'					>>$@
 	@echo 'WININET_LDADD="$(WININET_LDADD)"'			>>$@
-	@echo 'WININET_RPATH="$(WININET_RPATH)"'			>>$@
-	@echo 'WININET_WL_RPATH="$(WININET_WL_RPATH)"'			>>$@
+	@echo 'WININET_LIBDIR="$(WININET_LIBDIR)"'			>>$@
 	@echo 'CURL_LDADD="$(CURL_LDADD)"'				>>$@
-	@echo 'CURL_RPATH="$(CURL_RPATH)"'				>>$@
-	@echo 'CURL_WL_RPATH="$(CURL_WL_RPATH)"'			>>$@
+	@echo 'CURL_LIBDIR="$(CURL_LIBDIR)"'				>>$@
 	@echo 'LIBWWW_LDADD="$(LIBWWW_LDADD)"'				>>$@
-	@echo 'LIBWWW_RPATH="$(LIBWWW_RPATH)"'				>>$@
-	@echo 'LIBWWW_WL_RPATH="$(LIBWWW_WL_RPATH)"'			>>$@
+	@echo 'LIBWWW_LIBDIR="$(LIBWWW_LIBDIR)"'			>>$@
 	@echo 'XMLRPC_MAJOR_RELEASE="$(XMLRPC_MAJOR_RELEASE)"'		>>$@
 	@echo 'XMLRPC_MINOR_RELEASE="$(XMLRPC_MINOR_RELEASE)"'		>>$@
 	@echo 'XMLRPC_POINT_RELEASE="$(XMLRPC_POINT_RELEASE)"'		>>$@

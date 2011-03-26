@@ -1,15 +1,16 @@
 #ifndef SERVER_CGI_HPP_INCLUDED
 #define SERVER_CGI_HPP_INCLUDED
 
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/registry.hpp>
 
 namespace xmlrpc_c {
 
-class serverCgi {
+class XMLRPC_DLLEXPORT serverCgi {
 
 public:
 
-    class constrOpt {
+    class XMLRPC_DLLEXPORT constrOpt {
     public:
         constrOpt();
 

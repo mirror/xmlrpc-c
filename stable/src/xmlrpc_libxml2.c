@@ -300,7 +300,7 @@ end_element(void *          const user_data,
 	/* XXX - I think expat enforces these facts, but I want to be sure.
 	** If one of these assertion ever fails, it should be replaced by a
 	** non-assertion runtime error check. */
-	XMLRPC_ASSERT(strcmp(name, context->current->_name) == 0);
+	XMLRPC_ASSERT(xmlrpc_streq(name, context->current->_name));
 	XMLRPC_ASSERT(context->current->_parent != NULL ||
 		      context->current == context->root);
 

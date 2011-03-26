@@ -24,18 +24,20 @@ OMIT_CURL_TRANSPORT_RULE=Y
 
 include $(SRCDIR)/common.mk
 
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
 CURL_INCLUDES := $(shell curl-config --cflags)
 # We expect that curl-config --cflags just gives us -I options, because
 # we need just the -I options for 'make dep'.  Plus, it's scary to think
 # of what any other compiler flag would do to our compile.
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include \
   $(CURL_INCLUDES)
 
 .PHONY: clean

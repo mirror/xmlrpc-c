@@ -52,6 +52,8 @@
    such subordinate libraries as OpenSSL and Winsock.
 -----------------------------------------------------------------------------*/
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #include <string.h>
@@ -59,7 +61,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <limits.h>
-#if !MSVCRT
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 #include <signal.h>
@@ -197,11 +199,26 @@ struct xmlrpc_client_transport {
            
            This is constant (the handle, not the object).
         */
+    bool dontAdvertise;
+        /* Don't identify to the server the XML-RPC engine we are using.  If
+           false, include a User-Agent HTTP header in all requests that
+           identifies the Xmlrpc-c and Curl libraries.
+
+           See also 'userAgent'.
+
+           This is constant.
+        */
     const char * userAgent;
-        /* Prefix for the User-Agent HTTP header, reflecting facilities
-           outside of Xmlrpc-c.  The actual User-Agent header consists
-           of this prefix plus information about Xmlrpc-c.  NULL means
-           none.
+        /* Information to include in a User-Agent HTTP header, reflecting
+           facilities outside of Xmlrpc-c.  
+
+           Null means none.
+
+           The full User-Agent header value is this information (if
+           'userAgent' is non-null) followed by identification of Xmlrpc-c
+           and Curl (if 'dontAdvertise' is false).  If 'userAgent' is null
+           and 'dontAdvertise' is true, we put no User-Agent header at all
+           in the request.
 
            This is constant.
         */
@@ -212,6 +229,8 @@ struct xmlrpc_client_transport {
            the transport to give up on whatever it is doing and return ASAP.
 
            NULL means none -- transport never gives up.
+
+           This is constant.
         */
 };
 
@@ -233,6 +252,10 @@ struct rpc {
     xmlrpc_transport_asynch_complete complete;
         /* Routine to call to complete the RPC after it is complete HTTP-wise.
            NULL if none.
+        */
+    xmlrpc_transport_progress progress;
+        /* Routine to call periodically to report the progress of transporting
+           the call and response.  NULL if none.
         */
     struct xmlrpc_call_info * callInfoP;
         /* User's identifier for this RPC */
@@ -331,8 +354,6 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     unsigned int selectTimeoutMillisec;
     xmlrpc_timespec retval;
 
-    selectTimeoutMillisec = 0; /* quiet compiler warning */
-
     /* We assume there is work to do at least every 3 seconds, because
        the Curl multi manager often has retries and other scheduled work
        that doesn't involve file handles on which we can select().
@@ -377,7 +398,7 @@ processCurlMessages(xmlrpc_env * const envP,
                 curlTransaction * curlTransactionP;
 
                 curl_easy_getinfo(curlMsg.easy_handle, CURLINFO_PRIVATE,
-                                  &curlTransactionP);
+                                  (void *)&curlTransactionP);
 
                 curlTransaction_finish(envP,
                                        curlTransactionP, curlMsg.data.result);
@@ -599,7 +620,8 @@ getTimeoutParm(xmlrpc_env *                          const envP,
     else {
         if (curlHasNosignal()) {
             /* libcurl takes a 'long' in milliseconds for the timeout value */
-            if ((curlXportParmsP->timeout + 999) / 1000 > LONG_MAX)
+            if ((unsigned)(long)(curlXportParmsP->timeout) !=
+                curlXportParmsP->timeout)
                 xmlrpc_faultf(envP, "Timeout value %u is too large.",
                               curlXportParmsP->timeout);
             else
@@ -610,6 +632,19 @@ getTimeoutParm(xmlrpc_env *                          const envP,
                           "capable of doing timeouts except by using "
                           "signals.  You need at least Curl 7.10");
     }
+}
+
+
+
+static void
+setVerbose(bool * const verboseP) {
+
+    const char * const xmlrpcTraceCurl = getenv("XMLRPC_TRACE_CURL");
+
+    if (xmlrpcTraceCurl)
+        *verboseP = true;
+    else
+        *verboseP = false;
 }
 
 
@@ -651,6 +686,11 @@ getXportParms(xmlrpc_env *                          const envP,
         transportP->userAgent = NULL;
     else
         transportP->userAgent = strdup(curlXportParmsP->user_agent);
+    
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(dont_advertise))
+        transportP->dontAdvertise = false;
+    else
+        transportP->dontAdvertise = curlXportParmsP->dont_advertise;
     
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
         curlSetupP->networkInterface = NULL;
@@ -706,7 +746,7 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->sslKeyType = strdup(curlXportParmsP->sslkeytype);
     
-        if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeypasswd))
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeypasswd))
         curlSetupP->sslKeyPasswd = NULL;
     else if (curlXportParmsP->sslkeypasswd == NULL)
         curlSetupP->sslKeyPasswd = NULL;
@@ -765,6 +805,35 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->sslCipherList = strdup(curlXportParmsP->ssl_cipher_list);
 
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy))
+        curlSetupP->proxy = NULL;
+    else if (curlXportParmsP->proxy == NULL)
+        curlSetupP->proxy = NULL;
+    else
+        curlSetupP->proxy = strdup(curlXportParmsP->proxy);
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_port))
+        curlSetupP->proxyPort = 8080;
+    else
+        curlSetupP->proxyPort = curlXportParmsP->proxy_port;
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_auth))
+        curlSetupP->proxyAuth = CURLAUTH_BASIC;
+    else
+        curlSetupP->proxyAuth = curlXportParmsP->proxy_auth;
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_userpwd))
+        curlSetupP->proxyUserPwd = NULL;
+    else if (curlXportParmsP->proxy_userpwd == NULL)
+        curlSetupP->proxyUserPwd = NULL;
+    else
+        curlSetupP->proxyUserPwd = strdup(curlXportParmsP->proxy_userpwd);
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(proxy_type))
+        curlSetupP->proxyType = CURLPROXY_HTTP;
+    else
+        curlSetupP->proxyType = curlXportParmsP->proxy_type;
+
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
 }
 
@@ -803,6 +872,10 @@ freeXportParms(const struct xmlrpc_client_transport * const transportP) {
         xmlrpc_strfree(curlSetupP->networkInterface);
     if (transportP->userAgent)
         xmlrpc_strfree(transportP->userAgent);
+    if (curlSetupP->proxy)
+        xmlrpc_strfree(curlSetupP->proxy);
+    if (curlSetupP->proxyUserPwd)
+        xmlrpc_strfree(curlSetupP->proxyUserPwd);
 }
 
 
@@ -922,6 +995,8 @@ create(xmlrpc_env *                      const envP,
     if (transportP == NULL)
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
+        setVerbose(&transportP->curlSetupStuff.verbose);
+
         transportP->interruptP = NULL;
 
         transportP->asyncCurlMultiP = curlMulti_create();
@@ -1083,6 +1158,7 @@ createRpc(xmlrpc_env *                     const envP,
           xmlrpc_mem_block *               const callXmlP,
           xmlrpc_mem_block *               const responseXmlP,
           xmlrpc_transport_asynch_complete       complete, 
+          xmlrpc_transport_progress              progress,
           struct xmlrpc_call_info *        const callInfoP,
           rpc **                           const rpcPP) {
 
@@ -1096,17 +1172,19 @@ createRpc(xmlrpc_env *                     const envP,
         rpcP->curlSessionP = curlSessionP;
         rpcP->callInfoP    = callInfoP;
         rpcP->complete     = complete;
+        rpcP->progress     = progress;
         rpcP->responseXmlP = responseXmlP;
 
         curlTransaction_create(envP,
                                curlSessionP,
                                serverP,
                                callXmlP, responseXmlP, 
+                               clientTransportP->dontAdvertise,
                                clientTransportP->userAgent,
                                &clientTransportP->curlSetupStuff,
                                rpcP,
                                complete ? &finishRpcCurlTransaction : NULL,
-                               &curlTransactionProgress,
+                               progress ? &curlTransactionProgress : NULL,
                                &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (envP->fault_occurred)
@@ -1190,14 +1268,43 @@ static curlt_progressFn curlTransactionProgress;
 
 static void
 curlTransactionProgress(void * const context,
+                        double const dlTotal,
+                        double const dlNow,
+                        double const ulTotal,
+                        double const ulNow,
                         bool * const abortP) {
+/*----------------------------------------------------------------------------
+   This is equivalent to a Curl "progress function" (the curlTransaction
+   object just passes through the call from libcurl).
 
+   The curlTransaction calls this once a second telling us how much
+   data has transferred.  If the transport user has set up a progress
+   function, we call that with this progress information.  That 
+   function might e.g. display a progress bar.
+
+   Additionally, the curlTransaction gives us the opportunity to tell it
+   to abort the transaction, which we do if the user has set his
+   "interrupt" flag (which he registered with the transport when he
+   created it).
+-----------------------------------------------------------------------------*/
     rpc * const rpcP = context;
+    struct xmlrpc_client_transport * const transportP = rpcP->transportP;
+
+    struct xmlrpc_progress_data progressData;
 
     assert(rpcP);
+    assert(transportP);
+    assert(rpcP->progress);
 
-    if (rpcP->transportP->interruptP)
-        *abortP = *rpcP->transportP->interruptP;
+    progressData.response.total = dlTotal;
+    progressData.response.now   = dlNow;
+    progressData.call.total     = ulTotal;
+    progressData.call.now       = ulNow;
+
+    rpcP->progress(rpcP->callInfoP, progressData);
+
+    if (transportP->interruptP)
+        *abortP = *transportP->interruptP;
     else
         *abortP = false;
 }
@@ -1210,6 +1317,7 @@ sendRequest(xmlrpc_env *                     const envP,
             const xmlrpc_server_info *       const serverP,
             xmlrpc_mem_block *               const callXmlP,
             xmlrpc_transport_asynch_complete       complete,
+            xmlrpc_transport_progress              progress,
             struct xmlrpc_call_info *        const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to
@@ -1232,7 +1340,7 @@ sendRequest(xmlrpc_env *                     const envP,
                           "curl_easy_init() failed.");
         else {
             createRpc(envP, clientTransportP, curlSessionP, serverP,
-                      callXmlP, responseXmlP, complete, callInfoP,
+                      callXmlP, responseXmlP, complete, progress, callInfoP,
                       &rpcP);
             
             if (!envP->fault_occurred) {
@@ -1355,7 +1463,7 @@ call(xmlrpc_env *                     const envP,
         createRpc(envP, clientTransportP, clientTransportP->syncCurlSessionP,
                   serverP,
                   callXmlP, responseXmlP,
-                  NULL, NULL,
+                  NULL, NULL, NULL,
                   &rpcP);
 
         if (!envP->fault_occurred) {

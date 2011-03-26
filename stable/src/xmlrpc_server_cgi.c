@@ -38,6 +38,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/server_cgi.h"
 
 
@@ -202,11 +203,11 @@ xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP) {
     length_str = getenv("CONTENT_LENGTH");
 
     /* Perform some sanity checks. */
-    if (!method || 0 != strcmp(method, "POST")) {
+    if (!method || !xmlrpc_streq(method, "POST")) {
         code = 405; message = "Method Not Allowed";
         XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Expected HTTP method POST");
     }
-    if (!type || 0 != strncmp(type, "text/xml", strlen("text/xml"))) {
+    if (!type || !xmlrpc_strneq(type, "text/xml", strlen("text/xml"))) {
 	char *template = "Expected content type: \"text/xml\", received: \"%s\"";
 	size_t err_len = strlen(template) + strlen(type) + 1;
 	char *err = malloc(err_len);

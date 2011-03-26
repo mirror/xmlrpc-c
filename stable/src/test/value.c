@@ -13,7 +13,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/string_int.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "value_datetime.h"
 
 #include "value.h"
@@ -522,7 +522,7 @@ test_value_string_wide_build(void) {
     xmlrpc_env_init(&env);
 
     /* Build with build_value w# */
-    valueP = xmlrpc_build_value(&env, "w#", wcs_data, 3);
+    valueP = xmlrpc_build_value(&env, "w#", wcs_data, (size_t)3);
     TEST_NO_FAULT(&env);
     TEST(valueP != NULL);
 
@@ -660,7 +660,7 @@ test_value_string_wide(void) {
         TEST(str != NULL);
         TEST(len == 4);
         TEST(str[len] == '\0');
-        TEST(0 == strncmp(str, utf8_data, len));
+        TEST(xmlrpc_strneq(str, utf8_data, len));
         free((void*)str);
     }
 
@@ -1045,20 +1045,48 @@ test_value_array_nil(void) {
 
 
 static void
+destroyMyCptr(void * const context,
+              void * const objectP) {
+/*----------------------------------------------------------------------------
+   This is a xmlrpc_cptr_dtor_fn.
+-----------------------------------------------------------------------------*/
+    int * const destroyConfirmationP = context;
+    int * const objectIntP = objectP;
+
+    *destroyConfirmationP = *objectIntP;
+}
+
+
+
+static void
 test_value_cptr(void) {
+
+    int destroyConfirmation;
 
     xmlrpc_value * v;
     xmlrpc_env env;
     void * ptr;
-
-    /* Test C pointer storage using 'p'.
-       We don't have cleanup functions (yet). 
-    */
+    int myObject;
 
     xmlrpc_env_init(&env);
 
     TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_C_PTR), "C_PTR"));
 
+    myObject = 7;
+
+    v = xmlrpc_cptr_new(&env, &myObject);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_C_PTR);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_cptr_new_dtor(&env, &myObject,
+                             &destroyMyCptr, &destroyConfirmation);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_C_PTR);
+    destroyConfirmation = 3;
+    xmlrpc_DECREF(v);
+    TEST(destroyConfirmation == 7);  // the destructor has set this
+    
     v = xmlrpc_build_value(&env, "p", (void*) 0x00000017);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_C_PTR == xmlrpc_value_type(v));
@@ -1084,7 +1112,7 @@ test_value_nil(void) {
 
     v = xmlrpc_nil_new(&env);
     TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_NIL == xmlrpc_value_type(v));
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_NIL);
     xmlrpc_DECREF(v);
 
     v = xmlrpc_build_value(&env, "n");
@@ -1276,7 +1304,7 @@ test_value_parse_value(void) {
 
     valueP = xmlrpc_build_value(&env, "(idb8ss#6(i){s:i}np(i))",
                                 7, 3.14, (xmlrpc_bool)1, datestring,
-                                "hello world", "a\0b", 3, 
+                                "hello world", "a\0b", (size_t)3,
                                 "base64 data", strlen("base64 data"),
                                 15, "member9", 9, &valueP, -5);
     
@@ -1421,7 +1449,7 @@ test_struct_get_element(xmlrpc_value * const structP,
 
 static void
 testStructReadout(xmlrpc_value * const structP,
-                  size_t         const expectedSize) {
+                  unsigned int   const expectedSize) {
 
     xmlrpc_env env;
     xmlrpc_value * keyP;
@@ -1564,6 +1592,10 @@ test_struct_decompose(xmlrpc_value * const testStructP) {
                            "foo", &sval,
                            "bar", &ival);
     TEST_NO_FAULT(&env);
+    TEST(ival == 1);
+    TEST(!bval);
+    TEST(streq(sval, "Hello!"));
+    free(sval);
 
     /* First value of wrong type */
     xmlrpc_decompose_value(&env, testStructP, "{s:b,s:i,*}",

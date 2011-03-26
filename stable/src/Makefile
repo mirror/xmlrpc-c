@@ -48,18 +48,18 @@ SHARED_LIBS_TO_INSTALL := $(TARGET_LIBRARY_NAMES)
 TRANSPORT_MODS =
 TRANSPORT_LIBDEP =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
-  TRANSPORT_MODS += $(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport
+  TRANSPORT_MODS += blddir/lib/wininet_transport/xmlrpc_wininet_transport
   TRANSPORT_LIBDEP += $(shell wininet-config --libs)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport
-  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curltransaction
-  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curlmulti
-  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/lock_pthread
+  TRANSPORT_MODS += blddir/lib/curl_transport/xmlrpc_curl_transport
+  TRANSPORT_MODS += blddir/lib/curl_transport/curltransaction
+  TRANSPORT_MODS += blddir/lib/curl_transport/curlmulti
+  TRANSPORT_MODS += blddir/lib/curl_transport/lock_pthread
   TRANSPORT_LIBDEP += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  TRANSPORT_MODS += $(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport
+  TRANSPORT_MODS += blddir/lib/libwww_transport/xmlrpc_libwww_transport
   TRANSPORT_LIBDEP += $(shell libwww-config --libs)
 endif
 
@@ -70,8 +70,8 @@ ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
 else
   XMLRPC_XML_PARSER = xmlrpc_expat
   XML_PARSER_LIBDEP = \
-    -L$(BLDDIR)/lib/expat/xmlparse -lxmlrpc_xmlparse \
-    -L$(BLDDIR)/lib/expat/xmltok -lxmlrpc_xmltok
+    -Lblddir/lib/expat/xmlparse -lxmlrpc_xmlparse \
+    -Lblddir/lib/expat/xmltok -lxmlrpc_xmltok
   XML_PARSER_LIBDEP_DEP = $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLTOK)
 endif
 
@@ -79,6 +79,8 @@ endif
 
 LIBXMLRPC_MODS = \
         double \
+	json \
+	parse_datetime \
 	parse_value \
         resource \
 	trace \
@@ -135,7 +137,7 @@ all: \
 # Extra dependencies to make parallel make work in spite of all the submakes
 # (See top level make file for details)
 ifeq ($MUST_BUILD_CLIENT),yes)
-cpp/all: $(BLDDIR)/transport_config.h
+cpp/all: $(BLDDIR)/transport_config.h $(TARGET_SHARED_LE_LIBS)
 endif
 
 #-----------------------------------------------------------------------------
@@ -232,20 +234,20 @@ libxmlrpc_client.a: LIBOBJECTS = \
 # Rules for these are in common.mk, courtesy of TARGET_MODS:
 
 BASIC_INCLUDES = \
-  -I$(BLDDIR) \
-  -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include \
+  -Iblddir \
+  -Iblddir/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include \
 
 TRANSPORT_INCLUDES = \
-  -I$($SRCDIR)/lib/wininet_transport \
-  -I$(SRCDIR)/lib/curl_transport \
-  -I$(SRCDIR)/lib/libwww_transport \
+  -Isrcdir/lib/wininet_transport \
+  -Isrcdir/lib/curl_transport \
+  -Isrcdir/lib/libwww_transport \
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(shell xml2-config --cflags)
 else
-  LIBXML_INCLUDES = -I$(SRCDIR)/lib/expat/xmlparse
+  LIBXML_INCLUDES = -Isrcdir/lib/expat/xmlparse
 endif
 
 $(LIBXMLRPC_MODS:%=%.o) \
@@ -262,13 +264,11 @@ $(LIBXMLRPC_SERVER_MODS:%=%.osh): \
 
 $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.o) \
 $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.osh): \
-  INCLUDES = $(BASIC_INCLUDES) -I$(SRCDIR)/lib/abyss/src
+  INCLUDES = $(BASIC_INCLUDES) -Isrcdir/lib/abyss/src
 
 $(LIBXMLRPC_SERVER_CGI_MODS:%=%.o) \
 $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh): \
   INCLUDES = $(BASIC_INCLUDES)
-
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 
 check:
