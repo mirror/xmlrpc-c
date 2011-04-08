@@ -271,8 +271,8 @@ $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh): \
   INCLUDES = $(BASIC_INCLUDES)
 
 
+.PHONY: check
 check:
-	$(MAKE) -C test runtests
 	$(MAKE) -C cpp  check
 
 .PHONY: install
@@ -281,12 +281,9 @@ install: install-common $(SUBDIRS:%=%/install)
 .PHONY: clean clean-local distclean distclean-local
 clean: clean-common clean-local
 clean-local:
-	$(MAKE) -C test clean
 
 distclean: clean distclean-local distclean-common
-
 distclean-local:
-	$(MAKE) -C test distclean
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BLDDIR)/transport_config.h dep-common

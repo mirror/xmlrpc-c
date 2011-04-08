@@ -1,10 +1,9 @@
 ifeq ($(SRCDIR),)
   updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
-  srcDIR := $(call updir,$(CURDIR))
-  SRCDIR := $(call updir,$(srcDIR))
+  SRCDIR := $(call updir,$(CURDIR))
   BLDDIR := $(SRCDIR)
 endif
-SUBDIR := src/test
+SUBDIR := test
 
 include $(BLDDIR)/config.mk
 

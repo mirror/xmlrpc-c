@@ -8,7 +8,7 @@ export BLDDIR
 
 include $(BLDDIR)/config.mk
 
-SUBDIRS = include lib src tools examples
+SUBDIRS = include lib src tools test examples
 
 # The reason we don't build tools and examples by default is that they
 # contain executables, which require significantly more from the
@@ -148,6 +148,7 @@ distclean-local: clean-local
 	rm -f TAGS
 
 check: $(SUBDIRS:%=%/check)
+	$(MAKE) -C test runtests
 
 DISTFILES = 
 
