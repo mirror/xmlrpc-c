@@ -7,6 +7,8 @@ SUBDIR := test
 
 include $(BLDDIR)/config.mk
 
+SUBDIRS = cpp
+
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 LDADD_CLIENT = \
@@ -22,7 +24,7 @@ INCLUDES = -I$(BLDDIR) -Isrcdir/include -Isrcdir/lib/util/include \
 
 PROGS = test cgitest1
 
-all: $(PROGS)
+all: $(PROGS) $(SUBDIRS:%=%/all)
 
 LDFLAGS = $(LADD)
 
@@ -83,19 +85,25 @@ $(OBJS):%.o:%.c
 .PHONY: check
 check:
 
-.PHONY: runtests
-runtests: test cgitest1
+.PHONY: runtests_local
+runtests_local: test cgitest1
 	./test
+
+.PHONY: runtests
+runtests: runtests_local cpp/runtests
+
+cpp/runtests: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
 
 .PHONY: install
 install:
 
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local
-clean-local:
+clean-local: $(SUBDIRS:%=%/clean) 
 	rm -f $(PROGS)
 
-distclean: clean distclean-common
+distclean: clean $(SUBDIRS:%=%/distclean) distclean-common
 
 .PHONY: dep
 dep: dep-common

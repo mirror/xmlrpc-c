@@ -1,11 +1,10 @@
 ifeq ($(SRCDIR),)
   updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
-  SRCCPPDIR := $(call updir,$(CURDIR))
-  srcDIR := $(call updir,$(SRCCPPDIR))
-  SRCDIR := $(call updir,$(srcDIR))
+  testDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(testDIR))
   BLDDIR := $(SRCDIR)
 endif
-SUBDIR := src/test/cpp
+SUBDIR := test/cpp
 
 include $(BLDDIR)/config.mk
 
