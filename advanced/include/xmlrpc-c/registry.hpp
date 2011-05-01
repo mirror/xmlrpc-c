@@ -24,7 +24,9 @@ class XMLRPC_DLLEXPORT callInfo {
    information pertinent to that kind of server.
 -----------------------------------------------------------------------------*/
 public:
-    virtual ~callInfo() {};  // This makes it polymorphic
+    virtual ~callInfo();  // This makes it polymorphic
+
+    callInfo();
 };
 
 class XMLRPC_DLLEXPORT method : public girmem::autoObject {

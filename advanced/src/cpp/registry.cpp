@@ -18,6 +18,17 @@ using namespace std;
 using namespace xmlrpc_c;
 
 
+callInfo::callInfo() {
+
+    // Even though this is the builtin default default constructor, we need
+    // this because some compilers won't use the builtin default to construct
+    // a constant (e.g. "callInfo const junk;");  I don't know why.
+}
+
+
+callInfo::~callInfo() {}
+
+
 namespace {
 
 void
