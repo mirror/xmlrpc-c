@@ -295,7 +295,7 @@ ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
   shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -dynamiclib -undefined suppress -single_module \
-	-flat_namespace $(SHLIB_CLIB)
+	-flat_namespace -install_name $(LIBINST_DIR)/$(SONAME) $(SHLIB_CLIB)
 endif
 
 ifeq ($(patsubst irix%,irix,$(HOST_OS)),irix)
