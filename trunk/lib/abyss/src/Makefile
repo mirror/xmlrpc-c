@@ -18,10 +18,16 @@ STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_abyss.a
 SHARED_LIBS_TO_BUILD := libxmlrpc_abyss
 SHARED_LIBS_TO_INSTALL := libxmlrpc_abyss
 
-ifeq ($(ENABLE_ABYSS_THREADS),yes)
-  THREAD_MODULE = thread_pthread
+ifeq ($(findstring mingw,$(HOST_OS)),mingw)
+  THREAD_MODULE = thread_windows
+  SOCKET_MODULE = socket_win
 else
-  THREAD_MODULE = thread_fork
+  SOCKET_MODULE = socket_unix
+  ifeq ($(ENABLE_ABYSS_THREADS),yes)
+    THREAD_MODULE = thread_pthread
+  else
+    THREAD_MODULE = thread_fork
+  endif
 endif
 
 TARGET_MODS = \
@@ -39,7 +45,7 @@ TARGET_MODS = \
   server \
   session \
   socket \
-  socket_unix \
+  $(SOCKET_MODULE) \
   token \
   $(THREAD_MODULE) \
   trace \

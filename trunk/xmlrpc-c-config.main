@@ -89,7 +89,7 @@ while test $# -gt 0; do
       ;;
     abyss-server)
       if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
-        the_libs="-lpthread $the_libs"
+        the_libs="$THREAD_LIBS $the_libs"
         fi
       the_libs="${LSOCKET} $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"

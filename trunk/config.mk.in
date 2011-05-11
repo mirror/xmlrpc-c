@@ -50,8 +50,8 @@ CC = @CC@
 CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
-AR = ar
-RANLIB = ranlib
+AR = @AR@
+RANLIB = @RANLIB@
 LN_S = ln -s
 INSTALL = $(SRCDIR)/install-sh
 

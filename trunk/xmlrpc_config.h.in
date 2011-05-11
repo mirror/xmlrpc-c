@@ -117,9 +117,15 @@
 
 /* MSVCRT means we're using the Microsoft Visual C++ runtime library */
 
-#ifdef _MSC_VER
-/* The compiler is Microsoft Visual C++. */
+#if defined(_MSC_VER)
+  /* The compiler is Microsoft Visual C++ */
   #define MSVCRT _MSC_VER
+#elif defined(__MINGW32__)
+  /* The compiler is Mingw, which is the Windows version of the GNU
+     compiler. Programs built with this normally use the Microsoft Visual
+     C++ runtime library.
+  */
+  #define MSVCRT 1
 #else
   #define MSVCRT 0
 #endif
