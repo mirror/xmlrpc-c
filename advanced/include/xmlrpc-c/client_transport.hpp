@@ -261,7 +261,7 @@ class XMLRPC_DLLEXPORT clientXmlTransport_curl : public xmlrpc_c::clientXmlTrans
 public:
     struct constrOpt_impl;
 
-    class constrOpt {
+    class XMLRPC_DLLEXPORT constrOpt {
     public:
         constrOpt();
         ~constrOpt();
@@ -399,7 +399,7 @@ class XMLRPC_DLLEXPORT clientXmlTransport_pstream : public xmlrpc_c::clientXmlTr
 public:
     struct constrOpt_impl;
 
-    class constrOpt {
+    class XMLRPC_DLLEXPORT constrOpt {
     public:
         constrOpt();
         ~constrOpt();

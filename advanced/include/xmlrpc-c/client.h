@@ -63,7 +63,7 @@ enum xmlrpc_httpauthtype {
     XMLRPC_HTTPAUTH_BASIC         = (1<<0),
     XMLRPC_HTTPAUTH_DIGEST        = (1<<1),
     XMLRPC_HTTPAUTH_GSSNEGOTIATE  = (1<<2),
-    XMLRPC_HTTPAUTH_NTLM          = (1<<3), 
+    XMLRPC_HTTPAUTH_NTLM          = (1<<3)
 };
 
 /* The following are useful combinations of the HTTP authentication types
