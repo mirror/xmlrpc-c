@@ -95,6 +95,14 @@ PostBuild_Cmds=if not exist ..\Bin\data md ..\Bin\data	copy ..\src\test\data\*.*
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\src\test\testtool.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\test\testtool.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\test\abyss.c
 # End Source File
 # Begin Source File
