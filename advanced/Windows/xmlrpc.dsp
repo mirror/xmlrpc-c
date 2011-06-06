@@ -208,6 +208,10 @@ SOURCE=..\lib\curl_transport\xmlrpc_curl_transport.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\libutil\string_number.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\xmlrpc_data.c
 # End Source File
 # Begin Source File
@@ -260,6 +264,10 @@ SOURCE=..\lib\wininet_transport\xmlrpc_wininet_transport.c
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\include\xmlrpc-c\string_number.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\lib\abyss\src\http.h

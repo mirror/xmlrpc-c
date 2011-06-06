@@ -115,6 +115,14 @@ SOURCE=..\src\cpp\test\tools.cpp
 
 SOURCE=.\socketpair.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\src\cpp\test\base64.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\cpp\test\xml.cpp
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
