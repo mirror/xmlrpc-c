@@ -80,7 +80,7 @@ $(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) \
 $(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
 $(ABYSS_SHLIB): LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
-  $(ABYSS_SHLIB):  LIBDEP += -lpthread
+  $(ABYSS_SHLIB):  LIBDEP += $(THREAD_LIBS)
 endif
 
 # Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:

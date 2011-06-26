@@ -96,7 +96,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo "# From '$@'"                                             >>$@
 	@echo '#######################################################' >>$@
 	@echo 'ENABLE_ABYSS_THREADS="$(ENABLE_ABYSS_THREADS)"'		>>$@
-	@echo 'THREADS_LIBS="$(THREAD_LIBS)"'				>>$@
+	@echo 'THREAD_LIBS="$(THREAD_LIBS)"'				>>$@
 	@echo 'ENABLE_LIBXML2_BACKEND="$(ENABLE_LIBXML2_BACKEND)"'      >>$@
 	@echo 'MUST_BUILD_WININET_CLIENT="$(MUST_BUILD_WININET_CLIENT)"'>>$@
 	@echo 'MUST_BUILD_CURL_CLIENT="$(MUST_BUILD_CURL_CLIENT)"'	>>$@
