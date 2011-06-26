@@ -525,11 +525,11 @@ $(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     fi
 
     dnl Get the huge list of libraries we need to link against.
-    LIBWWW_LDADD=$(LIBWWW_CONFIG --libs)
+    LIBWWW_LDADD=$($LIBWWW_CONFIG --libs)
     AC_SUBST(LIBWWW_LDADD)
 
     AC_MSG_CHECKING(for libwww library directory)
-    LIBWWW_LIBDIR="$(LIBWWW_CONFIG --prefix)/lib"
+    LIBWWW_LIBDIR="$($LIBWWW_CONFIG --prefix)/lib"
     AC_MSG_RESULT($LIBWWW_LIBDIR)
     AC_SUBST(LIBWWW_LIBDIR)
 
