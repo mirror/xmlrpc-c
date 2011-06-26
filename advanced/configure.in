@@ -392,7 +392,14 @@ dnl =======================================================================
 
 dnl Non-Unix systems will need to set up their platform configuration file
 dnl by hand.
-DIRECTORY_SEPARATOR="/"
+case "$host_os" in
+     *mingw*)
+        DIRECTORY_SEPARATOR="\\\\"
+        ;;
+     *)
+        DIRECTORY_SEPARATOR="/"
+        ;;
+esac
 AC_SUBST(DIRECTORY_SEPARATOR)
 
 
@@ -518,11 +525,11 @@ $(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     fi
 
     dnl Get the huge list of libraries we need to link against.
-    LIBWWW_LDADD=$(LIBWWW_CONFIG --libs)
+    LIBWWW_LDADD=$($LIBWWW_CONFIG --libs)
     AC_SUBST(LIBWWW_LDADD)
 
     AC_MSG_CHECKING(for libwww library directory)
-    LIBWWW_LIBDIR="$(LIBWWW_CONFIG --prefix)/lib"
+    LIBWWW_LIBDIR="$($LIBWWW_CONFIG --prefix)/lib"
     AC_MSG_RESULT($LIBWWW_LIBDIR)
     AC_SUBST(LIBWWW_LIBDIR)
 
@@ -579,6 +586,8 @@ if test x"$enable_libwww_client" != xno; then
         AC_MSG_RESULT(no)
         HAVE_LIBWWW_SSL_DEFINE=0
     fi
+else
+    HAVE_LIBWWW_SSL_DEFINE=0
 fi
 AC_SUBST(HAVE_LIBWWW_SSL_DEFINE)
 
@@ -616,6 +625,10 @@ AC_SUBST(CPP_WARN_FLAGS)
 BUILDDIR=$(pwd)
 AC_SUBST(BUILDDIR)
 
+AR=${ac_tool_prefix}ar
+AC_SUBST([AR])
+RANLIB=${ac_tool_prefix}ranlib
+AC_SUBST([RANLIB])
 
 dnl =======================================================================
 dnl Output our results.
