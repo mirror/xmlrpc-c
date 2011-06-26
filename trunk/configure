@@ -7709,12 +7709,12 @@ echo "$as_me: error: w3c-libwww version >= 5.2.8 required" >&2;}
    { (exit 1); exit 1; }; }
     fi
 
-        LIBWWW_LDADD=$(LIBWWW_CONFIG --libs)
+        LIBWWW_LDADD=$($LIBWWW_CONFIG --libs)
 
 
     { echo "$as_me:$LINENO: checking for libwww library directory" >&5
 echo $ECHO_N "checking for libwww library directory... $ECHO_C" >&6; }
-    LIBWWW_LIBDIR="$(LIBWWW_CONFIG --prefix)/lib"
+    LIBWWW_LIBDIR="$($LIBWWW_CONFIG --prefix)/lib"
     { echo "$as_me:$LINENO: result: $LIBWWW_LIBDIR" >&5
 echo "${ECHO_T}$LIBWWW_LIBDIR" >&6; }
 
