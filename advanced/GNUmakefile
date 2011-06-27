@@ -8,7 +8,7 @@ export BLDDIR
 
 include $(BLDDIR)/config.mk
 
-SUBDIRS = include lib src tools examples
+SUBDIRS = include lib src tools test examples
 
 # The reason we don't build tools and examples by default is that they
 # contain executables, which require significantly more from the
@@ -96,6 +96,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo "# From '$@'"                                             >>$@
 	@echo '#######################################################' >>$@
 	@echo 'ENABLE_ABYSS_THREADS="$(ENABLE_ABYSS_THREADS)"'		>>$@
+	@echo 'THREAD_LIBS="$(THREAD_LIBS)"'				>>$@
 	@echo 'ENABLE_LIBXML2_BACKEND="$(ENABLE_LIBXML2_BACKEND)"'      >>$@
 	@echo 'MUST_BUILD_WININET_CLIENT="$(MUST_BUILD_WININET_CLIENT)"'>>$@
 	@echo 'MUST_BUILD_CURL_CLIENT="$(MUST_BUILD_CURL_CLIENT)"'	>>$@
@@ -148,6 +149,7 @@ distclean-local: clean-local
 	rm -f TAGS
 
 check: $(SUBDIRS:%=%/check)
+	$(MAKE) -C test runtests
 
 DISTFILES = 
 

@@ -50,8 +50,8 @@ CC = @CC@
 CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
-AR = ar
-RANLIB = ranlib
+AR = @AR@
+RANLIB = @RANLIB@
 LN_S = ln -s
 INSTALL = $(SRCDIR)/install-sh
 
@@ -337,6 +337,8 @@ endif
 
 BUILDTOOL_CC = $(CC)
 BUILDTOOL_CCLD = $(CCLD)
+
+THREAD_LIBS = -lpthread
 
 # Here are the commands 'make install' uses to install various kinds of files:
 

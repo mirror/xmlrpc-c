@@ -304,21 +304,16 @@ $(TRANSPORT_CONFIG_USERS:%=%.o) $(TRANSPORT_CONFIG_USERS:%=%.osh): \
 #  MISCELLANEOUS RULES
 #-----------------------------------------------------------------------------
 
-check:
-	$(MAKE) -C test runtests
-
 .PHONY: install
 install: install-common
 
 .PHONY: clean clean-local distclean distclean-local
 clean: clean-common clean-local
 clean-local:
-	$(MAKE) -C test clean
 
 distclean: clean distclean-local distclean-common
 
 distclean-local:
-	$(MAKE) -C test distclean
 
 .PHONY: dep
 dep: dep-common $(BLDDIR)/transport_config.h

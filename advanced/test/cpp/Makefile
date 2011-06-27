@@ -1,11 +1,10 @@
 ifeq ($(SRCDIR),)
   updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
-  SRCCPPDIR := $(call updir,$(CURDIR))
-  srcDIR := $(call updir,$(SRCCPPDIR))
-  SRCDIR := $(call updir,$(srcDIR))
+  testDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(testDIR))
   BLDDIR := $(SRCDIR)
 endif
-SUBDIR := src/test/cpp
+SUBDIR := test/cpp
 
 include $(BLDDIR)/config.mk
 
@@ -30,10 +29,10 @@ LIBS += -lpthread
 
 INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 
-# This 'Makefile' dependency makes sure the symlinks get built before
+# This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
-Makefile: srcdir
+$(SRCDIR)/common.mk: srcdir blddir
 
 include $(SRCDIR)/common.mk
 
