@@ -230,6 +230,8 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
             /* This takes the place of HTLibTerminate() */
     }
     destroyCookieJar(clientTransportP->cookieJarP);
+    HTConversion_deleteAll(clientTransportP->xmlrpc_conversions);
+    HTProfile_delete();
 }
 
 
