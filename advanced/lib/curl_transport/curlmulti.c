@@ -19,7 +19,9 @@
 #endif
 
 #include <curl/curl.h>
+#ifdef NEED_CURL_TYPES_H
 #include <curl/types.h>
+#endif
 #include <curl/easy.h>
 #include <curl/multi.h>
 
