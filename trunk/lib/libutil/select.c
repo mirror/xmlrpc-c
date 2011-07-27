@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
+#include <time.h>  /* For struct timespec on some systems */
 #endif
 #endif 
 #include <signal.h>
