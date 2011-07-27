@@ -302,6 +302,19 @@ toValue(std::map<K, V> const& in) {
     return xmlrpc_c::value_struct(ret);
 }
 
+template<class InputIterator> xmlrpc_c::value_array
+arrayValueSlice(InputIterator begin,
+                InputIterator end) {
+/*----------------------------------------------------------------------------
+  convert C++ iterator pair to XML-RPC array
+-----------------------------------------------------------------------------*/
+    carray ret;
+    for (InputIterator p = begin; p != end; ++p) {
+        ret.push_back(toValue(*p));
+    }
+    return xmlrpc_c::value_array(ret);
+}
+
 template<class T> inline xmlrpc_c::value_array
 toValue(std::vector<T> const& in) {
 /*----------------------------------------------------------------------------
@@ -374,19 +387,6 @@ fromValue(std::vector<T> & y, xmlrpc_c::value const& x) {
     for (unsigned int i = 0; i < v.size(); ++i) {
         fromValue(y[i], v[i]);
     }
-}
-
-template<class InputIterator> xmlrpc_c::value_array
-arrayValueSlice(InputIterator begin,
-                InputIterator end) {
-/*----------------------------------------------------------------------------
-  convert C++ iterator pair to XML-RPC array
------------------------------------------------------------------------------*/
-    carray ret;
-    for (InputIterator p = begin; p != end; ++p) {
-        ret.push_back(toValue(*p));
-    }
-    return xmlrpc_c::value_array(ret);
 }
 
 template<class MemberClass> inline xmlrpc_c::value_array
