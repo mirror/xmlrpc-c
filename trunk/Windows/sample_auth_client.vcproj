@@ -20,8 +20,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -47,7 +47,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -107,8 +107,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -135,7 +135,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -195,8 +195,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -221,7 +221,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -283,8 +283,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -310,7 +310,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -372,8 +372,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -398,7 +398,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -461,8 +461,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -488,7 +488,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -551,8 +551,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Static|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -578,7 +578,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -639,8 +639,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Static|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -667,7 +667,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..,../../include,../../lib/util/include,../../.."
+				AdditionalIncludeDirectories="..,../include,../lib/util/include,../.."
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;CURL_STATICLIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -735,7 +735,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\examples\auth_client.c"
+				RelativePath="..\examples\auth_client.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"

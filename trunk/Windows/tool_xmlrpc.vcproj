@@ -19,8 +19,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -109,8 +109,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -136,7 +136,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -200,8 +200,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -227,7 +227,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -289,8 +289,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -317,7 +317,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -379,8 +379,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -405,7 +405,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -469,8 +469,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -496,7 +496,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -560,8 +560,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Static|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -587,7 +587,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -649,8 +649,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Static|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -677,7 +677,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse;../../tools/lib/include"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse;../tools/lib/include"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -746,31 +746,31 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\lib\util\casprintf.c"
+				RelativePath="..\lib\util\casprintf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lib\util\cmdline_parser.c"
+				RelativePath="..\lib\util\cmdline_parser.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tools\lib\dumpvalue.c"
+				RelativePath="..\tools\lib\dumpvalue.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lib\util\getoptx.c"
+				RelativePath="..\lib\util\getoptx.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lib\util\string_parser.c"
+				RelativePath="..\lib\util\string_parser.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lib\util\stripcaseeq.c"
+				RelativePath="..\lib\util\stripcaseeq.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tools\xmlrpc\xmlrpc.c"
+				RelativePath="..\tools\xmlrpc\xmlrpc.c"
 				>
 			</File>
 		</Filter>

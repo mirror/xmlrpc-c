@@ -19,8 +19,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -105,13 +105,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -137,7 +137,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -197,13 +197,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -229,7 +229,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -287,13 +287,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -320,7 +320,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -378,13 +378,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -409,7 +409,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -469,13 +469,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -501,7 +501,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../..;../..;../../include;../../lib/util/include;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="../..;..;../include;../lib/util/include;../lib/expat/xmlparse"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -561,13 +561,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release-Static|Win32"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -593,7 +593,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -651,13 +651,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release-Static|x64"
-			OutputDirectory="..\..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -684,7 +684,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../..;../../include;../../lib/util/include;../../..;../../lib/expat/xmlparse"
+				AdditionalIncludeDirectories="..;../include;../lib/util/include;../..;../lib/expat/xmlparse"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -742,7 +742,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy test files"
-				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -754,43 +754,43 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\test\abyss.c"
+				RelativePath="..\test\abyss.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lib\util\casprintf.c"
+				RelativePath="..\lib\util\casprintf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\cgi.c"
+				RelativePath="..\test\cgi.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\client.c"
+				RelativePath="..\test\client.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\method_registry.c"
+				RelativePath="..\test\method_registry.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\parse_xml.c"
+				RelativePath="..\test\parse_xml.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\serialize.c"
+				RelativePath="..\test\serialize.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\serialize_value.c"
+				RelativePath="..\test\serialize_value.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\server_abyss.c"
+				RelativePath="..\test\server_abyss.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\test.c"
+				RelativePath="..\test\test.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -866,23 +866,23 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\test\testtool.c"
+				RelativePath="..\test\testtool.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\value.c"
+				RelativePath="..\test\value.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\value_datetime.c"
+				RelativePath="..\test\value_datetime.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\xml_data.c"
+				RelativePath="..\test\xml_data.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\xmlrpc_expat.c"
+				RelativePath="..\src\xmlrpc_expat.c"
 				>
 			</File>
 		</Filter>
@@ -891,55 +891,55 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\test\abyss.h"
+				RelativePath="..\test\abyss.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\cgi.h"
+				RelativePath="..\test\cgi.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\client.h"
+				RelativePath="..\test\client.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\method_registry.h"
+				RelativePath="..\test\method_registry.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\parse_xml.h"
+				RelativePath="..\test\parse_xml.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\serialize.h"
+				RelativePath="..\test\serialize.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\serialize_value.h"
+				RelativePath="..\test\serialize_value.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\server_abyss.h"
+				RelativePath="..\test\server_abyss.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\test.h"
+				RelativePath="..\test\test.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\testtool.h"
+				RelativePath="..\test\testtool.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\value.h"
+				RelativePath="..\test\value.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\value_datetime.h"
+				RelativePath="..\test\value_datetime.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\xml_data.h"
+				RelativePath="..\test\xml_data.h"
 				>
 			</File>
 		</Filter>
@@ -947,19 +947,19 @@
 			Name="TestFiles"
 			>
 			<File
-				RelativePath="..\..\test\data\http-req-simple.txt"
+				RelativePath="..\test\data\http-req-simple.txt"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\data\req_no_params.xml"
+				RelativePath="..\test\data\req_no_params.xml"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\data\req_out_of_order.xml"
+				RelativePath="..\test\data\req_out_of_order.xml"
 				>
 			</File>
 			<File
-				RelativePath="..\..\test\data\req_value_name.xml"
+				RelativePath="..\test\data\req_value_name.xml"
 				>
 			</File>
 		</Filter>
