@@ -482,7 +482,15 @@ assertConstantsMatch(void) {
 
 static bool
 curlAlwaysDelegatesGssapi(void) {
+/*----------------------------------------------------------------------------
+   The Curl library we're using always delegates GSSAPI credentials
+   (we don't have a choice).
 
+   This works with Curl as distributed by the Curl project, but there are
+   other versions of Curl for which it doesn't -- those versions report
+   older version numbers but in fact don't always delegate.  Some never
+   delegate, and some give the user the option.
+-----------------------------------------------------------------------------*/
     curl_version_info_data * const curlInfoP =
         curl_version_info(CURLVERSION_NOW);
 
@@ -502,36 +510,36 @@ requestGssapiDelegation(CURL * const curlSessionP ATTR_UNUSED,
    for which we are compiled or to which we are linked is not capable of such
    delegation.
 -----------------------------------------------------------------------------*/
-    if (curlAlwaysDelegatesGssapi()) {
-        /* No need to request delegation, and we couldn't if we wanted to. */
-        *gotItP = true;
-    } else {
 #if HAVE_CURL_GSSAPI_DELEGATION
-        int rc;
+    int rc;
 
-        rc = curl_easy_setopt(curlSessionP, CURLOPT_GSSAPI_DELEGATION,
-                              CURLGSSAPI_DELEGATION_FLAG);
+    rc = curl_easy_setopt(curlSessionP, CURLOPT_GSSAPI_DELEGATION,
+                          CURLGSSAPI_DELEGATION_FLAG);
 
-        if (rc == CURLE_OK)
+    if (rc == CURLE_OK)
+        *gotItP = true;
+    else {
+        /* The only way curl_easy_setopt() could have failed is that we
+           are running with an old libcurl from before
+           CURLOPT_GSSAPI_DELEGATION was invented.
+        */
+        if (curlAlwaysDelegatesGssapi()) {
+            /* No need to request delegation; we got it anyway */
             *gotItP = true;
-        else {
-            /* The only way curl_easy_setopt() could have failed is that we
-               are running with an old libcurl from before
-               CURLOPT_GSSAPI_DELEGATION was invented.  And since we know we
-               have a libcurl that doesn't delegate by default (checked
-               above), that means we must have stock 7.21.7, which never
-               delegates at all.
-            */
-            *gotitP = false;
-        }
+        } else
+            *gotItP = false;
+    }
 #else
+    if (curlAlwaysDelegatesGssapi())
+        *gotItP = true;
+    else {
         /* The library may be able to do credential delegation on request, but
            we have no way to request it; the Curl for which we are compiled is
            too old.
         */
         *gotItP = false;
-#endif
     }
+#endif
 }
 
 
