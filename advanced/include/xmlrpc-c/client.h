@@ -108,6 +108,7 @@ struct xmlrpc_curl_xportparms {
            enum xmlrpc_httpproxyauth values
         */
     const char * proxy_userpwd;
+    xmlrpc_bool  gssapi_delegation;
 };
 
 

@@ -157,6 +157,7 @@ struct clientXmlTransport_curl::constrOpt_impl {
         unsigned int proxy_port;
         std::string  proxy_userpwd;
         xmlrpc_httpproxytype proxy_type;
+        bool         gssapi_delegation;
     } value;
     struct {
         bool network_interface;
@@ -184,6 +185,7 @@ struct clientXmlTransport_curl::constrOpt_impl {
         bool proxy_port;
         bool proxy_userpwd;
         bool proxy_type;
+        bool gssapi_delegation;
     } present;
 };
 
@@ -214,6 +216,7 @@ clientXmlTransport_curl::constrOpt_impl::constrOpt_impl() {
     present.proxy_auth        = false;
     present.proxy_userpwd     = false;
     present.proxy_type        = false;
+    present.gssapi_delegation = false;
 }
 
 
@@ -251,6 +254,7 @@ DEFINE_OPTION_SETTER(proxy_port, unsigned int);
 DEFINE_OPTION_SETTER(proxy_auth, unsigned int);
 DEFINE_OPTION_SETTER(proxy_userpwd, string);
 DEFINE_OPTION_SETTER(proxy_type, xmlrpc_httpproxytype);
+DEFINE_OPTION_SETTER(gssapi_delegation, bool);
 
 #undef DEFINE_OPTION_SETTER
 
@@ -333,6 +337,8 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
         opt.value.proxy_userpwd.c_str()     : NULL;
     transportParms.proxy_type        = opt.present.proxy_type ? 
         opt.value.proxy_type                : XMLRPC_HTTPPROXY_HTTP;
+    transportParms.gssapi_delegation = opt.present.gssapi_delegation ?
+        opt.value.gssapi_delegation         : false;
 
     this->c_transportOpsP = &xmlrpc_curl_transport_ops;
 
@@ -340,7 +346,7 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
 
     xmlrpc_curl_transport_ops.create(
         &env.env_c, 0, "", "",
-        &transportParms, XMLRPC_CXPSIZE(dont_advertise),
+        &transportParms, XMLRPC_CXPSIZE(gssapi_delegation),
         &this->c_transportP);
 
     if (env.env_c.fault_occurred)
