@@ -340,7 +340,7 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
 
     xmlrpc_curl_transport_ops.create(
         &env.env_c, 0, "", "",
-        &transportParms, XMLRPC_CXPSIZE(proxy_type),
+        &transportParms, XMLRPC_CXPSIZE(proxy_userpwd),
         &this->c_transportP);
 
     if (env.env_c.fault_occurred)
