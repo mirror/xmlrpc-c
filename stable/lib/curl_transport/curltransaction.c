@@ -99,9 +99,9 @@ xmlrpcUserAgentPart(bool const reportIt) {
         char curlVersion[32];
         
         snprintf(curlVersion, sizeof(curlVersion), "%u.%u.%u",
-                 (curlInfoP->version_num >> 16) && 0xff,
-                 (curlInfoP->version_num >>  8) && 0xff,
-                 (curlInfoP->version_num >>  0) && 0xff
+                 (curlInfoP->version_num >> 16) & 0xff,
+                 (curlInfoP->version_num >>  8) & 0xff,
+                 (curlInfoP->version_num >>  0) & 0xff
             );
 
         xmlrpc_asprintf(&retval,
