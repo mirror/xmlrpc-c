@@ -353,6 +353,9 @@ public:
             .proxy_port(8080)
             .proxy_userpwd("password")
             .proxy_type(XMLRPC_HTTPPROXY_SOCKS5)
+            .proxy_auth(XMLRPC_HTTPAUTH_BASIC)
+            .proxy_userpwd("mypassword")
+            .gssapi_delegation(true)
             );            
 
         clientXmlTransport_curl transport5(

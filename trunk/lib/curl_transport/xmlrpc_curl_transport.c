@@ -836,6 +836,11 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->proxyType = curlXportParmsP->proxy_type;
 
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(gssapi_delegation))
+        curlSetupP->gssapiDelegation = false;
+    else
+        curlSetupP->gssapiDelegation = !!curlXportParmsP->gssapi_delegation;
+
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
 }
 

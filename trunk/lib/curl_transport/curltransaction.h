@@ -81,6 +81,9 @@ struct curlSetup {
     unsigned int proxyType;
         /* see enum curl_proxytype: CURLPROXY_HTTP, CURLPROXY_SOCKS4, ... */
 
+    bool         gssapiDelegation;
+        /* allow GSSAPI credential delegation */
+
     unsigned int timeout;
         /* 0 = no Curl timeout.  This is in milliseconds. */
 

@@ -451,6 +451,91 @@ assertConstantsMatch(void) {
 
 
 
+/* About Curl and GSSAPI credential delegation:
+
+   Up through Curl 7.21.6, libcurl always delegates GSSAPI credentials, which
+   means it gives the client's secrets to the server so the server can operate
+   on the client's behalf.  In mid-2011, this was noticed to be a major
+   security exposure, because the server is not necessarily trustworthy.
+   One is supposed to delegate one's credentials only to a server one trusts.
+   So in 7.21.7, Curl never delegates GSSAPI credentials.
+
+   But that causes problems for clients that _do_ trust their server, which
+   had always relied upon Curl's delegation.
+
+   So starting in 7.21.8, Curl gives the user the choice.  The default is no
+   delegation, but the Curl user can set the CURLOPT_GSSAPI_DELEGATION flag to
+   order delegation.
+
+   Complicating matters is that some people made local variations of Curl
+   during the transition phase, so the version number alone isn't
+   determinative, so we rely on it only where we have to.
+
+   So Xmlrpc-c gives the same choice to its own user, via its
+   'gssapi_delegation' Curl transport option.
+   
+   Current Xmlrpc-c can be linked with, and compiled with, any version of
+   Curl, so it has to carefully consider all the possibilities.
+*/
+
+
+
+static bool
+curlAlwaysDelegatesGssapi(void) {
+
+    curl_version_info_data * const curlInfoP =
+        curl_version_info(CURLVERSION_NOW);
+
+    return (curlInfoP->version_num <= 0x071506);  /* 7.21.6 */
+}
+
+
+
+static void
+requestGssapiDelegation(CURL * const curlSessionP ATTR_UNUSED,
+                        bool * const gotItP) {
+/*----------------------------------------------------------------------------
+   Set up the Curl session *curlSessionP to delegate its GSSAPI credentials to
+   the server.
+
+   Return *gotitP is true iff we succeed.  We fail when the version of libcurl
+   for which we are compiled or to which we are linked is not capable of such
+   delegation.
+-----------------------------------------------------------------------------*/
+    if (curlAlwaysDelegatesGssapi()) {
+        /* No need to request delegation, and we couldn't if we wanted to. */
+        *gotItP = true;
+    } else {
+#if HAVE_CURL_GSSAPI_DELEGATION
+        int rc;
+
+        rc = curl_easy_setopt(curlSessionP, CURLOPT_GSSAPI_DELEGATION,
+                              CURLGSSAPI_DELEGATION_FLAG);
+
+        if (rc == CURLE_OK)
+            *gotItP = true;
+        else {
+            /* The only way curl_easy_setopt() could have failed is that we
+               are running with an old libcurl from before
+               CURLOPT_GSSAPI_DELEGATION was invented.  And since we know we
+               have a libcurl that doesn't delegate by default (checked
+               above), that means we must have stock 7.21.7, which never
+               delegates at all.
+            */
+            *gotitP = false;
+        }
+#else
+        /* The library may be able to do credential delegation on request, but
+           we have no way to request it; the Curl for which we are compiled is
+           too old.
+        */
+        *gotItP = false;
+#endif
+    }
+}
+
+
+
 static void
 setupCurlSession(xmlrpc_env *               const envP,
                  curlTransaction *          const curlTransactionP,
@@ -485,7 +570,7 @@ setupCurlSession(xmlrpc_env *               const envP,
        a particular transaction finished.
     */
 
-    /* It is out policy to do a libcurl call only where necessary, I.e.  not
+    /* It is our policy to do a libcurl call only where necessary, I.e.  not
        to set what is the default anyhow.  The reduction in calls may save
        some time, but mostly, it will save us encountering rare bugs or
        suffering from backward incompatibilities in future libcurl.  I.e. we
@@ -592,7 +677,18 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->timeout)
             setCurlTimeout(curlSessionP, curlSetupP->timeout);
 
-        {
+        if (curlSetupP->gssapiDelegation) {
+            bool gotIt;
+            requestGssapiDelegation(curlSessionP, &gotIt);
+
+            if (!gotIt)
+                xmlrpc_faultf(envP, "Cannot honor 'gssapi_delegation' "
+                              "Curl transport option.  "
+                              "This version of libcurl is not "
+                              "capable of delegating GSSAPI credentials");
+        }
+
+        if (!envP->fault_occurred) {
             const char * authHdrValue;
                 /* NULL means we don't have to construct an explicit
                    Authorization: header.  non-null means we have to
