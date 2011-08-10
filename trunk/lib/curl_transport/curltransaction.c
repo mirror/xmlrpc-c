@@ -369,38 +369,41 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
    Authorization: Basic: HTTP header.  Otherwise, return
    *basicAuthHdrParamP == NULL.
 -----------------------------------------------------------------------------*/
-    if (serverInfoP->allowedAuth.basic) {
-        CURLcode rc;
-        rc = curl_easy_setopt(curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    CURLcode rc;
 
-        if (rc == CURLE_OK)
-            *authHdrValueP = NULL;
-        else {
-            *authHdrValueP = strdup(serverInfoP->basicAuthHdrValue);
-            if (*authHdrValueP == NULL)
-                xmlrpc_faultf(envP, "Unable to allocate memory for basic "
-                              "authentication header");
-        }
-    } else
-        *authHdrValueP = NULL;
+    /* We don't worry if libcurl is too old for specific kinds of
+       authentication; they're defined only as _allowed_ authentication
+       methods, for when client and server are capable of using it, and unlike
+       with basic authentication, we have no historical commitment to consider
+       an old libcurl as capable of doing these.
 
-    /* We don't worry if libcurl is too old for these other kinds of
-       authentication; they're only defined as _allowed_
-       authentication methods, for when client and server are capable
-       of using it, and unlike with basic authentication, we have no
-       historical commitment to consider an old libcurl as capable of
-       doing these.
+       Note that curl_easy_setopt(CURLOPT_HTTPAUTH) succeeds even if there are
+       flags in it argument that weren't defined when it was written.
     */
     
     if (serverInfoP->userNamePw)
         curl_easy_setopt(curlSessionP, CURLOPT_USERPWD,
                          serverInfoP->userNamePw);
 
-    curl_easy_setopt(curlSessionP, CURLOPT_HTTPAUTH,
-                     (serverInfoP->allowedAuth.basic ? CURLAUTH_BASIC : 0) |
-                     (serverInfoP->allowedAuth.digest ? CURLAUTH_DIGEST : 0) |
-                     (serverInfoP->allowedAuth.gssnegotiate ? CURLAUTH_GSSNEGOTIATE : 0) |
-                     (serverInfoP->allowedAuth.NTLM ? CURLAUTH_NTLM : 0));
+    rc = curl_easy_setopt(
+        curlSessionP, CURLOPT_HTTPAUTH,
+        (serverInfoP->allowedAuth.basic        ? CURLAUTH_BASIC        : 0) |
+        (serverInfoP->allowedAuth.digest       ? CURLAUTH_DIGEST       : 0) |
+        (serverInfoP->allowedAuth.gssnegotiate ? CURLAUTH_GSSNEGOTIATE : 0) |
+        (serverInfoP->allowedAuth.ntlm         ? CURLAUTH_NTLM         : 0));
+    
+    if (rc != CURLE_OK) {
+        /* Curl is too old to do authentication, so we do it ourselves
+           with an explicit header if we have to.
+        */
+        if (serverInfoP->allowedAuth.basic) {
+            *authHdrValueP = strdup(serverInfoP->basicAuthHdrValue);
+            if (*authHdrValueP == NULL)
+                xmlrpc_faultf(envP, "Unable to allocate memory for basic "
+                              "authentication header");
+        } else        
+            *authHdrValueP = NULL;
+    }
 }
 
 
