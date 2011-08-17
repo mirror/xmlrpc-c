@@ -115,6 +115,34 @@ typedef struct {
 struct encoding;
 typedef struct encoding ENCODING;
 
+typedef void Utf8Converter(const ENCODING * encP,
+                           const char **    fromP,
+                           const char *     fromLim,
+                           char **          toP,
+                           const char *     toLim);
+/*----------------------------------------------------------------------------
+   A Utf8Converter is an encoder method that converts from the encoder's
+   code to UTF-8:
+
+   Convert the string that starts at *fromP and ends at 'fromLim' to UTF8 in
+   the buffer that starts at *toP and ends at 'toLim'.
+
+   Go from left to right and stop when the output buffer is full.
+
+   Note that the buffer can be full while still having a few bytes left in it
+   because an input character may require multiple bytes of the output buffer.
+
+   The encoding may require up to 4 UTF-8 bytes for a single input character.
+
+   Leave *fromP and *toP pointing after the last character converted.
+
+   The output buffer must be at least 4 bytes.  Results are undefined if not.
+
+   We necessarily advance *fromP at least one character if 'fromLim' allows.
+-----------------------------------------------------------------------------*/
+
+
+    
 struct encoding {
   int (*scanners[XML_N_STATES])(const ENCODING *,
 			        const char *,
@@ -140,11 +168,7 @@ struct encoding {
 			 POSITION *);
   int (*isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
 		    const char **badPtr);
-  void (*utf8Convert)(const ENCODING *enc,
-		      const char **fromP,
-		      const char *fromLim,
-		      char **toP,
-		      const char *toLim);
+  Utf8Converter * utf8Convert;
   void (*utf16Convert)(const ENCODING *enc,
 		       const char **fromP,
 		       const char *fromLim,
