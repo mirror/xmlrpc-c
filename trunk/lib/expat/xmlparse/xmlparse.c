@@ -2204,30 +2204,7 @@ doCdataSection(XML_Parser       const xmlParserP,
         reportDefault(xmlParserP, encoderP, s, next);
       break;
     case XML_TOK_DATA_CHARS:
-      if (characterDataHandler) {
-        if (MUST_CONVERT(encoderP, s)) {
-          for (;;) {
-            ICHAR *dataPtr = (ICHAR *)dataBuf;
-            XmlConvert(encoderP, &s, next, &dataPtr, (ICHAR *)dataBufEnd);
-            *evPtr.endP = next;
-            {
-                size_t const len = dataPtr - (ICHAR *)dataBuf;
-                assert((size_t)(int)len == len);   /* parser requirement */
-                characterDataHandler(handlerArg, dataBuf, (int)len);
-            }
-            if (s == next)
-              break;
-            *evPtr.startP = s;
-          }
-        }
-        else {
-            size_t const len = (XML_Char *)next - (XML_Char *)s;
-            assert((size_t)(int)len == len);   /* parser requirement */
-            characterDataHandler(handlerArg, (XML_Char *)s, (int)len);
-        }                               
-      }
-      else if (defaultHandler)
-        reportDefault(xmlParserP, encoderP, s, next);
+      processDataCharsToken(xmlParserP, encoderP, s, next);
       break;
     case XML_TOK_INVALID:
       *evPtr.startP = next;
