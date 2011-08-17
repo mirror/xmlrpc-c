@@ -49,6 +49,7 @@ SERVERPROGS_ABYSS = \
 BASIC_PROGS = \
   json \
   gen_sample_add_xml \
+  parse_xml \
 
 # Build up PROGS:
 PROGS = 
