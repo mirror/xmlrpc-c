@@ -68,7 +68,7 @@ main(int           const argc,
     /* Dispose of our server object. */
     xmlrpc_server_info_free(serverP);
     
-    /* Get the authentication information and print it out. */
+    /* Get the result of the RPC and print it out. */
     xmlrpc_read_int(&env, resultP, &sum);
     die_if_fault_occurred(&env);
     printf("The sum is %d\n", sum);
