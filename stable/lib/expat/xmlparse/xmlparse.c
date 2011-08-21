@@ -2812,11 +2812,11 @@ processContentToken(XML_Parser       const xmlParserP,
     case XML_TOK_DATA_CHARS:
         if (characterDataHandler) {
             if (MUST_CONVERT(enc, s)) {
+                const char * from;
+                from = s;  /* initial value */
                 for (;;) {
-                    const char * from;
                     ICHAR * dataPtr;
                     dataPtr = (ICHAR *)dataBuf;
-                    from = s;
                     XmlConvert(enc, &from, *nextP, &dataPtr,
                                (ICHAR *)dataBufEnd);
                     *eventEndPP = from;
