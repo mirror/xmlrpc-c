@@ -396,15 +396,12 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
         curl_easy_setopt(curlSessionP, CURLOPT_USERPWD,
                          serverInfoP->userNamePw);
 
-    if (serverInfoP->allowedAuth.digest)
-        curl_easy_setopt(
-            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-    if (serverInfoP->allowedAuth.gssnegotiate)
-        curl_easy_setopt(
-            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_GSSNEGOTIATE);
-    if (serverInfoP->allowedAuth.ntlm)
-        curl_easy_setopt(
-            curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
+    curl_easy_setopt(
+        curlSessionP, CURLOPT_HTTPAUTH,
+        (serverInfoP->allowedAuth.basic        ? CURLAUTH_BASIC        : 0) |
+        (serverInfoP->allowedAuth.digest       ? CURLAUTH_DIGEST       : 0) |
+        (serverInfoP->allowedAuth.gssnegotiate ? CURLAUTH_GSSNEGOTIATE : 0) |
+        (serverInfoP->allowedAuth.ntlm         ? CURLAUTH_NTLM         : 0));
 }
 
 
