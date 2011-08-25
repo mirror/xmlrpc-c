@@ -462,7 +462,7 @@ assertConstantsMatch(void) {
    But that causes problems for clients that _do_ trust their server, which
    had always relied upon Curl's delegation.
 
-   So starting in 7.21.8, Curl gives the user the choice.  The default is no
+   So starting in 7.22.0, Curl gives the user the choice.  The default is no
    delegation, but the Curl user can set the CURLOPT_GSSAPI_DELEGATION flag to
    order delegation.
 
