@@ -137,7 +137,7 @@ all: \
 # Extra dependencies to make parallel make work in spite of all the submakes
 # (See top level make file for details)
 ifeq ($MUST_BUILD_CLIENT),yes)
-cpp/all: $(BLDDIR)/transport_config.h $(TARGET_SHARED_LE_LIBS)
+  cpp/all: $(BLDDIR)/transport_config.h $(TARGET_SHARED_LE_LIBS)
 endif
 
 #-----------------------------------------------------------------------------
