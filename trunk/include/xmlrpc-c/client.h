@@ -168,7 +168,7 @@ XMLRPC_DLLEXPORT
 const char * 
 xmlrpc_client_get_default_transport(xmlrpc_env * const env);
 
-/* A callback function to handle the response to an asynchronous call.
+/* A user's function to handle the response to an asynchronous call.
 ** If 'fault->fault_occurred' is true, then response will be NULL. All
 ** arguments except 'userHandle' will be deallocated internally; please do
 ** not free any of them yourself.
