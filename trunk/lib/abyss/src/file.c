@@ -107,8 +107,7 @@ createFileImage(TFile **     const filePP,
         int rc;
 
         if (createFile)
-            /* Unix prefers S_IWUSR, but some Windows knows only S_IWRITE */
-            rc = open(name, attrib | O_CREAT, S_IWRITE | S_IREAD);
+            rc = open(name, attrib | O_CREAT, XMLRPC_S_IWUSR | XMLRPC_S_IRUSR);
         else
             rc = open(name, attrib);
 
