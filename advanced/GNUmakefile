@@ -68,7 +68,7 @@ examples/all: xmlrpc-c-config.test lib/all src/all include/all
 # make works for 'make all' in the top directory, but it may still fail
 # for the aforementioned reason for other invocations.
 
-tools/all: include/all lib/all src/all
+tools/all test/all: include/all lib/all src/all
 src/all lib/all: include/all
 src/all: lib/all
 
