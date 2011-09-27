@@ -3,6 +3,7 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
+#include <assert.h>
 #include "xmlrpc_config.h"
 #include "bool.h"
 #include "xmldef.h"
@@ -360,6 +361,8 @@ static const struct normal_encoding internal_utf8_encoding = {
 
 
 
+static Utf8Converter latin1_toUtf8;
+
 static void
 latin1_toUtf8(const ENCODING * const enc ATTR_UNUSED,
               const char **    const fromP,
@@ -367,17 +370,17 @@ latin1_toUtf8(const ENCODING * const enc ATTR_UNUSED,
               char **          const toP,
               const char *     const toLim) {
 /*----------------------------------------------------------------------------
-   Convert the Latin1 string that starts at *fromP and ends at 'fromLim'
-   to UTF8 in the buffer that starts at *toP and ends at 'toLim'.
+   Convert the Latin1 string to UTF-8.
 
-   Go from left to right and stop when the output buffer is full.
+   This is a Utf8Converter subroutine.  See documentation of the
+   Utf8Converter type for details.
 
-   Note that the buffer can be full while still having a byte left in it
-   because a Latin1 character may require two bytes of the output buffer.
-
-   Leave *fromP and *toP pointing after the last character converted.
+   Note: a latin1 input character converts to 1 or 2 UTF-8 output
+   bytes.
 -----------------------------------------------------------------------------*/
     bool bufferIsFull;
+
+    assert(toLim - *toP >= 2);  /* Calling condition */
 
     for (bufferIsFull = false; *fromP != fromLim && !bufferIsFull;) {
         unsigned char const c = (unsigned char)**fromP;

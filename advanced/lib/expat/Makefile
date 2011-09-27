@@ -17,6 +17,11 @@ default: all
 
 all: $(SUBDIRS:%=%/all)
 
+# Extra dependencies to make parallel make work in spite of all the submakes
+# (See top level make file for details)
+xmlparse/all: gennmtab/all xmltok/all
+xmltok/all: gennmtab/all
+
 clean: $(SUBDIRS:%=%/clean) clean-common
 
 distclean: $(SUBDIRS:%=%/distclean) distclean-common

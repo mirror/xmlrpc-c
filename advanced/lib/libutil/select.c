@@ -2,11 +2,11 @@
 
 #include "xmlrpc_config.h"
 
-#ifdef WIN32
+#if MSVCRT
 #include <winsock.h>
 #else
 /* In some systems (SUS), the select() interface comes from <sys/time.h>;
-   in others, from <sys/select.h>, and other from both.  Including both
+   in others, from <sys/select.h>, and others from both.  Including both
    in this order appears to work on all.
 */
 #include <sys/time.h>
@@ -46,7 +46,7 @@ xmlrpc_pselect(int                     const n,
     
     timeout.tv_sec  = timeoutP->tv_sec;
     timeout.tv_usec = timeoutP->tv_nsec/1000;
-#ifdef WIN32
+#if MSVCRT
     retval = select(n, readfdsP, writefdsP, exceptfdsP, &timeout);
 #else
     {

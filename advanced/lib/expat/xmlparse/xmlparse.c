@@ -1119,45 +1119,108 @@ normalizeLines(XML_Char *s)
 
 
 
+struct EventPtr {
+    const char ** startP;
+    const char ** endP;
+};
+
+
+
+static struct EventPtr
+getEventPtr(XML_Parser       const xmlParserP,
+            const ENCODING * const encoderP) {
+
+    Parser * const parserP = xmlParserP;
+
+    struct EventPtr retval;
+
+    if (encoderP == parserP->m_encoding) {
+        retval.startP = &parserP->m_eventPtr;
+        retval.endP   = &parserP->m_eventEndPtr;
+    } else {
+        retval.startP = &parserP->m_openInternalEntities->internalEventPtr;
+        retval.endP   = &parserP->m_openInternalEntities->internalEventEndPtr;
+    }
+
+    return retval;
+}
+
+
+
 static void
 reportDefault(XML_Parser       const xmlParserP,
-              const ENCODING * const enc,
+              const ENCODING * const encoderP,
               const char *     const start,
               const char *     const end) {
 
     Parser * const parser = (Parser *)xmlParserP;
 
-    if (MUST_CONVERT(enc, start)) {
-        const char * s;
+    if (MUST_CONVERT(encoderP, start)) {
+        struct EventPtr const evPtr = getEventPtr(xmlParserP, encoderP);
 
-        const char **eventPP;
-        const char **eventEndPP;
+        const char * inCursor;
 
-        if (enc == parser->m_encoding) {
-            eventPP = &eventPtr;
-            eventEndPP = &eventEndPtr;
-        }
-        else {
-            eventPP = &(openInternalEntities->internalEventPtr);
-            eventEndPP = &(openInternalEntities->internalEventEndPtr);
-        }
-        s = start;
+        inCursor = start;
         do {
             ICHAR *dataPtr = (ICHAR *)dataBuf;
-            XmlConvert(enc, &s, end, &dataPtr, (ICHAR *)dataBufEnd);
-            *eventEndPP = s;
+            XmlConvert(encoderP, &inCursor, end,
+                       &dataPtr, (ICHAR *)dataBufEnd);
+            *evPtr.endP = inCursor;
             {
                 size_t const len = dataPtr - (ICHAR *)dataBuf;
                 assert((size_t)(int)len == len);   /* parser requirement */
                 defaultHandler(handlerArg, dataBuf, (int)len);
             }
-            *eventPP = s;
-        } while (s != end);
+            *evPtr.startP = inCursor;
+        } while (inCursor != end);
     } else {
         size_t const len = (XML_Char *)end - (XML_Char *)start;
         assert((size_t)(int)len == len);  /* parser requirement */
         defaultHandler(handlerArg, (XML_Char *)start, len);
     }
+}
+
+
+
+static void
+processDataCharsToken(XML_Parser *     const xmlParserP,
+                      const ENCODING * const encoderP,
+                      const char *     const tokenStart,
+                      const char *     const tokenEnd) {
+
+    Parser * const parser = (Parser *)xmlParserP;
+        /* For use by macros */
+
+    if (characterDataHandler) {
+        if (MUST_CONVERT(encoderP, tokenStart)) {
+            struct EventPtr const evPtr = getEventPtr(xmlParserP, encoderP);
+
+            const char * inCursor;
+            for (inCursor = tokenStart; inCursor < tokenEnd;) {
+
+                ICHAR * outCursor;
+
+                outCursor = (ICHAR *)dataBuf;
+                *evPtr.startP = inCursor;
+                assert((ICHAR *)dataBufEnd - (ICHAR *)dataBuf >= 4);
+
+                XmlConvert(encoderP, &inCursor, tokenEnd, &outCursor,
+                           (ICHAR *)dataBufEnd);
+
+                *evPtr.endP = inCursor;
+                {
+                    size_t const len = outCursor - (ICHAR *)dataBuf;
+                    assert((size_t)(int)len == len);   /* parser reqt */
+                    characterDataHandler(handlerArg, dataBuf, (int)len);
+                }
+            }
+        } else {
+            size_t const len = (XML_Char *)tokenEnd - (XML_Char *)tokenStart;
+            assert((size_t)(int)len == len);   /* parser reqt */
+            characterDataHandler(handlerArg, (XML_Char *)tokenStart, len);
+        }
+    } else if (defaultHandler)
+        reportDefault(xmlParserP, encoderP, tokenStart, tokenEnd);
 }
 
 
@@ -2107,37 +2170,29 @@ epilogProcessor(XML_Parser       const xmlParserP,
 
 static enum XML_Error
 doCdataSection(XML_Parser       const xmlParserP,
-               const ENCODING * const enc,
+               const ENCODING * const encoderP,
                const char **    const startPtr,
                const char *     const end,
                const char **    const nextPtr) {
 
   Parser * const parser = (Parser *) xmlParserP;
+  struct EventPtr const evPtr = getEventPtr(xmlParserP, encoderP);
 
-  const char *s = *startPtr;
-  const char **eventPP;
-  const char **eventEndPP;
-  if (enc == parser->m_encoding) {
-    eventPP = &eventPtr;
-    *eventPP = s;
-    eventEndPP = &eventEndPtr;
-  }
-  else {
-    eventPP = &(openInternalEntities->internalEventPtr);
-    eventEndPP = &(openInternalEntities->internalEventEndPtr);
-  }
-  *eventPP = s;
+  const char * s;
+
+  s = *startPtr; /* initial value */
+  *evPtr.startP = s;
   *startPtr = 0;
   for (;;) {
     const char *next;
-    int tok = XmlCdataSectionTok(enc, s, end, &next);
-    *eventEndPP = next;
+    int tok = XmlCdataSectionTok(encoderP, s, end, &next);
+    *evPtr.endP = next;
     switch (tok) {
     case XML_TOK_CDATA_SECT_CLOSE:
       if (endCdataSectionHandler)
         endCdataSectionHandler(handlerArg);
       else if (defaultHandler)
-        reportDefault(xmlParserP, enc, s, next);
+        reportDefault(xmlParserP, encoderP, s, next);
       *startPtr = next;
       return XML_ERROR_NONE;
     case XML_TOK_DATA_NEWLINE:
@@ -2146,36 +2201,13 @@ doCdataSection(XML_Parser       const xmlParserP,
         characterDataHandler(handlerArg, &c, 1);
       }
       else if (defaultHandler)
-        reportDefault(xmlParserP, enc, s, next);
+        reportDefault(xmlParserP, encoderP, s, next);
       break;
     case XML_TOK_DATA_CHARS:
-      if (characterDataHandler) {
-        if (MUST_CONVERT(enc, s)) {
-          for (;;) {
-            ICHAR *dataPtr = (ICHAR *)dataBuf;
-            XmlConvert(enc, &s, next, &dataPtr, (ICHAR *)dataBufEnd);
-            *eventEndPP = next;
-            {
-                size_t const len = dataPtr - (ICHAR *)dataBuf;
-                assert((size_t)(int)len == len);   /* parser requirement */
-                characterDataHandler(handlerArg, dataBuf, (int)len);
-            }
-            if (s == next)
-              break;
-            *eventPP = s;
-          }
-        }
-        else {
-            size_t const len = (XML_Char *)next - (XML_Char *)s;
-            assert((size_t)(int)len == len);   /* parser requirement */
-            characterDataHandler(handlerArg, (XML_Char *)s, (int)len);
-        }                               
-      }
-      else if (defaultHandler)
-        reportDefault(xmlParserP, enc, s, next);
+      processDataCharsToken(xmlParserP, encoderP, s, next);
       break;
     case XML_TOK_INVALID:
-      *eventPP = next;
+      *evPtr.startP = next;
       return XML_ERROR_INVALID_TOKEN;
     case XML_TOK_PARTIAL_CHAR:
       if (nextPtr) {
@@ -2193,7 +2225,7 @@ doCdataSection(XML_Parser       const xmlParserP,
     default:
       abort();
     }
-    *eventPP = s = next;
+    *evPtr.startP = s = next;
   }
   /* not reached */
 }
@@ -2642,13 +2674,12 @@ processContentToken(XML_Parser       const xmlParserP,
                     const char **    const nextP,
                     const char **    const nextPtr,
                     int              const startTagLevel,
-                    const char **    const eventPP,
-                    const char **    const eventEndPP,
                     bool *           const doneP,
                     enum XML_Error * const errorCodeP,
                     const char **    const errorP) {
 
     Parser * const parser = (Parser *) xmlParserP;
+    struct EventPtr const evPtr = getEventPtr(xmlParserP, enc);
 
     *errorP = NULL;
     *errorCodeP = XML_ERROR_NONE;
@@ -2659,7 +2690,7 @@ processContentToken(XML_Parser       const xmlParserP,
           *nextPtr = s;
           *doneP = true;
       } else {
-          *eventEndPP = end;
+          *evPtr.endP = end;
 
           if (characterDataHandler) {
               XML_Char c = 0xA;
@@ -2688,7 +2719,7 @@ processContentToken(XML_Parser       const xmlParserP,
             *errorCodeP = XML_ERROR_NO_ELEMENTS;
         break;
     case XML_TOK_INVALID:
-        *eventPP = *nextP;
+        *evPtr.startP = *nextP;
         *errorCodeP = XML_ERROR_INVALID_TOKEN;
         xmlrpc_asprintf(errorP, "Invalid token, starting %ld bytes in",
                         (long)(*nextP - s));
@@ -2727,17 +2758,17 @@ processContentToken(XML_Parser       const xmlParserP,
         
         if (*errorCodeP == XML_ERROR_NONE)
             doEmptyElementNoAtts(xmlParserP, enc, s, end, *nextP, nextPtr,
-                                 eventPP, eventEndPP,
+                                 evPtr.startP, evPtr.endP,
                                  doneP, errorCodeP, errorP);
         break;
     case XML_TOK_EMPTY_ELEMENT_NO_ATTS:
         doEmptyElementNoAtts(xmlParserP, enc, s, end, *nextP, nextPtr,
-                             eventPP, eventEndPP,
+                             evPtr.startP, evPtr.endP,
                              doneP, errorCodeP, errorP);
         break;
     case XML_TOK_END_TAG:
         doEndTag(xmlParserP, enc, s, end, *nextP, nextPtr, startTagLevel,
-                 eventPP, doneP, errorCodeP, errorP);
+                 evPtr.startP, doneP, errorCodeP, errorP);
         break;
     case XML_TOK_CHAR_REF: {
         int const n = XmlCharRefNumber(enc, s);
@@ -2800,42 +2831,17 @@ processContentToken(XML_Parser       const xmlParserP,
                 reportDefault(xmlParserP, enc, s, end);
 
             if (startTagLevel == 0) {
-                *eventPP = end;
+                *evPtr.startP = end;
                 *errorCodeP = XML_ERROR_NO_ELEMENTS;
             } else if (tagLevel != startTagLevel) {
-                *eventPP = end;
+                *evPtr.startP = end;
                 *errorCodeP = XML_ERROR_ASYNC_ENTITY;
             } else
                 *doneP = true;
         }
         break;
     case XML_TOK_DATA_CHARS:
-        if (characterDataHandler) {
-            if (MUST_CONVERT(enc, s)) {
-                const char * from;
-                from = s;  /* initial value */
-                for (;;) {
-                    ICHAR * dataPtr;
-                    dataPtr = (ICHAR *)dataBuf;
-                    XmlConvert(enc, &from, *nextP, &dataPtr,
-                               (ICHAR *)dataBufEnd);
-                    *eventEndPP = from;
-                    {
-                        size_t const len = dataPtr - (ICHAR *)dataBuf;
-                        assert((size_t)(int)len == len);   /* parser reqt */
-                        characterDataHandler(handlerArg, dataBuf, (int)len);
-                    }
-                    if (from == *nextP)
-                        break;
-                    *eventPP = from;
-                }
-            } else {
-                size_t const len = (XML_Char *)*nextP - (XML_Char *)s;
-                assert((size_t)(int)len == len);   /* parser reqt */
-                characterDataHandler(handlerArg, (XML_Char *)s, len);
-            }
-        } else if (defaultHandler)
-            reportDefault(xmlParserP, enc, s, *nextP);
+        processDataCharsToken(xmlParserP, enc, s, *nextP);
         break;
     case XML_TOK_PI:
         if (!reportProcessingInstruction(xmlParserP, enc, s, *nextP))
@@ -2864,23 +2870,13 @@ doContent(XML_Parser       const xmlParserP,
           enum XML_Error * const errorCodeP,
           const char **    const errorP) {
 
-    Parser * const parser = (Parser *) xmlParserP;
+    struct EventPtr const evPtr = getEventPtr(xmlParserP, enc);
 
-    const char **eventPP;
-    const char **eventEndPP;
     const char * s;
     bool done;
 
-    if (enc == parser->m_encoding) {
-        eventPP = &eventPtr;
-        eventEndPP = &eventEndPtr;
-    } else {
-        eventPP = &(openInternalEntities->internalEventPtr);
-        eventEndPP = &(openInternalEntities->internalEventEndPtr);
-    }
-
     s = startArg;
-    *eventPP = s;
+    *evPtr.startP = s;
     done = false;
     *errorCodeP = XML_ERROR_NONE;
     *errorP = NULL;
@@ -2895,10 +2891,10 @@ doContent(XML_Parser       const xmlParserP,
            PREFIX(contentTok)() in xmltok/xmltok_impl.c
         */
         tok = XmlContentTok(enc, s, end, &next);
-        *eventEndPP = next;
+        *evPtr.endP = next;
 
         processContentToken(xmlParserP, tok, enc, s, end, &next, nextPtr,
-                            startTagLevel, eventPP, eventEndPP, &done,
+                            startTagLevel, &done,
                             errorCodeP, &error);
 
         if (*errorCodeP != XML_ERROR_NONE) {
@@ -2915,7 +2911,7 @@ doContent(XML_Parser       const xmlParserP,
 
             xmlrpc_strfree(xmlSample);
         }
-        *eventPP = s = next;
+        *evPtr.startP = s = next;
     }
 }
 
@@ -3093,26 +3089,18 @@ doIgnoreSection(XML_Parser       const xmlParserP,
   We set *startPtr to non-null is the section is closed, and to null if
   the section is not yet closed.
 -----------------------------------------------------------------------------*/
-    Parser * const parser = (Parser *) xmlParserP;
+    Parser * const parser = xmlParserP;
+    struct EventPtr const evPtr = getEventPtr(xmlParserP, enc);
     const char * const s = *startPtr;
 
     enum XML_Error retval;
     const char * next;
     int tok;
-    const char ** eventPP;
-    const char ** eventEndPP;
 
-    if (enc == parser->m_encoding) {
-        eventPP = &eventPtr;
-        eventEndPP = &eventEndPtr;
-    } else {
-        eventPP = &(openInternalEntities->internalEventPtr);
-        eventEndPP = &(openInternalEntities->internalEventEndPtr);
-    }
-    *eventPP = s;
+    *evPtr.startP = s;
     *startPtr = '\0';
     tok = XmlIgnoreSectionTok(enc, s, end, &next);
-    *eventEndPP = next;
+    *evPtr.endP = next;
 
     switch (tok) {
     case XML_TOK_IGNORE_SECT:
@@ -3122,7 +3110,7 @@ doIgnoreSection(XML_Parser       const xmlParserP,
         retval = XML_ERROR_NONE;
         break;
     case XML_TOK_INVALID:
-        *eventPP = next;
+        *evPtr.startP = next;
         retval = XML_ERROR_INVALID_TOKEN;
         break;
     case XML_TOK_PARTIAL_CHAR:
@@ -3204,7 +3192,8 @@ doProlog(XML_Parser       const xmlParserP,
          enum XML_Error * const errorCodeP,
          const char **    const errorP) {
     
-  Parser * const parser = (Parser *) xmlParserP;
+  Parser * const parser = xmlParserP;
+  struct EventPtr const evPtr = getEventPtr(xmlParserP, encArg);
 
   int tok;
   const char * next;
@@ -3213,9 +3202,6 @@ doProlog(XML_Parser       const xmlParserP,
 
   static const XML_Char externalSubsetName[] = { '#' , '\0' };
 
-  const char **eventPP;
-  const char **eventEndPP;
-
   *errorP = NULL;
 
   tok = tokArg;
@@ -3223,18 +3209,10 @@ doProlog(XML_Parser       const xmlParserP,
   enc = encArg;
   s = startArg;
 
-  if (enc == parser->m_encoding) {
-    eventPP = &eventPtr;
-    eventEndPP = &eventEndPtr;
-  }
-  else {
-    eventPP = &(openInternalEntities->internalEventPtr);
-    eventEndPP = &(openInternalEntities->internalEventEndPtr);
-  }
   for (;;) {
     int role;
-    *eventPP = s;
-    *eventEndPP = next;
+    *evPtr.startP = s;
+    *evPtr.endP = next;
     if (tok <= 0) {
       if (nextPtr != 0 && tok != XML_TOK_INVALID) {
         *nextPtr = s;
@@ -3243,7 +3221,7 @@ doProlog(XML_Parser       const xmlParserP,
       }
       switch (tok) {
       case XML_TOK_INVALID:
-        *eventPP = next;
+        *evPtr.startP = next;
         *errorCodeP = XML_ERROR_INVALID_TOKEN;
         return;
       case XML_TOK_PARTIAL:
@@ -3315,7 +3293,7 @@ doProlog(XML_Parser       const xmlParserP,
       }
       /* fall through */
     case XML_ROLE_ENTITY_PUBLIC_ID:
-      if (!XmlIsPublicId(enc, s, next, eventPP)) {
+      if (!XmlIsPublicId(enc, s, next, evPtr.startP)) {
         *errorCodeP = XML_ERROR_SYNTAX;
         return;
       }
@@ -3451,7 +3429,7 @@ doProlog(XML_Parser       const xmlParserP,
               /* Check it's not a parameter entity */
               && ((ENTITY *)lookup(&dtd.generalEntities, declEntity->name, 0)
                   == declEntity)) {
-            *eventEndPP = s;
+            *evPtr.endP = s;
             internalParsedEntityDeclHandler(handlerArg,
                                             declEntity->name,
                                             declEntity->textPtr,
@@ -3507,7 +3485,7 @@ doProlog(XML_Parser       const xmlParserP,
         }
         poolFinish(&dtd.pool);
         if (unparsedEntityDeclHandler) {
-          *eventEndPP = s;
+          *evPtr.endP = s;
           unparsedEntityDeclHandler(handlerArg,
                                     declEntity->name,
                                     declEntity->base,
@@ -3520,7 +3498,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_EXTERNAL_GENERAL_ENTITY_NO_NOTATION:
       if (declEntity && externalParsedEntityDeclHandler) {
-        *eventEndPP = s;
+        *evPtr.endP = s;
         externalParsedEntityDeclHandler(handlerArg,
                                         declEntity->name,
                                         declEntity->base,
@@ -3594,7 +3572,7 @@ doProlog(XML_Parser       const xmlParserP,
       }
       break;
     case XML_ROLE_NOTATION_PUBLIC_ID:
-      if (!XmlIsPublicId(enc, s, next, eventPP)) {
+      if (!XmlIsPublicId(enc, s, next, evPtr.startP)) {
         *errorCodeP = XML_ERROR_SYNTAX;
         return;
       }
@@ -3622,7 +3600,7 @@ doProlog(XML_Parser       const xmlParserP,
           *errorCodeP = XML_ERROR_NO_MEMORY;
           return;
         }
-        *eventEndPP = s;
+        *evPtr.endP = s;
         notationDeclHandler(handlerArg,
                             declNotationName,
                             curBase,
@@ -3633,7 +3611,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_NOTATION_NO_SYSTEM_ID:
       if (declNotationPublicId && notationDeclHandler) {
-        *eventEndPP = s;
+        *evPtr.endP = s;
         notationDeclHandler(handlerArg,
                             declNotationName,
                             curBase,

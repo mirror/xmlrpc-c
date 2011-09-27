@@ -36,10 +36,7 @@ xmlrpc_client_cleanup(void);
 
 /*=========================================================================
 **  xmlrpc_client_call
-**=========================================================================
-**  A synchronous XML-RPC client. Do not attempt to call any of these
-**  functions from inside an asynchronous callback!
-*/
+**=======================================================================*/
 
 XMLRPC_DLLEXPORT
 xmlrpc_value * 
@@ -88,51 +85,38 @@ xmlrpc_client_transport_call(
 **  An asynchronous XML-RPC client.
 */
 
-/* Make an asynchronous XML-RPC call. We make internal copies of all
-** arguments except user_data, so you can deallocate them safely as soon
-** as you return. Errors will be passed to the callback. You will need
-** to run the event loop somehow; see below.
-** WARNING: If an error occurs while building the argument, the
-** response handler will be called with a NULL param_array. */
 XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_call_asynch(const char * const server_url,
                           const char * const method_name,
-                          xmlrpc_response_handler callback,
+                          xmlrpc_response_handler responseHandler,
                           void *       const user_data,
                           const char * const format,
                           ...);
 
-/* As above, but use an xmlrpc_server_info object. The server object can be
-** safely destroyed as soon as this function returns. */
 XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_call_server_asynch(xmlrpc_server_info * const server,
                                  const char *         const method_name,
-                                 xmlrpc_response_handler callback,
+                                 xmlrpc_response_handler responseHandler,
                                  void *               const user_data,
                                  const char *         const format,
                                  ...);
 
-/* As above, but the parameter list is supplied as an xmlrpc_value
-** containing an array.
-*/
 XMLRPC_DLLEXPORT
 void
 xmlrpc_client_call_asynch_params(const char *   const server_url,
                                  const char *   const method_name,
-                                 xmlrpc_response_handler callback,
+                                 xmlrpc_response_handler responseHandler,
                                  void *         const user_data,
                                  xmlrpc_value * const paramArrayP);
     
-/* As above, but use an xmlrpc_server_info object. The server object can be
-** safely destroyed as soon as this function returns. */
 XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_call_server_asynch_params(
     xmlrpc_server_info * const server,
     const char *         const method_name,
-    xmlrpc_response_handler callback,
+    xmlrpc_response_handler responseHandler,
     void *               const user_data,
     xmlrpc_value *       const paramArrayP);
     
