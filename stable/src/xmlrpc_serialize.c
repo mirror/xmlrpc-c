@@ -370,7 +370,8 @@ serializeStruct(xmlrpc_env *       const envP,
                                           memberKeyP, memberValueP, dialect);
                 }
             }
-            addString(envP, outputP, "</struct>");
+            if (!envP->fault_occurred)
+                addString(envP, outputP, "</struct>");
         }
     }
 }
