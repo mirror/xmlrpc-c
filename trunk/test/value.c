@@ -194,15 +194,28 @@ test_value_string_no_null(void) {
 
     TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_STRING), "STRING"));
 
-    v = xmlrpc_string_new(&env, "foo");
-    TEST_NO_FAULT(&env);
-    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
-    xmlrpc_read_string(&env, v, &str);
-    TEST_NO_FAULT(&env);
-    TEST(streq(str, "foo"));
-    xmlrpc_DECREF(v);
-    strfree(str);
-
+    {
+        const char * const simpleAsciiString = "foo";
+        v = xmlrpc_string_new(&env, simpleAsciiString);
+        TEST_NO_FAULT(&env);
+        TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
+        xmlrpc_read_string(&env, v, &str);
+        TEST_NO_FAULT(&env);
+        TEST(streq(str, simpleAsciiString));
+        xmlrpc_DECREF(v);
+        strfree(str);
+    }        
+    {
+        const char * const utf8String = "KOŚĆ";
+        v = xmlrpc_string_new(&env, utf8String);
+        TEST_NO_FAULT(&env);
+        TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
+        xmlrpc_read_string(&env, v, &str);
+        TEST_NO_FAULT(&env);
+        TEST(streq(str, utf8String));
+        xmlrpc_DECREF(v);
+        strfree(str);
+    }
     v = xmlrpc_string_new_f(&env, "String %s, number %d", "xyz", 7);
     TEST_NO_FAULT(&env);
     TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_STRING);
