@@ -275,7 +275,9 @@ decodeUtf8(xmlrpc_env * const envP,
         } else {
             /* Look up the length of this UTF-8 sequence. */
             size_t const length = utf8SeqLength[(unsigned char) init];
-
+                /* Special value 0 means no length could be determined because
+                   it is not a valid initial byte for a UTF-8 sequence.
+                */
             if (length == 0)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INVALID_UTF8_ERROR,
