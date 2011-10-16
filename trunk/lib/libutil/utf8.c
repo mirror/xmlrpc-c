@@ -281,7 +281,8 @@ decodeUtf8(xmlrpc_env * const envP,
             if (length == 0)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INVALID_UTF8_ERROR,
-                    "Unrecognized UTF-8 initial byte value 0x%02x", init);
+                    "Unrecognized UTF-8 initial byte value 0x%02x",
+                    (unsigned char)init);
             else {
                 /* Make sure we have enough bytes to convert. */
                 if (utf8Cursor + length > utf8_len) {
