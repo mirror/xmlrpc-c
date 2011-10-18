@@ -137,11 +137,29 @@ validateContinuation(xmlrpc_env * const envP,
 static void
 validateUtf16(xmlrpc_env * const envP,
               wchar_t      const wc) {
+/*----------------------------------------------------------------------------
+   Validate that the string is a legal UTF16 encoding of a Unicode
+   character.
 
+   Actually, we validate that it is UCS-2.  The set of UCS-2 encodings is a
+   subset of the set of UTF16 encodings.  In particular, it is the set of
+   UTF16 encodings that are 16 bits.  UCS-2 is a fixed-length encoding, with
+   16 bits per character, whereas UTF16 is variable length, with 1 or more 16
+   bit units per character.
+
+   The name of the subroutine reflects the fact that in concept, we _should_
+   accept any UTF16, but we haven't taken the time yet to figure out how to do
+   that (in the big picture, not just this subroutine).  The user will notice
+   only if he uses those really arcane 3.1% of the Unicode characters that
+   take more than 16 bits to represent in UTF16.
+-----------------------------------------------------------------------------*/
     if (wc > UCS2_MAX_LEGAL_CHARACTER)
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INVALID_UTF8_ERROR,
-            "UCS-2 characters > U+FFFD are illegal.  String contains 0x%04x",
+            "Xmlrpc-c is not capable of handling UTF16 character encodings "
+            "longer than 16 bits, which means you can't have a code point "
+            "> U+FFFD.  "
+            "This string contains 0x%04x",
             (unsigned)wc);
     else if (UTF16_FIRST_SURROGATE <= wc && wc <= UTF16_LAST_SURROGATE)
         xmlrpc_env_set_fault_formatted(
