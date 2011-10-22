@@ -841,6 +841,13 @@ getXportParms(xmlrpc_env *                          const envP,
     else
         curlSetupP->gssapiDelegation = !!curlXportParmsP->gssapi_delegation;
 
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(referer))
+        curlSetupP->referer = NULL;
+    else if (curlXportParmsP->referer == NULL)
+        curlSetupP->referer = NULL;
+    else
+        curlSetupP->referer = strdup(curlXportParmsP->referer);
+
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
 }
 
@@ -883,6 +890,8 @@ freeXportParms(const struct xmlrpc_client_transport * const transportP) {
         xmlrpc_strfree(curlSetupP->proxy);
     if (curlSetupP->proxyUserPwd)
         xmlrpc_strfree(curlSetupP->proxyUserPwd);
+    if (curlSetupP->referer)
+        xmlrpc_strfree(curlSetupP->referer);
 }
 
 

@@ -272,6 +272,7 @@ public:
         constrOpt & no_ssl_verifyhost (bool         const& arg);
         constrOpt & dont_advertise    (bool         const& arg);
         constrOpt & user_agent        (std::string  const& arg);
+        constrOpt & referer           (std::string  const& arg);
         constrOpt & ssl_cert          (std::string  const& arg);
         constrOpt & sslcerttype       (std::string  const& arg);
         constrOpt & sslcertpasswd     (std::string  const& arg);

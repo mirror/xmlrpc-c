@@ -109,6 +109,7 @@ struct xmlrpc_curl_xportparms {
         */
     const char * proxy_userpwd;
     xmlrpc_bool  gssapi_delegation;
+    const char * referer;
 };
 
 

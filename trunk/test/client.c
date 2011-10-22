@@ -136,8 +136,9 @@ testCreateCurlParms(void) {
     curlTransportParms1.proxy_auth        = XMLRPC_HTTPAUTH_NONE;
     curlTransportParms1.proxy_userpwd     = "mypassword";
     curlTransportParms1.gssapi_delegation = 1;
+    curlTransportParms1.referer           = "myreferer";
 
-    clientParms1.transportparm_size = XMLRPC_CXPSIZE(gssapi_delegation);
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(referer);
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
                          &clientParms1, XMLRPC_CPSIZE(transportparm_size),
                          &clientP);
