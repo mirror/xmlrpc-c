@@ -352,7 +352,7 @@ buildBool(xmlrpc_env *    const envP,
 
     if (streq(valueString, "t") || streq(valueString, "true"))
         *paramPP = xmlrpc_bool_new(envP, true);
-    else if (streq(valueString, "f") == 0 || streq(valueString, "false"))
+    else if (streq(valueString, "f") || streq(valueString, "false"))
         *paramPP = xmlrpc_bool_new(envP, false);
     else
         setError(envP, "Boolean argument has unrecognized value '%s'.  "
