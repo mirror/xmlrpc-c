@@ -46,6 +46,7 @@ struct curlSetup {
 
            NULL means we have no preference.
         */
+    const char * referer;
     bool sslVerifyPeer;
         /* In an SSL connection, we should authenticate the server's SSL
            certificate -- refuse to talk to him if it isn't authentic.

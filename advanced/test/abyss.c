@@ -87,6 +87,18 @@ chanSwitchCreate(uint16_t       const portNumber,
 
 
 static void
+chanSwitchCreateIpV6(uint16_t       const portNumber,
+                     TChanSwitch ** const chanSwitchPP,
+                     const char **  const errorP) {
+
+#ifndef WIN32
+    ChanSwitchUnixCreateIpV6Port(portNumber, chanSwitchPP, errorP);
+#endif
+}    
+
+
+
+static void
 channelCreateFd(int const fd,
                 TChannel **   const channelPP,
                 const char ** const errorP) {
@@ -157,7 +169,13 @@ testChanSwitch(void) {
     ServerFree(&server);
 
     ChanSwitchDestroy(chanSwitchP);
-    
+
+    chanSwitchCreateIpV6(8080, &chanSwitchP, &error);
+     
+    TEST_NULL_STRING(error);
+
+    ChanSwitchDestroy(chanSwitchP);
+
     testChanSwitchOsSocket();
 }
 

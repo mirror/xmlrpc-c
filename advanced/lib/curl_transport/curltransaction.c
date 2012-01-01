@@ -615,6 +615,9 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->networkInterface)
             curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE,
                              curlSetupP->networkInterface);
+        if (curlSetupP->referer)
+            curl_easy_setopt(curlSessionP, CURLOPT_REFERER,
+                             curlSetupP->referer);
         if (curlSetupP->sslCert)
             curl_easy_setopt(curlSessionP, CURLOPT_SSLCERT,
                              curlSetupP->sslCert);

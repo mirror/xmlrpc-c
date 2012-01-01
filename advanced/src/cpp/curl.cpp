@@ -133,10 +133,11 @@ struct clientXmlTransport_curl::constrOpt_impl {
 
     struct {
         std::string  network_interface;
-        bool         no_ssl_verifypeer;
-        bool         no_ssl_verifyhost;
         bool         dont_advertise;
         std::string  user_agent;
+        std::string  referer;
+        bool         no_ssl_verifypeer;
+        bool         no_ssl_verifyhost;
         std::string  ssl_cert;
         std::string  sslcerttype;
         std::string  sslcertpasswd;
@@ -161,10 +162,11 @@ struct clientXmlTransport_curl::constrOpt_impl {
     } value;
     struct {
         bool network_interface;
-        bool no_ssl_verifypeer;
-        bool no_ssl_verifyhost;
         bool dont_advertise;
         bool user_agent;
+        bool referer;
+        bool no_ssl_verifypeer;
+        bool no_ssl_verifyhost;
         bool ssl_cert;
         bool sslcerttype;
         bool sslcertpasswd;
@@ -192,10 +194,11 @@ struct clientXmlTransport_curl::constrOpt_impl {
 clientXmlTransport_curl::constrOpt_impl::constrOpt_impl() {
 
     present.network_interface = false;
-    present.no_ssl_verifypeer = false;
-    present.no_ssl_verifyhost = false;
     present.dont_advertise    = false;
     present.user_agent        = false;
+    present.referer           = false;
+    present.no_ssl_verifypeer = false;
+    present.no_ssl_verifyhost = false;
     present.ssl_cert          = false;
     present.sslcerttype       = false;
     present.sslcertpasswd     = false;
@@ -230,10 +233,11 @@ clientXmlTransport_curl::constrOpt::OPTION_NAME(TYPE const& arg) { \
 }
 
 DEFINE_OPTION_SETTER(network_interface, string);
+DEFINE_OPTION_SETTER(dont_advertise, bool);
+DEFINE_OPTION_SETTER(referer, string);
+DEFINE_OPTION_SETTER(user_agent, string);
 DEFINE_OPTION_SETTER(no_ssl_verifypeer, bool);
 DEFINE_OPTION_SETTER(no_ssl_verifyhost, bool);
-DEFINE_OPTION_SETTER(dont_advertise, bool);
-DEFINE_OPTION_SETTER(user_agent, string);
 DEFINE_OPTION_SETTER(ssl_cert, string);
 DEFINE_OPTION_SETTER(sslcerttype, string);
 DEFINE_OPTION_SETTER(sslcertpasswd, string);
@@ -289,14 +293,16 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
 
     transportParms.network_interface = opt.present.network_interface ?
         opt.value.network_interface.c_str() : NULL;
-    transportParms.no_ssl_verifypeer = opt.present.no_ssl_verifypeer ? 
-        opt.value.no_ssl_verifypeer         : false;
-    transportParms.no_ssl_verifyhost = opt.present.no_ssl_verifyhost ? 
-        opt.value.no_ssl_verifyhost         : false;
+    transportParms.referer           = opt.present.referer ? 
+        opt.value.referer.c_str()     : NULL;
     transportParms.dont_advertise    = opt.present.dont_advertise ?
         opt.value.dont_advertise            : false;
     transportParms.user_agent        = opt.present.user_agent ?
         opt.value.user_agent.c_str()        : NULL;
+    transportParms.no_ssl_verifypeer = opt.present.no_ssl_verifypeer ? 
+        opt.value.no_ssl_verifypeer         : false;
+    transportParms.no_ssl_verifyhost = opt.present.no_ssl_verifyhost ? 
+        opt.value.no_ssl_verifyhost         : false;
     transportParms.ssl_cert          = opt.present.ssl_cert ?
         opt.value.ssl_cert.c_str()          : NULL;
     transportParms.sslcerttype       = opt.present.sslcerttype ?

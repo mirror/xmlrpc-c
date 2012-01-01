@@ -665,11 +665,12 @@ copySimple(xmlrpc_env *       const envP,
 
 enum crTreatment { CR_IS_LINEDELIM, CR_IS_CHAR };
 
-static xmlrpc_value *
+static void
 stringNew(xmlrpc_env *     const envP, 
           size_t           const length,
           const char *     const value,
-          enum crTreatment const crTreatment) {
+          enum crTreatment const crTreatment,
+          xmlrpc_value **  const valPP) {
 
     xmlrpc_value * valP;
 
@@ -692,9 +693,10 @@ stringNew(xmlrpc_env *     const envP,
 
             if (envP->fault_occurred)
                 free(valP);
+            else
+                *valPP = valP;
         }
     }
-    return valP;
 }
 
 
@@ -704,7 +706,9 @@ xmlrpc_string_new_lp(xmlrpc_env * const envP,
                      size_t       const length,
                      const char * const value) {
 
-    return stringNew(envP, length, value, CR_IS_LINEDELIM);
+    xmlrpc_value * retval;
+    stringNew(envP, length, value, CR_IS_LINEDELIM, &retval);
+    return retval;
 }
 
 
@@ -714,7 +718,9 @@ xmlrpc_string_new_lp_cr(xmlrpc_env * const envP,
                         size_t       const length,
                         const char * const value) {
 
-    return stringNew(envP, length, value, CR_IS_CHAR);
+    xmlrpc_value * retval;
+    stringNew(envP, length, value, CR_IS_CHAR, &retval);
+    return retval;
 }
 
 
@@ -723,7 +729,9 @@ xmlrpc_value *
 xmlrpc_string_new(xmlrpc_env * const envP,
                   const char * const value) {
     
-    return stringNew(envP, strlen(value), value, CR_IS_LINEDELIM);
+    xmlrpc_value * retval;
+    stringNew(envP, strlen(value), value, CR_IS_LINEDELIM, &retval);
+    return retval;
 }
 
 
@@ -732,7 +740,9 @@ xmlrpc_value *
 xmlrpc_string_new_cr(xmlrpc_env * const envP,
                      const char * const value) {
 
-    return stringNew(envP, strlen(value), value, CR_IS_CHAR);
+    xmlrpc_value * retval;
+    stringNew(envP, strlen(value), value, CR_IS_CHAR, &retval);
+    return retval;
 }
 
 
@@ -784,16 +794,14 @@ xmlrpc_string_new_f(xmlrpc_env * const envP,
 
 #if HAVE_UNICODE_WCHAR
 
-static xmlrpc_value *
+static void
 stringWNew(xmlrpc_env *     const envP, 
            size_t           const length,
            const wchar_t *  const value,
-           enum crTreatment const crTreatment) {
+           enum crTreatment const crTreatment,
+           xmlrpc_value **  const valPP) {
 
-    xmlrpc_value * valP;
     xmlrpc_mem_block * utf8P;
-
-    valP = NULL;  /* defeat compiler warning */
 
     utf8P = xmlrpc_wcs_to_utf8(envP, value, length);
     if (!envP->fault_occurred) {
@@ -801,12 +809,11 @@ stringWNew(xmlrpc_env *     const envP,
         size_t const utf8_len   = XMLRPC_MEMBLOCK_SIZE(char, utf8P);
         
         if (!envP->fault_occurred) {
-            valP = stringNew(envP, utf8_len, utf8_value, crTreatment);
+            stringNew(envP, utf8_len, utf8_value, crTreatment, valPP);
 
             XMLRPC_MEMBLOCK_FREE(char, utf8P);
         }
     }
-    return valP;
 }
 
 
@@ -816,7 +823,9 @@ xmlrpc_string_w_new_lp(xmlrpc_env *    const envP,
                        size_t          const length,
                        const wchar_t * const value) {
 
-    return stringWNew(envP, length, value, CR_IS_LINEDELIM);
+    xmlrpc_value * valP;
+    stringWNew(envP, length, value, CR_IS_LINEDELIM, &valP);
+    return valP;
 }
 
 
@@ -827,7 +836,9 @@ xmlrpc_string_w_new_lp_cr(xmlrpc_env *    const envP,
                           size_t          const length,
                           const wchar_t * const value) {
 
-    return stringWNew(envP, length, value, CR_IS_CHAR);
+    xmlrpc_value * valP;
+    stringWNew(envP, length, value, CR_IS_CHAR, &valP);
+    return valP;
 }
 
 
@@ -837,7 +848,9 @@ xmlrpc_value *
 xmlrpc_string_w_new(xmlrpc_env *    const envP,
                     const wchar_t * const value) {
 
-    return stringWNew(envP, wcslen(value), value, CR_IS_LINEDELIM);
+    xmlrpc_value * valP;
+    stringWNew(envP, wcslen(value), value, CR_IS_LINEDELIM, &valP);
+    return valP;
 }
 
 
@@ -846,7 +859,9 @@ xmlrpc_value *
 xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
                        const wchar_t * const value) {
 
-    return stringWNew(envP, wcslen(value), value, CR_IS_CHAR);
+    xmlrpc_value * valP;
+    stringWNew(envP, wcslen(value), value, CR_IS_CHAR, &valP);
+    return valP;
 }
 
 #endif   /* HAVE_UNICODE_WCHAR */

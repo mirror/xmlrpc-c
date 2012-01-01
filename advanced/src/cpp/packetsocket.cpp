@@ -766,7 +766,22 @@ packetSocket_impl::readWait(volatile const int * const interruptP,
                             bool *               const eofP,
                             bool *               const gotPacketP,
                             packetPtr *          const packetPP) {
+/*----------------------------------------------------------------------------
+   Read a packet from the packet socket.  It may be already in the buffer.
+   If not, wait as long as it takes for one to arrive.
 
+   But stop waiting and return without a packet when *interruptP is true (but
+   if we're in a system call, which we usually are, Caller will have to ensure
+   that call gets interrupted, e.g. by receiving a signal, so that we notice
+   *interruptP has changed).
+
+   Also return without a packet if we reach EOF on the packet socket
+   (i.e. the other side disconnected).
+
+   Return *gotPacketP true iff we return a packet.
+
+   Return *eofP true iff we hit EOF.
+-----------------------------------------------------------------------------*/
     bool gotPacket;
     bool eof;
 

@@ -331,10 +331,11 @@ public:
         clientXmlTransport_curl transport4(
             clientXmlTransport_curl::constrOpt()
             .network_interface("eth0")
-            .no_ssl_verifypeer(true)
-            .no_ssl_verifyhost(true)
             .dont_advertise(true)
             .user_agent("my user agent")
+            .referer("my referer")
+            .no_ssl_verifypeer(true)
+            .no_ssl_verifyhost(true)
             .ssl_cert("/etc/sslcert")
             .sslcerttype("PEM")
             .sslcertpasswd("mypass")

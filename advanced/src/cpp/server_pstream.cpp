@@ -267,9 +267,9 @@ callInfo_serverPstream::callInfo_serverPstream(
     struct sockaddr const clientAddr,
     socklen_t const clientAddrSize) :
 
-    serverP(serverP),
-    clientAddr(clientAddr),
-    clientAddrSize(clientAddrSize)
+    serverP        (serverP),
+    clientAddr     (clientAddr),
+    clientAddrSize (clientAddrSize)
 
 {}
 
