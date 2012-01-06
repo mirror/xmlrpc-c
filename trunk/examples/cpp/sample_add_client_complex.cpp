@@ -35,7 +35,7 @@ main(int argc, char **) {
     try {
         xmlrpc_c::clientXmlTransport_curl myTransport(
             xmlrpc_c::clientXmlTransport_curl::constrOpt()
-            .timeout(10)
+            .timeout(10000)  // milliseconds
             .user_agent("sample_add/1.0"));
 
         xmlrpc_c::client_xml myClient(&myTransport);
