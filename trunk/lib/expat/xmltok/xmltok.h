@@ -115,11 +115,16 @@ typedef struct {
 struct encoding;
 typedef struct encoding ENCODING;
 
-typedef void Utf8Converter(const ENCODING * encP,
-                           const char **    fromP,
-                           const char *     fromLim,
-                           char **          toP,
-                           const char *     toLim);
+/* It's pretty silly to have the 'const' on the argument names below, but MSVC
+   thinks the definitions of Utf8Converter functions that do have that
+   qualifier on the argument variables, don't match this declaration if we
+   don't.
+*/
+typedef void Utf8Converter(const ENCODING * const encP,
+                           const char **    const fromP,
+                           const char *     const fromLim,
+                           char **          const toP,
+                           const char *     const toLim);
 /*----------------------------------------------------------------------------
    A Utf8Converter is an encoder method that converts from the encoder's
    code to UTF-8:
