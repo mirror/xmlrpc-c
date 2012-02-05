@@ -13,9 +13,21 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
                      const char **  const errorP);
 
 void
+ChanSwitchUnixCreate2(struct in_addr const ipAddr,
+                      unsigned short const portNumber,
+                      TChanSwitch ** const chanSwitchPP,
+                      const char **  const errorP);
+
+void
 ChanSwitchUnixCreateIpV6Port(unsigned short const portNumber,
                              TChanSwitch ** const chanSwitchPP,
                              const char **  const errorP);
+
+void
+ChanSwitchUnixCreateIpV6Port2(struct in6_addr const ipAddr,
+                              unsigned short  const portNumber,
+                              TChanSwitch **  const chanSwitchPP,
+                              const char **   const errorP);
 
 void
 ChanSwitchUnixCreateFd(int            const fd,
