@@ -36,6 +36,7 @@
 #include "chanswitch.h"
 #include "channel.h"
 #include "socket.h"
+#include "netinet/in.h"
 #include "xmlrpc-c/abyss.h"
 
 #include "socket_unix.h"
@@ -403,9 +404,9 @@ ChannelUnixGetPeerName(TChannel *         const channelP,
 
 
 static void
-formatPeerInfoInet(struct sockaddr_in * const sockaddrInP,
-                   socklen_t            const sockaddrLen,
-                   const char **        const peerStringP) {
+formatPeerInfoInet(const struct sockaddr_in * const sockaddrInP,
+                   socklen_t                  const sockaddrLen,
+                   const char **              const peerStringP) {
 
     if (sockaddrLen < sizeof(*sockaddrInP))
         xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
@@ -422,27 +423,39 @@ formatPeerInfoInet(struct sockaddr_in * const sockaddrInP,
 
 
 static void
-formatPeerInfoInet6(struct sockaddr_in6 * const sockaddrIn6P,
-                    socklen_t             const sockaddrLen,
-                    const char **         const peerStringP) {
+formatPeerInfoInet6(const struct sockaddr_in6 * const sockaddrIn6P,
+                    socklen_t                   const sockaddrLen,
+                    const char **               const peerStringP) {
 
     if (sockaddrLen < sizeof(*sockaddrIn6P))
         xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
                         "the wrong size");
     else {
-        unsigned short * const ipaddr = (unsigned short *)
-            &sockaddrIn6P->sin6_addr.s6_addr16;
-        xmlrpc_asprintf(peerStringP,
-                        "[%x:%x:%x:%x:%x:%x:%x:%x]:%hu",
-                        htons(ipaddr[0]),
-                        htons(ipaddr[1]),
-                        htons(ipaddr[2]),
-                        htons(ipaddr[3]),
-                        htons(ipaddr[4]),
-                        htons(ipaddr[5]),
-                        htons(ipaddr[6]),
-                        htons(ipaddr[7]),
-                        sockaddrIn6P->sin6_port);
+        /* Gcc on Debian 6 gives a bewildering error message about aliasing
+           if we try to dereference sockaddrIn6P in various ways, regardless
+           of casts to void * or anything else.  So we copy the data structure
+           as raw memory contents and then access the copy.  12.02.05.
+        */
+        struct sockaddr_in6 sockaddr;
+
+        MEMSCPY(&sockaddr, sockaddrIn6P);
+
+        {
+            const unsigned short * const ipaddr = (unsigned short *)
+                sockaddr.sin6_addr.s6_addr16;
+
+            xmlrpc_asprintf(peerStringP,
+                            "[%x:%x:%x:%x:%x:%x:%x:%x]:%hu",
+                            htons(ipaddr[0]),
+                            htons(ipaddr[1]),
+                            htons(ipaddr[2]),
+                            htons(ipaddr[3]),
+                            htons(ipaddr[4]),
+                            htons(ipaddr[5]),
+                            htons(ipaddr[6]),
+                            htons(ipaddr[7]),
+                            sockaddr.sin6_port);
+        }
     }
 }
 
@@ -470,11 +483,13 @@ channelFormatPeerInfo(TChannel *    const channelP,
     else {
         switch (sockaddr.sa_family) {
         case AF_INET:
-            formatPeerInfoInet((struct sockaddr_in *) &sockaddr, sockaddrLen,
+            formatPeerInfoInet((const struct sockaddr_in *) &sockaddr,
+                               sockaddrLen,
                                peerStringP);
             break;
         case AF_INET6:
-            formatPeerInfoInet6((struct sockaddr_in6 *) &sockaddr, sockaddrLen,
+            formatPeerInfoInet6((const struct sockaddr_in6 *) &sockaddr,
+                                sockaddrLen,
                                 peerStringP);
             break;
         default:
@@ -893,10 +908,10 @@ setSocketOptions(int           const fd,
 
 
 static void
-bindSocketToPortInet(int              const fd,
-                     struct in_addr * const addrP,
-                     uint16_t         const portNumber,
-                     const char **    const errorP) {
+bindSocketToPortInet(int                    const fd,
+                     const struct in_addr * const addrP,
+                     uint16_t               const portNumber,
+                     const char **          const errorP) {
     
     struct sockaddr_in name;
     int rc;
@@ -922,10 +937,10 @@ bindSocketToPortInet(int              const fd,
 
 
 static void
-bindSocketToPortInet6(int               const fd,
-                      struct in6_addr * const addrP,
-                      uint16_t          const portNumber,
-                      const char **     const errorP) {
+bindSocketToPortInet6(int                     const fd,
+                      const struct in6_addr * const addrP,
+                      uint16_t                const portNumber,
+                      const char **           const errorP) {
 
     struct sockaddr_in6 name;
     int rc;
@@ -950,25 +965,20 @@ bindSocketToPortInet6(int               const fd,
 
 
 
-typedef enum {IP4, IP6} IpVersion;
-
-
-
 static void
-switchCreateIpPort(IpVersion      const ipVersion,
-                   unsigned short const portNumber,
-                   TChanSwitch ** const chanSwitchPP,
-                   const char **  const errorP) {
+switchCreateIpV4Port(const struct in_addr  * const ipAddrP,
+                     unsigned short          const portNumber,
+                     TChanSwitch **          const chanSwitchPP,
+                     const char **           const errorP) {
 /*----------------------------------------------------------------------------
-   Create a POSIX-socket-based channel switch.
+   Create a POSIX-socket-based channel switch for an IPv4 endpoint.
 
-   Use an IPv4 or IPv6 socket, according to 'ipVersion'.
-
-   Set the socket's local address so that a subsequent "listen" will listen
-   on all IP addresses, port number 'portNumber'.
+   Set the socket's local address so that a subsequent "listen" will listen on
+   the interface for IP address *ipAddrP, port number 'portNumber'.  If
+   ipAddrP is NULL, listen on ALL interfaces.
 -----------------------------------------------------------------------------*/
     int rc;
-    rc = socket(ipVersion == IP4 ? PF_INET : PF_INET6, SOCK_STREAM, 0);
+    rc = socket(PF_INET, SOCK_STREAM, 0);
     if (rc < 0)
         xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
                         errno, strerror(errno));
@@ -977,14 +987,40 @@ switchCreateIpPort(IpVersion      const ipVersion,
 
         setSocketOptions(socketFd, errorP);
         if (!*errorP) {
-            switch (ipVersion) {
-            case IP4:
-                bindSocketToPortInet(socketFd, NULL, portNumber, errorP);
-                break;
-            case IP6:
-                bindSocketToPortInet6(socketFd, NULL, portNumber, errorP);
-                break;
+            bindSocketToPortInet(socketFd, ipAddrP, portNumber, errorP);
+
+            if (!*errorP) {
+                bool const userSupplied = false;
+                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
             }
+        }
+        if (*errorP)
+            close(socketFd);
+    }
+}
+
+
+
+static void
+switchCreateIpV6Port(const struct in6_addr * const ipAddrP,
+                     unsigned short          const portNumber,
+                     TChanSwitch **          const chanSwitchPP,
+                     const char **           const errorP) {
+/*----------------------------------------------------------------------------
+  Same as switchCreateIpV4Port(), except for IPv6.
+-----------------------------------------------------------------------------*/
+    int rc;
+    rc = socket(PF_INET6, SOCK_STREAM, 0);
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else {
+        int const socketFd = rc;
+
+        setSocketOptions(socketFd, errorP);
+        if (!*errorP) {
+            bindSocketToPortInet6(socketFd, ipAddrP, portNumber, errorP);
+
             if (!*errorP) {
                 bool const userSupplied = false;
                 createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
@@ -1002,7 +1038,18 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
                      TChanSwitch ** const chanSwitchPP,
                      const char **  const errorP) {
 
-    switchCreateIpPort(IP4, portNumber, chanSwitchPP, errorP);
+    switchCreateIpV4Port(NULL, portNumber, chanSwitchPP, errorP);
+}
+
+
+
+void
+ChanSwitchUnixCreate2(struct in_addr const ipAddr,
+                      unsigned short const portNumber,
+                      TChanSwitch ** const chanSwitchPP,
+                      const char **  const errorP) {
+
+    switchCreateIpV4Port(&ipAddr, portNumber, chanSwitchPP, errorP);
 }
 
 
@@ -1012,7 +1059,18 @@ ChanSwitchUnixCreateIpV6Port(unsigned short const portNumber,
                              TChanSwitch ** const chanSwitchPP,
                              const char **  const errorP) {
 
-    switchCreateIpPort(IP6, portNumber, chanSwitchPP, errorP);
+    switchCreateIpV6Port(NULL, portNumber, chanSwitchPP, errorP);
+}
+
+
+
+void
+ChanSwitchUnixCreateIpV6Port2(struct in6_addr const ipAddr,
+                              unsigned short  const portNumber,
+                              TChanSwitch **  const chanSwitchPP,
+                              const char **   const errorP) {
+
+    switchCreateIpV6Port(&ipAddr, portNumber, chanSwitchPP, errorP);
 }
 
 
