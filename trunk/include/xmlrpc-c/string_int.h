@@ -123,16 +123,6 @@ by an MSVC extension:
   (snprintf(TARGET, sizeof(TARGET) , __VA_ARGS__)) 
 
 */
-/*------------------------------------------------------------------------*/
-/* Standard memory content functions with destination data structure      */
-/* size checking                                                          */
-/*------------------------------------------------------------------------*/
-#define MEMSSET(A,B) (memset(A, B, sizeof(*A)))
-#define MEMSCPY(A,B) (memcpy(A, B, sizeof(*A)))
-#define MEMSCMP(A,B) (memcmp(A, B, sizeof(*A)))
-#define MEMSEQ(A,B) (MEMSCMP(A,B) == 0)
-#define MEMSZERO(A) (MEMSSET(A, 0))
-
 #ifdef __cplusplus
 }
 #endif
