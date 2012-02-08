@@ -4,6 +4,7 @@
 
 #include "xmlrpc_config.h"
 
+#include "girstring.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/abyss.h"
@@ -85,6 +86,8 @@ static void
 testServerParms(void) {
     xmlrpc_server_abyss_parms parms;
 
+    struct sockaddr sockaddr;
+
     parms.config_file_name = NULL;
     parms.registryP = NULL;
     parms.port_number = 1000;
@@ -96,7 +99,64 @@ testServerParms(void) {
     parms.uri_path = "/RPC9";
     parms.chunk_response = TRUE;
     parms.allow_origin = "*";
+    parms.access_ctl_expires = TRUE;
+    parms.access_ctl_max_age = 5;
+    parms.sockaddr_p = &sockaddr;
+    parms.sockaddrlen = sizeof(sockaddr);
 };
+
+
+
+static void
+testObjectParm(void) {
+
+    xmlrpc_env env;
+
+    xmlrpc_server_abyss_parms parms;
+    xmlrpc_registry * registryP;
+    xmlrpc_server_abyss_t * serverP;
+
+    xmlrpc_env_init(&env);
+
+    xmlrpc_server_abyss_global_init(&env);
+    TEST_NO_FAULT(&env);
+
+    registryP = xmlrpc_registry_new(&env);
+    TEST_NO_FAULT(&env);
+
+    MEMSZERO(&parms);
+
+    parms.registryP = registryP;
+    
+    xmlrpc_server_abyss_create(&env, &parms, XMLRPC_APSIZE(sockaddrlen),
+                               &serverP);
+
+    TEST_NO_FAULT(&env);
+    TEST(serverP != NULL);
+
+    xmlrpc_server_abyss_destroy(serverP);
+    
+    xmlrpc_server_abyss_create(&env, &parms, XMLRPC_APSIZE(sockaddr_p),
+                               &serverP);
+
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);  /* sockaddr_p w/o sockaddrlen */
+
+    parms.port_number = 100000;
+
+    xmlrpc_server_abyss_create(&env, &parms, XMLRPC_APSIZE(sockaddrlen),
+                               &serverP);
+
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);  /* port number too large */
+
+    xmlrpc_server_abyss_create(&env, &parms, XMLRPC_APSIZE(port_number),
+                               &serverP);
+
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);  /* port number too large */
+
+    xmlrpc_server_abyss_global_term();
+
+    xmlrpc_env_clean(&env);
+}
 
 
 
@@ -157,6 +217,8 @@ testObject(void) {
 
     xmlrpc_server_abyss_setup_sig(&env, serverP, &oldHandlersP);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR); /* Not globally initialized */
+
+    testObjectParm();
 
     xmlrpc_env_clean(&env);
 }

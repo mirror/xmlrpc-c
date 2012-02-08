@@ -74,6 +74,8 @@ typedef struct {
     const char *      allow_origin;
     xmlrpc_bool       access_ctl_expires;
     unsigned int      access_ctl_max_age;
+    const struct sockaddr * sockaddr_p;
+    socklen_t         sockaddrlen;
 } xmlrpc_server_abyss_parms;
 
 

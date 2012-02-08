@@ -29,6 +29,7 @@
 
 #include "c_util.h"
 #include "int.h"
+#include "girstring.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "mallocvar.h"
@@ -416,7 +417,7 @@ formatPeerInfoInet(const struct sockaddr_in * const sockaddrInP,
             &sockaddrInP->sin_addr.s_addr;
         xmlrpc_asprintf(peerStringP, "%u.%u.%u.%u:%hu",
                         ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
-                        sockaddrInP->sin_port);
+                        ntohs(sockaddrInP->sin_port));
     }
 }
 
@@ -855,6 +856,9 @@ createChanSwitch(int            const fd,
 
     assert(!connected(fd));
 
+    if (SwitchTraceIsActive)
+        fprintf(stderr, "Creating Unix listen-socket based channel switch\n");
+
     MALLOCVAR(socketUnixP);
 
     if (socketUnixP == NULL)
@@ -908,20 +912,65 @@ setSocketOptions(int           const fd,
 
 
 static void
-bindSocketToPortInet(int                    const fd,
-                     const struct in_addr * const addrP,
-                     uint16_t               const portNumber,
-                     const char **          const errorP) {
+traceSocketBound(const struct sockaddr * const sockAddrP,
+                 socklen_t               const sockAddrLen) {
+
+    if (sockAddrP->sa_family == AF_INET &&
+        sockAddrLen >= sizeof(struct sockaddr_in)) {
+        const struct sockaddr_in * const sockAddrInP =
+            (const struct sockaddr_in *)sockAddrP;
+
+        unsigned char * const ipaddr = (unsigned char *)
+            &sockAddrInP->sin_addr.s_addr;
+
+        fprintf(stderr, "Bound socket for channel switch to "
+                "AF_INET port %u.%u.%u.%u:%hu\n",
+                ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
+                ntohs(sockAddrInP->sin_port));
+    } else {
+        fprintf(stderr, "Bound socket for channel switch to address of "
+                "family %d\n", sockAddrP->sa_family);
+    }
+}
+
+
+
+static void
+bindSocketToPort(int                     const fd,
+                 const struct sockaddr * const sockAddrP,
+                 socklen_t               const sockAddrLen,
+                 const char **           const errorP) {
+    
+    int rc;
+
+    rc = bind(fd, sockAddrP, sockAddrLen);
+
+    if (rc == -1)
+        xmlrpc_asprintf(errorP, "Unable to bind socket "
+                        "to the socket address.  "
+                        "bind() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else {
+        *errorP = NULL;
+
+        if (SwitchTraceIsActive)
+            traceSocketBound(sockAddrP, sockAddrLen);
+    }
+}
+
+
+
+static void
+bindSocketToPortInet(int           const fd,
+                     uint16_t      const portNumber,
+                     const char ** const errorP) {
     
     struct sockaddr_in name;
     int rc;
 
     name.sin_family = AF_INET;
     name.sin_port   = htons(portNumber);
-    if (addrP)
-        name.sin_addr = *addrP;
-    else
-        name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_addr.s_addr = INADDR_ANY;
 
     rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
 
@@ -938,7 +987,6 @@ bindSocketToPortInet(int                    const fd,
 
 static void
 bindSocketToPortInet6(int                     const fd,
-                      const struct in6_addr * const addrP,
                       uint16_t                const portNumber,
                       const char **           const errorP) {
 
@@ -947,10 +995,7 @@ bindSocketToPortInet6(int                     const fd,
 
     name.sin6_family = AF_INET6;
     name.sin6_port   = htons(portNumber);
-    if (addrP)
-        name.sin6_addr = *addrP;
-    else
-        name.sin6_addr = in6addr_any;
+    name.sin6_addr = in6addr_any;
 
     rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
 
@@ -966,16 +1011,14 @@ bindSocketToPortInet6(int                     const fd,
 
 
 static void
-switchCreateIpV4Port(const struct in_addr  * const ipAddrP,
-                     unsigned short          const portNumber,
+switchCreateIpV4Port(unsigned short          const portNumber,
                      TChanSwitch **          const chanSwitchPP,
                      const char **           const errorP) {
 /*----------------------------------------------------------------------------
    Create a POSIX-socket-based channel switch for an IPv4 endpoint.
 
    Set the socket's local address so that a subsequent "listen" will listen on
-   the interface for IP address *ipAddrP, port number 'portNumber'.  If
-   ipAddrP is NULL, listen on ALL interfaces.
+   all interfaces, port number 'portNumber'.
 -----------------------------------------------------------------------------*/
     int rc;
     rc = socket(PF_INET, SOCK_STREAM, 0);
@@ -987,7 +1030,7 @@ switchCreateIpV4Port(const struct in_addr  * const ipAddrP,
 
         setSocketOptions(socketFd, errorP);
         if (!*errorP) {
-            bindSocketToPortInet(socketFd, ipAddrP, portNumber, errorP);
+            bindSocketToPortInet(socketFd, portNumber, errorP);
 
             if (!*errorP) {
                 bool const userSupplied = false;
@@ -1002,8 +1045,7 @@ switchCreateIpV4Port(const struct in_addr  * const ipAddrP,
 
 
 static void
-switchCreateIpV6Port(const struct in6_addr * const ipAddrP,
-                     unsigned short          const portNumber,
+switchCreateIpV6Port(unsigned short          const portNumber,
                      TChanSwitch **          const chanSwitchPP,
                      const char **           const errorP) {
 /*----------------------------------------------------------------------------
@@ -1019,7 +1061,7 @@ switchCreateIpV6Port(const struct in6_addr * const ipAddrP,
 
         setSocketOptions(socketFd, errorP);
         if (!*errorP) {
-            bindSocketToPortInet6(socketFd, ipAddrP, portNumber, errorP);
+            bindSocketToPortInet6(socketFd, portNumber, errorP);
 
             if (!*errorP) {
                 bool const userSupplied = false;
@@ -1038,18 +1080,43 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
                      TChanSwitch ** const chanSwitchPP,
                      const char **  const errorP) {
 
-    switchCreateIpV4Port(NULL, portNumber, chanSwitchPP, errorP);
+    switchCreateIpV4Port(portNumber, chanSwitchPP, errorP);
 }
 
 
 
 void
-ChanSwitchUnixCreate2(struct in_addr const ipAddr,
-                      unsigned short const portNumber,
-                      TChanSwitch ** const chanSwitchPP,
-                      const char **  const errorP) {
+ChanSwitchUnixCreate2(int                     const protocolFamily,
+                      const struct sockaddr * const sockAddrP,
+                      socklen_t               const sockAddrLen,
+                      TChanSwitch **          const chanSwitchPP,
+                      const char **           const errorP) {
 
-    switchCreateIpV4Port(&ipAddr, portNumber, chanSwitchPP, errorP);
+    int rc;
+    rc = socket(protocolFamily, SOCK_STREAM, 0);
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else {
+        int const socketFd = rc;
+
+        if (SwitchTraceIsActive)
+            fprintf(stderr, "Created socket for protocol family %d\n",
+                    protocolFamily);
+
+        setSocketOptions(socketFd, errorP);
+        if (!*errorP) {
+            bindSocketToPort(socketFd, sockAddrP, sockAddrLen, errorP);
+
+            if (!*errorP) {
+                bool const userSupplied = false;
+                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
+            }
+        }
+        if (*errorP)
+            close(socketFd);
+    }
+
 }
 
 
@@ -1059,18 +1126,7 @@ ChanSwitchUnixCreateIpV6Port(unsigned short const portNumber,
                              TChanSwitch ** const chanSwitchPP,
                              const char **  const errorP) {
 
-    switchCreateIpV6Port(NULL, portNumber, chanSwitchPP, errorP);
-}
-
-
-
-void
-ChanSwitchUnixCreateIpV6Port2(struct in6_addr const ipAddr,
-                              unsigned short  const portNumber,
-                              TChanSwitch **  const chanSwitchPP,
-                              const char **   const errorP) {
-
-    switchCreateIpV6Port(&ipAddr, portNumber, chanSwitchPP, errorP);
+    switchCreateIpV6Port(portNumber, chanSwitchPP, errorP);
 }
 
 
@@ -1122,3 +1178,6 @@ SocketUnixCreateFd(int        const fd,
     } else
         *socketPP = socketP;
 }
+
+
+

@@ -18,6 +18,8 @@
 #  include <sys/wait.h>
 #  include <grp.h>
 #endif
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #include "bool.h"
 #include "int.h"
@@ -970,11 +972,74 @@ setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
 
 
 static void
+extractSockAddrParms(xmlrpc_env *                      const envP,
+                     const xmlrpc_server_abyss_parms * const parmsP,
+                     unsigned int                      const parmSize,
+                     const struct sockaddr **          const sockAddrPP,
+                     socklen_t *                       const sockAddrLenP,
+                     unsigned int *                    const portNumberP) {
+/*----------------------------------------------------------------------------
+   Return the server parameters that affect the address on which the server
+   socket shall listen.
+
+   There are two ways the arguments can specify this: 1) user supplies a
+   complete socket address, which specifies both a TCP port number and an IP
+   address (which determines on which interface, ergo which network, if any,
+   the server listens); and 2) just a TCP port number, which means he wants
+   to listen on all IPv4 interfaces and networks.  (2) is legacy.
+
+   If the user specifies the 'sockaddrP' and 'sockaddrlen' arguments, he gets
+   (1) and we ignore his 'port' argument.  We return his 'sockaddrP' and
+   'sockaddrlen' values as *sockAddrPP and *sockAddrLenP and nothing as
+   *portNumberP.
+
+   If the user doesn't specify 'sockaddrP', he gets (2).  We return NULL as
+   *sockAddrP and his 'port_number' argument as *portNumberP.  If he doesn't
+   specify 'port' either, we default it to 8080.
+
+   Specifying 'sockaddrP' and not 'sockaddrlen' is an error.
+
+   Note that the user's socket address may indicate "any IP address."
+-----------------------------------------------------------------------------*/
+    if (parmSize >= XMLRPC_APSIZE(sockaddr_p)) {
+        if (parmSize < XMLRPC_APSIZE(sockaddrlen))
+            xmlrpc_faultf(envP, "You must specify 'sockaddrlen' when you "
+                          "specify 'sockaddrP'");
+        else {
+            *sockAddrPP   = parmsP->sockaddr_p;
+            *sockAddrLenP = parmsP->sockaddrlen;
+        }
+    } else
+        *sockAddrPP = NULL;
+
+    if (*sockAddrPP == NULL) {
+        unsigned int portNumber;
+
+        if (parmSize >= XMLRPC_APSIZE(port_number))
+            portNumber = parmsP->port_number;
+        else
+            portNumber = 8080;
+        
+        if (portNumber > 0xffff)
+            xmlrpc_faultf(envP,
+                          "TCP port number %u exceeds the maximum possible "
+                          "TCP port number (65535)",
+                          portNumber);
+
+        *portNumberP = portNumber;
+    }        
+}
+
+
+
+static void
 extractServerCreateParms(
     xmlrpc_env *                      const envP,
     const xmlrpc_server_abyss_parms * const parmsP,
     unsigned int                      const parmSize,
     bool *                            const socketBoundP,
+    const struct sockaddr **          const sockAddrPP,
+    socklen_t *                       const sockAddrLenP,
     unsigned int *                    const portNumberP,
     TOsSocket *                       const socketFdP,
     const char **                     const logFileNameP) {
@@ -993,16 +1058,8 @@ extractServerCreateParms(
         else
             *socketFdP = parmsP->socket_handle;
     } else {
-        if (parmSize >= XMLRPC_APSIZE(port_number))
-            *portNumberP = parmsP->port_number;
-        else
-            *portNumberP = 8080;
-
-        if (*portNumberP > 0xffff)
-            xmlrpc_faultf(envP,
-                          "TCP port number %u exceeds the maximum possible "
-                          "TCP port number (65535)",
-                          *portNumberP);
+        extractSockAddrParms(envP, parmsP, parmSize, sockAddrPP, sockAddrLenP,
+                             portNumberP);
     }
     if (!envP->fault_occurred) {
         if (parmSize >= XMLRPC_APSIZE(log_file_name) &&
@@ -1031,35 +1088,103 @@ chanSwitchCreateOsSocket(TOsSocket      const socketFd,
 
 
 static void
-createServerBoundSocket(xmlrpc_env *   const envP,
-                        TOsSocket      const socketFd,
-                        const char *   const logFileName,
-                        TServer *      const serverP,
-                        TChanSwitch ** const chanSwitchPP) {
+createChanSwitchOsSocket(xmlrpc_env *   const envP,
+                         TOsSocket      const socketFd,
+                         TChanSwitch ** const chanSwitchPP) {
 
-    TChanSwitch * chanSwitchP;
     const char * error;
-    
-    chanSwitchCreateOsSocket(socketFd, &chanSwitchP, &error);
+
+    chanSwitchCreateOsSocket(socketFd, chanSwitchPP, &error);
+
     if (error) {
-        xmlrpc_faultf(envP, "Unable to create Abyss socket out of "
+        xmlrpc_faultf(envP, "Unable to create Abyss channel switch out of "
                       "file descriptor %d.  %s", socketFd, error);
         xmlrpc_strfree(error);
-    } else {
-        ServerCreateSwitch(serverP, chanSwitchP, &error);
+    }
+}
+
+
+
+static void
+chanSwitchCreateSockAddr(int                     const protocolFamily,
+                         const struct sockaddr * const sockAddrP,
+                         socklen_t               const sockAddrLen,
+                         TChanSwitch **          const chanSwitchPP,
+                         const char **           const errorP) {
+
+#ifdef WIN32
+    xmlrpc_asprintf(errorP, "XML-RPC For C/C++ does not know how to "
+                    "create an Abyss server given a socket address on "
+                    "Windows");
+#else
+    ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+                          chanSwitchPP, errorP);
+#endif
+
+}
+
+
+
+static void
+createChanSwitchSockAddr(xmlrpc_env *            const envP,
+                         const struct sockaddr * const sockAddrP,
+                         socklen_t               const sockAddrLen,
+                         TChanSwitch **          const chanSwitchPP) {
+
+    int protocolFamily;
+
+    assert(sockAddrP);
+
+    switch (sockAddrP->sa_family) {
+    case AF_INET:
+        protocolFamily = PF_INET;
+        break;
+    case AF_INET6:
+        protocolFamily = PF_INET6;
+        break;
+    default:
+        xmlrpc_faultf(envP, "Unknown socket address family %d.  "
+                      "We know only AF_INET and AF_INET6.",
+                      sockAddrP->sa_family);
+    }
+
+    if (!envP->fault_occurred) {
+        const char * error;
+
+        chanSwitchCreateSockAddr(protocolFamily, sockAddrP, sockAddrLen,
+                                 chanSwitchPP, &error);
+
         if (error) {
-            xmlrpc_faultf(envP, "Abyss failed to create server.  %s", error);
+            xmlrpc_faultf(envP, "Unable to create Abyss channel switch "
+                          "given the socket address.  %s", error);
             xmlrpc_strfree(error);
-        } else {
-            *chanSwitchPP = chanSwitchP;
-                    
-            ServerSetName(serverP, "XmlRpcServer");
-            
-            if (logFileName)
-                ServerSetLogFileName(serverP, logFileName);
         }
-        if (envP->fault_occurred)
-            ChanSwitchDestroy(chanSwitchP);
+    }
+}
+
+
+
+static void
+createChanSwitchIpv4Port(xmlrpc_env *          const envP,
+                         unsigned int          const portNumber,
+                         TChanSwitch **        const chanSwitchPP) {
+
+    struct sockaddr_in sockAddr;
+    const char * error;
+
+    sockAddr.sin_family      = AF_INET;
+    sockAddr.sin_port        = htons(portNumber);
+    sockAddr.sin_addr.s_addr = INADDR_ANY;
+
+    chanSwitchCreateSockAddr(PF_INET, (const struct sockaddr *)&sockAddr,
+                             sizeof(sockAddr),
+                             chanSwitchPP, &error);
+    
+    if (error) {
+        xmlrpc_faultf(envP, "Unable to create Abyss channel switch "
+                      "to listen on Port %u at any IPv4 address.  %s",
+                      portNumber, error);
+        xmlrpc_strfree(error);
     }
 }
 
@@ -1076,28 +1201,48 @@ createServerBare(xmlrpc_env *                      const envP,
    to use.
 -----------------------------------------------------------------------------*/
     bool socketBound;
+    const struct sockaddr * sockAddrP;
+    socklen_t sockAddrLen;
     unsigned int portNumber;
     TOsSocket socketFd;
     const char * logFileName;
 
     extractServerCreateParms(envP, parmsP, parmSize,
-                             &socketBound, &portNumber, &socketFd,
+                             &socketBound,
+                             &sockAddrP, &sockAddrLen, &portNumber, &socketFd,
                              &logFileName);
 
     if (!envP->fault_occurred) {
+        TChanSwitch * chanSwitchP;
+
         if (socketBound)
-            createServerBoundSocket(envP, socketFd, logFileName,
-                                    serverP, chanSwitchPP);
+            createChanSwitchOsSocket(envP, socketFd, &chanSwitchP);
         else {
-            abyss_bool success;
+            if (sockAddrP)
+                createChanSwitchSockAddr(envP, sockAddrP, sockAddrLen,
+                                         &chanSwitchP);
+            else
+                createChanSwitchIpv4Port(envP, portNumber, &chanSwitchP);
+        }
+        if (!envP->fault_occurred) {
+            const char * error;
 
-            success = ServerCreate(serverP, "XmlRpcServer", portNumber,
-                                   DEFAULT_DOCS, logFileName);
+            ServerCreateSwitch(serverP, chanSwitchP, &error);
 
-            if (!success)
-                xmlrpc_faultf(envP, "Failed to create an Abyss server object");
+            if (error) {
+                xmlrpc_faultf(envP, "Abyss failed to create server.  %s",
+                              error);
+                xmlrpc_strfree(error);
+            } else {
+                *chanSwitchPP = chanSwitchP;
+                    
+                ServerSetName(serverP, "XmlRpcServer");
             
-            *chanSwitchPP = NULL;
+                if (logFileName)
+                    ServerSetLogFileName(serverP, logFileName);
+            }
+            if (envP->fault_occurred)
+                ChanSwitchDestroy(chanSwitchP);
         }
         if (logFileName)
             xmlrpc_strfree(logFileName);
