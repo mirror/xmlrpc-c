@@ -9,6 +9,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <ostream>
 #if XMLRPC_HAVE_TIMEVAL
 #include <sys/time.h>
 #endif
