@@ -9,7 +9,11 @@
 #include <vector>
 #include <map>
 #include <string>
+#if defined(__GNUC__) && __GNUC__ < 3
+#include <iostream>
+#else
 #include <ostream>
+#endif
 #if XMLRPC_HAVE_TIMEVAL
 #include <sys/time.h>
 #endif
