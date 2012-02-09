@@ -152,7 +152,23 @@ testObjectParm(void) {
                                &serverP);
 
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);  /* port number too large */
+    {
+        struct sockaddr_in localhost;
+        localhost.sin_family = AF_INET;
+        localhost.sin_port = htons(8080);
+        localhost.sin_addr = test_ipAddrFromDecimal(127, 0, 0, 1);
 
+        parms.sockaddr_p = (const struct sockaddr *)&localhost;
+        parms.sockaddrlen = sizeof(localhost);
+
+        xmlrpc_server_abyss_create(&env, &parms, XMLRPC_APSIZE(sockaddrlen),
+                                   &serverP);
+
+        TEST_NO_FAULT(&env);
+        TEST(serverP != NULL);
+
+        xmlrpc_server_abyss_destroy(serverP);
+    }    
     xmlrpc_server_abyss_global_term();
 
     xmlrpc_env_clean(&env);

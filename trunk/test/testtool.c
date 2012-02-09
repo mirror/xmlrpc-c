@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <netinet/in.h>
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
@@ -61,5 +62,22 @@ test_null_string(const char * const string,
     else
         printf(".");
 }
+
+
+
+struct in_addr
+test_ipAddrFromDecimal(unsigned int const byte0,
+                       unsigned int const byte1,
+                       unsigned int const byte2,
+                       unsigned int const byte3) {
+
+    struct in_addr retval;
+
+    retval.s_addr =
+        htonl((byte0 << 24) + (byte1 << 16) + (byte2 << 8) + (byte3 << 0));
+
+    return retval;
+}
+
 
 
