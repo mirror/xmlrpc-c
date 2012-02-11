@@ -190,6 +190,8 @@ struct serverAbyss::constrOpt_impl {
         bool           chunkResponse;
         std::string    allowOrigin;
         unsigned int   accessCtlMaxAge;
+        const struct sockaddr * sockAddrP;
+        socklen_t      sockAddrLen;
         bool           serverOwnsSignals;
         bool           expectSigchld;
     } value;
@@ -207,6 +209,8 @@ struct serverAbyss::constrOpt_impl {
         bool chunkResponse;
         bool allowOrigin;
         bool accessCtlMaxAge;
+        bool sockAddrP;
+        bool sockAddrLen;
         bool serverOwnsSignals;
         bool expectSigchld;
     } present;
@@ -227,7 +231,9 @@ serverAbyss::constrOpt_impl::constrOpt_impl() {
     present.uriPath           = false;
     present.chunkResponse     = false;
     present.allowOrigin       = false;
-    present.accessCtlMaxAge  = false;
+    present.accessCtlMaxAge   = false;
+    present.sockAddrP         = false;
+    present.sockAddrLen       = false;
     present.serverOwnsSignals = false;
     present.expectSigchld     = false;
     
@@ -262,6 +268,8 @@ DEFINE_OPTION_SETTER(uriPath,           string);
 DEFINE_OPTION_SETTER(chunkResponse,     bool);
 DEFINE_OPTION_SETTER(allowOrigin,       string);
 DEFINE_OPTION_SETTER(accessCtlMaxAge,   unsigned int);
+DEFINE_OPTION_SETTER(sockAddrP,         const struct sockaddr *);
+DEFINE_OPTION_SETTER(sockAddrLen,       socklen_t);
 DEFINE_OPTION_SETTER(serverOwnsSignals, bool);
 DEFINE_OPTION_SETTER(expectSigchld,     bool);
 
@@ -282,6 +290,20 @@ serverAbyss::constrOpt::~constrOpt() {
 
 
 
+struct SockAddr {
+
+    const struct sockaddr * const sockAddrP;
+    socklen_t               const sockAddrLen;
+
+    SockAddr(const struct sockaddr * const sockAddrP,
+             socklen_t               const sockAddrLen) :
+        sockAddrP   (sockAddrP),
+        sockAddrLen (sockAddrLen)
+    {}
+};
+
+
+
 static void
 createServer(bool         const  logFileNameGiven,
              string       const& logFileName,
@@ -289,6 +311,8 @@ createServer(bool         const  logFileNameGiven,
              int          const  socketFd,
              bool         const  portNumberGiven,
              unsigned int const  portNumber,
+             bool         const  sockAddrPGiven,
+             SockAddr     const& sockAddr,
              TServer *    const  srvPP) {
              
     const char * const logfileArg(logFileNameGiven ? 
@@ -302,7 +326,10 @@ createServer(bool         const  logFileNameGiven,
         created =
             ServerCreateSocket(srvPP, serverName, socketFd,
                                DEFAULT_DOCS, logfileArg);
-    else if (portNumberGiven) {
+    else if (sockAddrPGiven) {
+        throwf("Code for sockAddrP option has not been written yet %u",
+               sockAddr.sockAddrLen);
+    } else if (portNumberGiven) {
         if (portNumber > 0xffff)
             throwf("Port number %u exceeds the maximum possible port number "
                    "(65535)", portNumber);
@@ -467,6 +494,26 @@ serverAbyss_impl::setHttpReqHandlers(string       const& uriPath,
         
 
 
+static void
+validateListenOptions(serverAbyss::constrOpt_impl const& opt) {
+    
+    if ((opt.present.portNumber ? 1 : 0) +
+        (opt.present.socketFd ? 1 : 0) +
+        (opt.present.sockAddrP ? 1 : 0) > 1)
+        throwf("You can specify at most one of portNumber, socketFd, "
+               "and sockAddrP options");
+
+    if (opt.present.sockAddrP && !opt.present.sockAddrLen)
+        throwf("You must specify the sockAddrLen option when you "
+               "specify sockAddrP");
+
+    if (!opt.present.sockAddrP && opt.present.sockAddrLen)
+        throwf("The sockAddrLen option does not make sense without "
+               "sockAddrP");
+}
+
+
+
 serverAbyss_impl::serverAbyss_impl(
     serverAbyss::constrOpt_impl const& opt,
     serverAbyss *          const serverAbyssP) :
@@ -485,8 +532,7 @@ serverAbyss_impl::serverAbyss_impl(
             this->registryP = this->regPtr.get();
         }
     }
-    if (opt.present.portNumber && opt.present.socketFd)
-        throwf("You can't specify both portNumber and socketFd options");
+    validateListenOptions(opt);
 
     this->serverOwnsSignals = opt.value.serverOwnsSignals;
     
@@ -499,6 +545,8 @@ serverAbyss_impl::serverAbyss_impl(
     createServer(opt.present.logFileName, opt.value.logFileName,
                  opt.present.socketFd,    opt.value.socketFd,
                  opt.present.portNumber,  opt.value.portNumber,
+                 opt.present.sockAddrP,
+                 SockAddr(opt.value.sockAddrP, opt.value.sockAddrLen),
                  &this->cServer);
 
     try {
