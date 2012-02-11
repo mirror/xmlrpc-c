@@ -304,51 +304,6 @@ struct SockAddr {
 
 
 
-static void
-createServer(bool         const  logFileNameGiven,
-             string       const& logFileName,
-             bool         const  socketFdGiven,
-             int          const  socketFd,
-             bool         const  portNumberGiven,
-             unsigned int const  portNumber,
-             bool         const  sockAddrPGiven,
-             SockAddr     const& sockAddr,
-             TServer *    const  srvPP) {
-             
-    const char * const logfileArg(logFileNameGiven ? 
-                                  logFileName.c_str() : NULL);
-
-    const char * const serverName("XmlRpcServer");
-
-    abyss_bool created;
-        
-    if (socketFdGiven)
-        created =
-            ServerCreateSocket(srvPP, serverName, socketFd,
-                               DEFAULT_DOCS, logfileArg);
-    else if (sockAddrPGiven) {
-        throwf("Code for sockAddrP option has not been written yet %u",
-               sockAddr.sockAddrLen);
-    } else if (portNumberGiven) {
-        if (portNumber > 0xffff)
-            throwf("Port number %u exceeds the maximum possible port number "
-                   "(65535)", portNumber);
-
-        created =
-            ServerCreate(srvPP, serverName, portNumber,
-                         DEFAULT_DOCS, logfileArg);
-    } else
-        created = 
-            ServerCreateNoAccept(srvPP, serverName,
-                                 DEFAULT_DOCS, logfileArg);
-
-    if (!created)
-        throw(error("Failed to create Abyss server.  See Abyss error log for "
-                    "reason."));
-}
-
-
-
 struct serverAbyss_impl {
     registryPtr regPtr;
         // This just holds a reference to the registry so that it may
@@ -361,21 +316,16 @@ struct serverAbyss_impl {
 
     TServer cServer;
 
+    TChanSwitch * chanSwitchP;
+        // Handle of the channel switch we created.  Null if we didn't.
+        // When user wants us to accept connections, we create a channel
+        // switch and create a server based on it; otherwise, we don't.
+
     serverAbyss_impl(serverAbyss::constrOpt_impl const& opt,
                      serverAbyss *               const serverAbyssP);
 
     ~serverAbyss_impl();
 
-    void
-    setAdditionalServerParms(serverAbyss::constrOpt_impl const& opt);
-
-    void
-    setHttpReqHandlers(string       const& uriPath,
-                       bool         const  chunkResponse,
-                       bool         const  doHttpAccessControl,
-                       string       const& allowOrigin,
-                       bool         const  accessCtlExpires,
-                       unsigned int const  accessCtlMaxAge);
     void
     run();
 
@@ -438,62 +388,6 @@ processXmlrpcCall(xmlrpc_env *        const envP,
 
 
 
-void
-serverAbyss_impl::setAdditionalServerParms(
-    serverAbyss::constrOpt_impl const& opt) {
-
-    // The following ought to be parameters on ServerCreate().
-
-    if (opt.present.keepaliveTimeout)
-        ServerSetKeepaliveTimeout(&this->cServer, opt.value.keepaliveTimeout);
-    if (opt.present.keepaliveMaxConn)
-        ServerSetKeepaliveMaxConn(&this->cServer, opt.value.keepaliveMaxConn);
-    if (opt.present.timeout)
-        ServerSetTimeout(&this->cServer, opt.value.timeout);
-    ServerSetAdvertise(&this->cServer, !opt.value.dontAdvertise);
-    if (opt.value.expectSigchld)
-        ServerUseSigchld(&this->cServer);
-}
-
-
-
-void
-serverAbyss_impl::setHttpReqHandlers(string       const& uriPath,
-                                     bool         const  chunkResponse,
-                                     bool         const  doHttpAccessControl,
-                                     string       const& allowOrigin,
-                                     bool         const  accessCtlExpires,
-                                     unsigned int const  accessCtlMaxAge) {
-/*----------------------------------------------------------------------------
-   This is a constructor helper.  Don't assume *this is complete.
------------------------------------------------------------------------------*/
-    env_wrap env;
-    xmlrpc_server_abyss_handler_parms parms;
-
-    parms.xml_processor = &processXmlrpcCall;
-    parms.xml_processor_arg = this;
-    parms.xml_processor_max_stack = this->registryP->maxStackSize();
-    parms.uri_path = uriPath.c_str();
-    parms.chunk_response = chunkResponse;
-    parms.allow_origin = doHttpAccessControl ? allowOrigin.c_str() : NULL;
-    parms.access_ctl_expires = accessCtlExpires;
-    parms.access_ctl_max_age = accessCtlMaxAge;
-
-    xmlrpc_server_abyss_set_handler3(
-        &env.env_c, &this->cServer,
-        &parms, XMLRPC_AHPSIZE(access_ctl_max_age));
-    
-    if (env.env_c.fault_occurred)
-        throwf("Failed to register the HTTP handler for XML-RPC "
-               "with the underlying Abyss HTTP server.  "
-               "xmlrpc_server_abyss_set_handler3() failed with:  %s",
-               env.env_c.fault_string);
-
-    xmlrpc_server_abyss_set_default_handler(&this->cServer);
-}
-        
-
-
 static void
 validateListenOptions(serverAbyss::constrOpt_impl const& opt) {
     
@@ -510,13 +404,286 @@ validateListenOptions(serverAbyss::constrOpt_impl const& opt) {
     if (!opt.present.sockAddrP && opt.present.sockAddrLen)
         throwf("The sockAddrLen option does not make sense without "
                "sockAddrP");
+
+    if (opt.present.portNumber) {
+        if (opt.value.portNumber > 0xffff)
+            throwf("Port number %u exceeds the maximum possible port number "
+                   "(65535)", opt.value.portNumber);
+    }
+}
+
+
+
+static void
+createServerFromSwitch(TServer *     const serverP,
+                       TChanSwitch * const chanSwitchP) {
+
+    const char * error;
+
+    ServerCreateSwitch(serverP, chanSwitchP, &error);
+
+    if (error) {
+        throwf("Abyss failed to create server.  %s", error);
+        xmlrpc_strfree(error);
+    }
+}
+
+
+
+TChanSwitch *
+newChanSwitchOsSocket(int const socketFd) {
+
+    TChanSwitch * chanSwitchP;
+    const char * error;
+
+#ifdef WIN32
+    ChanSwitchWinCreateWinsock(socketFd, &chanSwitchP, &error);
+#else
+    ChanSwitchUnixCreateFd(socketFd, &chanSwitchP, &error);
+#endif
+
+    if (error) {
+        string const errorS(error);
+        xmlrpc_strfree(error);
+
+        throwf("Abyss failed to create a channel switch from the "
+               "supplied listen socket.  %s", errorS.c_str());
+    }
+    return chanSwitchP;
+}
+
+
+
+static void
+chanSwitchCreateSockAddr(int                     const protocolFamily,
+                         const struct sockaddr * const sockAddrP,
+                         socklen_t               const sockAddrLen,
+                         TChanSwitch **          const chanSwitchPP) {
+
+#ifdef WIN32
+    xmlrpc_asprintf(errorP, "XML-RPC For C/C++ does not know how to "
+                    "create an Abyss server given a socket address "
+                    "on Windows");
+#else
+    const char * error;
+
+    ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+                          chanSwitchPP, &error);
+#endif
+    if (error) {
+        string const errorS(error);
+        xmlrpc_strfree(error);
+        throwf("Unable to create Abyss channel switch from socket address.  "
+               "%s", errorS.c_str());
+    }
+}
+
+
+
+TChanSwitch *
+newChanSwitchSockAddr(SockAddr const& sockAddr) {
+    
+    int protocolFamily;
+
+    switch (sockAddr.sockAddrP->sa_family) {
+    case AF_INET:
+        protocolFamily = PF_INET;
+        break;
+    case AF_INET6:
+        protocolFamily = PF_INET6;
+        break;
+    default:
+        throwf("Unknown socket address family %d.  "
+               "We know only AF_INET and AF_INET6.",
+               sockAddr.sockAddrP->sa_family);
+    }
+
+    TChanSwitch * chanSwitchP;
+
+    chanSwitchCreateSockAddr(protocolFamily,
+                             sockAddr.sockAddrP, sockAddr.sockAddrLen,
+                             &chanSwitchP);
+
+    return chanSwitchP;
+}
+
+
+
+TChanSwitch *
+newChanSwitchIpV4Port(unsigned int const portNumber) {
+    
+    struct sockaddr_in sockAddr;
+
+    sockAddr.sin_family      = AF_INET;
+    sockAddr.sin_port        = htons(portNumber);
+    sockAddr.sin_addr.s_addr = INADDR_ANY;
+
+    TChanSwitch * chanSwitchP;
+
+    chanSwitchCreateSockAddr(PF_INET, (const struct sockaddr *)&sockAddr,
+                             sizeof(sockAddr),
+                             &chanSwitchP);
+
+    return chanSwitchP;
+}
+
+
+
+static void
+createServerBare(bool           const  logFileNameGiven,
+                 string         const& logFileName,
+                 bool           const  socketFdGiven,
+                 int            const  socketFd,
+                 bool           const  portNumberGiven,
+                 unsigned int   const  portNumber,
+                 bool           const  sockAddrPGiven,
+                 SockAddr       const& sockAddr,
+                 TServer *      const  serverP,
+                 TChanSwitch ** const  chanSwitchPP) {
+
+    const char * const serverName("XmlRpcServer");
+
+    if (socketFdGiven || sockAddrPGiven || portNumberGiven) {
+
+        TChanSwitch * const chanSwitchP(
+            socketFdGiven ?
+                newChanSwitchOsSocket(socketFd) : 
+            sockAddrPGiven ? 
+                newChanSwitchSockAddr(sockAddr) :
+            portNumberGiven ?
+                newChanSwitchIpV4Port(portNumber) :
+                NULL);
+
+        assert(chanSwitchP);
+
+        try {
+            createServerFromSwitch(serverP, chanSwitchP);
+
+            try {
+                ServerSetName(serverP, serverName);
+
+                if (logFileNameGiven)
+                    ServerSetLogFileName(serverP, logFileName.c_str());
+            } catch (...) {
+                ServerFree(serverP);
+                throw;
+            }
+        } catch (...) {
+            ChanSwitchDestroy(chanSwitchP);
+            throw;
+        }
+        *chanSwitchPP = chanSwitchP;
+    } else {
+        const char * const logfileArg(logFileNameGiven ? 
+                                      logFileName.c_str() : NULL);
+        
+        ServerCreateNoAccept(serverP, serverName,
+                             DEFAULT_DOCS, logfileArg);
+
+        *chanSwitchPP = NULL;
+    }
+}
+
+
+
+static void
+setAdditionalServerParms(TServer *                   const  serverP,
+                         serverAbyss::constrOpt_impl const& opt) {
+
+    if (opt.present.keepaliveTimeout)
+        ServerSetKeepaliveTimeout(serverP, opt.value.keepaliveTimeout);
+    if (opt.present.keepaliveMaxConn)
+        ServerSetKeepaliveMaxConn(serverP, opt.value.keepaliveMaxConn);
+    if (opt.present.timeout)
+        ServerSetTimeout(serverP, opt.value.timeout);
+    ServerSetAdvertise(serverP, !opt.value.dontAdvertise);
+    if (opt.value.expectSigchld)
+        ServerUseSigchld(serverP);
+}
+
+
+
+static void
+setHttpReqHandlers(TServer *    const  serverP,
+                   void *       const  serverHandle,
+                   size_t       const  maxStackSize,
+                   string       const& uriPath,
+                   bool         const  chunkResponse,
+                   bool         const  doHttpAccessControl,
+                   string       const& allowOrigin,
+                   bool         const  accessCtlExpires,
+                   unsigned int const  accessCtlMaxAge) {
+
+    env_wrap env;
+    xmlrpc_server_abyss_handler_parms parms;
+
+    parms.xml_processor = &processXmlrpcCall;
+    parms.xml_processor_arg = serverHandle;
+    parms.xml_processor_max_stack = maxStackSize;
+    parms.uri_path = uriPath.c_str();
+    parms.chunk_response = chunkResponse;
+    parms.allow_origin = doHttpAccessControl ? allowOrigin.c_str() : NULL;
+    parms.access_ctl_expires = accessCtlExpires;
+    parms.access_ctl_max_age = accessCtlMaxAge;
+
+    xmlrpc_server_abyss_set_handler3(
+        &env.env_c, serverP,
+        &parms, XMLRPC_AHPSIZE(access_ctl_max_age));
+    
+    if (env.env_c.fault_occurred)
+        throwf("Failed to register the HTTP handler for XML-RPC "
+               "with the underlying Abyss HTTP server.  "
+               "xmlrpc_server_abyss_set_handler3() failed with:  %s",
+               env.env_c.fault_string);
+
+    xmlrpc_server_abyss_set_default_handler(serverP);
+}
+        
+
+
+static void
+createServer(serverAbyss::constrOpt_impl const& opt,
+             void *                      const  serverHandle,
+             size_t                      const  maxStackSize,
+             TServer *                   const  serverP,
+             TChanSwitch **              const  chanSwitchPP) {
+
+    validateListenOptions(opt);
+    
+    createServerBare(opt.present.logFileName, opt.value.logFileName,
+                     opt.present.socketFd,    opt.value.socketFd,
+                     opt.present.portNumber,  opt.value.portNumber,
+                     opt.present.sockAddrP,
+                     SockAddr(opt.value.sockAddrP, opt.value.sockAddrLen),
+                     serverP, chanSwitchPP);
+    
+    try {
+        setAdditionalServerParms(serverP, opt);
+
+        setHttpReqHandlers(serverP,
+                           serverHandle,
+                           maxStackSize,
+                           opt.value.uriPath,
+                           opt.value.chunkResponse,
+                           opt.present.allowOrigin,
+                           opt.value.allowOrigin,
+                           opt.present.accessCtlMaxAge,
+                           opt.value.accessCtlMaxAge);
+
+        if (opt.present.portNumber || opt.present.socketFd ||
+            opt.present.sockAddrP)
+            ServerInit(serverP);
+    } catch (...) {
+        ServerFree(serverP);
+        throw;
+    }
 }
 
 
 
 serverAbyss_impl::serverAbyss_impl(
     serverAbyss::constrOpt_impl const& opt,
-    serverAbyss *          const serverAbyssP) :
+    serverAbyss *               const  serverAbyssP) :
     serverAbyssP(serverAbyssP) {
 
     if (!opt.present.registryP && !opt.present.registryPtr)
@@ -532,7 +699,6 @@ serverAbyss_impl::serverAbyss_impl(
             this->registryP = this->regPtr.get();
         }
     }
-    validateListenOptions(opt);
 
     this->serverOwnsSignals = opt.value.serverOwnsSignals;
     
@@ -541,31 +707,9 @@ serverAbyss_impl::serverAbyss_impl(
                "and serverOwnsSignals options");
 
     DateInit();
-    
-    createServer(opt.present.logFileName, opt.value.logFileName,
-                 opt.present.socketFd,    opt.value.socketFd,
-                 opt.present.portNumber,  opt.value.portNumber,
-                 opt.present.sockAddrP,
-                 SockAddr(opt.value.sockAddrP, opt.value.sockAddrLen),
-                 &this->cServer);
 
-    try {
-        this->setAdditionalServerParms(opt);
-
-        this->setHttpReqHandlers(opt.value.uriPath,
-                                 opt.value.chunkResponse,
-                                 opt.present.allowOrigin,
-                                 opt.value.allowOrigin,
-                                 opt.present.accessCtlMaxAge,
-                                 opt.value.accessCtlMaxAge);
-
-
-        if (opt.present.portNumber || opt.present.socketFd)
-            ServerInit(&this->cServer);
-    } catch (...) {
-        ServerFree(&this->cServer);
-        throw;
-    }
+    createServer(opt, this, this->registryP->maxStackSize(),
+                 &this->cServer, &this->chanSwitchP);
 }
 
 
@@ -573,6 +717,9 @@ serverAbyss_impl::serverAbyss_impl(
 serverAbyss_impl::~serverAbyss_impl() {
 
     ServerFree(&this->cServer);
+
+    if (this->chanSwitchP)
+        ChanSwitchDestroy(this->chanSwitchP);
 }
 
 
