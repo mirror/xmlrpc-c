@@ -19,10 +19,15 @@
 #define XMLRPC_NORETURN_ATTR
 #endif
 
-/* XMLRPC_DLLEXPORT is an attribute of an external symbols that says it
+/* XMLRPC_DLLEXPORT is an attribute of an external symbol that says it
    is to be exported from a library that contains it.
+
+   It has no effect in a declaration of imported symbol - i.e. one that is not
+   defined in the same compilation unit.  So one can use XMLRPC_DLLEXPORT on
+   a declaration in a header file that gets included in both the defining and
+   the user compilation unit.
 */
-#if defined(_DLL) &&  defined(_MSC_VER) && _MSC_VER >= 1500
+#if defined(_DLL) &&  defined(_MSC_VER)
 #define XMLRPC_DLLEXPORT __declspec(dllexport)
 #else
 #define XMLRPC_DLLEXPORT
