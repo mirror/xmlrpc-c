@@ -5,7 +5,7 @@
 
 #include "unistdx.h"
 #include <stdio.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif
@@ -52,7 +52,7 @@ chanSwitchCreateFd(int            const fd,
                    TChanSwitch ** const chanSwitchPP,
                    const char **  const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChanSwitchWinCreateWinsock(fd, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreateFd(fd, chanSwitchPP, errorP);
@@ -63,7 +63,7 @@ chanSwitchCreateFd(int            const fd,
 
 static void
 closesock(int const fd) {
-#ifdef WIN32
+#ifdef _WIN32
     closesocket(fd);
 #else
     close(fd);
@@ -77,7 +77,7 @@ chanSwitchCreate(uint16_t       const portNumber,
                  TChanSwitch ** const chanSwitchPP,
                  const char **  const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChanSwitchWinCreate(portNumber, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreate(portNumber, chanSwitchPP, errorP);
@@ -93,7 +93,7 @@ chanSwitchCreate2(int                     const protocolFamily,
                   TChanSwitch **          const chanSwitchPP,
                   const char **           const errorP) {
 
-#ifndef WIN32
+#ifndef _WIN32
     ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen,
                           chanSwitchPP, errorP);
 #endif
@@ -106,7 +106,7 @@ chanSwitchCreateIpV6(uint16_t       const portNumber,
                      TChanSwitch ** const chanSwitchPP,
                      const char **  const errorP) {
 
-#ifndef WIN32
+#ifndef _WIN32
     ChanSwitchUnixCreateIpV6Port(portNumber, chanSwitchPP, errorP);
 #endif
 }    
@@ -118,7 +118,7 @@ channelCreateFd(int const fd,
                 TChannel **   const channelPP,
                 const char ** const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     struct abyss_win_chaninfo * channelInfoP;
     ChannelWinCreateWinsock(fd, channelPP, &channelInfoP, errorP);
 #else
@@ -289,7 +289,7 @@ testOsSocket(void) {
 static void
 testSocket(void) {
 
-#ifndef WIN32
+#ifndef _WIN32
     int rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);

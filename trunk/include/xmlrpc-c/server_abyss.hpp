@@ -1,7 +1,7 @@
 #ifndef SERVER_ABYSS_HPP_INCLUDED
 #define SERVER_ABYSS_HPP_INCLUDED
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock.h>   // For XMLRPC_SOCKET (= SOCKET)
 #endif
 
@@ -72,7 +72,7 @@ public:
     void
     runConn(int const socketFd);
 
-#ifndef WIN32
+#ifndef _WIN32
     void
     sigchld(pid_t pid);
 #endif

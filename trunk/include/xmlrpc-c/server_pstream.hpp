@@ -1,7 +1,7 @@
 #ifndef SERVER_PSTREAM_HPP_INCLUDED
 #define SERVER_PSTREAM_HPP_INCLUDED
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock.h>  /* For XMLRPC_SOCKET (= SOCKET) */
 typedef int socklen_t;
 #else

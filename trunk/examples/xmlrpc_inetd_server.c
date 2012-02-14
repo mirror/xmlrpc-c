@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 
@@ -49,7 +49,7 @@ setupSignalHandlers(void) {
        obviously don't want to die just because a client didn't complete
        an RPC, so we ignore SIGPIPE.
     */
-#ifndef WIN32
+#ifndef _WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);

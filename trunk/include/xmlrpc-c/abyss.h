@@ -84,7 +84,7 @@ typedef struct _TChanSwitch TChanSwitch;
 typedef struct _TChannel TChannel;
 typedef struct _TSocket TSocket;
 
-#ifdef WIN32
+#ifdef _WIN32
   #include <xmlrpc-c/abyss_winsock.h>
 #else
   #include <xmlrpc-c/abyss_unixsock.h>
@@ -274,7 +274,7 @@ XMLRPC_DLLEXPORT
 void
 ServerUseSigchld(TServer * const serverP);
 
-#ifndef WIN32
+#ifndef _WIN32
 void
 ServerHandleSigchld(pid_t const pid);
 #endif
@@ -561,7 +561,7 @@ MIMETypeGuessFromFile(const char * const filename);
 ** Paths and so on...
 *********************************************************************/
 
-#ifdef WIN32
+#ifdef _WIN32
 #define DEFAULT_ROOT        "c:\\abyss"
 #define DEFAULT_DOCS        DEFAULT_ROOT"\\htdocs"
 #define DEFAULT_CONF_FILE   DEFAULT_ROOT"\\conf\\abyss.conf"

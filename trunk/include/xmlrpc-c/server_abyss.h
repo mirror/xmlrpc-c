@@ -11,7 +11,7 @@
 #ifndef  XMLRPC_SERVER_ABYSS_H_INCLUDED
 #define  XMLRPC_SERVER_ABYSS_H_INCLUDED
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock.h>  /* For XMLRPC_SOCKET (= SOCKET) */
 #endif
 

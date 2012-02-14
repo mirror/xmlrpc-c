@@ -1,6 +1,6 @@
 /* Copyright information is at the end of the file. */
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <direct.h>
 #else
 #include <unistd.h>
@@ -52,7 +52,7 @@ int total_tests = 0;
 int total_failures = 0;
 
 bool const runningUnderWindows =
-#ifdef WIN32
+#ifdef _WIN32
     true;
 #else
     false;
@@ -84,7 +84,7 @@ testVersion(void) {
 
     xmlrpc_version(&major, &minor, &point);
 
-#ifndef WIN32    
+#ifndef _WIN32    
     /* xmlrpc_version_major, etc. are not exported from a Windows DLL */
 
     TEST(major == xmlrpc_version_major);
@@ -710,7 +710,7 @@ test_utf8_coding(void) {
 static void
 test_server_cgi_maybe(void) {
 
-#ifndef WIN32
+#ifndef _WIN32
 
     test_server_cgi();
 
@@ -722,7 +722,7 @@ test_server_cgi_maybe(void) {
 static void
 test_client_maybe(void) {
 
-#ifndef WIN32 /* Must get Windows Curl transport working for this to work */
+#ifndef _WIN32 /* Must get Windows Curl transport working for this to work */
 
     test_client();
 

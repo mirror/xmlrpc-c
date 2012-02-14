@@ -8,7 +8,7 @@
 
 #include "xmlrpc-c/c_util.h"
 #include "xmlrpc-c/time_int.h"
-#ifdef WIN32
+#if MSVCRT
 #ifndef sigset_t
 typedef int sigset_t;
 #endif

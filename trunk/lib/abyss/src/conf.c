@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(WIN32) && !defined(__BORLANDC__)
+#if defined(_WIN32)
 #include <direct.h>
 #endif
 
@@ -254,7 +254,7 @@ static void
 chdirx(const char * const newdir,
        bool *       const successP) {
     
-#if defined(WIN32) && !defined(__BORLANDC__)
+#if defined(_WIN32)
     *successP = _chdir(newdir) == 0;
 #else
     *successP = chdir(newdir) == 0;

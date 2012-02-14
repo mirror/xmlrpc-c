@@ -1077,7 +1077,7 @@ chanSwitchCreateOsSocket(TOsSocket      const socketFd,
                          TChanSwitch ** const chanSwitchPP,
                          const char **  const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChanSwitchWinCreateWinsock(socketFd, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreateFd(socketFd, chanSwitchPP, errorP);
@@ -1112,7 +1112,7 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
                          TChanSwitch **          const chanSwitchPP,
                          const char **           const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     xmlrpc_asprintf(errorP, "XML-RPC For C/C++ does not know how to "
                     "create an Abyss server given a socket address on "
                     "Windows");
@@ -1497,7 +1497,7 @@ sigchld(int const signalClass ATTR_UNUSED) {
    forking as a threading mechanism), so we respond by passing the
    signal on to the Abyss server.  And reaping the dead child.
 -----------------------------------------------------------------------------*/
-#ifndef WIN32
+#ifndef _WIN32
     /* Reap zombie children / report to Abyss until there aren't any more. */
 
     bool childrenLeft;
@@ -1524,7 +1524,7 @@ sigchld(int const signalClass ATTR_UNUSED) {
         } else
             ServerHandleSigchld(pid);
     }
-#endif /* WIN32 */
+#endif /* _WIN32 */
 }
 
 
@@ -1534,7 +1534,7 @@ struct xmlrpc_server_abyss_sig {
        functions in this library messed with them; useful for restoring
        them later.
     */
-#ifndef WIN32
+#ifndef _WIN32
     struct sigaction pipe;
     struct sigaction chld;
 #else
@@ -1546,7 +1546,7 @@ struct xmlrpc_server_abyss_sig {
 
 static void
 setupSignalHandlers(xmlrpc_server_abyss_sig * const oldHandlersP) {
-#ifndef WIN32
+#ifndef _WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);
@@ -1566,7 +1566,7 @@ setupSignalHandlers(xmlrpc_server_abyss_sig * const oldHandlersP) {
 
 static void
 restoreSignalHandlers(const xmlrpc_server_abyss_sig * const oldHandlersP) {
-#ifndef WIN32
+#ifndef _WIN32
 
     sigaction(SIGPIPE, &oldHandlersP->pipe, NULL);
     sigaction(SIGCHLD, &oldHandlersP->chld, NULL);

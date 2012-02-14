@@ -484,11 +484,11 @@ long mod_gzip_iusn = 0; /* Instance Unique Sequence Number */
 long mod_gzip_maximum_inmem_size = 60000L;
 long mod_gzip_minimum_file_size  = 300L;
 
-#ifdef WIN32
+#ifdef _WIN32
 char mod_gzip_dirsep[]="\\"; /* Dir separator is a backslash for Windows */
-#else /* !WIN32 */
+#else /* !_WIN32 */
 char mod_gzip_dirsep[]="/";  /* Dir separator is a forward slash for UNIX */
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
 /*
  * The Compressed Object Cache control structure...
@@ -672,7 +672,7 @@ void mod_gzip_printf( const char *fmt, ... )
  /* Start... */
 
  /* If UNIX  then mod_gzip_dirsep = '/' Backward slash */
- /* If WIN32 then mod_gzip_dirsep = '\' Forward  slash */
+ /* If _WIN32 then mod_gzip_dirsep = '\' Forward  slash */
 
  #ifdef FUTURE_USE
  /*
@@ -3012,13 +3012,13 @@ int targetmaxlen
 
  /* Start... */
 
- #ifdef WIN32
+ #ifdef _WIN32
  process_id = (long) GetCurrentProcessId();
  thread_id  = (long) GetCurrentThreadId();
- #else /* !WIN32 */
+ #else /* !_WIN32 */
  process_id = (long) getpid();
  thread_id  = (long) process_id; /* TODO: Add pthreads call */
- #endif /* WIN32 */
+ #endif /* _WIN32 */
 
  #ifdef MOD_GZIP_DEBUG1
  mod_gzip_printf( "%s: Entry...\n",cn );
@@ -5213,11 +5213,11 @@ int          nodecline
                    cn, gzp->output_filename );
           #endif
 
-          #ifdef WIN32
+          #ifdef _WIN32
           DeleteFile( gzp->output_filename );
-          #else /* !WIN32 */
+          #else /* !_WIN32 */
           unlink( gzp->output_filename );
-          #endif /* WIN32 */
+          #endif /* _WIN32 */
          }
        else /* Keep all work files... */
          {
@@ -5874,7 +5874,7 @@ static int log_script(request_rec *r, cgi_server_conf * conf, int ret,
 		      "a")) == NULL)) {
 	while (ap_bgets(argsbuffer, HUGE_STRING_LEN, script_in) > 0)
 	    continue;
-#if defined(WIN32) || defined(NETWARE)
+#if defined(_WIN32) || defined(NETWARE)
         while (ap_bgets(argsbuffer, HUGE_STRING_LEN, script_err) > 0) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r, 
                           "%s", argsbuffer);            
@@ -5978,7 +5978,7 @@ int mod_gzip_cgi_handler( request_rec *r )
        return log_scripterror(r, conf, FORBIDDEN, APLOG_NOERRNO,
               "attempt to include NPH CGI script");
       }
-    #if defined(OS2) || defined(WIN32)
+    #if defined(OS2) || defined(_WIN32)
     if ( r->finfo.st_mode == 0 )
       {
        struct stat statbuf;
@@ -6201,7 +6201,7 @@ static int mod_gzip_cgi_child(void *child_stuff, child_info *pinfo)
 #ifdef OS2
     FILE *dbg = fopen("con", "w");
 #else
-    #ifdef WIN32
+    #ifdef _WIN32
     FILE *dbg = fopen("c:\\script.dbg", "a" );
     #else
     FILE *dbg = fopen("/dev/tty", "w");
@@ -6222,7 +6222,7 @@ static int mod_gzip_cgi_child(void *child_stuff, child_info *pinfo)
     for (i = 0; env[i]; ++i)
 	fprintf(dbg, "'%s'\n", env[i]);
 #endif
-#ifndef WIN32
+#ifndef _WIN32
     #ifdef DEBUG_CGI
     fprintf(dbg, "Call ap_chdir_file(r->filename=[%s]\n",r->filename);
     #endif
@@ -6235,7 +6235,7 @@ static int mod_gzip_cgi_child(void *child_stuff, child_info *pinfo)
 	ap_error_log2stderr(r->server);
 #ifdef TPF
     #ifdef DEBUG_CGI
-    #ifdef WIN32
+    #ifdef _WIN32
     fprintf(dbg, "TPF defined... return( 0 ) now...\n");
     if ( dbg ) { fclose(dbg); dbg=0; }
     #endif
@@ -6254,10 +6254,10 @@ static int mod_gzip_cgi_child(void *child_stuff, child_info *pinfo)
     #ifdef DEBUG_CGI
     fprintf(dbg, "Back ap_call_exec()...\n");
     #endif
-#if defined(WIN32) || defined(OS2)
+#if defined(_WIN32) || defined(OS2)
     #ifdef DEBUG_CGI
-    #ifdef WIN32
-    fprintf(dbg, "WIN32 or OS2 defined... return( child_pid ) now...\n");
+    #ifdef _WIN32
+    fprintf(dbg, "_WIN32 or OS2 defined... return( child_pid ) now...\n");
     if ( dbg ) { fclose(dbg); dbg=0; }
     #endif
     #endif
@@ -6266,7 +6266,7 @@ static int mod_gzip_cgi_child(void *child_stuff, child_info *pinfo)
     ap_log_error(APLOG_MARK, APLOG_ERR, NULL, "exec of %s failed", r->filename);
     exit(0);
     #ifdef DEBUG_CGI
-    #ifdef WIN32
+    #ifdef _WIN32
     if ( dbg ) { fclose(dbg); dbg=0; }
     #endif
     #endif
@@ -6423,7 +6423,7 @@ int *final_return_code
               r->connection->aborted = 1; 
               break; 
              }
-           #ifdef WIN32
+           #ifdef _WIN32
            FD_SET( (unsigned) fd, &fds );
            #else
            FD_SET( fd, &fds );
@@ -6711,7 +6711,7 @@ typedef int            gz1_file_t;
 #  endif
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #  define HAVE_SYS_UTIME_H
 #  define NO_UTIME_H
 #  define PATH_SEP2 '\\'
