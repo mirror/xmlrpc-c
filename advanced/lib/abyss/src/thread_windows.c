@@ -144,6 +144,8 @@ void
 ThreadRelease(TThread * const threadP) {
 
     CloseHandle(threadP->handle);
+
+    free(threadP);
 }
 
 
