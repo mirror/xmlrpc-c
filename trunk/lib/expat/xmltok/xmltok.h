@@ -117,7 +117,7 @@ typedef struct encoding ENCODING;
 
 /* It's pretty silly to have the 'const' on the argument names below, but MSVC
    thinks the definitions of Utf8Converter functions that do have that
-   qualifier on the argument variables, don't match this declaration if we
+   qualifier on the argument variables don't match this declaration if we
    don't.
 */
 typedef void Utf8Converter(const ENCODING * const encP,
