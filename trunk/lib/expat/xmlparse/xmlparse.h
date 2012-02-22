@@ -14,39 +14,9 @@ extern "C" {
 
 typedef void *XML_Parser;
 
-#ifdef XML_UNICODE_WCHAR_T
-
-/* XML_UNICODE_WCHAR_T will work only if sizeof(wchar_t) == 2 and wchar_t
-   uses Unicode.
-*/
-/* Information is UTF-16 encoded as wchar_ts */
-
-#ifndef XML_UNICODE
-#define XML_UNICODE
-#endif
-
-#include <stddef.h>
-typedef wchar_t XML_Char;
-typedef wchar_t XML_LChar;
-
-#else /* not XML_UNICODE_WCHAR_T */
-
-#ifdef XML_UNICODE
-
-/* Information is UTF-16 encoded as unsigned shorts */
-typedef unsigned short XML_Char;
-typedef char XML_LChar;
-
-#else /* not XML_UNICODE */
-
 /* Information is UTF-8 encoded. */
 typedef char XML_Char;
 typedef char XML_LChar;
-
-#endif /* not XML_UNICODE */
-
-#endif /* not XML_UNICODE_WCHAR_T */
-
 
 /* Constructs a new parser; encoding is the encoding specified by the external
 protocol or null if there is none specified. */

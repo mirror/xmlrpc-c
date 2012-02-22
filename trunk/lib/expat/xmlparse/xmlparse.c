@@ -38,15 +38,6 @@ extractXmlSample(const char * const start,
 
 
 
-#ifdef XML_UNICODE
-#define XML_ENCODE_MAX XML_UTF16_ENCODE_MAX
-#define XmlConvert XmlUtf16Convert
-#define XmlGetInternalEncoding xmlrpc_XmlGetUtf16InternalEncoding
-#define XmlGetInternalEncodingNS xmlrpc_XmlGetUtf16InternalEncodingNS
-#define XmlEncode xmlrpc_XmlUtf16Encode
-#define MUST_CONVERT(enc, s) (!(enc)->isUtf16 || (((unsigned long)s) & 1))
-typedef unsigned short ICHAR;
-#else
 #define XML_ENCODE_MAX XML_UTF8_ENCODE_MAX
 #define XmlConvert XmlUtf8Convert
 #define XmlGetInternalEncoding xmlrpc_XmlGetUtf8InternalEncoding
@@ -54,7 +45,6 @@ typedef unsigned short ICHAR;
 #define XmlEncode xmlrpc_XmlUtf8Encode
 #define MUST_CONVERT(enc, s) (!(enc)->isUtf8)
 typedef char ICHAR;
-#endif
 
 
 #ifndef XML_NS
@@ -67,11 +57,12 @@ typedef char ICHAR;
 
 #endif
 
-#ifdef XML_UNICODE_WCHAR_T
-#define XML_T(x) L ## x
-#else
+/* XML_T is a vestige of conditionally compiled code that was never used in
+   Xmlrpc-c that made characters 16 bits.  In that case, XML_T was defined
+   differently.
+*/
+
 #define XML_T(x) x
-#endif
 
 /* Round up n to be a multiple of sz, where sz is a power of 2. */
 #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
@@ -1345,26 +1336,7 @@ initializeEncoding(XML_Parser const xmlParserP) {
     Parser * const parser = (Parser *) xmlParserP;
 
     const char *s;
-#ifdef XML_UNICODE
-    char encodingBuf[128];
-    if (!protocolEncodingName)
-        s = 0;
-    else {
-        int i;
-        for (i = 0; protocolEncodingName[i]; i++) {
-            if (i == sizeof(encodingBuf) - 1
-                || (protocolEncodingName[i] & ~0x7f) != 0) {
-                encodingBuf[0] = '\0';
-                break;
-            }
-            encodingBuf[i] = (char)protocolEncodingName[i];
-        }
-        encodingBuf[i] = '\0';
-        s = encodingBuf;
-    }
-#else
     s = protocolEncodingName;
-#endif
     {        
         int rc;
 
