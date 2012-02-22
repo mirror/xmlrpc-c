@@ -336,7 +336,6 @@ typedef struct {
 #define unknownEncodingHandlerData \
   (((Parser *)parser)->m_unknownEncodingHandlerData)
 #define unknownEncodingRelease (((Parser *)parser)->m_unknownEncodingRelease)
-#define protocolEncodingName (((Parser *)parser)->m_protocolEncodingName)
 #define ns (((Parser *)parser)->m_ns)
 #define prologState (((Parser *)parser)->m_prologState)
 #define processor (((Parser *)parser)->m_processor)
@@ -1332,22 +1331,22 @@ handleUnknownEncoding(XML_Parser       const xmlParserP,
 static enum XML_Error
 initializeEncoding(XML_Parser const xmlParserP) {
 
-    enum XML_Error retval;
     Parser * const parser = (Parser *) xmlParserP;
 
-    const char *s;
-    s = protocolEncodingName;
-    {        
-        int rc;
+    enum XML_Error retval;
+    int rc;
 
-        rc = (ns ? xmlrpc_XmlInitEncodingNS : xmlrpc_XmlInitEncoding)(
-            &parser->m_initEncoding, &parser->m_encoding, s);
+    rc = (ns ? xmlrpc_XmlInitEncodingNS : xmlrpc_XmlInitEncoding)(
+        &parser->m_initEncoding, &parser->m_encoding,
+        parser->m_protocolEncodingName);
 
-        if (rc != 0)
-            retval = XML_ERROR_NONE;
-        else
-            retval = handleUnknownEncoding(xmlParserP, protocolEncodingName);
-    }
+    if (rc == 0) {
+        /* 'parser->m_protocolEncodingName' is not a recognized name */
+        retval = handleUnknownEncoding(xmlParserP,
+                                       parser->m_protocolEncodingName);
+    } else
+        retval = XML_ERROR_NONE;
+
     return retval;
 }
 
@@ -1384,7 +1383,7 @@ processXmlDecl(XML_Parser   const xmlParserP,
     }
     if (defaultHandler)
         reportDefault(xmlParserP, parser->m_encoding, s, next);
-    if (!protocolEncodingName) {
+    if (!parser->m_protocolEncodingName) {
         if (newEncoding) {
             if (newEncoding->minBytesPerChar !=
                 parser->m_encoding->minBytesPerChar) {
@@ -3913,11 +3912,11 @@ xmlrpc_XML_ParserCreate(const XML_Char * const encodingName) {
         ns = 0;
         poolInit(&tempPool);
         poolInit(&temp2Pool);
-        protocolEncodingName =
+        parser->m_protocolEncodingName =
             encodingName ? poolCopyString(&tempPool, encodingName) : 0;
         curBase = 0;
         if (!dtdInit(&dtd) || !atts || !dataBuf
-            || (encodingName && !protocolEncodingName)) {
+            || (encodingName && !parser->m_protocolEncodingName)) {
             xmlrpc_XML_ParserFree(xmlParserP);
             return 0;
         }
@@ -3975,16 +3974,25 @@ xmlrpc_XML_ParserCreateNS(const XML_Char * const encodingName,
 
 
 int
-xmlrpc_XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName)
-{
-  if (!encodingName)
-    protocolEncodingName = 0;
-  else {
-    protocolEncodingName = poolCopyString(&tempPool, encodingName);
-    if (!protocolEncodingName)
-      return 0;
-  }
-  return 1;
+xmlrpc_XML_SetEncoding(XML_Parser       const xmlParserP,
+                       const XML_Char * const encodingName) {
+
+    Parser * const parser = (Parser *) xmlParserP;
+
+    int retval;
+
+    if (!encodingName) {
+        parser->m_protocolEncodingName = NULL;
+        retval = 1;
+    } else {
+        parser->m_protocolEncodingName =
+            poolCopyString(&tempPool, encodingName);
+        if (parser->m_protocolEncodingName)
+            retval = 1;
+        else
+            retval = 0;
+    }
+    return retval;
 }
 
 
