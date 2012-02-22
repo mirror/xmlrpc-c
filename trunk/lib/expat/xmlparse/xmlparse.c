@@ -1282,23 +1282,35 @@ reportComment(XML_Parser parser,
 
 
 
+static void
+initXmlEncoding(XML_Encoding * const xmlEncP) {
+    
+    unsigned int i;
+
+    for (i = 0; i < ARRAY_SIZE(xmlEncP->map); ++i)
+        xmlEncP->map[i] = -1;
+
+    xmlEncP->convert = 0;
+    xmlEncP->data    = 0;
+    xmlEncP->release = 0;
+}
+
+
+
 static enum XML_Error
-handleUnknownEncoding(XML_Parser const xmlParserP,
+handleUnknownEncoding(XML_Parser       const xmlParserP,
                       const XML_Char * const encodingName) {
 
     Parser * const parser = (Parser *) xmlParserP;
 
     if (unknownEncodingHandler) {
         XML_Encoding info;
-        int i;
-        for (i = 0; i < 256; i++)
-            info.map[i] = -1;
-        info.convert = 0;
-        info.data = 0;
-        info.release = 0;
+
+        initXmlEncoding(&info);
+
         if (unknownEncodingHandler(unknownEncodingHandlerData,
                                    encodingName, &info)) {
-            ENCODING *enc;
+            ENCODING * enc;
             unknownEncodingMem = malloc(xmlrpc_XmlSizeOfUnknownEncoding());
             if (!unknownEncodingMem) {
                 if (info.release)
@@ -1308,13 +1320,13 @@ handleUnknownEncoding(XML_Parser const xmlParserP,
             enc = (ns
                    ? xmlrpc_XmlInitUnknownEncodingNS
                    : xmlrpc_XmlInitUnknownEncoding)(unknownEncodingMem,
-                                             info.map,
-                                             info.convert,
-                                             info.data);
+                                                    info.map,
+                                                    info.convert,
+                                                    info.data);
             if (enc) {
-                unknownEncodingData = info.data;
+                unknownEncodingData    = info.data;
                 unknownEncodingRelease = info.release;
-                parser->m_encoding = enc;
+                parser->m_encoding     = enc;
                 return XML_ERROR_NONE;
             }
         }
@@ -1329,6 +1341,7 @@ handleUnknownEncoding(XML_Parser const xmlParserP,
 static enum XML_Error
 initializeEncoding(XML_Parser const xmlParserP) {
 
+    enum XML_Error retval;
     Parser * const parser = (Parser *) xmlParserP;
 
     const char *s;
@@ -1352,10 +1365,18 @@ initializeEncoding(XML_Parser const xmlParserP) {
 #else
     s = protocolEncodingName;
 #endif
-    if ((ns ? xmlrpc_XmlInitEncodingNS : xmlrpc_XmlInitEncoding)(
-        &parser->m_initEncoding, &parser->m_encoding, s))
-        return XML_ERROR_NONE;
-    return handleUnknownEncoding(xmlParserP, protocolEncodingName);
+    {        
+        int rc;
+
+        rc = (ns ? xmlrpc_XmlInitEncodingNS : xmlrpc_XmlInitEncoding)(
+            &parser->m_initEncoding, &parser->m_encoding, s);
+
+        if (rc != 0)
+            retval = XML_ERROR_NONE;
+        else
+            retval = handleUnknownEncoding(xmlParserP, protocolEncodingName);
+    }
+    return retval;
 }
 
 
