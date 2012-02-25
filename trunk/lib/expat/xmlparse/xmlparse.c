@@ -254,6 +254,7 @@ typedef struct {
   INIT_ENCODING m_initEncoding;
   const ENCODING *m_internalEncoding;
   const XML_Char *m_protocolEncodingName;
+    /* NULL if no encoding assigned */
   int m_ns;
   void *m_unknownEncodingMem;
   void *m_unknownEncodingData;
@@ -380,7 +381,6 @@ typedef struct {
 #define hadExternalDoctype (((Parser *)parser)->m_hadExternalDoctype)
 #define namespaceSeparator (((Parser *)parser)->m_namespaceSeparator)
 #define parentParser (((Parser *)parser)->m_parentParser)
-#define paramEntityParsing (((Parser *)parser)->m_paramEntityParsing)
 
 
 
@@ -1152,21 +1152,25 @@ reportDefault(XML_Parser       const xmlParserP,
 
         inCursor = start;
         do {
-            ICHAR *dataPtr = (ICHAR *)dataBuf;
+            ICHAR * dataPtr;
+
+            dataPtr = (ICHAR *)parser->m_dataBuf; /* initial value */
+
             XmlConvert(encoderP, &inCursor, end,
-                       &dataPtr, (ICHAR *)dataBufEnd);
+                       &dataPtr, (ICHAR *)parser->m_dataBufEnd);
             *evPtr.endP = inCursor;
             {
-                size_t const len = dataPtr - (ICHAR *)dataBuf;
+                size_t const len = dataPtr - (ICHAR *)parser->m_dataBuf;
                 assert((size_t)(int)len == len);   /* parser requirement */
-                defaultHandler(handlerArg, dataBuf, (int)len);
+                defaultHandler(parser->m_handlerArg,
+                               parser->m_dataBuf, (int)len);
             }
             *evPtr.startP = inCursor;
         } while (inCursor != end);
     } else {
         size_t const len = (XML_Char *)end - (XML_Char *)start;
         assert((size_t)(int)len == len);  /* parser requirement */
-        defaultHandler(handlerArg, (XML_Char *)start, len);
+        defaultHandler(parser->m_handlerArg, (XML_Char *)start, len);
     }
 }
 
@@ -1352,65 +1356,109 @@ initializeEncoding(XML_Parser const xmlParserP) {
 
 
 
-static enum XML_Error
-processXmlDecl(XML_Parser   const xmlParserP,
-               int          const isGeneralTextEntity,
-               const char * const s,
-               const char * const next) {
+static void
+handleUnknownEncoding0(XML_Parser       const xmlParserP,
+                       const char *     const encodingName,
+                       const ENCODING * const encoding,
+                       STRING_POOL *    const tempPoolP,
+                       enum XML_Error * const resultP) {
 
-    Parser * const parser = (Parser *) xmlParserP;
+    const XML_Char * const s =
+        poolStoreString(tempPoolP, encoding, encodingName,
+                        encodingName + XmlNameLength(encoding,
+                                                     encodingName));
+    if (s) {
+        *resultP = handleUnknownEncoding(xmlParserP, s);
+        poolDiscard(tempPoolP);
+    } else
+        *resultP = XML_ERROR_NO_MEMORY;
+}
+
+
+
+static void
+processXmlDecl(XML_Parser       const xmlParserP,
+               int              const isGeneralTextEntity,
+               const char *     const s,
+               const char *     const next,
+               enum XML_Error * const resultP) {
+/*----------------------------------------------------------------------------
+   Process an XML declaration processing instruction (PI), i.e.
+   <?xml ...?>
+
+   If *xmlParserP does not already have an encoding assigned and the
+   declaration names an encoding, set that up as the encoding for the parser
+   if possible.
+
+   If *xmlParserP already has an encoding assigned, ignore any encoding
+   specification in the declaration, even errors in it.
+-----------------------------------------------------------------------------*/
+    Parser * const parserP = (Parser *) xmlParserP;
 
     const char *encodingName = 0;
-    const ENCODING *newEncoding = 0;
+    const ENCODING *newEncodingP = 0;
     const char *version;
     int standalone = -1;
-    if (!(ns
-          ? xmlrpc_XmlParseXmlDeclNS
-          : xmlrpc_XmlParseXmlDecl)(isGeneralTextEntity,
-                             parser->m_encoding,
-                             s,
-                             next,
-                             &eventPtr,
-                             &version,
-                             &encodingName,
-                             &newEncoding,
-                             &standalone))
-        return XML_ERROR_SYNTAX;
-    if (!isGeneralTextEntity && standalone == 1) {
-        dtd.standalone = 1;
-        if (paramEntityParsing == XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE)
-            paramEntityParsing = XML_PARAM_ENTITY_PARSING_NEVER;
-    }
-    if (defaultHandler)
-        reportDefault(xmlParserP, parser->m_encoding, s, next);
-    if (!parser->m_protocolEncodingName) {
-        if (newEncoding) {
-            if (newEncoding->minBytesPerChar !=
-                parser->m_encoding->minBytesPerChar) {
-                eventPtr = encodingName;
-                return XML_ERROR_INCORRECT_ENCODING;
+    bool validSyntax;
+
+    validSyntax = (parserP->m_ns
+                 ? xmlrpc_XmlParseXmlDeclNS
+                 : xmlrpc_XmlParseXmlDecl)(isGeneralTextEntity,
+                                           parserP->m_encoding,
+                                           s,
+                                           next,
+                                           &parserP->m_eventPtr,
+                                           &version,
+                                           &encodingName,
+                                           &newEncodingP,
+                                           &standalone);
+    if (!validSyntax) {
+        *resultP = XML_ERROR_SYNTAX;
+        /* parserP->m_eventPtr points to the invalid part */
+    } else {
+        if (!isGeneralTextEntity && standalone == 1) {
+            parserP->m_dtd.standalone = 1;
+            if (parserP->m_paramEntityParsing ==
+                XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE)
+                parserP->m_paramEntityParsing = XML_PARAM_ENTITY_PARSING_NEVER;
+        }
+        if (parserP->m_defaultHandler)
+            reportDefault(xmlParserP, parserP->m_encoding, s, next);
+        if (parserP->m_protocolEncodingName)
+            *resultP = XML_ERROR_NONE;
+        else {
+            if (newEncodingP) {
+                /* The declaration names an encoding and the parser recognized
+                   the name as referring to 'newEncodingP'.
+                */
+                if (newEncodingP->minBytesPerChar !=
+                    parserP->m_encoding->minBytesPerChar) {
+                    parserP->m_eventPtr = encodingName;
+                    *resultP = XML_ERROR_INCORRECT_ENCODING;
+                } else {
+                    parserP->m_encoding = newEncodingP;
+                    *resultP = XML_ERROR_NONE;
+                }
+            } else {
+                if (encodingName) {
+                    /* The declaration names an encoding, but the parser
+                       didn't recognize the name.
+                    */
+                    enum XML_Error result;
+                    handleUnknownEncoding0(xmlParserP, encodingName,
+                                           parserP->m_encoding,
+                                           &parserP->m_tempPool, &result);
+                    
+                    if (result == XML_ERROR_UNKNOWN_ENCODING)
+                        parserP->m_eventPtr = encodingName;
+                
+                    *resultP = result;
+                } else
+                    /* The declaration doesn't name an encoding */
+                    *resultP = XML_ERROR_NONE;
             }
-            parser->m_encoding = newEncoding;
-        }
-        else if (encodingName) {
-            enum XML_Error result;
-            const XML_Char * s =
-                poolStoreString(&tempPool,
-                                parser->m_encoding,
-                                encodingName,
-                                encodingName
-                                + XmlNameLength(parser->m_encoding,
-                                                encodingName));
-            if (!s)
-                return XML_ERROR_NO_MEMORY;
-            result = handleUnknownEncoding(xmlParserP, s);
-            poolDiscard(&tempPool);
-            if (result == XML_ERROR_UNKNOWN_ENCODING)
-                eventPtr = encodingName;
-            return result;
         }
     }
-    return XML_ERROR_NONE;
 }
 
 
@@ -2954,7 +3002,8 @@ externalEntityInitProcessor3(XML_Parser       const xmlParserP,
     switch (tok) {
     case XML_TOK_XML_DECL:
     {
-        enum XML_Error result = processXmlDecl(xmlParserP, 1, start, next);
+        enum XML_Error result;
+        processXmlDecl(xmlParserP, 1, start, next, &result);
         if (result != XML_ERROR_NONE) {
             *errorCodeP = result;
             return;
@@ -3247,7 +3296,8 @@ doProlog(XML_Parser       const xmlParserP,
     role = XmlTokenRole(&prologState, tok, s, next, enc);
     switch (role) {
     case XML_ROLE_XML_DECL: {
-        enum XML_Error result = processXmlDecl(xmlParserP, 0, s, next);
+        enum XML_Error result;
+        processXmlDecl(xmlParserP, 0, s, next, &result);
         if (result != XML_ERROR_NONE) {
           *errorCodeP = result;
           return;
@@ -3267,7 +3317,8 @@ doProlog(XML_Parser       const xmlParserP,
       }
       break;
     case XML_ROLE_TEXT_DECL: {
-        enum XML_Error result = processXmlDecl(xmlParserP, 1, s, next);
+        enum XML_Error result;
+        processXmlDecl(xmlParserP, 1, s, next, &result);
         if (result != XML_ERROR_NONE) {
           *errorCodeP = result;
           return;
@@ -3306,7 +3357,7 @@ doProlog(XML_Parser       const xmlParserP,
     case XML_ROLE_DOCTYPE_CLOSE:
       if (dtd.complete && hadExternalDoctype) {
         dtd.complete = 0;
-        if (paramEntityParsing && externalEntityRefHandler) {
+        if (parser->m_paramEntityParsing && externalEntityRefHandler) {
           ENTITY *entity = (ENTITY *)lookup(&dtd.paramEntities,
                                             externalSubsetName,
                                             0);
@@ -3438,7 +3489,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_DOCTYPE_SYSTEM_ID:
       if (!dtd.standalone
-          && !paramEntityParsing
+          && !parser->m_paramEntityParsing
           && notStandaloneHandler
           && !notStandaloneHandler(handlerArg)) {
         *errorCodeP = XML_ERROR_NOT_STANDALONE;
@@ -3664,7 +3715,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_PARAM_ENTITY_REF:
     case XML_ROLE_INNER_PARAM_ENTITY_REF:
-      if (paramEntityParsing
+      if (parser->m_paramEntityParsing
           && (dtd.complete || role == XML_ROLE_INNER_PARAM_ENTITY_REF)) {
         const XML_Char *name;
         ENTITY *entity;
@@ -3846,87 +3897,97 @@ XML_Parser
 xmlrpc_XML_ParserCreate(const XML_Char * const encodingName) {
 
     XML_Parser const xmlParserP = malloc(sizeof(Parser));
-    Parser * const parser = (Parser *)xmlParserP;
+
+    bool error;
+    
     if (xmlParserP) {
-        processor = prologInitProcessor;
-        xmlrpc_XmlPrologStateInit(&prologState);
-        userData = 0;
-        handlerArg = 0;
-        startElementHandler = 0;
-        endElementHandler = 0;
-        characterDataHandler = 0;
-        processingInstructionHandler = 0;
-        commentHandler = 0;
-        startCdataSectionHandler = 0;
-        endCdataSectionHandler = 0;
-        defaultHandler = 0;
-        startDoctypeDeclHandler = 0;
-        endDoctypeDeclHandler = 0;
-        unparsedEntityDeclHandler = 0;
-        notationDeclHandler = 0;
-        externalParsedEntityDeclHandler = 0;
-        internalParsedEntityDeclHandler = 0;
-        startNamespaceDeclHandler = 0;
-        endNamespaceDeclHandler = 0;
-        notStandaloneHandler = 0;
-        externalEntityRefHandler = 0;
-        externalEntityRefHandlerArg = parser;
-        unknownEncodingHandler = 0;
-        buffer = 0;
-        bufferPtr = 0;
-        bufferEnd = 0;
-        parseEndByteIndex = 0;
-        parseEndPtr = 0;
-        bufferLim = 0;
-        declElementType = 0;
-        declAttributeId = 0;
-        declEntity = 0;
-        declNotationName = 0;
-        declNotationPublicId = 0;
-        memset(&position, 0, sizeof(POSITION));
-        errorCode = XML_ERROR_NONE;
-        errorString = NULL;
-        eventPtr = 0;
-        eventEndPtr = 0;
-        positionPtr = 0;
-        openInternalEntities = 0;
-        tagLevel = 0;
-        tagStack = 0;
-        freeTagList = 0;
-        freeBindingList = 0;
-        inheritedBindings = 0;
-        attsSize = INIT_ATTS_SIZE;
-        atts = malloc(attsSize * sizeof(ATTRIBUTE));
-        nSpecifiedAtts = 0;
-        dataBuf = malloc(INIT_DATA_BUF_SIZE * sizeof(XML_Char));
-        groupSize = 0;
-        groupConnector = 0;
-        hadExternalDoctype = 0;
-        unknownEncodingMem = 0;
-        unknownEncodingRelease = 0;
-        unknownEncodingData = 0;
-        unknownEncodingHandlerData = 0;
-        namespaceSeparator = '!';
-        parentParser = 0;
-        paramEntityParsing = XML_PARAM_ENTITY_PARSING_NEVER;
-        ns = 0;
-        poolInit(&tempPool);
-        poolInit(&temp2Pool);
+        Parser * const parser = (Parser *)xmlParserP;
+
+        parser->m_processor = prologInitProcessor;
+        xmlrpc_XmlPrologStateInit(&parser->m_prologState);
+        parser->m_userData = 0;
+        parser->m_handlerArg = 0;
+        parser->m_startElementHandler = 0;
+        parser->m_endElementHandler = 0;
+        parser->m_characterDataHandler = 0;
+        parser->m_processingInstructionHandler = 0;
+        parser->m_commentHandler = 0;
+        parser->m_startCdataSectionHandler = 0;
+        parser->m_endCdataSectionHandler = 0;
+        parser->m_defaultHandler = 0;
+        parser->m_startDoctypeDeclHandler = 0;
+        parser->m_endDoctypeDeclHandler = 0;
+        parser->m_unparsedEntityDeclHandler = 0;
+        parser->m_notationDeclHandler = 0;
+        parser->m_externalParsedEntityDeclHandler = 0;
+        parser->m_internalParsedEntityDeclHandler = 0;
+        parser->m_startNamespaceDeclHandler = 0;
+        parser->m_endNamespaceDeclHandler = 0;
+        parser->m_notStandaloneHandler = 0;
+        parser->m_externalEntityRefHandler = 0;
+        parser->m_externalEntityRefHandlerArg = parser;
+        parser->m_unknownEncodingHandler = 0;
+        parser->m_buffer = 0;
+        parser->m_bufferPtr = 0;
+        parser->m_bufferEnd = 0;
+        parser->m_parseEndByteIndex = 0;
+        parser->m_parseEndPtr = 0;
+        parser->m_bufferLim = 0;
+        parser->m_declElementType = 0;
+        parser->m_declAttributeId = 0;
+        parser->m_declEntity = 0;
+        parser->m_declNotationName = 0;
+        parser->m_declNotationPublicId = 0;
+        memset(&parser->m_position, 0, sizeof(POSITION));
+        parser->m_errorCode = XML_ERROR_NONE;
+        parser->m_errorString = NULL;
+        parser->m_eventPtr = 0;
+        parser->m_eventEndPtr = 0;
+        parser->m_positionPtr = 0;
+        parser->m_openInternalEntities = 0;
+        parser->m_tagLevel = 0;
+        parser->m_tagStack = 0;
+        parser->m_freeTagList = 0;
+        parser->m_freeBindingList = 0;
+        parser->m_inheritedBindings = 0;
+        parser->m_attsSize = INIT_ATTS_SIZE;
+        parser->m_atts = malloc(attsSize * sizeof(ATTRIBUTE));
+        parser->m_nSpecifiedAtts = 0;
+        parser->m_dataBuf = malloc(INIT_DATA_BUF_SIZE * sizeof(XML_Char));
+        parser->m_groupSize = 0;
+        parser->m_groupConnector = 0;
+        parser->m_hadExternalDoctype = 0;
+        parser->m_unknownEncodingMem = 0;
+        parser->m_unknownEncodingRelease = 0;
+        parser->m_unknownEncodingData = 0;
+        parser->m_unknownEncodingHandlerData = 0;
+        parser->m_namespaceSeparator = '!';
+        parser->m_parentParser = 0;
+        parser->m_paramEntityParsing = XML_PARAM_ENTITY_PARSING_NEVER;
+        parser->m_ns = 0;
+        poolInit(&parser->m_tempPool);
+        poolInit(&parser->m_temp2Pool);
         parser->m_protocolEncodingName =
-            encodingName ? poolCopyString(&tempPool, encodingName) : 0;
-        curBase = 0;
-        if (!dtdInit(&dtd) || !atts || !dataBuf
-            || (encodingName && !parser->m_protocolEncodingName)) {
-            xmlrpc_XML_ParserFree(xmlParserP);
-            return 0;
+            encodingName ?
+            poolCopyString(&parser->m_tempPool, encodingName) : NULL;
+        parser->m_curBase = 0;
+        if (!dtdInit(&parser->m_dtd) || !parser->m_atts || !parser->m_dataBuf
+            || (encodingName && !parser->m_protocolEncodingName))
+            error = true;
+        else {
+            parser->m_dataBufEnd = parser->m_dataBuf + INIT_DATA_BUF_SIZE;
+            xmlrpc_XmlInitEncoding(&parser->m_initEncoding,
+                                   &parser->m_encoding,
+                                   0);
+            parser->m_internalEncoding = XmlGetInternalEncoding();
+            error = false;
         }
-        dataBufEnd = dataBuf + INIT_DATA_BUF_SIZE;
-        xmlrpc_XmlInitEncoding(&parser->m_initEncoding,
-                               &parser->m_encoding,
-                               0);
-        internalEncoding = XmlGetInternalEncoding();
-    }
-    return xmlParserP;
+        if (error)
+            xmlrpc_XML_ParserFree(xmlParserP);
+    } else
+        error =true;
+
+    return error ? NULL : xmlParserP;
 }
 
 XML_Parser
@@ -4002,7 +4063,8 @@ xmlrpc_XML_ExternalEntityParserCreate(XML_Parser oldParser,
                                       const XML_Char *context,
                                       const XML_Char *encodingName)
 {
-  XML_Parser parser = oldParser;
+    XML_Parser xmlParserP = oldParser;
+    Parser * parser = xmlParserP;
   DTD *oldDtd = &dtd;
   XML_StartElementHandler oldStartElementHandler = startElementHandler;
   XML_EndElementHandler oldEndElementHandler = endElementHandler;
@@ -4025,7 +4087,7 @@ xmlrpc_XML_ExternalEntityParserCreate(XML_Parser oldParser,
   void *oldHandlerArg = handlerArg;
   int oldDefaultExpandInternalEntities = defaultExpandInternalEntities;
   void *oldExternalEntityRefHandlerArg = externalEntityRefHandlerArg;
-  int oldParamEntityParsing = paramEntityParsing;
+  int oldParamEntityParsing = parser->m_paramEntityParsing;
   parser = (ns
             ? xmlrpc_XML_ParserCreateNS(encodingName, namespaceSeparator)
             : xmlrpc_XML_ParserCreate(encodingName));
@@ -4056,7 +4118,7 @@ xmlrpc_XML_ExternalEntityParserCreate(XML_Parser oldParser,
   if (oldExternalEntityRefHandlerArg != oldParser)
     externalEntityRefHandlerArg = oldExternalEntityRefHandlerArg;
   defaultExpandInternalEntities = oldDefaultExpandInternalEntities;
-  paramEntityParsing = oldParamEntityParsing;
+  parser->m_paramEntityParsing = oldParamEntityParsing;
   if (context) {
     if (!dtdCopy(&dtd, oldDtd) || !setContext(parser, context)) {
       xmlrpc_XML_ParserFree(parser);
@@ -4313,12 +4375,15 @@ xmlrpc_XML_SetUnknownEncodingHandler(XML_Parser parser,
 
 int
 xmlrpc_XML_SetParamEntityParsing(
-    XML_Parser                  const parser  ATTR_UNUSED,
+    XML_Parser                  const xmlParserP,
     enum XML_ParamEntityParsing const parsing) {
     
+    Parser * const parserP = (Parser *) xmlParserP;
+
     int retval;
 
-    paramEntityParsing = parsing;
+    parserP->m_paramEntityParsing = parsing;
+
     retval = 1;
 
     return retval;
