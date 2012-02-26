@@ -13,38 +13,52 @@
 extern "C" {
 #endif /* __cplusplus */
 
-XMLRPC_DLLEXPORT
+/*
+  XMLRPC_SERVER_CGI_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_server_cgi.
+
+  XMLRPC_BUILDING_SERVER_CGI says this compilation is part of
+  libxmlrpc_server_cgi, as opposed to something that _uses_
+  libxmlrpc_server_cgi.
+*/
+#ifdef XMLRPC_BUILDING_SERVER_CGI
+#define XMLRPC_SERVER_CGI_EXPORTED XMLRPC_DLL_EXPORT
+#else
+#define XMLRPC_SERVER_CGI_EXPORTED
+#endif
+
+XMLRPC_SERVER_CGI_EXPORTED
 void
 xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP);
 
 #define XMLRPC_CGI_NO_FLAGS (0)
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_CGI_EXPORTED
 extern void
 xmlrpc_cgi_init(int const flags);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_CGI_EXPORTED
 extern xmlrpc_registry *
 xmlrpc_cgi_registry (void);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_CGI_EXPORTED
 void
 xmlrpc_cgi_add_method(const char *  const method_name,
                       xmlrpc_method const method,
                       void *        const user_data);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_CGI_EXPORTED
 void
 xmlrpc_cgi_add_method_w_doc(const char *  const method_name,
                             xmlrpc_method const method,
                             void *        const user_data,
                             const char *  const signature,
                             const char *  const help);
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_CGI_EXPORTED
 extern void
 xmlrpc_cgi_process_call (void);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_CGI_EXPORTED
 extern void
 xmlrpc_cgi_cleanup (void);
 

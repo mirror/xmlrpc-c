@@ -45,6 +45,20 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/*
+  XMLRPC_SERVER_HTTPSYS_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_server_httpsys.
+
+  XMLRPC_BUILDING_SERVER_HTTPSYS says this compilation is part of
+  libxmlrpc_server_httpsys, as opposed to something that _uses_
+  libxmlrpc_server_httpsys.
+*/
+#ifdef XMLRPC_BUILDING_SERVER_HTTPSYS
+#define XMLRPC_SERVER_HTTPSYS_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_SERVER_HTTPSYS_EXPORTED
+#endif
+
 /*=========================================================================
 **  XML-RPC Server (based on HTTP.SYS)
 **=========================================================================
@@ -82,7 +96,7 @@ typedef struct {
    not the caller is new enough to have supplied a certain parameter.
 */
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_HTTPSYS_EXPORTED
 void
 xmlrpc_server_httpsys(
 	xmlrpc_env *                        const envP,

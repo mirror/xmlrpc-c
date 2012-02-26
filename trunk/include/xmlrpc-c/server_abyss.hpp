@@ -11,16 +11,30 @@
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/abyss.h>
 
+/*
+  XMLRPC_SERVER_ABYSSPP_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_server_abyss++.
+
+  XMLRPC_BUILDING_SERVER_ABYSSPP says this compilation is part of
+  libxmlrpc_server_abyss++, as opposed to something that _uses_
+  libxmlrpc_server_abyss++.
+*/
+#ifdef XMLRPC_BUILDING_SERVER_ABYSSPP
+#define XMLRPC_SERVER_ABYSSPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_SERVER_ABYSSPP_EXPORTED
+#endif
+
 namespace xmlrpc_c {
 
 struct serverAbyss_impl;
 
-class XMLRPC_DLLEXPORT serverAbyss {
+class XMLRPC_SERVER_ABYSSPP_EXPORTED serverAbyss {
     
 public:
     struct constrOpt_impl;
 
-    class XMLRPC_DLLEXPORT constrOpt {
+    class XMLRPC_SERVER_ABYSSPP_EXPORTED constrOpt {
     public:
         constrOpt();
         ~constrOpt();
@@ -80,7 +94,8 @@ public:
     void
     terminate();
     
-    class XMLRPC_DLLEXPORT shutdown : public xmlrpc_c::registry::shutdown {
+    class XMLRPC_SERVER_ABYSSPP_EXPORTED shutdown :
+         public xmlrpc_c::registry::shutdown {
     public:
         shutdown(xmlrpc_c::serverAbyss * const severAbyssP);
         virtual ~shutdown();
@@ -97,7 +112,8 @@ private:
     initialize(constrOpt const& opt);
 };
 
-class XMLRPC_DLLEXPORT callInfo_serverAbyss : public xmlrpc_c::callInfo {
+class XMLRPC_SERVER_ABYSSPP_EXPORTED callInfo_serverAbyss :
+        public xmlrpc_c::callInfo {
 /*----------------------------------------------------------------------------
    This is information about how an XML-RPC call arrived via an Abyss server.
    It is available to the user's XML-RPC method execute() method, so for
@@ -117,7 +133,7 @@ public:
         // object things like what the IP address of the client is.
 };
 
-class XMLRPC_DLLEXPORT callInfo_abyss : public xmlrpc_c::callInfo {
+class XMLRPC_SERVER_ABYSSPP_EXPORTED callInfo_abyss : public xmlrpc_c::callInfo {
 /*----------------------------------------------------------------------------
    This is information about how an XML-RPC call arrived via an Abyss server.
    It is available to the user's XML-RPC method execute() method, so for
@@ -135,19 +151,19 @@ public:
         // object things like what the IP address of the client is.
 };
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSSPP_EXPORTED
 void
 server_abyss_set_handlers(TServer *          const  srvP,
                           xmlrpc_c::registry const& registry,
                           std::string        const& uriPath = "/RPC2");
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSSPP_EXPORTED
 void
 server_abyss_set_handlers(TServer *                  const  srvP,
                           const xmlrpc_c::registry * const  registryP,
                           std::string                const& uriPath = "/RPC2");
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSSPP_EXPORTED
 void
 server_abyss_set_handlers(TServer *             const srvP,
                           xmlrpc_c::registryPtr const registryPtr,

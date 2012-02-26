@@ -24,6 +24,20 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/*
+  XMLRPC_SERVER_ABYSS_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_server_abyss.
+
+  XMLRPC_BUILDING_SERVER_ABYSS says this compilation is part of
+  libxmlrpc_server_abyss, as opposed to something that _uses_
+  libxmlrpc_server_abyss.
+*/
+#ifdef XMLRPC_BUILDING_SERVER_ABYSS
+#define XMLRPC_SERVER_ABYSS_EXPORTED XMLRPC_DLL_EXPORT
+#else
+#define XMLRPC_SERVER_ABYSS_EXPORTED
+#endif
+
 #define XMLRPC_SERVER_ABYSS_NO_FLAGS (0)
 
 
@@ -34,11 +48,11 @@ extern "C" {
 **  of your program, when it is only one thread.
 **=======================================================================*/
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_global_init(xmlrpc_env * const envP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_global_term(void);
 
@@ -93,7 +107,7 @@ typedef struct {
 **  Simple server with Abyss under the covers
 **=======================================================================*/
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parms,
@@ -105,47 +119,47 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
 
 typedef struct xmlrpc_server_abyss xmlrpc_server_abyss_t;
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
                            const xmlrpc_server_abyss_parms * const parmsP,
                            unsigned int                      const parmSize,
                            xmlrpc_server_abyss_t **          const serverPP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_destroy(xmlrpc_server_abyss_t * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_run_server(xmlrpc_env *            const envP,
                                xmlrpc_server_abyss_t * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_terminate(xmlrpc_env *            const envP,
                               xmlrpc_server_abyss_t * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_reset_terminate(xmlrpc_env *            const envP,
                                     xmlrpc_server_abyss_t * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_use_sigchld(xmlrpc_server_abyss_t * const serverP);
 
 
 typedef struct xmlrpc_server_abyss_sig xmlrpc_server_abyss_sig;
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_setup_sig(
     xmlrpc_env *               const envP,
     xmlrpc_server_abyss_t *    const serverP,
     xmlrpc_server_abyss_sig ** const oldHandlersPP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_restore_sig(
     const xmlrpc_server_abyss_sig * const oldHandlersP);
@@ -188,7 +202,7 @@ typedef struct {
 */
 
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_set_handler3(
     xmlrpc_env *                              const envP,
@@ -196,7 +210,7 @@ xmlrpc_server_abyss_set_handler3(
     const xmlrpc_server_abyss_handler_parms * const parms,
     unsigned int                              const parmSize);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_set_handler2(
     TServer *         const srvP,
@@ -206,25 +220,25 @@ xmlrpc_server_abyss_set_handler2(
     size_t            const xmlProcessorMaxStackSize,
     xmlrpc_bool       const chunkResponse);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
                                   const char *      const filename,
                                   xmlrpc_registry * const registryP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_set_handlers(TServer *         const serverP,
                                  xmlrpc_registry * const registryP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                 TServer *         const serverP,
                                 const char *      const filename,
                                 xmlrpc_registry * const registryP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_set_default_handler(TServer * const serverP);
 
@@ -245,7 +259,7 @@ xmlrpc_server_abyss_set_default_handler(TServer * const serverP);
 ** Once you call this routine, it is illegal to modify the server any
 ** more, including changing any method registry.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void
 xmlrpc_server_abyss_run(void);
 
@@ -255,7 +269,7 @@ xmlrpc_server_abyss_run(void);
 ** function.  'runfirstArg' is the argument the server passes to the runfirst
 ** function.
 **/
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void 
 xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
                               void *     const runfirstArg);
@@ -276,34 +290,34 @@ xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
 ** Or use a regular method registry and call
 ** xmlrpc_server_abyss_set_handlers().
 **/
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void 
 xmlrpc_server_abyss_init(int          const flags, 
                          const char * const config_file);
 
 /* This is called automatically by xmlrpc_server_abyss_init. */
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void xmlrpc_server_abyss_init_registry (void);
 
 /* Fetch the internal registry, if you happen to need it. 
    If you're using this, you really shouldn't be using the built-in
    registry at all.  It exists today only for backward compatibilty.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 extern xmlrpc_registry *
 xmlrpc_server_abyss_registry (void);
 
 /* A quick & easy shorthand for adding a method. Depending on
 ** how you've configured your copy of Abyss, it's probably not safe to
 ** call this method after calling xmlrpc_server_abyss_run. */
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 void xmlrpc_server_abyss_add_method (char *        const method_name,
                                      xmlrpc_method const method,
                                      void *        const user_data);
     
 /* As above, but provide documentation (see xmlrpc_registry_add_method_w_doc
 ** for more information). You should really use this one. */
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_ABYSS_EXPORTED
 extern void
 xmlrpc_server_abyss_add_method_w_doc (char *        const method_name,
                                       xmlrpc_method const method,

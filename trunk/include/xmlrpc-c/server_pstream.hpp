@@ -13,15 +13,29 @@ typedef int socklen_t;
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/packetsocket.hpp>
 
+/*
+  XMLRPC_SERVER_PSTREAMPP_EXPORTED marks a symbol in this file that is
+  exported from libxmlrpc_server_pstream++.
+
+  XMLRPC_BUILDING_SERVER_PSTREAMPP says this compilation is part of
+  libxmlrpc_server_pstream++, as opposed to something that _uses_
+  libxmlrpc_server_pstream++.
+*/
+#ifdef XMLRPC_BUILDING_SERVER_PSTREAMPP
+#define XMLRPC_SERVER_PSTREAMPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_SERVER_PSTREAMPP_EXPORTED
+#endif
+
 namespace xmlrpc_c {
 
-class XMLRPC_DLLEXPORT serverPstreamConn {
+class XMLRPC_SERVER_PSTREAMPP_EXPORTED serverPstreamConn {
 
 public:
 
     struct constrOpt_impl;
 
-    class XMLRPC_DLLEXPORT constrOpt {
+    class XMLRPC_SERVER_PSTREAMPP_EXPORTED constrOpt {
     public:
         constrOpt();
         ~constrOpt();
@@ -78,13 +92,13 @@ private:
 };
 
 
-class XMLRPC_DLLEXPORT serverPstream {
+class XMLRPC_SERVER_PSTREAMPP_EXPORTED serverPstream {
 
 public:
 
     struct constrOpt_impl;
 
-    class XMLRPC_DLLEXPORT constrOpt {
+    class XMLRPC_SERVER_PSTREAMPP_EXPORTED constrOpt {
     public:
         constrOpt();
         ~constrOpt();
@@ -131,7 +145,8 @@ private:
 // server then passes it on through to the user's XML-RPC method 
 // execute() method.
 
-class XMLRPC_DLLEXPORT callInfo_serverPstream : public xmlrpc_c::callInfo {
+class XMLRPC_SERVER_PSTREAMPP_EXPORTED callInfo_serverPstream :
+        public xmlrpc_c::callInfo {
 /*----------------------------------------------------------------------------
    This is information about how an XML-RPC call arrived to the server.  It is
    available to the user's XML-RPC method execute() method, so for example an

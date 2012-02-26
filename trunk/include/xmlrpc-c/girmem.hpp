@@ -25,11 +25,24 @@
    typedef CRITICAL_SECTION girmem_lock;
 #endif
 
+/*
+  XMLRPC_LIBPP_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc++.
+
+  XMLRPC_BUILDING_LIBPP says this compilation is part of libxmlrpc++, as
+  opposed to something that _uses_ libxmlrpc++.
+*/
+#ifdef XMLRPC_BUILDING_LIBPP
+#define XMLRPC_LIBPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_LIBPP_EXPORTED
+#endif
+
 namespace girmem {
 
-class XMLRPC_DLLEXPORT autoObjectPtr;
+class XMLRPC_LIBPP_EXPORTED autoObjectPtr;
 
-class XMLRPC_DLLEXPORT autoObject {
+class XMLRPC_LIBPP_EXPORTED autoObject {
     friend class autoObjectPtr;
 
 public:
@@ -45,7 +58,7 @@ private:
     unsigned int refcount;
 };
 
-class XMLRPC_DLLEXPORT autoObjectPtr {
+class XMLRPC_LIBPP_EXPORTED autoObjectPtr {
 public:
     autoObjectPtr();
     autoObjectPtr(girmem::autoObject * objectP);

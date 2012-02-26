@@ -12,11 +12,24 @@
 #include <xmlrpc-c/timeout.hpp>
 #include <xmlrpc-c/client_transport.hpp>
 
+/*
+  XMLRPC_CLIENTPP_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_client++.
+
+  XMLRPC_BUILDING_CLIENTPP says this compilation is part of
+  libxmlrpc_client++, as opposed to something that _uses_ libxmlrpc_client++.
+*/
+#ifdef XMLRPC_BUILDING_CLIENTPP
+#define XMLRPC_CLIENTPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_CLIENTPP_EXPORTED
+#endif
+
 namespace xmlrpc_c {
 
-class XMLRPC_DLLEXPORT clientTransactionPtr;
+class XMLRPC_CLIENTPP_EXPORTED clientTransactionPtr;
 
-class XMLRPC_DLLEXPORT clientTransaction : public girmem::autoObject {
+class XMLRPC_CLIENTPP_EXPORTED clientTransaction : public girmem::autoObject {
 
     friend class clientTransactionPtr;
 
@@ -34,7 +47,7 @@ protected:
     clientTransaction();
 };
 
-class XMLRPC_DLLEXPORT clientTransactionPtr : public girmem::autoObjectPtr {
+class XMLRPC_CLIENTPP_EXPORTED clientTransactionPtr : public girmem::autoObjectPtr {
     
 public:
     clientTransactionPtr();
@@ -47,9 +60,9 @@ public:
     operator->() const;
 };
 
-class XMLRPC_DLLEXPORT clientPtr;
+class XMLRPC_CLIENTPP_EXPORTED clientPtr;
 
-class XMLRPC_DLLEXPORT client : public girmem::autoObject {
+class XMLRPC_CLIENTPP_EXPORTED client : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    A generic client -- a means of performing an RPC.  This is so generic
    that it can be used for clients that are not XML-RPC.
@@ -81,7 +94,7 @@ public:
     setInterrupt(int *);
 };
 
-class XMLRPC_DLLEXPORT clientPtr : public girmem::autoObjectPtr {
+class XMLRPC_CLIENTPP_EXPORTED clientPtr : public girmem::autoObjectPtr {
 public:
     clientPtr();
 
@@ -94,7 +107,7 @@ public:
     get() const;
 };
 
-class XMLRPC_DLLEXPORT serverAccessor : public girmem::autoObject {
+class XMLRPC_CLIENTPP_EXPORTED serverAccessor : public girmem::autoObject {
     
 public:
     serverAccessor(xmlrpc_c::clientPtr       const clientP,
@@ -110,7 +123,7 @@ private:
     xmlrpc_c::carriageParmPtr const carriageParmP;
 };
 
-class XMLRPC_DLLEXPORT serverAccessorPtr : public girmem::autoObjectPtr {
+class XMLRPC_CLIENTPP_EXPORTED serverAccessorPtr : public girmem::autoObjectPtr {
 public:
     serverAccessorPtr();
 
@@ -124,7 +137,7 @@ public:
     get() const;
 };
 
-class XMLRPC_DLLEXPORT connection {
+class XMLRPC_CLIENTPP_EXPORTED connection {
 /*----------------------------------------------------------------------------
    A nexus of a particular client and a particular server, along with
    carriage parameters for performing RPCs between the two.
@@ -144,7 +157,7 @@ public:
     xmlrpc_c::carriageParm * carriageParmP;
 };
 
-class XMLRPC_DLLEXPORT client_xml : public xmlrpc_c::client {
+class XMLRPC_CLIENTPP_EXPORTED client_xml : public xmlrpc_c::client {
 /*----------------------------------------------------------------------------
    A client that uses XML-RPC XML in the RPC.  This class does not define
    how the XML gets transported, though (i.e. does not require HTTP).
@@ -184,7 +197,7 @@ private:
     struct client_xml_impl * implP;
 };
 
-class XMLRPC_DLLEXPORT xmlTransaction_client : public xmlrpc_c::xmlTransaction {
+class XMLRPC_CLIENTPP_EXPORTED xmlTransaction_client : public xmlrpc_c::xmlTransaction {
 
 public:
     xmlTransaction_client(xmlrpc_c::clientTransactionPtr const& tranP);
@@ -202,7 +215,7 @@ private:
     xmlrpc_c::clientTransactionPtr const tranP;
 };
 
-class XMLRPC_DLLEXPORT xmlTransaction_clientPtr : public xmlTransactionPtr {
+class XMLRPC_CLIENTPP_EXPORTED xmlTransaction_clientPtr : public xmlTransactionPtr {
 public:
     xmlTransaction_clientPtr();
     
@@ -214,7 +227,7 @@ public:
 
 class rpcPtr;
 
-class XMLRPC_DLLEXPORT rpc : public clientTransaction {
+class XMLRPC_CLIENTPP_EXPORTED rpc : public clientTransaction {
 /*----------------------------------------------------------------------------
    An RPC.  An RPC consists of method name, parameters, and result.  It
    does not specify in any way how the method name and parameters get
@@ -282,7 +295,7 @@ private:
     struct rpc_impl * implP;
 };
 
-class XMLRPC_DLLEXPORT rpcPtr : public clientTransactionPtr {
+class XMLRPC_CLIENTPP_EXPORTED rpcPtr : public clientTransactionPtr {
 public:
     rpcPtr();
 

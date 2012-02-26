@@ -20,17 +20,6 @@
 /* XMLRPC_DLLEXPORT is an attribute of an external symbol that says it
    is to be exported from a library that contains it.
 
-   It has no effect in a declaration of imported symbol - i.e. one that is not
-   defined in the same compilation unit.  So one can use XMLRPC_DLLEXPORT on
-   a declaration in a header file that gets included in both the defining and
-   the user compilation unit.
-
-   (In the MSVC case, with the definition below, the above does not appear to
-   be the case, because the linker includes in the .lib DLL import library for
-   a DLL symbols that are imported to, rather than exported from, that DLL,
-   and even creates .lib DLL import libraries for things that aren't DLLs at
-   all.  We need to fix that).
-
    XMLRPC_BUILD_DLL says the compilation at hand is for use in an Xmlrpc-c
    DLL.  This is meant to be defined via compiler option.
 */

@@ -26,6 +26,19 @@
 extern "C" {
 #endif
 
+/*
+  XMLRPC_LIB_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc.
+
+  XMLRPC_BUILDING_LIB says this compilation is part of libxmlrpc, as
+  opposed to something that _uses_ libxmlrpc.
+*/
+#ifdef XMLRPC_BUILDING_LIB
+#define XMLRPC_LIB_EXPORTED XMLRPC_DLL_EXPORT
+#else
+#define XMLRPC_LIB_EXPORTED
+#endif
+
 struct _xmlrpc_value {
     xmlrpc_type _type;
     int _refcount;
@@ -111,34 +124,34 @@ typedef struct {
 } _struct_member;
 
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
                          xmlrpc_value ** const valPP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 const char *
 xmlrpc_typeName(xmlrpc_type const type);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_traceXml(const char * const label, 
                 const char * const xml,
                 size_t       const xmlLength);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_destroyString(xmlrpc_value * const stringP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_destroyDatetime(xmlrpc_value * const datetimeP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_destroyStruct(xmlrpc_value * const structP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
 
@@ -154,19 +167,19 @@ xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
    new memory for them.
 -----------------------------------------------------------------------------*/
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_datetime_str_old(xmlrpc_env *         const envP,
                              const xmlrpc_value * const valueP,
                              const char **        const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_old(xmlrpc_env *         const envP,
                        const xmlrpc_value * const valueP,
                        const char **        const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           const xmlrpc_value * const valueP,
@@ -174,13 +187,13 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           const char **        const stringValueP);
 
 #if XMLRPC_HAVE_WCHAR
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_w_old(xmlrpc_env *     const envP,
                          xmlrpc_value *   const valueP,
                          const wchar_t ** const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
                             xmlrpc_value *   const valueP,
@@ -188,7 +201,7 @@ xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
                             const wchar_t ** const stringValueP);
 #endif
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_base64_old(xmlrpc_env *           const envP,
                        const xmlrpc_value *   const valueP,
