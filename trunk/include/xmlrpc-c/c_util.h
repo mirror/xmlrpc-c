@@ -26,8 +26,17 @@
    defined in the same compilation unit.  So one can use XMLRPC_DLLEXPORT on
    a declaration in a header file that gets included in both the defining and
    the user compilation unit.
+
+   (In the MSVC case, with the definition below, the above does not appear to
+   be the case, because the linker includes in the .lib DLL import library for
+   a DLL symbols that are imported to, rather than exported from, that DLL,
+   and even creates .lib DLL import libraries for things that aren't DLLs at
+   all.  We need to fix that).
+
+   XMLRPC_BUILD_DLL says the compilation at hand is for use in an Xmlrpc-c
+   DLL.  This is meant to be defined via compiler option.
 */
-#if defined(_DLL) &&  defined(_MSC_VER)
+#if defined(XMLRPC_BUILD_DLL) && defined(_MSC_VER)
 #define XMLRPC_DLLEXPORT __declspec(dllexport)
 #else
 #define XMLRPC_DLLEXPORT
