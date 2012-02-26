@@ -5,8 +5,6 @@
    the compiler.
 */
 
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-
 /* XMLRPC_PRINTF_ATTR lets the GNU compiler check printf-type
    calls to be sure the arguments match the format string, thus preventing
    runtime segmentation faults and incorrect messages.

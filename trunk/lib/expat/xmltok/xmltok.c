@@ -6,6 +6,7 @@ See the file copying.txt for copying permission.
 #include <assert.h>
 #include "xmlrpc_config.h"
 #include "bool.h"
+#include "c_util.h"
 #include "xmldef.h"
 #include "xmltok.h"
 #include "nametab.h"
