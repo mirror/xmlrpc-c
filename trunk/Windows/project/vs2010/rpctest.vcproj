@@ -2,9 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="libxmlrpc_xmltok"
-	ProjectGUID="{BD9F6041-A272-462D-8C41-87CEF1F11408}"
-	RootNamespace="xmltok"
+	Name="rpctest"
+	ProjectGUID="{4CFB235E-56AE-4BF2-BE67-8FD4AF5F1722}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -20,9 +19,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="2"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -46,8 +45,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\lib\util\include;..\include"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;XML_DTD;XML_NS;_LIB"
+				AdditionalIncludeDirectories="../../../;../..;../../../include;../../../lib/util/include;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -72,9 +71,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				ImportLibrary="$(OutDir)\$(ProjectName).lib"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -98,13 +104,15 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="2"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -129,8 +137,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\lib\util\include;..\include"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;XML_DTD;XML_NS;_LIB"
+				AdditionalIncludeDirectories="../../../;../..;../../../include;../../../lib/util/include;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -155,9 +163,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				ImportLibrary="$(OutDir)\$(ProjectName).lib"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -182,13 +196,15 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="2"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -213,8 +229,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..,..\lib\util\include,..\include"
-				PreprocessorDefinitions="NDEBUG;XML_NS;WIN32;_WINDOWS;XML_DTD;_LIB"
+				AdditionalIncludeDirectories="../..;../../../include;../../../lib/util/include;../../../;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -238,7 +254,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ImportLibrary="$(OutDir)\$(ProjectName).lib"
+				AdditionalDependencies="ws2_32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ProgramDatabaseFile="$(IntDir)\$(ProjectName).pdb"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -262,13 +286,15 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="2"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -294,8 +320,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..,..\lib\util\include,..\include"
-				PreprocessorDefinitions="NDEBUG;XML_NS;WIN32;_WINDOWS;XML_DTD;_LIB"
+				AdditionalIncludeDirectories="../..;../../../include;../../../lib/util/include;../../../;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -319,7 +345,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ImportLibrary="$(OutDir)\$(ProjectName).lib"
+				AdditionalDependencies="ws2_32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ProgramDatabaseFile="$(IntDir)\$(ProjectName).pdb"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -344,13 +377,15 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="4"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -374,8 +409,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\lib\util\include;..\include"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;XML_DTD;XML_NS;_LIB"
+				AdditionalIncludeDirectories="../../../;../..;../../../include;../../../lib/util/include;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -399,10 +434,23 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib Wininet.lib "
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -416,14 +464,19 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="4"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -448,8 +501,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\lib\util\include;..\include"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;XML_DTD;XML_NS;_LIB"
+				AdditionalIncludeDirectories="../../../;../..;../../../include;../../../lib/util/include;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -473,10 +526,23 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib Wininet.lib "
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -490,14 +556,19 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release-Static|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="4"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -522,8 +593,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..,..\lib\util\include,..\include"
-				PreprocessorDefinitions="NDEBUG;XML_NS;WIN32;_WINDOWS;XML_DTD;_LIB"
+				AdditionalIncludeDirectories="../..;../../../include;../../../lib/util/include;../../../;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -546,10 +617,22 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib Wininet.lib "
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ProgramDatabaseFile="$(IntDir)\$(ProjectName).pdb"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -563,14 +646,19 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release-Static|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
-			ConfigurationType="4"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -596,8 +684,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..,..\lib\util\include,..\include"
-				PreprocessorDefinitions="NDEBUG;XML_NS;WIN32;_WINDOWS;XML_DTD;_LIB"
+				AdditionalIncludeDirectories="../..;../../../include;../../../lib/util/include;../../../;../../../lib/expat/xmlparse"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -620,10 +708,22 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib Wininet.lib "
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ProgramDatabaseFile="$(IntDir)\$(ProjectName).pdb"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -637,7 +737,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy test files"
+				CommandLine="if not exist $(OutDir)\data md $(OutDir)\data&#x0D;&#x0A;copy ..\..\..\test\data\*.* $(OutDir)\data&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -646,10 +751,46 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\lib\expat\xmltok\xmlrole.c"
+				RelativePath="..\..\..\test\abyss.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\util\casprintf.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\cgi.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\client.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\method_registry.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\parse_xml.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\serialize.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\serialize_value.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\server_abyss.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\test.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -725,122 +866,106 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\xmltok.c"
+				RelativePath="..\..\..\test\testtool.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\test\value.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\value_datetime.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\xml_data.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\xmlrpc_expat.c"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;fi;fd"
+			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\lib\expat\xmltok\asciitab.h"
+				RelativePath="..\..\..\test\abyss.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\iasciitab.h"
+				RelativePath="..\..\..\test\cgi.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\latin1tab.h"
+				RelativePath="..\..\..\test\client.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\nametab.h"
+				RelativePath="..\..\..\test\method_registry.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\utf8tab.h"
+				RelativePath="..\..\..\test\parse_xml.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\xmldef.h"
+				RelativePath="..\..\..\test\serialize.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\xmlrole.h"
+				RelativePath="..\..\..\test\serialize_value.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lib\expat\xmltok\xmltok.h"
+				RelativePath="..\..\..\test\server_abyss.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\test.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\testtool.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\value.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\value_datetime.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\xml_data.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="TestFiles"
+			>
+			<File
+				RelativePath="..\..\..\test\data\http-req-simple.txt"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\data\req_no_params.xml"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\data\req_out_of_order.xml"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\test\data\req_value_name.xml"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
+			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 		</Filter>
 	</Files>

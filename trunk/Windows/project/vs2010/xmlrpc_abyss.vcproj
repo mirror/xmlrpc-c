@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="libxmlrpc++"
-	ProjectGUID="{3E7064F3-6200-4C39-85BE-775931D21828}"
-	RootNamespace="xmlrpc++"
+	Name="libxmlrpc_abyss"
+	ProjectGUID="{20A8F64B-F738-4D32-A798-A65AD8291541}"
+	RootNamespace="xmlrpc_abyss"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -20,8 +20,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -46,12 +46,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -73,9 +72,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib Wininet.lib"
-				OutputFile="$(OutDir)\$(ProjectName).dll"
-				IgnoreDefaultLibraryNames=""
+				AdditionalOptions="ws2_32.lib"
+				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
@@ -106,8 +104,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -133,12 +131,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -160,9 +157,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib Wininet.lib"
-				OutputFile="$(OutDir)\$(ProjectName).dll"
-				IgnoreDefaultLibraryNames=""
+				AdditionalOptions="ws2_32.lib"
+				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
@@ -194,8 +190,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -221,12 +217,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;$(NOINHERIT)"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -247,8 +242,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib Wininet.lib"
-				OutputFile="$(OutDir)\$(ProjectName).dll"
+				AdditionalOptions="ws2_32.lib"
+				GenerateManifest="false"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 			/>
 			<Tool
@@ -277,8 +272,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -305,12 +300,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;$(NOINHERIT)"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -331,8 +325,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib Wininet.lib"
-				OutputFile="$(OutDir)\$(ProjectName).dll"
+				AdditionalOptions="ws2_32.lib"
+				GenerateManifest="false"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 				TargetMachine="17"
 			/>
@@ -362,8 +356,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -388,12 +382,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -436,8 +429,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug-Static|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -463,12 +456,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -511,8 +503,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Static|Win32"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -538,12 +530,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;$(NOINHERIT)"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -585,8 +576,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Static|x64"
-			OutputDirectory="..\bin\$(ConfigurationName)-$(PlatformName)\"
-			IntermediateDirectory="..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
+			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -613,12 +604,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../lib,../lib/curl_transport,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,../.."
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;$(NOINHERIT)"
+				AdditionalIncludeDirectories="..\..\..\,..\..\..\include,..\..\..\lib\util\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
@@ -664,10 +654,10 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;cc"
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\src\cpp\base64.cpp"
+				RelativePath="..\..\..\lib\abyss\src\channel.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -743,7 +733,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\client.cpp"
+				RelativePath="..\..\..\lib\abyss\src\chanswitch.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -819,7 +809,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\client_simple.cpp"
+				RelativePath="..\..\..\lib\abyss\src\conf.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -895,7 +885,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\curl.cpp"
+				RelativePath="..\..\..\lib\abyss\src\conn.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -971,7 +961,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\env_wrap.cpp"
+				RelativePath="..\..\..\lib\abyss\src\data.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1047,7 +1037,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\fault.cpp"
+				RelativePath="..\..\..\lib\abyss\src\date.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1123,7 +1113,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\girerr.cpp"
+				RelativePath="..\..\..\lib\abyss\src\file.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1199,7 +1189,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\girmem.cpp"
+				RelativePath="..\..\..\lib\abyss\src\handler.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1275,7 +1265,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\libwww.cpp"
+				RelativePath="..\..\..\lib\abyss\src\http.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1351,7 +1341,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\outcome.cpp"
+				RelativePath="..\..\..\lib\abyss\src\init.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1427,7 +1417,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\packetsocket.cpp"
+				RelativePath="..\..\..\lib\abyss\src\response.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1503,7 +1493,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\param_list.cpp"
+				RelativePath="..\..\..\lib\abyss\src\server.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1579,7 +1569,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\pstream.cpp"
+				RelativePath="..\..\..\lib\abyss\src\session.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1655,11 +1645,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\lib\util\pthreadx_win32.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\cpp\registry.cpp"
+				RelativePath="..\..\..\lib\abyss\src\socket.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1735,7 +1721,175 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\server_abyss.cpp"
+				RelativePath="..\..\..\lib\abyss\src\socket_openssl.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\abyss\src\socket_unix.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\abyss\src\socket_win.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1811,11 +1965,175 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\server_cgi.cpp"
+				RelativePath="..\..\..\lib\abyss\src\thread_fork.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\server_pstream.cpp"
+				RelativePath="..\..\..\lib\abyss\src\thread_pthread.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\abyss\src\thread_windows.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1891,7 +2209,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\server_pstream_conn.cpp"
+				RelativePath="..\..\..\lib\abyss\src\token.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1967,239 +2285,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\cpp\value.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\src\cpp\wininet.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\src\cpp\xml.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Static|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\lib\wininet_transport\xmlrpc_wininet_transport.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\cpp\XmlRpcCpp.cpp"
+				RelativePath="..\..\..\lib\abyss\src\trace.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2280,67 +2366,75 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\include\xmlrpc-c\base.hpp"
+				RelativePath="..\..\..\include\xmlrpc-c\abyss.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\base64.hpp"
+				RelativePath="..\..\..\lib\abyss\src\abyss_info.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\client.hpp"
+				RelativePath="..\..\..\include\xmlrpc-c\abyss_winsock.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\client_simple.hpp"
+				RelativePath="..\..\..\lib\abyss\src\channel.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\client_transport.hpp"
+				RelativePath="..\..\..\lib\abyss\src\chanswitch.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\cpp\env_wrap.hpp"
+				RelativePath="..\..\..\lib\abyss\src\conn.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\girerr.hpp"
+				RelativePath="..\..\..\lib\abyss\src\data.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\girmem.hpp"
+				RelativePath="..\..\..\lib\abyss\src\date.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\oldcppwrapper.hpp"
+				RelativePath="..\..\..\lib\abyss\src\file.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\packetsocket.hpp"
+				RelativePath="..\..\..\lib\abyss\src\handler.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\registry.hpp"
+				RelativePath="..\..\..\lib\abyss\src\http.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\server_abyss.hpp"
+				RelativePath="..\..\..\lib\abyss\src\server.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\server_cgi.hpp"
+				RelativePath="..\..\..\lib\abyss\src\session.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\server_pstream.hpp"
+				RelativePath="..\..\..\lib\abyss\src\socket.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\timeout.hpp"
+				RelativePath="..\..\..\lib\abyss\src\socket_win.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\xml.hpp"
+				RelativePath="..\..\..\lib\abyss\src\thread.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\abyss\src\token.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\abyss\src\trace.h"
 				>
 			</File>
 		</Filter>
