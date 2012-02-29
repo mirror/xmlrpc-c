@@ -4034,6 +4034,17 @@ xmlrpc_XML_ParserCreateNS(const XML_Char * const encodingName,
 
 
 
+static void
+resetErrorString(Parser * const parserP) {
+
+    if (parserP->m_errorString) {
+        xmlrpc_strfree(parserP->m_errorString);
+        parserP->m_errorString = NULL;
+    }
+}
+
+
+
 int
 xmlrpc_XML_SetEncoding(XML_Parser       const xmlParserP,
                        const XML_Char * const encodingName) {
@@ -4183,8 +4194,7 @@ xmlrpc_XML_ParserFree(XML_Parser parser)
   free(unknownEncodingMem);
   if (unknownEncodingRelease)
     unknownEncodingRelease(unknownEncodingData);
-  if (errorString)
-    xmlrpc_strfree(errorString);
+  resetErrorString(parser);
   free(parser);
 }
 
@@ -4434,47 +4444,53 @@ parseNoBuffer(Parser *     const parser,
               bool         const isFinal,
               int *        const succeededP) {
 
-    parseEndByteIndex += len;
-    positionPtr = s;
+    parser->m_parseEndByteIndex += len;
+    parser->m_positionPtr = s;
 
     if (isFinal) {
-        parseEndPtr = s + len;
-        processor(parser, s, parseEndPtr, 0, &errorCode, &errorString);
-        if (errorCode == XML_ERROR_NONE)
+        parser->m_parseEndPtr = s + len;
+        parser->m_processor(parser, s, parser->m_parseEndPtr, 0,
+                            &parser->m_errorCode, &parser->m_errorString);
+        if (parser->m_errorCode == XML_ERROR_NONE)
             *succeededP = true;
         else {
-            eventEndPtr = eventPtr;
-            processor = errorProcessor;
+            parser->m_eventEndPtr = parser->m_eventPtr;
+            parser->m_processor = errorProcessor;
             *succeededP = false;
         }
     } else {
         const char * end;
 
-        parseEndPtr = s + len;
-        processor(parser, s, s + len, &end, &errorCode, &errorString);
-        if (errorCode != XML_ERROR_NONE) {
-            eventEndPtr = eventPtr;
-            processor = errorProcessor;
+        parser->m_parseEndPtr = s + len;
+        parser->m_processor(parser, s, s + len,
+                            &end,
+                            &parser->m_errorCode, &parser->m_errorString);
+        if (parser->m_errorCode != XML_ERROR_NONE) {
+            parser->m_eventEndPtr = parser->m_eventPtr;
+            parser->m_processor = errorProcessor;
             *succeededP = false;
         } else {
             int const nLeftOver = s + len - end;
-            XmlUpdatePosition(parser->m_encoding, positionPtr, end, &position);
+            XmlUpdatePosition(parser->m_encoding, parser->m_positionPtr, end,
+                              &parser->m_position);
             if (nLeftOver > 0) {
-                if (buffer == 0 || nLeftOver > bufferLim - buffer) {
-                    REALLOCARRAY(buffer, len * 2);
-                    if (buffer)
-                        bufferLim = buffer + len * 2;
+                if (buffer == 0 ||
+                    nLeftOver > parser->m_bufferLim - parser->m_buffer) {
+                    REALLOCARRAY(parser->m_buffer, len * 2);
+                    if (parser->m_buffer)
+                        parser->m_bufferLim = parser->m_buffer + len * 2;
                 }
 
-                if (buffer) {
-                    memcpy(buffer, end, nLeftOver);
-                    bufferPtr = buffer;
-                    bufferEnd = buffer + nLeftOver;
+                if (parser->m_buffer) {
+                    memcpy(parser->m_buffer, end, nLeftOver);
+                    parser->m_bufferPtr = parser->m_buffer;
+                    parser->m_bufferEnd = parser->m_buffer + nLeftOver;
                     *succeededP = true;
                 } else {
-                    errorCode = XML_ERROR_NO_MEMORY;
-                    eventPtr = eventEndPtr = 0;
-                    processor = errorProcessor;
+                    parser->m_errorCode = XML_ERROR_NO_MEMORY;
+                    parser->m_eventPtr = 0;
+                    parser->m_eventEndPtr = 0;
+                    parser->m_processor = errorProcessor;
                     *succeededP = false;
                 }
             } else
@@ -4495,17 +4511,14 @@ xmlrpc_XML_Parse(XML_Parser   const xmlParserP,
 
     int retval;
 
-    if (errorString) {
-        xmlrpc_strfree(errorString);
-        errorString = NULL;
-    }
+    resetErrorString(parser);
 
     if (len == 0) {
         if (!isFinal)
             retval = 1;
         else
             parseFinalLen0(parser, &retval);
-    } else if (bufferPtr == bufferEnd)
+    } else if (parser->m_bufferPtr == parser->m_bufferEnd)
         parseNoBuffer(parser, s, len, isFinal, &retval);
     else {
         memcpy(xmlrpc_XML_GetBuffer(parser, len), s, len);
@@ -4525,25 +4538,24 @@ xmlrpc_XML_ParseBuffer(XML_Parser const xmlParserP,
 
     const char * const start = bufferPtr;
 
-    if (errorString) {
-        xmlrpc_strfree(errorString);
-        errorString = NULL;
-    }
+    resetErrorString(parser);
 
-    positionPtr = start;
-    bufferEnd += len;
-    parseEndByteIndex += len;
-    processor(xmlParserP, start, parseEndPtr = bufferEnd,
-              isFinal ? (const char **)0 : &bufferPtr,
-              &errorCode, &errorString);
-    if (errorCode == XML_ERROR_NONE) {
+    parser->m_positionPtr = start;
+    parser->m_bufferEnd += len;
+    parser->m_parseEndByteIndex += len;
+    parser->m_parseEndPtr = parser->m_bufferEnd;
+    parser->m_processor(xmlParserP, start, parser->m_parseEndPtr,
+                        isFinal ? NULL : &parser->m_bufferPtr,
+                        &parser->m_errorCode, &parser->m_errorString);
+    if (parser->m_errorCode == XML_ERROR_NONE) {
         if (!isFinal)
-            XmlUpdatePosition(parser->m_encoding, positionPtr, bufferPtr,
-                              &position);
+            XmlUpdatePosition(parser->m_encoding,
+                              parser->m_positionPtr, parser->m_bufferPtr,
+                              &parser->m_position);
         return 1;
     } else {
-        eventEndPtr = eventPtr;
-        processor = errorProcessor;
+        parser->m_eventEndPtr = parser->m_eventPtr;
+        parser->m_processor = errorProcessor;
         return 0;
     }
 }
