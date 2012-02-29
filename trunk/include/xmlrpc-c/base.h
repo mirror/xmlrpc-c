@@ -778,7 +778,7 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
                   const char *    const xmlData,
                   size_t          const xmlDataLen,
                   const char **   const methodNameP,
-                  xmlrpc_value ** const paramArrayP);
+                  xmlrpc_value ** const paramArrayPP);
 
 XMLRPC_LIB_EXPORTED
 void
