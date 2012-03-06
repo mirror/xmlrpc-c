@@ -609,7 +609,7 @@ parseSimpleValueCdata(xmlrpc_env *    const envP,
                       size_t          const cdataLength,
                       xmlrpc_value ** const valuePP) {
 /*----------------------------------------------------------------------------
-   Parse an XML element is supposedly a data type element such as
+   Parse an XML element that is supposedly a data type element such as
    <string>.  Its name is 'elementName', and it has no children, but
    contains cdata 'cdata', which is 'dataLength' characters long.
 -----------------------------------------------------------------------------*/
@@ -669,7 +669,7 @@ parseSimpleValue(xmlrpc_env *    const envP,
                  xml_element *   const elemP,
                  xmlrpc_value ** const valuePP) {
     
-    size_t childCount = xml_element_children_size(elemP);
+    size_t const childCount = xml_element_children_size(elemP);
                     
     if (childCount > 0)
         setParseFault(envP, "The child of a <value> element "
@@ -680,7 +680,7 @@ parseSimpleValue(xmlrpc_env *    const envP,
         const char * const elemName  = xml_element_name(elemP);
         const char * const cdata     = xml_element_cdata(elemP);
         size_t       const cdataSize = xml_element_cdata_size(elemP);
-                    
+
         parseSimpleValueCdata(envP, elemName, cdata, cdataSize, valuePP);
     }
 }

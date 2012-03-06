@@ -86,16 +86,9 @@ getChildByName (xmlrpc_env *  const envP,
 
 
 
-/*=========================================================================
-**  convert_params
-**=========================================================================
-**  Convert an XML element representing a list of params into an
-**  xmlrpc_value (of type array).
-*/
-
 static xmlrpc_value *
-convert_params(xmlrpc_env *        const envP,
-               const xml_element * const elemP) {
+convertParams(xmlrpc_env *        const envP,
+              const xml_element * const elemP) {
 /*----------------------------------------------------------------------------
    Convert an XML element representing a list of parameters (i.e.  a <params>
    element) to an xmlrpc_value of type array.  Note that an xmlrpc_value is
@@ -103,18 +96,20 @@ convert_params(xmlrpc_env *        const envP,
    We use type xmlrpc_value to represent the parameter list just for
    convenience.
 -----------------------------------------------------------------------------*/
-    xmlrpc_value *array, *item;
-    int size, i;
-    xml_element **params, *param, *value;
+    xmlrpc_value * arrayP;
+    xmlrpc_value * itemP;
+    unsigned int i;
+    unsigned int size;
+    xml_element ** params;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(elemP != NULL);
 
     /* Set up our error-handling preconditions. */
-    array = item = NULL;
+    arrayP = itemP = NULL;
 
     /* Allocate an array to hold our parameters. */
-    array = xmlrpc_build_value(envP, "()");
+    arrayP = xmlrpc_build_value(envP, "()");
     XMLRPC_FAIL_IF_FAULT(envP);
 
     /* We're responsible for checking our own element name. */
@@ -124,35 +119,37 @@ convert_params(xmlrpc_env *        const envP,
     size = xml_element_children_size(elemP);
     params = xml_element_children(elemP);
     for (i = 0; i < size; ++i) {
+        xml_element * const paramP = params[i];
         unsigned int const maxNest = (unsigned int)
             xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
 
-        param = params[i];
-        CHECK_NAME(envP, param, "param");
-        CHECK_CHILD_COUNT(envP, param, 1);
+        xml_element * valueEltP;
 
-        value = xml_element_children(param)[0];
+        CHECK_NAME(envP, paramP, "param");
+        CHECK_CHILD_COUNT(envP, paramP, 1);
 
-        CHECK_NAME(envP, value, "value");
+        valueEltP = xml_element_children(paramP)[0];
 
-        xmlrpc_parseValue(envP, maxNest, value, &item);
+        CHECK_NAME(envP, valueEltP, "value");
+
+        xmlrpc_parseValue(envP, maxNest, valueEltP, &itemP);
         XMLRPC_FAIL_IF_FAULT(envP);
 
-        xmlrpc_array_append_item(envP, array, item);
-        xmlrpc_DECREF(item);
-        item = NULL;
+        xmlrpc_array_append_item(envP, arrayP, itemP);
+        xmlrpc_DECREF(itemP);
+        itemP = NULL;
         XMLRPC_FAIL_IF_FAULT(envP);
     }
 
  cleanup:
     if (envP->fault_occurred) {
-        if (array)
-            xmlrpc_DECREF(array);
-        if (item)
-            xmlrpc_DECREF(item);
+        if (arrayP)
+            xmlrpc_DECREF(arrayP);
+        if (itemP)
+            xmlrpc_DECREF(itemP);
         return NULL;
     }
-    return array;
+    return arrayP;
 }
 
 
@@ -246,7 +243,7 @@ parseCallChildren(xmlrpc_env *    const envP,
                 paramsElemP = getChildByName(envP, callElemP, "params");
                     
                 if (!envP->fault_occurred)
-                    *paramArrayPP = convert_params(envP, paramsElemP);
+                    *paramArrayPP = convertParams(envP, paramsElemP);
             } else {
                 /* Workaround for Ruby XML-RPC and old versions of
                    xmlrpc-epi.  Future improvement: Instead of looking
@@ -450,7 +447,7 @@ parseParamsElement(xmlrpc_env *        const envP,
 
     XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(paramsElementP), "params"));
 
-    paramsVP = convert_params(envP, paramsElementP);
+    paramsVP = convertParams(envP, paramsElementP);
 
     if (!envP->fault_occurred) {
         int arraySize;
