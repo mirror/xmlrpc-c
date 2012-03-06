@@ -37,7 +37,6 @@ DUMPVALUE = blddir/tools/lib/dumpvalue.o
 # Can we just use $(LIBS) in the link?
 
 LIBS = $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
-LIBS = $(LIBXMLRPC_A) $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A) $(LIBXMLRPC_UTIL_A)
 
 PARSECALL_OBJS = xmlrpc_parsecall.o $(DUMPVALUE)
 
