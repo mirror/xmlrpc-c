@@ -34,7 +34,7 @@ extern "C" {
   opposed to something that _uses_ libxmlrpc.
 */
 #ifdef XMLRPC_BUILDING_LIB
-#define XMLRPC_LIB_EXPORTED XMLRPC_DLL_EXPORT
+#define XMLRPC_LIB_EXPORTED XMLRPC_DLLEXPORT
 #else
 #define XMLRPC_LIB_EXPORTED
 #endif
