@@ -12,7 +12,8 @@
 #define  XMLRPC_SERVER_ABYSS_H_INCLUDED
 
 #ifdef _WIN32
-#include <winsock.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+#  include <winsock2.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+#  include <ws2tcpip.h>
 #endif
 
 #include <xmlrpc-c/config.h>  /* For XMLRPC_SOCKET */
@@ -33,7 +34,7 @@ extern "C" {
   libxmlrpc_server_abyss.
 */
 #ifdef XMLRPC_BUILDING_SERVER_ABYSS
-#define XMLRPC_SERVER_ABYSS_EXPORTED XMLRPC_DLL_EXPORT
+#define XMLRPC_SERVER_ABYSS_EXPORTED XMLRPC_DLLEXPORT
 #else
 #define XMLRPC_SERVER_ABYSS_EXPORTED
 #endif

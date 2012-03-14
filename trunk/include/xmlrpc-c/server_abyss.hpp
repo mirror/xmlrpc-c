@@ -2,7 +2,8 @@
 #define SERVER_ABYSS_HPP_INCLUDED
 
 #ifdef _WIN32
-#include <winsock.h>   // For XMLRPC_SOCKET (= SOCKET)
+#  include <winsock2.h>   // For XMLRPC_SOCKET (= SOCKET)
+#  include <ws2tcpip.h>
 #endif
 
 #include <xmlrpc-c/config.h>  // For XMLRPC_SOCKET

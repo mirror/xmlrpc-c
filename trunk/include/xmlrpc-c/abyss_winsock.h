@@ -1,11 +1,20 @@
 /* This is just a sub-file for abyss.h */
 
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 struct abyss_win_chaninfo {
     size_t peerAddrLen;
     struct sockaddr peerAddr;
 };
+
+XMLRPC_ABYSS_EXPORTED
+void
+ChanSwitchWinCreate2(int                     const protocolFamily,
+                      const struct sockaddr * const sockAddrP,
+                      socklen_t               const sockAddrLen,
+                      TChanSwitch **          const chanSwitchPP,
+                      const char **           const errorP);
 
 XMLRPC_ABYSS_EXPORTED
 void

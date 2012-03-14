@@ -2,8 +2,8 @@
 #define SERVER_PSTREAM_HPP_INCLUDED
 
 #ifdef _WIN32
-#include <winsock.h>  /* For XMLRPC_SOCKET (= SOCKET) */
-typedef int socklen_t;
+#  include <winsock2.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+#  include <ws2tcpip.h>
 #else
 #include <sys/socket.h>
 #endif

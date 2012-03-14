@@ -215,8 +215,9 @@ testChanSwitch(void) {
 
     ChanSwitchDestroy(chanSwitchP);
 
+#ifndef _WIN32
     chanSwitchCreateIpV6(8080, &chanSwitchP, &error);
-     
+
     TEST_NULL_STRING(error);
 
     ChanSwitchDestroy(chanSwitchP);
@@ -224,6 +225,7 @@ testChanSwitch(void) {
     testChanSwitchSockAddr();
 
     testChanSwitchOsSocket();
+#endif
 }
 
 

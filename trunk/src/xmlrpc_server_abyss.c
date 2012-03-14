@@ -13,13 +13,14 @@
 #include <fcntl.h>
 #ifdef _WIN32
 #  include <io.h>
+#  pragma comment(lib, "Ws2_32.lib")
 #else
 #  include <signal.h>
 #  include <sys/wait.h>
 #  include <grp.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
 #endif
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 #include "bool.h"
 #include "int.h"
@@ -543,9 +544,8 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
                          const char **           const errorP) {
 
 #ifdef _WIN32
-    xmlrpc_asprintf(errorP, "XML-RPC For C/C++ does not know how to "
-                    "create an Abyss server given a socket address on "
-                    "Windows");
+    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+                          chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen, 
                           chanSwitchPP, errorP);

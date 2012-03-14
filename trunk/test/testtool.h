@@ -4,7 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
+#endif
 
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/util_int.h"

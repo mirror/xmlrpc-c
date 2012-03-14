@@ -1,7 +1,13 @@
 #ifndef TEST_HPP_INCLUDED
 #define TEST_HPP_INCLUDED
 
+#ifdef _WIN32
+#  include <winsock2.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+#  include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
+#endif
+
 #include <string>
 
 #include "xmlrpc-c/girerr.hpp"

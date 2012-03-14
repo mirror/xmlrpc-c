@@ -19,7 +19,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#include <winsock.h>
+#include <winsock2.h>
 typedef int socklen_t;
 #else
 #include <sys/socket.h>

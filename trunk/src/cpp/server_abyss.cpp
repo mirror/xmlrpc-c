@@ -460,13 +460,12 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
                          socklen_t               const sockAddrLen,
                          TChanSwitch **          const chanSwitchPP) {
 
-#ifdef WIN32
-    xmlrpc_asprintf(errorP, "XML-RPC For C/C++ does not know how to "
-                    "create an Abyss server given a socket address "
-                    "on Windows");
-#else
     const char * error;
 
+#ifdef WIN32
+    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+                          chanSwitchPP, &error);
+#else
     ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen, 
                           chanSwitchPP, &error);
 #endif

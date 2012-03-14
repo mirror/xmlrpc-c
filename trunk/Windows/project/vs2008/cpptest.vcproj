@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="cpptest"
 	ProjectGUID="{26FB3E14-7E0C-4B0C-AB1E-CFE4B48A1856}"
+	RootNamespace="cpptest"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>

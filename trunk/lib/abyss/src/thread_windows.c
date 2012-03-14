@@ -7,7 +7,7 @@
    threading code, which did work on Windows, as a basis.
 */
 
-
+#include <winsock2.h>
 #include <process.h>
 #include <windows.h>
 

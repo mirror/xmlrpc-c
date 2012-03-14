@@ -1,7 +1,13 @@
-#include <netinet/in.h>
 #include <string>
 #include <sstream>
 #include <iostream>
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#else
+#  include <netinet/in.h>
+#endif
+
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;

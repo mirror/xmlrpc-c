@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="libxmlrpc_server_abyss"
 	ProjectGUID="{E98186CB-F1B0-40A6-87A5-77B13A3F1600}"
+	RootNamespace="libxmlrpc_server_abyss"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -45,8 +46,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;XMLRPC_BUILD_DLL;XMLRPC_BUILDING_SERVER_ABYSS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -128,8 +129,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;XMLRPC_BUILD_DLL;XMLRPC_BUILDING_SERVER_ABYSS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -212,8 +213,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;XMLRPC_BUILD_DLL;XMLRPC_BUILDING_SERVER_ABYSS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -293,8 +294,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;XMLRPC_BUILD_DLL;XMLRPC_BUILDING_SERVER_ABYSS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -373,7 +374,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
 				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -447,7 +448,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
 				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -521,7 +522,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -595,7 +596,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
+				AdditionalIncludeDirectories="../../../;../../../lib,../../../lib/util/include,../../../include,../..,../../../lib/expat/xmlparse,../../../lib/abyss/src,../../../lib/wininet_transport"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -648,6 +649,10 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;cc"
 			>
 			<File
+				RelativePath="..\..\..\src\abyss_handler.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\xmlrpc_server_abyss.c"
 				>
 			</File>
@@ -656,6 +661,10 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl"
 			>
+			<File
+				RelativePath="..\..\..\src\abyss_handler.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\include\xmlrpc-c\base.h"
 				>
