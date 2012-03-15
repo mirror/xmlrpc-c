@@ -1015,10 +1015,10 @@ bindSocketToAddr(SOCKET                     const winsock,
 
 void
 ChanSwitchWinCreate2(int                     const protocolFamily,
-                      const struct sockaddr * const sockAddrP,
-                      socklen_t               const sockAddrLen,
-                      TChanSwitch **          const chanSwitchPP,
-                      const char **           const errorP) {
+                     const struct sockaddr * const sockAddrP,
+                     socklen_t               const sockAddrLen,
+                     TChanSwitch **          const chanSwitchPP,
+                     const char **           const errorP) {
 
     struct socketWin * socketWinP;
 
@@ -1059,3 +1059,6 @@ ChanSwitchWinCreate2(int                     const protocolFamily,
             free(socketWinP);
     }
 }
+
+
+
