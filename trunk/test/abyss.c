@@ -93,7 +93,10 @@ chanSwitchCreate2(int                     const protocolFamily,
                   TChanSwitch **          const chanSwitchPP,
                   const char **           const errorP) {
 
-#ifndef _WIN32
+#ifdef _WIN32
+    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen,
+                         chanSwitchPP, errorP);
+#else
     ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen,
                           chanSwitchPP, errorP);
 #endif
