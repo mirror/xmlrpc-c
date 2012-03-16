@@ -23,8 +23,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef _WIN32
-#  include <winsock2.h>
+#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
+#  include <winsock2.h>
 #else
 #  include <unistd.h>
 #endif

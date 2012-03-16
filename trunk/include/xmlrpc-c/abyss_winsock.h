@@ -1,5 +1,8 @@
 /* This is just a sub-file for abyss.h */
 
+/* See restrictions on including <winsock.h> and <windows.h> at the top
+   of abyss.h.
+*/
 #include <winsock2.h>
 #include <ws2tcpip.h>
 

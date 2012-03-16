@@ -3,11 +3,12 @@
 #include <time.h>
 
 #if !MSVCRT
-#include <sys/time.h>
+#  include <sys/time.h>
 #endif
 
 #if MSVCRT
-#include <windows.h>
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif
 
 #include "xmlrpc-c/string_int.h"

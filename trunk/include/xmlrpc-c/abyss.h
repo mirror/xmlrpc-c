@@ -8,6 +8,12 @@
   The Abyss component of Xmlrpc-c is based on the independently developed
   and distributed Abyss web server package from 2001.
 
+  Nothing may include this header file that also includes <winsock.h>,
+  because it conflicts with this file's use of <winsock2.h>.  Furthermore,
+  nothing including this file may include <windows.h> without previously
+  defining WIN32_LEAN_AND_MEAN, because <windows.h> without that macro
+  includes <winsock.h> automatically.  (see abyss_winsock.h).
+
   Copyright information is at the end of the file.
 ****************************************************************************/
 

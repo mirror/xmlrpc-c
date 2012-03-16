@@ -7,9 +7,10 @@
    threading code, which did work on Windows, as a basis.
 */
 
-#include <winsock2.h>
-#include <process.h>
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <process.h>
+#include <winsock2.h>
 
 #include "xmlrpc_config.h"
 

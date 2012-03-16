@@ -4,6 +4,12 @@
   This declares the user interface to libxmlrpc_server_abyss, which
   provides facilities for running an XML-RPC server based on the Xmlrpc-c
   Abyss HTTP server.
+
+  Nothing may include this header file that also includes <winsock.h>,
+  because it conflicts with this file's use of <winsock2.h>.  Furthermore,
+  nothing including this file may include <windows.h> without previously
+  defining WIN32_LEAN_AND_MEAN, because <windows.h> without that macro
+  includes <winsock.h> automatically.
 ============================================================================*/
 
 /* Copyright and license information is at the end of the file */
@@ -12,6 +18,7 @@
 #define  XMLRPC_SERVER_ABYSS_H_INCLUDED
 
 #ifdef _WIN32
+/* See restriction above concerning windows.h and winsock.h */
 #  include <winsock2.h>  /* For XMLRPC_SOCKET (= SOCKET) */
 #  include <ws2tcpip.h>
 #endif

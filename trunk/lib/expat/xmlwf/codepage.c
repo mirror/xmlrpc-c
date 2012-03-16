@@ -9,8 +9,7 @@ See the file copying.txt for copying permission.
 
 #if MSVCRT
 #define STRICT 1
-#define WIN32_LEAN_AND_MEAN 1
-
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 int codepageMap(int cp, int *map)

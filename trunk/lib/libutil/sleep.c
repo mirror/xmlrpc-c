@@ -4,10 +4,11 @@
 #include "xmlrpc-c/sleep_int.h"
 
 #if MSVCRT
-#include <windows.h>
-#include <process.h>
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#  include <process.h>
 #else
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 
