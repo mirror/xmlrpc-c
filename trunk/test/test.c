@@ -1,9 +1,9 @@
 /* Copyright information is at the end of the file. */
 
 #ifdef _WIN32
-#include <direct.h>
+#  include <direct.h>
 #else
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
