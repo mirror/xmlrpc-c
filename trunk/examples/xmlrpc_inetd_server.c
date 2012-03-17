@@ -22,11 +22,13 @@
 */
 
 #define _XOPEN_SOURCE 600
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.h */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
 #ifndef _WIN32
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #include <xmlrpc-c/base.h>

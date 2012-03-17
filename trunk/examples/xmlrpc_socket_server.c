@@ -13,10 +13,11 @@
    $ socketexec -local_port=8080 ./xmlrpc_socket_server
 */
 
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.h */
+
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef _WIN32
-#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
 #  include <unistd.h>

@@ -1,4 +1,5 @@
 #include "xmlrpc_config.h"
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
 #include <cstdlib>
 #include <string>
 #include <memory>
@@ -6,7 +7,7 @@
 #include <errno.h>
 #include <iostream>
 #if !MSVCRT
-#include <sys/wait.h>
+#  include <sys/wait.h>
 #endif
 
 #include "assertx.hpp"

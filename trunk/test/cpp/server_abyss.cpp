@@ -4,6 +4,8 @@
   Test the Abyss server C++ facilities of XML-RPC for C/C++.
   
 =============================================================================*/
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
+
 #include <errno.h>
 #include <string>
 #include <iostream>

@@ -1,6 +1,7 @@
 #include "xmlrpc_config.h"
 
 #define _XOPEN_SOURCE 600  /* For strdup(), sigaction */
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
 
 #include <assert.h>
 #include <stdio.h>

@@ -1,3 +1,5 @@
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
+
 #include "unistdx.h"
 #include <stdio.h>
 #include "bool.h"

@@ -2,6 +2,7 @@
    connection.  We should figure out how to create a test client and do
    such tests.
 */
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
 
 #include "unistdx.h"
 #include <stdio.h>
