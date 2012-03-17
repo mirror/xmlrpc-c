@@ -415,7 +415,12 @@ xmlrpc_initAccessCtl(ResponseAccessCtl * const accessCtlP,
                      const char *        const allowOrigin,
                      bool                const expires,
                      unsigned int        const maxAge) {
+/*----------------------------------------------------------------------------
+   Set up *accessCtlP to reflect the HTTP access control parameters
+   'allowOrigin', 'expires', and 'maxAge'.
 
+   Note that 'maxAge' is irrelevant when 'expires' is false.
+-----------------------------------------------------------------------------*/
     accessCtlP->allowOrigin = xmlrpc_strdupsol(allowOrigin);
     accessCtlP->expires     = expires;
     accessCtlP->maxAge      = maxAge;

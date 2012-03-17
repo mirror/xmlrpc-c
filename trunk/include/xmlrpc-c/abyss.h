@@ -496,13 +496,15 @@ ResponseContentLength(TSession *      const sessionP,
 
 typedef struct {
 /*----------------------------------------------------------------------------
-   These are parameters to control the HTTP "Access Control functions.  That's
+   These are parameters to control the HTTP "Access Control" functions.  That's
    where the client asks whether it is OK to send a request that some other
    server asked the client to send (e.g. a person web browses a page at
    a.example.com, and it sends a script that executes on the user's computer
    and tries to perform an XML-RPC RPC on b.example.com.  The user's browser
    first asks b.example.com if it is OK to do an RPC that is really initiated
    by a.example.com.
+
+   These parameters tell the server how to respond to such a request.
 -----------------------------------------------------------------------------*/
     const char * allowOrigin;
         /* This tells what original servers (a.example.com in the example

@@ -197,8 +197,10 @@ interpretHttpAccessControl(
             maxAge = parmsP->access_ctl_max_age;
         else
             maxAge = 0;
-    } else
+    } else {
         expires = false;
+        maxAge = 0;  /* Meaningless; just to quiet runtime memory checks */
+    }
 
     xmlrpc_initAccessCtl(accessCtlP, allowOrigin, expires, maxAge);
 }

@@ -1,6 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <netinet/in.h>
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#else
+#  include <netinet/in.h>
+#endif
 
 #include "xmlrpc_config.h"
 #include "xmlrpc-c/util.h"
