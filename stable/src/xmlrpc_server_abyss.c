@@ -767,7 +767,8 @@ interpretHttpAccessControl(
             accessCtlP->maxAge = parmsP->access_ctl_max_age;
         else
             accessCtlP->maxAge = 0;
-    }            
+    } else
+        accessCtlP->expires = false;
 }
 
 

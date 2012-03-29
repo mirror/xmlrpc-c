@@ -53,7 +53,7 @@ xmlrpc_makePrintable_lp(const char * const input,
                 output[outputCursor++] = input[inputCursor]; 
             } else {
                 snprintf(&output[outputCursor], 5, "\\x%02x", 
-                         input[inputCursor]);
+                         (unsigned char)input[inputCursor]);
                 outputCursor += 4;
             }
         }
