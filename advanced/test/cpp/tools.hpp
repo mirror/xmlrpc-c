@@ -1,6 +1,13 @@
 #ifndef TEST_HPP_INCLUDED
 #define TEST_HPP_INCLUDED
 
+#ifdef _WIN32
+#  include <winsock2.h>  /* For XMLRPC_SOCKET (= SOCKET) */
+#  include <ws2tcpip.h>
+#else
+#include <netinet/in.h>
+#endif
+
 #include <string>
 
 #include "xmlrpc-c/girerr.hpp"
@@ -45,6 +52,12 @@ error
 fileLineError(std::string  const filename,
               unsigned int const lineNumber,
               std::string  const description);
+
+struct in_addr
+test_ipAddrFromDecimal(unsigned int const byte0,
+                       unsigned int const byte1,
+                       unsigned int const byte2,
+                       unsigned int const byte3);
 
 #define TEST(statement) \
     do { \

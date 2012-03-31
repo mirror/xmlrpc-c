@@ -6,11 +6,25 @@
 
 namespace xmlrpc_c {
 
-class XMLRPC_DLLEXPORT serverCgi {
+/*
+  XMLRPC_SERVER_CGIPP_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_server_cgi++.
+
+  XMLRPC_BUILDING_SERVER_CGIPP says this compilation is part of
+  libxmlrpc_server_cgi++, as opposed to something that _uses_
+  libxmlrpc_server_cgi++.
+*/
+#ifdef XMLRPC_BUILDING_SERVER_CGIPP
+#define XMLRPC_SERVER_CGIPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_SERVER_CGIPP_EXPORTED
+#endif
+
+class XMLRPC_SERVER_CGIPP_EXPORTED serverCgi {
 
 public:
 
-    class XMLRPC_DLLEXPORT constrOpt {
+    class XMLRPC_SERVER_CGIPP_EXPORTED constrOpt {
     public:
         constrOpt();
 

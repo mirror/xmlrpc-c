@@ -5,6 +5,13 @@
 #include <stdio.h>
 #include <math.h>
 
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#else
+#include <netinet/in.h>
+#endif
+
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/util_int.h"
 
@@ -76,5 +83,11 @@ do { \
    } while (0)
 
 ;
+
+struct in_addr
+test_ipAddrFromDecimal(unsigned int const byte0,
+                       unsigned int const byte1,
+                       unsigned int const byte2,
+                       unsigned int const byte3);
 
 #endif

@@ -23,7 +23,7 @@ testVersion(void) {
 
     xmlrpc_client_version(&major, &minor, &point);
 
-#ifndef WIN32    
+#ifndef _WIN32    
     /* xmlrpc_client_version_major, etc. are not exported from a Windows DLL */
 
     TEST(major == xmlrpc_client_version_major);

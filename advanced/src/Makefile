@@ -102,7 +102,7 @@ LIBXMLRPC_CLIENT_MODS = xmlrpc_client xmlrpc_client_global xmlrpc_server_info
 
 LIBXMLRPC_SERVER_MODS = registry method system_method
 
-LIBXMLRPC_SERVER_ABYSS_MODS = xmlrpc_server_abyss
+LIBXMLRPC_SERVER_ABYSS_MODS = xmlrpc_server_abyss abyss_handler
 
 LIBXMLRPC_SERVER_CGI_MODS = xmlrpc_server_cgi
 

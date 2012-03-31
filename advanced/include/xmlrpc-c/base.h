@@ -23,6 +23,19 @@
 extern "C" {
 #endif
 
+/*
+  XMLRPC_LIB_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc.
+
+  XMLRPC_BUILDING_LIB says this compilation is part of libxmlrpc, as
+  opposed to something that _uses_ libxmlrpc.
+*/
+#ifdef XMLRPC_BUILDING_LIB
+#define XMLRPC_LIB_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_LIB_EXPORTED
+#endif
+
 /*=========================================================================
 **  Version of libxmlrpc
 **=======================================================================*/
@@ -34,7 +47,7 @@ extern unsigned int const xmlrpc_version_major;
 extern unsigned int const xmlrpc_version_minor;
 extern unsigned int const xmlrpc_version_point;
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_version(unsigned int * const majorP,
                unsigned int * const minorP,
@@ -118,11 +131,11 @@ typedef enum {
 
 typedef struct _xmlrpc_value xmlrpc_value;
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 const char *
 xmlrpc_type_name(xmlrpc_type const type);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
 
@@ -130,116 +143,116 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP);
     xmlrpc_abort_if_array_bad(val)
 
 /* Increment the reference count of an xmlrpc_value. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 extern void xmlrpc_INCREF(xmlrpc_value* const value);
 
 /* Decrement the reference count of an xmlrpc_value. If there
 ** are no more references, free it. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 extern void xmlrpc_DECREF(xmlrpc_value* const value);
 
 /* Get the type of an XML-RPC value. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP,
                int          const intValue);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_read_int(xmlrpc_env *         const envP,
                 const xmlrpc_value * const valueP,
                 int *                const intValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_i8_new(xmlrpc_env * const envP, 
               xmlrpc_int64 const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_read_i8(xmlrpc_env *         const envP,
                const xmlrpc_value * const valueP,
                xmlrpc_int64 *       const intValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_bool_new(xmlrpc_env * const envP,
                 xmlrpc_bool  const boolValue);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_bool(xmlrpc_env *         const envP,
                  const xmlrpc_value * const valueP,
                  xmlrpc_bool *        const boolValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_double_new(xmlrpc_env * const envP,
                   double       const doubleValue);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_double(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    xmlrpc_double *      const doubleValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_datetime_new(xmlrpc_env *    const envP, 
                     xmlrpc_datetime const dt);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_datetime_new_str(xmlrpc_env * const envP,
                         const char * const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
                         time_t       const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value*
 xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
                          time_t       const secs,
                          unsigned int const usecs);
 
 #if XMLRPC_HAVE_TIMEVAL
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP, 
                             struct timeval const value);
 #endif
 
 #if XMLRPC_HAVE_TIMESPEC
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
                              struct timespec const value);
 #endif
 
 void
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_read_datetime(xmlrpc_env *         const envP,
                      const xmlrpc_value * const valueP,
                      xmlrpc_datetime *    const dtP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          const char **        const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
                           const xmlrpc_value * const valueP,
@@ -247,7 +260,7 @@ xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
                           unsigned int *       const usecsP);
 
 #if XMLRPC_HAVE_TIMEVAL
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_datetime_timeval(xmlrpc_env *         const envP,
                              const xmlrpc_value * const valueP,
@@ -255,68 +268,68 @@ xmlrpc_read_datetime_timeval(xmlrpc_env *         const envP,
 #endif
 
 #if XMLRPC_HAVE_TIMESPEC
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
                               const xmlrpc_value * const valueP,
                               struct timespec *    const timeValueP);
 #endif
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_new(xmlrpc_env * const envP,
                   const char * const stringValue);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_new_lp(xmlrpc_env * const envP, 
                      size_t       const length,
                      const char * const stringValue);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_new_va(xmlrpc_env * const envP,
                      const char * const format,
                      va_list            args);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_new_f(xmlrpc_env * const envP,
                     const char * const format,
                     ...);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_new_lp_cr(xmlrpc_env * const envP, 
                         size_t       const length,
                         const char * const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_new_cr(xmlrpc_env * const envP,
                      const char * const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    const char **        const stringValueP);
 
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_crlf(xmlrpc_env *         const envP,
                         const xmlrpc_value * const valueP,
                         const char **        const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_lp_crlf(xmlrpc_env *         const envP,
                            const xmlrpc_value * const valueP,
                            size_t *             const lengthP,
                            const char **        const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_lp(xmlrpc_env *         const envP,
                       const xmlrpc_value * const valueP,
@@ -324,93 +337,93 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
                       const char **        const stringValueP);
 
 #if XMLRPC_HAVE_WCHAR
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_w_new(xmlrpc_env *    const envP,
                     const wchar_t * const stringValue);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_w_new_lp(xmlrpc_env *    const envP, 
                        size_t          const length,
                        const wchar_t * const stringValue);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_w(xmlrpc_env *     const envP,
                      xmlrpc_value *   const valueP,
                      const wchar_t ** const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_w_crlf(xmlrpc_env *     const envP,
                           xmlrpc_value *   const valueP,
                           const wchar_t ** const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_w_lp(xmlrpc_env *     const envP,
                         xmlrpc_value *   const valueP,
                         size_t *         const lengthP,
                         const wchar_t ** const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_string_w_lp_crlf(xmlrpc_env *     const envP,
                              xmlrpc_value *   const valueP,
                              size_t *         const lengthP,
                              const wchar_t ** const stringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_w_new_lp_cr(xmlrpc_env *    const envP, 
                           size_t          const length,
                           const wchar_t * const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
                        const wchar_t * const value);
 
 #endif /* XMLRPC_HAVE_WCHAR */
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_base64_new(xmlrpc_env *          const envP, 
                   size_t                const length,
                   const unsigned char * const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_base64(xmlrpc_env *           const envP,
                    const xmlrpc_value *   const valueP,
                    size_t *               const lengthP,
                    const unsigned char ** const bytestringValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_base64_size(xmlrpc_env *           const envP,
                         const xmlrpc_value *   const valueP,
                         size_t *               const lengthP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_array_new(xmlrpc_env * const envP);
 
 /* Return the number of elements in an XML-RPC array.
 ** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 int 
 xmlrpc_array_size(xmlrpc_env *         const env, 
                   const xmlrpc_value * const array);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_array_append_item(xmlrpc_env   * const envP,
                          xmlrpc_value * const arrayP,
                          xmlrpc_value * const valueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_array_read_item(xmlrpc_env *         const envP,
                        const xmlrpc_value * const arrayP,
@@ -424,14 +437,14 @@ xmlrpc_array_read_item(xmlrpc_env *         const envP,
    Sets XMLRPC_TYPE_ERROR if 'array' is not an array.
    Sets XMLRPC_INDEX_ERROR if 'index' is out of bounds.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value * 
 xmlrpc_array_get_item(xmlrpc_env *         const envP,
                       const xmlrpc_value * const arrayP,
                       int                  const index);
 
 /* Not implemented--we don't need it yet.
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 int
 xmlrpc_array_set_item(xmlrpc_env *   const envP,
                       xmlrpc_value * const arrayP,
@@ -439,20 +452,20 @@ xmlrpc_array_set_item(xmlrpc_env *   const envP,
                       xmlrpc_value * const valueP);
 */
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_struct_new(xmlrpc_env * const env);
 
 /* Return the number of key/value pairs in a struct.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 int
 xmlrpc_struct_size (xmlrpc_env   * const env, 
                     xmlrpc_value * const strct);
 
 /* Returns true iff 'strct' contains 'key'.
 ** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 int 
 xmlrpc_struct_has_key(xmlrpc_env *   const envP,
                       xmlrpc_value * const strctP,
@@ -462,7 +475,7 @@ xmlrpc_struct_has_key(xmlrpc_env *   const envP,
    Deprecated.  xmlrpc_struct_get_value_v() is more general, and this
    case is not common enough to warrant a shortcut.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 int 
 xmlrpc_struct_has_key_n(xmlrpc_env   * const envP,
                         xmlrpc_value * const strctP,
@@ -471,7 +484,7 @@ xmlrpc_struct_has_key_n(xmlrpc_env   * const envP,
 
 #if 0
 /* Not implemented yet, but needed for completeness. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 int
 xmlrpc_struct_has_key_v(xmlrpc_env *   env, 
                         xmlrpc_value * strct,
@@ -479,7 +492,7 @@ xmlrpc_struct_has_key_v(xmlrpc_env *   env,
 #endif
 
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_struct_find_value(xmlrpc_env *    const envP,
                          xmlrpc_value *  const structP,
@@ -487,21 +500,21 @@ xmlrpc_struct_find_value(xmlrpc_env *    const envP,
                          xmlrpc_value ** const valuePP);
 
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value *  const structP,
                            xmlrpc_value *  const keyP,
                            xmlrpc_value ** const valuePP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_struct_read_value(xmlrpc_env *    const envP,
                          xmlrpc_value *  const structP,
                          const char *    const key,
                          xmlrpc_value ** const valuePP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
                            xmlrpc_value *  const structP,
@@ -511,7 +524,7 @@ xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
 /* The "get_value" functions are deprecated.  Use the "find_value"
    and "read_value" functions instead.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value * 
 xmlrpc_struct_get_value(xmlrpc_env *   const envP,
                         xmlrpc_value * const strctP,
@@ -521,7 +534,7 @@ xmlrpc_struct_get_value(xmlrpc_env *   const envP,
    Deprecated.  xmlrpc_struct_get_value_v() is more general, and this
    case is not common enough to warrant a shortcut.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value * 
 xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                           xmlrpc_value * const strctP,
@@ -531,7 +544,7 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
 /* Set the value associated with 'key' in 'strct' to 'value'.
    Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. 
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_struct_set_value(xmlrpc_env *   const env,
                         xmlrpc_value * const strct,
@@ -542,7 +555,7 @@ xmlrpc_struct_set_value(xmlrpc_env *   const env,
    The general way to set a structure value is xmlrpc_struct_set_value_v(),
    and this case is not common enough to deserve a shortcut.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_struct_set_value_n(xmlrpc_env *    const env,
                           xmlrpc_value *  const strct,
@@ -552,7 +565,7 @@ xmlrpc_struct_set_value_n(xmlrpc_env *    const env,
 
 /* The same as above, but the key must be an XML-RPC string.
 ** Fails with XMLRPC_TYPE_ERROR if 'keyval' is not a string. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_struct_set_value_v(xmlrpc_env *   const env,
                           xmlrpc_value * const strct,
@@ -564,7 +577,7 @@ xmlrpc_struct_set_value_v(xmlrpc_env *   const env,
 ** Fails with XMLRPC_TYPE_ERROR if 'struct' is not a struct.
 ** Fails with XMLRPC_INDEX_ERROR if 'index' is out of bounds. */
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_struct_read_member(xmlrpc_env *    const envP,
                           xmlrpc_value *  const structP,
@@ -578,7 +591,7 @@ xmlrpc_struct_read_member(xmlrpc_env *    const envP,
 
    Deprecated.  Use xmlrpc_struct_read_member() instead.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_struct_get_key_and_value(xmlrpc_env *    const env,
                                 xmlrpc_value *  const strct,
@@ -595,46 +608,46 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    const env,
    (int, time_t, etc) allow.
 */
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_cptr_new(xmlrpc_env * const envP,
                 void *       const value);
 
 typedef void (*xmlrpc_cptr_dtor_fn)(void *, void *);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_cptr_new_dtor(xmlrpc_env *        const envP,
                      void *              const value,
                      xmlrpc_cptr_dtor_fn const dtor,
                      void *              const dtorContext);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_cptr(xmlrpc_env *         const envP,
                  const xmlrpc_value * const valueP,
                  void **              const ptrValueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_nil(xmlrpc_env *   const envP,
                 xmlrpc_value * const valueP);
                 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_nil_new(xmlrpc_env * const envP);
 
 
 /* Build an xmlrpc_value from a format string. */
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value * 
 xmlrpc_build_value(xmlrpc_env * const env,
                    const char * const format, 
                    ...);
 
 /* The same as the above, but using a va_list and more general */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_build_value_va(xmlrpc_env *    const env,
                       const char *    const format,
@@ -642,14 +655,14 @@ xmlrpc_build_value_va(xmlrpc_env *    const env,
                       xmlrpc_value ** const valPP,
                       const char **   const tailP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_decompose_value(xmlrpc_env *   const envP,
                        xmlrpc_value * const value,
                        const char *   const format, 
                        ...);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
                           xmlrpc_value * const value,
@@ -663,7 +676,7 @@ xmlrpc_decompose_value_va(xmlrpc_env *   const envP,
 
    These are deprecated.  Use xmlrpc_decompose_value... instead.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_parse_value(xmlrpc_env *   const envP,
                    xmlrpc_value * const value,
@@ -671,7 +684,7 @@ xmlrpc_parse_value(xmlrpc_env *   const envP,
                    ...);
 
 /* The same as the above, but using a va_list. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_parse_value_va(xmlrpc_env *   const envP,
                       xmlrpc_value * const value,
@@ -687,33 +700,33 @@ typedef enum xmlrpc_dialect {
     xmlrpc_dialect_apache
 } xmlrpc_dialect;
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_serialize_value2(xmlrpc_env *       const envP,
                         xmlrpc_mem_block * const outputP,
                         xmlrpc_value *     const valueP,
                         xmlrpc_dialect     const dialect);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_serialize_value(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
                        xmlrpc_value *     const valueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_serialize_params2(xmlrpc_env *       const envP,
                          xmlrpc_mem_block * const outputP,
                          xmlrpc_value *     const paramArrayP,
                          xmlrpc_dialect     const dialect);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_serialize_params(xmlrpc_env *       const envP,
                         xmlrpc_mem_block * const outputP,
                         xmlrpc_value *     const paramArrayP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_serialize_call2(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
@@ -721,27 +734,27 @@ xmlrpc_serialize_call2(xmlrpc_env *       const envP,
                        xmlrpc_value *     const paramArrayP,
                        xmlrpc_dialect     const dialect);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_serialize_call(xmlrpc_env *       const envP,
                       xmlrpc_mem_block * const outputP,
                       const char *       const methodName,
                       xmlrpc_value *     const paramArrayP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_serialize_response2(xmlrpc_env *       const envP,
                            xmlrpc_mem_block * const outputP,
                            xmlrpc_value *     const valueP,
                            xmlrpc_dialect     const dialect);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_serialize_response(xmlrpc_env *       const envP,
                           xmlrpc_mem_block * const outputP,
                           xmlrpc_value *     const valueP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_serialize_fault(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
@@ -752,22 +765,22 @@ xmlrpc_serialize_fault(xmlrpc_env *       const envP,
 **  Decoding XML
 **=======================================================================*/
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
                        const char *    const xmlData,
                        size_t          const xmlDataLen,
                        xmlrpc_value ** const valuePP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_parse_call(xmlrpc_env *    const envP,
                   const char *    const xmlData,
                   size_t          const xmlDataLen,
                   const char **   const methodNameP,
-                  xmlrpc_value ** const paramArrayP);
+                  xmlrpc_value ** const paramArrayPP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_parse_response2(xmlrpc_env *    const envP,
                        const char *    const xmlData,
@@ -779,7 +792,7 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
 
 /* xmlrpc_parse_response() is for backward compatibility */
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_parse_response(xmlrpc_env * const envP, 
                       const char * const xmlData, 
@@ -795,7 +808,7 @@ xmlrpc_parse_response(xmlrpc_env * const envP,
 
 /* This routine inserts newlines every 76 characters, as required by the
 ** Base64 specification. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_mem_block *
 xmlrpc_base64_encode(xmlrpc_env *          const envP,
                      const unsigned char * const binData,
@@ -803,14 +816,14 @@ xmlrpc_base64_encode(xmlrpc_env *          const envP,
 
 /* This routine encodes everything in one line. This is needed for HTTP
 ** authentication and similar tasks. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 xmlrpc_mem_block *
 xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
                                       const unsigned char * const binData,
                                       size_t                const binLen);
 
 /* This decodes Base64 data with or without newlines. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 extern xmlrpc_mem_block *
 xmlrpc_base64_decode(xmlrpc_env * const envP,
                      const char * const asciiData,
@@ -827,12 +840,12 @@ xmlrpc_base64_decode(xmlrpc_env * const envP,
 **  a cookie replacement of basic authentication.)
 **/
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 extern void xmlrpc_authcookie_set(xmlrpc_env * const env,
                                   const char * const username,
                                   const char * const password);
 
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 char *xmlrpc_authcookie(void);
 
 /*=========================================================================
@@ -861,11 +874,11 @@ char *xmlrpc_authcookie(void);
 #define XMLRPC_XML_SIZE_LIMIT_DEFAULT (512*1024)
 
 /* Set a specific limit to the specified value. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 extern void xmlrpc_limit_set (int const limit_id, size_t const value);
 
 /* Get the value of a specified limit. */
-XMLRPC_DLLEXPORT
+XMLRPC_LIB_EXPORTED
 extern size_t xmlrpc_limit_get (int const limit_id);
 
 

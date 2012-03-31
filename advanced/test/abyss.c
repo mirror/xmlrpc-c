@@ -2,10 +2,11 @@
    connection.  We should figure out how to create a test client and do
    such tests.
 */
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
 
 #include "unistdx.h"
 #include <stdio.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif
@@ -52,7 +53,7 @@ chanSwitchCreateFd(int            const fd,
                    TChanSwitch ** const chanSwitchPP,
                    const char **  const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChanSwitchWinCreateWinsock(fd, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreateFd(fd, chanSwitchPP, errorP);
@@ -63,7 +64,7 @@ chanSwitchCreateFd(int            const fd,
 
 static void
 closesock(int const fd) {
-#ifdef WIN32
+#ifdef _WIN32
     closesocket(fd);
 #else
     close(fd);
@@ -77,7 +78,7 @@ chanSwitchCreate(uint16_t       const portNumber,
                  TChanSwitch ** const chanSwitchPP,
                  const char **  const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChanSwitchWinCreate(portNumber, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreate(portNumber, chanSwitchPP, errorP);
@@ -87,11 +88,29 @@ chanSwitchCreate(uint16_t       const portNumber,
 
 
 static void
+chanSwitchCreate2(int                     const protocolFamily,
+                  const struct sockaddr * const sockAddrP,
+                  socklen_t               const sockAddrLen,
+                  TChanSwitch **          const chanSwitchPP,
+                  const char **           const errorP) {
+
+#ifdef _WIN32
+    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen,
+                         chanSwitchPP, errorP);
+#else
+    ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen,
+                          chanSwitchPP, errorP);
+#endif
+}
+
+
+
+static void
 chanSwitchCreateIpV6(uint16_t       const portNumber,
                      TChanSwitch ** const chanSwitchPP,
                      const char **  const errorP) {
 
-#ifndef WIN32
+#ifndef _WIN32
     ChanSwitchUnixCreateIpV6Port(portNumber, chanSwitchPP, errorP);
 #endif
 }    
@@ -103,7 +122,7 @@ channelCreateFd(int const fd,
                 TChannel **   const channelPP,
                 const char ** const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     struct abyss_win_chaninfo * channelInfoP;
     ChannelWinCreateWinsock(fd, channelPP, &channelInfoP, errorP);
 #else
@@ -152,6 +171,36 @@ testChanSwitchOsSocket(void) {
 
 
 static void
+testChanSwitchSockAddr(void) {
+
+    TServer server;
+    TChanSwitch * chanSwitchP;
+    const char * error;
+
+    struct sockaddr_in sockAddr;
+
+    sockAddr.sin_family = AF_INET;
+    sockAddr.sin_port   = htons(8080);
+    sockAddr.sin_addr   = test_ipAddrFromDecimal(127, 0, 0, 1);
+
+    chanSwitchCreate2(PF_INET,
+                      (const struct sockaddr *) &sockAddr, sizeof(sockAddr),
+                      &chanSwitchP, &error);
+
+    TEST_NULL_STRING(error);
+
+    ServerCreateSwitch(&server, chanSwitchP, &error);
+
+    TEST_NULL_STRING(error);
+
+    ServerFree(&server);
+
+    ChanSwitchDestroy(chanSwitchP);
+}
+
+
+
+static void
 testChanSwitch(void) {
 
     TServer server;
@@ -170,13 +219,17 @@ testChanSwitch(void) {
 
     ChanSwitchDestroy(chanSwitchP);
 
+#ifndef _WIN32
     chanSwitchCreateIpV6(8080, &chanSwitchP, &error);
-     
+
     TEST_NULL_STRING(error);
 
     ChanSwitchDestroy(chanSwitchP);
 
+    testChanSwitchSockAddr();
+
     testChanSwitchOsSocket();
+#endif
 }
 
 
@@ -242,7 +295,7 @@ testOsSocket(void) {
 static void
 testSocket(void) {
 
-#ifndef WIN32
+#ifndef _WIN32
     int rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);

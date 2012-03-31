@@ -13,9 +13,11 @@
    $ socketexec -local_port=8080 ./xmlrpc_socket_server
 */
 
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.h */
+
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef WIN32
+#ifdef _WIN32
 #  include <windows.h>
 #else
 #  include <unistd.h>
@@ -27,7 +29,7 @@
 
 #include "config.h"  /* information about this build environment */
 
-#ifdef WIN32
+#ifdef _WIN32
   #define SLEEP(seconds) SleepEx(seconds * 1000, 1);
 #else
   #define SLEEP(seconds) sleep(seconds);

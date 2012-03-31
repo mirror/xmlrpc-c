@@ -22,8 +22,10 @@
    respond to the client, then exit.
 */
 
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.hpp */
+
 #ifndef WIN32
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 #include <cassert>
 

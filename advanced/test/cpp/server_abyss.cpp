@@ -4,6 +4,8 @@
   Test the Abyss server C++ facilities of XML-RPC for C/C++.
   
 =============================================================================*/
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
+
 #include <errno.h>
 #include <string>
 #include <iostream>
@@ -14,7 +16,7 @@
 #include <cstdlib>
 #include <time.h>
 #ifdef WIN32
-  #include <winsock.h>
+  #include <winsock2.h>
 #else
   #include <sys/unistd.h>
   #include <sys/socket.h>
@@ -47,6 +49,20 @@ closesock(int const fd) {
 #else
   close(fd);
 #endif
+}
+
+
+
+static sockaddr_in
+localhostSockAddr(short const portNumber) {
+
+    struct sockaddr_in retval;
+
+    retval.sin_family = AF_INET;
+    retval.sin_port = htons(portNumber);
+    retval.sin_addr = test_ipAddrFromDecimal(127, 0, 0, 1);
+
+    return retval;
 }
 
 
@@ -206,16 +222,56 @@ public:
     
         myRegistryP->addMethod("sample.add", methodPtr(new sampleAddMethod));
 
+        struct sockaddr_in const sockAddr(localhostSockAddr(8080));
+        const struct sockaddr * const sockAddrP(
+            (const struct sockaddr *)&sockAddr);
+
         EXPECT_ERROR(  // No registry
             serverAbyss::constrOpt opt;
             serverAbyss abyssServer(opt);
             );
+        EXPECT_ERROR(  // Both registryP and registryPtr
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryPtr(myRegistryP)
+                                    .registryP(&myRegistry)
+                                    .portNumber(12345)
+                );
+            );
         EXPECT_ERROR(  // Both portNumber and socketFd
             serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
                                     .portNumber(8080)
                                     .socketFd(3));
             );
+        
+        EXPECT_ERROR(  // Both portNumber and sockAddrP
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
+                                    .portNumber(8080)
+                                    .sockAddrP(sockAddrP)
+                                    .sockAddrLen(sizeof(sockAddr)));
+            );
+        
+        EXPECT_ERROR(  // Both socketFd and sockAddrP
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
+                                    .socketFd(3)
+                                    .sockAddrP(sockAddrP)
+                                    .sockAddrLen(sizeof(sockAddr)));
+            );
+        
+        EXPECT_ERROR(  // sockAddrP but no sockAddrLen
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
+                                    .sockAddrP(sockAddrP));
+            );
     
+        EXPECT_ERROR(  // port number too big
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryP(&myRegistry)
+                                    .portNumber(65536));
+            );
+        
         // Due to the vagaries of Abyss, construction of the following
         // objects may exit the program if it detects an error, such as
         // port number already in use.  We need to fix Abyss some day.
@@ -230,14 +286,6 @@ public:
             serverAbyss abyssServer(serverAbyss::constrOpt()
                                     .registryPtr(myRegistryP)
                                     .portNumber(12345)
-                );
-    
-            EXPECT_ERROR(  // Both registryP and registryPtr
-                serverAbyss abyssServer(serverAbyss::constrOpt()
-                                        .registryPtr(myRegistryP)
-                                        .registryP(&myRegistry)
-                                        .portNumber(12345)
-                    );
                 );
         }
         {
@@ -255,6 +303,13 @@ public:
         }
     
         {
+            serverAbyss abyssServer(serverAbyss::constrOpt()
+                                    .registryPtr(myRegistryP)
+                                    .sockAddrP(sockAddrP)
+                                    .sockAddrLen(sizeof(sockAddr))
+                );
+        }
+        {
             // Test all the options
             serverAbyss abyssServer(serverAbyss::constrOpt()
                                     .registryPtr(myRegistryP)
@@ -267,6 +322,7 @@ public:
                                     .uriPath("/xmlrpc")
                                     .chunkResponse(true)
                                     .allowOrigin("*")
+                                    .accessCtlMaxAge(42)
                                     .serverOwnsSignals(false)
                                     .expectSigchld(true)
                 );

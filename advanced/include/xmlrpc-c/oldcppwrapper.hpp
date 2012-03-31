@@ -10,20 +10,18 @@
 #ifndef XMLRPCCPP_H_INCLUDED
 #define XMLRPCCPP_H_INCLUDED
 
-// There used to be a "using namespace std" here and some confusing old
-// comments about it having something to do with what header file you
-// include to get string functions.
-//
-// "using namespace std" was under "#if defined(__GNUC__) && (__GNUC__ >= 3)"
-// until December 2003, and then unconditional until Release 1.1 (March 2005).
-// Older GNU Compilers apparently imply namespace std, so they don't need it.
-// 
-// But "using namespace std" is a bad idea.  This is an interface header
-// file, and we don't want to suck all of namespace std into the user's
-// namespace just because he's using Xmlrpc-c.  So we took it out.
-// We refer to std names like std::string.
-// -Bryan 2005.03.12.
+/*
+  XMLRPC_OLDCPPWRAPPER_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_cpp.
 
+  XMLRPC_BUILDING_OLDCPPWRAPPER says this compilation is part of
+  libxmlrpc_cpp, as opposed to something that _uses_ libxmlrpc_cpp.
+*/
+#ifdef XMLRPC_BUILDING_OLDCPPWRAPPER
+#define XMLRPC_OLDCPPWRAPPER_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_OLDCPPWRAPPER_EXPORTED
+#endif
 
 #include <cstdlib>
 #include <string>
@@ -38,7 +36,7 @@
 //=========================================================================
 //  A C++ exception class representing an XML-RPC fault.
 
-class XMLRPC_DLLEXPORT XmlRpcFault {
+class XMLRPC_OLDCPPWRAPPER_EXPORTED XmlRpcFault {
 
 private:
     xmlrpc_env   mFault;
@@ -75,7 +73,7 @@ inline xmlrpc_env *XmlRpcFault::getFaultEnv (void) {
 //    xmlrpc_parse_value(env, v, "(i)", &i);
 //    env.throwIfFaultOccurred();        
 
-class XMLRPC_DLLEXPORT XmlRpcEnv {
+class XMLRPC_OLDCPPWRAPPER_EXPORTED XmlRpcEnv {
 
 private:
     xmlrpc_env   mEnv;
@@ -129,7 +127,7 @@ inline void XmlRpcEnv::throwIfFaultOccurred (void) const {
 //
 //  So reference counting for the xmlrpc_value is quite a nightmare.
 
-class XMLRPC_DLLEXPORT XmlRpcValue {
+class XMLRPC_OLDCPPWRAPPER_EXPORTED XmlRpcValue {
 
 private:
     xmlrpc_value *mValue;
@@ -258,7 +256,7 @@ inline xmlrpc_value *XmlRpcValue::borrowReference (void) const {
 //  XmlRpcClient
 //=========================================================================
 
-class XMLRPC_DLLEXPORT XmlRpcClient {
+class XMLRPC_OLDCPPWRAPPER_EXPORTED XmlRpcClient {
 
 private:
     std::string mServerUrl;
@@ -345,7 +343,7 @@ inline XmlRpcValue XmlRpcClient::call (std::string method_name,
 //  XmlRpcGenSrv
 //=========================================================================
 
-class XMLRPC_DLLEXPORT XmlRpcGenSrv {
+class XMLRPC_OLDCPPWRAPPER_EXPORTED XmlRpcGenSrv {
 
 private:
 

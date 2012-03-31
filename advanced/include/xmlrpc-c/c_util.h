@@ -5,8 +5,6 @@
    the compiler.
 */
 
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-
 /* XMLRPC_PRINTF_ATTR lets the GNU compiler check printf-type
    calls to be sure the arguments match the format string, thus preventing
    runtime segmentation faults and incorrect messages.
@@ -19,10 +17,13 @@
 #define XMLRPC_NORETURN_ATTR
 #endif
 
-/* XMLRPC_DLLEXPORT is an attribute of an external symbols that says it
+/* XMLRPC_DLLEXPORT is an attribute of an external symbol that says it
    is to be exported from a library that contains it.
+
+   XMLRPC_BUILD_DLL says the compilation at hand is for use in an Xmlrpc-c
+   DLL.  This is meant to be defined via compiler option.
 */
-#if defined(_DLL) &&  defined(_MSC_VER) && _MSC_VER >= 1500
+#if defined(XMLRPC_BUILD_DLL) && defined(_MSC_VER)
 #define XMLRPC_DLLEXPORT __declspec(dllexport)
 #else
 #define XMLRPC_DLLEXPORT

@@ -1,6 +1,7 @@
 /* This is just a sub-file for abyss.h */
 
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 struct abyss_unix_chaninfo {
     size_t peerAddrLen;
@@ -11,6 +12,13 @@ void
 ChanSwitchUnixCreate(unsigned short const portNumber,
                      TChanSwitch ** const chanSwitchPP,
                      const char **  const errorP);
+
+void
+ChanSwitchUnixCreate2(int                     const protocolFamily,
+                      const struct sockaddr * const sockAddrP,
+                      socklen_t               const sockAddrLen,
+                      TChanSwitch **          const chanSwitchPP,
+                      const char **           const errorP);
 
 void
 ChanSwitchUnixCreateIpV6Port(unsigned short const portNumber,

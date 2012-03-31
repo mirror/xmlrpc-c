@@ -30,7 +30,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <xmlparser.h>
 #else
 #include <libxml/parser.h>

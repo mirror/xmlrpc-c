@@ -13,6 +13,8 @@
 //       $ ./callinfo_abyss_server &
 //       $ xmlrpc localhost:8080 getCallInfo
 
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.hpp */
+
 #include <cassert>
 #include <stdexcept>
 #include <iostream>

@@ -3,7 +3,7 @@
 #include "xmlrpc_config.h"
 
 #if MSVCRT
-#include <winsock.h>
+#include <winsock2.h>
 #else
 /* In some systems (SUS), the select() interface comes from <sys/time.h>;
    in others, from <sys/select.h>, and others from both.  Including both

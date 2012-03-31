@@ -8,6 +8,7 @@ See the file copying.txt for copying permission.
 #include <stddef.h>
 #include <string.h>
 
+#include "xmlrpc_config.h"
 #include "xmlparse.h"
 #include "codepage.h"
 #include "xmlfile.h"
@@ -695,8 +696,8 @@ int tmain(int argc, XML_Char **argv)
     else if (outputDir) {
       const XML_Char *file = argv[i];
       if (tcsrchr(file, T('/')))
-	file = tcsrchr(file, T('/')) + 1;
-#ifdef WIN32
+          file = tcsrchr(file, T('/')) + 1;
+#if MSVCRT
       if (tcsrchr(file, T('\\')))
 	file = tcsrchr(file, T('\\')) + 1;
 #endif

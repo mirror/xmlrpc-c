@@ -7,9 +7,22 @@
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/client.hpp>
 
+/*
+  XMLRPC_CLIENTPP_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_client++.
+
+  XMLRPC_BUILDING_CLIENTPP says this compilation is part of
+  libxmlrpc_client++, as opposed to something that _uses_ libxmlrpc_client++.
+*/
+#ifdef XMLRPC_BUILDING_CLIENTPP
+#define XMLRPC_CLIENTPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_CLIENTPP_EXPORTED
+#endif
+
 namespace xmlrpc_c {
 
-class XMLRPC_DLLEXPORT clientSimple {
+class XMLRPC_CLIENTPP_EXPORTED clientSimple {
 
 public:
     clientSimple();

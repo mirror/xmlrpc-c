@@ -993,3 +993,72 @@ ChanSwitchWinCreateWinsock(SOCKET         const winsock,
         }
     }
 }
+
+static void
+bindSocketToAddr(SOCKET                     const winsock,
+                 const struct sockaddr *    const addrP,
+                 socklen_t                  const sockAddrLen,
+                 const char **              const errorP) {
+    
+    int rc;
+
+    rc = bind(winsock, (struct sockaddr *)addrP, sockAddrLen);
+
+    if (rc != 0) {
+        int const lastError = WSAGetLastError();
+        xmlrpc_asprintf(errorP, "Unable to bind socket to the socket address.  "
+                        "bind() failed with WSAERROR %i (%s)",
+                        lastError, getWSAError(lastError));
+    } else
+        *errorP = NULL;
+}
+
+void
+ChanSwitchWinCreate2(int                     const protocolFamily,
+                     const struct sockaddr * const sockAddrP,
+                     socklen_t               const sockAddrLen,
+                     TChanSwitch **          const chanSwitchPP,
+                     const char **           const errorP) {
+
+    struct socketWin * socketWinP;
+
+    MALLOCVAR(socketWinP);
+
+    if (!socketWinP)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for Windows socket "
+                        "descriptor structure.");
+    else {
+        SOCKET winsock;
+
+        winsock = socket(protocolFamily, SOCK_STREAM, 0);
+
+        if (winsock == 0 || winsock == INVALID_SOCKET) {
+            int const lastError = WSAGetLastError();
+            xmlrpc_asprintf(errorP, "socket() failed with WSAERROR %d (%s)",
+                            lastError, getWSAError(lastError));
+        } else {
+            socketWinP->winsock = winsock;
+            socketWinP->userSuppliedWinsock = FALSE;
+            socketWinP->interruptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+            
+            setSocketOptions(socketWinP->winsock, errorP);
+            if (!*errorP) {
+                bindSocketToAddr(socketWinP->winsock, sockAddrP, sockAddrLen,
+                                 errorP);
+                if (!*errorP)
+                    ChanSwitchCreate(&chanSwitchVtbl, socketWinP,
+                                     chanSwitchPP);
+            }
+
+            if (*errorP) {
+                CloseHandle(socketWinP->interruptEvent);
+                closesocket(winsock);
+            }
+        }
+        if (*errorP)
+            free(socketWinP);
+    }
+}
+
+
+

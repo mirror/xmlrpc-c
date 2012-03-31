@@ -22,11 +22,13 @@
 */
 
 #define _XOPEN_SOURCE 600
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.h */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#ifndef WIN32
-#include <unistd.h>
+#ifndef _WIN32
+#  include <unistd.h>
 #endif
 
 #include <xmlrpc-c/base.h>
@@ -49,7 +51,7 @@ setupSignalHandlers(void) {
        obviously don't want to die just because a client didn't complete
        an RPC, so we ignore SIGPIPE.
     */
-#ifndef WIN32
+#ifndef _WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);

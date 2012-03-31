@@ -21,9 +21,22 @@
 #include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/base.h>
 
+/*
+  XMLRPC_LIBPP_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc++.
+
+  XMLRPC_BUILDING_LIBPP says this compilation is part of libxmlrpc++, as
+  opposed to something that _uses_ libxmlrpc++.
+*/
+#ifdef XMLRPC_BUILDING_LIBPP
+#define XMLRPC_LIBPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_LIBPP_EXPORTED
+#endif
+
 namespace xmlrpc_c {
 
-class XMLRPC_DLLEXPORT value {
+class XMLRPC_LIBPP_EXPORTED value {
     // This is a handle.  You don't want to create a pointer to this;
     // it is in fact a pointer itself.
 public:
@@ -97,7 +110,7 @@ std::ostream& operator<<(std::ostream& out,
                          xmlrpc_c::value::type_t const& type);
 
 
-class XMLRPC_DLLEXPORT value_int : public value {
+class XMLRPC_LIBPP_EXPORTED value_int : public value {
 public:
     value_int(int const cvalue);
 
@@ -109,7 +122,7 @@ public:
 };
 
 
-class XMLRPC_DLLEXPORT value_boolean : public value {
+class XMLRPC_LIBPP_EXPORTED value_boolean : public value {
 public:
     value_boolean(bool const cvalue);
 
@@ -121,7 +134,7 @@ public:
 };
 
 
-class XMLRPC_DLLEXPORT value_string : public value {
+class XMLRPC_LIBPP_EXPORTED value_string : public value {
 public:
     enum nlCode {nlCode_all, nlCode_lf};
 
@@ -141,7 +154,7 @@ public:
 };
 
 
-class XMLRPC_DLLEXPORT value_double : public value {
+class XMLRPC_LIBPP_EXPORTED value_double : public value {
 public:
     value_double(double const cvalue);
 
@@ -153,7 +166,7 @@ public:
 };
 
 
-class XMLRPC_DLLEXPORT value_datetime : public value {
+class XMLRPC_LIBPP_EXPORTED value_datetime : public value {
 public:
     value_datetime(std::string const cvalue);
     value_datetime(time_t const cvalue);
@@ -176,7 +189,7 @@ public:
 
 typedef std::vector<unsigned char> cbytestring;
 
-class XMLRPC_DLLEXPORT value_bytestring : public value {
+class XMLRPC_LIBPP_EXPORTED value_bytestring : public value {
 public:
     value_bytestring(cbytestring const& cvalue);
 
@@ -197,7 +210,7 @@ public:
 
 typedef std::map<std::string, xmlrpc_c::value> cstruct;
 
-class XMLRPC_DLLEXPORT value_struct : public value {
+class XMLRPC_LIBPP_EXPORTED value_struct : public value {
 public:
     value_struct(cstruct const& cvalue);
 
@@ -212,7 +225,7 @@ public:
 
 typedef std::vector<xmlrpc_c::value> carray;
 
-class XMLRPC_DLLEXPORT value_array : public value {
+class XMLRPC_LIBPP_EXPORTED value_array : public value {
 public:
     value_array(carray const& cvalue);
 
@@ -231,7 +244,7 @@ public:
 
 
 
-class XMLRPC_DLLEXPORT value_nil : public value {
+class XMLRPC_LIBPP_EXPORTED value_nil : public value {
 public:
     value_nil();
 
@@ -241,7 +254,7 @@ public:
 };
 
 
-class XMLRPC_DLLEXPORT value_i8 : public value {
+class XMLRPC_LIBPP_EXPORTED value_i8 : public value {
 public:
     value_i8(xmlrpc_int64 const cvalue);
 
@@ -403,7 +416,7 @@ arrayValueArray(const MemberClass * const in,
     return arrayValueSlice(in, in + size);
 }
 
-class XMLRPC_DLLEXPORT fault {
+class XMLRPC_LIBPP_EXPORTED fault {
 /*----------------------------------------------------------------------------
    This is an XML-RPC fault.
 
@@ -447,7 +460,7 @@ private:
     std::string             description;
 };
 
-class XMLRPC_DLLEXPORT rpcOutcome {
+class XMLRPC_LIBPP_EXPORTED rpcOutcome {
 /*----------------------------------------------------------------------------
   The outcome of a validly executed RPC -- either an XML-RPC fault
   or an XML-RPC value of the result.
@@ -469,7 +482,7 @@ private:
     xmlrpc_c::fault fault;   // valid if not 'succeeded'
 };
 
-class XMLRPC_DLLEXPORT paramList {
+class XMLRPC_LIBPP_EXPORTED paramList {
 /*----------------------------------------------------------------------------
    A parameter list of an XML-RPC call.
 -----------------------------------------------------------------------------*/

@@ -66,7 +66,7 @@
 #endif
 #include <signal.h>
 
-#ifdef WIN32
+#if MSVCRT
 #include "curllink.h"
 #endif
 
@@ -283,7 +283,7 @@ unlockSyncCurlSession(struct xmlrpc_client_transport * const transportP) {
 static void
 initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
 
-#if defined (WIN32)
+#if MSVCRT
     /* This is CRITICAL so that cURL-Win32 works properly! */
     
     /* So this commenter says, but I wonder why.  libcurl should do the
@@ -319,7 +319,7 @@ initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
 static void
 termWindowsStuff(void) {
 
-#if defined (WIN32)
+#if MSVCRT
     WSACleanup();
 #endif
 }
@@ -493,7 +493,7 @@ waitForWorkInt(xmlrpc_env *       const envP,
    waitForWork() will suffice.
 -----------------------------------------------------------------------------*/
     sigset_t callerBlockSet;
-#ifdef WIN32
+#ifdef _WIN32
     waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
 #else
     sigset_t allSignals;

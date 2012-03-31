@@ -6,6 +6,8 @@
    less control over how the requests are served.
 */
 
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.hpp */
+
 #include <cassert>
 #include <iostream>
 
