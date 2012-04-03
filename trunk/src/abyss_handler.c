@@ -422,7 +422,8 @@ xmlrpc_initAccessCtl(ResponseAccessCtl * const accessCtlP,
 
    Note that 'maxAge' is irrelevant when 'expires' is false.
 -----------------------------------------------------------------------------*/
-    accessCtlP->allowOrigin = xmlrpc_strdupsol(allowOrigin);
+    accessCtlP->allowOrigin =
+        allowOrigin ? xmlrpc_strdupsol(allowOrigin) : NULL;
     accessCtlP->expires     = expires;
     accessCtlP->maxAge      = maxAge;
 }
