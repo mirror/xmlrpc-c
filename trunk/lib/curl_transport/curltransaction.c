@@ -797,7 +797,11 @@ interpretCurlEasyError(const char ** const descriptionP,
 void
 curlTransaction_getError(curlTransaction * const curlTransactionP,
                          xmlrpc_env *      const envP) {
-
+/*----------------------------------------------------------------------------
+   Determine whether the transaction *curlTransactionP was successful in HTTP
+   terms.  Assume the transaction did complete.  Return as *envP an indication
+   of whether the transaction failed and if so, how.
+-----------------------------------------------------------------------------*/
     if (curlTransactionP->result != CURLE_OK) {
         /* We've seen Curl just return a null string for an explanation
            (e.g. when TCP connect() fails because IP address doesn't exist).
@@ -829,7 +833,24 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
                 "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
                 curlTransactionP->curlError);
         else {
-            if (http_result != 200)
+            /* We have seen Curl report that the transaction completed OK
+               (CURLE_OK) when the server sent back garbage instead of an HTTP
+               response (because it wasn't an HTTP server).  In that case Curl
+               reports zero in place of the response code.  It's strange that
+               Curl doesn't report that protocol violation at a higher level
+               (perhaps with more detail), but apparently it does not, so we
+               go by the HTTP_CODE value.  Note that if the server closes the
+               connection without responding at all, Curl calls the
+               transaction failed with an "empty reply from server" error
+               code.
+            */
+            if (http_result == 0)
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_NETWORK_ERROR,
+                    "Server is not an XML-RPC server.  Its response to our "
+                    "call is not valid HTTP.  Or it's valid HTTP with a "
+                    "response code of zero.");
+            else if (http_result != 200)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_NETWORK_ERROR,
                     "HTTP response code is %ld, not 200",
