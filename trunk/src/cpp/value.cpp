@@ -58,6 +58,12 @@ class cDatetimeValueWrapper {
 public:
     xmlrpc_value * valueP;
     
+    cDatetimeValueWrapper(xmlrpc_datetime const cppvalue) {
+        env_wrap env;
+        
+        this->valueP = xmlrpc_datetime_new(&env.env_c, cppvalue);
+        throwIfError(env);
+    }
     cDatetimeValueWrapper(time_t const cppvalue) {
         env_wrap env;
         
@@ -457,6 +463,15 @@ value_datetime::value_datetime(string const cppvalue) {
 
 
 
+value_datetime::value_datetime(xmlrpc_datetime const cppvalue) {
+
+    cDatetimeValueWrapper wrapper(cppvalue);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+
 value_datetime::value_datetime(time_t const cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue);
@@ -495,6 +510,21 @@ value_datetime::value_datetime(xmlrpc_c::value const baseValue) {
     else {
         this->instantiate(baseValue.cValueP);
     }
+}
+
+
+
+value_datetime::operator xmlrpc_datetime() const {
+
+    this->validateInstantiated();
+
+    xmlrpc_datetime retval;
+    env_wrap env;
+
+    xmlrpc_read_datetime(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
 }
 
 
