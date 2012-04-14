@@ -165,6 +165,38 @@ tsIsEqual(struct timespec const comparand,
 }
 #endif
 
+static xmlrpc_datetime const
+makeXd(time_t       const secs,
+       unsigned int const usecs) {
+
+    struct tm const tm = *gmtime(&secs);
+
+    xmlrpc_datetime retval;
+
+    retval.Y = 1900 + tm.tm_year;
+    retval.M = 1 + tm.tm_mon;
+    retval.D = tm.tm_mday;
+    retval.h = tm.tm_hour;
+    retval.m = tm.tm_min;
+    retval.s = tm.tm_sec;
+    retval.u = usecs;
+
+    return retval;
+}
+
+static bool
+xdIsEqual(xmlrpc_datetime const comparand,
+          xmlrpc_datetime const comparator) {
+    return
+        comparand.Y == comparator.Y &&
+        comparand.M == comparator.M &&
+        comparand.D == comparator.D &&
+        comparand.h == comparator.h &&
+        comparand.m == comparator.m &&
+        comparand.s == comparator.s &&
+        comparand.u == comparator.u;
+}
+
 
 
 class datetimeTestSuite : public testSuite {
@@ -194,6 +226,11 @@ public:
         TEST(static_cast<time_t>(datetime5) == testTime);
         TEST(tsIsEqual(static_cast<timespec>(datetime5), testTimeTs));
 #endif
+        xmlrpc_datetime const testTimeXd(makeXd(testTime, 5));
+        value_datetime datetime6(testTimeXd);
+        TEST(static_cast<time_t>(datetime6) == testTime);
+        TEST(xdIsEqual(static_cast<xmlrpc_datetime>(datetime6), testTimeXd));
+
         try {
             value_datetime datetime4(value_int(4));
             TEST_FAILED("invalid cast int-datetime suceeded");
