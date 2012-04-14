@@ -442,20 +442,18 @@ formatPeerInfoInet6(const struct sockaddr_in6 * const sockaddrIn6P,
         MEMSCPY(&sockaddr, sockaddrIn6P);
 
         {
-            const unsigned short * const ipaddr = (unsigned short *)
-                sockaddr.sin6_addr.s6_addr16;
+            char buffer[256];
+            const char * rc;
 
-            xmlrpc_asprintf(peerStringP,
-                            "[%x:%x:%x:%x:%x:%x:%x:%x]:%hu",
-                            htons(ipaddr[0]),
-                            htons(ipaddr[1]),
-                            htons(ipaddr[2]),
-                            htons(ipaddr[3]),
-                            htons(ipaddr[4]),
-                            htons(ipaddr[5]),
-                            htons(ipaddr[6]),
-                            htons(ipaddr[7]),
-                            sockaddr.sin6_port);
+            rc = inet_ntop(AF_INET6, &sockaddr.sin6_addr,
+                           buffer, sizeof(buffer));
+
+            /* Punt the supposedly impossible error */
+            if (rc == NULL)
+                STRSCPY(buffer, "???");
+
+            xmlrpc_asprintf(peerStringP, "[%s]:%hu",
+                            buffer, sockaddr.sin6_port);
         }
     }
 }
