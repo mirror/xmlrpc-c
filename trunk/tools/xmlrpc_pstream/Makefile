@@ -23,8 +23,6 @@ INCLUDES = \
   -Iblddir/include \
   -Isrcdir/include \
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc_pstream
 
 OBJECTS = \
