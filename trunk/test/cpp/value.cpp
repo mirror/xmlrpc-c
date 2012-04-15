@@ -206,6 +206,7 @@ public:
     }
     virtual void runtests(unsigned int const) {
         time_t const testTime(900684535);
+        string const testTime8601("19980717T140855,000000Z");
         value_datetime datetime1("19980717T14:08:55");
         TEST(static_cast<time_t>(datetime1) == testTime);
         value_datetime datetime2(testTime);
@@ -230,6 +231,9 @@ public:
         value_datetime datetime6(testTimeXd);
         TEST(static_cast<time_t>(datetime6) == testTime);
         TEST(xdIsEqual(static_cast<xmlrpc_datetime>(datetime6), testTimeXd));
+
+        string const iso8601Value(datetime1.iso8601Value());
+        TEST(iso8601Value == testTime8601);
 
         try {
             value_datetime datetime4(value_int(4));

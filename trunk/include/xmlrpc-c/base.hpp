@@ -188,6 +188,8 @@ public:
     value_datetime(xmlrpc_c::value const baseValue);
 
     time_t cvalue() const;
+
+    std::string iso8601Value() const;
 };
 
 

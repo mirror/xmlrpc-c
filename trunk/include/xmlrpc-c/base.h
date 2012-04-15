@@ -242,12 +242,6 @@ xmlrpc_read_datetime(xmlrpc_env *         const envP,
 
 XMLRPC_LIB_EXPORTED
 void
-xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
-                         const xmlrpc_value * const valueP,
-                         const char **        const stringValueP);
-
-XMLRPC_LIB_EXPORTED
-void
 xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP);
@@ -274,6 +268,18 @@ xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
                               const xmlrpc_value * const valueP,
                               struct timespec *    const timeValueP);
 #endif
+
+void
+XMLRPC_LIB_EXPORTED
+xmlrpc_read_datetime_8601(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          const char **        const iso8601ValueP);
+
+XMLRPC_LIB_EXPORTED
+void
+xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
+                         const xmlrpc_value * const valueP,
+                         const char **        const stringValueP);
 
 XMLRPC_LIB_EXPORTED
 xmlrpc_value *

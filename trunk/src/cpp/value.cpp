@@ -36,6 +36,7 @@
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "env_wrap.hpp"
 
 #include "xmlrpc-c/base.hpp"
@@ -584,6 +585,28 @@ time_t
 value_datetime::cvalue() const {
 
     return static_cast<time_t>(*this);
+}
+
+
+
+string
+value_datetime::iso8601Value() const {
+
+    string retval;
+
+    this->validateInstantiated();
+
+    const char * iso8601;
+    env_wrap env;
+
+    xmlrpc_read_datetime_8601(&env.env_c, this->cValueP, &iso8601);
+    throwIfError(env);
+
+    retval = iso8601;
+
+    xmlrpc_strfree(iso8601);
+
+    return retval;
 }
 
 
