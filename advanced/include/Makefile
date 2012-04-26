@@ -37,11 +37,13 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	@echo '  #define XMLRPC_HAVE_TIMEVAL 0'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 0'                          >>$@
 	@echo '  #define XMLRPC_HAVE_PTHREAD 0'                           >>$@
+	@echo '  #define XMLRPC_HAVE_WINTHREAD 1'                         >>$@
 	@echo '#else'                                                     >>$@
 	@echo '  #define XMLRPC_SOCKET int'                               >>$@
 	@echo '  #define XMLRPC_HAVE_TIMEVAL 1'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 1'                          >>$@
 	@echo '  #define XMLRPC_HAVE_PTHREAD 1'                           >>$@
+	@echo '  #define XMLRPC_HAVE_WINTHREAD 0'                         >>$@
 	@echo '#endif'                                                    >>$@
 	@echo ''                                                          >>$@
 	@echo '#if defined(_MSC_VER)'                                     >>$@
