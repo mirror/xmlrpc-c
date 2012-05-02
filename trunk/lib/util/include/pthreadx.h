@@ -32,6 +32,12 @@
 #  define _REENTRANT
 #  include <pthread.h>
 #elif HAVE_WINDOWS_THREAD
+/* We define WIN32_WIN_LEAN_AND_MEAN to make <windows.h> contain less
+   junk; nothing in Xmlrpc-c needs that stuff.  One significant thing it cuts
+   out is <winsock.h>, which would conflict with the <winsock2.h> that our
+   includer might use.
+*/
+#define WIN32_WIN_LEAN_AND_MEAN
 #include <windows.h>
 
 #ifdef __cplusplus
