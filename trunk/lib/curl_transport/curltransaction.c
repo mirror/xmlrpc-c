@@ -58,6 +58,15 @@ struct curlTransaction {
     struct curl_slist * headerList;
         /* The HTTP headers for the transaction */
     const char * serverUrl;  /* malloc'ed - belongs to this object */
+    xmlrpc_mem_block * postDataP;
+        /* The data to send for the POST method */
+    xmlrpc_mem_block * responseDataP;
+        /* This is normally where to put the body of the HTTP response.  But
+           do to a quirk of Curl, if the response is not valid HTTP, rather
+           than this just being irrelevant, it is the place that Curl puts the
+           server's non-HTTP response.  That can be useful for error
+           reporting.
+        */
 };
 
 
@@ -266,13 +275,16 @@ static size_t
 collect(void *  const ptr, 
         size_t  const size, 
         size_t  const nmemb,  
-        FILE  * const stream) {
+        void  * const streamP) {
 /*----------------------------------------------------------------------------
-   This is a Curl output function.  Curl calls this to deliver the
-   HTTP response body to the Curl client.  Curl thinks it's writing to
-   a POSIX stream.
+   This is a Curl write function.  Curl calls this to deliver the
+   HTTP response body to the Curl client.
+
+   But as a design quirk, Curl also calls this when there is no HTTP body
+   because the response from the server is not valid HTTP.  In that case,
+   Curl calls this to deliver the raw contents of the response.
 -----------------------------------------------------------------------------*/
-    xmlrpc_mem_block * const responseXmlP = (xmlrpc_mem_block *) stream;
+    xmlrpc_mem_block * const responseXmlP = streamP;
     char * const buffer = ptr;
     size_t const length = nmemb * size;
 
@@ -545,15 +557,13 @@ requestGssapiDelegation(CURL * const curlSessionP ATTR_UNUSED,
 
 static void
 setupCurlSession(xmlrpc_env *               const envP,
-                 curlTransaction *          const curlTransactionP,
-                 xmlrpc_mem_block *         const callXmlP,
-                 xmlrpc_mem_block *         const responseXmlP,
+                 curlTransaction *          const transP,
                  const xmlrpc_server_info * const serverInfoP,
                  bool                       const dontAdvertise,
                  const char *               const userAgent,
                  const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
-   Set up the Curl session for the transaction *curlTransactionP so that
+   Set up the Curl session for the transaction *transP so that
    a subsequent curl_easy_perform() would perform said transaction.
 
    The data curl_easy_perform() would send for that transaction would 
@@ -565,7 +575,7 @@ setupCurlSession(xmlrpc_env *               const envP,
    Xmlrpc-c interface.  Some day, we need to replace this with a type
    (probably identical) not tied to Xmlrpc-c.
 -----------------------------------------------------------------------------*/
-    CURL * const curlSessionP = curlTransactionP->curlSessionP;
+    CURL * const curlSessionP = transP->curlSessionP;
 
     assertConstantsMatch();
 
@@ -584,26 +594,24 @@ setupCurlSession(xmlrpc_env *               const envP,
        don't exercise any more of libcurl than we have to.
     */
 
-    curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, curlTransactionP);
+    curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, transP);
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
-    curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
+    curl_easy_setopt(curlSessionP, CURLOPT_URL, transP->serverUrl);
 
-    XMLRPC_MEMBLOCK_APPEND(char, envP, callXmlP, "\0", 1);
+    XMLRPC_MEMBLOCK_APPEND(char, envP, transP->postDataP, "\0", 1);
     if (!envP->fault_occurred) {
         curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS, 
-                         XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP));
+                         XMLRPC_MEMBLOCK_CONTENTS(char, transP->postDataP));
         curl_easy_setopt(curlSessionP, CURLOPT_WRITEFUNCTION, collect);
-        curl_easy_setopt(curlSessionP, CURLOPT_FILE, responseXmlP);
+        curl_easy_setopt(curlSessionP, CURLOPT_FILE, transP->responseDataP);
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
-        curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, 
-                         curlTransactionP->curlError);
-        if (curlTransactionP->progress) {
+        curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, transP->curlError);
+        if (transP->progress) {
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
             curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION,
                              curlProgress);
-            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA,
-                             curlTransactionP);
+            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
         } else
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
         
@@ -714,7 +722,7 @@ setupCurlSession(xmlrpc_env *               const envP,
                 if (!envP->fault_occurred) {
                     curl_easy_setopt(
                         curlSessionP, CURLOPT_HTTPHEADER, headerList);
-                    curlTransactionP->headerList = headerList;
+                    transP->headerList = headerList;
                 }
                 if (authHdrValue)
                     xmlrpc_strfree(authHdrValue);
@@ -754,8 +762,10 @@ curlTransaction_create(xmlrpc_env *               const envP,
         if (curlTransactionP->serverUrl == NULL)
             xmlrpc_faultf(envP, "Out of memory to store server URL.");
         else {
+            curlTransactionP->postDataP     = callXmlP;
+            curlTransactionP->responseDataP = responseXmlP;
+
             setupCurlSession(envP, curlTransactionP,
-                             callXmlP, responseXmlP,
                              serverP, dontAdvertise, userAgent,
                              curlSetupStuffP);
             
@@ -817,6 +827,24 @@ interpretCurlEasyError(const char ** const descriptionP,
 
 
 
+static const char *
+formatDataReceived(curlTransaction * const curlTransactionP) {
+
+    const char * retval;
+
+    if (XMLRPC_MEMBLOCK_SIZE(char, curlTransactionP->responseDataP) == 0)
+        retval = xmlrpc_strdupsol("");
+    else {
+        xmlrpc_asprintf(
+            &retval,
+            "Raw data from server: '%s'\n",
+            XMLRPC_MEMBLOCK_CONTENTS(char, curlTransactionP->responseDataP));
+    }
+    return retval;
+}
+
+
+
 void
 curlTransaction_getError(curlTransaction * const curlTransactionP,
                          xmlrpc_env *      const envP) {
@@ -856,14 +884,18 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
                 "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
                 curlTransactionP->curlError);
         else {
-            if (http_result == 0)
+            if (http_result == 0) {
                 /* See above for what this case means */
+                const char * const dataReceived =
+                    formatDataReceived(curlTransactionP);
+
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_NETWORK_ERROR,
                     "Server is not an XML-RPC server.  Its response to our "
                     "call is not valid HTTP.  Or it's valid HTTP with a "
-                    "response code of zero.");
-            else if (http_result != 200)
+                    "response code of zero.  %s", dataReceived);
+                xmlrpc_strfree(dataReceived);
+            } else if (http_result != 200)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_NETWORK_ERROR,
                     "HTTP response code is %ld, not 200",
