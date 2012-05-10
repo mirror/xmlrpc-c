@@ -819,8 +819,8 @@ interpretCurlEasyError(const char ** const descriptionP,
    reports it as the HTTP response body.  E.g. we had an inetd server respond
    with a "library not found" error message because the server connected
    Standard Error to the socket.  The 'curl' program typed out the error
-   message, naked, and exited with exit status zero.  We might be able to take
-   advantage of that to give better error reporting to our user.
+   message, naked, and exited with exit status zero.  We exploit this
+   discovery to give better error reporting to our user.
 
    We saw this with Curl 7.16.1.
 */
