@@ -403,7 +403,8 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
                               "authentication header");
         } else        
             *authHdrValueP = NULL;
-    }
+    } else
+        *authHdrValueP = NULL;
 }
 
 
