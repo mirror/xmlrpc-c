@@ -376,10 +376,9 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
    HTTP basic authentication.
 
    So the special function is this: if libcurl is too old to have
-   authorization options and *serverInfoP allows basic authentication,
-   return as *basicAuthHdrParamP an appropriate parameter for the
-   Authorization: Basic: HTTP header.  Otherwise, return
-   *basicAuthHdrParamP == NULL.
+   authorization options and *serverInfoP allows basic authentication, return
+   as *authHdrValueP an appropriate parameter for the Authorization: Basic:
+   HTTP header.  Otherwise, return *authHdrValueP == NULL.
 -----------------------------------------------------------------------------*/
     CURLcode rc;
 
@@ -415,8 +414,10 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
                               "authentication header");
         } else        
             *authHdrValueP = NULL;
-    }
+    } else
+        *authHdrValueP = NULL;
 }
+
 
 
 static void
