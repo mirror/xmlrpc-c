@@ -431,7 +431,7 @@ createServerFromSwitch(TServer *     const serverP,
 
 
 
-TChanSwitch *
+static TChanSwitch *
 newChanSwitchOsSocket(int const socketFd) {
 
     TChanSwitch * chanSwitchP;
@@ -480,7 +480,7 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
 
 
 
-TChanSwitch *
+static TChanSwitch *
 newChanSwitchSockAddr(SockAddr const& sockAddr) {
     
     int protocolFamily;
@@ -509,7 +509,7 @@ newChanSwitchSockAddr(SockAddr const& sockAddr) {
 
 
 
-TChanSwitch *
+static TChanSwitch *
 newChanSwitchIpV4Port(unsigned int const portNumber) {
     
     struct sockaddr_in sockAddr;
