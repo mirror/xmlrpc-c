@@ -62,6 +62,9 @@
 #ifndef HAVE_STRICMP
 #define HAVE_STRICMP 0
 #endif
+#ifndef HAVE__STRICMP
+#define HAVE__STRICMP 0
+#endif
 #ifndef HAVE_STRTOLL
 #define HAVE_STRTOLL 0
 #endif

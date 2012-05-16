@@ -351,6 +351,7 @@ INSTALL_SCRIPT = $(INSTALL) -c -m 755
 # he doesn't like the default specified at 'configure' time.
 
 prefix = $(PREFIX)
+datarootdir = $(DATAROOT_DIR)
 
 #datarootdir is the new Autoconf(2.60) name for datadir, which is still
 #accepted, but a warning is issued if datarootdir is not also used.
