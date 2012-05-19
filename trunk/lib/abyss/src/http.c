@@ -53,7 +53,7 @@ initRequestInfo(TRequestInfo * const requestInfoP,
     XMLRPC_ASSERT_PTR_OK(requestLine);
     XMLRPC_ASSERT_PTR_OK(path);
 
-    requestInfoP->requestline = strdup(requestLine);
+    requestInfoP->requestline = xmlrpc_strdupsol(requestLine);
     requestInfoP->method      = httpMethod;
     requestInfoP->host        = xmlrpc_strdupnull(host);
     requestInfoP->port        = port;
@@ -460,50 +460,82 @@ readRequestField(TSession * const sessionP,
 
 
 static void
-unescapeUri(char * const uri,
-            bool * const errorP) {
+hexDigitValue(char           const digit,
+              unsigned int * const valueP,
+              const char **  const errorP) {
 
-    char * x;
-    char * y;
+    if (digit == '\0')
+        xmlrpc_asprintf(errorP, "string ends in the middle of a "
+                        "%% escape sequence");
+    else {
+        char const digitLc = tolower(digit);
 
-    x = y = uri;
-    
-    *errorP = FALSE;
-
-    while (*x && !*errorP) {
-        switch (*x) {
-        case '%': {
-            char c;
-            ++x;
-            c = tolower(*x++);
-            if ((c >= '0') && (c <= '9'))
-                c -= '0';
-            else if ((c >= 'a') && (c <= 'f'))
-                c -= 'a' - 10;
-            else
-                *errorP = TRUE;
-
-            if (!*errorP) {
-                char d;
-                d = tolower(*x++);
-                if ((d >= '0') && (d <= '9'))
-                    d -= '0';
-                else if ((d >= 'a') && (d <= 'f'))
-                    d -= 'a' - 10;
-                else
-                    *errorP = TRUE;
-
-                if (!*errorP)
-                    *y++ = ((c << 4) | d);
-            }
-        } break;
-
-        default:
-            *y++ = *x++;
-            break;
-        }
+        if ((digitLc >= '0') && (digitLc <= '9')) {
+            *valueP = digitLc - '0';
+            *errorP = NULL;
+        } else if ((digitLc >= 'a') && (digitLc <= 'f')) {
+            *valueP = 10 + digitLc - 'a';
+            *errorP = NULL;
+        } else
+            xmlrpc_asprintf(errorP, "Non-hexadecimal digit '%c' in "
+                            "%%HH escape sequence", digit);
     }
-    *y = '\0';
+}
+
+
+
+static void
+unescapeUri(const char *  const uriComponent,
+            const char ** const unescapedP,
+            const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Unescape a component of a URI, e.g. the host name.  That component may
+   have %HH encoding, especially of characters that are delimiters within
+   a URI like slash and colon.
+
+   Return the unescaped version as *unescapedP in newly malloced storage.
+-----------------------------------------------------------------------------*/
+    char * buffer;
+
+    buffer = strdup(uriComponent);
+
+    if (!buffer)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for URI unescape buffer");
+    else {
+        const char * src;
+        char * dst;
+
+        src = dst = buffer;
+    
+        *errorP = NULL;  /* initial value */
+
+        while (*src && !*errorP) {
+            switch (*src) {
+            case '%': {
+                unsigned int digit0;
+                hexDigitValue(*src++, &digit0, errorP);
+            
+                if (!*errorP) {
+                    unsigned int digit1;
+                    hexDigitValue(*src++, &digit1, errorP);
+                
+                    if (!*errorP)
+                        *dst++ = ((digit0 << 4) | digit1);
+                }
+            } break;
+
+            default:
+                *dst++ = *src++;
+                break;
+            }
+        }
+        *dst = '\0';
+
+        if (*errorP)
+            xmlrpc_strfree(buffer);
+        else
+            *unescapedP = buffer;
+    }
 }
 
 
@@ -512,8 +544,7 @@ static void
 parseHostPort(const char *     const hostport,
               const char **    const hostP,
               unsigned short * const portP,
-              const char **    const errorP,
-              uint16_t *       const httpErrorCodeP) {
+              const char **    const errorP) {
 /*----------------------------------------------------------------------------
    Parse a 'hostport', a string in the form www.acme.com:8080 .
 
@@ -523,37 +554,156 @@ parseHostPort(const char *     const hostport,
    Default the port to 80 if 'hostport' doesn't have the port part.
 -----------------------------------------------------------------------------*/
     char * buffer;
-    char * colonPos;
 
     buffer = strdup(hostport);
 
-    colonPos = strchr(buffer, ':');
-    if (colonPos) {
-        const char * p;
-        uint32_t port;
+    if (!buffer)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for host/port buffer");
+    else {
+        char * const colonPos = strchr(buffer, ':');
 
-        *colonPos = '\0';  /* Split hostport at the colon */
+        if (colonPos) {
+            const char * p;
+            uint32_t port;
 
-        for (p = colonPos + 1, port = 0;
-             isdigit(*p) && port < 65535;
-             (port = port * 10 + (*p - '0')), ++p);
+            *colonPos = '\0';  /* Split hostport at the colon */
+
+            for (p = colonPos + 1, port = 0;
+                 isdigit(*p) && port < 65535;
+                 (port = port * 10 + (*p - '0')), ++p);
             
-        if (*p || port == 0) {
-            xmlrpc_asprintf(errorP, "There is nothing, or something "
-                            "non-numeric for the port number after the "
-                            "colon in '%s'", hostport);
-            *httpErrorCodeP = 400;  /* Bad Request */
+            if (*p || port == 0) {
+                xmlrpc_asprintf(errorP, "There is nothing, or something "
+                                "non-numeric for the port number after the "
+                                "colon in '%s'", hostport);
+            } else {
+                *hostP = xmlrpc_strdupsol(buffer);
+                *portP = port;
+                *errorP = NULL;
+            }
         } else {
-            *hostP = strdup(buffer);
-            *portP = port;
+            *hostP  = xmlrpc_strdupsol(buffer);
+            *portP  = 80;
             *errorP = NULL;
         }
-    } else {
-        *hostP          = strdup(buffer);
-        *portP          = 80;
-        *errorP = NULL;
+        free(buffer);
     }
-    free(buffer);
+}
+
+
+
+static void
+splitUriQuery(const char *  const requestUri,
+              const char ** const queryP,
+              const char ** const noQueryP,
+              const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Split 'requestUri' at the question mark, returning the stuff after
+   as *queryP and the stuff before as *noQueryP.
+-----------------------------------------------------------------------------*/
+    char * buffer;
+
+    buffer = strdup(requestUri);
+
+    if (!buffer)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for URI buffer");
+    else {
+        char * const qmark = strchr(buffer, '?');
+            
+        if (qmark) {
+            *qmark = '\0';
+            *queryP = xmlrpc_strdupsol(qmark + 1);
+        } else
+            *queryP = NULL;
+
+        *errorP = NULL;
+        *noQueryP = buffer;
+    }
+}
+
+
+
+static void
+parseHttpHostPortPath(const char *    const hostportpath,
+                      const char **   const hostP,
+                      unsigned short* const portP,
+                      const char **   const pathP,
+                      const char **   const errorP) {
+
+    const char * path;
+
+    char * buffer;
+
+    buffer = strdup(hostportpath);
+
+    if (!buffer)
+        xmlrpc_asprintf(errorP,
+                        "Couldn't get memory for host/port/path buffer");
+    else {
+        char * const slashPos = strchr(buffer, '/');
+
+        char * hostport;
+                
+        if (slashPos) {
+            path = xmlrpc_strdupsol(slashPos); /* Includes the initial slash */
+
+            *slashPos = '\0';  /* NUL termination for hostport */
+        } else
+            path = strdup("*");
+
+        hostport = buffer;
+
+        /* The following interprets the port field without taking into account
+           any %HH encoding, as the RFC says may be there.  We ignore that
+           remote possibility out of laziness.
+        */
+        parseHostPort(hostport, hostP, portP, errorP);
+
+        if (*errorP)
+            xmlrpc_strfree(path);
+        else
+            *pathP = path;
+
+        free(buffer);
+    }
+}
+
+
+
+static void
+unescapeHostPathQuery(const char *  const host,
+                      const char *  const path,
+                      const char *  const query,
+                      const char ** const hostP,
+                      const char ** const pathP,
+                      const char ** const queryP,
+                      const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Unescape each of the four components of a URI.
+
+   Each may be NULL, in which case we return NULL.
+-----------------------------------------------------------------------------*/
+    if (host)
+        unescapeUri(host, hostP, errorP);
+    else
+        *hostP = NULL;
+    if (!*errorP) {
+        if (path)
+            unescapeUri(path, pathP, errorP);
+        else
+            *pathP = NULL;
+        if (!*errorP) {
+            if (query)
+                unescapeUri(query, queryP, errorP);
+            else
+                *queryP = NULL;
+            if (*errorP)
+                xmlrpc_strfree(*pathP);
+        } else {
+            if (*hostP)
+                xmlrpc_strfree(*hostP);
+        }
+    }
 }
 
 
@@ -564,7 +714,7 @@ parseRequestUri(char *           const requestUri,
                 unsigned short * const portP,
                 const char **    const pathP,
                 const char **    const queryP,
-                uint16_t *       const httpErrorCodeP) {
+                const char **    const errorP) {
 /*----------------------------------------------------------------------------
   Parse the request URI (in the request line
   "GET http://www.myserver.com:8080/myfile.cgi?parm HTTP/1.1",
@@ -584,91 +734,49 @@ parseRequestUri(char *           const requestUri,
 
   Return strings in newly malloc'ed storage.
 
-  Return as *httpErrorCodeP the HTTP error code that describes how the
-  URI is invalid, or 0 if it is valid.  If it's invalid, other return
-  values are meaningless.
-
-  This destroys 'requestUri'.  We should fix that.
+  We can return syntactically invalid entities, e.g. a host name that
+  contains "<", if 'requestUri' is similarly invalid.  We should fix that
+  some day.  RFC 2396 lists a lot of characters as reserved for certain
+  use in the URI, such as colon, and totally disallowed, such as space.
 -----------------------------------------------------------------------------*/
-    bool error;
+    const char * requestUriNoQuery;
+        /* The request URI with any query (the stuff marked by a question
+           mark at the end of a request URI) chopped off.
+        */
+    const char * query;
+    const char * path;
+    const char * host;
+    unsigned short port;
 
-    unescapeUri(requestUri, &error);
-    
-    if (error)
-        *httpErrorCodeP = 400;  /* Bad Request */
-    else {
-        char * requestUriNoQuery;
-           /* The request URI with any query (the stuff marked by a question
-              mark at the end of a request URI) chopped off.
-           */
-        {
-            /* Split requestUri at the question mark */
-            char * const qmark = strchr(requestUri, '?');
-            
-            if (qmark) {
-                *qmark = '\0';
-                *queryP = strdup(qmark + 1);
-            } else
-                *queryP = NULL;
-
-            requestUriNoQuery = requestUri;
-        }
-
+    splitUriQuery(requestUri, &query, &requestUriNoQuery, errorP);
+    if (!*errorP) {
         if (requestUriNoQuery[0] == '/') {
-            *hostP = NULL;
-            *pathP = strdup(requestUriNoQuery);
-            *portP = 80;
-            *httpErrorCodeP = 0;
+            host = NULL;
+            path = xmlrpc_strdupsol(requestUriNoQuery);
+            port = 80;
+            *errorP = NULL;
         } else {
             if (!xmlrpc_strneq(requestUriNoQuery, "http://", 7))
-                *httpErrorCodeP = 400;  /* Bad Request */
-            else {
-                char * const hostportpath = &requestUriNoQuery[7];
-                char * const slashPos = strchr(hostportpath, '/');
-
-                const char * host;
-                const char * path;
-                unsigned short port;
-
-                char * hostport;
-                
-                if (slashPos) {
-                    char * p;
-                    path = strdup(slashPos);
-                    
-                    /* Nul-terminate the host name.  To make space for
-                       it, slide the whole name back one character.
-                       This moves it into the space now occupied by
-                       the end of "http://", which we don't need.
-                    */
-                    for (p = hostportpath; *p != '/'; ++p)
-                        *(p-1) = *p;
-                    *(p-1) = '\0';
-                    
-                    hostport = hostportpath - 1;
-                    *httpErrorCodeP = 0;
-                } else {
-                    path = strdup("*");
-                    hostport = hostportpath;
-                    *httpErrorCodeP = 0;
-                }
-                if (!*httpErrorCodeP) {
-                    const char * error;
-                    parseHostPort(hostport, &host, &port,
-                                  &error, httpErrorCodeP);
-                    if (error)
-                        xmlrpc_strfree(error);
-                    else
-                        *httpErrorCodeP = 0;
-                }
-                if (*httpErrorCodeP)
-                    xmlrpc_strfree(path);
-
-                *hostP  = host;
-                *portP  = port;
-                *pathP  = path;
-            }
+                xmlrpc_asprintf(errorP, "Scheme is not http://");
+            else
+                parseHttpHostPortPath(&requestUriNoQuery[7],
+                                      &host, &port, &path, errorP);
         }
+
+        if (!*errorP) {
+            *portP = port;
+            unescapeHostPathQuery(host, path, query,
+                                  hostP, pathP, queryP, errorP);
+
+            if (host)
+                xmlrpc_strfree(host);
+            if (path)
+                xmlrpc_strfree(path);
+        }
+
+        if (query)
+            xmlrpc_strfree(query);
+        xmlrpc_strfree(requestUriNoQuery);
     }
 }
 
@@ -729,11 +837,15 @@ parseRequestLine(char *           const requestLine,
             unsigned short port;
             const char * path;
             const char * query;
+            const char * error;
 
-            parseRequestUri(requestUri, &host, &port, &path, &query,
-                            httpErrorCodeP);
+            parseRequestUri(requestUri, &host, &port, &path, &query, &error);
 
-            if (!*httpErrorCodeP) {
+            if (error) {
+                *httpErrorCodeP = 400;  /* Bad Request */
+                xmlrpc_strfree(error);
+                    /* Someday we should do something with this */
+            } else {
                 const char * httpVersion;
 
                 NextToken((const char **)&p);
@@ -853,7 +965,7 @@ processField(const char *  const fieldName,
             sessionP->requestInfo.host = NULL;
         }
         parseHostPort(fieldValue, &sessionP->requestInfo.host,
-                      &sessionP->requestInfo.port, errorP, httpErrorCodeP);
+                      &sessionP->requestInfo.port, errorP);
     } else if (xmlrpc_streq(fieldName, "from"))
         sessionP->requestInfo.from = fieldValue;
     else if (xmlrpc_streq(fieldName, "user-agent"))
@@ -1110,7 +1222,7 @@ RequestAuth(TSession *   const sessionP,
                 xmlrpc_strfree(userPass);
 
                 if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
-                    sessionP->requestInfo.user = strdup(user);
+                    sessionP->requestInfo.user = xmlrpc_strdupsol(user);
                     authorized = TRUE;
                 } else
                     authorized = FALSE;
