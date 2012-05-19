@@ -527,7 +527,7 @@ parseHostPort(const char *     const hostport,
 
     buffer = strdup(hostport);
 
-    colonPos = strchr(buffer, ':');
+    colonPos = strrchr(buffer, ':');
     if (colonPos) {
         const char * p;
         uint32_t port;
