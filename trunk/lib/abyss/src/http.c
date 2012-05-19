@@ -560,7 +560,12 @@ parseHostPort(const char *     const hostport,
     if (!buffer)
         xmlrpc_asprintf(errorP, "Couldn't get memory for host/port buffer");
     else {
-        char * const colonPos = strchr(buffer, ':');
+        /* Note that the host portion may contain colons.  The old RFC says
+           it can't, but a newer one says the host may be an IPv6 address
+           in the form [x:x:x...].  But the port portion may contain only
+           digits, so we use the _last_ colon as the delimiter.
+        */
+        char * const colonPos = strrchr(buffer, ':');
 
         if (colonPos) {
             const char * p;
