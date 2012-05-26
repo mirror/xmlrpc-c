@@ -165,37 +165,33 @@ struct decompTreeNode {
 
 /* prototype for recursive calls */
 static void
-releaseDecomposition(const struct decompTreeNode * const decompRootP,
-                     bool                          const oldstyleMemMgmt);
+releaseDecomposition(const struct decompTreeNode * const decompRootP);
 
 
 static void
-releaseDecompArray(struct arrayDecomp const arrayDecomp,
-                   bool               const oldstyleMemMgmt) {
+releaseDecompArray(struct arrayDecomp const arrayDecomp) {
 
     unsigned int i;
     for (i = 0; i < arrayDecomp.itemCnt; ++i) {
-        releaseDecomposition(arrayDecomp.itemArray[i], oldstyleMemMgmt);
+        releaseDecomposition(arrayDecomp.itemArray[i]);
     }
 }
 
 
+
 static void
-releaseDecompStruct(struct structDecomp const structDecomp,
-                    bool                const oldstyleMemMgmt) {
+releaseDecompStruct(struct structDecomp const structDecomp) {
 
     unsigned int i;
     for (i = 0; i < structDecomp.mbrCnt; ++i) {
-        releaseDecomposition(structDecomp.mbrArray[i].decompTreeP,
-                             oldstyleMemMgmt);
+        releaseDecomposition(structDecomp.mbrArray[i].decompTreeP);
     }
 }
 
 
 
 static void
-releaseDecomposition(const struct decompTreeNode * const decompRootP,
-                     bool                          const oldstyleMemMgmt) {
+releaseDecomposition(const struct decompTreeNode * const decompRootP) {
 /*----------------------------------------------------------------------------
    Assuming that Caller has decomposed something according to 'decompRootP',
    release whatever resources the decomposed information occupies.
@@ -236,10 +232,10 @@ releaseDecomposition(const struct decompTreeNode * const decompRootP,
         xmlrpc_DECREF(*decompRootP->store.TstructVal.valueP);
         break;
     case '(':
-        releaseDecompArray(decompRootP->store.Tarray, oldstyleMemMgmt);
+        releaseDecompArray(decompRootP->store.Tarray);
         break;
     case '{':
-        releaseDecompStruct(decompRootP->store.Tstruct, oldstyleMemMgmt);
+        releaseDecompStruct(decompRootP->store.Tstruct);
         break;
     }
 }
@@ -310,11 +306,12 @@ parsearray(xmlrpc_env *         const envP,
             }
         }
         if (envP->fault_occurred) {
-            /* Release the items we completed before we failed. */
-            unsigned int i;
-            for (i = 0; i < doneCnt; ++i)
-                releaseDecomposition(arrayDecomp.itemArray[i],
-                                     oldstyleMemMgmt);
+            if (!oldstyleMemMgmt) {
+                /* Release the items we completed before we failed. */
+                unsigned int i;
+                for (i = 0; i < doneCnt; ++i)
+                    releaseDecomposition(arrayDecomp.itemArray[i]);
+            }
         }
     }
 }
@@ -351,10 +348,12 @@ parsestruct(xmlrpc_env *        const envP,
     }
 
     if (envP->fault_occurred) {
-        unsigned int i;
-        for (i = 0; i < doneCount; ++i)
-            releaseDecomposition(structDecomp.mbrArray[i].decompTreeP,
-                                 oldstyleMemMgmt);
+        if (!oldstyleMemMgmt) {
+            /* Release the items we completed before we failed. */
+            unsigned int i;
+            for (i = 0; i < doneCount; ++i)
+                releaseDecomposition(structDecomp.mbrArray[i].decompTreeP);
+        }
     }
 }
 
