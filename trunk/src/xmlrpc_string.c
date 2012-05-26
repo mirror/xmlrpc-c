@@ -238,7 +238,15 @@ void
 xmlrpc_read_string_old(xmlrpc_env *         const envP,
                        const xmlrpc_value * const valueP,
                        const char **        const stringValueP) {
+/*----------------------------------------------------------------------------
+   Like xmlrpc_read_string(), except it returns as *stringValueP a pointer
+   into memory owned by *valueP, rather than new memory to be owned by
+   Caller.
 
+   This is for internal use; it's necessary to implement the deprecated
+   xmlrpc_parse_value(), which also returns pointers to someone else's
+   storage.
+-----------------------------------------------------------------------------*/
     size_t length;
     accessStringValue(envP, valueP, &length, stringValueP);
 }
@@ -299,7 +307,10 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           const xmlrpc_value * const valueP,
                           size_t *             const lengthP,
                           const char **        const stringValueP) {
-
+/*----------------------------------------------------------------------------
+  This is to xmlrpc_read_string_lp() as xmlrpc_read_string_old() is
+  to xmlrpc_read_string().
+-----------------------------------------------------------------------------*/
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
         *lengthP =      XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block) - 1;
@@ -468,7 +479,10 @@ void
 xmlrpc_read_string_w_old(xmlrpc_env *     const envP,
                          xmlrpc_value *   const valueP,
                          const wchar_t ** const stringValueP) {
-
+/*----------------------------------------------------------------------------
+  This is to xmlrpc_read_string_w() as xmlrpc_read_string_old() is
+  to xmlrpc_read_string().
+-----------------------------------------------------------------------------*/
     size_t length;
 
     accessStringValueW(envP, valueP, &length, stringValueP);
@@ -540,7 +554,10 @@ xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
                             xmlrpc_value *   const valueP,
                             size_t *         const lengthP,
                             const wchar_t ** const stringValueP) {
-
+/*----------------------------------------------------------------------------
+  This is to xmlrpc_read_string_w_lp() as xmlrpc_read_string_old() is
+  to xmlrpc_read_string().
+-----------------------------------------------------------------------------*/
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
         setupWcsBlock(envP, valueP);
