@@ -785,7 +785,8 @@ createChanSwitch(struct _TServer * const srvP,
 
 
 void
-ServerInit(TServer * const serverP) {
+ServerInit2(TServer *     const serverP,
+            const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Initialize a server to accept connections.
 
@@ -795,28 +796,27 @@ ServerInit(TServer * const serverP) {
    user supplies the channels (TCP connections)).
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
-    const char * retError;
     
     if (!srvP->serverAcceptsConnections)
-        xmlrpc_asprintf(&retError,
+        xmlrpc_asprintf(errorP,
                         "ServerInit() is not valid on a server that doesn't "
                         "accept connections "
                         "(i.e. created with ServerCreateNoAccept)");
     else {
-        retError = NULL;  /* initial value */
+        *errorP = NULL;  /* initial value */
 
         if (!srvP->chanSwitchP) {
             const char * error;
             createChanSwitch(srvP, &error);
 
             if (error) {
-                xmlrpc_asprintf(&retError, "Unable to create a channel switch "
+                xmlrpc_asprintf(errorP, "Unable to create a channel switch "
                                 "for the server.  %s", error);
                 xmlrpc_strfree(error);
             }
         }
 
-        if (!retError) {
+        if (!*errorP) {
             const char * error;
 
             assert(srvP->chanSwitchP);
@@ -824,16 +824,27 @@ ServerInit(TServer * const serverP) {
             ChanSwitchListen(srvP->chanSwitchP, MAX_CONN, &error);
 
             if (error) {
-                xmlrpc_asprintf(&retError,
+                xmlrpc_asprintf(errorP,
                                 "Failed to listen on bound socket.  %s",
                                 error);
                 xmlrpc_strfree(error);
             }
         }
     }
-    if (retError) {
-        TraceExit("ServerInit() failed.  %s", retError);
-        xmlrpc_strfree(retError);
+}
+
+
+
+void
+ServerInit(TServer * const serverP) {
+
+    const char * error;
+
+    ServerInit2(serverP, &error);
+
+    if (error) {
+        TraceExit("ServerInit() failed.  %s", error);
+        xmlrpc_strfree(error);
     }
 }
 

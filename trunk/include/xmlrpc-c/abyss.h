@@ -242,6 +242,11 @@ ServerSetMimeType(TServer *  const serverP,
 
 XMLRPC_ABYSS_EXPORTED
 void
+ServerInit2(TServer *     const serverP,
+            const char ** const errorP);
+
+XMLRPC_ABYSS_EXPORTED
+void
 ServerInit(TServer * const serverP);
 
 XMLRPC_ABYSS_EXPORTED
