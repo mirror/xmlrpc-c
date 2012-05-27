@@ -95,7 +95,6 @@ LIBXMLRPC_MODS = \
 	$(XMLRPC_XML_PARSER) \
 	xmlrpc_parse \
 	xmlrpc_serialize \
-	xmlrpc_base64 \
 	xmlrpc_authcookie \
 
 LIBXMLRPC_CLIENT_MODS = xmlrpc_client xmlrpc_client_global xmlrpc_server_info

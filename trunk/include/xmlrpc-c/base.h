@@ -806,37 +806,6 @@ xmlrpc_parse_response(xmlrpc_env * const envP,
 
 
 /*=========================================================================
-**  XML-RPC Base64 Utilities
-**=========================================================================
-**  Here are some lightweight utilities which can be used to encode and
-**  decode Base64 data. These are exported mainly for testing purposes.
-*/
-
-/* This routine inserts newlines every 76 characters, as required by the
-** Base64 specification. */
-XMLRPC_LIB_EXPORTED
-xmlrpc_mem_block *
-xmlrpc_base64_encode(xmlrpc_env *          const envP,
-                     const unsigned char * const binData,
-                     size_t                const binLen);
-
-/* This routine encodes everything in one line. This is needed for HTTP
-** authentication and similar tasks. */
-XMLRPC_LIB_EXPORTED
-xmlrpc_mem_block *
-xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
-                                      const unsigned char * const binData,
-                                      size_t                const binLen);
-
-/* This decodes Base64 data with or without newlines. */
-XMLRPC_LIB_EXPORTED
-extern xmlrpc_mem_block *
-xmlrpc_base64_decode(xmlrpc_env * const envP,
-                     const char * const asciiData,
-                     size_t       const asciiLen);
-
-
-/*=========================================================================
 **  Authorization Cookie Handling
 **=========================================================================
 **  Routines to get and set values for authorizing via authorization
