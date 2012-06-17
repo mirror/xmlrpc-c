@@ -52,7 +52,7 @@
 #include <queue>
 #include <iostream>
 #include <sstream>
-#include <cstdio>
+#include <stdio.h>     // mingw32 doesn't have <cstdio> in 12.06.
 #include <cstdlib>
 
 #include <errno.h>
