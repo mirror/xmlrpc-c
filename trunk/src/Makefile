@@ -48,18 +48,18 @@ SHARED_LIBS_TO_INSTALL := $(TARGET_LIBRARY_NAMES)
 TRANSPORT_MODS =
 TRANSPORT_LIBDEP =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
-  TRANSPORT_MODS += blddir/lib/wininet_transport/xmlrpc_wininet_transport
+  TRANSPORT_MODS += $(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport
   TRANSPORT_LIBDEP += $(shell wininet-config --libs)
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  TRANSPORT_MODS += blddir/lib/curl_transport/xmlrpc_curl_transport
-  TRANSPORT_MODS += blddir/lib/curl_transport/curltransaction
-  TRANSPORT_MODS += blddir/lib/curl_transport/curlmulti
-  TRANSPORT_MODS += blddir/lib/curl_transport/lock_pthread
+  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport
+  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curltransaction
+  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curlmulti
+  TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/lock_pthread
   TRANSPORT_LIBDEP += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  TRANSPORT_MODS += blddir/lib/libwww_transport/xmlrpc_libwww_transport
+  TRANSPORT_MODS += $(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport
   TRANSPORT_LIBDEP += $(shell libwww-config --libs)
 endif
 
