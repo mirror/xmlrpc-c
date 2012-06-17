@@ -43,7 +43,7 @@
 #include <direct.h>
 #endif
 
-#ifdef _UNIX
+#ifndef _WIN32
 #include <pwd.h>
 #endif
 
@@ -254,11 +254,7 @@ static void
 chdirx(const char * const newdir,
        bool *       const successP) {
     
-#if defined(_WIN32)
-    *successP = _chdir(newdir) == 0;
-#else
-    *successP = chdir(newdir) == 0;
-#endif
+    *successP = XMLRPC_CHDIR(newdir) == 0;
 }
 
 
@@ -266,7 +262,10 @@ chdirx(const char * const newdir,
 static void
 parseUser(const char *      const p, 
           struct _TServer * const srvP) {
-#ifdef _UNIX
+#ifdef _WIN32
+    /* *srvP has no 'uid' or 'gid' member; system has no getpwnam() */
+    TraceMsg("User option ignored");
+#else
     if (p[0] == '#') {
         int32_t n;
         
@@ -284,9 +283,7 @@ parseUser(const char *      const p,
         if ((int)srvP->gid==(-1))
             srvP->gid = pwd->pw_gid;
     };
-#else
-    TraceMsg("User option ignored");
-#endif  /* _UNIX */ 
+#endif
 }
 
 
@@ -294,16 +291,12 @@ parseUser(const char *      const p,
 static void
 parsePidfile(const char *      const p,
              struct _TServer * const srvP) {
-#ifdef _UNIX
     bool succeeded;
     succeeded = FileOpenCreate(&srvP->pidfileP, p, O_TRUNC | O_WRONLY);
     if (!succeeded) {
         srvP->pidfileP = NULL;
         TraceMsg("Bad PidFile value '%s'", p);
     };
-#else
-    TraceMsg("PidFile option ignored");
-#endif  /* _UNIX */ 
 }
 
 

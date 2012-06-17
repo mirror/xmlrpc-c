@@ -81,11 +81,11 @@ struct _TServer {
            of the function itself, not the stack size for the thread
            that runs it.
         */
-#ifndef WIN32
+#ifndef _WIN32
     uid_t uid;
     gid_t gid;
-    struct TFile * pidfileP;
 #endif
+    struct TFile * pidfileP;
 };
 
 #endif
