@@ -212,10 +212,20 @@ $(LIBXMLRPC_CLIENT): LIBOBJECTS = \
   $(LIBXMLRPC_CLIENT_MODS:%=%.osh) \
   $(TRANSPORT_MODS:%=%.osh)
 
+# We try to get Xmlrpc-c directories early in the link library search
+# path to avert problems with other versions of Xmlrpc-c being in more
+# general directories (such as /usr/local/lib) that are added to the
+# search path by curl-config, etc.  That's why we separate the -L from
+# the corresponding -l.
+# 
+# Note that in a properly configured system, curl-config, etc. do not
+# generate -L options for general directories.
+
 LIBXMLRPC_CLIENT_LIBDEP = \
+  -Lblddir/src -Lblddir/lib/libutil \
+  -lxmlrpc -lxmlrpc_util \
+  $(XML_PARSER_LIBDEP) \
   $(TRANSPORT_LIBDEP) \
-  -Lblddir/src -lxmlrpc $(XML_PARSER_LIBDEP) \
-  -Lblddir/lib/util -lxmlrpc_util \
 
 $(LIBXMLRPC_CLIENT): LIBDEP = $(LIBXMLRPC_CLIENT_LIBDEP)
 

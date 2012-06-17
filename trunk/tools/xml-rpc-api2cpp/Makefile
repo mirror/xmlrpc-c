@@ -39,7 +39,7 @@ OBJECTS = \
 xml-rpc-api2cpp: \
   $(OBJECTS) \
   $(LIBXMLRPC_CPP) \
-  $(LIBXMLRPC_CLIENT) \
+  $(CLIENT_LIBS_DEP) \
   $(LIBXMLRPC_SERVER) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_XML) \
