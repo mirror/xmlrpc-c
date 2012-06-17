@@ -47,9 +47,11 @@ SHARED_LIBS_TO_INSTALL := $(TARGET_LIBRARY_NAMES)
 
 TRANSPORT_MODS =
 TRANSPORT_LIBDEP =
+TRANSPORT_INCLUDES =
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   TRANSPORT_MODS += $(BLDDIR)/lib/wininet_transport/xmlrpc_wininet_transport
   TRANSPORT_LIBDEP += $(shell wininet-config --libs)
+  TRANSPORT_INCLUDES += -Isrcdir/lib/wininet_transport
 endif
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport
@@ -57,10 +59,12 @@ ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curlmulti
   TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/lock_pthread
   TRANSPORT_LIBDEP += $(shell curl-config --libs)
+  TRANSPORT_INCLUDES += -Isrcdir/lib/curl_transport
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   TRANSPORT_MODS += $(BLDDIR)/lib/libwww_transport/xmlrpc_libwww_transport
   TRANSPORT_LIBDEP += $(shell libwww-config --libs)
+  TRANSPORT_INCLUDES += -Isrcdir/lib/libwww_transport
 endif
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
@@ -207,9 +211,13 @@ $(LIBXMLRPC_CLIENT): \
 $(LIBXMLRPC_CLIENT): LIBOBJECTS = \
   $(LIBXMLRPC_CLIENT_MODS:%=%.osh) \
   $(TRANSPORT_MODS:%=%.osh)
-$(LIBXMLRPC_CLIENT): LIBDEP = \
+
+LIBXMLRPC_CLIENT_LIBDEP = \
   $(TRANSPORT_LIBDEP) \
-  -L. -lxmlrpc $(XML_PARSER_LIBDEP) -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -Lblddir/src -lxmlrpc $(XML_PARSER_LIBDEP) \
+  -Lblddir/lib/util -lxmlrpc_util \
+
+$(LIBXMLRPC_CLIENT): LIBDEP = $(LIBXMLRPC_CLIENT_LIBDEP)
 
 libxmlrpc.a: $(LIBXMLRPC_MODS:%=%.o)
 libxmlrpc.a: LIBOBJECTS = $(LIBXMLRPC_MODS:%=%.o)
@@ -241,11 +249,6 @@ BASIC_INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include \
 
-TRANSPORT_INCLUDES = \
-  -Isrcdir/lib/wininet_transport \
-  -Isrcdir/lib/curl_transport \
-  -Isrcdir/lib/libwww_transport \
-
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(shell xml2-config --cflags)
 else
@@ -272,7 +275,29 @@ $(LIBXMLRPC_SERVER_CGI_MODS:%=%.o) \
 $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh): \
   INCLUDES = $(BASIC_INCLUDES)
 
+#-----------------------------------------------------------------------------
+#  RULES TO MAKE CFLAGS/LDFLAGS FILES
+#
+#  These are for builds in other directories of things that use libraries in
+#  this directory.  E.g. when you build libxmlrpc_client++, it depends upon
+#  libxmlrpc_client from this directory.  So the link of libxmlrpc_client++
+#  must specify a dependency upon libxmlrpc_client and any library upon which
+#  libxmlrpc_client depends, so the link command for libxmlrpc_client++
+#  $(shell cat libxmlrpc_client.ldflags).
+#  
+#  Note that some systems don't need this because there is information in
+#  libxmlrpc_client that tells libxmlrpc_client's dependencies, so you need
+#  only find libxmlrpc_client to generate libxmlrpc_client++.
+#-----------------------------------------------------------------------------
 
+libxmlrpc_client.cflags:
+	echo "$(TRANSPORT_INCLUDES)" >$@
+
+libxmlrpc_client.ldflags:
+	echo "-Lblddir/src -lxmlrpc_client $(LIBXMLRPC_CLIENT_LIBDEP)" >$@
+
+
+#-----------------------------------------------------------------------------
 .PHONY: check
 check:
 	$(MAKE) -C cpp  check
@@ -286,6 +311,7 @@ clean-local:
 
 distclean: clean distclean-local distclean-common
 distclean-local:
+	rm *.cflags *.ldflags
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BLDDIR)/transport_config.h dep-common
