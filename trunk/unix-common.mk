@@ -58,7 +58,13 @@ SHLIB_CMD = $(CCLD) $(LADD) $(LDFLAGS_SHLIB) -o $@ $^
 
 SHLIB_LE_TARGETS = $(call shliblefn, $(SHARED_LIBS_TO_BUILD))
 
-$(SHLIB_LE_TARGETS):%:%.$(MAJ).$(MIN)
+$(SHLIB_LE_TARGETS):%:%.$(MAJ)
+	rm -f $@
+	$(LN_S) $< $@
+
+SONAME_TARGETS = $(SHLIB_LE_TARGETS:%=%.$(MAJ))
+
+$(SONAME_TARGETS):%:%.$(MIN)
 	rm -f $@
 	$(LN_S) $< $@
 
