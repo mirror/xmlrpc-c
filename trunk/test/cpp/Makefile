@@ -18,13 +18,6 @@ XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 LIBS := $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 
-ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  LIBS += $(shell curl-config --libs)
-endif
-ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  LIBS += $(shell libwww-config --libs)
-endif
-
 LIBS += -lpthread
 
 INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
@@ -35,7 +28,6 @@ INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 $(SRCDIR)/common.mk: srcdir blddir
 
 include $(SRCDIR)/common.mk
-
 
 TEST_OBJS = \
   test.o \
