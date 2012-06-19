@@ -69,6 +69,10 @@ TEST_LIBS = \
   $(LIBXMLRPC_PACKETSOCKET_A) \
   $(LIBXMLRPC_UTIL_A) \
 
+ifeq ($(MSVCRT),yes)
+TEST_LIBS += socketpair.o
+endif
+
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
   TEST_LIBS += $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
@@ -82,6 +86,9 @@ test: $(TEST_OBJS) $(TEST_LIBS)
 	$(CXXLD) -o $@ $(LDFLAGS) $(LADD) $^ $(LIB_XML) $(LIBS)
 
 %.o:%.cpp
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $(D_INTERNAL_EXPAT) $<
+
+socketpair.o: $(SRCDIR)/Windows/socketpair.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $(D_INTERNAL_EXPAT) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
