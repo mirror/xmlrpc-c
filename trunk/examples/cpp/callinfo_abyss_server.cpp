@@ -19,9 +19,11 @@
 #include <stdexcept>
 #include <iostream>
 #include <unistd.h>
+#include <stdio.h>
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdio.h>
+#endif
 
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
@@ -63,7 +65,7 @@ tcpAddrFromSockAddr(struct sockaddr const sockAddr) {
 
 
 
-static std::string
+static string
 rpcIpAddrMsg(xmlrpc_c::callInfo_serverAbyss const& callInfo) {
 
     void * chanInfoPtr;
@@ -83,7 +85,7 @@ rpcIpAddrMsg(xmlrpc_c::callInfo_serverAbyss const& callInfo) {
             tcpAddr.ipAddr[3],
             tcpAddr.portNumber);
 
-    return std::string(msg);
+    return string(msg);
 }
 
 
