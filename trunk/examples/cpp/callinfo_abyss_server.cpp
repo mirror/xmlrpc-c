@@ -65,14 +65,26 @@ tcpAddrFromSockAddr(struct sockaddr const sockAddr) {
 
 
 
+/* On Windows, we have struct abyss_win_chaninfo, while on Unix we have
+   struct abyss_unix_chaninfo, but for what we're doing here, they're
+   fungible -- we use only members that exist in both.  So we refer to the
+   generically with macro CHANINFO_TYPE.
+*/
+
+#ifdef _WIN32
+  #define CHANINFO_TYPE abyss_win_chaninfo
+#else
+  #define CHANINFO_TYPE abyss_unix_chaninfo
+#endif
+
 static string
 rpcIpAddrMsg(xmlrpc_c::callInfo_serverAbyss const& callInfo) {
 
     void * chanInfoPtr;
     SessionGetChannelInfo(callInfo.abyssSessionP, &chanInfoPtr);
 
-    struct abyss_unix_chaninfo * const chanInfoP(
-        static_cast<struct abyss_unix_chaninfo *>(chanInfoPtr));
+    struct CHANINFO_TYPE * const chanInfoP(
+        static_cast<struct CHANINFO_TYPE *>(chanInfoPtr));
 
     struct tcpPortAddr const tcpAddr(tcpAddrFromSockAddr(chanInfoP->peerAddr));
 
