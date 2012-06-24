@@ -41,12 +41,15 @@ SERVERPROGS_CGI = \
 
 SERVERPROGS_ABYSS = \
   compound_value_server \
-  interrupted_server \
   xmlrpc_inetd_server \
   xmlrpc_socket_server \
   xmlrpc_loop_server \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
+
+ifneq ($(MSVCRT),yes)
+  SERVERPROGS_ABYSS += interrupted_server
+endif
 
 BASIC_PROGS = \
   json \
