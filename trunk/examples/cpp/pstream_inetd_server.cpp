@@ -17,7 +17,7 @@
      $ socketexec -accept -local_port=8080 ./pstream_inetd_server
 */
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #include <cassert>
