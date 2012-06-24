@@ -14,8 +14,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/abyss.h>
@@ -52,7 +54,11 @@ setupSignalHandlers(void) {
 static void
 printPeerIpAddr(TSession * const abyssSessionP) {
 
+#ifdef _WIN32
+    struct abyss_win_chaninfo * channelInfoP;
+#else
     struct abyss_unix_chaninfo * channelInfoP;
+#endif
     struct sockaddr_in * sockAddrInP;
     unsigned char * ipAddr;  /* 4 byte array */
 
