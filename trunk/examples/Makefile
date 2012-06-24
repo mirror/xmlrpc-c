@@ -31,7 +31,9 @@ CLIENTPROGS = \
   xmlrpc_asynch_client \
 
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  CLIENTPROGS += interrupted_client
+  ifneq ($(MSVCRT),yes)
+    CLIENTPROGS += interrupted_client
+  endif
 endif
 
 SERVERPROGS_CGI = \
