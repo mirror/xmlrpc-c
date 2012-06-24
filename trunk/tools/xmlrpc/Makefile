@@ -36,8 +36,6 @@ UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 DUMPVALUE = blddir/tools/lib/dumpvalue.o
 
-# Can we just use $(LIBS) in the link?
-
 XMLRPC_OBJS = xmlrpc.o $(DUMPVALUE)
 
 xmlrpc: $(XMLRPC_OBJS) $(CLIENT_LIBS_DEP) $(UTILS)
