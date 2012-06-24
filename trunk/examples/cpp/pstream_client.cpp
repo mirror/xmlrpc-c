@@ -42,10 +42,12 @@ main(int argc, char **) {
         exit(1);
     }
 
+#ifndef _WIN32
     // It's a good idea to disable SIGPIPE signals; if server closes his end
     // of the pipe/socket, we'd rather see a failure to send a call than
     // get killed by the OS.
     signal(SIGPIPE, SIG_IGN);
+#endif
 
     try {
         xmlrpc_c::clientXmlTransport_pstream myTransport(
