@@ -679,10 +679,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\xmlrpc_base64.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\xmlrpc_build.c"
 				>
 			</File>
