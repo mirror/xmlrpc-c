@@ -43,6 +43,10 @@ private:
     class Impl;
 
     std::auto_ptr<Impl> const implP;
+
+    // Because of 'implP', we cannot allow copy construction, so this is
+    // private:
+    autoObject(autoObject const&);
 };
 
 class XMLRPC_LIBPP_EXPORTED autoObjectPtr {
