@@ -330,7 +330,7 @@ ifeq ($(patsubst mingw32%,mingw32,$(HOST_OS)),mingw32)
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
-  MSVCRT = yes   # libc is Microsoft C runtime library
+  MSVCRT = yes
 endif
 
 ##############################################################################
