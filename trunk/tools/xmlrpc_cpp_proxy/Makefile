@@ -41,6 +41,10 @@ LIBS = \
 
 LDLIBS = $(CLIENTPP_LDLIBS) $(CLIENT_LDLIBS)
 
+ifeq ($(MSVCRT),yes)
+  LDLIBS += -lws2_32 -lwsock32 -lpthread
+endif
+
 xmlrpc_cpp_proxy:  $(OBJECTS) $(LIBS)
 	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS) $(LADD)
 

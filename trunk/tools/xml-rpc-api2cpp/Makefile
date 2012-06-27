@@ -26,6 +26,10 @@ INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 
 LDFLAGS = $(LADD)
 
+ifeq ($(MSVCRT),yes)
+  CLIENT_LDLIBS += -lws2_32 -lwsock32 -lpthread
+endif
+
 LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -L$(BLDDIR)/src -lxmlrpc_server \
   $(CLIENT_LDLIBS)
 

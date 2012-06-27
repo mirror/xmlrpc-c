@@ -24,6 +24,10 @@ LDFLAGS = $(LADD)
 
 all: xmlrpc_transport
 
+ifeq ($(MSVCRT),yes)
+  CLIENT_LDLIBS += -lws2_32 -lwsock32 -lpthread
+endif
+
 UTIL_OBJS = \
   casprintf.o \
   cmdline_parser.o \
