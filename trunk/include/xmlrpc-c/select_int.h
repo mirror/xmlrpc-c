@@ -1,17 +1,29 @@
+/*****************************************************************************
+                                 select_int.h
+******************************************************************************
+  This file is the interface header for the OS-independent abstraction of the
+  "select" OS services (i.e. services for waiting for events).
+
+  Nothing may include this header file that also includes <winsock.h>,
+  because it conflicts with this file's use of <winsock2.h>.  Furthermore,
+  nothing including this file may include <windows.h> without previously
+  defining WIN32_LEAN_AND_MEAN, because <windows.h> without that macro
+  includes <winsock.h> automatically.
+
+*****************************************************************************/
 #ifndef SELECT_INT_H_INCLUDED
 #define SELECT_INT_H_INCLUDED
 
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
 #include <signal.h>
 
 #include "xmlrpc-c/c_util.h"
 #include "xmlrpc-c/time_int.h"
 #if MSVCRT
-#ifndef sigset_t
-typedef int sigset_t;
-#endif
+  #include <winsock2.h>
+
+  #ifndef sigset_t
+    typedef int sigset_t;
+  #endif
 #endif
 
 /*
