@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <time.h>
 
-#if !MSVCRT
+#if HAVE_GETTIMEOFDAY
 #  include <sys/time.h>
 #endif
 
