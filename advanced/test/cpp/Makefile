@@ -18,13 +18,6 @@ XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 LIBS := $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 
-ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  LIBS += $(shell curl-config --libs)
-endif
-ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  LIBS += $(shell libwww-config --libs)
-endif
-
 LIBS += -lpthread
 
 INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
@@ -35,7 +28,6 @@ INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 $(SRCDIR)/common.mk: srcdir blddir
 
 include $(SRCDIR)/common.mk
-
 
 TEST_OBJS = \
   test.o \
@@ -69,6 +61,10 @@ TEST_LIBS = \
   $(LIBXMLRPC_PACKETSOCKET_A) \
   $(LIBXMLRPC_UTIL_A) \
 
+ifeq ($(MSVCRT),yes)
+TEST_LIBS += socketpair.o
+endif
+
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
   TEST_LIBS += $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
@@ -82,6 +78,9 @@ test: $(TEST_OBJS) $(TEST_LIBS)
 	$(CXXLD) -o $@ $(LDFLAGS) $(LADD) $^ $(LIB_XML) $(LIBS)
 
 %.o:%.cpp
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $(D_INTERNAL_EXPAT) $<
+
+socketpair.o: $(SRCDIR)/Windows/socketpair.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $(D_INTERNAL_EXPAT) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check

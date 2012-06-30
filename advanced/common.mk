@@ -493,6 +493,13 @@ endif
 $(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh): \
   $(BLDDIR)/include/xmlrpc-c/config.h
 
+ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
+$(BLDDIR)/src/libxmlrpc_client.cflags:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile $(notdir $@)
+$(BLDDIR)/src/libxmlrpc_client.ldflags:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile $(notdir $@)
+endif
+
 # With a separate build directory, you have to make the directory itself
 # before you can make anything in it.  Here's the rule to do that.
 $(SUBDIRS:%=$(CURDIR)/%):

@@ -90,6 +90,24 @@ tsIsEqual(struct timespec const comparand,
 
 
 
+static const char *
+make8601(time_t       const seconds,
+         unsigned int const usec) {
+
+    struct tm const tm = *gmtime(&seconds);
+
+    const char * retval;
+
+    xmlrpc_asprintf(&retval, "%04u%02u%02uT%02u%02u%02u,%06uZ",
+                    1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec,
+                    usec);
+
+    return retval;
+}
+
+
+
 static void
 test_value_datetime_varytime(const char * const datestring,
                              time_t       const datetime,
@@ -109,6 +127,8 @@ test_value_datetime_varytime(const char * const datestring,
     struct timespec const dtTimespec = makeTs(datetime, usec);
     struct timespec readBackTs;
 #endif
+    const char * const dt8601 = make8601(datetime, usec);
+    const char * readBack8601;
 
     datestringSec = truncateFracSec(datestring);
 
@@ -139,6 +159,11 @@ test_value_datetime_varytime(const char * const datestring,
     TEST_NO_FAULT(&env);
     TEST(tsIsEqual(dtTimespec, readBackTs));
 #endif
+
+    xmlrpc_read_datetime_8601(&env, v, &readBack8601);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_streq(dt8601, readBack8601));
+    strfree(readBack8601);
 
     xmlrpc_DECREF(v);
 

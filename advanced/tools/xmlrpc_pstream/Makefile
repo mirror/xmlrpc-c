@@ -23,8 +23,6 @@ INCLUDES = \
   -Iblddir/include \
   -Isrcdir/include \
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc_pstream
 
 OBJECTS = \
@@ -34,7 +32,7 @@ OBJECTS = \
 LIBS = \
   $(LIBXMLRPC_CLIENTPP) \
   $(LIBXMLRPCPP) \
-  $(LIBXMLRPC_CLIENT) \
+  $(CLIENT_LIBS_DEP) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_XML) \
   $(LIBXMLRPC_UTIL) \

@@ -169,7 +169,13 @@ public:
 class XMLRPC_LIBPP_EXPORTED value_datetime : public value {
 public:
     value_datetime(std::string const cvalue);
+
+    value_datetime(xmlrpc_datetime const cvalue);
+    operator xmlrpc_datetime() const;
+
     value_datetime(time_t const cvalue);
+    operator time_t() const;
+
 #if XMLRPC_HAVE_TIMEVAL
     value_datetime(struct timeval const& cvalue);
     operator timeval() const;
@@ -181,9 +187,9 @@ public:
 
     value_datetime(xmlrpc_c::value const baseValue);
 
-    operator time_t() const;
-
     time_t cvalue() const;
+
+    std::string iso8601Value() const;
 };
 
 

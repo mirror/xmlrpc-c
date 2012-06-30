@@ -24,7 +24,7 @@
 
 #define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.hpp */
 
-#ifndef WIN32
+#ifndef _WIN32
 #  include <unistd.h>
 #endif
 #include <cassert>

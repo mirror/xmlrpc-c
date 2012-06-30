@@ -75,10 +75,6 @@ struct _xmlrpc_value {
        non-XML characters, we have to stretch the definition of XML).
 
        For base64, this is bytes of the byte string, directly.
-
-       For datetime, this is in the same format as the contents of
-       a <dateTime.iso8601> XML element.  That really ought to be changed
-       to time_t some day.
     */
     xmlrpc_mem_block _block;
 

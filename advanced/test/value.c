@@ -1318,6 +1318,33 @@ test_value_invalid_struct(void) {
 
 
 static void
+testFailedParseValue(void) {
+
+    xmlrpc_env env;
+    xmlrpc_value * valueP;
+    const char * stringval;
+    int integerval;
+    
+
+    xmlrpc_env_init(&env);
+
+    valueP = xmlrpc_build_value(&env, "{s:s}", "string", "stringval");
+
+    TEST_NO_FAULT(&env);
+
+    /* Fail because "integer" member is missing */
+    xmlrpc_parse_value(&env, valueP, "{s:s,s:i,*}",
+                       "string", &stringval, "integer", &integerval);
+    TEST_FAULT(&env, XMLRPC_INDEX_ERROR);
+
+    xmlrpc_DECREF(valueP);
+    
+    xmlrpc_env_clean(&env);
+}
+
+
+
+static void
 test_value_parse_value(void) {
 
     xmlrpc_env env;
@@ -1372,6 +1399,8 @@ test_value_parse_value(void) {
 
         xmlrpc_DECREF(valueP);
     }
+    testFailedParseValue();
+
     xmlrpc_env_clean(&env);
 }
 

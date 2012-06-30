@@ -17,7 +17,7 @@
      $ socketexec -accept -local_port=8080 ./pstream_inetd_server
 */
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #include <cassert>
@@ -59,10 +59,12 @@ int
 main(int           const, 
      const char ** const) {
 
+#ifndef _WIN32
     // It's a good idea to disable SIGPIPE signals; if client closes his end
     // of the pipe/socket, we'd rather see a failure to send a response than
     // get killed by the OS.
     signal(SIGPIPE, SIG_IGN);
+#endif
 
     try {
         xmlrpc_c::registry myRegistry;

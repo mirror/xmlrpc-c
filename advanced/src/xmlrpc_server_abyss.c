@@ -754,6 +754,8 @@ createServer(xmlrpc_env *                      const envP,
     createServerBare(envP, parmsP, parmSize, abyssServerP, chanSwitchPP);
 
     if (!envP->fault_occurred) {
+        const char * error;
+
         setAdditionalServerParms(parmsP, parmSize, abyssServerP);
         
         setHandlersRegistry(abyssServerP, uriPathParm(parmsP, parmSize),
@@ -763,7 +765,12 @@ createServer(xmlrpc_env *                      const envP,
                             expiresParm(parmsP, parmSize),
                             maxAgeParm(parmsP, parmSize));
         
-        ServerInit(abyssServerP);
+        ServerInit2(abyssServerP, &error);
+
+        if (error) {
+            xmlrpc_faultf(envP, error);
+            xmlrpc_strfree(error);
+        }
     }
 }
 
@@ -1185,7 +1192,6 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                 oldHighLevelAbyssRun(envP, parmsP, parmSize);
             else
                 normalLevelAbyssRun(envP, parmsP, parmSize);
-            
         }
         xmlrpc_server_abyss_global_term();
     }

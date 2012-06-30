@@ -260,7 +260,17 @@ isInteger(const char * const token,
 static bool
 isFloat(const char * const token,
         unsigned int const tokSize) {
+/*----------------------------------------------------------------------------
+   The token 'token', of size 'tokSize' is a syntactically valid floating
+   point number.
 
+   N.B. This is true of any integer.
+   
+   We don't accept plus signs.
+
+   Examples of valid floating point:  0, 32, 32.5, , 32.500,
+   32.5E4 -5, 32.5E-4, 005.
+-----------------------------------------------------------------------------*/
     unsigned int i;
     bool seenPeriod;
     bool seenDigit;

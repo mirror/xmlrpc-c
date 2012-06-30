@@ -242,12 +242,6 @@ xmlrpc_read_datetime(xmlrpc_env *         const envP,
 
 XMLRPC_LIB_EXPORTED
 void
-xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
-                         const xmlrpc_value * const valueP,
-                         const char **        const stringValueP);
-
-XMLRPC_LIB_EXPORTED
-void
 xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP);
@@ -274,6 +268,18 @@ xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
                               const xmlrpc_value * const valueP,
                               struct timespec *    const timeValueP);
 #endif
+
+void
+XMLRPC_LIB_EXPORTED
+xmlrpc_read_datetime_8601(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          const char **        const iso8601ValueP);
+
+XMLRPC_LIB_EXPORTED
+void
+xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
+                         const xmlrpc_value * const valueP,
+                         const char **        const stringValueP);
 
 XMLRPC_LIB_EXPORTED
 xmlrpc_value *
@@ -797,37 +803,6 @@ xmlrpc_value *
 xmlrpc_parse_response(xmlrpc_env * const envP, 
                       const char * const xmlData, 
                       size_t       const xmlDataLen);
-
-
-/*=========================================================================
-**  XML-RPC Base64 Utilities
-**=========================================================================
-**  Here are some lightweight utilities which can be used to encode and
-**  decode Base64 data. These are exported mainly for testing purposes.
-*/
-
-/* This routine inserts newlines every 76 characters, as required by the
-** Base64 specification. */
-XMLRPC_LIB_EXPORTED
-xmlrpc_mem_block *
-xmlrpc_base64_encode(xmlrpc_env *          const envP,
-                     const unsigned char * const binData,
-                     size_t                const binLen);
-
-/* This routine encodes everything in one line. This is needed for HTTP
-** authentication and similar tasks. */
-XMLRPC_LIB_EXPORTED
-xmlrpc_mem_block *
-xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
-                                      const unsigned char * const binData,
-                                      size_t                const binLen);
-
-/* This decodes Base64 data with or without newlines. */
-XMLRPC_LIB_EXPORTED
-extern xmlrpc_mem_block *
-xmlrpc_base64_decode(xmlrpc_env * const envP,
-                     const char * const asciiData,
-                     size_t       const asciiLen);
 
 
 /*=========================================================================

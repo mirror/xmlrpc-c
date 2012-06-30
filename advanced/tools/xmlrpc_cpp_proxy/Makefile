@@ -34,12 +34,16 @@ OBJECTS = \
 LIBS = \
   $(LIBXMLRPC_CLIENTPP) \
   $(LIBXMLRPCPP) \
-  $(LIBXMLRPC_CLIENT) \
+  $(CLIENT_LIBS_DEP) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_XML) \
   $(LIBXMLRPC_UTIL) \
 
 LDLIBS = $(CLIENTPP_LDLIBS) $(CLIENT_LDLIBS)
+
+ifeq ($(MSVCRT),yes)
+  LDLIBS += -lws2_32 -lwsock32 -lpthread
+endif
 
 xmlrpc_cpp_proxy:  $(OBJECTS) $(LIBS)
 	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS) $(LADD)

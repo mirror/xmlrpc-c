@@ -1133,7 +1133,7 @@ performCurlTransaction(xmlrpc_env *      const envP,
 
         if (!envP->fault_occurred) {
             /* Curl session completed OK.  But did HTTP transaction
-               work?
+               it prosecuted work?
             */
             curlTransaction_getError(curlTransactionP, envP);
         }

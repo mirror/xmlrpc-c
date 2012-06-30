@@ -36,12 +36,9 @@ SHARED_LIBS_TO_INSTALL = $(TARGET_LIB_NAMES_PP)
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
 INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
-  $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) $(TRANSPORT_INCLUDES)
+  $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) \
+  $(shell cat blddir/src/libxmlrpc_client.cflags)
 DEP_SOURCES = *.cpp
-
-WININET_TRANSPORT_DIR = srcdir/lib/wininet_transport
-CURL_TRANSPORT_DIR    = srcdir/lib/curl_transport
-LIBWWW_TRANSPORT_DIR  = srcdir/lib/libwww_transport
 
 ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
@@ -87,11 +84,6 @@ include $(SRCDIR)/common.mk
 # this make file is used for anything.
 
 $(SRCDIR)/common.mk: srcdir blddir
-
-TRANSPORT_INCLUDES = \
-  -I$(WININET_TRANSPORT_DIR) \
-  -I$(CURL_TRANSPORT_DIR) \
-  -I$(LIBWWW_TRANSPORT_DIR) \
 
 BASIC_INCLUDES = \
   -Iblddir/include \
@@ -141,7 +133,9 @@ $(LIBXMLRPCPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
-
+ifeq ($(MSVCRT),yes)
+  $(LIBXMLRPCPP_SH):  LIBDEP += -lpthread
+endif
 
 LIBXMLRPC_SERVERPP_SH = $(call shlibfn, libxmlrpc_server++)
 
@@ -156,6 +150,9 @@ $(LIBXMLRPC_SERVERPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+ifeq ($(MSVCRT),yes)
+  $(LIBXMLRPC_SERVERPP_SH):  LIBDEP += -lpthread
+endif
 
 LIBXMLRPC_SERVER_ABYSSPP_SH = $(call shlibfn, libxmlrpc_server_abyss++)
 
@@ -174,6 +171,10 @@ $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \
    -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
    -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
 
+ifeq ($(MSVCRT),yes)
+  $(LIBXMLRPC_SERVER_ABYSSPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
+endif
+
 LIBXMLRPC_SERVER_CGIPP_SH = $(call shlibfn, libxmlrpc_server_cgi++)
 
 $(LIBXMLRPC_SERVER_CGIPP_SH): $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh) \
@@ -186,6 +187,9 @@ $(LIBXMLRPC_SERVER_CGIPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+ifeq ($(MSVCRT),yes)
+  $(LIBXMLRPC_SERVER_CGIPP_SH):  LIBDEP += -lpthread
+endif
 
 LIBXMLRPC_SERVER_PSTREAMPP_SH = $(call shlibfn, libxmlrpc_server_pstream++)
 
@@ -201,6 +205,10 @@ $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
 
+ifeq ($(MSVCRT),yes)
+  $(LIBXMLRPC_SERVER_PSTREAMPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
+endif
+
 LIBXMLRPC_CLIENTPP_SH = $(call shlibfn, libxmlrpc_client++)
 
 $(LIBXMLRPC_CLIENTPP_SH): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
@@ -208,13 +216,18 @@ $(LIBXMLRPC_CLIENTPP_SH): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
   $(call shliblefn, libxmlrpc_packetsocket) \
   $(LIBXMLRPC) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
-  $(LIBXMLRPC_CLIENT)
+  $(LIBXMLRPC_CLIENT) \
+  $(BLDDIR)/src/libxmlrpc_client.ldflags
 $(LIBXMLRPC_CLIENTPP_SH): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENTPP_SH): LIBDEP = \
   -L. -l$(LIBXMLRPCPP_NAME) -lxmlrpc_packetsocket \
+  $(shell cat blddir/src/libxmlrpc_client.ldflags) \
   -Lblddir/src -lxmlrpc_client -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+ifeq ($(MSVCRT),yes)
+  $(LIBXMLRPC_CLIENTPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
+endif
 
 LIBXMLRPC_PACKETSOCKET_SH = $(call shlibfn, libxmlrpc_packetsocket)
 
@@ -226,6 +239,9 @@ $(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+ifeq ($(MSVCRT),yes)
+  $(LIBXMLRPC_PACKETSOCKET_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
+endif
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o
@@ -283,8 +299,12 @@ $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh): \
   INCLUDES = $(SERVER_INCLUDES)
 
 $(LIBXMLRPC_CLIENTPP_MODS:%=%.o) \
+$(LIBXMLRPC_CLIENTPP_MODS:%=%.osh): $(BLDDIR)/src/libxmlrpc_client.cflags
+
+$(LIBXMLRPC_CLIENTPP_MODS:%=%.o) \
 $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh): \
-  INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
+  INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) \
+    $(shell cat blddir/src/libxmlrpc_client.cflags)
 
 $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o) \
 $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh): \
@@ -317,5 +337,6 @@ distclean-local:
 
 .PHONY: dep
 dep: dep-common $(BLDDIR)/transport_config.h
+dep-common: $(BLDDIR)/src/libxmlrpc_client.cflags
 
 include depend.mk

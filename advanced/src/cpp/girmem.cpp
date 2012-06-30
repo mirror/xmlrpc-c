@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "pthreadx.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -81,6 +83,13 @@ autoObject::Impl::decref(bool * const unreferencedP) {
 
 
 autoObject::autoObject() : implP(auto_ptr<Impl>(new Impl)) {}
+
+
+
+autoObject::autoObject(autoObject const&) {
+    // This method is declared private, so we can be running now:
+    assert(false);
+}
 
 
 
