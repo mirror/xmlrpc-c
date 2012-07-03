@@ -66,7 +66,7 @@
 #endif
 #include <signal.h>
 
-#if MSVCRT
+#if MSVCRT && !defined(__MINGW32__)
 #include "curllink.h"
 #endif
 
