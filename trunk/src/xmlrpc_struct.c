@@ -371,9 +371,9 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                           size_t         const keyLen) {
 
     xmlrpc_value * retval;
-    xmlrpc_value * keyP;
+    xmlrpc_value * keyP;  /* 'key' as an XML-RPC string */
     
-    keyP = xmlrpc_build_value(envP, "s#", key, keyLen);
+    keyP = xmlrpc_string_new_lp(envP, keyLen, key);
     if (!envP->fault_occurred) {
         xmlrpc_struct_find_value_v(envP, structP, keyP, &retval);
 
@@ -441,10 +441,9 @@ xmlrpc_struct_set_value_n(xmlrpc_env *    const envP,
             "Type is %d; struct is %d",
             xmlrpc_value_type(strctP), XMLRPC_TYPE_STRUCT);
     else {
-        xmlrpc_value * keyvalP;
+        xmlrpc_value * keyvalP;  /* 'key' as an XML-RPC string */
 
-        /* Get the key as an xmlrpc_value */
-        keyvalP = xmlrpc_build_value(envP, "s#", key, keyLen);
+        keyvalP = xmlrpc_string_new_lp(envP, keyLen, key);
         if (!envP->fault_occurred)
             xmlrpc_struct_set_value_v(envP, strctP, keyvalP, valueP);
 

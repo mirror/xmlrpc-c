@@ -109,7 +109,7 @@ convertParams(xmlrpc_env *        const envP,
     arrayP = itemP = NULL;
 
     /* Allocate an array to hold our parameters. */
-    arrayP = xmlrpc_build_value(envP, "()");
+    arrayP = xmlrpc_array_new(envP);
     XMLRPC_FAIL_IF_FAULT(envP);
 
     /* We're responsible for checking our own element name. */
