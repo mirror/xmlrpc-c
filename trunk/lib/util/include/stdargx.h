@@ -12,7 +12,7 @@
 
    On some systems (e.g. Gcc for PPC or AMD64), va_list is an array.
    That invites the scourge of array-to-pointer degeneration if you try
-   to take its address.  Burying it inside a struct as we do with out
+   to take its address.  Burying it inside a struct as we do with our
    va_listx type makes it immune.
 
    Example of what would happen if we used va_list instead of va_listx,
