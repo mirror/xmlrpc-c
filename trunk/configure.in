@@ -644,6 +644,9 @@ fi
 if test ! -f Makefile; then
   ln -s "${srcdir}/Makefile" .
 fi
+if test ! -f transport_config.mk; then
+  ln -s "${srcdir}/transport_config.mk" .
+fi
 
 
 if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
