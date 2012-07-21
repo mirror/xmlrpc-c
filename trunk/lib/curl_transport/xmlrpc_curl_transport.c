@@ -66,10 +66,6 @@
 #endif
 #include <signal.h>
 
-#if MSVCRT && !defined(__MINGW32__)
-#include "curllink.h"
-#endif
-
 #include "bool.h"
 #include "girmath.h"
 #include "mallocvar.h"
