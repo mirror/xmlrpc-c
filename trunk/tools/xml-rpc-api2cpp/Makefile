@@ -24,8 +24,6 @@ CFLAGS_LOCAL = -Wno-inline
 
 INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 
-LDFLAGS = $(LADD)
-
 ifeq ($(MSVCRT),yes)
   CLIENT_LDLIBS += -lws2_32 -lwsock32 -lpthread
 endif
@@ -48,7 +46,7 @@ xml-rpc-api2cpp: \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_XML) \
   $(LIBXMLRPC_UTIL)
-	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS)
+	$(CXXLD) -o $@ $(LDFLAGS_ALL) $(OBJECTS) $(LDLIBS)
 
 %.o:%.cpp
 	$(CXX) -c $(CXXFLAGS_ALL) $<

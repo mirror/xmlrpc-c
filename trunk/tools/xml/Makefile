@@ -23,8 +23,6 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include
 
-LDFLAGS = $(LADD)
-
 all: $(PROGS)
 
 UTIL_OBJS = \
@@ -41,7 +39,7 @@ LIBS = $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 PARSECALL_OBJS = xmlrpc_parsecall.o $(DUMPVALUE)
 
 xmlrpc_parsecall: $(PARSECALL_OBJS) $(LIBS) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $^
+	$(CCLD) -o $@ $(LDFLAGS_ALL) $^
 
 %.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS_ALL) $<

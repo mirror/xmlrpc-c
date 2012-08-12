@@ -20,8 +20,6 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc_transport
 
 ifeq ($(MSVCRT),yes)
@@ -38,7 +36,7 @@ UTIL_OBJS = \
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 xmlrpc_transport:%:%.o $(CLIENT_LIBS_DEP) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $< $(CLIENT_LDLIBS) $(UTILS)
+	$(CCLD) -o $@ $(LDFLAGS_ALL) $< $(CLIENT_LDLIBS) $(UTILS)
 
 %.o:%.c
 	$(CC) -c $(CFLAGS_ALL) $<
