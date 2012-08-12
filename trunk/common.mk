@@ -78,6 +78,14 @@ ifeq ($(LIBXMLRPCPP_NAME),)
   LIBXMLRPCPP_NAME := xmlrpc++
 endif
 
+ifneq ($(LADD),)
+# We used to use make variable LADD, but now use the conventional LDFLAGS,
+# for user-supplied additional link flags
+  LDFLAGS := $(LADD)
+endif
+
+LDFLAGS_ALL = $(LDFLAGS_PERSONAL) $(LDFLAGS)
+
 ##############################################################################
 #                        STATIC LINK LIBRARY RULES                           #
 ##############################################################################
@@ -148,13 +156,7 @@ else
   TARGET_SHARED_LE_LIBS =
 endif
 
-ifneq ($(LADD),)
-# We used to use make variable LADD, but now use the conventional LDFLAGS,
-# for user-supplied additional link flags
-  LDFLAGS := $(LADD)
-endif
-
-LDFLAGS_SHLIB_ALL=$(LDFLAGS_PERSONAL) $(LDFLAGS) $(LDFLAGS_SHLIB)
+LDFLAGS_SHLIB_ALL=$(LDFLAGS_ALL) $(LDFLAGS_SHLIB)
 
 #------ the actual rules ----------------------------------------------------
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
