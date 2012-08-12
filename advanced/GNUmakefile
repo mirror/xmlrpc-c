@@ -8,7 +8,11 @@ export BLDDIR
 
 include $(BLDDIR)/config.mk
 
-SUBDIRS = include lib src tools test examples
+SUBDIRS = include lib src test examples
+
+ifeq ($(BUILD_TOOLS),yes)
+  SUBDIRS += tools
+endif
 
 # The reason we don't build tools and examples by default is that they
 # contain executables, which require significantly more from the
@@ -22,10 +26,6 @@ SUBDIRS = include lib src tools test examples
 # subdirectory and make there.
 
 DEFAULT_SUBDIRS = include lib src
-
-ifeq ($(BUILD_TOOLS),yes)
-  DEFAULT_SUBDIRS += tools
-endif
 
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 
