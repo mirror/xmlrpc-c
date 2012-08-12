@@ -43,6 +43,6 @@ gennmtab.o:%.o:%.c
 	$(BUILDTOOL_CC) -c $< -o $@ $(CFLAGS_ALL) $(INCLUDES)
 
 gennmtab:%:%.o
-	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS) $^
+	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS_PERSONAL) $(LDFLAGS) $^
 
 include depend.mk

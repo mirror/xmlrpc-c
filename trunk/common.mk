@@ -148,12 +148,20 @@ else
   TARGET_SHARED_LE_LIBS =
 endif
 
+ifneq ($(LADD),)
+# We used to use make variable LADD, but now use the conventional LDFLAGS,
+# for user-supplied additional link flags
+  LDFLAGS := $(LADD)
+endif
+
+LDFLAGS_SHLIB_ALL=$(LDFLAGS_PERSONAL) $(LDFLAGS) $(LDFLAGS_SHLIB)
+
 #------ the actual rules ----------------------------------------------------
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
-	$(CCLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
+	$(CCLD) $(LDFLAGS_SHLIB_ALL) $(LIBOBJECTS) $(LIBDEP) -o $@  
 
 $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
-	$(CXXLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
+	$(CXXLD) $(LDFLAGS_SHLIB_ALL) $(LIBOBJECTS) $(LIBDEP) -o $@  
 #----------------------------------------------------------------------------
 
 LIBXMLRPC_UTIL_DIR = $(BLDDIR)/lib/libutil
@@ -273,11 +281,18 @@ endif
 # ways with what the make file is trying to do.  But at least some users
 # get useful results.
 
-CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS) \
-  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+ifneq ($(CADD),)
+# We used to use make variable CADD, but now use the conventional CFLAGS,
+# for user-supplied additional link flags
+  CFLAGS := $(CADD)
+  CXXFLAGS := $(CADD)
+endif
 
-CXXFLAGS_ALL = $(CXXFLAGS_COMMON) $(CFLAGS_LOCAL) $(CXXFLAGS) \
-  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CFLAGS)
+
+CXXFLAGS_ALL = $(CXXFLAGS_COMMON) $(CFLAGS_LOCAL) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CXXFLAGS)
 
 
 $(TARGET_MODS:%=%.o):%.o:%.c
