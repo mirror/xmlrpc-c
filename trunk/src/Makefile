@@ -321,13 +321,13 @@ check:
 .PHONY: install
 install: install-common $(SUBDIRS:%=%/install)
 
-.PHONY: clean clean-local distclean distclean-local
-clean: clean-common clean-local
+.PHONY: clean clean-local distclean distclean-local 
+clean:  $(SUBDIRS:%=%/clean) clean-common clean-local
 clean-local:
 
-distclean: clean distclean-local distclean-common
+distclean: $(SUBDIRS:%=%/distclean) clean distclean-local distclean-common
 distclean-local:
-	rm *.cflags *.ldflags
+	rm -f *.cflags *.ldflags
 
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep) $(BLDDIR)/transport_config.h dep-common
