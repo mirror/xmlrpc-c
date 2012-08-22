@@ -673,6 +673,10 @@ stringNew(xmlrpc_env *     const envP,
 
     xmlrpc_value * valP;
 
+    // hack to work around old-style exception cleanup in
+    // convert_params() in xmlrpc_parse.c.
+    valP = NULL;
+
     xmlrpc_validate_utf8(envP, value, length);
 
     if (!envP->fault_occurred) {
