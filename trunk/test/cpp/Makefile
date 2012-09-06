@@ -16,7 +16,7 @@ all: $(PROGS)
 
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
-LIBS := $(shell $(XMLRPC_C_CONFIG) client --ldadd)
+LIBS := 
 
 LIBS += -lpthread
 
@@ -42,6 +42,7 @@ TEST_OBJS = \
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
   CLIENT_LIBS = $(LIBXMLRPC_CLIENTPP_A) $(LIBXMLRPC_CLIENT_A)
+  LIBS += $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 else
   TEST_OBJS += testclient_dummy.o
   CLIENT_LIBS =
