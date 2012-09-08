@@ -9,7 +9,6 @@
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
-#include "transport_config.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/oldcppwrapper.hpp"
 #include "xmlrpc-c/registry.hpp"
