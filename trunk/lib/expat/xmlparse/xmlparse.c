@@ -470,10 +470,11 @@ int poolGrow(STRING_POOL *pool)
   }
   if (pool->blocks && pool->start == pool->blocks->s) {
     size_t const blockSize = (pool->end - pool->start)*2;
-    pool->blocks = realloc(pool->blocks, offsetof(BLOCK, s) +
-                           blockSize * sizeof(XML_Char));
-    if (!pool->blocks)
+    BLOCK *temp = realloc(pool->blocks, offsetof(BLOCK, s) +
+                          blockSize * sizeof(XML_Char));
+    if (!temp)
       return 0;
+    pool->blocks = temp;
     pool->blocks->size = blockSize;
     pool->ptr = pool->blocks->s + (pool->ptr - pool->start);
     pool->start = pool->blocks->s;
@@ -954,9 +955,10 @@ int addBinding(XML_Parser parser,
   if (freeBindingList) {
     b = freeBindingList;
     if (len > b->uriAlloc) {
-      b->uri = realloc(b->uri, sizeof(XML_Char) * (len + EXPAND_SPARE));
-      if (!b->uri)
+      XML_Char *temp = realloc(b->uri, sizeof(XML_Char) * (len + EXPAND_SPARE));
+      if (!temp)
         return 0;
+      b->uri = temp;
       b->uriAlloc = len + EXPAND_SPARE;
     }
     freeBindingList = b->nextTagBinding;
@@ -1911,15 +1913,18 @@ defineAttribute(ELEMENT_TYPE *type,
       type->allocDefaultAtts = 8;
       type->defaultAtts =
           malloc(type->allocDefaultAtts*sizeof(DEFAULT_ATTRIBUTE));
+      if (!type->defaultAtts)
+        return 0;
     }
     else {
+      DEFAULT_ATTRIBUTE *temp;
       type->allocDefaultAtts *= 2;
-      type->defaultAtts =
-          realloc(type->defaultAtts,
-                  type->allocDefaultAtts*sizeof(DEFAULT_ATTRIBUTE));
+      temp = realloc(type->defaultAtts,
+                     type->allocDefaultAtts*sizeof(DEFAULT_ATTRIBUTE));
+      if (!temp)
+        return 0;
+      type->defaultAtts = temp;
     }
-    if (!type->defaultAtts)
-      return 0;
   }
   att = type->defaultAtts + type->nDefaultAtts;
   att->id = attId;
@@ -1978,10 +1983,12 @@ storeAtts(XML_Parser       const xmlParserP,
   n = XmlGetAttributes(enc, attStr, attsSize, atts);
   if (n + nDefaultAtts > attsSize) {
     int oldAttsSize = attsSize;
+    ATTRIBUTE *temp;
     attsSize = n + nDefaultAtts + INIT_ATTS_SIZE;
-    atts = realloc((void *)atts, attsSize * sizeof(ATTRIBUTE));
-    if (!atts)
+    temp = realloc((void *)atts, attsSize * sizeof(ATTRIBUTE));
+    if (!temp)
       return XML_ERROR_NO_MEMORY;
+    atts = temp;
     if (n > oldAttsSize)
       XmlGetAttributes(enc, attStr, n, atts);
   }
@@ -2554,13 +2561,15 @@ doStartTagNoAtts(XML_Parser       const xmlParserP,
         if (tag->rawNameLength +
             (int)(sizeof(XML_Char) - 1) +
             (int)sizeof(XML_Char) > tag->bufEnd - tag->buf) {
+            char *temp;
             int bufSize = tag->rawNameLength * 4;
             bufSize = ROUND_UP(bufSize, sizeof(XML_Char));
-            tag->buf = realloc(tag->buf, bufSize);
-            if (!tag->buf) {
+            temp = realloc(tag->buf, bufSize);
+            if (!temp) {
                 *errorCodeP = XML_ERROR_NO_MEMORY;
                 return;
             }
+            tag->buf = temp;
             tag->bufEnd = tag->buf + bufSize;
         }
         memcpy(tag->buf, tag->rawName, tag->rawNameLength);
@@ -2587,11 +2596,12 @@ doStartTagNoAtts(XML_Parser       const xmlParserP,
                 break;
             else {
                 size_t const bufSize = (tag->bufEnd - tag->buf) << 1;
-                tag->buf = realloc(tag->buf, bufSize);
-                if (!tag->buf) {
+                char *temp = realloc(tag->buf, bufSize);
+                if (!temp) {
                     *errorCodeP = XML_ERROR_NO_MEMORY;
                     return;
                 }
+                tag->buf = temp;
                 tag->bufEnd = tag->buf + bufSize;
                 if (nextPtr)
                     tag->rawName = tag->buf;
@@ -3735,13 +3745,19 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_GROUP_OPEN:
       if (prologState.level >= groupSize) {
-        if (groupSize)
-          groupConnector = realloc(groupConnector, groupSize *= 2);
-        else
+        if (groupSize) {
+          char *temp = realloc(groupConnector, groupSize *= 2);
+          if (!temp) {
+            *errorCodeP = XML_ERROR_NO_MEMORY;
+            return;
+          }
+          groupConnector = temp;
+          } else {
           groupConnector = malloc(groupSize = 32);
-        if (!groupConnector) {
-          *errorCodeP = XML_ERROR_NO_MEMORY;
-          return;
+          if (!groupConnector) {
+            *errorCodeP = XML_ERROR_NO_MEMORY;
+            return;
+          }
         }
       }
       groupConnector[prologState.level] = 0;
