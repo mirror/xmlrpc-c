@@ -979,7 +979,7 @@ waitForConnectionCapacity(outstandingConnList * const outstandingConnListP) {
     /* We need to make this number configurable.  Note that MAX_CONN (16) is
        also the backlog limit on the TCP socket, and they really aren't
        related.  As it stands, we can have 16 connections in progress inside
-       Abyss plus 16 waiting in the the channel switch.
+       Abyss plus 16 waiting in the channel switch.
     */
 
     while (outstandingConnListP->count >= MAX_CONN) {
