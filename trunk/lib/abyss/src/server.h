@@ -49,6 +49,17 @@ struct _TServer {
         /* Maximum time in seconds the server will wait to read a header
            or a data chunk from the channel.
         */
+    uint32_t maxConn;
+        /* Maximum number of connections the server allows to exist (i.e.
+           HTTP transactions in progress) at once.  Server will not accept
+           a connection if it already has this many.
+        */
+    uint32_t maxConnBacklog;
+        /* Maximum number of connections the server allows the OS to queue
+           waiting for the server to accept it.  The OS accepts this many TCP
+           connections on the server's behalf and holds them waiting for the
+           server to accept them from the OS.
+        */
     TList handlers;
         /* Ordered list of HTTP request handlers.  For each HTTP request,
            Server calls each one in order until one reports that it handled

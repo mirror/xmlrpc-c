@@ -188,6 +188,8 @@ createServer(struct _TServer ** const srvPP,
                 srvP->advertise        = TRUE;
                 srvP->useSigchld       = FALSE;
                 srvP->uriHandlerStackSize = 0;
+                srvP->maxConn          = 15;
+                srvP->maxConnBacklog   = 15;
             
                 initUnixStuff(srvP);
 
@@ -532,6 +534,28 @@ ServerSetMimeType(TServer *  const serverP,
 
 
 
+void
+ServerSetMaxConn(TServer *    const serverP,
+                 unsigned int const maxConn) {
+
+    if (maxConn > 0) {
+        serverP->srvP->maxConn = maxConn;
+    }
+}
+
+
+
+void
+ServerSetMaxConnBacklog(TServer *    const serverP,
+                        unsigned int const maxConnBacklog) {
+
+    if (maxConnBacklog > 0) {
+        serverP->srvP->maxConnBacklog = maxConnBacklog;
+    }
+}
+
+
+
 static URIHandler2
 makeUriHandler2(const struct uriHandler * const handlerP) {
 
@@ -821,7 +845,7 @@ ServerInit2(TServer *     const serverP,
 
             assert(srvP->chanSwitchP);
 
-            ChanSwitchListen(srvP->chanSwitchP, MAX_CONN, &error);
+            ChanSwitchListen(srvP->chanSwitchP, srvP->maxConnBacklog, &error);
 
             if (error) {
                 xmlrpc_asprintf(errorP,
@@ -971,18 +995,12 @@ waitForNoConnections(outstandingConnList * const outstandingConnListP) {
 
 
 static void
-waitForConnectionCapacity(outstandingConnList * const outstandingConnListP) {
+waitForConnectionCapacity(outstandingConnList * const outstandingConnListP,
+                          unsigned int          const maxConn) {
 /*----------------------------------------------------------------------------
-   Wait until there are fewer than the maximum allowed connections in
-   progress.
+   Wait until there are fewer than 'maxConn' connections in progress.
 -----------------------------------------------------------------------------*/
-    /* We need to make this number configurable.  Note that MAX_CONN (16) is
-       also the backlog limit on the TCP socket, and they really aren't
-       related.  As it stands, we can have 16 connections in progress inside
-       Abyss plus 16 waiting in the channel switch.
-    */
-
-    while (outstandingConnListP->count >= MAX_CONN) {
+    while (outstandingConnListP->count >= maxConn) {
         freeFinishedConns(outstandingConnListP);
         if (outstandingConnListP->firstP)
             waitForConnectionFreed(outstandingConnListP);
@@ -1058,7 +1076,7 @@ acceptAndProcessNextConnection(
 
             freeFinishedConns(outstandingConnListP);
             
-            waitForConnectionCapacity(outstandingConnListP);
+            waitForConnectionCapacity(outstandingConnListP, srvP->maxConn);
             
             ConnCreate(&connectionP, serverP, channelP, channelInfoP,
                        &serverFunc,

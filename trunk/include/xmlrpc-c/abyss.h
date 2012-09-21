@@ -240,6 +240,18 @@ void
 ServerSetMimeType(TServer *  const serverP,
                   MIMEType * const MIMETypeP);
 
+#define HAVE_SERVER_SET_MAX_CONN 1
+XMLRPC_ABYSS_EXPORTED
+void
+ServerSetMaxConn(TServer *    const serverP,
+                 unsigned int const maxConn);
+
+#define HAVE_SERVER_SET_MAX_CONN_BACKLOG 1
+XMLRPC_ABYSS_EXPORTED
+void
+ServerSetMaxConnBacklog(TServer *    const serverP,
+                        unsigned int const maxConnBacklog);
+
 XMLRPC_ABYSS_EXPORTED
 void
 ServerInit2(TServer *     const serverP,
@@ -602,12 +614,6 @@ MIMETypeGuessFromFile(const char * const filename);
 #define DEFAULT_CONF_FILE   DEFAULT_ROOT"/conf/abyss.conf"
 #define DEFAULT_LOG_FILE    DEFAULT_ROOT"/log/abyss.log"
 #endif
-
-/*********************************************************************
-** Maximum number of simultaneous connections
-*********************************************************************/
-
-#define MAX_CONN    16
 
 /*********************************************************************
 ** General purpose definitions
