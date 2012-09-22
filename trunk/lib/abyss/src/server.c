@@ -83,8 +83,9 @@ initUnixStuff(struct _TServer * const srvP) {
 
 
 
-static bool
-logOpen(struct _TServer * const srvP) {
+static void
+logOpen(struct _TServer * const srvP,
+        const char **     const errorP) {
 
     bool success;
 
@@ -93,17 +94,16 @@ logOpen(struct _TServer * const srvP) {
     if (success) {
         bool success;
         success = MutexCreate(&srvP->logmutexP);
-        if (success)
+        if (success) {
+            *errorP = NULL;
             srvP->logfileisopen = TRUE;
-        else
-            TraceMsg("Can't create mutex for log file");
-
-        if (!success)
+        } else
+            xmlrpc_asprintf(errorP, "Can't create mutex for log file");
+            
+        if (*errorP)
             FileClose(srvP->logfileP);
     } else
-        TraceMsg("Can't open log file '%s'", srvP->logfilename);
-
-    return success;
+        xmlrpc_asprintf(errorP, "Can't open log file '%s'", srvP->logfilename);
 }
 
 
@@ -1055,7 +1055,8 @@ destroyChannel(void * const userHandle) {
 static void
 acceptAndProcessNextConnection(
     TServer *             const serverP,
-    outstandingConnList * const outstandingConnListP) {
+    outstandingConnList * const outstandingConnListP,
+    const char **         const errorP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
@@ -1067,8 +1068,9 @@ acceptAndProcessNextConnection(
     ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
     
     if (error) {
-        TraceMsg("Failed to accept the next connection from a client "
-                 "at the channel level.  %s", error);
+        xmlrpc_asprintf(errorP,
+                        "Failed to accept the next connection from a client "
+                        "at the channel level.  %s", error);
         xmlrpc_strfree(error);
     } else {
         if (channelP) {
@@ -1092,15 +1094,19 @@ acceptAndProcessNextConnection(
                    of a background thread), destroyChannel() will
                    destroy *channelP.
                 */
+                *errorP = NULL;
             } else {
-                TraceMsg("Failed to create an Abyss connection "
-                         "out of new channel %lx.  %s", channelP, error);
+                xmlrpc_asprintf(
+                    errorP, "Failed to create an Abyss connection "
+                    "out of new channel %lx.  %s",
+                    (unsigned long)channelP, error);
                 xmlrpc_strfree(error);
                 ChannelDestroy(channelP);
                 free(channelInfoP);
             }
         } else {
             /* Accept function was interrupted before it got a connection */
+            *errorP = NULL;
         }
     }
 }
@@ -1108,19 +1114,24 @@ acceptAndProcessNextConnection(
 
 
 static void 
-serverRun2(TServer * const serverP) {
+serverRun2(TServer *     const serverP,
+           const char ** const errorP) {
 
     struct _TServer * const srvP = serverP->srvP;
     outstandingConnList * outstandingConnListP;
 
     createOutstandingConnList(&outstandingConnListP);
 
-    while (!srvP->terminationRequested)
-        acceptAndProcessNextConnection(serverP, outstandingConnListP);
+    *errorP = NULL;  /* initial value */
 
-    waitForNoConnections(outstandingConnListP);
+    while (!srvP->terminationRequested && !*errorP)
+        acceptAndProcessNextConnection(serverP, outstandingConnListP, errorP);
+
+    if (!*errorP) {
+        waitForNoConnections(outstandingConnListP);
     
-    destroyOutstandingConnList(outstandingConnListP);
+        destroyOutstandingConnList(outstandingConnListP);
+    }
 }
 
 
@@ -1134,8 +1145,15 @@ ServerRun(TServer * const serverP) {
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
                  "Try ServerRunConn() or ServerInit()");
-    else
-        serverRun2(serverP);
+    else {
+        const char * error;
+
+        serverRun2(serverP, &error);
+
+        TraceMsg("Server failed.  %s", error);
+
+        xmlrpc_strfree(error);
+    }
 }
 
 
@@ -1535,9 +1553,16 @@ LogWrite(TServer *    const serverP,
 
     struct _TServer * const srvP = serverP->srvP;
 
-    if (!srvP->logfileisopen && srvP->logfilename)
-        logOpen(srvP);
+    if (!srvP->logfileisopen && srvP->logfilename) {
+        const char * error;
+        logOpen(srvP, &error);
 
+        if (error) {
+            TraceMsg("Failed to open log file.  %s", error);
+
+            xmlrpc_strfree(error);
+        }
+    }
     if (srvP->logfileisopen) {
         bool success;
         success = MutexLock(srvP->logmutexP);
