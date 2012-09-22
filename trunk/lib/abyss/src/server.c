@@ -1344,11 +1344,14 @@ ServerRunOnce2(TServer *           const serverP,
 
 
 static void
-setGroups(void) {
+setGroups(const char ** const errorP) {
 
 #if HAVE_SETGROUPS   
-    if (setgroups(0, NULL) == (-1))
-        TraceExit("Failed to setup the group.");
+    if (setgroups(0, NULL) == -1)
+        xmlrpc_asprintf(errorP, "setgroups() errno = %d (%s)",
+                        errno, strerror(errno));
+#else
+    *errorP = NULL;
 #endif
 }
 
@@ -1385,12 +1388,18 @@ ServerDaemonize(TServer * const serverP) {
 
     /* Change the current user if we are root */
     if (getuid()==0) {
+        const char * error;
         if (srvP->uid == (uid_t)-1)
             TraceExit("Can't run under root privileges.  "
                       "Please add a User option in your "
                       "Abyss configuration file.");
 
-        setGroups();
+        setGroups(&error);
+
+        if (error) {
+            TraceExit("Failed to set groups.  %s", error);
+            xmlrpc_strfree(error);
+        }
 
         if (srvP->gid != (gid_t)-1)
             if (setgid(srvP->gid)==(-1))
