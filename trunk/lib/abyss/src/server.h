@@ -12,6 +12,9 @@ struct TFile;
 struct abyss_mutex;
 
 struct _TServer {
+    bool traceIsActive;
+        /* We should report to Standard Error our internal activities */
+
     bool terminationRequested;
         /* User wants this server to terminate as soon as possible,
            in particular before accepting any more connections and without

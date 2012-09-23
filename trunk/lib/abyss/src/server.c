@@ -121,6 +121,46 @@ logClose(struct _TServer * const srvP) {
 
 
 static void
+setupTrace(struct _TServer * const srvP) {
+
+    srvP->traceIsActive = (getenv("ABYSS_TRACE_SERVER") != NULL);
+
+    if (srvP->traceIsActive)
+        fprintf(stderr, "Abyss server will trace "
+                "basic server activity "
+                "due to ABYSS_TRACE_SERVER environment variable\n");
+}
+
+
+
+static void
+tracev(const char * const fmt,
+       va_list            argptr) {
+
+    vfprintf(stderr, fmt, argptr);
+
+    fprintf(stderr, "\n");
+}
+
+
+
+static void
+trace(struct _TServer * const srvP,
+      const char *      const fmt,
+      ...) {
+
+    if (srvP->traceIsActive) {
+        va_list argptr;
+
+        va_start(argptr, fmt);
+        tracev(fmt, argptr);
+        va_end(argptr);
+    }
+}
+
+
+
+static void
 initChanSwitchStuff(struct _TServer * const srvP,
                     bool              const noAccept,
                     TChanSwitch *     const chanSwitchP,
@@ -166,6 +206,8 @@ createServer(struct _TServer ** const srvPP,
         xmlrpc_asprintf(errorP,
                         "Unable to allocate space for server descriptor");
     } else {
+        setupTrace(srvP);
+
         srvP->terminationRequested = false;
 
         initChanSwitchStuff(srvP, noAccept, chanSwitchP, userChanSwitch,
@@ -1053,6 +1095,44 @@ destroyChannel(void * const userHandle) {
 
 
 static void
+processNewChannel(TServer *             const serverP,
+                  TChannel *            const channelP,
+                  void *                const channelInfoP,
+                  outstandingConnList * const outstandingConnListP,
+                  const char **         const errorP) {
+
+    struct _TServer * const srvP = serverP->srvP;
+                      
+    TConn * connectionP;
+    const char * error;
+
+    freeFinishedConns(outstandingConnListP);
+            
+    waitForConnectionCapacity(outstandingConnListP, srvP->maxConn);
+            
+    ConnCreate(&connectionP, serverP, channelP, channelInfoP,
+               &serverFunc,
+               SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
+               &destroyChannel, ABYSS_BACKGROUND,
+               srvP->useSigchld,
+               &error);
+    if (!error) {
+        addToOutstandingConnList(outstandingConnListP, connectionP);
+        ConnProcess(connectionP);
+        /* When connection is done (which could be later, courtesy of a
+           background thread), destroyChannel() will destroy *channelP.
+        */
+        *errorP = NULL;
+    } else {
+        xmlrpc_asprintf(
+            errorP, "Failed to create an Abyss connection.  %s", error);
+        xmlrpc_strfree(error);
+    }
+}
+
+
+
+static void
 acceptAndProcessNextConnection(
     TServer *             const serverP,
     outstandingConnList * const outstandingConnListP,
@@ -1060,10 +1140,11 @@ acceptAndProcessNextConnection(
 
     struct _TServer * const srvP = serverP->srvP;
 
-    TConn * connectionP;
     const char * error;
     TChannel * channelP;
     void * channelInfoP;
+
+    trace(srvP, "Waiting for a new channel from channel switch");
         
     ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
     
@@ -1076,36 +1157,25 @@ acceptAndProcessNextConnection(
         if (channelP) {
             const char * error;
 
-            freeFinishedConns(outstandingConnListP);
-            
-            waitForConnectionCapacity(outstandingConnListP, srvP->maxConn);
-            
-            ConnCreate(&connectionP, serverP, channelP, channelInfoP,
-                       &serverFunc,
-                       SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
-                       &destroyChannel, ABYSS_BACKGROUND,
-                       srvP->useSigchld,
-                       &error);
-            if (!error) {
-                addToOutstandingConnList(outstandingConnListP,
-                                         connectionP);
-                ConnProcess(connectionP);
-                /* When connection is done (which could be later, courtesy
-                   of a background thread), destroyChannel() will
-                   destroy *channelP.
-                */
-                *errorP = NULL;
-            } else {
-                xmlrpc_asprintf(
-                    errorP, "Failed to create an Abyss connection "
-                    "out of new channel %lx.  %s",
-                    (unsigned long)channelP, error);
-                xmlrpc_strfree(error);
+            trace(srvP, "Got a new channel from channel switch");
+
+            processNewChannel(serverP, channelP, channelInfoP,
+                              outstandingConnListP, &error);
+
+            if (error) {
+                xmlrpc_asprintf(errorP, "Failed to use new channel %lx",
+                                (unsigned long) channelP);
                 ChannelDestroy(channelP);
                 free(channelInfoP);
+            } else {
+                trace(srvP, "successfully processed newly accepted channel");
+                /* Connection created above will destroy *channelP
+                   and *channelInfoP as it terminates.
+                */
             }
         } else {
             /* Accept function was interrupted before it got a connection */
+            trace(srvP, "Wait for new channel from switch was interrupted");
             *errorP = NULL;
         }
     }
@@ -1124,12 +1194,21 @@ serverRun2(TServer *     const serverP,
 
     *errorP = NULL;  /* initial value */
 
+    trace(srvP, "Starting main connection accepting loop");
+    
     while (!srvP->terminationRequested && !*errorP)
         acceptAndProcessNextConnection(serverP, outstandingConnListP, errorP);
 
+    trace(srvP, "Main connection accepting loop is done");
+
     if (!*errorP) {
+        trace(srvP, "Waiting for %u existing connections to finish",
+              outstandingConnListP->count);
+
         waitForNoConnections(outstandingConnListP);
     
+        trace(srvP, "No connections left");
+
         destroyOutstandingConnList(outstandingConnListP);
     }
 }
