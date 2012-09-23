@@ -1108,6 +1108,10 @@ processNewChannel(TServer *             const serverP,
 
     freeFinishedConns(outstandingConnListP);
             
+    trace(srvP, "Waiting for there to be fewer than the maximum "
+          "%u sessions in progress",
+          srvP->maxConn);
+
     waitForConnectionCapacity(outstandingConnListP, srvP->maxConn);
             
     ConnCreate(&connectionP, serverP, channelP, channelInfoP,
