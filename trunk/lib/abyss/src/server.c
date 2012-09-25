@@ -1224,6 +1224,8 @@ ServerRun(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     if (!srvP->chanSwitchP)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
@@ -1239,6 +1241,7 @@ ServerRun(TServer * const serverP) {
             xmlrpc_strfree(error);
         }
     }
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1260,6 +1263,8 @@ serverRunChannel(TServer *     const serverP,
     TConn * connectionP;
     const char * error;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     srvP->keepalivemaxconn = 1;
 
     ConnCreate(&connectionP, 
@@ -1278,6 +1283,7 @@ serverRunChannel(TServer *     const serverP,
 
         ConnWaitAndRelease(connectionP);
     }
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1295,6 +1301,8 @@ ServerRunChannel(TServer *     const serverP,
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     if (srvP->serverAcceptsConnections)
         xmlrpc_asprintf(errorP,
                         "This server is configured to accept connections on "
@@ -1302,6 +1310,8 @@ ServerRunChannel(TServer *     const serverP,
                         "Try ServerRun() or ServerCreateNoAccept().");
     else
         serverRunChannel(serverP, channelP, channelInfoP, errorP);
+
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1371,6 +1381,8 @@ ServerRunOnce(TServer * const serverP) {
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     if (!srvP->chanSwitchP)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRunOnce().  "
@@ -1406,6 +1418,7 @@ ServerRunOnce(TServer * const serverP) {
             }
         }
     }
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
