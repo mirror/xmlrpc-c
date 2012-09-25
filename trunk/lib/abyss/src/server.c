@@ -1233,9 +1233,11 @@ ServerRun(TServer * const serverP) {
 
         serverRun2(serverP, &error);
 
-        TraceMsg("Server failed.  %s", error);
+        if (error) {
+            TraceMsg("Server failed.  %s", error);
 
-        xmlrpc_strfree(error);
+            xmlrpc_strfree(error);
+        }
     }
 }
 
