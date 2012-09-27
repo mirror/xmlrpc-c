@@ -789,8 +789,8 @@ serverFunc(void * const userHandle) {
 
             bool keepalive;
 
-            trace(srvP, "HTTP request at least partially received.  "
-                  "Receiving the rest and processing");
+            trace(srvP, "HTTP request %u at least partially received.  "
+                  "Receiving the rest and processing", requestCount);
             
             processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
                                      &keepalive);
@@ -799,6 +799,10 @@ serverFunc(void * const userHandle) {
                   keepalive ? "YES" : "NO");
             
             ++requestCount;
+
+            /* The HTTP request may have requested termination of the server */
+            if (srvP->terminationRequested)
+                connectionDone = TRUE;
 
             if (!keepalive)
                 connectionDone = TRUE;
