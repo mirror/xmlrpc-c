@@ -755,6 +755,9 @@ serverFunc(void * const userHandle) {
     bool connectionDone;
         /* No more need for this HTTP connection */
 
+    trace(srvP, "Thread starting to handle requests on a new connection.  "
+          "PID = %d", getpid());
+
     requestCount = 0;
     connectionDone = FALSE;
 
@@ -785,9 +788,15 @@ serverFunc(void * const userHandle) {
                 requestCount + 1 >= srvP->keepalivemaxconn;
 
             bool keepalive;
+
+            trace(srvP, "HTTP request at least partially received.  "
+                  "Receiving the rest and processing");
             
             processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
                                      &keepalive);
+
+            trace(srvP, "Done processing the HTTP request.  Keepalive = %s",
+                  keepalive ? "YES" : "NO");
             
             ++requestCount;
 
@@ -798,6 +807,7 @@ serverFunc(void * const userHandle) {
             ConnReadInit(connectionP);
         }
     }
+    trace(srvP, "PID %d done with connection", getpid());
 }
 
 
