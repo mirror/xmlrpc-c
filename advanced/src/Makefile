@@ -316,7 +316,6 @@ libxmlrpc_client.ldflags:
 #-----------------------------------------------------------------------------
 .PHONY: check
 check:
-	$(MAKE) -C cpp  check
 
 .PHONY: install
 install: install-common $(SUBDIRS:%=%/install)
