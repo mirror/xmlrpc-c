@@ -773,15 +773,15 @@ serverFunc(void * const userHandle) {
         ConnRead(connectionP, srvP->keepalivetimeout,
                  &timedOut, &eof, &readError);
 
-        if (readError) {
+        if (srvP->terminationRequested) {
+            connectionDone = TRUE;
+        } else if (readError) {
             TraceMsg("Failed to read from Abyss connection.  %s", readError);
             xmlrpc_strfree(readError);
             connectionDone = TRUE;
         } else if (timedOut) {
             connectionDone = TRUE;
         } else if (eof) {
-            connectionDone = TRUE;
-        } else if (srvP->terminationRequested) {
             connectionDone = TRUE;
         } else {
             bool const lastReqOnConn =
@@ -799,10 +799,6 @@ serverFunc(void * const userHandle) {
                   keepalive ? "YES" : "NO");
             
             ++requestCount;
-
-            /* The HTTP request may have requested termination of the server */
-            if (srvP->terminationRequested)
-                connectionDone = TRUE;
 
             if (!keepalive)
                 connectionDone = TRUE;
@@ -1065,6 +1061,22 @@ waitForConnectionCapacity(outstandingConnList * const outstandingConnListP,
 
 
 
+static void
+interruptChannels(outstandingConnList * const outstandingConnListP) {
+/*----------------------------------------------------------------------------
+   Get every thread that is waiting to read a request or write a response
+   for a connection to stop waiting.
+-----------------------------------------------------------------------------*/
+    TConn * p;
+
+    for (p = outstandingConnListP->firstP; p; p = p->nextOutstandingP) {
+
+        ChannelInterrupt(p->channelP);
+    }
+}
+
+
+
 #ifndef _WIN32
 void
 ServerHandleSigchld(pid_t const pid) {
@@ -1220,8 +1232,11 @@ serverRun2(TServer *     const serverP,
     trace(srvP, "Main connection accepting loop is done");
 
     if (!*errorP) {
-        trace(srvP, "Waiting for %u existing connections to finish",
+        trace(srvP, "Interrupting and waiting for %u existing connections "
+              "to finish",
               outstandingConnListP->count);
+
+        interruptChannels(outstandingConnListP);
 
         waitForNoConnections(outstandingConnListP);
     
