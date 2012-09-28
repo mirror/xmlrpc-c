@@ -20,8 +20,6 @@ CFLAGS_LOCAL = -Wno-inline
 
 INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc_cpp_proxy
 
 OBJECTS = \
@@ -46,7 +44,7 @@ ifeq ($(MSVCRT),yes)
 endif
 
 xmlrpc_cpp_proxy:  $(OBJECTS) $(LIBS)
-	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS) $(LADD)
+	$(CXXLD) -o $@ $(LDFLAGS_ALL) $(OBJECTS) $(LDLIBS) $(LADD)
 
 %.o:%.cpp $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CXX) -c $(CXXFLAGS_ALL) $<

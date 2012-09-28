@@ -76,7 +76,7 @@ else
 endif
 
 test: $(TEST_OBJS) $(TEST_LIBS)
-	$(CXXLD) -o $@ $(LDFLAGS) $(LADD) $^ $(LIB_XML) $(LIBS)
+	$(CXXLD) -o $@ $(LDFLAGS_ALL) $^ $(LIB_XML) $(LIBS)
 
 %.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $(D_INTERNAL_EXPAT) $<

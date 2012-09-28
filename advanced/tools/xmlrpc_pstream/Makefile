@@ -50,7 +50,7 @@ UTIL_OBJS = \
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 xmlrpc_pstream:  $(OBJECTS) $(LIBS) $(UTILS)
-	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(UTILS) $(LDLIBS) $(LADD)
+	$(CXXLD) -o $@ $(LDFLAGS_ALL) $(OBJECTS) $(UTILS) $(LDLIBS) $(LADD)
 
 %.o:%.cpp blddir/include/xmlrpc-c/config.h
 	$(CXX) -c $(CXXFLAGS_ALL) $<

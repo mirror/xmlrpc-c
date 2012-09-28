@@ -66,10 +66,6 @@
 #endif
 #include <signal.h>
 
-#if MSVCRT
-#include "curllink.h"
-#endif
-
 #include "bool.h"
 #include "girmath.h"
 #include "mallocvar.h"

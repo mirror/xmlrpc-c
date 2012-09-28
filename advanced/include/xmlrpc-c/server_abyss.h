@@ -98,6 +98,8 @@ typedef struct {
     unsigned int      access_ctl_max_age;
     const struct sockaddr * sockaddr_p;
     socklen_t         sockaddrlen;
+    unsigned int      max_conn;
+    unsigned int      max_conn_backlog;
 } xmlrpc_server_abyss_parms;
 
 

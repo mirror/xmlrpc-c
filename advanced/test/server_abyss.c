@@ -93,7 +93,8 @@ testServerParms(void) {
     parms.config_file_name = NULL;
     parms.registryP = NULL;
     parms.port_number = 1000;
-    parms.log_file_name = "/tmp/xmlrpc_logfile";
+    parms.max_conn = 10;
+    parms.max_conn_backlog = 10;
     parms.keepalive_timeout = 5;
     parms.keepalive_max_conn = 4;
     parms.timeout = 50;
@@ -105,6 +106,7 @@ testServerParms(void) {
     parms.access_ctl_max_age = 5;
     parms.sockaddr_p = &sockaddr;
     parms.sockaddrlen = sizeof(sockaddr);
+    parms.log_file_name = "/tmp/xmlrpc_logfile";
 };
 
 
@@ -254,6 +256,8 @@ test_server_abyss(void) {
     
     testSetHandlers(&abyssServer);
 
+    ServerSetMaxConn(&abyssServer, 10);
+    ServerSetMaxConnBacklog(&abyssServer, 10);
     ServerSetKeepaliveTimeout(&abyssServer, 60);
     ServerSetKeepaliveMaxConn(&abyssServer, 10);
     ServerSetTimeout(&abyssServer, 0);

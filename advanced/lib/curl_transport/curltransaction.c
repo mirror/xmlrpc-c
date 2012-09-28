@@ -335,7 +335,7 @@ curlProgress(void * const contextP,
    via this progress function.  But because of the above-mentioned failure of
    Curl to properly synchronize signals (and Bryan's failure to get Curl
    developers to accept code to fix it), we now use the Curl "multi" facility
-   instead and do our own pselect().  But This function still normally gets
+   instead and do our own pselect().  But this function still normally gets
    called by curl_multi_perform(), which the transport tries to call even when
    the user has requested interruption, because we don't trust our ability to
    abort a running Curl transaction.  curl_multi_perform() reliably winds up a

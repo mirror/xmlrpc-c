@@ -119,33 +119,27 @@ hashStructKey(const char * const key,
 
 
 
-/*=========================================================================
-**  find_member
-**=========================================================================
-**  Get the index of the member with the specified key, or -1 if no such
-**  member exists.
-*/
+static void
+findMember(xmlrpc_value * const structP, 
+           const char *   const key, 
+           size_t         const keyLen,
+           bool *         const foundP,
+           unsigned int * const indexP) {
 
-static int 
-find_member(xmlrpc_value * const strctP, 
-            const char *   const key, 
-            size_t         const keyLen) {
-
-    int retval;
     size_t size, i;
     uint32_t searchHash;
     _struct_member * contents;  /* array */
     bool found;
     size_t foundIndex;  /* Meaningful only when 'found' is true */
 
-    XMLRPC_ASSERT_VALUE_OK(strctP);
+    XMLRPC_ASSERT_VALUE_OK(structP);
     XMLRPC_ASSERT(key != NULL);
     foundIndex = 0;  /* defeat used-before-set compiler warning */
 
     /* Look for our key. */
     searchHash = hashStructKey(key, keyLen);
-    size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strctP->_block);
-    contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
+    size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
+    contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
     for (i = 0, found = false; i < size && !found; ++i) {
         if (contents[i].keyHash == searchHash) {
             xmlrpc_value * const keyvalP = contents[i].key;
@@ -162,11 +156,11 @@ find_member(xmlrpc_value * const strctP,
     if (found) {
         assert((size_t)(int)foundIndex == foundIndex);
             /* Definition of structure says it has few enough members */
-        retval = foundIndex;
-    } else
-        retval = -1;
 
-    return retval;
+        if (indexP)
+            *indexP = foundIndex;
+    }
+    *foundP = found;
 }
 
 
@@ -189,25 +183,29 @@ xmlrpc_struct_has_key(xmlrpc_env *   const envP,
 
 int 
 xmlrpc_struct_has_key_n(xmlrpc_env   * const envP,
-                        xmlrpc_value * const strctP,
+                        xmlrpc_value * const structP,
                         const char *   const key, 
-                        size_t         const key_len) {
-    int index;
+                        size_t         const keyLen) {
+    int retval;
 
     /* Suppress a compiler warning about uninitialized variables. */
-    index = 0;
+    retval = 0;
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_VALUE_OK(strctP);
+    XMLRPC_ASSERT_VALUE_OK(structP);
     XMLRPC_ASSERT(key != NULL);
     
-    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
-    index = find_member(strctP, key, key_len);
+    if (structP->_type != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault(envP, XMLRPC_TYPE_ERROR,
+                             "Value is not a struct");
+    else {
+        bool found;
 
- cleanup:
-    if (envP->fault_occurred)
-        return 0;
-    return (index >= 0);
+        findMember(structP, key, keyLen, &found, NULL);
+
+        retval = found ? 1 : 0;
+    }
+    return retval;
 }
 
 
@@ -242,11 +240,12 @@ xmlrpc_struct_find_value(xmlrpc_env *    const envP,
             envP, XMLRPC_TYPE_ERROR, "Value is not a struct.  It is type #%d",
             structP->_type);
     else {
-        int index;
+        bool found;
+        unsigned int index;
 
         /* Get our member index. */
-        index = find_member(structP, key, strlen(key));
-        if (index < 0)
+        findMember(structP, key, strlen(key), &found, &index);
+        if (!found)
             *valuePP = NULL;
         else {
             _struct_member * const members =
@@ -286,13 +285,15 @@ xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
                 "It is type #%d",
                 keyP->_type);
         else {
-            int index;
+            bool found;
+            unsigned int index;
 
             /* Get our member index. */
-            index = find_member(structP, 
-                                XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block),
-                                XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block)-1);
-            if (index < 0)
+            findMember(structP, 
+                       XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block),
+                       XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block)-1,
+                       &found, &index);
+            if (!found)
                 *valuePP = NULL;
             else {
                 _struct_member * const members =
@@ -371,9 +372,9 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                           size_t         const keyLen) {
 
     xmlrpc_value * retval;
-    xmlrpc_value * keyP;
+    xmlrpc_value * keyP;  /* 'key' as an XML-RPC string */
     
-    keyP = xmlrpc_build_value(envP, "s#", key, keyLen);
+    keyP = xmlrpc_string_new_lp(envP, keyLen, key);
     if (!envP->fault_occurred) {
         xmlrpc_struct_find_value_v(envP, structP, keyP, &retval);
 
@@ -441,10 +442,9 @@ xmlrpc_struct_set_value_n(xmlrpc_env *    const envP,
             "Type is %d; struct is %d",
             xmlrpc_value_type(strctP), XMLRPC_TYPE_STRUCT);
     else {
-        xmlrpc_value * keyvalP;
+        xmlrpc_value * keyvalP;  /* 'key' as an XML-RPC string */
 
-        /* Get the key as an xmlrpc_value */
-        keyvalP = xmlrpc_build_value(envP, "s#", key, keyLen);
+        keyvalP = xmlrpc_string_new_lp(envP, keyLen, key);
         if (!envP->fault_occurred)
             xmlrpc_struct_set_value_v(envP, strctP, keyvalP, valueP);
 
@@ -454,56 +454,92 @@ xmlrpc_struct_set_value_n(xmlrpc_env *    const envP,
 
 
 
-void 
-xmlrpc_struct_set_value_v(xmlrpc_env *   const envP,
-                          xmlrpc_value * const strctP,
-                          xmlrpc_value * const keyvalP,
-                          xmlrpc_value * const valueP) {
+static void
+changeMemberValue(xmlrpc_value * const structP,
+                  unsigned int   const mbrIndex,
+                  xmlrpc_value * const newValueP) {
+/*----------------------------------------------------------------------------
+  Change the value of an existing member. (But be careful--the original and
+  new values might be the same object, so watch the order of INCREF and DECREF
+  calls!)
+-----------------------------------------------------------------------------*/
+    _struct_member * const members =
+        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+    _struct_member * const memberP = &members[mbrIndex];
+    xmlrpc_value * const oldValueP = memberP->value;
 
-    char *key;
-    size_t key_len;
-    int index;
-    _struct_member *members, *member, new_member;
-    xmlrpc_value *old_value;
+    /* Juggle our references. */
+    memberP->value = newValueP;
+    xmlrpc_INCREF(memberP->value);
+    xmlrpc_DECREF(oldValueP);
+}
 
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_VALUE_OK(strctP);
-    XMLRPC_ASSERT_VALUE_OK(keyvalP);
-    XMLRPC_ASSERT_VALUE_OK(valueP);
 
-    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
-    XMLRPC_TYPE_CHECK(envP, keyvalP, XMLRPC_TYPE_STRING);
 
-    key = XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
-    key_len = XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
-    index = find_member(strctP, key, key_len);
+static void
+addNewMember(xmlrpc_env *   const envP,
+             xmlrpc_value * const structP,
+             xmlrpc_value * const keyvalP,
+             xmlrpc_value * const valueP) {
+/*----------------------------------------------------------------------------
+   Add a new member.  Assume no member already exists with this key.
+-----------------------------------------------------------------------------*/
+    const char * const key =
+        XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+    size_t const keyLen =
+        XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
 
-    if (index >= 0) {
-        /* Change the value of an existing member. (But be careful--the
-        ** original and new values might be the same object, so watch
-        ** the order of INCREF and DECREF calls!) */
-        members = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
-        member = &members[index];
+    _struct_member newMember;
 
-        /* Juggle our references. */
-        old_value = member->value;
-        member->value = valueP;
-        xmlrpc_INCREF(member->value);
-        xmlrpc_DECREF(old_value);
-    } else {
-        /* Add a new member. */
-        new_member.keyHash = hashStructKey(key, key_len);
-        new_member.key     = keyvalP;
-        new_member.value   = valueP;
-        XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &strctP->_block,
-                               &new_member, 1);
-        XMLRPC_FAIL_IF_FAULT(envP);
+    newMember.keyHash = hashStructKey(key, keyLen);
+    newMember.key     = keyvalP;
+    newMember.value   = valueP;
+
+    XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &structP->_block,
+                           &newMember, 1);
+
+    if (!envP->fault_occurred) {
         xmlrpc_INCREF(keyvalP);
         xmlrpc_INCREF(valueP);
     }
+}
 
-cleanup:
-    return;
+
+
+
+void 
+xmlrpc_struct_set_value_v(xmlrpc_env *   const envP,
+                          xmlrpc_value * const structP,
+                          xmlrpc_value * const keyvalP,
+                          xmlrpc_value * const valueP) {
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(structP);
+    XMLRPC_ASSERT_VALUE_OK(keyvalP);
+    XMLRPC_ASSERT_VALUE_OK(valueP);
+
+    if (structP->_type != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault(envP, XMLRPC_TYPE_ERROR,
+                             "Value is not a struct");
+    else if (keyvalP->_type != XMLRPC_TYPE_STRING)
+        xmlrpc_env_set_fault(envP, XMLRPC_TYPE_ERROR,
+                             "Key value is not a string");
+    else {
+        const char * const key =
+            XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+        size_t const keyLen =
+            XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
+
+        bool found;
+        unsigned int index;
+
+        findMember(structP, key, keyLen, &found, &index);
+
+        if (found)
+            changeMemberValue(structP, index, valueP);
+        else
+            addNewMember(envP, structP, keyvalP, valueP);
+    }
 }
 
 

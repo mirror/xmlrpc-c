@@ -58,7 +58,8 @@ public:
         constrOpt & registryP         (const xmlrpc_c::registry * const& arg);
         constrOpt & socketFd          (XMLRPC_SOCKET  const& arg);
         constrOpt & portNumber        (unsigned int   const& arg);
-        constrOpt & logFileName       (std::string    const& arg);
+        constrOpt & maxConn           (unsigned int   const& arg);
+        constrOpt & maxConnBacklog    (unsigned int   const& arg);
         constrOpt & keepaliveTimeout  (unsigned int   const& arg);
         constrOpt & keepaliveMaxConn  (unsigned int   const& arg);
         constrOpt & timeout           (unsigned int   const& arg);
@@ -69,6 +70,7 @@ public:
         constrOpt & accessCtlMaxAge   (unsigned int   const& arg);
         constrOpt & sockAddrP         (const struct sockaddr * const& arg);
         constrOpt & sockAddrLen       (socklen_t      const& arg);
+        constrOpt & logFileName       (std::string    const& arg);
         constrOpt & serverOwnsSignals (bool           const& arg);
         constrOpt & expectSigchld     (bool           const& arg);
 

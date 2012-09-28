@@ -182,7 +182,8 @@ struct serverAbyss::constrOpt_impl {
         const xmlrpc_c::registry * registryP;
         XMLRPC_SOCKET  socketFd;
         unsigned int   portNumber;
-        std::string    logFileName;
+        unsigned int   maxConn;
+        unsigned int   maxConnBacklog;
         unsigned int   keepaliveTimeout;
         unsigned int   keepaliveMaxConn;
         unsigned int   timeout;
@@ -193,6 +194,7 @@ struct serverAbyss::constrOpt_impl {
         unsigned int   accessCtlMaxAge;
         const struct sockaddr * sockAddrP;
         socklen_t      sockAddrLen;
+        std::string    logFileName;
         bool           serverOwnsSignals;
         bool           expectSigchld;
     } value;
@@ -201,7 +203,8 @@ struct serverAbyss::constrOpt_impl {
         bool registryP;
         bool socketFd;
         bool portNumber;
-        bool logFileName;
+        bool maxConn;
+        bool maxConnBacklog;
         bool keepaliveTimeout;
         bool keepaliveMaxConn;
         bool timeout;
@@ -212,6 +215,7 @@ struct serverAbyss::constrOpt_impl {
         bool accessCtlMaxAge;
         bool sockAddrP;
         bool sockAddrLen;
+        bool logFileName;
         bool serverOwnsSignals;
         bool expectSigchld;
     } present;
@@ -225,6 +229,8 @@ serverAbyss::constrOpt_impl::constrOpt_impl() {
     present.socketFd          = false;
     present.portNumber        = false;
     present.logFileName       = false;
+    present.maxConn           = false;
+    present.maxConnBacklog    = false;
     present.keepaliveTimeout  = false;
     present.keepaliveMaxConn  = false;
     present.timeout           = false;
@@ -260,7 +266,8 @@ DEFINE_OPTION_SETTER(registryPtr,       xmlrpc_c::registryPtr);
 DEFINE_OPTION_SETTER(registryP,         const registry *);
 DEFINE_OPTION_SETTER(socketFd,          XMLRPC_SOCKET);
 DEFINE_OPTION_SETTER(portNumber,        unsigned int);
-DEFINE_OPTION_SETTER(logFileName,       string);
+DEFINE_OPTION_SETTER(maxConn,           unsigned int);
+DEFINE_OPTION_SETTER(maxConnBacklog,    unsigned int);
 DEFINE_OPTION_SETTER(keepaliveTimeout,  unsigned int);
 DEFINE_OPTION_SETTER(keepaliveMaxConn,  unsigned int);
 DEFINE_OPTION_SETTER(timeout,           unsigned int);
@@ -271,6 +278,7 @@ DEFINE_OPTION_SETTER(allowOrigin,       string);
 DEFINE_OPTION_SETTER(accessCtlMaxAge,   unsigned int);
 DEFINE_OPTION_SETTER(sockAddrP,         const struct sockaddr *);
 DEFINE_OPTION_SETTER(sockAddrLen,       socklen_t);
+DEFINE_OPTION_SETTER(logFileName,       string);
 DEFINE_OPTION_SETTER(serverOwnsSignals, bool);
 DEFINE_OPTION_SETTER(expectSigchld,     bool);
 
@@ -590,6 +598,10 @@ static void
 setAdditionalServerParms(TServer *                   const  serverP,
                          serverAbyss::constrOpt_impl const& opt) {
 
+    if (opt.present.maxConn)
+        ServerSetMaxConn(serverP, opt.value.maxConn);
+    if (opt.present.maxConnBacklog)
+        ServerSetMaxConnBacklog(serverP, opt.value.maxConnBacklog);
     if (opt.present.keepaliveTimeout)
         ServerSetKeepaliveTimeout(serverP, opt.value.keepaliveTimeout);
     if (opt.present.keepaliveMaxConn)

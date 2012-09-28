@@ -21,8 +21,6 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc
 
 UTIL_OBJS = \
@@ -43,7 +41,7 @@ ifeq ($(MSVCRT),yes)
 endif
 
 xmlrpc: $(XMLRPC_OBJS) $(CLIENT_LIBS_DEP) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
+	$(CCLD) -o $@ $(LDFLAGS_ALL) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
 
 %.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS_ALL) $<

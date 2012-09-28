@@ -115,7 +115,7 @@ convertParams(xmlrpc_env *        const envP,
     XMLRPC_ASSERT(elemP != NULL);
 
     /* Allocate an array to hold our parameters. */
-    arrayP = xmlrpc_build_value(envP, "()");
+    arrayP = xmlrpc_array_new(envP);
     if (!envP->fault_occurred) {
         /* We're responsible for checking our own element name. */
         validateName(envP, elemP, "params");    

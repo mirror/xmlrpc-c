@@ -314,7 +314,8 @@ public:
             serverAbyss abyssServer(serverAbyss::constrOpt()
                                     .registryPtr(myRegistryP)
                                     .portNumber(12345)
-                                    .logFileName("/tmp/logfile")
+                                    .maxConn(10)
+                                    .maxConnBacklog(10)
                                     .keepaliveTimeout(5)
                                     .keepaliveMaxConn(4)
                                     .timeout(20)
@@ -323,6 +324,7 @@ public:
                                     .chunkResponse(true)
                                     .allowOrigin("*")
                                     .accessCtlMaxAge(42)
+                                    .logFileName("/tmp/logfile")
                                     .serverOwnsSignals(false)
                                     .expectSigchld(true)
                 );

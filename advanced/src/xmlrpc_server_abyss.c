@@ -401,6 +401,14 @@ setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
         ServerSetTimeout(serverP, parmsP->timeout);
     if (parmSize >= XMLRPC_APSIZE(dont_advertise))
         ServerSetAdvertise(serverP, !parmsP->dont_advertise);
+    if (parmSize >= XMLRPC_APSIZE(max_conn)) {
+        if (parmsP->max_conn != 0)
+            ServerSetMaxConn(serverP, parmsP->max_conn);
+    }
+    if (parmSize >= XMLRPC_APSIZE(max_conn_backlog)) {
+        if (parmsP->max_conn_backlog != 0)
+            ServerSetMaxConnBacklog(serverP, parmsP->max_conn_backlog);
+    }
 }
 
 
