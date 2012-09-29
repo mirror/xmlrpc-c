@@ -265,10 +265,10 @@ paramList::getNil(unsigned int const paramNumber) const {
 
 
 
-long long
+xmlrpc_int64
 paramList::getI8(unsigned int const paramNumber,
-                 long long    const minimum,
-                 long long    const maximum) const {
+                 xmlrpc_int64 const minimum,
+                 xmlrpc_int64 const maximum) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
