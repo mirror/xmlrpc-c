@@ -19,7 +19,7 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Release|Win32"
+			Name="Release-DLL|Win32"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -100,7 +100,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|x64"
+			Name="Release-DLL|x64"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -183,7 +183,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|Win32"
+			Name="Debug-DLL|Win32"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -265,7 +265,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|x64"
+			Name="Debug-DLL|x64"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -654,7 +654,7 @@
 				RelativePath="..\..\..\lib\expat\xmlparse\xmlparse.c"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -663,7 +663,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -672,7 +672,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -681,7 +681,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
