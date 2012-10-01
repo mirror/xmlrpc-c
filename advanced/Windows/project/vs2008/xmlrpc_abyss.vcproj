@@ -19,7 +19,7 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
+			Name="Debug-DLL|Win32"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -103,7 +103,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|x64"
+			Name="Debug-DLL|x64"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -189,7 +189,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
+			Name="Release-DLL|Win32"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -271,7 +271,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|x64"
+			Name="Release-DLL|x64"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)-$(PlatformName)\"
 			IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
@@ -660,7 +660,7 @@
 				RelativePath="..\..\..\lib\abyss\src\channel.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -669,7 +669,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -678,7 +678,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -687,7 +687,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -736,7 +736,7 @@
 				RelativePath="..\..\..\lib\abyss\src\chanswitch.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -745,7 +745,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -754,7 +754,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -763,7 +763,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -812,7 +812,7 @@
 				RelativePath="..\..\..\lib\abyss\src\conf.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -821,7 +821,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -830,7 +830,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -839,7 +839,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -888,7 +888,7 @@
 				RelativePath="..\..\..\lib\abyss\src\conn.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -897,7 +897,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -906,7 +906,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -915,7 +915,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -964,7 +964,7 @@
 				RelativePath="..\..\..\lib\abyss\src\data.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -973,7 +973,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -982,7 +982,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -991,7 +991,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1040,7 +1040,7 @@
 				RelativePath="..\..\..\lib\abyss\src\date.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1049,7 +1049,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1058,7 +1058,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1067,7 +1067,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1116,7 +1116,7 @@
 				RelativePath="..\..\..\lib\abyss\src\file.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1125,7 +1125,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1134,7 +1134,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1143,7 +1143,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1192,7 +1192,7 @@
 				RelativePath="..\..\..\lib\abyss\src\handler.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1201,7 +1201,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1210,7 +1210,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1219,7 +1219,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1268,7 +1268,7 @@
 				RelativePath="..\..\..\lib\abyss\src\http.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1277,7 +1277,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1286,7 +1286,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1295,7 +1295,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1344,7 +1344,7 @@
 				RelativePath="..\..\..\lib\abyss\src\init.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1353,7 +1353,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1362,7 +1362,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1371,7 +1371,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1420,7 +1420,7 @@
 				RelativePath="..\..\..\lib\abyss\src\response.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1429,7 +1429,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1438,7 +1438,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1447,7 +1447,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1496,7 +1496,7 @@
 				RelativePath="..\..\..\lib\abyss\src\server.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1505,7 +1505,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1514,7 +1514,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1523,7 +1523,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1572,7 +1572,7 @@
 				RelativePath="..\..\..\lib\abyss\src\session.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1581,7 +1581,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1590,7 +1590,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1599,7 +1599,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1648,7 +1648,7 @@
 				RelativePath="..\..\..\lib\abyss\src\socket.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1657,7 +1657,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1666,7 +1666,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1675,7 +1675,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1724,7 +1724,7 @@
 				RelativePath="..\..\..\lib\abyss\src\socket_openssl.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1734,7 +1734,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1744,7 +1744,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1754,7 +1754,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1808,7 +1808,7 @@
 				RelativePath="..\..\..\lib\abyss\src\socket_unix.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1818,7 +1818,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1828,7 +1828,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1838,7 +1838,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1892,7 +1892,7 @@
 				RelativePath="..\..\..\lib\abyss\src\socket_win.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1901,7 +1901,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1910,7 +1910,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1919,7 +1919,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1968,7 +1968,7 @@
 				RelativePath="..\..\..\lib\abyss\src\thread_fork.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1978,7 +1978,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1988,7 +1988,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1998,7 +1998,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2052,7 +2052,7 @@
 				RelativePath="..\..\..\lib\abyss\src\thread_pthread.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2062,7 +2062,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2072,7 +2072,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2082,7 +2082,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2136,7 +2136,7 @@
 				RelativePath="..\..\..\lib\abyss\src\thread_windows.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2145,7 +2145,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2154,7 +2154,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2163,7 +2163,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2212,7 +2212,7 @@
 				RelativePath="..\..\..\lib\abyss\src\token.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2221,7 +2221,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2230,7 +2230,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2239,7 +2239,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2288,7 +2288,7 @@
 				RelativePath="..\..\..\lib\abyss\src\trace.c"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2297,7 +2297,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Debug-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2306,7 +2306,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release-DLL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2315,7 +2315,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
+					Name="Release-DLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
