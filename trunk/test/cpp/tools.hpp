@@ -75,7 +75,7 @@ test_ipAddrFromDecimal(unsigned int const byte0,
     } while (0)
 
 #define EXPECT_ERROR(statement) \
-    do { try { statement } catch (error) {break;} \
+    do { try { statement } catch (error const&) {break;} \
       throw(fileLineError(__FILE__, __LINE__, "Expected error; didn't get one")); \
     } while (0)
 
