@@ -506,7 +506,6 @@ addNewMember(xmlrpc_env *   const envP,
 
 
 
-
 void 
 xmlrpc_struct_set_value_v(xmlrpc_env *   const envP,
                           xmlrpc_value * const structP,
