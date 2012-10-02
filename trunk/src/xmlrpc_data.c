@@ -86,12 +86,31 @@ destroyValue(xmlrpc_value * const valueP) {
 
 
 
-/*=========================================================================
-**  Reference Counting
-**=========================================================================
-**  Some simple reference-counting code. The xmlrpc_DECREF routine is in
-**  charge of destroying values when their reference count equals zero.
-*/
+/*===========================================================================
+  Reference Counting
+=============================================================================
+  Some simple reference-counting code. The xmlrpc_DECREF routine is in
+  charge of destroying values when their reference count reaches zero.
+
+  This is a major issue for thread concurrency, because there is no
+  serialization here.  Callers must serialize.  But lots of Xmlrpc-c objects
+  share xmlrpc_value's, so Caller can't easily tell what has to be serialized.
+
+  Caller must keep xmlrpc_values in separate universes for concurrent
+  manipulation by separate threads.
+
+  Another issue is that while this reference counting is supposed to provide
+  cheap copies, values can change after being referenced.  For example, you
+  can add an element to one "copy" of an array and it changes all the other
+  "copies" of it.
+
+  The intended use of these objects is that you build one up and only when
+  you're done do you pass it around.  So we really ought to forbid modifying
+  an xmlrpc_value that has more than one reference.  We don't because this
+  external behavior had existed for a long time before we noticed the problem
+  and we're afraid of breaking an existing program that does that in such a
+  way that it works.  Copy on write might also work.
+============================================================================*/
 
 void 
 xmlrpc_INCREF (xmlrpc_value * const valueP) {
