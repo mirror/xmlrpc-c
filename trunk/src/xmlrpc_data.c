@@ -10,8 +10,30 @@
 #include "bool.h"
 #include "mallocvar.h"
 
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_platform.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+
+
+/*=============================================================================
+
+  xmlrpc_value is designed to enable cheap copies by sharing pointers and
+  maintaining reference counts.  Multiple threads can use an xmlrpc_value
+  simultaneously because there is locking around the reference count
+  manipulation (but only since Xmlrpc-c 1.33).  But there is no copy on
+  write, so the scheme depends upon the user not modifying an xmlrpc_value
+  after building it, and not copying it while building it.  Another reason
+  to observe this sequence is that there is no locking around modifications,
+  so a reader could see a half-updated xmlrpc_value.
+
+  We could enforce a prohibition against modifying an xmlrpc_value that has
+  references other than the one by the party doing the modifying, but we
+  don't because we allowed it for a long time before we noticed the problem
+  adn we're afraid of breaking an existing program that does these updates in
+  such a way that it actually works.
+
+=============================================================================*/
 
 
 
@@ -76,8 +98,10 @@ destroyValue(xmlrpc_value * const valueP) {
         XMLRPC_ASSERT(false); /* There are no other possible values */
     }
 
-    /* Next, we mark this value as invalid, to help catch refcount
-        ** errors. */
+    valueP->lockP->destroy(valueP->lockP);
+
+    /* Next, we mark this value as invalid, to help catch refcount errors.
+    */
     valueP->_type = XMLRPC_TYPE_DEAD;
 
     /* Finally, we destroy the value itself. */
@@ -91,34 +115,20 @@ destroyValue(xmlrpc_value * const valueP) {
 =============================================================================
   Some simple reference-counting code. The xmlrpc_DECREF routine is in
   charge of destroying values when their reference count reaches zero.
-
-  This is a major issue for thread concurrency, because there is no
-  serialization here.  Callers must serialize.  But lots of Xmlrpc-c objects
-  share xmlrpc_value's, so Caller can't easily tell what has to be serialized.
-
-  Caller must keep xmlrpc_values in separate universes for concurrent
-  manipulation by separate threads.
-
-  Another issue is that while this reference counting is supposed to provide
-  cheap copies, values can change after being referenced.  For example, you
-  can add an element to one "copy" of an array and it changes all the other
-  "copies" of it.
-
-  The intended use of these objects is that you build one up and only when
-  you're done do you pass it around.  So we really ought to forbid modifying
-  an xmlrpc_value that has more than one reference.  We don't because this
-  external behavior had existed for a long time before we noticed the problem
-  and we're afraid of breaking an existing program that does that in such a
-  way that it works.  Copy on write might also work.
 ============================================================================*/
 
 void 
 xmlrpc_INCREF (xmlrpc_value * const valueP) {
 
     XMLRPC_ASSERT_VALUE_OK(valueP);
-    XMLRPC_ASSERT(valueP->_refcount > 0);
+
+    valueP->lockP->acquire(valueP->lockP);
+
+    XMLRPC_ASSERT(valueP->refcount > 0);
     
-    ++valueP->_refcount;
+    ++valueP->refcount;
+
+    valueP->lockP->release(valueP->lockP);
 }
 
 
@@ -126,14 +136,22 @@ xmlrpc_INCREF (xmlrpc_value * const valueP) {
 void 
 xmlrpc_DECREF (xmlrpc_value * const valueP) {
 
+    bool died;
+
     XMLRPC_ASSERT_VALUE_OK(valueP);
-    XMLRPC_ASSERT(valueP->_refcount > 0);
+
+    valueP->lockP->acquire(valueP->lockP);
+
+    XMLRPC_ASSERT(valueP->refcount > 0);
     XMLRPC_ASSERT(valueP->_type != XMLRPC_TYPE_DEAD);
 
-    valueP->_refcount--;
+    --valueP->refcount;
 
-    /* If we have no more refs, we need to deallocate this value. */
-    if (valueP->_refcount == 0)
+    died = (valueP->refcount == 0);
+
+    valueP->lockP->release(valueP->lockP);
+
+    if (died)
         destroyValue(valueP);
 }
 
@@ -350,11 +368,16 @@ xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
 
     MALLOCVAR(valP);
     if (!valP)
-        xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
-                             "Could not allocate memory for xmlrpc_value");
-    else
-        valP->_refcount = 1;
+        xmlrpc_faultf(envP, "Could not allocate memory for xmlrpc_value");
+    else {
+        valP->lockP = xmlrpc_lock_create();
 
+        if (!valP->lockP)
+            xmlrpc_faultf(envP, "Could not allocate memory for lock for "
+                          "xmlrpc_value");
+        else
+            valP->refcount = 1;
+    }
     *valPP = valP;
 }
 

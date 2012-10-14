@@ -39,7 +39,7 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP) {
                 xmlrpc_value * const itemP = contents[index];
                 if (itemP == NULL)
                     abort();
-                else if (itemP->_refcount < 1)
+                else if (itemP->refcount < 1)
                     abort();
             }
         }

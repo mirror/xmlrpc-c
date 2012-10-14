@@ -41,7 +41,8 @@ extern "C" {
 
 struct _xmlrpc_value {
     xmlrpc_type _type;
-    int _refcount;
+    struct lock * lockP;
+    unsigned int refcount;
 
     /* Certain data types store their data directly in the xmlrpc_value. */
     union {
