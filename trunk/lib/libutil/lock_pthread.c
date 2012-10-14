@@ -1,7 +1,7 @@
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "mallocvar.h"
-#include "pthreadx.h"
 
 #include "xmlrpc-c/lock.h"
 

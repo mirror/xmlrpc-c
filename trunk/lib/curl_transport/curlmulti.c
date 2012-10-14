@@ -29,7 +29,7 @@
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/lock.h"
-#include "xmlrpc-c/lock_pthread.h"
+#include "xmlrpc-c/lock_platform.h"
 
 #include "curlversion.h"
 
@@ -81,7 +81,7 @@ curlMulti_create(void) {
     if (curlMultiP == NULL)
         retval = NULL;
     else {
-        curlMultiP->lockP = xmlrpc_lock_create_pthread();
+        curlMultiP->lockP = xmlrpc_lock_create();
 
         if (curlMultiP->lockP == NULL)
             retval = NULL;

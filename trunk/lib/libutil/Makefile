@@ -33,7 +33,9 @@ TARGET_MODS = \
   asprintf \
   base64 \
   error \
+  lock_platform \
   lock_pthread \
+  lock_none \
   make_printable \
   memblock \
   select \
