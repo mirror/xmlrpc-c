@@ -468,7 +468,7 @@ handleXmlRpcCallReq(TSession *           const abyssSessionP,
 -----------------------------------------------------------------------------*/
     /* We used to reject the call if content-type was not present and
        text/xml, on some security theory (a firewall may block text/xml with
-       the intent of blocking XML-RPC.  Now, we believe that is silly, and we
+       the intent of blocking XML-RPC).  Now, we believe that is silly, and we
        have seen an incorrectly implemented client that says text/plain.
     */
     const char * error;
