@@ -41,6 +41,16 @@ static pthreadStartRoutine execute;
 static void *
 execute(void * const arg) {
 
+    /* We make sure the user's "thread done" function runs as the thread
+       exits, whether it exits by directly calling ThreadExit() or by
+       returning to caller.
+
+       In the direct exit case, the OS calls the "thread done" function by
+       virtual of a cleanup that we set up.  In the return to caller case, we
+       get control back and our call to pthread_cleanup_pop() calls the
+       "thread done" function.
+    */
+
     struct abyss_thread * const threadP = arg;
     bool const executeTrue = true;
 
@@ -49,11 +59,6 @@ execute(void * const arg) {
     threadP->func(threadP->userHandle);
 
     pthread_cleanup_pop(executeTrue);
-
-    /* Note that func() may not return; it may just exit the thread,
-       by calling ThreadExit(), in which case code here doesn't run.
-    */
-    threadP->threadDone(threadP->userHandle);
 
     return NULL;
 }
