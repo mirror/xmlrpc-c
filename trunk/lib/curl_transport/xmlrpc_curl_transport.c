@@ -79,6 +79,8 @@
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/time_int.h"
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_pthread.h"
 
 #include <curl/curl.h>
 #ifdef NEED_CURL_TYPES_H
@@ -87,8 +89,6 @@
 #include <curl/easy.h>
 #include <curl/multi.h>
 
-#include "lock.h"
-#include "lock_pthread.h"
 #include "curltransaction.h"
 #include "curlmulti.h"
 #include "curlversion.h"
@@ -948,7 +948,7 @@ static void
 makeSyncCurlSession(xmlrpc_env *                     const envP,
                     struct xmlrpc_client_transport * const transportP) {
 
-    transportP->syncCurlSessionLockP = curlLock_create_pthread();
+    transportP->syncCurlSessionLockP = xmlrpc_lock_create_pthread();
     if (transportP->syncCurlSessionLockP == NULL)
         xmlrpc_faultf(envP, "Unable to create lock for "
                       "synchronous Curl session.");

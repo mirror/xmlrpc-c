@@ -33,6 +33,7 @@ TARGET_MODS = \
   asprintf \
   base64 \
   error \
+  lock_pthread \
   make_printable \
   memblock \
   select \
