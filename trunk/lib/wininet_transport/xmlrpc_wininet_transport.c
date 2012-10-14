@@ -23,6 +23,8 @@
 #include "casprintf.h"
 #include "pthreadx.h"
 
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_platform.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/client.h"
@@ -50,7 +52,7 @@ statusCallback(HINTERNET     const hInternet,
 
 
 struct xmlrpc_client_transport {
-    pthread_mutex_t listLock;
+    lock * listLockP;
     struct list_head rpcList;
         /* List of all RPCs that exist for this transport.  An RPC exists
            from the time the user requests it until the time the user 
@@ -651,9 +653,11 @@ rpcCreate(xmlrpc_env *                     const envP,
             }
             if (!envP->fault_occurred) {
                 list_init_header(&rpcP->link, rpcP);
-                pthread_mutex_lock(&clientTransportP->listLock);
+                clientTransportP->listLockP->acquire(
+                    clientTransportP->listLockP);
                 list_add_head(&clientTransportP->rpcList, &rpcP->link);
-                pthread_mutex_unlock(&clientTransportP->listLock);
+                clientTransportP->listLockP->release(
+                    clientTransportP->listLockP);
             }
             if (envP->fault_occurred)
                     destroyWinInetTransaction(rpcP->winInetTransactionP);
@@ -804,7 +808,7 @@ create(xmlrpc_env *                      const envP,
     if (transportP == NULL)
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
-        pthread_mutex_init(&transportP->listLock, NULL);
+        transportP->listLockP = xmlrpc_lock_create();
         
         list_make_empty(&transportP->rpcList);
 
@@ -839,7 +843,7 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
         InternetCloseHandle(hSyncInternetSession);
     hSyncInternetSession = NULL;
 
-    pthread_mutex_destroy(&clientTransportP->listLock);
+    clientTransportP->listLockP->destroy(clientTransportP->listLockP);
 
     free(clientTransportP);
 }
@@ -896,11 +900,11 @@ finishAsynch(struct xmlrpc_client_transport * const clientTransportP,
        to set an alarm and interrupt running threads.
     */
 
-    pthread_mutex_lock(&clientTransportP->listLock);
+    clientTransportP->listLockP->acquire(clientTransportP->listLockP);
 
     list_foreach(&clientTransportP->rpcList, finishRpc, NULL);
 
-    pthread_mutex_unlock(&clientTransportP->listLock);
+    clientTransportP->listLockP->release(clientTransportP->listLockP);
 }
 
 
