@@ -36,10 +36,10 @@ typedef void * (pthreadStartRoutine)(void *);
 
 
 
-static pthreadStartRoutine pthreadStart;
+static pthreadStartRoutine execute;
 
 static void *
-pthreadStart(void * const arg) {
+execute(void * const arg) {
 
     struct abyss_thread * const threadP = arg;
     bool const executeTrue = true;
@@ -93,7 +93,7 @@ ThreadCreate(TThread **      const threadPP,
             threadP->threadDone = threadDone;
 
             rc = pthread_create(&threadP->thread, &attr,
-                                pthreadStart, threadP);
+                                execute, threadP);
             if (rc == 0) {
                 *errorP = NULL;
                 *threadPP = threadP;
