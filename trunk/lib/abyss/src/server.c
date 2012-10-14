@@ -19,9 +19,12 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/sleep_int.h"
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_platform.h"
 
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
+#include "thread.h"
 #include "session.h"
 #include "file.h"
 #include "conn.h"
@@ -92,13 +95,10 @@ logOpen(struct _TServer * const srvP,
     success = FileOpenCreate(&srvP->logfileP, srvP->logfilename,
                              O_WRONLY | O_APPEND);
     if (success) {
-        bool success;
-        success = MutexCreate(&srvP->logmutexP);
-        if (success) {
-            *errorP = NULL;
-            srvP->logfileisopen = TRUE;
-        } else
-            xmlrpc_asprintf(errorP, "Can't create mutex for log file");
+        srvP->logLockP = xmlrpc_lock_create();
+        *errorP = NULL;
+
+        srvP->logfileisopen = TRUE;
             
         if (*errorP)
             FileClose(srvP->logfileP);
@@ -113,7 +113,7 @@ logClose(struct _TServer * const srvP) {
 
     if (srvP->logfileisopen) {
         FileClose(srvP->logfileP);
-        MutexDestroy(srvP->logmutexP);
+        srvP->logLockP->destroy(srvP->logLockP);
         srvP->logfileisopen = FALSE;
     }
 }
@@ -1700,15 +1700,12 @@ LogWrite(TServer *    const serverP,
         }
     }
     if (srvP->logfileisopen) {
-        bool success;
-        success = MutexLock(srvP->logmutexP);
-        if (success) {
-            const char * const lbr = "\n";
-            FileWrite(srvP->logfileP, msg, strlen(msg));
-            FileWrite(srvP->logfileP, lbr, strlen(lbr));
+        srvP->logLockP->acquire(srvP->logLockP);
+        const char * const lbr = "\n";
+        FileWrite(srvP->logfileP, msg, strlen(msg));
+        FileWrite(srvP->logfileP, lbr, strlen(lbr));
         
-            MutexUnlock(srvP->logmutexP);
-        }
+        srvP->logLockP->release(srvP->logLockP);
     }
 }
 /*******************************************************************************

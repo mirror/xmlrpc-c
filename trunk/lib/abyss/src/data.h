@@ -4,7 +4,7 @@
 #include "bool.h"
 #include "int.h"
 
-struct abyss_mutex;
+struct lock;
 
 /*********************************************************************
 ** Buffer
@@ -153,7 +153,7 @@ typedef struct {
     TPoolZone * firstzone;
     TPoolZone * currentzone;
     uint32_t zonesize;
-    struct abyss_mutex * mutexP;
+    struct lock * lockP;
 } TPool;
 
 bool
