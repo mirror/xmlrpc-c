@@ -1700,8 +1700,8 @@ LogWrite(TServer *    const serverP,
         }
     }
     if (srvP->logfileisopen) {
-        srvP->logLockP->acquire(srvP->logLockP);
         const char * const lbr = "\n";
+        srvP->logLockP->acquire(srvP->logLockP);
         FileWrite(srvP->logfileP, msg, strlen(msg));
         FileWrite(srvP->logfileP, lbr, strlen(lbr));
         
