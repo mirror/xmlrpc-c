@@ -1170,6 +1170,16 @@ createRpc(xmlrpc_env *                     const envP,
     if (rpcP == NULL)
         xmlrpc_faultf(envP, "Couldn't allocate memory for rpc object");
     else {
+        curlt_progressFn * curlProgressFn;
+
+        if (progress || clientTransportP->interruptP)
+            curlProgressFn = &curlTransactionProgress;
+        else {
+            /* There's nothing for curlTransactionProgress() to do, so save
+               the time and complexity of calling it.
+            */
+            curlProgressFn = NULL;
+        }
         rpcP->transportP   = clientTransportP;
         rpcP->curlSessionP = curlSessionP;
         rpcP->callInfoP    = callInfoP;
@@ -1186,7 +1196,7 @@ createRpc(xmlrpc_env *                     const envP,
                                &clientTransportP->curlSetupStuff,
                                rpcP,
                                complete ? &finishRpcCurlTransaction : NULL,
-                               progress ? &curlTransactionProgress : NULL,
+                               curlProgressFn,
                                &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (envP->fault_occurred)
@@ -1296,15 +1306,22 @@ curlTransactionProgress(void * const context,
 
     assert(rpcP);
     assert(transportP);
-    assert(rpcP->progress);
 
     progressData.response.total = dlTotal;
     progressData.response.now   = dlNow;
     progressData.call.total     = ulTotal;
     progressData.call.now       = ulNow;
 
-    rpcP->progress(rpcP->callInfoP, progressData);
+    if (rpcP->progress) {
+        struct xmlrpc_progress_data progressData;
 
+        progressData.response.total = dlTotal;
+        progressData.response.now   = dlNow;
+        progressData.call.total     = ulTotal;
+        progressData.call.now       = ulNow;
+
+        rpcP->progress(rpcP->callInfoP, progressData);
+    }
     if (transportP->interruptP)
         *abortP = *transportP->interruptP;
     else
