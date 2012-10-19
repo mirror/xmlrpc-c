@@ -613,13 +613,17 @@ finishCurlMulti(xmlrpc_env *       const envP,
    flag, we tell libcurl to do whatever work there is to do, and as part of
    that, libcurl calls the progress function, gets the "kill me" message,
    and passes that on to us).
-
-   But libcurl does not reliably call the progress function.  We don't know
-   exactly when it does and when it doesn't, but often it just doesn't call
-   the progress function at all, in which case we have no choice but to wait
-   for libcurl to finish each transaction in its own good time.  Therefore,
-   the *interruptP flag may not have any effect.
 -----------------------------------------------------------------------------*/
+    /* For integrity, we make sure we don't let *interruptP interrupt our
+       wait for work more than once.  That way, if for any reason libcurl
+       fails to call the progress function, or the progress function fails
+       to notice the interrupt flag and tell libcurl to abort, or libcurl
+       does abort as told, we don't have a busy loop of calls to
+       doCurlWork().
+
+       'curlCalledSinceInterrupt' is part of this logic.
+    */
+
     bool rpcStillRunning;
     bool timedOut;
     bool curlCalledSinceInterrupt;
@@ -640,10 +644,9 @@ finishCurlMulti(xmlrpc_env *       const envP,
             xmlrpc_timespec nowTime;
 
             /* doCurlWork() (among other things) finds Curl transactions that
-               user wants to abort and finishes them.  But sometimes it
-               doesn't (because it doesn't call the progress function; we
-               don't know when it calls the progress function and when it
-               doesn't)
+               user wants to abort and finishes them.  (This is by virtue
+               of libcurl calling its progress function when we tell it to do
+               all available work).
             */
             if (*interruptP)
                 curlCalledSinceInterrupt = true;
@@ -1233,6 +1236,16 @@ createRpc(xmlrpc_env *                     const envP,
     if (rpcP == NULL)
         xmlrpc_faultf(envP, "Couldn't allocate memory for rpc object");
     else {
+        curlt_progressFn * curlProgressFn;
+
+        if (progress || clientTransportP->interruptP)
+            curlProgressFn = &curlTransactionProgress;
+        else {
+            /* There's nothing for curlTransactionProgress() to do, so save
+               the time and complexity of calling it.
+            */
+            curlProgressFn = NULL;
+        }
         rpcP->transportP   = clientTransportP;
         rpcP->curlSessionP = curlSessionP;
         rpcP->callInfoP    = callInfoP;
@@ -1249,7 +1262,7 @@ createRpc(xmlrpc_env *                     const envP,
                                &clientTransportP->curlSetupStuff,
                                rpcP,
                                complete ? &finishRpcCurlTransaction : NULL,
-                               progress ? &curlTransactionProgress : NULL,
+                               curlProgressFn,
                                &rpcP->curlTransactionP);
         if (!envP->fault_occurred) {
             if (envP->fault_occurred)
@@ -1355,21 +1368,24 @@ curlTransactionProgress(void * const context,
     rpc * const rpcP = context;
     struct xmlrpc_client_transport * const transportP = rpcP->transportP;
 
-    struct xmlrpc_progress_data progressData;
-
     assert(rpcP);
     assert(transportP);
-    assert(rpcP->progress);
 
     trace("Progress function called back by libcurl");
 
-    progressData.response.total = dlTotal;
-    progressData.response.now   = dlNow;
-    progressData.call.total     = ulTotal;
-    progressData.call.now       = ulNow;
+    if (rpcP->progress) {
+        struct xmlrpc_progress_data progressData;
 
-    rpcP->progress(rpcP->callInfoP, progressData);
+        trace("Calling transport client's progress function with %u %u %u %u",
+              dlTotal, dlNow, ulTotal, ulNow);
 
+        progressData.response.total = dlTotal;
+        progressData.response.now   = dlNow;
+        progressData.call.total     = ulTotal;
+        progressData.call.now       = ulNow;
+
+        rpcP->progress(rpcP->callInfoP, progressData);
+    }
     if (transportP->interruptP) {
         trace("Interrupt flag is set; "
               "directing libcurl to abort the transaction");
