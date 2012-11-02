@@ -95,14 +95,14 @@ callTransportSetup(xmlrpc_env *           const envP,
 
 
 
-bool xmlrpc_trace_transport;
+int xmlrpc_trace_transport;
 
 
 
 static void
 setupTransportGlobalConst(xmlrpc_env * const envP) {
 
-    xmlrpc_trace_transport = !!getenv("XMLRPC_TRACE_TRANSPORT");
+    xmlrpc_trace_transport = getenv("XMLRPC_TRACE_TRANSPORT") ? 1 : 0;
 
 #if MUST_BUILD_WININET_CLIENT
     if (!envP->fault_occurred)

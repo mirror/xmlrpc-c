@@ -84,7 +84,7 @@ struct xmlrpc_client_transport_ops {
     xmlrpc_transport_set_interrupt set_interrupt;
 };
 
-extern bool xmlrpc_trace_transport;
+extern int xmlrpc_trace_transport;
     // This is nonzero to indicate that client XML transport logic should
     // be traced.
 
