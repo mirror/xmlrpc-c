@@ -604,6 +604,10 @@ finishCurlMulti(xmlrpc_env *       const envP,
 
    Don't return until all the Curl transactions are done or we time out.
 
+   if 'interruptP' is non-null, it points to a value which is normally zero,
+   but is nonzero when Caller wants us to abort all the transactions and
+   return ASAP.
+
    The *interruptP flag alone will not interrupt us.  We will wait in
    spite of it for all Curl transactions to complete.  *interruptP
    just gives us a hint that the Curl transactions are being
@@ -648,7 +652,7 @@ finishCurlMulti(xmlrpc_env *       const envP,
                of libcurl calling its progress function when we tell it to do
                all available work).
             */
-            if (*interruptP)
+            if (interruptP && *interruptP)
                 curlCalledSinceInterrupt = true;
 
             doCurlWork(envP, curlMultiP, &rpcStillRunning);
