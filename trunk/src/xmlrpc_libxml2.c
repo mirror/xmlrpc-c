@@ -55,6 +55,35 @@ struct _xml_element {
 
 
 
+void
+xml_init(xmlrpc_env * const envP) {
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+
+    /* N.B. xmlInitParser() does not stack.  Calling it twice is the
+       same as calling it once.  Consequently, the same is true
+       of xml_init().
+
+       N.B. xmlInitParser() is necessary for form only, because every
+       libxml2 subroutine that needs it to be called just calls it itself.
+    */
+    xmlInitParser();
+}
+
+
+
+void
+xml_term(void) {
+
+    /* N.B xmlCleanupParser() doesn't know how many times you called
+       xmlInitParser().  Calling it twice is the same as calling it once.
+       This means you must not call xml_term() while anything else in
+       the process is still using libxml2.
+    */
+    xmlCleanupParser();
+}
+
+
 
 static xml_element *
 xmlElementNew(xmlrpc_env * const envP,
@@ -244,7 +273,7 @@ typedef struct {
    Our parse context. We pass this around as libxml user data.
 -----------------------------------------------------------------------------*/
 
-    xmlrpc_env *  envP;
+    xmlrpc_env env;
     xml_element * rootP;
     xml_element * currentP;
 } ParseContext;
@@ -269,10 +298,10 @@ startElement_(void *           const userData,
 
     /* Get our context and see if an error has already occured. */
     contextP = (ParseContext*) userData;
-    if (!contextP->envP->fault_occurred) {
+    if (!contextP->env.fault_occurred) {
         /* Build a new element. */
-        elemP = xmlElementNew(contextP->envP, (char *) name);
-        XMLRPC_FAIL_IF_FAULT(contextP->envP);
+        elemP = xmlElementNew(&contextP->env, (char *) name);
+        XMLRPC_FAIL_IF_FAULT(&contextP->env);
 
         /* Insert it in the appropriate place. */
         if (!contextP->rootP) {
@@ -285,9 +314,9 @@ startElement_(void *           const userData,
             /* (We need to watch our error handling invariants very carefully
             ** here. Read the docs for xml_elementAppendChild. */
             newCurrentP = elemP;
-            xmlElementAppendChild(contextP->envP, contextP->currentP, elemP);
+            xmlElementAppendChild(&contextP->env, contextP->currentP, elemP);
             elemP = NULL;
-            XMLRPC_FAIL_IF_FAULT(contextP->envP);
+            XMLRPC_FAIL_IF_FAULT(&contextP->env);
             contextP->currentP = newCurrentP;
         }
         
@@ -309,15 +338,15 @@ endElement_(void *          const userData,
 
     /* Get our context and see if an error has already occured. */
     contextP = (ParseContext*) userData;
-    if (!contextP->envP->fault_occurred) {
+    if (!contextP->env.fault_occurred) {
         assert(xmlrpc_streq((const char *)name,
                             contextP->currentP->name));
         assert(contextP->currentP->parentP != NULL ||
                contextP->currentP == contextP->rootP);
 
         /* Add a trailing '\0' to our cdata. */
-        xmlElementAppendCdata(contextP->envP, contextP->currentP, "\0", 1);
-        if (!contextP->envP->fault_occurred) {
+        xmlElementAppendCdata(&contextP->env, contextP->currentP, "\0", 1);
+        if (!contextP->env.fault_occurred) {
             /* Pop our "stack" of elements. */
             contextP->currentP = contextP->currentP->parentP;
         }
@@ -337,10 +366,10 @@ characterData(void *          const userData,
     
     /* Get our context and see if an error has already occured. */
     contextP = (ParseContext*)userData;
-    if (!contextP->envP->fault_occurred) {
+    if (!contextP->env.fault_occurred) {
         assert(contextP->currentP != NULL);
 	
-        xmlElementAppendCdata(contextP->envP,
+        xmlElementAppendCdata(&contextP->env,
                               contextP->currentP,
                               (char *)s,
                               len);
@@ -407,7 +436,7 @@ xml_parse(xmlrpc_env *   const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
     assert(xmlData != NULL);
 
-    context.envP     = envP;
+    xmlrpc_env_init(&context.env);
     context.rootP    = NULL;
     context.currentP = NULL;
 
@@ -424,7 +453,9 @@ xml_parse(xmlrpc_env *   const envP,
             xmlrpc_env_set_fault(envP, XMLRPC_PARSE_ERROR,
                                  "XML parsing failed");
         else {
-            if (envP->fault_occurred) {
+            if (context.env.fault_occurred) {
+                xmlrpc_env_set_fault(envP, XMLRPC_PARSE_ERROR,
+                                     context.env.fault_string);
                 /* This should be done by the parser, but I'm not sure which
                    callbacks need to do it.
                 */
@@ -437,8 +468,14 @@ xml_parse(xmlrpc_env *   const envP,
                 *resultPP = context.rootP;
             }
         }
+        /* xmlParseChunk() creates a document.  You find it with
+           parserP->myDoc.
+        */
+        if (parserP->myDoc)
+            xmlFreeDoc(parserP->myDoc);
         xmlFreeParserCtxt(parserP);
     }
+    xmlrpc_env_clean(&context.env);
 }
 
 

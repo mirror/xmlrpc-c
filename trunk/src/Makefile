@@ -81,6 +81,7 @@ endif
 # LIBxxx_OBJS is the list of object files that make up library libxxx.
 
 LIBXMLRPC_MODS = \
+	base_global \
         double \
 	json \
 	parse_datetime \

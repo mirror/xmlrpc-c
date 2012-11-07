@@ -741,6 +741,7 @@ main(int     argc,
         fprintf(stderr, "There are no arguments.\n");
         retval = 1;
     } else {
+        xmlrpc_init();
         testVersion();
         testEnv();
         testMemBlock();
@@ -767,6 +768,8 @@ main(int     argc,
         test_client_maybe();
 
         printf("\n");
+
+        xmlrpc_term();
 
         /* Summarize our test run. */
         printf("Ran %d tests, %d failed, %.1f%% passed\n",
