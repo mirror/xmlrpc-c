@@ -422,9 +422,11 @@ xml_parse(xmlrpc_env *   const envP,
     *resultPP = context.root;
 
  cleanup:
-    if (parser)
+    if (parser) {
+        if (parser->myDoc)
+            xmlFreeDoc(parser->myDoc);
         xmlFreeParserCtxt(parser);
-
+    }
     if (envP->fault_occurred) {
         if (context.root)
             xml_element_free(context.root);
