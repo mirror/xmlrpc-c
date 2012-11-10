@@ -1067,11 +1067,17 @@ interruptChannels(outstandingConnList * const outstandingConnListP) {
    Get every thread that is waiting to read a request or write a response
    for a connection to stop waiting.
 -----------------------------------------------------------------------------*/
-    TConn * p;
+    TConn * connP;
 
-    for (p = outstandingConnListP->firstP; p; p = p->nextOutstandingP) {
+    for (connP = outstandingConnListP->firstP;
+         connP; connP = connP->nextOutstandingP) {
 
-        ChannelInterrupt(p->channelP);
+        if (connP->finished) {
+            /* The connection couldn't be waiting on the channel, and the
+               channel probably doesn't even exit anymore.
+            */
+        } else 
+            ChannelInterrupt(connP->channelP);
     }
 }
 
