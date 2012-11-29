@@ -741,7 +741,9 @@ main(int     argc,
         fprintf(stderr, "There are no arguments.\n");
         retval = 1;
     } else {
-        xmlrpc_init();
+        xmlrpc_env env;
+        xmlrpc_env_init(&env);
+        xmlrpc_init(&env);
         testVersion();
         testEnv();
         testMemBlock();
@@ -784,6 +786,7 @@ main(int     argc,
             retval = 1;
             printf("FAILED\n");
         }
+        xmlrpc_env_clean(&env);
     }
     return retval;
 }
