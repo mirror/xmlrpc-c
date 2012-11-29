@@ -54,6 +54,7 @@ translateTypeSpecifierToName(xmlrpc_env *  const envP,
     case 'S': *typeNameP = "struct";           break;
     case 'A': *typeNameP = "array";            break;
     case 'n': *typeNameP = "nil";              break;
+    case 'I': *typeNameP = "i8";               break;
     default:
         xmlrpc_faultf(envP, 
                       "Method registry contains invalid signature "
