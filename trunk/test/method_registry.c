@@ -208,7 +208,7 @@ doRpc(xmlrpc_env *      const envP,
 static const char * const validSigString[] = {
     "i:",
     "s:d",
-    "i:bds86SA",
+    "n:iIbds86SA",
     "i:,i:",
     "i:dd,s:,A:A",
     "i:,",
@@ -250,6 +250,8 @@ test_system_methodSignature(xmlrpc_registry * const registryP) {
     const char * type5;
     const char * type6;
     const char * type7;
+    const char * type8;
+    const char * type9;
     const char * nosigstring;
 
     xmlrpc_env_init(&env);
@@ -290,20 +292,24 @@ test_system_methodSignature(xmlrpc_registry * const registryP) {
     doRpc(&env, registryP, "system.methodSignature", argArrayP, NULL,
           &resultP);
     TEST_NO_FAULT(&env);
-    xmlrpc_decompose_value(&env, resultP, "((ssssssss))",
+    xmlrpc_decompose_value(&env, resultP, "((ssssssssss))",
                            &type0, &type1, &type2, &type3,
-                           &type4, &type5, &type6, &type7);
+                           &type4, &type5, &type6, &type7,
+                           &type8, &type9);
     TEST_NO_FAULT(&env);
-    TEST(streq(type0, "int"));
-    TEST(streq(type1, "boolean"));
-    TEST(streq(type2, "double"));
-    TEST(streq(type3, "string"));
-    TEST(streq(type4, "dateTime.iso8601"));
-    TEST(streq(type5, "base64"));
-    TEST(streq(type6, "struct"));
-    TEST(streq(type7, "array"));
+    TEST(streq(type0, "nil"));
+    TEST(streq(type1, "int"));
+    TEST(streq(type2, "i8"));
+    TEST(streq(type3, "boolean"));
+    TEST(streq(type4, "double"));
+    TEST(streq(type5, "string"));
+    TEST(streq(type6, "dateTime.iso8601"));
+    TEST(streq(type7, "base64"));
+    TEST(streq(type8, "struct"));
+    TEST(streq(type9, "array"));
     strfree(type0); strfree(type1); strfree(type2); strfree(type3);
     strfree(type4); strfree(type5); strfree(type6); strfree(type7);
+    strfree(type8); strfree(type9);
     xmlrpc_DECREF(resultP);
     xmlrpc_DECREF(argArrayP);
 
