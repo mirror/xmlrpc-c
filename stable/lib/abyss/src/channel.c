@@ -181,7 +181,7 @@ void
 ChannelInterrupt(TChannel * const channelP) {
 
     if (ChannelTraceIsActive)
-        fprintf(stderr, "Interrupting channel waits");
+        fprintf(stderr, "Interrupting channel waits\n");
 
     (*channelP->vtbl.interrupt)(channelP);
 }
