@@ -121,7 +121,7 @@ $(LIBXMLRPC_CPP_SH): LIBOBJECTS = XmlRpcCpp.osh
 $(LIBXMLRPC_CPP_SH): LIBDEP = \
   -Lblddir/src  -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  $(LIBXMLRPC_UTIL_LIBDEP) \
 
 LIBXMLRPCPP_SH = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 

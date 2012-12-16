@@ -69,6 +69,7 @@ all: libxmlrpc_util.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 # Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
 $(UTIL_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
+$(UTIL_SHLIB): -lpthread
 ifeq ($(MSVCRT), yes)
     $(UTIL_SHLIB): LIBDEP += -lws2_32 -lwsock32
 endif
