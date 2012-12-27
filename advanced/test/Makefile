@@ -104,6 +104,6 @@ clean-local: $(SUBDIRS:%=%/clean)
 distclean: clean $(SUBDIRS:%=%/distclean) distclean-common
 
 .PHONY: dep
-dep: dep-common
+dep: dep-common $(SUBDIRS:%=%/dep)
 
 include depend.mk

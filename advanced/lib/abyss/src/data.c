@@ -42,11 +42,12 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_platform.h"
 
 #include "xmlrpc-c/abyss.h"
 
 #include "token.h"
-#include "thread.h"
 
 #include "data.h"
 
@@ -552,12 +553,11 @@ PoolCreate(TPool *  const poolP,
            uint32_t const zonesize) {
 
     bool success;
-    bool mutexCreated;
 
     poolP->zonesize = zonesize;
 
-    mutexCreated = MutexCreate(&poolP->mutexP);
-    if (mutexCreated) {
+    poolP->lockP = xmlrpc_lock_create();
+    if (poolP->lockP) {
         TPoolZone * const firstZoneP = PoolZoneAlloc(zonesize);
 
         if (firstZoneP != NULL) {
@@ -567,7 +567,7 @@ PoolCreate(TPool *  const poolP,
         } else
             success = FALSE;
         if (!success)
-            MutexDestroy(poolP->mutexP);
+            poolP->lockP->destroy(poolP->lockP);
     } else
         success = FALSE;
 
@@ -587,13 +587,10 @@ PoolAlloc(TPool *  const poolP,
     if (size == 0)
         retval = NULL;
     else {
-        bool gotMutexLock;
-
-        gotMutexLock = MutexLock(poolP->mutexP);
-        if (!gotMutexLock)
-            retval = NULL;
-        else {
+        poolP->lockP->acquire(poolP->lockP);
+        {
             TPoolZone * const curPoolZoneP = poolP->currentzone;
+
 
             if (curPoolZoneP->pos + size < curPoolZoneP->maxpos) {
                 retval = curPoolZoneP->pos;
@@ -612,8 +609,8 @@ PoolAlloc(TPool *  const poolP,
                 } else
                     retval = NULL;
             }
-            MutexUnlock(poolP->mutexP);
         }
+        poolP->lockP->release(poolP->lockP);
     }
     return retval;
 }
@@ -659,7 +656,7 @@ PoolFree(TPool * const poolP) {
         nextPoolZoneP = poolZoneP->next;
         free(poolZoneP);
     }
-    MutexDestroy(poolP->mutexP);
+    poolP->lockP->destroy(poolP->lockP);
 }
 
 

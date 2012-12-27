@@ -55,7 +55,7 @@ else
 endif
 
 LIBXMLRPCPP_MODS = \
-  base64 env_wrap fault girerr girmem outcome param_list value xml
+  base64 env_wrap fault girerr girmem global outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
 LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi
@@ -121,7 +121,7 @@ $(LIBXMLRPC_CPP_SH): LIBOBJECTS = XmlRpcCpp.osh
 $(LIBXMLRPC_CPP_SH): LIBDEP = \
   -Lblddir/src  -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  $(LIBXMLRPC_UTIL_LIBDEP) \
 
 LIBXMLRPCPP_SH = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 

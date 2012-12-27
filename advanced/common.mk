@@ -255,6 +255,15 @@ else
   LDLIBS_XML = $(shell xml2-config --libs)
 endif
 
+# LIBXMLRPC_UTIL_LIBDEP is the string of linker options you need on the link
+# of a shared library that refers to symbols in libxmlrpc_util.  It tells
+# the linker to record a dependency upon libxmlrpc_util in the shared library
+# being built, and also dependencies on things on which libxmlrpc_util
+# depends.  You might think that the linker could get the latter out of
+# libxmlrpc_util itself, but we have found (2012.12) that in a Mingw build
+# it does not.
+
+LIBXMLRPC_UTIL_LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -lpthread
 
 ##############################################################################
 #            RULES TO BUILD OBJECT FILES TO LINK INTO LIBRARIES              #

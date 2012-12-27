@@ -38,6 +38,21 @@ struct _xml_element {
     XMLRPC_ASSERT((elem) != NULL && (elem)->_name != XMLRPC_BAD_POINTER)
 
 
+void
+xml_init(xmlrpc_env * const envP) {
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+}
+
+
+
+void
+xml_term(void) {
+
+}
+
+
+
 /*=========================================================================
 **  xml_element_new
 **=========================================================================

@@ -1,7 +1,5 @@
-#ifndef CURL_LOCK_H_INCLUDED
-#define CURL_LOCK_H_INCLUDED
-
-#include <pthread.h>
+#ifndef LOCK_H_INCLUDED
+#define LOCK_H_INCLUDED
 
 typedef struct lock lock;
 
@@ -15,7 +13,7 @@ struct lock {
        "void * implementationP" and make curlLock_create_pthread() malloc
        the mutex.
     */
-    pthread_mutex_t theLock;
+    void * implementationP;
     lockAcquireFn * acquire;
     lockReleaseFn * release;
     lockDestroyFn * destroy;

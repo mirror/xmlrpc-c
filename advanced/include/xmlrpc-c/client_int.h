@@ -10,9 +10,11 @@
   Copyright information is at the end of the file.
 ============================================================================*/
 
-
 #ifndef  XMLRPC_CLIENT_INT_H_INCLUDED
 #define  XMLRPC_CLIENT_INT_H_INCLUDED
+
+#include "xmlrpc_config.h"
+#include "bool.h"
 
 #include "xmlrpc-c/util.h"
 

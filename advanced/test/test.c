@@ -741,6 +741,9 @@ main(int     argc,
         fprintf(stderr, "There are no arguments.\n");
         retval = 1;
     } else {
+        xmlrpc_env env;
+        xmlrpc_env_init(&env);
+        xmlrpc_init(&env);
         testVersion();
         testEnv();
         testMemBlock();
@@ -768,6 +771,8 @@ main(int     argc,
 
         printf("\n");
 
+        xmlrpc_term();
+
         /* Summarize our test run. */
         printf("Ran %d tests, %d failed, %.1f%% passed\n",
                total_tests, total_failures,
@@ -781,6 +786,7 @@ main(int     argc,
             retval = 1;
             printf("FAILED\n");
         }
+        xmlrpc_env_clean(&env);
     }
     return retval;
 }

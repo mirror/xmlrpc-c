@@ -95,8 +95,14 @@ callTransportSetup(xmlrpc_env *           const envP,
 
 
 
+int xmlrpc_trace_transport;
+
+
+
 static void
 setupTransportGlobalConst(xmlrpc_env * const envP) {
+
+    xmlrpc_trace_transport = getenv("XMLRPC_TRACE_TRANSPORT") ? 1 : 0;
 
 #if MUST_BUILD_WININET_CLIENT
     if (!envP->fault_occurred)
@@ -163,6 +169,8 @@ xmlrpc_client_setup_global_const(xmlrpc_env * const envP) {
    (perhaps cascaded down from a multitude of higher level libraries)
    as part of early program setup, when the program is only one thread.
 -----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+
     if (constSetupCount == 0)
         setupTransportGlobalConst(envP);
 
@@ -435,6 +443,7 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
                      unsigned int                      const parmSize,
                      xmlrpc_client **                  const clientPP) {
     
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(clientPP);
 
     if (constSetupCount == 0) {
@@ -539,6 +548,7 @@ xmlrpc_client_transport_call2(
     xmlrpc_mem_block *         const callXmlP,
     xmlrpc_mem_block **        const respXmlPP) {
 
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(clientP);
     XMLRPC_ASSERT_PTR_OK(serverP);
     XMLRPC_ASSERT_PTR_OK(callXmlP);
@@ -559,6 +569,8 @@ parseResponse(xmlrpc_env *       const envP,
               const char **      const faultStringP) {
 
     xmlrpc_env respEnv;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
 
     xmlrpc_env_init(&respEnv);
 
@@ -716,6 +728,8 @@ xmlrpc_client_call_server2_va(xmlrpc_env *               const envP,
 
     xmlrpc_value * paramArrayP;
         /* The XML-RPC parameter list array */
+
+    XMLRPC_ASSERT_ENV_OK(envP);
 
     computeParamArray(envP, format, args, &paramArrayP);
 
@@ -1092,6 +1106,8 @@ xmlrpc_client_start_rpcf_va(xmlrpc_env *    const envP,
                             va_list               args) {
 
     xmlrpc_server_info * serverInfoP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
 
     serverInfoP = xmlrpc_server_info_new(envP, serverUrl);
     if (!envP->fault_occurred) {

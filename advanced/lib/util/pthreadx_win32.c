@@ -119,37 +119,3 @@ pthread_detach(pthread_t const target_thread) {
 
 
 
-int
-pthread_mutex_init(pthread_mutex_t *           const mp,
-                   const pthread_mutexattr_t * const attr) {
-
-    InitializeCriticalSection(mp);
-    return 0;
-}
-
-
-
-int
-pthread_mutex_lock(pthread_mutex_t * const mp) {
-
-    EnterCriticalSection(mp);
-    return 0;
-}
-
-
-
-int
-pthread_mutex_unlock(pthread_mutex_t * const mp) {
-
-    LeaveCriticalSection(mp);
-    return 0;
-}
-
-
-
-int
-pthread_mutex_destroy(pthread_mutex_t * const mp) {
-
-    DeleteCriticalSection(mp);
-    return 0;
-}

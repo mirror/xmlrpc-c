@@ -3,8 +3,8 @@
 # programs can use.  Not libraries, though -- just programs.  The reason
 # we don't want any library to use object modules in here is that they'll
 # probably pollute the name space when users link those libraries to their
-# programs.  In fact, if more than one Xmlrpc-c library includes one of these
-# modules, the libraries will conflict with each other.
+# programs.  In fact, if more than one Xmlrpc-c library included one of these
+# modules, the libraries would conflict with each other.
 #
 # So a utility function that is to be used by libraries (and, optionally,
 # programs) should go in libxmlrpc_util.  libxmlrpc_util is a prerequisite

@@ -56,6 +56,7 @@
 
 #include "xmlrpc_config.h"
 
+#include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -65,13 +66,13 @@
 #include <sys/select.h>
 #endif
 #include <signal.h>
+#include <stdio.h>
 
 #include "bool.h"
 #include "girmath.h"
 #include "mallocvar.h"
 #include "linklist.h"
 #include "girstring.h"
-#include "pthreadx.h"
 
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
@@ -79,6 +80,8 @@
 #include "xmlrpc-c/client_int.h"
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/time_int.h"
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_platform.h"
 
 #include <curl/curl.h>
 #ifdef NEED_CURL_TYPES_H
@@ -87,8 +90,6 @@
 #include <curl/easy.h>
 #include <curl/multi.h>
 
-#include "lock.h"
-#include "lock_pthread.h"
 #include "curltransaction.h"
 #include "curlmulti.h"
 #include "curlversion.h"
@@ -105,6 +106,31 @@
 
 
 typedef struct rpc rpc;
+
+
+
+static void
+tracev(const char * const fmt,
+       va_list            args) {
+
+    vfprintf(stderr, fmt, args);
+
+    fprintf(stderr, "\n");
+}
+
+
+
+static void
+trace(const char * const fmt, ...) {
+
+    if (xmlrpc_trace_transport) {
+        va_list args;
+
+        va_start(args, fmt);
+        tracev(fmt, args);
+        va_end(args);
+    }
+}
 
 
 
@@ -420,24 +446,24 @@ waitForWork(xmlrpc_env *       const envP,
    Update the Curl multi manager's file descriptor sets to indicate what
    work we found for it to do.
 
-   Wait under signal mask *sigmaskP.  The point of this is that Caller
-   can make sure that arrival of a signal of a certain class
-   interrupts our wait, even if the signal arrives shortly before we
-   begin waiting.  Caller blocks that signal class, then checks
-   whether a signal of that class has already been received.  If not,
-   he calls us with *sigmaskP indicating that class NOT blocked.
-   Thus, if a signal of that class arrived any time after Caller
-   checked, we will return immediately or when the signal arrives,
-   whichever is sooner.  Note that we can provide this service only
-   because pselect() has the same atomic unblock/wait feature.
+   Wait under signal mask *sigmaskP.  The point of this is that Caller can
+   make sure that arrival of a signal of a certain class interrupts our wait,
+   even if the signal arrives shortly before we begin waiting.  Caller blocks
+   that signal class, then checks whether a signal of that class has already
+   been received.  If not, he calls us with *sigmaskP indicating that class
+   NOT blocked.  Thus, if a signal of that class arrived any time after Caller
+   checked, we will return immediately and if it arrives while we're waiting,
+   we will return then.  Note that we can provide this service only because
+   pselect() has the same atomic unblock/wait feature.
    
-   If sigmaskP is NULL, wait under whatever the current signal mask
-   is.
+   If sigmaskP is NULL, wait under whatever the current signal mask is.
 -----------------------------------------------------------------------------*/
     fd_set readFdSet;
     fd_set writeFdSet;
     fd_set exceptFdSet;
     int maxFd;
+
+    trace("Waiting for work");
 
     curlMulti_fdset(envP, curlMultiP,
                     &readFdSet, &writeFdSet, &exceptFdSet, &maxFd);
@@ -452,6 +478,10 @@ waitForWork(xmlrpc_env *       const envP,
                 pselectTimeout(timeoutType, deadline);
 
             int rc;
+
+            trace("No work available; waiting for a Curl file descriptor to "
+                  "be ready or %u.%03u sec",
+                  pselectTimeoutArg.tv_sec, pselectTimeoutArg.tv_nsec/1000000);
 
             rc = xmlrpc_pselect(maxFd+1, &readFdSet, &writeFdSet, &exceptFdSet,
                                 &pselectTimeoutArg, sigmaskP);
@@ -468,6 +498,7 @@ waitForWork(xmlrpc_env *       const envP,
                                       readFdSet, writeFdSet, exceptFdSet);
             }
         }
+        trace("Wait is over");
     }
 }
 
@@ -502,6 +533,8 @@ waitForWorkInt(xmlrpc_env *       const envP,
     
     if (*interruptP == 0)
         waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
+    else
+        trace("Not waiting because interrupt flag is set\n");
 
     sigprocmask(SIG_SETMASK, &callerBlockSet, NULL);
 #endif
@@ -527,18 +560,23 @@ doCurlWork(xmlrpc_env * const envP,
    again.
 -----------------------------------------------------------------------------*/
     bool immediateWorkToDo;
-    int runningHandles;
+    int runningHandleCt;
+
+    trace("Calling libcurl to perform all immediate work");
 
     immediateWorkToDo = true;  /* initial assumption */
 
     while (immediateWorkToDo && !envP->fault_occurred) {
         curlMulti_perform(envP, curlMultiP,
-                          &immediateWorkToDo, &runningHandles);
+                          &immediateWorkToDo, &runningHandleCt);
     }
 
     /* We either did all the work that's ready to do or hit an error. */
 
     if (!envP->fault_occurred) {
+        trace("libcurl has performed all immediate work; %d tasks "
+              "(file handles) still running", runningHandleCt);
+
         /* The work we did may have resulted in asynchronous messages
            (asynchronous to the thing they refer to, not to us, of course).
            In particular the message "Curl transaction has completed".
@@ -546,7 +584,7 @@ doCurlWork(xmlrpc_env * const envP,
         */
         processCurlMessages(envP, curlMultiP);
 
-        *transStillRunningP = runningHandles > 0;
+        *transStillRunningP = runningHandleCt > 0;
     }
 }
 
@@ -566,23 +604,41 @@ finishCurlMulti(xmlrpc_env *       const envP,
 
    Don't return until all the Curl transactions are done or we time out.
 
+   if 'interruptP' is non-null, it points to a value which is normally zero,
+   but is nonzero when Caller wants us to abort all the transactions and
+   return ASAP.
+
    The *interruptP flag alone will not interrupt us.  We will wait in
    spite of it for all Curl transactions to complete.  *interruptP
    just gives us a hint that the Curl transactions are being
    interrupted, so we know there is work to do for them.  (The way it
    works is Caller sets up a "progress" function that checks the same
    interrupt flag and reports "kill me."  When we see the interrupt
-   flag, we call that progress function and get the message).
+   flag, we tell libcurl to do whatever work there is to do, and as part of
+   that, libcurl calls the progress function, gets the "kill me" message,
+   and passes that on to us).
 -----------------------------------------------------------------------------*/
+    /* For integrity, we make sure we don't let *interruptP interrupt our
+       wait for work more than once.  That way, if for any reason libcurl
+       fails to call the progress function, or the progress function fails
+       to notice the interrupt flag and tell libcurl to abort, or libcurl
+       does abort as told, we don't have a busy loop of calls to
+       doCurlWork().
+
+       'curlCalledSinceInterrupt' is part of this logic.
+    */
+
     bool rpcStillRunning;
     bool timedOut;
+    bool curlCalledSinceInterrupt;
 
     rpcStillRunning = true;  /* initial assumption */
     timedOut = false;
+    curlCalledSinceInterrupt = false;
     
     while (rpcStillRunning && !timedOut && !envP->fault_occurred) {
 
-        if (interruptP) {
+        if (interruptP && !curlCalledSinceInterrupt) {
             waitForWorkInt(envP, curlMultiP, timeoutType, deadline,
                            interruptP);
         } else 
@@ -591,12 +647,16 @@ finishCurlMulti(xmlrpc_env *       const envP,
         if (!envP->fault_occurred) {
             xmlrpc_timespec nowTime;
 
-            /* doCurlWork() (among other things) finds Curl
-               transactions that user wants to abort and finishes
-               them.
+            /* doCurlWork() (among other things) finds Curl transactions that
+               user wants to abort and finishes them.  (This is by virtue
+               of libcurl calling its progress function when we tell it to do
+               all available work).
             */
+            if (interruptP && *interruptP)
+                curlCalledSinceInterrupt = true;
+
             doCurlWork(envP, curlMultiP, &rpcStillRunning);
-            
+
             xmlrpc_gettimeofday(&nowTime);
             
             timedOut = (timeoutType == timeout_yes &&
@@ -948,7 +1008,7 @@ static void
 makeSyncCurlSession(xmlrpc_env *                     const envP,
                     struct xmlrpc_client_transport * const transportP) {
 
-    transportP->syncCurlSessionLockP = curlLock_create_pthread();
+    transportP->syncCurlSessionLockP = xmlrpc_lock_create();
     if (transportP->syncCurlSessionLockP == NULL)
         xmlrpc_faultf(envP, "Unable to create lock for "
                       "synchronous Curl session.");
@@ -1312,18 +1372,16 @@ curlTransactionProgress(void * const context,
     rpc * const rpcP = context;
     struct xmlrpc_client_transport * const transportP = rpcP->transportP;
 
-    struct xmlrpc_progress_data progressData;
-
     assert(rpcP);
     assert(transportP);
 
-    progressData.response.total = dlTotal;
-    progressData.response.now   = dlNow;
-    progressData.call.total     = ulTotal;
-    progressData.call.now       = ulNow;
+    trace("Progress function called back by libcurl");
 
     if (rpcP->progress) {
         struct xmlrpc_progress_data progressData;
+
+        trace("Calling transport client's progress function with %u %u %u %u",
+              dlTotal, dlNow, ulTotal, ulNow);
 
         progressData.response.total = dlTotal;
         progressData.response.now   = dlNow;
@@ -1332,9 +1390,11 @@ curlTransactionProgress(void * const context,
 
         rpcP->progress(rpcP->callInfoP, progressData);
     }
-    if (transportP->interruptP)
+    if (transportP->interruptP) {
+        trace("Interrupt flag is set; "
+              "directing libcurl to abort the transaction");
         *abortP = *transportP->interruptP;
-    else
+    } else
         *abortP = false;
 }
 
@@ -1534,7 +1594,7 @@ setupGlobalConstants(xmlrpc_env * const envP) {
 static void
 teardownGlobalConstants(void) {
 /*----------------------------------------------------------------------------
-   See longwinded discussionof the global constant issue at the top of
+   See longwinded discussion of the global constant issue at the top of
    this file.
 -----------------------------------------------------------------------------*/
     curl_global_cleanup();

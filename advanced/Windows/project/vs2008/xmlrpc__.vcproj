@@ -1655,7 +1655,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\lib\util\pthreadx_win32.c"
+				RelativePath="..\..\..\lib\libutil\lock_windows.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\libutil\lock_platform.c"
 				>
 			</File>
 			<File

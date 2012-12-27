@@ -42,7 +42,7 @@ public:
         try {
             value_int int4(value_double(3.7));
             TEST_FAILED("invalid cast double-int suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
 
         value const int1x(toValue(7));
         TEST(int1x.type() == value::TYPE_INT);
@@ -71,7 +71,7 @@ public:
         try {
             value_double double4(value_int(4));
             TEST_FAILED("invalid cast int-double suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
 
         value const double1x(toValue(3.14));
         TEST(double1x.type() == value::TYPE_DOUBLE);
@@ -102,7 +102,7 @@ public:
         try {
             value_boolean boolean4(value_int(4));
             TEST_FAILED("invalid cast int-boolean suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
 
         value const boolean1x(toValue(true));
         TEST(boolean1x.type() == value::TYPE_BOOLEAN);
@@ -237,7 +237,7 @@ public:
         try {
             value_datetime datetime4(value_int(4));
             TEST_FAILED("invalid cast int-datetime suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
     }
 };
 
@@ -260,7 +260,7 @@ public:
         try {
             value_string string4(value_int(4));
             TEST_FAILED("invalid cast int-string succeeded");
-        } catch (error) {}
+        } catch (error const&) {}
         value_string string5("hello world", value_string::nlCode_all);
         TEST(static_cast<string>(string5) == "hello world");
         value_string string6("hello\nthere\rworld\r\n\n",
@@ -309,7 +309,7 @@ public:
         try {
             value_bytestring bytestring4(value_int(4));
             TEST_FAILED("invalid cast int-bytestring suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
 
         value const bytestring1x(toValue(bytestringData));
         TEST(bytestring1x.type() == value::TYPE_BYTESTRING);
@@ -339,7 +339,7 @@ public:
         try {
             value_nil nil4(value_int(4));
             TEST_FAILED("invalid cast int-nil suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
     }
 };
 
@@ -364,7 +364,7 @@ public:
         try {
             value_i8 int4(value_double(3.7));
             TEST_FAILED("invalid cast double-i8 suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
     }
 };
 
@@ -392,7 +392,7 @@ public:
         try {
             value_struct struct4(value_int(4));
             TEST_FAILED("invalid cast int-struct suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
 
         map<string, int> structDatax;
         structDatax["one"] = 1;
@@ -442,7 +442,7 @@ public:
         try {
             value_array array4(value_int(4));
             TEST_FAILED("invalid cast int-array suceeded");
-        } catch (error) {}
+        } catch (error const&) {}
 
         int const arrayDatax[] = {7, 4};
 

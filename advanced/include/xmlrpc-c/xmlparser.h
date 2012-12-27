@@ -68,6 +68,15 @@ xml_parse(xmlrpc_env *   const envP,
           size_t         const xmlDataLen,
           xml_element ** const resultPP);
 
+/* Initialize and terminate static global parser state.  This should be done
+   once per run of a program, and while the program is just one thread.
+*/
+void
+xml_init(xmlrpc_env * const envP);
+
+void
+xml_term(void);
+
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 **
