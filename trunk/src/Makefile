@@ -187,7 +187,7 @@ $(LIBXMLRPC_SERVER_ABYSS): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSS_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSS): LIBDEP = \
   -L. -lxmlrpc_server \
   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
-  -L. -lxmlrpc $(XML_PARSER_LIBDEP) -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -L. -lxmlrpc $(XML_PARSER_LIBDEP) $(LIBXMLRPC_UTIL_LIBDEP)
 ifeq ($(MSVCRT),yes)
   $(LIBXMLRPC_SERVER_ABYSS):  LIBDEP += -lws2_32 -lwsock32
 endif
@@ -202,7 +202,7 @@ $(LIBXMLRPC_SERVER_CGI): \
 $(LIBXMLRPC_SERVER_CGI): LIBOBJECTS = $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_CGI): LIBDEP = \
   -L. -lxmlrpc_server \
-  -L. -lxmlrpc $(XML_PARSER_LIBDEP) -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -L. -lxmlrpc $(XML_PARSER_LIBDEP) $(LIBXMLRPC_UTIL_LIBDEP)
 
 LIBXMLRPC_CLIENT = $(call shlibfn, libxmlrpc_client)
 
