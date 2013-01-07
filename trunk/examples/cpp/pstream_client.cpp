@@ -9,10 +9,10 @@
   client).
 
   You have to supply as Standard Input a stream (TCP) socket whose other
-  end is hooked up to the RPC server.  The 'socket_exec' program is a
+  end is hooked up to the RPC server.  The 'socketexec' program is a
   good way to arrange that.
 
-  The sample program pstream_server.cpp is compatible with this client.
+  The sample program pstream_serial_server.cpp is compatible with this client.
 
   Example:
 
