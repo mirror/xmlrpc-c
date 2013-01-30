@@ -13,26 +13,6 @@
      $ xmlrpc localhost:8080 sample.add i/3 i/5
      Result:
        Integer: 8
-
-   This is just the beginnings of this program.  It should be extended
-   to deal with all types of parameters and results.
-
-   An example of a good syntax for parameters would be:
-
-     $ xmlrpc http://www.oreillynet.com/meerkat/xml-rpc/server.php \
-         meerkat.getItems \
-         struct/{search:linux,descriptions:i/76,time_period:12hour}
-     Result:
-       Array:
-         Struct:
-           title: String: DatabaseJournal: OpenEdge-Based Finance ...
-           link: String: http://linuxtoday.com/news_story.php3?ltsn=...
-           description: String: "Finance application with embedded ...
-         Struct:
-           title: ...
-           link: ...
-           description: ...
-
 */
 
 #define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
@@ -425,6 +405,37 @@ buildI8(xmlrpc_env *    const envP,
 
 
 static void
+buildArray(xmlrpc_env *    const envP,
+           const char *    const valueString,
+           xmlrpc_value ** const paramPP) {
+
+    /* We can't do compound values today, but here is how we plan to do them:
+
+         struct/{search:linux,descriptions:i/76,time_period:12hour}
+
+         array/{i/7,s/hello,struct/{a:7,b:5}}
+    */
+    
+    *paramPP = NULL;
+    setError(envP, "Code to interpret array parameters ('%s') has not been "
+             "written yet", valueString);
+}
+
+
+
+static void
+buildStruct(xmlrpc_env *    const envP,
+            const char *    const valueString,
+            xmlrpc_value ** const paramPP) {
+
+    *paramPP = NULL;
+    setError(envP, "Code to interpret struct parameters ('%s') has not been "
+             "written yet", valueString);
+}
+
+
+
+static void
 computeParameter(xmlrpc_env *    const envP,
                  const char *    const paramArg,
                  xmlrpc_value ** const paramPP) {
@@ -443,6 +454,10 @@ computeParameter(xmlrpc_env *    const envP,
         buildBool(envP, &paramArg[2], paramPP);
     else if (xmlrpc_strneq(paramArg, "n/", 2))
         buildNil(envP, &paramArg[2], paramPP);
+    else if (xmlrpc_strneq(paramArg, "array/", 6))
+        buildArray(envP, &paramArg[6], paramPP);
+    else if (xmlrpc_strneq(paramArg, "struct/", 7))
+        buildStruct(envP, &paramArg[7], paramPP);
     else {
         /* It's not in normal type/value format, so we take it to be
            the shortcut string notation 
