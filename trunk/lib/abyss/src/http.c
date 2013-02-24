@@ -1403,7 +1403,7 @@ HTTPWriteEndChunk(TSession * const sessionP) {
 
     bool retval;
 
-    if (sessionP->chunkedwritemode && sessionP->chunkedwrite) {
+    if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
         /* May be one day trailer dumping will be added */
         sessionP->chunkedwritemode = FALSE;
         retval = ConnWrite(sessionP->connP, "0\r\n\r\n", 5);
