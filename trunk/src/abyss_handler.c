@@ -76,6 +76,8 @@ sendResponse(xmlrpc_env *      const envP,
 
    This is meant to run in the context of an Abyss URI handler for
    Abyss session 'abyssSessionP'.
+
+   'chunked' means to make it a chunked response if possible.
 -----------------------------------------------------------------------------*/
     const char * http_cookie = NULL;
         /* This used to set http_cookie to getenv("HTTP_COOKIE"), but
@@ -353,10 +355,18 @@ processCall(TSession *            const abyssSessionP,
    Handle an RPC request.  This is an HTTP request that has the proper form
    to be an XML-RPC call.
 
-   The text of the call is available through the Abyss session
-   'abyssSessionP'.
+   We get the body of the request, which is the text of the call,
+   via the Abyss session 'abyssSessionP'.
 
    Its content length is 'contentSize' bytes.
+
+   We send the response to the request (which may contain the RPC response,
+   but may be an error indication) via the Abyss session 'abyssSessionP'.
+
+   We use 'xmlProcessor', with argument 'xmlProcessorArg' to execute the
+   RPC, i.e. turn the XML-RPC call into an XML-RPC response.
+
+   'wantChunk' means Caller wants the HTTP reponse chunked.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
 
