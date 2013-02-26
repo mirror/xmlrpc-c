@@ -31,11 +31,13 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-#include <xmlparser.h>
-#else
+/* There was code here from 2006-2013 that included <xmlparser.h>
+   instead of <libxml/parser.h> when compiling for Windows.  It was probably
+   compiled rarely if ever (this file is an optional part of the build).
+   In Feburary 2013, a Mingw user found <libxml/parser.h> was necessary,
+   and that makes more sense, so we changed it.
+*/
 #include <libxml/parser.h>
-#endif
 
 #include "mallocvar.h"
 #include "xmlrpc-c/base.h"
