@@ -524,37 +524,46 @@ parseHostPort(const char *     const hostport,
    Default the port to 80 if 'hostport' doesn't have the port part.
 -----------------------------------------------------------------------------*/
     char * buffer;
-    char * colonPos;
 
     buffer = strdup(hostport);
 
-    colonPos = strchr(buffer, ':');
-    if (colonPos) {
-        const char * p;
-        uint32_t port;
+    if (!buffer)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for host/port buffer");
+    else {
+        /* Note that the host portion may contain colons.  The old RFC says
+           it can't, but a newer one says the host may be an IPv6 address
+           in the form [x:x:x...].  But the port portion may contain only
+           digits, so we use the _last_ colon as the delimiter.
+        */
+        char * const colonPos = strrchr(buffer, ':');
 
-        *colonPos = '\0';  /* Split hostport at the colon */
+        if (colonPos) {
+            const char * p;
+            uint32_t port;
 
-        for (p = colonPos + 1, port = 0;
-             isdigit(*p) && port < 65535;
-             (port = port * 10 + (*p - '0')), ++p);
+            *colonPos = '\0';  /* Split hostport at the colon */
+
+            for (p = colonPos + 1, port = 0;
+                 isdigit(*p) && port < 65535;
+                 (port = port * 10 + (*p - '0')), ++p);
             
-        if (*p || port == 0) {
-            xmlrpc_asprintf(errorP, "There is nothing, or something "
-                            "non-numeric for the port number after the "
-                            "colon in '%s'", hostport);
-            *httpErrorCodeP = 400;  /* Bad Request */
+            if (*p || port == 0) {
+                xmlrpc_asprintf(errorP, "There is nothing, or something "
+                                "non-numeric for the port number after the "
+                                "colon in '%s'", hostport);
+                *httpErrorCodeP = 400;  /* Bad Request */
+            } else {
+                *hostP = strdup(buffer);
+                *portP = port;
+                *errorP = NULL;
+            }
         } else {
-            *hostP = strdup(buffer);
-            *portP = port;
+            *hostP          = strdup(buffer);
+            *portP          = 80;
             *errorP = NULL;
         }
-    } else {
-        *hostP          = strdup(buffer);
-        *portP          = 80;
-        *errorP = NULL;
+        free(buffer);
     }
-    free(buffer);
 }
 
 
