@@ -16,7 +16,7 @@
 #ifdef WIN32
   #include <winsock.h>
 #else
-  #include <sys/unistd.h>
+  #include <unistd.h>
   #include <sys/socket.h>
   #include <arpa/inet.h>
   #include <netinet/in.h>
