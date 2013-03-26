@@ -413,7 +413,7 @@ buildArray(xmlrpc_env *    const envP,
 
          struct/{search:linux,descriptions:i/76,time_period:12hour}
 
-         array/{i/7,s/hello,struct/{a:7,b:5}}
+         array/(i/7,s/hello,struct/{a:7,b:5})
     */
     
     *paramPP = NULL;
