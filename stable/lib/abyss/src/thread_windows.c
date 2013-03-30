@@ -7,9 +7,10 @@
    threading code, which did work on Windows, as a basis.
 */
 
-
-#include <process.h>
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <process.h>
+#include <winsock2.h>
 
 #include "xmlrpc_config.h"
 
@@ -167,71 +168,4 @@ ThreadUpdateStatus(TThread * const threadP ATTR_UNUSED) {
 }
  
  
-
-/*********************************************************************
-** Mutex
-*********************************************************************/
-
-struct abyss_mutex {
-    HANDLE winMutex;
-};
-
-
-bool
-MutexCreate(TMutex ** const mutexPP) {
-
-    TMutex * mutexP;
-    bool succeeded;
-
-    MALLOCVAR(mutexP);
-
-    if (mutexP) {
-
-        mutexP->winMutex = CreateMutex(NULL, FALSE, NULL);
-
-        succeeded = (mutexP->winMutex != NULL);
-    } else
-        succeeded = FALSE;
-
-    if (!succeeded)
-        free(mutexP);
-
-    *mutexPP = mutexP;
-
-    return succeeded;
-}
- 
-
-
-bool
-MutexLock(TMutex * const mutexP) {
-
-    return (WaitForSingleObject(mutexP->winMutex, INFINITE) != WAIT_TIMEOUT);
-}
-
-
-
-bool
-MutexUnlock(TMutex * const mutexP) {
-
-    return ReleaseMutex(mutexP->winMutex);
-}
-
-
-bool
-MutexTryLock(TMutex * const mutexP) {
-
-    return (WaitForSingleObject(mutexP->winMutex, 0) != WAIT_TIMEOUT);
-}
-
-
-
-void
-MutexDestroy(TMutex * const mutexP) {
-
-    CloseHandle(mutexP->winMutex);
-
-    free(mutexP);
-}
-
 

@@ -13,37 +13,50 @@
 extern "C" {
 #endif
 
-XMLRPC_DLLEXPORT
+/*
+  XMLRPC_UTIL_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc_util.
+
+  XMLRPC_BUILDING_UTIL says this compilation is part of libxmlrpc_util, as
+  opposed to something that _uses_ libxmlrpc_util.
+*/
+#ifdef XMLRPC_BUILDING_UTIL
+#define XMLRPC_UTIL_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_UTIL_EXPORTED
+#endif
+
+XMLRPC_UTIL_EXPORTED
 bool
 xmlrpc_strnomem(const char * const string);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 const char *
 xmlrpc_strnomemval(void);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_vasprintf(const char ** const retvalP,
                  const char *  const fmt,
                  va_list             varargs);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void XMLRPC_PRINTF_ATTR(2,3)
 xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 const char *
 xmlrpc_strdupsol(const char * const string);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_strfree(const char * const string);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 const char *
 xmlrpc_strdupnull(const char * const string);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_strfreenull(const char * const string);
 
@@ -88,16 +101,16 @@ xmlrpc_strneq(const char * const a,
     return (strncmp(a, b, len) == 0);
 }
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 const char * 
 xmlrpc_makePrintable(const char * const input);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 const char *
 xmlrpc_makePrintable_lp(const char * const input,
                         size_t       const inputLength);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 const char *
 xmlrpc_makePrintableChar(char const input);
 
@@ -123,7 +136,6 @@ by an MSVC extension:
   (snprintf(TARGET, sizeof(TARGET) , __VA_ARGS__)) 
 
 */
-
 #ifdef __cplusplus
 }
 #endif

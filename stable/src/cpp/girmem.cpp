@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "pthreadx.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
@@ -10,8 +12,56 @@ using namespace girmem;
 namespace girmem {
 
 
+class autoObject::Impl {
+
+    pthread_mutex_t refcountLock;
+    unsigned int refcount;
+
+public:
+    Impl();
+
+    ~Impl();
+
+    void
+    incref();
+
+    void
+    decref(bool * const unreferencedP);
+};
+
+
+
+autoObject::Impl::Impl() {
+
+    int rc;
+
+    rc = pthread_mutex_init(&this->refcountLock, NULL);
+
+    if (rc != 0)
+        throw(error("Unable to initialize pthread mutex"));
+
+    this->refcount = 0;
+}
+
+
+
+autoObject::Impl::~Impl() {
+
+    if (this->refcount > 0)
+        throw(error("Destroying referenced object"));
+
+    int rc;
+
+    rc = pthread_mutex_destroy(&this->refcountLock);
+
+    if (rc != 0)
+        throw(error("Unable to destroy pthread mutex"));
+}
+
+
+
 void
-autoObject::incref() {
+autoObject::Impl::incref() {
     pthread_mutex_lock(&this->refcountLock);
     ++this->refcount;
     pthread_mutex_unlock(&this->refcountLock);
@@ -20,7 +70,7 @@ autoObject::incref() {
 
 
 void
-autoObject::decref(bool * const unreferencedP) {
+autoObject::Impl::decref(bool * const unreferencedP) {
 
     if (this->refcount == 0)
         throw(error("Decrementing ref count of unreferenced object"));
@@ -32,29 +82,31 @@ autoObject::decref(bool * const unreferencedP) {
  
 
 
-autoObject::autoObject() {
-    int rc;
+autoObject::autoObject() : implP(auto_ptr<Impl>(new Impl)) {}
 
-    rc = pthread_mutex_init(&this->refcountLock, NULL);
 
-    if (rc != 0)
-        throw(error("Unable to initialize pthread mutex"));
 
-    this->refcount   = 0;
+autoObject::autoObject(autoObject const&) {
+    // This method is declared private, so we can be running now:
+    assert(false);
 }
 
 
 
-autoObject::~autoObject() {
-    if (this->refcount > 0)
-        throw(error("Destroying referenced object"));
+autoObject::~autoObject() {}
 
-    int rc;
 
-    rc = pthread_mutex_destroy(&this->refcountLock);
 
-    if (rc != 0)
-        throw(error("Unable to destroy pthread mutex"));
+void
+autoObject::incref() {
+    this->implP->incref();
+}
+
+
+
+void
+autoObject::decref(bool * const unreferencedP) {
+    this->implP->decref(unreferencedP);
 }
 
 

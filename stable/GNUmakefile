@@ -8,7 +8,11 @@ export BLDDIR
 
 include $(BLDDIR)/config.mk
 
-SUBDIRS = include lib src tools examples
+SUBDIRS = include lib src test examples
+
+ifeq ($(BUILD_TOOLS),yes)
+  SUBDIRS += tools
+endif
 
 # The reason we don't build tools and examples by default is that they
 # contain executables, which require significantly more from the
@@ -22,10 +26,6 @@ SUBDIRS = include lib src tools examples
 # subdirectory and make there.
 
 DEFAULT_SUBDIRS = include lib src
-
-ifeq ($(BUILD_TOOLS),yes)
-  DEFAULT_SUBDIRS += tools
-endif
 
 PROGRAMS_TO_INSTALL = xmlrpc-c-config
 
@@ -68,7 +68,7 @@ examples/all: xmlrpc-c-config.test lib/all src/all include/all
 # make works for 'make all' in the top directory, but it may still fail
 # for the aforementioned reason for other invocations.
 
-tools/all: include/all lib/all src/all
+tools/all test/all: include/all lib/all src/all
 src/all lib/all: include/all
 src/all: lib/all
 
@@ -96,6 +96,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo "# From '$@'"                                             >>$@
 	@echo '#######################################################' >>$@
 	@echo 'ENABLE_ABYSS_THREADS="$(ENABLE_ABYSS_THREADS)"'		>>$@
+	@echo 'THREAD_LIBS="$(THREAD_LIBS)"'				>>$@
 	@echo 'ENABLE_LIBXML2_BACKEND="$(ENABLE_LIBXML2_BACKEND)"'      >>$@
 	@echo 'MUST_BUILD_WININET_CLIENT="$(MUST_BUILD_WININET_CLIENT)"'>>$@
 	@echo 'MUST_BUILD_CURL_CLIENT="$(MUST_BUILD_CURL_CLIENT)"'	>>$@
@@ -148,6 +149,7 @@ distclean-local: clean-local
 	rm -f TAGS
 
 check: $(SUBDIRS:%=%/check)
+	$(MAKE) -C test runtests
 
 DISTFILES = 
 

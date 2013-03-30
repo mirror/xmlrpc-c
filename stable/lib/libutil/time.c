@@ -2,12 +2,13 @@
 #include <assert.h>
 #include <time.h>
 
-#if !MSVCRT
-#include <sys/time.h>
+#if HAVE_GETTIMEOFDAY
+#  include <sys/time.h>
 #endif
 
 #if MSVCRT
-#include <windows.h>
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif
 
 #include "xmlrpc-c/string_int.h"
@@ -40,7 +41,7 @@ gettimeofdayPosix(xmlrpc_timespec * const todP) {
 static void
 gettimeofdayWindows(xmlrpc_timespec * const todP) {
 
-    __int64 const epochOffset = 116444736000000000i64;
+    __int64 const epochOffset = 116444736000000000ll;
         /* Number of 100-nanosecond units between the beginning of the
            Windows epoch (Jan. 1, 1601) and the Unix epoch (Jan. 1, 1970).
         */

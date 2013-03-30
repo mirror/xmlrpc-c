@@ -1,51 +1,55 @@
+/*============================================================================
+                               girmem.hpp
+==============================================================================
+  This declares the user interface to memory management facilities (smart
+  pointers, basically) in libxmlrpc.  They are used in interfaces to various
+  classes in XML For C/C++.
+============================================================================*/
 #ifndef GIRMEM_HPP_INCLUDED
 #define GIRMEM_HPP_INCLUDED
 
-#include <xmlrpc-c/config.h>
+#include <memory>
 #include <xmlrpc-c/c_util.h>
 
-/* The following pthread crap mirrors what is in pthreadx.h, which is
-   what girmem.cpp uses to declare the lock interface.  We can't simply
-   include pthreadx.h here, because it's an internal Xmlrpc-c header file,
-   and this is an external one.
+/*
+  XMLRPC_LIBPP_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc++.
 
-   This is a stopgap measure until we do something cleaner, such as expose
-   pthreadx.h as an external interface (class girlock, maybe?) or create
-   a lock class with virtual methods.
-
-   The problem we're solving is that class autoObject contains 
-   a pthread_mutex_t member, and on Windows, there's no such type.
+  XMLRPC_BUILDING_LIBPP says this compilation is part of libxmlrpc++, as
+  opposed to something that _uses_ libxmlrpc++.
 */
-   
-#if XMLRPC_HAVE_PTHREAD
-#  include <pthread.h>
-   typedef pthread_mutex_t girmem_lock;
+#ifdef XMLRPC_BUILDING_LIBPP
+#define XMLRPC_LIBPP_EXPORTED XMLRPC_DLLEXPORT
 #else
-#  include <windows.h>
-   typedef CRITICAL_SECTION girmem_lock;
+#define XMLRPC_LIBPP_EXPORTED
 #endif
 
 namespace girmem {
 
-class XMLRPC_DLLEXPORT autoObjectPtr;
+class XMLRPC_LIBPP_EXPORTED autoObjectPtr;
 
-class XMLRPC_DLLEXPORT autoObject {
+class XMLRPC_LIBPP_EXPORTED autoObject {
     friend class autoObjectPtr;
 
 public:
     void incref();
     void decref(bool * const unreferencedP);
-    
+
 protected:
     autoObject();
     virtual ~autoObject();
 
 private:
-    girmem_lock refcountLock;
-    unsigned int refcount;
+    class Impl;
+
+    std::auto_ptr<Impl> const implP;
+
+    // Because of 'implP', we cannot allow copy construction, so this is
+    // private:
+    autoObject(autoObject const&);
 };
 
-class XMLRPC_DLLEXPORT autoObjectPtr {
+class XMLRPC_LIBPP_EXPORTED autoObjectPtr {
 public:
     autoObjectPtr();
     autoObjectPtr(girmem::autoObject * objectP);

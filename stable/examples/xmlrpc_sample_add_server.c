@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server written in C. */
+/* A simple standalone XML-RPC server program written in C. */
 
 /* This server knows one RPC class (besides the system classes):
    "sample.add".
@@ -20,10 +20,13 @@
    $ export XMLRPC_TRACE_XML=1
 */
 
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.h */
+
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef WIN32
+#ifdef _WIN32
 #  include <windows.h>
+#  include <winsock2.h>
 #else
 #  include <unistd.h>
 #endif
@@ -35,7 +38,7 @@
 #include "config.h"  /* information about this build environment */
 
 
-#ifdef WIN32
+#ifdef _WIN32
   #define SLEEP(seconds) SleepEx(seconds * 1000, 1);
 #else
   #define SLEEP(seconds) sleep(seconds);
@@ -93,14 +96,19 @@ main(int           const argc,
     xmlrpc_env_init(&env);
 
     registryP = xmlrpc_registry_new(&env);
+    if (env.fault_occurred) {
+        printf("xmlrpc_registry_new() failed.  %s\n", env.fault_string);
+        exit(1);
+    }
 
     xmlrpc_registry_add_method3(&env, registryP, &methodInfo);
+    if (env.fault_occurred) {
+        printf("xmlrpc_registry_add_method3() failed.  %s\n",
+               env.fault_string);
+        exit(1);
+    }
 
-    /* In the modern form of the Abyss API, we supply parameters in memory
-       like a normal API.  We select the modern form by setting
-       config_file_name to NULL: 
-    */
-    serverparm.config_file_name = NULL;
+    serverparm.config_file_name = NULL;   /* Select the modern normal API */
     serverparm.registryP        = registryP;
     serverparm.port_number      = atoi(argv[1]);
     serverparm.log_file_name    = "/tmp/xmlrpc_log";
@@ -108,8 +116,14 @@ main(int           const argc,
     printf("Running XML-RPC server...\n");
 
     xmlrpc_server_abyss(&env, &serverparm, XMLRPC_APSIZE(log_file_name));
-
-    /* xmlrpc_server_abyss() never returns */
+    if (env.fault_occurred) {
+        printf("xmlrpc_server_abyss() failed.  %s\n", env.fault_string);
+        exit(1);
+    }
+    /* xmlrpc_server_abyss() never returns unless it fails */
 
     return 0;
 }
+
+
+

@@ -46,6 +46,7 @@ struct curlSetup {
 
            NULL means we have no preference.
         */
+    const char * referer;
     bool sslVerifyPeer;
         /* In an SSL connection, we should authenticate the server's SSL
            certificate -- refuse to talk to him if it isn't authentic.
@@ -80,6 +81,9 @@ struct curlSetup {
     const char * proxyUserPwd;
     unsigned int proxyType;
         /* see enum curl_proxytype: CURLPROXY_HTTP, CURLPROXY_SOCKS4, ... */
+
+    bool         gssapiDelegation;
+        /* allow GSSAPI credential delegation */
 
     unsigned int timeout;
         /* 0 = no Curl timeout.  This is in milliseconds. */

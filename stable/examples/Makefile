@@ -15,8 +15,8 @@ include $(BLDDIR)/config.mk
 
 default: all
 
-CFLAGS = $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS += $(LADD)
+CFLAGS += $(CFLAGS_PERSONAL) $(CADD)
+LDFLAGS += $(LDFLAGS_PERSONAL) $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
@@ -25,28 +25,36 @@ XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 CLIENTPROGS = \
   auth_client \
+  compound_value_client \
   synch_client \
   xmlrpc_sample_add_client \
   xmlrpc_asynch_client \
 
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  CLIENTPROGS += interrupted_client
+  ifneq ($(MSVCRT),yes)
+    CLIENTPROGS += interrupted_client
+  endif
 endif
 
 SERVERPROGS_CGI = \
   xmlrpc_sample_add_server.cgi
 
 SERVERPROGS_ABYSS = \
-  interrupted_server \
+  compound_value_server \
   xmlrpc_inetd_server \
   xmlrpc_socket_server \
   xmlrpc_loop_server \
   xmlrpc_sample_add_server \
   xmlrpc_server_validatee \
 
+ifneq ($(MSVCRT),yes)
+  SERVERPROGS_ABYSS += interrupted_server
+endif
+
 BASIC_PROGS = \
   json \
   gen_sample_add_xml \
+  parse_xml \
 
 # Build up PROGS:
 PROGS = 

@@ -3,12 +3,13 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
+#include "xmlrpc_config.h"
+
 #include "codepage.h"
 
-#ifdef WIN32
+#if MSVCRT
 #define STRICT 1
-#define WIN32_LEAN_AND_MEAN 1
-
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 int codepageMap(int cp, int *map)
@@ -50,7 +51,7 @@ int codepageConvert(int cp, const char *p)
   return -1;
 }
 
-#else /* not WIN32 */
+#else /* MSVCRT */
 
 int codepageMap(int cp, int *map)
 {
@@ -62,4 +63,4 @@ int codepageConvert(int cp, const char *p)
   return -1;
 }
 
-#endif /* not WIN32 */
+#endif /* MSVCRT */

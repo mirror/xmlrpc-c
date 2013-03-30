@@ -17,7 +17,7 @@ Binmode RPC is an ultra-lightweight RPC protocol designed for 100%
 compatibility with XML-RPC <http://www.xmlrpc.com/>. It emphasizes
 simplicity, dynamically-typed data, and extreme ease of implementation.
 
-Two XML-RPC implementations that support 'binmode-rpc' may negotiate away
+Two XML-RPC implementations that implement 'binmode-rpc' may negotiate away
 the XML part of XML-RPC, and replace it with a simple binary protocol.
 
 Design goals:
@@ -35,13 +35,13 @@ Design goals:
   * The protocol must be semi-readable in a hex dump or Emacs buffer.
   * The protocol must efficiently encode boxcarred calls that are
     implemented using 'system.multicall'.
-  * The protocol must support an efficient encoding for
+  * The protocol must enable an efficient encoding for
     frequently-repeated string values.
 
   * The protocol must never be sent to clients or servers which
-    don't support it.
+    don't understand it.
   * There must be a way for clients and servers to active the protocol
-    if both ends of the connection support it.
+    if both ends of the connection understand it.
 
 
 The X-XML-RPC-Extensions Header
@@ -97,7 +97,7 @@ A client or server which sends the 'binmode-rpc' extension MUST accept
 message bodies of type 'application/x-binmode-rpc' in addition to the
 regular 'text/xml'.
 
-All servers which accept the binmode-rpc extension MUST also support
+All servers which accept the binmode-rpc extension MUST also accept
 standard XML-RPC, as described by <http://www.xmlrpc.org/spec>.
 
 
@@ -231,7 +231,7 @@ UTF-8 & Unicode FAQ: http://www.cl.cam.ac.uk/~mgk25/unicode.html
   RecalledString := '<' CodebookPosition
   CodebookPosition := UnsignedOctet
 
-The 'binmode' format supports a 256-entry "codebook" of strings. At the
+The 'binmode' format allows a 256-entry "codebook" of strings. At the
 start of a data stream, the codebook is empty. When the decoder
 encounters a RecordedString, it MUST store it into the specified codebook
 position (and then proceed to decode it as a regular string).

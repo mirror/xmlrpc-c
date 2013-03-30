@@ -21,8 +21,6 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc
 
 UTIL_OBJS = \
@@ -36,14 +34,14 @@ UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 DUMPVALUE = blddir/tools/lib/dumpvalue.o
 
-# Can we just use $(LIBS) in the link?
-
-LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
-
 XMLRPC_OBJS = xmlrpc.o $(DUMPVALUE)
 
-xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
+ifeq ($(MSVCRT),yes)
+  CLIENT_LDLIBS += -lws2_32 -lwsock32 -lpthread
+endif
+
+xmlrpc: $(XMLRPC_OBJS) $(CLIENT_LIBS_DEP) $(UTILS)
+	$(CCLD) -o $@ $(LDFLAGS_ALL) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
 
 %.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS_ALL) $<

@@ -81,10 +81,12 @@ typedef struct prolog_state {
   int documentEntity;
 } PROLOG_STATE;
 
-XMLRPC_DLLEXPORT void
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XmlPrologStateInit(PROLOG_STATE * const state);
 
-XMLRPC_DLLEXPORT void
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XmlPrologStateInitExternalEntity(PROLOG_STATE * const state);
 
 #define XmlTokenRole(state, tok, ptr, end, enc) \
@@ -94,4 +96,4 @@ xmlrpc_XmlPrologStateInitExternalEntity(PROLOG_STATE * const state);
 }
 #endif
 
-#endif /* not XmlRole_INCLUDED */
+#endif

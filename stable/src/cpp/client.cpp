@@ -494,7 +494,7 @@ clientXmlTransport::asyncComplete(
                 XMLRPC_MEMBLOCK_SIZE(char, responseXmlMP));
             xmlTranCtlP->xmlTranP->finish(responseXml);
         }
-    } catch(error) {
+    } catch(exception const&) {
         /* We can't throw an error back to C code, and the async_complete
            interface does not provide for failure, so we define ->finish()
            as not being capable of throwing an error.
@@ -873,17 +873,17 @@ client_xml::call(carriageParm * const  carriageParmP,
 
     try {
         this->implP->transportP->call(carriageParmP, callXml, &responseXml);
-    } catch (error const& error) {
+    } catch (exception const& e) {
         throwf("Unable to transport XML to server and "
-               "get XML response back.  %s", error.what());
+               "get XML response back.  %s", e.what());
     }
     xml::trace("XML-RPC RESPONSE", responseXml);
         
     try {
         xml::parseResponse(responseXml, outcomeP);
-    } catch (error const& error) {
+    } catch (exception const& e) {
         throwf("Response XML from server is not valid XML-RPC response.  %s",
-               error.what());
+               e.what());
     }
 }
  

@@ -58,6 +58,15 @@ struct curlTransaction {
     struct curl_slist * headerList;
         /* The HTTP headers for the transaction */
     const char * serverUrl;  /* malloc'ed - belongs to this object */
+    xmlrpc_mem_block * postDataP;
+        /* The data to send for the POST method */
+    xmlrpc_mem_block * responseDataP;
+        /* This is normally where to put the body of the HTTP response.  But
+           do to a quirk of Curl, if the response is not valid HTTP, rather
+           than this just being irrelevant, it is the place that Curl puts the
+           server's non-HTTP response.  That can be useful for error
+           reporting.
+        */
 };
 
 
@@ -266,13 +275,16 @@ static size_t
 collect(void *  const ptr, 
         size_t  const size, 
         size_t  const nmemb,  
-        FILE  * const stream) {
+        void  * const streamP) {
 /*----------------------------------------------------------------------------
-   This is a Curl output function.  Curl calls this to deliver the
-   HTTP response body to the Curl client.  Curl thinks it's writing to
-   a POSIX stream.
+   This is a Curl write function.  Curl calls this to deliver the
+   HTTP response body to the Curl client.
+
+   But as a design quirk, Curl also calls this when there is no HTTP body
+   because the response from the server is not valid HTTP.  In that case,
+   Curl calls this to deliver the raw contents of the response.
 -----------------------------------------------------------------------------*/
-    xmlrpc_mem_block * const responseXmlP = (xmlrpc_mem_block *) stream;
+    xmlrpc_mem_block * const responseXmlP = streamP;
     char * const buffer = ptr;
     size_t const length = nmemb * size;
 
@@ -323,7 +335,7 @@ curlProgress(void * const contextP,
    via this progress function.  But because of the above-mentioned failure of
    Curl to properly synchronize signals (and Bryan's failure to get Curl
    developers to accept code to fix it), we now use the Curl "multi" facility
-   instead and do our own pselect().  But This function still normally gets
+   instead and do our own pselect().  But this function still normally gets
    called by curl_multi_perform(), which the transport tries to call even when
    the user has requested interruption, because we don't trust our ability to
    abort a running Curl transaction.  curl_multi_perform() reliably winds up a
@@ -364,45 +376,48 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
    HTTP basic authentication.
 
    So the special function is this: if libcurl is too old to have
-   authorization options and *serverInfoP allows basic authentication,
-   return as *basicAuthHdrParamP an appropriate parameter for the
-   Authorization: Basic: HTTP header.  Otherwise, return
-   *basicAuthHdrParamP == NULL.
+   authorization options and *serverInfoP allows basic authentication, return
+   as *authHdrValueP an appropriate parameter for the Authorization: Basic:
+   HTTP header.  Otherwise, return *authHdrValueP == NULL.
 -----------------------------------------------------------------------------*/
-    if (serverInfoP->allowedAuth.basic) {
-        CURLcode rc;
-        rc = curl_easy_setopt(curlSessionP, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    CURLcode rc;
 
-        if (rc == CURLE_OK)
-            *authHdrValueP = NULL;
-        else {
-            *authHdrValueP = strdup(serverInfoP->basicAuthHdrValue);
-            if (*authHdrValueP == NULL)
-                xmlrpc_faultf(envP, "Unable to allocate memory for basic "
-                              "authentication header");
-        }
-    } else
-        *authHdrValueP = NULL;
+    /* We don't worry if libcurl is too old for specific kinds of
+       authentication; they're defined only as _allowed_ authentication
+       methods, for when client and server are capable of using it, and unlike
+       with basic authentication, we have no historical commitment to consider
+       an old libcurl as capable of doing these.
 
-    /* We don't worry if libcurl is too old for these other kinds of
-       authentication; they're only defined as _allowed_
-       authentication methods, for when client and server are capable
-       of using it, and unlike with basic authentication, we have no
-       historical commitment to consider an old libcurl as capable of
-       doing these.
+       Note that curl_easy_setopt(CURLOPT_HTTPAUTH) succeeds even if there are
+       flags in it argument that weren't defined when it was written.
     */
     
     if (serverInfoP->userNamePw)
         curl_easy_setopt(curlSessionP, CURLOPT_USERPWD,
                          serverInfoP->userNamePw);
 
-    curl_easy_setopt(
+    rc = curl_easy_setopt(
         curlSessionP, CURLOPT_HTTPAUTH,
         (serverInfoP->allowedAuth.basic        ? CURLAUTH_BASIC        : 0) |
         (serverInfoP->allowedAuth.digest       ? CURLAUTH_DIGEST       : 0) |
         (serverInfoP->allowedAuth.gssnegotiate ? CURLAUTH_GSSNEGOTIATE : 0) |
         (serverInfoP->allowedAuth.ntlm         ? CURLAUTH_NTLM         : 0));
+    
+    if (rc != CURLE_OK) {
+        /* Curl is too old to do authentication, so we do it ourselves
+           with an explicit header if we have to.
+        */
+        if (serverInfoP->allowedAuth.basic) {
+            *authHdrValueP = strdup(serverInfoP->basicAuthHdrValue);
+            if (*authHdrValueP == NULL)
+                xmlrpc_faultf(envP, "Unable to allocate memory for basic "
+                              "authentication header");
+        } else        
+            *authHdrValueP = NULL;
+    } else
+        *authHdrValueP = NULL;
 }
+
 
 
 static void
@@ -448,17 +463,108 @@ assertConstantsMatch(void) {
 
 
 
+/* About Curl and GSSAPI credential delegation:
+
+   Up through Curl 7.21.6, libcurl always delegates GSSAPI credentials, which
+   means it gives the client's secrets to the server so the server can operate
+   on the client's behalf.  In mid-2011, this was noticed to be a major
+   security exposure, because the server is not necessarily trustworthy.
+   One is supposed to delegate one's credentials only to a server one trusts.
+   So in 7.21.7, Curl never delegates GSSAPI credentials.
+
+   But that causes problems for clients that _do_ trust their server, which
+   had always relied upon Curl's delegation.
+
+   So starting in 7.22.0, Curl gives the user the choice.  The default is no
+   delegation, but the Curl user can set the CURLOPT_GSSAPI_DELEGATION flag to
+   order delegation.
+
+   Complicating matters is that some people made local variations of Curl
+   during the transition phase, so the version number alone isn't
+   determinative, so we rely on it only where we have to.
+
+   So Xmlrpc-c gives the same choice to its own user, via its
+   'gssapi_delegation' Curl transport option.
+   
+   Current Xmlrpc-c can be linked with, and compiled with, any version of
+   Curl, so it has to carefully consider all the possibilities.
+*/
+
+
+
+static bool
+curlAlwaysDelegatesGssapi(void) {
+/*----------------------------------------------------------------------------
+   The Curl library we're using always delegates GSSAPI credentials
+   (we don't have a choice).
+
+   This works with Curl as distributed by the Curl project, but there are
+   other versions of Curl for which it doesn't -- those versions report
+   older version numbers but in fact don't always delegate.  Some never
+   delegate, and some give the user the option.
+-----------------------------------------------------------------------------*/
+    curl_version_info_data * const curlInfoP =
+        curl_version_info(CURLVERSION_NOW);
+
+    return (curlInfoP->version_num <= 0x071506);  /* 7.21.6 */
+}
+
+
+
+static void
+requestGssapiDelegation(CURL * const curlSessionP ATTR_UNUSED,
+                        bool * const gotItP) {
+/*----------------------------------------------------------------------------
+   Set up the Curl session *curlSessionP to delegate its GSSAPI credentials to
+   the server.
+
+   Return *gotitP is true iff we succeed.  We fail when the version of libcurl
+   for which we are compiled or to which we are linked is not capable of such
+   delegation.
+-----------------------------------------------------------------------------*/
+#if HAVE_CURL_GSSAPI_DELEGATION
+    int rc;
+
+    rc = curl_easy_setopt(curlSessionP, CURLOPT_GSSAPI_DELEGATION,
+                          CURLGSSAPI_DELEGATION_FLAG);
+
+    if (rc == CURLE_OK)
+        *gotItP = true;
+    else {
+        /* The only way curl_easy_setopt() could have failed is that we
+           are running with an old libcurl from before
+           CURLOPT_GSSAPI_DELEGATION was invented.
+        */
+        if (curlAlwaysDelegatesGssapi()) {
+            /* No need to request delegation; we got it anyway */
+            *gotItP = true;
+        } else
+            *gotItP = false;
+    }
+#else
+    if (curlAlwaysDelegatesGssapi())
+        *gotItP = true;
+    else {
+        /* The library may be able to do credential delegation on request, but
+           we have no way to request it; the Curl for which we are compiled is
+           too old.
+        */
+        *gotItP = false;
+    }
+#endif
+}
+
+
+
 static void
 setupCurlSession(xmlrpc_env *               const envP,
-                 curlTransaction *          const curlTransactionP,
-                 xmlrpc_mem_block *         const callXmlP,
-                 xmlrpc_mem_block *         const responseXmlP,
+                 curlTransaction *          const transP,
                  const xmlrpc_server_info * const serverInfoP,
                  bool                       const dontAdvertise,
                  const char *               const userAgent,
                  const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
-   Set up the Curl session for the transaction *curlTransactionP so that
+   Set up the Curl session for the transaction *transP so that
    a subsequent curl_easy_perform() would perform said transaction.
 
    The data curl_easy_perform() would send for that transaction would 
@@ -470,7 +576,7 @@ setupCurlSession(xmlrpc_env *               const envP,
    Xmlrpc-c interface.  Some day, we need to replace this with a type
    (probably identical) not tied to Xmlrpc-c.
 -----------------------------------------------------------------------------*/
-    CURL * const curlSessionP = curlTransactionP->curlSessionP;
+    CURL * const curlSessionP = transP->curlSessionP;
 
     assertConstantsMatch();
 
@@ -482,33 +588,31 @@ setupCurlSession(xmlrpc_env *               const envP,
        a particular transaction finished.
     */
 
-    /* It is out policy to do a libcurl call only where necessary, I.e.  not
+    /* It is our policy to do a libcurl call only where necessary, I.e.  not
        to set what is the default anyhow.  The reduction in calls may save
        some time, but mostly, it will save us encountering rare bugs or
        suffering from backward incompatibilities in future libcurl.  I.e. we
        don't exercise any more of libcurl than we have to.
     */
 
-    curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, curlTransactionP);
+    curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, transP);
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
-    curl_easy_setopt(curlSessionP, CURLOPT_URL, curlTransactionP->serverUrl);
+    curl_easy_setopt(curlSessionP, CURLOPT_URL, transP->serverUrl);
 
-    XMLRPC_MEMBLOCK_APPEND(char, envP, callXmlP, "\0", 1);
+    XMLRPC_MEMBLOCK_APPEND(char, envP, transP->postDataP, "\0", 1);
     if (!envP->fault_occurred) {
         curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS, 
-                         XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP));
+                         XMLRPC_MEMBLOCK_CONTENTS(char, transP->postDataP));
         curl_easy_setopt(curlSessionP, CURLOPT_WRITEFUNCTION, collect);
-        curl_easy_setopt(curlSessionP, CURLOPT_FILE, responseXmlP);
+        curl_easy_setopt(curlSessionP, CURLOPT_FILE, transP->responseDataP);
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
-        curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, 
-                         curlTransactionP->curlError);
-        if (curlTransactionP->progress) {
+        curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, transP->curlError);
+        if (transP->progress) {
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
             curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION,
                              curlProgress);
-            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA,
-                             curlTransactionP);
+            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
         } else
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
         
@@ -520,6 +624,9 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->networkInterface)
             curl_easy_setopt(curlSessionP, CURLOPT_INTERFACE,
                              curlSetupP->networkInterface);
+        if (curlSetupP->referer)
+            curl_easy_setopt(curlSessionP, CURLOPT_REFERER,
+                             curlSetupP->referer);
         if (curlSetupP->sslCert)
             curl_easy_setopt(curlSessionP, CURLOPT_SSLCERT,
                              curlSetupP->sslCert);
@@ -589,7 +696,18 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->timeout)
             setCurlTimeout(curlSessionP, curlSetupP->timeout);
 
-        {
+        if (curlSetupP->gssapiDelegation) {
+            bool gotIt;
+            requestGssapiDelegation(curlSessionP, &gotIt);
+
+            if (!gotIt)
+                xmlrpc_faultf(envP, "Cannot honor 'gssapi_delegation' "
+                              "Curl transport option.  "
+                              "This version of libcurl is not "
+                              "capable of delegating GSSAPI credentials");
+        }
+
+        if (!envP->fault_occurred) {
             const char * authHdrValue;
                 /* NULL means we don't have to construct an explicit
                    Authorization: header.  non-null means we have to
@@ -605,7 +723,7 @@ setupCurlSession(xmlrpc_env *               const envP,
                 if (!envP->fault_occurred) {
                     curl_easy_setopt(
                         curlSessionP, CURLOPT_HTTPHEADER, headerList);
-                    curlTransactionP->headerList = headerList;
+                    transP->headerList = headerList;
                 }
                 if (authHdrValue)
                     xmlrpc_strfree(authHdrValue);
@@ -645,8 +763,10 @@ curlTransaction_create(xmlrpc_env *               const envP,
         if (curlTransactionP->serverUrl == NULL)
             xmlrpc_faultf(envP, "Out of memory to store server URL.");
         else {
+            curlTransactionP->postDataP     = callXmlP;
+            curlTransactionP->responseDataP = responseXmlP;
+
             setupCurlSession(envP, curlTransactionP,
-                             callXmlP, responseXmlP,
                              serverP, dontAdvertise, userAgent,
                              curlSetupStuffP);
             
@@ -685,10 +805,55 @@ interpretCurlEasyError(const char ** const descriptionP,
 
 
 
+/* CURL quirks:
+
+   We have seen Curl report that the transaction completed OK (CURLE_OK) when
+   the server sent back garbage instead of an HTTP response (because it wasn't
+   an HTTP server).  In that case Curl reports zero in place of the response
+   code.  It's strange that Curl doesn't report that protocol violation at a
+   higher level (perhaps with more detail), but apparently it does not, so we
+   go by the HTTP_CODE value.  Note that if the server closes the connection
+   without responding at all, Curl calls the transaction failed with an "empty
+   reply from server" error code.
+
+   It appears to be the case that when the server sends non-HTTP garbage, Curl
+   reports it as the HTTP response body.  E.g. we had an inetd server respond
+   with a "library not found" error message because the server connected
+   Standard Error to the socket.  The 'curl' program typed out the error
+   message, naked, and exited with exit status zero.  We exploit this
+   discovery to give better error reporting to our user.
+
+   We saw this with Curl 7.16.1.
+*/
+
+
+
+static const char *
+formatDataReceived(curlTransaction * const curlTransactionP) {
+
+    const char * retval;
+
+    if (XMLRPC_MEMBLOCK_SIZE(char, curlTransactionP->responseDataP) == 0)
+        retval = xmlrpc_strdupsol("");
+    else {
+        xmlrpc_asprintf(
+            &retval,
+            "Raw data from server: '%s'\n",
+            XMLRPC_MEMBLOCK_CONTENTS(char, curlTransactionP->responseDataP));
+    }
+    return retval;
+}
+
+
+
 void
 curlTransaction_getError(curlTransaction * const curlTransactionP,
                          xmlrpc_env *      const envP) {
-
+/*----------------------------------------------------------------------------
+   Determine whether the transaction *curlTransactionP was successful in HTTP
+   terms.  Assume the transaction did complete.  Return as *envP an indication
+   of whether the transaction failed and if so, how.
+-----------------------------------------------------------------------------*/
     if (curlTransactionP->result != CURLE_OK) {
         /* We've seen Curl just return a null string for an explanation
            (e.g. when TCP connect() fails because IP address doesn't exist).
@@ -720,7 +885,18 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
                 "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
                 curlTransactionP->curlError);
         else {
-            if (http_result != 200)
+            if (http_result == 0) {
+                /* See above for what this case means */
+                const char * const dataReceived =
+                    formatDataReceived(curlTransactionP);
+
+                xmlrpc_env_set_fault_formatted(
+                    envP, XMLRPC_NETWORK_ERROR,
+                    "Server is not an XML-RPC server.  Its response to our "
+                    "call is not valid HTTP.  Or it's valid HTTP with a "
+                    "response code of zero.  %s", dataReceived);
+                xmlrpc_strfree(dataReceived);
+            } else if (http_result != 200)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_NETWORK_ERROR,
                     "HTTP response code is %ld, not 200",

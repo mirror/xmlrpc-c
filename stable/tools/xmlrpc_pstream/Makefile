@@ -23,8 +23,6 @@ INCLUDES = \
   -Iblddir/include \
   -Isrcdir/include \
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc_pstream
 
 OBJECTS = \
@@ -34,7 +32,7 @@ OBJECTS = \
 LIBS = \
   $(LIBXMLRPC_CLIENTPP) \
   $(LIBXMLRPCPP) \
-  $(LIBXMLRPC_CLIENT) \
+  $(CLIENT_LIBS_DEP) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_XML) \
   $(LIBXMLRPC_UTIL) \
@@ -52,7 +50,7 @@ UTIL_OBJS = \
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
 xmlrpc_pstream:  $(OBJECTS) $(LIBS) $(UTILS)
-	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(UTILS) $(LDLIBS) $(LADD)
+	$(CXXLD) -o $@ $(LDFLAGS_ALL) $(OBJECTS) $(UTILS) $(LDLIBS) $(LADD)
 
 %.o:%.cpp blddir/include/xmlrpc-c/config.h
 	$(CXX) -c $(CXXFLAGS_ALL) $<

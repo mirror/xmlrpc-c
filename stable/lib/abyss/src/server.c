@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#ifndef WIN32
+#ifndef _WIN32
   #include <grp.h>
 #endif
 
@@ -19,16 +19,19 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/sleep_int.h"
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_platform.h"
 
 #include "xmlrpc-c/abyss.h"
 #include "trace.h"
+#include "thread.h"
 #include "session.h"
 #include "file.h"
 #include "conn.h"
 #include "chanswitch.h"
 #include "channel.h"
 #include "socket.h"
-#ifdef WIN32
+#ifdef _WIN32
   #include "socket_win.h"
 #else
   #include "socket_unix.h"
@@ -75,7 +78,7 @@ ServerResetTerminate(TServer * const serverP) {
 
 static void
 initUnixStuff(struct _TServer * const srvP) {
-#ifndef WIN32
+#ifndef _WIN32
     srvP->pidfileP = NULL;
     srvP->uid = srvP->gid = -1;
 #endif
@@ -83,27 +86,24 @@ initUnixStuff(struct _TServer * const srvP) {
 
 
 
-static bool
-logOpen(struct _TServer * const srvP) {
+static void
+logOpen(struct _TServer * const srvP,
+        const char **     const errorP) {
 
     bool success;
 
     success = FileOpenCreate(&srvP->logfileP, srvP->logfilename,
                              O_WRONLY | O_APPEND);
     if (success) {
-        bool success;
-        success = MutexCreate(&srvP->logmutexP);
-        if (success)
-            srvP->logfileisopen = TRUE;
-        else
-            TraceMsg("Can't create mutex for log file");
+        srvP->logLockP = xmlrpc_lock_create();
+        *errorP = NULL;
 
-        if (!success)
+        srvP->logfileisopen = TRUE;
+            
+        if (*errorP)
             FileClose(srvP->logfileP);
     } else
-        TraceMsg("Can't open log file '%s'", srvP->logfilename);
-
-    return success;
+        xmlrpc_asprintf(errorP, "Can't open log file '%s'", srvP->logfilename);
 }
 
 
@@ -113,8 +113,48 @@ logClose(struct _TServer * const srvP) {
 
     if (srvP->logfileisopen) {
         FileClose(srvP->logfileP);
-        MutexDestroy(srvP->logmutexP);
+        srvP->logLockP->destroy(srvP->logLockP);
         srvP->logfileisopen = FALSE;
+    }
+}
+
+
+
+static void
+setupTrace(struct _TServer * const srvP) {
+
+    srvP->traceIsActive = (getenv("ABYSS_TRACE_SERVER") != NULL);
+
+    if (srvP->traceIsActive)
+        fprintf(stderr, "Abyss server will trace "
+                "basic server activity "
+                "due to ABYSS_TRACE_SERVER environment variable\n");
+}
+
+
+
+static void
+tracev(const char * const fmt,
+       va_list            argptr) {
+
+    vfprintf(stderr, fmt, argptr);
+
+    fprintf(stderr, "\n");
+}
+
+
+
+static void
+trace(struct _TServer * const srvP,
+      const char *      const fmt,
+      ...) {
+
+    if (srvP->traceIsActive) {
+        va_list argptr;
+
+        va_start(argptr, fmt);
+        tracev(fmt, argptr);
+        va_end(argptr);
     }
 }
 
@@ -166,6 +206,8 @@ createServer(struct _TServer ** const srvPP,
         xmlrpc_asprintf(errorP,
                         "Unable to allocate space for server descriptor");
     } else {
+        setupTrace(srvP);
+
         srvP->terminationRequested = false;
 
         initChanSwitchStuff(srvP, noAccept, chanSwitchP, userChanSwitch,
@@ -188,6 +230,8 @@ createServer(struct _TServer ** const srvPP,
                 srvP->advertise        = TRUE;
                 srvP->useSigchld       = FALSE;
                 srvP->uriHandlerStackSize = 0;
+                srvP->maxConn          = 15;
+                srvP->maxConnBacklog   = 15;
             
                 initUnixStuff(srvP);
 
@@ -268,7 +312,7 @@ createSwitchFromOsSocket(TOsSocket      const osSocket,
                          TChanSwitch ** const chanSwitchPP,
                          const char **  const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChanSwitchWinCreateWinsock(osSocket, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreateFd(osSocket, chanSwitchPP, errorP);
@@ -283,7 +327,7 @@ createChannelFromOsSocket(TOsSocket     const osSocket,
                           void **       const channelInfoPP,
                           const char ** const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChannelWinCreateWinsock(osSocket, channelPP,
                             (struct abyss_win_chaninfo**)channelInfoPP,
                             errorP);
@@ -532,6 +576,28 @@ ServerSetMimeType(TServer *  const serverP,
 
 
 
+void
+ServerSetMaxConn(TServer *    const serverP,
+                 unsigned int const maxConn) {
+
+    if (maxConn > 0) {
+        serverP->srvP->maxConn = maxConn;
+    }
+}
+
+
+
+void
+ServerSetMaxConnBacklog(TServer *    const serverP,
+                        unsigned int const maxConnBacklog) {
+
+    if (maxConnBacklog > 0) {
+        serverP->srvP->maxConnBacklog = maxConnBacklog;
+    }
+}
+
+
+
 static URIHandler2
 makeUriHandler2(const struct uriHandler * const handlerP) {
 
@@ -689,6 +755,9 @@ serverFunc(void * const userHandle) {
     bool connectionDone;
         /* No more need for this HTTP connection */
 
+    trace(srvP, "Thread starting to handle requests on a new connection.  "
+          "PID = %d", getpid());
+
     requestCount = 0;
     connectionDone = FALSE;
 
@@ -704,7 +773,9 @@ serverFunc(void * const userHandle) {
         ConnRead(connectionP, srvP->keepalivetimeout,
                  &timedOut, &eof, &readError);
 
-        if (readError) {
+        if (srvP->terminationRequested) {
+            connectionDone = TRUE;
+        } else if (readError) {
             TraceMsg("Failed to read from Abyss connection.  %s", readError);
             xmlrpc_strfree(readError);
             connectionDone = TRUE;
@@ -712,16 +783,20 @@ serverFunc(void * const userHandle) {
             connectionDone = TRUE;
         } else if (eof) {
             connectionDone = TRUE;
-        } else if (srvP->terminationRequested) {
-            connectionDone = TRUE;
         } else {
             bool const lastReqOnConn =
                 requestCount + 1 >= srvP->keepalivemaxconn;
 
             bool keepalive;
+
+            trace(srvP, "HTTP request %u at least partially received.  "
+                  "Receiving the rest and processing", requestCount);
             
             processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
                                      &keepalive);
+
+            trace(srvP, "Done processing the HTTP request.  Keepalive = %s",
+                  keepalive ? "YES" : "NO");
             
             ++requestCount;
 
@@ -732,6 +807,7 @@ serverFunc(void * const userHandle) {
             ConnReadInit(connectionP);
         }
     }
+    trace(srvP, "PID %d done with connection", getpid());
 }
 
 
@@ -749,7 +825,7 @@ createSwitchFromPortNum(unsigned short const portNumber,
                         TChanSwitch ** const chanSwitchPP,
                         const char **  const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     ChanSwitchWinCreate(portNumber, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreate(portNumber, chanSwitchPP, errorP);
@@ -785,7 +861,8 @@ createChanSwitch(struct _TServer * const srvP,
 
 
 void
-ServerInit(TServer * const serverP) {
+ServerInit2(TServer *     const serverP,
+            const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Initialize a server to accept connections.
 
@@ -795,45 +872,55 @@ ServerInit(TServer * const serverP) {
    user supplies the channels (TCP connections)).
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
-    const char * retError;
     
     if (!srvP->serverAcceptsConnections)
-        xmlrpc_asprintf(&retError,
+        xmlrpc_asprintf(errorP,
                         "ServerInit() is not valid on a server that doesn't "
                         "accept connections "
                         "(i.e. created with ServerCreateNoAccept)");
     else {
-        retError = NULL;  /* initial value */
+        *errorP = NULL;  /* initial value */
 
         if (!srvP->chanSwitchP) {
             const char * error;
             createChanSwitch(srvP, &error);
 
             if (error) {
-                xmlrpc_asprintf(&retError, "Unable to create a channel switch "
+                xmlrpc_asprintf(errorP, "Unable to create a channel switch "
                                 "for the server.  %s", error);
                 xmlrpc_strfree(error);
             }
         }
 
-        if (!retError) {
+        if (!*errorP) {
             const char * error;
 
             assert(srvP->chanSwitchP);
 
-            ChanSwitchListen(srvP->chanSwitchP, MAX_CONN, &error);
+            ChanSwitchListen(srvP->chanSwitchP, srvP->maxConnBacklog, &error);
 
             if (error) {
-                xmlrpc_asprintf(&retError,
+                xmlrpc_asprintf(errorP,
                                 "Failed to listen on bound socket.  %s",
                                 error);
                 xmlrpc_strfree(error);
             }
         }
     }
-    if (retError) {
-        TraceExit("ServerInit() failed.  %s", retError);
-        xmlrpc_strfree(retError);
+}
+
+
+
+void
+ServerInit(TServer * const serverP) {
+
+    const char * error;
+
+    ServerInit2(serverP, &error);
+
+    if (error) {
+        TraceExit("ServerInit() failed.  %s", error);
+        xmlrpc_strfree(error);
     }
 }
 
@@ -960,18 +1047,12 @@ waitForNoConnections(outstandingConnList * const outstandingConnListP) {
 
 
 static void
-waitForConnectionCapacity(outstandingConnList * const outstandingConnListP) {
+waitForConnectionCapacity(outstandingConnList * const outstandingConnListP,
+                          unsigned int          const maxConn) {
 /*----------------------------------------------------------------------------
-   Wait until there are fewer than the maximum allowed connections in
-   progress.
+   Wait until there are fewer than 'maxConn' connections in progress.
 -----------------------------------------------------------------------------*/
-    /* We need to make this number configurable.  Note that MAX_CONN (16) is
-       also the backlog limit on the TCP socket, and they really aren't
-       related.  As it stands, we can have 16 connections in progress inside
-       Abyss plus 16 waiting in the the channel switch.
-    */
-
-    while (outstandingConnListP->count >= MAX_CONN) {
+    while (outstandingConnListP->count >= maxConn) {
         freeFinishedConns(outstandingConnListP);
         if (outstandingConnListP->firstP)
             waitForConnectionFreed(outstandingConnListP);
@@ -980,7 +1061,29 @@ waitForConnectionCapacity(outstandingConnList * const outstandingConnListP) {
 
 
 
-#ifndef WIN32
+static void
+interruptChannels(outstandingConnList * const outstandingConnListP) {
+/*----------------------------------------------------------------------------
+   Get every thread that is waiting to read a request or write a response
+   for a connection to stop waiting.
+-----------------------------------------------------------------------------*/
+    TConn * connP;
+
+    for (connP = outstandingConnListP->firstP;
+         connP; connP = connP->nextOutstandingP) {
+
+        if (connP->finished) {
+            /* The connection couldn't be waiting on the channel, and the
+               channel probably doesn't even exit anymore.
+            */
+        } else 
+            ChannelInterrupt(connP->channelP);
+    }
+}
+
+
+
+#ifndef _WIN32
 void
 ServerHandleSigchld(pid_t const pid) {
 
@@ -1024,54 +1127,92 @@ destroyChannel(void * const userHandle) {
 
 
 static void
+processNewChannel(TServer *             const serverP,
+                  TChannel *            const channelP,
+                  void *                const channelInfoP,
+                  outstandingConnList * const outstandingConnListP,
+                  const char **         const errorP) {
+
+    struct _TServer * const srvP = serverP->srvP;
+                      
+    TConn * connectionP;
+    const char * error;
+
+    freeFinishedConns(outstandingConnListP);
+            
+    trace(srvP, "Waiting for there to be fewer than the maximum "
+          "%u sessions in progress",
+          srvP->maxConn);
+
+    waitForConnectionCapacity(outstandingConnListP, srvP->maxConn);
+            
+    ConnCreate(&connectionP, serverP, channelP, channelInfoP,
+               &serverFunc,
+               SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
+               &destroyChannel, ABYSS_BACKGROUND,
+               srvP->useSigchld,
+               &error);
+    if (!error) {
+        addToOutstandingConnList(outstandingConnListP, connectionP);
+        ConnProcess(connectionP);
+        /* When connection is done (which could be later, courtesy of a
+           background thread), destroyChannel() will destroy *channelP.
+        */
+        *errorP = NULL;
+    } else {
+        xmlrpc_asprintf(
+            errorP, "Failed to create an Abyss connection.  %s", error);
+        xmlrpc_strfree(error);
+    }
+}
+
+
+
+static void
 acceptAndProcessNextConnection(
     TServer *             const serverP,
-    outstandingConnList * const outstandingConnListP) {
+    outstandingConnList * const outstandingConnListP,
+    const char **         const errorP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
-    TConn * connectionP;
     const char * error;
     TChannel * channelP;
     void * channelInfoP;
+
+    trace(srvP, "Waiting for a new channel from channel switch");
         
     ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
     
     if (error) {
-        TraceMsg("Failed to accept the next connection from a client "
-                 "at the channel level.  %s", error);
+        xmlrpc_asprintf(errorP,
+                        "Failed to accept the next connection from a client "
+                        "at the channel level.  %s", error);
         xmlrpc_strfree(error);
     } else {
         if (channelP) {
             const char * error;
 
-            freeFinishedConns(outstandingConnListP);
-            
-            waitForConnectionCapacity(outstandingConnListP);
-            
-            ConnCreate(&connectionP, serverP, channelP, channelInfoP,
-                       &serverFunc,
-                       SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
-                       &destroyChannel, ABYSS_BACKGROUND,
-                       srvP->useSigchld,
-                       &error);
-            if (!error) {
-                addToOutstandingConnList(outstandingConnListP,
-                                         connectionP);
-                ConnProcess(connectionP);
-                /* When connection is done (which could be later, courtesy
-                   of a background thread), destroyChannel() will
-                   destroy *channelP.
-                */
-            } else {
-                TraceMsg("Failed to create an Abyss connection "
-                         "out of new channel %lx.  %s", channelP, error);
-                xmlrpc_strfree(error);
+            trace(srvP, "Got a new channel from channel switch");
+
+            processNewChannel(serverP, channelP, channelInfoP,
+                              outstandingConnListP, &error);
+
+            if (error) {
+                xmlrpc_asprintf(errorP, "Failed to use new channel %lx",
+                                (unsigned long) channelP);
                 ChannelDestroy(channelP);
                 free(channelInfoP);
+            } else {
+                trace(srvP, "successfully processed newly accepted channel");
+                /* Connection created above will destroy *channelP
+                   and *channelInfoP as it terminates.
+                */
             }
         } else {
             /* Accept function was interrupted before it got a connection */
+            trace(srvP, "Wait for new channel from switch was interrupted");
+            *errorP = NULL;
         }
     }
 }
@@ -1079,19 +1220,36 @@ acceptAndProcessNextConnection(
 
 
 static void 
-serverRun2(TServer * const serverP) {
+serverRun2(TServer *     const serverP,
+           const char ** const errorP) {
 
     struct _TServer * const srvP = serverP->srvP;
     outstandingConnList * outstandingConnListP;
 
     createOutstandingConnList(&outstandingConnListP);
 
-    while (!srvP->terminationRequested)
-        acceptAndProcessNextConnection(serverP, outstandingConnListP);
+    *errorP = NULL;  /* initial value */
 
-    waitForNoConnections(outstandingConnListP);
+    trace(srvP, "Starting main connection accepting loop");
     
-    destroyOutstandingConnList(outstandingConnListP);
+    while (!srvP->terminationRequested && !*errorP)
+        acceptAndProcessNextConnection(serverP, outstandingConnListP, errorP);
+
+    trace(srvP, "Main connection accepting loop is done");
+
+    if (!*errorP) {
+        trace(srvP, "Interrupting and waiting for %u existing connections "
+              "to finish",
+              outstandingConnListP->count);
+
+        interruptChannels(outstandingConnListP);
+
+        waitForNoConnections(outstandingConnListP);
+    
+        trace(srvP, "No connections left");
+
+        destroyOutstandingConnList(outstandingConnListP);
+    }
 }
 
 
@@ -1101,12 +1259,24 @@ ServerRun(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     if (!srvP->chanSwitchP)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
                  "Try ServerRunConn() or ServerInit()");
-    else
-        serverRun2(serverP);
+    else {
+        const char * error;
+
+        serverRun2(serverP, &error);
+
+        if (error) {
+            TraceMsg("Server failed.  %s", error);
+
+            xmlrpc_strfree(error);
+        }
+    }
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1128,6 +1298,8 @@ serverRunChannel(TServer *     const serverP,
     TConn * connectionP;
     const char * error;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     srvP->keepalivemaxconn = 1;
 
     ConnCreate(&connectionP, 
@@ -1146,6 +1318,7 @@ serverRunChannel(TServer *     const serverP,
 
         ConnWaitAndRelease(connectionP);
     }
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1163,6 +1336,8 @@ ServerRunChannel(TServer *     const serverP,
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     if (srvP->serverAcceptsConnections)
         xmlrpc_asprintf(errorP,
                         "This server is configured to accept connections on "
@@ -1170,6 +1345,8 @@ ServerRunChannel(TServer *     const serverP,
                         "Try ServerRun() or ServerCreateNoAccept().");
     else
         serverRunChannel(serverP, channelP, channelInfoP, errorP);
+
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1239,6 +1416,8 @@ ServerRunOnce(TServer * const serverP) {
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
+    trace(srvP, "%s entered", __FUNCTION__);
+
     if (!srvP->chanSwitchP)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRunOnce().  "
@@ -1274,6 +1453,7 @@ ServerRunOnce(TServer * const serverP) {
             }
         }
     }
+    trace(srvP, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1297,11 +1477,14 @@ ServerRunOnce2(TServer *           const serverP,
 
 
 static void
-setGroups(void) {
+setGroups(const char ** const errorP) {
 
 #if HAVE_SETGROUPS   
-    if (setgroups(0, NULL) == (-1))
-        TraceExit("Failed to setup the group.");
+    if (setgroups(0, NULL) == -1)
+        xmlrpc_asprintf(errorP, "setgroups() errno = %d (%s)",
+                        errno, strerror(errno));
+#else
+    *errorP = NULL;
 #endif
 }
 
@@ -1338,12 +1521,18 @@ ServerDaemonize(TServer * const serverP) {
 
     /* Change the current user if we are root */
     if (getuid()==0) {
+        const char * error;
         if (srvP->uid == (uid_t)-1)
             TraceExit("Can't run under root privileges.  "
                       "Please add a User option in your "
                       "Abyss configuration file.");
 
-        setGroups();
+        setGroups(&error);
+
+        if (error) {
+            TraceExit("Failed to set groups.  %s", error);
+            xmlrpc_strfree(error);
+        }
 
         if (srvP->gid != (gid_t)-1)
             if (setgid(srvP->gid)==(-1))
@@ -1506,19 +1695,23 @@ LogWrite(TServer *    const serverP,
 
     struct _TServer * const srvP = serverP->srvP;
 
-    if (!srvP->logfileisopen && srvP->logfilename)
-        logOpen(srvP);
+    if (!srvP->logfileisopen && srvP->logfilename) {
+        const char * error;
+        logOpen(srvP, &error);
 
-    if (srvP->logfileisopen) {
-        bool success;
-        success = MutexLock(srvP->logmutexP);
-        if (success) {
-            const char * const lbr = "\n";
-            FileWrite(srvP->logfileP, msg, strlen(msg));
-            FileWrite(srvP->logfileP, lbr, strlen(lbr));
-        
-            MutexUnlock(srvP->logmutexP);
+        if (error) {
+            TraceMsg("Failed to open log file.  %s", error);
+
+            xmlrpc_strfree(error);
         }
+    }
+    if (srvP->logfileisopen) {
+        const char * const lbr = "\n";
+        srvP->logLockP->acquire(srvP->logLockP);
+        FileWrite(srvP->logfileP, msg, strlen(msg));
+        FileWrite(srvP->logfileP, lbr, strlen(lbr));
+        
+        srvP->logLockP->release(srvP->logLockP);
     }
 }
 /*******************************************************************************

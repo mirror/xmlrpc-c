@@ -47,13 +47,13 @@ initRequestInfo(TRequestInfo * const requestInfoP,
                 const char *   const query) {
 /*----------------------------------------------------------------------------
   Set up the request info structure.  For information that is
-  controlled by headers, use the defaults -- I.e. the value that
-  applies if the request contains no applicable header.
+  controlled by the header, use the defaults -- I.e. the value that
+  applies if the request contains no applicable header field.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_PTR_OK(requestLine);
     XMLRPC_ASSERT_PTR_OK(path);
 
-    requestInfoP->requestline = strdup(requestLine);
+    requestInfoP->requestline = xmlrpc_strdupsol(requestLine);
     requestInfoP->method      = httpMethod;
     requestInfoP->host        = xmlrpc_strdupnull(host);
     requestInfoP->port        = port;
@@ -237,36 +237,36 @@ convertLineEnd(char * const lineStart,
 
 
 static void
-getRestOfHeader(TConn *       const connectionP,
-                char *        const lineEnd,
-                time_t        const deadline,
-                const char ** const headerEndP,
-                bool *        const errorP) {
+getRestOfField(TConn *       const connectionP,
+               char *        const lineEnd,
+               time_t        const deadline,
+               const char ** const fieldEndP,
+               bool *        const errorP) {
 /*----------------------------------------------------------------------------
    Given that the read buffer for connection *connectionP contains (at
-   its current read position) the first line of an HTTP header, which
+   its current read position) the first line of an HTTP header field, which
    ends at position 'lineEnd', find the rest of it.
 
-   Some or all of the rest of the header may be in the buffer already;
+   Some or all of the rest of the field may be in the buffer already;
    we read more from the connection as necessary, but not if it takes past
    'deadline'.  In the latter case, we fail.
 
-   We return the location of the end of the whole header as *headerEndP.
-   We do not remove the header from the buffer, but we do modify the
-   buffer so as to join the multiple lines of the header into a single
-   line, and to NUL-terminate the header.
+   We return the location of the end of the whole field as *headerEndP.
+   We do not remove the field from the buffer, but we do modify the
+   buffer so as to join the multiple lines of the field into a single
+   line, and to NUL-terminate the field.
 -----------------------------------------------------------------------------*/
-    char * const headerStart = connectionP->buffer.t + connectionP->bufferpos;
+    char * const fieldStart = connectionP->buffer.t + connectionP->bufferpos;
 
-    char * headerEnd;
-        /* End of the header lines we've seen at so far */
-    bool gotWholeHeader;
+    char * fieldEnd;
+        /* End of the field lines we've seen at so far */
+    bool gotWholeField;
     bool error;
 
-    headerEnd = lineEnd;  /* initial value - end of 1st line */
+    fieldEnd = lineEnd;  /* initial value - end of 1st line */
         
-    for (gotWholeHeader = FALSE, error = FALSE;
-         !gotWholeHeader && !error;) {
+    for (gotWholeField = FALSE, error = FALSE;
+         !gotWholeField && !error;) {
 
         char * nextLineEnd;
 
@@ -274,51 +274,51 @@ getRestOfHeader(TConn *       const connectionP,
            valid, that there is at least one more line in it.  Worst
            case, it's the empty line that marks the end of the headers.
         */
-        getLineInBuffer(connectionP, headerEnd, deadline,
+        getLineInBuffer(connectionP, fieldEnd, deadline,
                         &nextLineEnd, &error);
         if (!error) {
-            if (isContinuationLine(headerEnd)) {
+            if (isContinuationLine(fieldEnd)) {
                 /* Join previous line to this one */
-                convertLineEnd(headerEnd, headerStart, ' ');
+                convertLineEnd(fieldEnd, fieldStart, ' ');
                 /* Add this line to the header */
-                headerEnd = nextLineEnd;
+                fieldEnd = nextLineEnd;
             } else {
-                gotWholeHeader = TRUE;
+                gotWholeField = TRUE;
 
-                /* NUL-terminate the whole header */
-                convertLineEnd(headerEnd, headerStart, '\0');
+                /* NUL-terminate the whole field */
+                convertLineEnd(fieldEnd, fieldStart, '\0');
             }
         }
     }
-    *headerEndP = headerEnd;
-    *errorP     = error;
+    *fieldEndP = fieldEnd;
+    *errorP    = error;
 }
 
 
 
 static void
-readHeader(TConn * const connectionP,
-           time_t  const deadline,
-           bool *  const endOfHeadersP,
-           char ** const headerP,
-           bool *  const errorP) {
+readField(TConn * const connectionP,
+          time_t  const deadline,
+          bool *  const endOfHeaderP,
+          char ** const fieldP,
+          bool *  const errorP) {
 /*----------------------------------------------------------------------------
-   Read an HTTP header, or the end of headers empty line, on connection
+   Read an HTTP header field, or the end of header empty line, on connection
    *connectionP.
 
-   An HTTP header is basically a line, except that if a line starts
+   An HTTP header field is basically a line, except that if a line starts
    with white space, it's a continuation of the previous line.  A line
    is delimited by either LF or CRLF.
 
-   The first line of an HTTP header is never empty; an empty line signals
-   the end of the HTTP headers and beginning of the HTTP body.  We call
-   that empty line the EOH mark.
+   The first line of an HTTP header field is never empty; an empty line
+   signals the end of the HTTP header and beginning of the HTTP body.  We
+   call that empty line the EOH mark.
 
    We assume the connection is positioned to a header or EOH mark.
    
    In the course of reading, we read at least one character past the
-   line delimiter at the end of the header or EOH mark; we may read
-   much more.  But we leave everything after the header or EOH (and
+   line delimiter at the end of the field or EOH mark; we may read
+   much more.  But we leave everything after the field or EOH (and
    its line delimiter) in the internal buffer, with the buffer pointer
    pointing to it.
 
@@ -326,10 +326,10 @@ readHeader(TConn * const connectionP,
    previous call to this subroutine) before reading any more from from
    the channel.
 
-   We return as *headerP the next header as an ASCIIZ string, with no
+   We return as *fieldP the next field as an ASCIIZ string, with no
    line delimiter.  That string is stored in the "unused" portion of
-   the connection's internal buffer.  Iff there is no next header, we
-   return *endOfHeadersP == true and nothing meaningful as *headerP.
+   the connection's internal buffer.  Iff there is no next field, we
+   return *endOfHeaderP == true and nothing meaningful as *fieldP.
 -----------------------------------------------------------------------------*/
     char * const bufferStart = connectionP->buffer.t + connectionP->bufferpos;
 
@@ -344,25 +344,25 @@ readHeader(TConn * const connectionP,
         else if (isEmptyLine(bufferStart)) {
             /* Consume the EOH mark from the buffer */
             connectionP->bufferpos = lineEnd - connectionP->buffer.t;
-            *endOfHeadersP = TRUE;
+            *endOfHeaderP = TRUE;
         } else {
-            /* We have the first line of a header; there may be more. */
+            /* We have the first line of a field; there may be more. */
 
-            const char * headerEnd;
+            const char * fieldEnd;
 
-            *endOfHeadersP = FALSE;
+            *endOfHeaderP = FALSE;
 
-            getRestOfHeader(connectionP, lineEnd, deadline,
-                            &headerEnd, &error);
+            getRestOfField(connectionP, lineEnd, deadline,
+                           &fieldEnd, &error);
 
             if (!error) {
-                *headerP = bufferStart;
+                *fieldP = bufferStart;
 
                 /* Consume the header from the buffer (but be careful --
                    you can't reuse that part of the buffer because the
                    string we will return is in it!
                 */
-                connectionP->bufferpos = headerEnd - connectionP->buffer.t;
+                connectionP->bufferpos = fieldEnd - connectionP->buffer.t;
             }
         }
     }
@@ -410,45 +410,44 @@ skipToNonemptyLine(TConn * const connectionP,
 
 
 static void
-readRequestHeader(TSession * const sessionP,
-                  time_t     const deadline,
-                  char **    const requestLineP,
-                  uint16_t * const httpErrorCodeP) {
+readRequestField(TSession * const sessionP,
+                 time_t     const deadline,
+                 char **    const requestLineP,
+                 uint16_t * const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
-   Read the HTTP request header (aka request header field) from
-   session 'sessionP'.  We read through the session's internal buffer;
-   i.e.  we may get data that was previously read from the network, or
-   we may read more from the network.
+   Read the HTTP request header field from session 'sessionP'.  We read
+   through the session's internal buffer; i.e.  we may get data that was
+   previously read from the network, or we may read more from the network.
 
    We assume the connection is presently positioned to the beginning of
-   the HTTP document.  We leave it positioned after the request header.
+   the HTTP document.  We leave it positioned after the request field.
    
    We ignore any empty lines at the beginning of the stream, per
    RFC2616 Section 4.1.
 
-   Fail if we can't get the header before 'deadline'.
+   Fail if we can't get the field before 'deadline'.
 
-   Return as *requestLineP the request header read.  This ASCIIZ string is
+   Return as *requestLineP the request field read.  This ASCIIZ string is
    in the session's internal buffer.
 
    Return as *httpErrorCodeP the HTTP error code that describes how we
-   are not able to read the request header, or 0 if we can.
+   are not able to read the request field, or 0 if we can.
    If we can't, *requestLineP is meaningless.
 -----------------------------------------------------------------------------*/
     char * line;
     bool error;
-    bool endOfHeaders;
+    bool endOfHeader;
 
     skipToNonemptyLine(sessionP->connP, deadline, &error);
 
     if (!error) {
-        readHeader(sessionP->connP, deadline, &endOfHeaders, &line, &error);
+        readField(sessionP->connP, deadline, &endOfHeader, &line, &error);
 
-        /* End of headers is delimited by an empty line, and we skipped all
-           the empty lines above, so readHeader() could not have encountered
+        /* End of header is delimited by an empty line, and we skipped all
+           the empty lines above, so readField() could not have encountered
            EOH:
         */
-        assert(!endOfHeaders);
+        assert(!endOfHeader);
     }
     if (error)
         *httpErrorCodeP = 408;  /* Request Timeout */
@@ -461,50 +460,82 @@ readRequestHeader(TSession * const sessionP,
 
 
 static void
-unescapeUri(char * const uri,
-            bool * const errorP) {
+hexDigitValue(char           const digit,
+              unsigned int * const valueP,
+              const char **  const errorP) {
 
-    char * x;
-    char * y;
+    if (digit == '\0')
+        xmlrpc_asprintf(errorP, "string ends in the middle of a "
+                        "%% escape sequence");
+    else {
+        char const digitLc = tolower(digit);
 
-    x = y = uri;
-    
-    *errorP = FALSE;
-
-    while (*x && !*errorP) {
-        switch (*x) {
-        case '%': {
-            char c;
-            ++x;
-            c = tolower(*x++);
-            if ((c >= '0') && (c <= '9'))
-                c -= '0';
-            else if ((c >= 'a') && (c <= 'f'))
-                c -= 'a' - 10;
-            else
-                *errorP = TRUE;
-
-            if (!*errorP) {
-                char d;
-                d = tolower(*x++);
-                if ((d >= '0') && (d <= '9'))
-                    d -= '0';
-                else if ((d >= 'a') && (d <= 'f'))
-                    d -= 'a' - 10;
-                else
-                    *errorP = TRUE;
-
-                if (!*errorP)
-                    *y++ = ((c << 4) | d);
-            }
-        } break;
-
-        default:
-            *y++ = *x++;
-            break;
-        }
+        if ((digitLc >= '0') && (digitLc <= '9')) {
+            *valueP = digitLc - '0';
+            *errorP = NULL;
+        } else if ((digitLc >= 'a') && (digitLc <= 'f')) {
+            *valueP = 10 + digitLc - 'a';
+            *errorP = NULL;
+        } else
+            xmlrpc_asprintf(errorP, "Non-hexadecimal digit '%c' in "
+                            "%%HH escape sequence", digit);
     }
-    *y = '\0';
+}
+
+
+
+static void
+unescapeUri(const char *  const uriComponent,
+            const char ** const unescapedP,
+            const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Unescape a component of a URI, e.g. the host name.  That component may
+   have %HH encoding, especially of characters that are delimiters within
+   a URI like slash and colon.
+
+   Return the unescaped version as *unescapedP in newly malloced storage.
+-----------------------------------------------------------------------------*/
+    char * buffer;
+
+    buffer = strdup(uriComponent);
+
+    if (!buffer)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for URI unescape buffer");
+    else {
+        const char * src;
+        char * dst;
+
+        src = dst = buffer;
+    
+        *errorP = NULL;  /* initial value */
+
+        while (*src && !*errorP) {
+            switch (*src) {
+            case '%': {
+                unsigned int digit0;
+                hexDigitValue(*src++, &digit0, errorP);
+            
+                if (!*errorP) {
+                    unsigned int digit1;
+                    hexDigitValue(*src++, &digit1, errorP);
+                
+                    if (!*errorP)
+                        *dst++ = ((digit0 << 4) | digit1);
+                }
+            } break;
+
+            default:
+                *dst++ = *src++;
+                break;
+            }
+        }
+        *dst = '\0';
+
+        if (*errorP)
+            xmlrpc_strfree(buffer);
+        else
+            *unescapedP = buffer;
+    }
 }
 
 
@@ -513,8 +544,7 @@ static void
 parseHostPort(const char *     const hostport,
               const char **    const hostP,
               unsigned short * const portP,
-              const char **    const errorP,
-              uint16_t *       const httpErrorCodeP) {
+              const char **    const errorP) {
 /*----------------------------------------------------------------------------
    Parse a 'hostport', a string in the form www.acme.com:8080 .
 
@@ -551,18 +581,133 @@ parseHostPort(const char *     const hostport,
                 xmlrpc_asprintf(errorP, "There is nothing, or something "
                                 "non-numeric for the port number after the "
                                 "colon in '%s'", hostport);
-                *httpErrorCodeP = 400;  /* Bad Request */
             } else {
-                *hostP = strdup(buffer);
+                *hostP = xmlrpc_strdupsol(buffer);
                 *portP = port;
                 *errorP = NULL;
             }
         } else {
-            *hostP          = strdup(buffer);
-            *portP          = 80;
+            *hostP  = xmlrpc_strdupsol(buffer);
+            *portP  = 80;
             *errorP = NULL;
         }
         free(buffer);
+    }
+}
+
+
+
+static void
+splitUriQuery(const char *  const requestUri,
+              const char ** const queryP,
+              const char ** const noQueryP,
+              const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Split 'requestUri' at the question mark, returning the stuff after
+   as *queryP and the stuff before as *noQueryP.
+-----------------------------------------------------------------------------*/
+    char * buffer;
+
+    buffer = strdup(requestUri);
+
+    if (!buffer)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for URI buffer");
+    else {
+        char * const qmark = strchr(buffer, '?');
+            
+        if (qmark) {
+            *qmark = '\0';
+            *queryP = xmlrpc_strdupsol(qmark + 1);
+        } else
+            *queryP = NULL;
+
+        *errorP = NULL;
+        *noQueryP = buffer;
+    }
+}
+
+
+
+static void
+parseHttpHostPortPath(const char *    const hostportpath,
+                      const char **   const hostP,
+                      unsigned short* const portP,
+                      const char **   const pathP,
+                      const char **   const errorP) {
+
+    const char * path;
+
+    char * buffer;
+
+    buffer = strdup(hostportpath);
+
+    if (!buffer)
+        xmlrpc_asprintf(errorP,
+                        "Couldn't get memory for host/port/path buffer");
+    else {
+        char * const slashPos = strchr(buffer, '/');
+
+        char * hostport;
+                
+        if (slashPos) {
+            path = xmlrpc_strdupsol(slashPos); /* Includes the initial slash */
+
+            *slashPos = '\0';  /* NUL termination for hostport */
+        } else
+            path = strdup("*");
+
+        hostport = buffer;
+
+        /* The following interprets the port field without taking into account
+           any %HH encoding, as the RFC says may be there.  We ignore that
+           remote possibility out of laziness.
+        */
+        parseHostPort(hostport, hostP, portP, errorP);
+
+        if (*errorP)
+            xmlrpc_strfree(path);
+        else
+            *pathP = path;
+
+        free(buffer);
+    }
+}
+
+
+
+static void
+unescapeHostPathQuery(const char *  const host,
+                      const char *  const path,
+                      const char *  const query,
+                      const char ** const hostP,
+                      const char ** const pathP,
+                      const char ** const queryP,
+                      const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Unescape each of the four components of a URI.
+
+   Each may be NULL, in which case we return NULL.
+-----------------------------------------------------------------------------*/
+    if (host)
+        unescapeUri(host, hostP, errorP);
+    else
+        *hostP = NULL;
+    if (!*errorP) {
+        if (path)
+            unescapeUri(path, pathP, errorP);
+        else
+            *pathP = NULL;
+        if (!*errorP) {
+            if (query)
+                unescapeUri(query, queryP, errorP);
+            else
+                *queryP = NULL;
+            if (*errorP)
+                xmlrpc_strfree(*pathP);
+        } else {
+            if (*hostP)
+                xmlrpc_strfree(*hostP);
+        }
     }
 }
 
@@ -574,7 +719,7 @@ parseRequestUri(char *           const requestUri,
                 unsigned short * const portP,
                 const char **    const pathP,
                 const char **    const queryP,
-                uint16_t *       const httpErrorCodeP) {
+                const char **    const errorP) {
 /*----------------------------------------------------------------------------
   Parse the request URI (in the request line
   "GET http://www.myserver.com:8080/myfile.cgi?parm HTTP/1.1",
@@ -594,91 +739,49 @@ parseRequestUri(char *           const requestUri,
 
   Return strings in newly malloc'ed storage.
 
-  Return as *httpErrorCodeP the HTTP error code that describes how the
-  URI is invalid, or 0 if it is valid.  If it's invalid, other return
-  values are meaningless.
-
-  This destroys 'requestUri'.  We should fix that.
+  We can return syntactically invalid entities, e.g. a host name that
+  contains "<", if 'requestUri' is similarly invalid.  We should fix that
+  some day.  RFC 2396 lists a lot of characters as reserved for certain
+  use in the URI, such as colon, and totally disallowed, such as space.
 -----------------------------------------------------------------------------*/
-    bool error;
+    const char * requestUriNoQuery;
+        /* The request URI with any query (the stuff marked by a question
+           mark at the end of a request URI) chopped off.
+        */
+    const char * query;
+    const char * path;
+    const char * host;
+    unsigned short port;
 
-    unescapeUri(requestUri, &error);
-    
-    if (error)
-        *httpErrorCodeP = 400;  /* Bad Request */
-    else {
-        char * requestUriNoQuery;
-           /* The request URI with any query (the stuff marked by a question
-              mark at the end of a request URI) chopped off.
-           */
-        {
-            /* Split requestUri at the question mark */
-            char * const qmark = strchr(requestUri, '?');
-            
-            if (qmark) {
-                *qmark = '\0';
-                *queryP = strdup(qmark + 1);
-            } else
-                *queryP = NULL;
-
-            requestUriNoQuery = requestUri;
-        }
-
+    splitUriQuery(requestUri, &query, &requestUriNoQuery, errorP);
+    if (!*errorP) {
         if (requestUriNoQuery[0] == '/') {
-            *hostP = NULL;
-            *pathP = strdup(requestUriNoQuery);
-            *portP = 80;
-            *httpErrorCodeP = 0;
+            host = NULL;
+            path = xmlrpc_strdupsol(requestUriNoQuery);
+            port = 80;
+            *errorP = NULL;
         } else {
             if (!xmlrpc_strneq(requestUriNoQuery, "http://", 7))
-                *httpErrorCodeP = 400;  /* Bad Request */
-            else {
-                char * const hostportpath = &requestUriNoQuery[7];
-                char * const slashPos = strchr(hostportpath, '/');
-
-                const char * host;
-                const char * path;
-                unsigned short port;
-
-                char * hostport;
-                
-                if (slashPos) {
-                    char * p;
-                    path = strdup(slashPos);
-                    
-                    /* Nul-terminate the host name.  To make space for
-                       it, slide the whole name back one character.
-                       This moves it into the space now occupied by
-                       the end of "http://", which we don't need.
-                    */
-                    for (p = hostportpath; *p != '/'; ++p)
-                        *(p-1) = *p;
-                    *(p-1) = '\0';
-                    
-                    hostport = hostportpath - 1;
-                    *httpErrorCodeP = 0;
-                } else {
-                    path = strdup("*");
-                    hostport = hostportpath;
-                    *httpErrorCodeP = 0;
-                }
-                if (!*httpErrorCodeP) {
-                    const char * error;
-                    parseHostPort(hostport, &host, &port,
-                                  &error, httpErrorCodeP);
-                    if (error)
-                        xmlrpc_strfree(error);
-                    else
-                        *httpErrorCodeP = 0;
-                }
-                if (*httpErrorCodeP)
-                    xmlrpc_strfree(path);
-
-                *hostP  = host;
-                *portP  = port;
-                *pathP  = path;
-            }
+                xmlrpc_asprintf(errorP, "Scheme is not http://");
+            else
+                parseHttpHostPortPath(&requestUriNoQuery[7],
+                                      &host, &port, &path, errorP);
         }
+
+        if (!*errorP) {
+            *portP = port;
+            unescapeHostPathQuery(host, path, query,
+                                  hostP, pathP, queryP, errorP);
+
+            if (host)
+                xmlrpc_strfree(host);
+            if (path)
+                xmlrpc_strfree(path);
+        }
+
+        if (query)
+            xmlrpc_strfree(query);
+        xmlrpc_strfree(requestUriNoQuery);
     }
 }
 
@@ -739,11 +842,15 @@ parseRequestLine(char *           const requestLine,
             unsigned short port;
             const char * path;
             const char * query;
+            const char * error;
 
-            parseRequestUri(requestUri, &host, &port, &path, &query,
-                            httpErrorCodeP);
+            parseRequestUri(requestUri, &host, &port, &path, &query, &error);
 
-            if (!*httpErrorCodeP) {
+            if (error) {
+                *httpErrorCodeP = 400;  /* Bad Request */
+                xmlrpc_strfree(error);
+                    /* Someday we should do something with this */
+            } else {
                 const char * httpVersion;
 
                 NextToken((const char **)&p);
@@ -838,11 +945,11 @@ getFieldNameToken(char **       const pP,
 
 
 static void
-processHeader(const char *  const fieldName,
-              char *        const fieldValue,
-              TSession *    const sessionP,
-              const char ** const errorP,
-              uint16_t *    const httpErrorCodeP) {
+processField(const char *  const fieldName,
+             char *        const fieldValue,
+             TSession *    const sessionP,
+             const char ** const errorP,
+             uint16_t *    const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
    We may modify *fieldValue, and we put pointers to *fieldValue and
    *fieldName into *sessionP.
@@ -863,7 +970,7 @@ processHeader(const char *  const fieldName,
             sessionP->requestInfo.host = NULL;
         }
         parseHostPort(fieldValue, &sessionP->requestInfo.host,
-                      &sessionP->requestInfo.port, errorP, httpErrorCodeP);
+                      &sessionP->requestInfo.port, errorP);
     } else if (xmlrpc_streq(fieldName, "from"))
         sessionP->requestInfo.from = fieldValue;
     else if (xmlrpc_streq(fieldName, "user-agent"))
@@ -898,42 +1005,42 @@ processHeader(const char *  const fieldName,
 
 
 static void
-readAndProcessHeaders(TSession *    const sessionP,
-                      time_t        const deadline,
-                      const char ** const errorP,
-                      uint16_t *    const httpErrorCodeP) {
+readAndProcessHeaderFields(TSession *    const sessionP,
+                           time_t        const deadline,
+                           const char ** const errorP,
+                           uint16_t *    const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
-   Read all the HTTP headers from the session *sessionP, which has at
-   least one header coming.  Update *sessionP to reflect the
-   information in the headers.
+   Read all the HTTP header fields from the session *sessionP, which has at
+   least one field coming.  Update *sessionP to reflect the information in the
+   fields.
 
-   If we find an error in the headers or while trying to read them, we return
+   If we find an error in the fields or while trying to read them, we return
    a text explanation of the problem as *errorP and an appropriate HTTP error
    code as *httpErrorCodeP.  Otherwise, we return *errorP = NULL and nothing
    as *httpErrorCodeP.
 -----------------------------------------------------------------------------*/
-    bool endOfHeaders;
+    bool endOfHeader;
 
     assert(!sessionP->validRequest);
         /* Calling us doesn't make sense if there is already a valid request */
 
     *errorP = NULL;  /* initial assumption */
-    endOfHeaders = false;  /* Caller assures us there is at least one header */
+    endOfHeader = false;  /* Caller assures us there is at least one header */
 
-    while (!endOfHeaders && !*errorP) {
-        char * header;
+    while (!endOfHeader && !*errorP) {
+        char * field;
         bool error;
-        readHeader(sessionP->connP, deadline, &endOfHeaders, &header, &error);
+        readField(sessionP->connP, deadline, &endOfHeader, &field, &error);
         if (error) {
-            xmlrpc_asprintf(errorP, "Failed to read headers from "
+            xmlrpc_asprintf(errorP, "Failed to read header from "
                             "client connection.");
             *httpErrorCodeP = 408;  /* Request Timeout */
         } else {
-            if (!endOfHeaders) {
+            if (!endOfHeader) {
                 char * p;
                 char * fieldName;
 
-                p = &header[0];
+                p = &field[0];
                 getFieldNameToken(&p, &fieldName, errorP, httpErrorCodeP);
                 if (!*errorP) {
                     char * fieldValue;
@@ -945,8 +1052,8 @@ readAndProcessHeaders(TSession *    const sessionP,
                     TableAdd(&sessionP->requestHeaderFields,
                              fieldName, fieldValue);
                     
-                    processHeader(fieldName, fieldValue, sessionP, errorP,
-                                  httpErrorCodeP);
+                    processField(fieldName, fieldValue, sessionP, errorP,
+                                 httpErrorCodeP);
                 }
             }
         }
@@ -975,7 +1082,7 @@ RequestRead(TSession *    const sessionP,
     uint16_t httpErrorCode;  /* zero for no error */
     char * requestLine;  /* In connection;s internal buffer */
 
-    readRequestHeader(sessionP, deadline, &requestLine, &httpErrorCode);
+    readRequestField(sessionP, deadline, &requestLine, &httpErrorCode);
     if (httpErrorCode) {
         xmlrpc_asprintf(errorP, "Problem getting the request header");
         *httpErrorCodeP = httpErrorCode;
@@ -985,11 +1092,11 @@ RequestRead(TSession *    const sessionP,
         const char * path;
         const char * query;
         unsigned short port;
-        bool moreHeaders;
+        bool moreFields;
 
         parseRequestLine(requestLine, &httpMethod, &sessionP->version,
                          &host, &port, &path, &query,
-                         &moreHeaders, &httpErrorCode);
+                         &moreFields, &httpErrorCode);
 
         if (httpErrorCode) {
             xmlrpc_asprintf(errorP, "Unable to parse the request header "
@@ -1000,9 +1107,9 @@ RequestRead(TSession *    const sessionP,
                             requestLine,
                             httpMethod, host, port, path, query);
 
-            if (moreHeaders) {
-                readAndProcessHeaders(sessionP, deadline,
-                                      errorP, httpErrorCodeP);
+            if (moreFields) {
+                readAndProcessHeaderFields(sessionP, deadline,
+                                           errorP, httpErrorCodeP);
             } else
                 *errorP = NULL;
 
@@ -1120,7 +1227,7 @@ RequestAuth(TSession *   const sessionP,
                 xmlrpc_strfree(userPass);
 
                 if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
-                    sessionP->requestInfo.user = strdup(user);
+                    sessionP->requestInfo.user = xmlrpc_strdupsol(user);
                     authorized = TRUE;
                 } else
                     authorized = FALSE;

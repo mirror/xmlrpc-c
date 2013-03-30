@@ -8,6 +8,12 @@
   The Abyss component of Xmlrpc-c is based on the independently developed
   and distributed Abyss web server package from 2001.
 
+  Nothing may include this header file that also includes <winsock.h>,
+  because it conflicts with this file's use of <winsock2.h>.  Furthermore,
+  nothing including this file may include <windows.h> without previously
+  defining WIN32_LEAN_AND_MEAN, because <windows.h> without that macro
+  includes <winsock.h> automatically.  (see abyss_winsock.h).
+
   Copyright information is at the end of the file.
 ****************************************************************************/
 
@@ -24,6 +30,19 @@ extern "C" {
 #include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/inttypes.h>
 
+/*
+  XMLRPC_ABYSS_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc_abyss.
+
+  XMLRPC_BUILDING_ABYSS says this compilation is part of libxmlrpc_abyss, as
+  opposed to something that _uses_ libxmlrpc_abyss.
+*/
+#ifdef XMLRPC_BUILDING_ABYSS
+#define XMLRPC_ABYSS_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_ABYSS_EXPORTED
+#endif
+
 /****************************************************************************
   STUFF FOR THE OUTER CONTROL PROGRAM TO USE
 ****************************************************************************/
@@ -34,11 +53,11 @@ typedef int abyss_bool;
   GLOBAL (STATIC) PROGRAM STUFF
 ****************************************************************************/
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 AbyssInit(const char ** const errorP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 AbyssTerm(void);
 
@@ -48,29 +67,29 @@ AbyssTerm(void);
 
 typedef struct MIMEType MIMEType;
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 MIMEType *
 MIMETypeCreate(void);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 MIMETypeDestroy(MIMEType * const MIMETypeP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 MIMETypeInit(void);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 MIMETypeTerm(void);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 MIMETypeAdd2(MIMEType *   const MIMETypeP,
              const char * const type,
              const char * const ext);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 MIMETypeAdd(const char * const type,
             const char * const ext);
@@ -84,17 +103,17 @@ typedef struct _TChanSwitch TChanSwitch;
 typedef struct _TChannel TChannel;
 typedef struct _TSocket TSocket;
 
-#ifdef WIN32
+#ifdef _WIN32
   #include <xmlrpc-c/abyss_winsock.h>
 #else
   #include <xmlrpc-c/abyss_unixsock.h>
 #endif
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ChanSwitchInit(const char ** const errorP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ChanSwitchTerm(void);
 
@@ -103,23 +122,23 @@ ChanSwitchTerm(void);
    in abyss_unixsock.h, etc.
 */
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ChanSwitchDestroy(TChanSwitch * const chanSwitchP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ChannelInit(const char ** const errorP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ChannelTerm(void);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ChannelDestroy(TChannel * const channelP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 SocketDestroy(TSocket * const socketP);
 
@@ -136,7 +155,7 @@ typedef struct {
 
 typedef struct _TSession TSession;
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ServerCreate(TServer *       const serverP,
              const char *    const name,
@@ -144,13 +163,13 @@ ServerCreate(TServer *       const serverP,
              const char *    const filespath,
              const char *    const logfilename);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerCreateSwitch(TServer *     const serverP,
                    TChanSwitch * const chanSwitchP,
                    const char ** const errorP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ServerCreateSocket(TServer *    const serverP,
                    const char * const name,
@@ -159,87 +178,104 @@ ServerCreateSocket(TServer *    const serverP,
                    const char * const logfilename);
 
 #define HAVE_SERVER_CREATE_SOCKET_2
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerCreateSocket2(TServer *     const serverP,
                     TSocket *     const socketP,
                     const char ** const errorP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ServerCreateNoAccept(TServer *    const serverP,
                      const char * const name,
                      const char * const filespath,
                      const char * const logfilename);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerFree(TServer * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetName(TServer *    const serverP,
               const char * const name);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetFilesPath(TServer *    const serverP,
                    const char * const filesPath);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetLogFileName(TServer *    const serverP,
                      const char * const logFileName);
 
 #define HAVE_SERVER_SET_KEEPALIVE_TIMEOUT 1
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetKeepaliveTimeout(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveTimeout);
 
 #define HAVE_SERVER_SET_KEEPALIVE_MAX_CONN 1
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetKeepaliveMaxConn(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveMaxConn);
 
 #define HAVE_SERVER_SET_TIMEOUT 1
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetTimeout(TServer *       const serverP,
                  xmlrpc_uint32_t const timeout);
 
 #define HAVE_SERVER_SET_ADVERTISE 1
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetAdvertise(TServer *  const serverP,
                    abyss_bool const advertise);
 
 #define HAVE_SERVER_SET_MIME_TYPE 1
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerSetMimeType(TServer *  const serverP,
                   MIMEType * const MIMETypeP);
 
-XMLRPC_DLLEXPORT
+#define HAVE_SERVER_SET_MAX_CONN 1
+XMLRPC_ABYSS_EXPORTED
+void
+ServerSetMaxConn(TServer *    const serverP,
+                 unsigned int const maxConn);
+
+#define HAVE_SERVER_SET_MAX_CONN_BACKLOG 1
+XMLRPC_ABYSS_EXPORTED
+void
+ServerSetMaxConnBacklog(TServer *    const serverP,
+                        unsigned int const maxConnBacklog);
+
+XMLRPC_ABYSS_EXPORTED
+void
+ServerInit2(TServer *     const serverP,
+            const char ** const errorP);
+
+XMLRPC_ABYSS_EXPORTED
 void
 ServerInit(TServer * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerRun(TServer * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerRunOnce(TServer * const serverP);
 
 /* ServerRunOnce2() is obsolete.  See user's guide. */
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerRunOnce2(TServer *           const serverP,
                enum abyss_foreback const foregroundBackground);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerRunChannel(TServer *     const serverP,
                  TChannel *    const channelP,
@@ -247,34 +283,34 @@ ServerRunChannel(TServer *     const serverP,
                  const char ** const errorP);
 
 #define HAVE_SERVER_RUN_CONN_2
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerRunConn2(TServer *     const serverP,
                TSocket *     const connectedSocketP,
                const char ** const errorP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerRunConn(TServer * const serverP,
               TOsSocket const connectedSocket);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerDaemonize(TServer * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerTerminate(TServer * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerResetTerminate(TServer * const serverP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerUseSigchld(TServer * const serverP);
 
-#ifndef WIN32
+#ifndef _WIN32
 void
 ServerHandleSigchld(pid_t const pid);
 #endif
@@ -302,7 +338,7 @@ struct ServerReqHandler3 {
     size_t        handleReqStackSize; /* zero = default */
 };
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerAddHandler3(TServer *                        const serverP,
                   const struct ServerReqHandler3 * const handlerP,
@@ -316,13 +352,13 @@ typedef struct URIHandler2 {
     void *        userdata;
 } URIHandler2;
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerAddHandler2(TServer *     const srvP,
                   URIHandler2 * const handlerP,
                   abyss_bool *  const successP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ServerAddHandler(TServer * const srvP,
                  URIHandler const handler);
@@ -333,7 +369,7 @@ typedef abyss_bool (*THandlerDflt) (TSession *);
    for the same type
 */
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ServerDefaultHandler(TServer *    const srvP,
                      THandlerDflt const handler);
@@ -343,12 +379,12 @@ ServerDefaultHandler(TServer *    const srvP,
    inappropriate for an API.
 */
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ConfReadServerFile(const char * const filename,
                    TServer *    const srvP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 LogWrite(TServer *    const srvP,
          const char * const c);
@@ -371,7 +407,7 @@ typedef struct {
     const char * query;
         /* The query part of the URI (stuff after '?').  NULL if none. */
     const char * host;
-        /* NOT the value of the host: header.  Rather, the name of the
+        /* NOT the value of the host: header field.  Rather, the name of the
            target host (could be part of the host: value; could be from the
            URI).  No port number.  NULL if request does not specify a host
            name.
@@ -381,7 +417,7 @@ typedef struct {
     const char * referer;
     const char * requestline;
     const char * user;
-        /* Requesting user (from authorization: header).  NULL if
+        /* Requesting user (from authorization: header field).  NULL if
            request doesn't specify or handler has not authenticated it.
         */
     xmlrpc_uint16_t port;
@@ -391,99 +427,101 @@ typedef struct {
     abyss_bool keepalive;
 } TRequestInfo;
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 SessionRefillBuffer(TSession * const sessionP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 size_t
 SessionReadDataAvail(TSession * const sessionP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 SessionGetReadData(TSession *    const sessionP, 
                    size_t        const max, 
                    const char ** const outStartP, 
                    size_t *      const outLenP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 SessionGetRequestInfo(TSession *            const sessionP,
                       const TRequestInfo ** const requestInfoPP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 SessionGetChannelInfo(TSession * const sessionP,
                       void **    const channelInfoPP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void *
 SessionGetDefaultHandlerCtx(TSession * const sessionP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 char *
 RequestHeaderValue(TSession *   const sessionP,
                    const char * const name);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ResponseAddField(TSession *   const sessionP,
                  const char * const name,
                  const char * const value);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ResponseWriteStart(TSession * const sessionP);
 
 /* For backward compatibility: */
 #define ResponseWrite ResponseWriteStart
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ResponseWriteBody(TSession *      const sessionP,
                   const char *    const data,
                   xmlrpc_uint32_t const len);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ResponseWriteEnd(TSession * const sessionP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ResponseChunked(TSession * const sessionP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 xmlrpc_uint16_t
 ResponseStatusFromErrno(int const errnoArg);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ResponseStatus(TSession *      const sessionP,
                xmlrpc_uint16_t const code);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ResponseStatusErrno(TSession * const sessionP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ResponseContentType(TSession *   const serverP,
                     const char * const type);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 ResponseContentLength(TSession *      const sessionP,
                       xmlrpc_uint64_t const len);
 
 typedef struct {
 /*----------------------------------------------------------------------------
-   These are parameters to control the HTTP "Access Control functions.  That's
+   These are parameters to control the HTTP "Access Control" functions.  That's
    where the client asks whether it is OK to send a request that some other
    server asked the client to send (e.g. a person web browses a page at
    a.example.com, and it sends a script that executes on the user's computer
    and tries to perform an XML-RPC RPC on b.example.com.  The user's browser
    first asks b.example.com if it is OK to do an RPC that is really initiated
    by a.example.com.
+
+   These parameters tell the server how to respond to such a request.
 -----------------------------------------------------------------------------*/
     const char * allowOrigin;
         /* This tells what original servers (a.example.com in the example
@@ -504,44 +542,44 @@ typedef struct {
         */
 } ResponseAccessCtl;
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ResponseAccessControl(TSession *        const abyssSessionP, 
                       ResponseAccessCtl const accessControl);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ResponseError2(TSession *   const sessionP,
                const char * const explanation);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 void
 ResponseError(TSession * const sessionP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 const char *
 MIMETypeFromExt(const char * const ext);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 const char *
 MIMETypeFromExt2(MIMEType *   const MIMETypeP,
                  const char * const ext);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 const char *
 MIMETypeFromFileName2(MIMEType *   const MIMETypeP,
                       const char * const fileName);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 const char *
 MIMETypeFromFileName(const char * const fileName);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 const char *
 MIMETypeGuessFromFile2(MIMEType *   const MIMETypeP,
                        const char * const fileName);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 const char *
 MIMETypeGuessFromFile(const char * const filename);
 
@@ -561,7 +599,7 @@ MIMETypeGuessFromFile(const char * const filename);
 ** Paths and so on...
 *********************************************************************/
 
-#ifdef WIN32
+#ifdef _WIN32
 #define DEFAULT_ROOT        "c:\\abyss"
 #define DEFAULT_DOCS        DEFAULT_ROOT"\\htdocs"
 #define DEFAULT_CONF_FILE   DEFAULT_ROOT"\\conf\\abyss.conf"
@@ -576,12 +614,6 @@ MIMETypeGuessFromFile(const char * const filename);
 #define DEFAULT_CONF_FILE   DEFAULT_ROOT"/conf/abyss.conf"
 #define DEFAULT_LOG_FILE    DEFAULT_ROOT"/log/abyss.log"
 #endif
-
-/*********************************************************************
-** Maximum number of simultaneous connections
-*********************************************************************/
-
-#define MAX_CONN    16
 
 /*********************************************************************
 ** General purpose definitions
@@ -603,21 +635,21 @@ MIMETypeGuessFromFile(const char * const filename);
 ** Range
 *********************************************************************/
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool
 RangeDecode(char *            const str,
             xmlrpc_uint64_t   const filesize,
             xmlrpc_uint64_t * const start,
             xmlrpc_uint64_t * const end);
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool DateInit(void);
 
 /*********************************************************************
 ** Session
 *********************************************************************/
 
-XMLRPC_DLLEXPORT
+XMLRPC_ABYSS_EXPORTED
 abyss_bool SessionLog(TSession * const s);
 
 

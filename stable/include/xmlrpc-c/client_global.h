@@ -4,6 +4,19 @@
 #include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/client.h>
 
+/*
+  XMLRPC_CLIENT_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc_client.
+
+  XMLRPC_BUILDING_CLIENT says this compilation is part of libxmlrpc_client, as
+  opposed to something that _uses_ libxmlrpc_client.
+*/
+#ifdef XMLRPC_BUILDING_CLIENT
+#define XMLRPC_CLIENT_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_CLIENT_EXPORTED
+#endif
+
 /*=========================================================================
 **  Initialization and Shutdown
 **=========================================================================
@@ -15,13 +28,13 @@
 #define XMLRPC_CLIENT_NO_FLAGS         (0)
 #define XMLRPC_CLIENT_SKIP_LIBWWW_INIT (1)
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 extern void
 xmlrpc_client_init(int          const flags,
                    const char * const appname,
                    const char * const appversion);
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 void 
 xmlrpc_client_init2(xmlrpc_env *                      const env,
                     int                               const flags,
@@ -30,18 +43,15 @@ xmlrpc_client_init2(xmlrpc_env *                      const env,
                     const struct xmlrpc_clientparms * const clientparms,
                     unsigned int                      const parm_size);
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 extern void
 xmlrpc_client_cleanup(void);
 
 /*=========================================================================
 **  xmlrpc_client_call
-**=========================================================================
-**  A synchronous XML-RPC client. Do not attempt to call any of these
-**  functions from inside an asynchronous callback!
-*/
+**=======================================================================*/
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 xmlrpc_value * 
 xmlrpc_client_call(xmlrpc_env * const envP,
                    const char * const server_url,
@@ -49,14 +59,14 @@ xmlrpc_client_call(xmlrpc_env * const envP,
                    const char * const format,
                    ...);
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 xmlrpc_value * 
 xmlrpc_client_call_params(xmlrpc_env *   const envP,
                           const char *   const serverUrl,
                           const char *   const methodName,
                           xmlrpc_value * const paramArrayP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 xmlrpc_value * 
 xmlrpc_client_call_server(xmlrpc_env *               const envP,
                           const xmlrpc_server_info * const server,
@@ -64,7 +74,7 @@ xmlrpc_client_call_server(xmlrpc_env *               const envP,
                           const char *               const format, 
                           ...);
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 xmlrpc_value *
 xmlrpc_client_call_server_params(
     xmlrpc_env *               const envP,
@@ -72,7 +82,7 @@ xmlrpc_client_call_server_params(
     const char *               const method_name,
     xmlrpc_value *             const paramArrayP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 void
 xmlrpc_client_transport_call(
     xmlrpc_env *               const envP,
@@ -88,51 +98,38 @@ xmlrpc_client_transport_call(
 **  An asynchronous XML-RPC client.
 */
 
-/* Make an asynchronous XML-RPC call. We make internal copies of all
-** arguments except user_data, so you can deallocate them safely as soon
-** as you return. Errors will be passed to the callback. You will need
-** to run the event loop somehow; see below.
-** WARNING: If an error occurs while building the argument, the
-** response handler will be called with a NULL param_array. */
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 void 
 xmlrpc_client_call_asynch(const char * const server_url,
                           const char * const method_name,
-                          xmlrpc_response_handler callback,
+                          xmlrpc_response_handler responseHandler,
                           void *       const user_data,
                           const char * const format,
                           ...);
 
-/* As above, but use an xmlrpc_server_info object. The server object can be
-** safely destroyed as soon as this function returns. */
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 void 
 xmlrpc_client_call_server_asynch(xmlrpc_server_info * const server,
                                  const char *         const method_name,
-                                 xmlrpc_response_handler callback,
+                                 xmlrpc_response_handler responseHandler,
                                  void *               const user_data,
                                  const char *         const format,
                                  ...);
 
-/* As above, but the parameter list is supplied as an xmlrpc_value
-** containing an array.
-*/
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 void
 xmlrpc_client_call_asynch_params(const char *   const server_url,
                                  const char *   const method_name,
-                                 xmlrpc_response_handler callback,
+                                 xmlrpc_response_handler responseHandler,
                                  void *         const user_data,
                                  xmlrpc_value * const paramArrayP);
     
-/* As above, but use an xmlrpc_server_info object. The server object can be
-** safely destroyed as soon as this function returns. */
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 void 
 xmlrpc_client_call_server_asynch_params(
     xmlrpc_server_info * const server,
     const char *         const method_name,
-    xmlrpc_response_handler callback,
+    xmlrpc_response_handler responseHandler,
     void *               const user_data,
     xmlrpc_value *       const paramArrayP);
     
@@ -145,13 +142,13 @@ xmlrpc_client_call_server_asynch_params(
 
 /* Finish all outstanding asynchronous calls. Alternatively, the loop
 ** will exit if someone calls xmlrpc_client_event_loop_end. */
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 extern void
 xmlrpc_client_event_loop_finish_asynch(void);
 
 
 /* Finish all outstanding asynchronous calls. */
-XMLRPC_DLLEXPORT
+XMLRPC_CLIENT_EXPORTED
 extern void
 xmlrpc_client_event_loop_finish_asynch_timeout(unsigned long const milliseconds);
 

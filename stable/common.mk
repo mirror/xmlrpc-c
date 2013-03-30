@@ -17,7 +17,7 @@ include $(SRCDIR)/version.mk
 # fully made.
 .DELETE_ON_ERROR:
 
-GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit -Winline \
+GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit \
   -Wno-unknown-pragmas
   # We need -Wwrite-strings after we fix all the missing consts
   #
@@ -77,6 +77,14 @@ endif
 ifeq ($(LIBXMLRPCPP_NAME),)
   LIBXMLRPCPP_NAME := xmlrpc++
 endif
+
+ifneq ($(LADD),)
+# We used to use make variable LADD, but now use the conventional LDFLAGS,
+# for user-supplied additional link flags
+  LDFLAGS := $(LADD)
+endif
+
+LDFLAGS_ALL = $(LDFLAGS_PERSONAL) $(LDFLAGS)
 
 ##############################################################################
 #                        STATIC LINK LIBRARY RULES                           #
@@ -148,12 +156,14 @@ else
   TARGET_SHARED_LE_LIBS =
 endif
 
+LDFLAGS_SHLIB_ALL=$(LDFLAGS_ALL) $(LDFLAGS_SHLIB)
+
 #------ the actual rules ----------------------------------------------------
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
-	$(CCLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
+	$(CCLD) $(LDFLAGS_SHLIB_ALL) $(LIBOBJECTS) $(LIBDEP) -o $@  
 
 $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
-	$(CXXLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
+	$(CXXLD) $(LDFLAGS_SHLIB_ALL) $(LIBOBJECTS) $(LIBDEP) -o $@  
 #----------------------------------------------------------------------------
 
 LIBXMLRPC_UTIL_DIR = $(BLDDIR)/lib/libutil
@@ -245,6 +255,15 @@ else
   LDLIBS_XML = $(shell xml2-config --libs)
 endif
 
+# LIBXMLRPC_UTIL_LIBDEP is the string of linker options you need on the link
+# of a shared library that refers to symbols in libxmlrpc_util.  It tells
+# the linker to record a dependency upon libxmlrpc_util in the shared library
+# being built, and also dependencies on things on which libxmlrpc_util
+# depends.  You might think that the linker could get the latter out of
+# libxmlrpc_util itself, but we have found (2012.12) that in a Mingw build
+# it does not.
+
+LIBXMLRPC_UTIL_LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -lpthread
 
 ##############################################################################
 #            RULES TO BUILD OBJECT FILES TO LINK INTO LIBRARIES              #
@@ -273,11 +292,18 @@ endif
 # ways with what the make file is trying to do.  But at least some users
 # get useful results.
 
-CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS) \
-  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+ifneq ($(CADD),)
+# We used to use make variable CADD, but now use the conventional CFLAGS,
+# for user-supplied additional link flags
+  CFLAGS := $(CADD)
+  CXXFLAGS := $(CADD)
+endif
 
-CXXFLAGS_ALL = $(CXXFLAGS_COMMON) $(CFLAGS_LOCAL) $(CXXFLAGS) \
-  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CFLAGS)
+
+CXXFLAGS_ALL = $(CXXFLAGS_COMMON) $(CFLAGS_LOCAL) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CXXFLAGS)
 
 
 $(TARGET_MODS:%=%.o):%.o:%.c
@@ -492,6 +518,13 @@ endif
 
 $(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh): \
   $(BLDDIR)/include/xmlrpc-c/config.h
+
+ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
+$(BLDDIR)/src/libxmlrpc_client.cflags:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile $(notdir $@)
+$(BLDDIR)/src/libxmlrpc_client.ldflags:
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile $(notdir $@)
+endif
 
 # With a separate build directory, you have to make the directory itself
 # before you can make anything in it.  Here's the rule to do that.

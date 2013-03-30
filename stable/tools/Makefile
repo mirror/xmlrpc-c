@@ -11,6 +11,7 @@ SUBDIRS = \
   binmode-rpc-kit \
   lib \
   turbocharger \
+  xml \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   SUBDIRS += xmlrpc xmlrpc_transport

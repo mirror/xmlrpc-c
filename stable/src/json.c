@@ -260,7 +260,17 @@ isInteger(const char * const token,
 static bool
 isFloat(const char * const token,
         unsigned int const tokSize) {
+/*----------------------------------------------------------------------------
+   The token 'token', of size 'tokSize' is a syntactically valid floating
+   point number.
 
+   N.B. This is true of any integer.
+   
+   We don't accept plus signs.
+
+   Examples of valid floating point:  0, 32, 32.5, , 32.500,
+   32.5E4 -5, 32.5E-4, 005.
+-----------------------------------------------------------------------------*/
     unsigned int i;
     bool seenPeriod;
     bool seenDigit;
@@ -673,35 +683,26 @@ static xmlrpc_value *
 integerTokenValue(xmlrpc_env * const envP,
                   Tokenizer *  const tokP) {
 
+    xmlrpc_env env;
+    char valueString[tokP->size + 1];
+    xmlrpc_int64 value;
     xmlrpc_value * valP;
-    char * valueString;
 
-    valueString = malloc(tokP->size + 1);
+    xmlrpc_env_init(&env);
 
-    if (valueString == NULL)
-        setParseErr(envP, tokP, "Could not allocate memory to process a "
-                    "%lu-character integer token", (unsigned long)tokP->size);
-    else {
-        xmlrpc_env env;
-        xmlrpc_int64 value;
+    memcpy(valueString, tokP->begin, tokP->size);
+    valueString[tokP->size] = '\0';
 
-        xmlrpc_env_init(&env);
+    xmlrpc_parse_int64(&env, valueString, &value);
 
-        memcpy(valueString, tokP->begin, tokP->size);
-        valueString[tokP->size] = '\0';
+    if (env.fault_occurred)
+        setParseErr(envP, tokP, "Error in integer token value '%s': %s",
+                    tokP->begin, env.fault_string);
+    else
+        valP = xmlrpc_i8_new(envP, value);
+    
+    xmlrpc_env_clean(&env);
 
-        xmlrpc_parse_int64(&env, valueString, &value);
-
-        if (env.fault_occurred)
-            setParseErr(envP, tokP, "Error in integer token value '%s': %s",
-                        tokP->begin, env.fault_string);
-        else
-            valP = xmlrpc_i8_new(envP, value);
-
-        free(valueString);
-
-        xmlrpc_env_clean(&env);
-    }
     return valP;
 }
 
@@ -1323,11 +1324,13 @@ serializeArray(xmlrpc_env *       const envP,
                 if (!envP->fault_occurred) {
                     serializeValue(envP, itemP, level + 1, outP);
 
-                    XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
+                    if (i < size - 1)
+                        XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
                 }
             }
         }
         if (!envP->fault_occurred) {
+            XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "\n", 1);
             indent(envP, level, outP);
             if (!envP->fault_occurred) {
                 XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "]", 1);
@@ -1348,14 +1351,10 @@ serializeStructMember(xmlrpc_env *       const envP,
     serializeValue(envP, memberKeyP, level, outP);
                     
     if (!envP->fault_occurred) {
-        formatOut(envP, outP, ":\n");
+        formatOut(envP, outP, ":");
         
-        if (!envP->fault_occurred) {
-            serializeValue(envP, memberValueP, level + 1, outP);
-
-            if (!envP->fault_occurred)
-                XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
-        }
+        if (!envP->fault_occurred)
+            serializeValue(envP, memberValueP, level, outP);
     }
 }
 
@@ -1366,8 +1365,6 @@ serializeStruct(xmlrpc_env *       const envP,
                 xmlrpc_value *     const valP,
                 unsigned int       const level,
                 xmlrpc_mem_block * const outP) {
-
-    indent(envP, level, outP);
 
     if (!envP->fault_occurred) {
         formatOut(envP, outP, "{\n");
@@ -1383,12 +1380,19 @@ serializeStruct(xmlrpc_env *       const envP,
                     xmlrpc_struct_get_key_and_value(envP, valP, i,
                                                     &memberKeyP,
                                                     &memberValueP);
-                    if (!envP->fault_occurred)
+                    if (!envP->fault_occurred) {
                         serializeStructMember(envP, memberKeyP, memberValueP,
                                               level + 1, outP);
+                        
+                        if (!envP->fault_occurred && i < size - 1)
+                            XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
+                    }
                 }
-                if (!envP->fault_occurred) 
+                if (!envP->fault_occurred) {
+                    XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "\n", 1);
+                    indent(envP, level, outP);
                     XMLRPC_MEMBLOCK_APPEND(char, envP, outP, "}", 1);
+                }
             }
         }
     }

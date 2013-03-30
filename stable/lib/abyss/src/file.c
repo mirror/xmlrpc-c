@@ -66,14 +66,14 @@
 #include "file.h"
 
 bool const win32 =
-#ifdef WIN32
+#ifdef _WIN32
 TRUE;
 #else
 FALSE;
 #endif
 
 struct TFileFind {
-#ifdef WIN32
+#ifdef _WIN32
   #if MSVCRT
       intptr_t handle;
   #else
@@ -107,8 +107,7 @@ createFileImage(TFile **     const filePP,
         int rc;
 
         if (createFile)
-            /* Unix prefers S_IWUSR, but some Windows knows only S_IWRITE */
-            rc = open(name, attrib | O_CREAT, S_IWRITE | S_IREAD);
+            rc = open(name, attrib | O_CREAT, XMLRPC_S_IWUSR | XMLRPC_S_IRUSR);
         else
             rc = open(name, attrib);
 
@@ -253,7 +252,7 @@ fileFindFirstWin(TFileFind *  const filefindP ATTR_UNUSED,
     filefindP->handle = _findfirsti64(search, fileinfo);
     *retP = filefindP->handle != -1;
 #else
-#ifdef WIN32
+#ifdef _WIN32
     filefindP->handle = FindFirstFile(search, &fileinfo->data);
     *retP = filefindP->handle != INVALID_HANDLE_VALUE;
     if (*retP) {
@@ -327,7 +326,7 @@ fileFindNextWin(TFileFind * const filefindP ATTR_UNUSED,
 #if MSVCRT
     *retvalP = _findnexti64(filefindP->handle, fileinfo) != -1;
 #else
-#ifdef WIN32
+#ifdef _WIN32
     bool found;
     found = FindNextFile(filefindP->handle, &fileinfo->data);
     if (found) {
@@ -351,7 +350,7 @@ fileFindNextPosix(TFileFind * const filefindP,
                   TFileInfo * const fileinfoP,
                   bool *      const retvalP) {
 
-#ifndef WIN32
+#ifndef _WIN32
     struct dirent * deP;
 
     deP = readdir(filefindP->handle);
@@ -401,7 +400,7 @@ FileFindNext(TFileFind * const filefindP,
 
 void
 FileFindClose(TFileFind * const filefindP) {
-#ifdef WIN32
+#ifdef _WIN32
 #if MSVCRT
     _findclose(filefindP->handle);
 #else

@@ -45,7 +45,7 @@ packetsocket_lib=
 
 the_libdirs="-L$LIBINST_DIR $the_libdirs"
 
-the_libs="-lxmlrpc -lxmlrpc_util ${LIBXML}"
+the_libs="-lxmlrpc  ${LIBXML} -lxmlrpc_util"
 the_rpath="-R$LIBINST_DIR $the_rpath"
 the_wl_rpath="-Wl,-rpath,$LIBINST_DIR $the_wl_rpath"
 
@@ -89,7 +89,7 @@ while test $# -gt 0; do
       ;;
     abyss-server)
       if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
-        the_libs="-lpthread $the_libs"
+        the_libs="$THREAD_LIBS $the_libs"
         fi
       the_libs="${LSOCKET} $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"

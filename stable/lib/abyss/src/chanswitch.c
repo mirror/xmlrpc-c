@@ -15,7 +15,7 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
-#ifdef WIN32
+#ifdef _WIN32
   #include "socket_win.h"
 #else
   #include "socket_unix.h"
@@ -26,7 +26,7 @@
 static void
 socketOsInit(const char ** const errorP) {
 
-#ifdef WIN32
+#ifdef _WIN32
     SocketWinInit(errorP);
 #else
     SocketUnixInit(errorP);
@@ -38,7 +38,7 @@ socketOsInit(const char ** const errorP) {
 static void
 socketOsTerm(void) {
 
-#ifdef WIN32
+#ifdef _WIN32
     SocketWinTerm();
 #else
     SocketUnixTerm();

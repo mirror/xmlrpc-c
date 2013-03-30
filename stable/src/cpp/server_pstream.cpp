@@ -19,7 +19,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#include <winsock.h>
+#include <winsock2.h>
 typedef int socklen_t;
 #else
 #include <sys/socket.h>
@@ -267,9 +267,9 @@ callInfo_serverPstream::callInfo_serverPstream(
     struct sockaddr const clientAddr,
     socklen_t const clientAddrSize) :
 
-    serverP(serverP),
-    clientAddr(clientAddr),
-    clientAddrSize(clientAddrSize)
+    serverP        (serverP),
+    clientAddr     (clientAddr),
+    clientAddrSize (clientAddrSize)
 
 {}
 

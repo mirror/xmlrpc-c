@@ -3,8 +3,10 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
+#include <assert.h>
 #include "xmlrpc_config.h"
 #include "bool.h"
+#include "c_util.h"
 #include "xmldef.h"
 #include "xmltok.h"
 #include "nametab.h"
@@ -360,6 +362,8 @@ static const struct normal_encoding internal_utf8_encoding = {
 
 
 
+static Utf8Converter latin1_toUtf8;
+
 static void
 latin1_toUtf8(const ENCODING * const enc ATTR_UNUSED,
               const char **    const fromP,
@@ -367,17 +371,17 @@ latin1_toUtf8(const ENCODING * const enc ATTR_UNUSED,
               char **          const toP,
               const char *     const toLim) {
 /*----------------------------------------------------------------------------
-   Convert the Latin1 string that starts at *fromP and ends at 'fromLim'
-   to UTF8 in the buffer that starts at *toP and ends at 'toLim'.
+   Convert the Latin1 string to UTF-8.
 
-   Go from left to right and stop when the output buffer is full.
+   This is a Utf8Converter subroutine.  See documentation of the
+   Utf8Converter type for details.
 
-   Note that the buffer can be full while still having a byte left in it
-   because a Latin1 character may require two bytes of the output buffer.
-
-   Leave *fromP and *toP pointing after the last character converted.
+   Note: a latin1 input character converts to 1 or 2 UTF-8 output
+   bytes.
 -----------------------------------------------------------------------------*/
     bool bufferIsFull;
+
+    assert(toLim - *toP >= 2);  /* Calling condition */
 
     for (bufferIsFull = false; *fromP != fromLim && !bufferIsFull;) {
         unsigned char const c = (unsigned char)**fromP;
@@ -999,17 +1003,17 @@ static const char KW_no[] = {
 
 static
 int doParseXmlDecl(const ENCODING *(*encodingFinder)(const ENCODING *,
-		                                     const char *,
-						     const char *),
-		   int isGeneralTextEntity,
-		   const ENCODING *enc,
-		   const char *ptr,
-		   const char *end,
-		   const char **badPtr,
-		   const char **versionPtr,
-		   const char **encodingName,
-		   const ENCODING **encoding,
-		   int *standalone)
+                                                     const char *,
+                                                     const char *),
+                   int isGeneralTextEntity,
+                   const ENCODING *enc,
+                   const char *ptr,
+                   const char *end,
+                   const char **badPtr,
+                   const char **versionPtr,
+                   const char **encodingName,
+                   const ENCODING **encoding,
+                   int *standalone)
 {
   const char *val = 0;
   const char *name = 0;
@@ -1382,24 +1386,34 @@ static const char KW_UTF_16LE[] = {
   ASCII_U, ASCII_T, ASCII_F, ASCII_MINUS, ASCII_1, ASCII_6, ASCII_L, ASCII_E, '\0'
 };
 
-static
-int getEncodingIndex(const char *name)
-{
-  static const char *encodingNames[] = {
-    KW_ISO_8859_1,
-    KW_US_ASCII,
-    KW_UTF_8,
-    KW_UTF_16,
-    KW_UTF_16BE,
-    KW_UTF_16LE,
-  };
-  int i;
-  if (name == 0)
-    return NO_ENC;
-  for (i = 0; i < (int)(sizeof(encodingNames)/sizeof(encodingNames[0])); i++)
-    if (streqci(name, encodingNames[i]))
-      return i;
-  return UNKNOWN_ENC;
+static int
+getEncodingIndex(const char * const name) {
+/*----------------------------------------------------------------------------
+   Return the index into the encodings[] table of the encoding named 'name'.
+
+   If 'name' is NULL, return NO_ENC.
+
+   If the name is non-NULL, but not one we recognize, return UNKNOWN_ENC.
+   Note that UNKNOWN_ENC is not actually an index (but NO_ENC is).
+-----------------------------------------------------------------------------*/
+    if (name == NULL)
+        return NO_ENC;
+    else {
+        static const char * const encodingNames[] = {
+            KW_ISO_8859_1,
+            KW_US_ASCII,
+            KW_UTF_8,
+            KW_UTF_16,
+            KW_UTF_16BE,
+            KW_UTF_16LE,
+        };
+        unsigned int i;
+        for (i = 0; i < (unsigned int)(ARRAY_SIZE(encodingNames)); i++) {
+            if (streqci(name, encodingNames[i]))
+                return i;
+        }
+        return UNKNOWN_ENC;
+    }
 }
 
 /* For binary compatibility, we store the index of the encoding specified

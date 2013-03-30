@@ -13,9 +13,9 @@
 */
 #define XMLRPC_HAVE_WCHAR 1
 #ifdef WIN32
-  /* SOCKET is a type defined by <winsock.h>.  Anyone who
+  /* SOCKET is a type defined by <winsock2.h>.  Anyone who
      uses XMLRPC_SOCKET on a WIN32 system must #include
-     <winsock.h>
+     <winsock2.h>
   */
   #define XMLRPC_SOCKET SOCKET
   #define XMLRPC_HAVE_TIMEVAL 0

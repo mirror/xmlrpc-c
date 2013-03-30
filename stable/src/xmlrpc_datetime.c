@@ -9,7 +9,8 @@
 #include <assert.h>
 #include <stdio.h>
 #if MSVCRT
-#include <windows.h>
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif
 
 #include "bool.h"
@@ -292,6 +293,53 @@ xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
     timeValueP->tv_nsec = usecs * 1000;
 }
 #endif
+
+
+
+void
+xmlrpc_read_datetime_8601(xmlrpc_env *         const envP,
+                          const xmlrpc_value * const valueP,
+                          const char **        const iso8601ValueP) {
+/*----------------------------------------------------------------------------
+  Get the datetime in ISO 8601 format.
+
+  ISO 8601 allows a variety of representations for each datetime.
+  The particular one we return is as in the following example.
+
+     19930214T131030,250000Z
+
+  (13:10:30.25 on February 14, 1993)
+
+  There are always 4 digits for the year.  There are always 6 digits after the
+  comma (microseconds).  Midnight is hour 0, not 24.
+-----------------------------------------------------------------------------*/
+    validateDatetimeType(envP, valueP);
+    if (!envP->fault_occurred) {
+        xmlrpc_datetime dt;
+
+        xmlrpc_read_datetime(envP, valueP, &dt);
+
+        if (!envP->fault_occurred) {
+            if (dt.Y > 9999)
+                xmlrpc_faultf(envP, "Too far in future (year %u).  "
+                              "ISO 8601 cannot "
+                              "represent years after AD 9999", dt.Y);
+            else {
+                xmlrpc_asprintf(iso8601ValueP,
+                                "%04u%02u%02uT%02u%02u%02u,%06uZ",
+                                dt.Y, dt.M, dt.D, dt.h, dt.m, dt.s, dt.u);
+
+                if (xmlrpc_strnomem(*iso8601ValueP))
+                    xmlrpc_faultf(envP,
+                                  "Unable to allocate memory "
+                                  "for datetime string");
+                
+                if (envP->fault_occurred)
+                    xmlrpc_strfree(*iso8601ValueP);
+            }
+        }
+    }
+}
 
 
 

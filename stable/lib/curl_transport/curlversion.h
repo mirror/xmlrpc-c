@@ -14,6 +14,12 @@
   #define HAVE_CURL_STRERROR 0
 #endif
 
+#ifdef CURLGSSAPI_DELEGATION_FLAG
+#define HAVE_CURL_GSSAPI_DELEGATION 1
+#else
+#define HAVE_CURL_GSSAPI_DELEGATION 0
+#endif
+
 #undef CMAJOR
 #undef CMINOR
 

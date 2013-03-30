@@ -32,6 +32,12 @@
 #  define _REENTRANT
 #  include <pthread.h>
 #elif HAVE_WINDOWS_THREAD
+/* We define WIN32_WIN_LEAN_AND_MEAN to make <windows.h> contain less
+   junk; nothing in Xmlrpc-c needs that stuff.  One significant thing it cuts
+   out is <winsock.h>, which would conflict with the <winsock2.h> that our
+   includer might use.
+*/
+#define WIN32_WIN_LEAN_AND_MEAN
 #include <windows.h>
 
 #ifdef __cplusplus
@@ -39,20 +45,11 @@ extern "C" {
 #endif
 
 typedef HANDLE pthread_t;
-typedef CRITICAL_SECTION pthread_mutex_t;
-
-#define PTHREAD_MUTEX_INITIALIZER NULL
-    /* usage: pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; */
 
 typedef
 struct {
     int attrs; /* currently unused. placeholder. */
 } pthread_attr_t;
-
-typedef
-struct {
-    int attrs; /* currently unused. placeholder. */
-} pthread_mutexattr_t;
 
 typedef void * pthread_func(void *);
 
@@ -63,12 +60,6 @@ extern int pthread_create(pthread_t *            const new_thread_ID,
 extern int pthread_cancel(pthread_t target_thread);
 extern int pthread_join(pthread_t target_thread, void **status);
 extern int pthread_detach(pthread_t target_thread);
-
-extern int pthread_mutex_init(pthread_mutex_t *           const mp,
-                              const pthread_mutexattr_t * const attr);
-extern int pthread_mutex_lock(pthread_mutex_t * const mp);
-extern int pthread_mutex_unlock(pthread_mutex_t * const mp);
-extern int pthread_mutex_destroy(pthread_mutex_t * const mp);
 
 #ifdef __cplusplus
 }

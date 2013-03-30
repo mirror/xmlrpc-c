@@ -18,9 +18,23 @@
 #include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/girmem.hpp>
 
+/*
+  XMLRPC_PACKETSOCKET_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_packetsocket.
+
+  XMLRPC_BUILDING_PACKETSOCKET says this compilation is part of
+  libxmlrpc_packetsocket, as opposed to something that _uses_
+  libxmlrpc_packetsocket.
+*/
+#ifdef XMLRPC_BUILDING_PACKETSOCKET
+#define XMLRPC_PACKETSOCKET_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_PACKETSOCKET_EXPORTED
+#endif
+
 namespace xmlrpc_c {
 
-class XMLRPC_DLLEXPORT packet : public girmem::autoObject {
+class XMLRPC_PACKETSOCKET_EXPORTED packet : public girmem::autoObject {
 
 public:
     packet();
@@ -55,7 +69,7 @@ private:
 
 
 
-class XMLRPC_DLLEXPORT packetPtr: public girmem::autoObjectPtr {
+class XMLRPC_PACKETSOCKET_EXPORTED packetPtr: public girmem::autoObjectPtr {
 
 public:
     packetPtr();
@@ -68,9 +82,9 @@ public:
 
 
 
-class XMLRPC_DLLEXPORT packetSocket_impl;
+class XMLRPC_PACKETSOCKET_EXPORTED packetSocket_impl;
 
-class XMLRPC_DLLEXPORT packetSocket {
+class XMLRPC_PACKETSOCKET_EXPORTED packetSocket {
 /*----------------------------------------------------------------------------
    This is an Internet communication vehicle that transmits individual
    variable-length packets of text.

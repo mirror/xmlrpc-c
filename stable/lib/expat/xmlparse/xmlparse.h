@@ -14,44 +14,15 @@ extern "C" {
 
 typedef void *XML_Parser;
 
-#ifdef XML_UNICODE_WCHAR_T
-
-/* XML_UNICODE_WCHAR_T will work only if sizeof(wchar_t) == 2 and wchar_t
-   uses Unicode.
-*/
-/* Information is UTF-16 encoded as wchar_ts */
-
-#ifndef XML_UNICODE
-#define XML_UNICODE
-#endif
-
-#include <stddef.h>
-typedef wchar_t XML_Char;
-typedef wchar_t XML_LChar;
-
-#else /* not XML_UNICODE_WCHAR_T */
-
-#ifdef XML_UNICODE
-
-/* Information is UTF-16 encoded as unsigned shorts */
-typedef unsigned short XML_Char;
-typedef char XML_LChar;
-
-#else /* not XML_UNICODE */
-
 /* Information is UTF-8 encoded. */
 typedef char XML_Char;
 typedef char XML_LChar;
 
-#endif /* not XML_UNICODE */
-
-#endif /* not XML_UNICODE_WCHAR_T */
-
-
 /* Constructs a new parser; encoding is the encoding specified by the external
 protocol or null if there is none specified. */
 
-XML_Parser XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+XML_Parser
 xmlrpc_XML_ParserCreate(const XML_Char * const encoding);
 
 /* Constructs a new parser and namespace processor.  Element type names
@@ -64,7 +35,8 @@ the namespace URI and the local part will be concatenated without any
 separator.  When a namespace is not declared, the name and prefix will be
 passed through without expansion. */
 
-XML_Parser XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+XML_Parser
 xmlrpc_XML_ParserCreateNS(const XML_Char * const encoding,
                           XML_Char const namespaceSeparator);
 
@@ -268,24 +240,30 @@ typedef int (*XML_UnknownEncodingHandler)(void *encodingHandlerData,
                       const XML_Char *name,
                       XML_Encoding *info);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetElementHandler(XML_Parser parser,
                              XML_StartElementHandler start,
                              XML_EndElementHandler end);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetCharacterDataHandler(XML_Parser parser,
                                    XML_CharacterDataHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetProcessingInstructionHandler(
     XML_Parser parser,
     XML_ProcessingInstructionHandler handler);
-void XMLRPC_DLLEXPORT
+
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetCommentHandler(XML_Parser parser,
                              XML_CommentHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetCdataSectionHandler(XML_Parser parser,
                                   XML_StartCdataSectionHandler start,
                                   XML_EndCdataSectionHandler end);
@@ -295,50 +273,62 @@ xmlrpc_XML_SetCdataSectionHandler(XML_Parser parser,
    handler.
 */
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetDefaultHandler(XML_Parser parser,
                              XML_DefaultHandler handler);
 
-/* This sets the default handler but does not inhibit expansion of internal entities.
-The entity reference will not be passed to the default handler. */
+/* This sets the default handler but does not inhibit expansion of internal
+   entities.  The entity reference will not be passed to the default
+   handler.
+*/
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetDefaultHandlerExpand(XML_Parser parser,
                                    XML_DefaultHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetDoctypeDeclHandler(XML_Parser parser,
                                  XML_StartDoctypeDeclHandler start,
                                  XML_EndDoctypeDeclHandler end);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetUnparsedEntityDeclHandler(XML_Parser parser,
                                         XML_UnparsedEntityDeclHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetNotationDeclHandler(XML_Parser parser,
                                   XML_NotationDeclHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetExternalParsedEntityDeclHandler(
     XML_Parser parser,
     XML_ExternalParsedEntityDeclHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetInternalParsedEntityDeclHandler(
     XML_Parser parser,
     XML_InternalParsedEntityDeclHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetNamespaceDeclHandler(XML_Parser parser,
                                    XML_StartNamespaceDeclHandler start,
                                    XML_EndNamespaceDeclHandler end);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetNotStandaloneHandler(XML_Parser parser,
                                    XML_NotStandaloneHandler handler);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetExternalEntityRefHandler(XML_Parser parser,
                                        XML_ExternalEntityRefHandler handler);
 
@@ -346,10 +336,12 @@ xmlrpc_XML_SetExternalEntityRefHandler(XML_Parser parser,
    passed as the first argument to the external entity ref handler
    instead of the parser object.
 */
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetExternalEntityRefHandlerArg(XML_Parser, void *arg);
 
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetUnknownEncodingHandler(XML_Parser parser,
                                      XML_UnknownEncodingHandler handler,
                                      void *encodingHandlerData);
@@ -358,11 +350,13 @@ xmlrpc_XML_SetUnknownEncodingHandler(XML_Parser parser,
    processing instruction or character data.  It causes the corresponding
    markup to be passed to the default handler.
 */
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_DefaultCurrent(XML_Parser parser);
 
 /* This value is passed as the userData argument to callbacks. */
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_SetUserData(XML_Parser parser, void *userData);
 
 /* Returns the last value set by XML_SetUserData or null. */
@@ -372,14 +366,16 @@ xmlrpc_XML_SetUserData(XML_Parser parser, void *userData);
 to XML_ParserCreate. It must not be called after XML_Parse
 or XML_ParseBuffer. */
 
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_SetEncoding(XML_Parser parser, const XML_Char *encoding);
 
 /* If this function is called, then the parser will be passed
    as the first argument to callbacks instead of userData.
    The userData will still be accessible using XML_GetUserData.
 */
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_UseParserAsHandlerArg(XML_Parser parser);
 
 /* Sets the base to be used for resolving relative URIs in system
@@ -389,10 +385,12 @@ xmlrpc_XML_UseParserAsHandlerArg(XML_Parser parser);
    and XML_UnparsedEntityDeclHandler. The base argument will be copied.
    Returns zero if out of memory, non-zero otherwise.
 */
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_SetBase(XML_Parser parser, const XML_Char *base);
 
-const XML_Char XMLRPC_DLLEXPORT *
+XMLRPC_DLLEXPORT 
+const XML_Char *
 xmlrpc_XML_GetBase(XML_Parser parser);
 
 /* Returns the number of the attribute/value pairs passed in last call
@@ -401,7 +399,8 @@ xmlrpc_XML_GetBase(XML_Parser parser);
    this correspondds to an index into the atts array passed to the
    XML_StartElementHandler.
 */
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_GetSpecifiedAttributeCount(XML_Parser parser);
 
 /* Returns the index of the ID attribute passed in the last call to
@@ -409,25 +408,31 @@ xmlrpc_XML_GetSpecifiedAttributeCount(XML_Parser parser);
    attribute/value pair counts as 2; thus this correspondds to an index
    into the atts array passed to the XML_StartElementHandler.
 */
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_GetIdAttributeIndex(XML_Parser parser);
 
 /* Parses some input. Returns 0 if a fatal error is detected.
    The last call to XML_Parse must have isFinal true;
    len may be zero for this call (or any other).
 */
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_Parse(XML_Parser   const xmlParserP,
                  const char * const s,
                  size_t       const len,
                  int          const isFinal);
 
-void XMLRPC_DLLEXPORT *
+XMLRPC_DLLEXPORT 
+void *
 xmlrpc_XML_GetBuffer(XML_Parser const xmlParserP,
                      size_t     const len);
 
-int XMLRPC_DLLEXPORT
-xmlrpc_XML_ParseBuffer(XML_Parser const parser, int const len, int const isFinal);
+XMLRPC_DLLEXPORT
+int
+xmlrpc_XML_ParseBuffer(XML_Parser const parser,
+                       int        const len,
+                       int        const isFinal);
 
 /* Creates an XML_Parser object that can parse an external general
    entity; context is a '\0'-terminated string specifying the parse
@@ -445,7 +450,8 @@ xmlrpc_XML_ParseBuffer(XML_Parser const parser, int const len, int const isFinal
    from the parser argument.  Returns 0 if out of memory.  Otherwise
    returns a new XML_Parser object.
 */
-XML_Parser XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+XML_Parser
 xmlrpc_XML_ExternalEntityParserCreate(XML_Parser parser,
                                       const XML_Char *context,
                                       const XML_Char *encoding);
@@ -475,9 +481,18 @@ enum XML_ParamEntityParsing {
    XML_SetParamEntityParsing will return 0 if parsing of parameter
    entities is requested; otherwise it will return non-zero.
 */
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_SetParamEntityParsing(XML_Parser parser,
                                  enum XML_ParamEntityParsing parsing);
+
+/* Sets the hash salt to use for internal hash calculations.
+   Helps in preventing DoS attacks based on predicting hash
+   function behavior. This must be called before parsing is started.
+   Returns 1 if successful, 0 when called after parsing has started.
+*/
+int
+XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt);
 
 enum XML_Error {
   XML_ERROR_NONE,
@@ -510,10 +525,12 @@ enum XML_Error {
    information about the error.
 */
 
-enum XML_Error XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+enum XML_Error
 xmlrpc_XML_GetErrorCode(XML_Parser const parser);
 
-XMLRPC_DLLEXPORT const char *
+XMLRPC_DLLEXPORT
+const char *
 xmlrpc_XML_GetErrorString(XML_Parser const parser);
 
 /* These functions return information about the current parse location.
@@ -525,17 +542,23 @@ xmlrpc_XML_GetErrorString(XML_Parser const parser);
    of the sequence of characters that generated the event.
 */
 
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_GetCurrentLineNumber(XML_Parser parser);
-int XMLRPC_DLLEXPORT
+
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_GetCurrentColumnNumber(XML_Parser parser);
-long XMLRPC_DLLEXPORT
+
+XMLRPC_DLLEXPORT
+long
 xmlrpc_XML_GetCurrentByteIndex(XML_Parser parser);
 
 /* Return the number of bytes in the current event.
 Returns 0 if the event is in an internal entity. */
 
-int XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XML_GetCurrentByteCount(XML_Parser parser);
 
 /* For backwards compatibility with previous versions. */
@@ -544,11 +567,13 @@ xmlrpc_XML_GetCurrentByteCount(XML_Parser parser);
 #define XML_GetErrorByteIndex XML_GetCurrentByteIndex
 
 /* Frees memory used by the parser. */
-void XMLRPC_DLLEXPORT
+XMLRPC_DLLEXPORT
+void
 xmlrpc_XML_ParserFree(XML_Parser parser);
 
 /* Returns a string describing the error. */
-const XML_LChar XMLRPC_DLLEXPORT *
+XMLRPC_DLLEXPORT 
+const XML_LChar *
 xmlrpc_XML_ErrorString(int const code);
 
 #ifdef __cplusplus

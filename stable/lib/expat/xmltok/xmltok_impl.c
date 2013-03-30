@@ -1,3 +1,14 @@
+/*=============================================================================
+                              xmltok_impl.c
+===============================================================================
+
+  This is an inclusion for xmltok.c.  You define various macros to control
+  what code this file generates.  xmltok.c includes it multiple times with
+  different macro definitions to get different code.
+
+  For example, the PREFIX macro becomes part of the symbol names we define,
+  and can be "normal_", "little2_", or "big2_".
+=============================================================================*/
 /*
 Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.

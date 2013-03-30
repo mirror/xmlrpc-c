@@ -14,7 +14,21 @@
 namespace xmlrpc_c {
 
 
-class XMLRPC_DLLEXPORT callInfo {
+/*
+  XMLRPC_SERVERPP_EXPORTED marks a symbol in this file that is exported
+  from libxmlrpc_server++.
+
+  XMLRPC_BUILDING_SERVERPP says this compilation is part of
+  libxmlrpc_server++, as opposed to something that _uses_
+  libxmlrpc_server++.
+*/
+#ifdef XMLRPC_BUILDING_SERVERPP
+#define XMLRPC_SERVERPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_SERVERPP_EXPORTED
+#endif
+
+class XMLRPC_SERVERPP_EXPORTED callInfo {
 /*----------------------------------------------------------------------------
    Information about how an XML-RPC call arrived.
 
@@ -29,7 +43,7 @@ public:
     callInfo();
 };
 
-class XMLRPC_DLLEXPORT method : public girmem::autoObject {
+class XMLRPC_SERVERPP_EXPORTED method : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An XML-RPC method.
 
@@ -85,7 +99,7 @@ protected:
 */
 
 
-class XMLRPC_DLLEXPORT method2 : public method {
+class XMLRPC_SERVERPP_EXPORTED method2 : public method {
 /*----------------------------------------------------------------------------
    An XML-RPC method.
 
@@ -112,7 +126,7 @@ public:
 
 };
 
-class XMLRPC_DLLEXPORT methodPtr : public girmem::autoObjectPtr {
+class XMLRPC_SERVERPP_EXPORTED methodPtr : public girmem::autoObjectPtr {
 
 public:
     methodPtr(xmlrpc_c::method * const methodP);
@@ -121,7 +135,7 @@ public:
     operator->() const;
 };
 
-class XMLRPC_DLLEXPORT defaultMethod : public girmem::autoObject {
+class XMLRPC_SERVERPP_EXPORTED defaultMethod : public girmem::autoObject {
 
 public:
     virtual ~defaultMethod();
@@ -132,7 +146,7 @@ public:
             xmlrpc_c::value *   const  resultP) = 0;
 };
 
-class XMLRPC_DLLEXPORT defaultMethodPtr : public girmem::autoObjectPtr {
+class XMLRPC_SERVERPP_EXPORTED defaultMethodPtr : public girmem::autoObjectPtr {
 
 public:
     defaultMethodPtr();
@@ -148,7 +162,7 @@ public:
 
 struct registry_impl;
 
-class XMLRPC_DLLEXPORT registry : public girmem::autoObject {
+class XMLRPC_SERVERPP_EXPORTED registry : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An Xmlrpc-c server method registry.  An Xmlrpc-c server transport
    (e.g.  an HTTP server) uses this object to process an incoming
@@ -170,7 +184,7 @@ public:
     void
     disableIntrospection();
 
-    class XMLRPC_DLLEXPORT shutdown {
+    class XMLRPC_SERVERPP_EXPORTED shutdown {
     public:
         virtual ~shutdown() = 0;
         virtual void
@@ -202,7 +216,7 @@ private:
 };
 
 
-class XMLRPC_DLLEXPORT registryPtr : public girmem::autoObjectPtr {
+class XMLRPC_SERVERPP_EXPORTED registryPtr : public girmem::autoObjectPtr {
 
 public:
     registryPtr();

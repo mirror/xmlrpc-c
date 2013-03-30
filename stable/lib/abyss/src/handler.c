@@ -14,7 +14,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#ifdef WIN32
+#ifdef _WIN32
   #include <io.h>
 #else
   #include <unistd.h>
@@ -644,7 +644,7 @@ handleFile(TSession *   const sessionP,
 static void
 convertToNativeFileName(char * const fileName ATTR_UNUSED) {
 
-#ifdef WIN32
+#ifdef _WIN32
     char * p;
     p = &fileName[0];
     while (*p) {
@@ -653,7 +653,7 @@ convertToNativeFileName(char * const fileName ATTR_UNUSED) {
 
         ++p;
     }
-#endif  /* WIN32 */
+#endif  /* _WIN32 */
 }
 
 

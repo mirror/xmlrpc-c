@@ -50,8 +50,8 @@ CC = @CC@
 CXX = @CXX@
 CCLD = $(CC)
 CXXLD = $(CXX)
-AR = ar
-RANLIB = ranlib
+AR = @AR@
+RANLIB = @RANLIB@
 LN_S = ln -s
 INSTALL = $(SRCDIR)/install-sh
 
@@ -322,6 +322,17 @@ ifeq ($(patsubst cygwin%,cygwin,$(HOST_OS)),cygwin)
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
+ifeq ($(patsubst mingw32%,mingw32,$(HOST_OS)),mingw32)
+  SHARED_LIB_TYPE = dll
+  MUST_BUILD_SHLIB = Y
+  MUST_BUILD_SHLIBLE = N
+  SHLIB_SUFFIX = dll
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  MSVCRT = yes
+endif
+
 ##############################################################################
 #                     MISCELLANEOUS
 ##############################################################################
@@ -337,6 +348,8 @@ endif
 
 BUILDTOOL_CC = $(CC)
 BUILDTOOL_CCLD = $(CCLD)
+
+THREAD_LIBS = -lpthread
 
 # Here are the commands 'make install' uses to install various kinds of files:
 

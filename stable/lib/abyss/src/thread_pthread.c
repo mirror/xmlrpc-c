@@ -36,10 +36,20 @@ typedef void * (pthreadStartRoutine)(void *);
 
 
 
-static pthreadStartRoutine pthreadStart;
+static pthreadStartRoutine execute;
 
 static void *
-pthreadStart(void * const arg) {
+execute(void * const arg) {
+
+    /* We make sure the user's "thread done" function runs as the thread
+       exits, whether it exits by directly calling ThreadExit() or by
+       returning to caller.
+
+       In the direct exit case, the OS calls the "thread done" function by
+       virtual of a cleanup that we set up.  In the return to caller case, we
+       get control back and our call to pthread_cleanup_pop() calls the
+       "thread done" function.
+    */
 
     struct abyss_thread * const threadP = arg;
     bool const executeTrue = true;
@@ -49,11 +59,6 @@ pthreadStart(void * const arg) {
     threadP->func(threadP->userHandle);
 
     pthread_cleanup_pop(executeTrue);
-
-    /* Note that func() may not return; it may just exit the thread,
-       by calling ThreadExit(), in which case code here doesn't run.
-    */
-    threadP->threadDone(threadP->userHandle);
 
     return NULL;
 }
@@ -93,7 +98,7 @@ ThreadCreate(TThread **      const threadPP,
             threadP->threadDone = threadDone;
 
             rc = pthread_create(&threadP->thread, &attr,
-                                pthreadStart, threadP);
+                                execute, threadP);
             if (rc == 0) {
                 *errorP = NULL;
                 *threadPP = threadP;
@@ -195,65 +200,3 @@ ThreadHandleSigchld(pid_t const pid ATTR_UNUSED) {
 
 
 
-/*********************************************************************
-** Mutex
-*********************************************************************/
-
-struct abyss_mutex {
-    pthread_mutex_t pthreadMutex;
-};
-
-
-bool
-MutexCreate(TMutex ** const mutexPP) {
-
-    TMutex * mutexP;
-    bool succeeded;
-
-    MALLOCVAR(mutexP);
-
-    if (mutexP) {
-        int rc;
-        rc = pthread_mutex_init(&mutexP->pthreadMutex, NULL);
-
-        succeeded = (rc == 0);
-    } else
-        succeeded = FALSE;
-
-    if (!succeeded)
-        free(mutexP);
-
-    *mutexPP = mutexP;
-
-    return succeeded;
-}
-
-
-
-bool
-MutexLock(TMutex * const mutexP) {
-    return (pthread_mutex_lock(&mutexP->pthreadMutex) == 0);
-}
-
-
-
-bool
-MutexUnlock(TMutex * const mutexP) {
-    return (pthread_mutex_unlock(&mutexP->pthreadMutex) == 0);
-}
-
-
-
-bool
-MutexTryLock(TMutex * const mutexP) {
-    return (pthread_mutex_trylock(&mutexP->pthreadMutex) == 0);
-}
-
-
-
-void
-MutexDestroy(TMutex * const mutexP) {
-    pthread_mutex_destroy(&mutexP->pthreadMutex);
-
-    free(mutexP);
-}

@@ -10,7 +10,7 @@ include $(BLDDIR)/config.mk
 
 default: all
 
-MODS := xmlrpc_curl_transport curltransaction curlmulti lock_pthread
+MODS := xmlrpc_curl_transport curltransaction curlmulti
 
 .PHONY: all
 all: $(MODS:%=%.o) $(MODS:%=%.osh)

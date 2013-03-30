@@ -1,7 +1,9 @@
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.hpp */
+
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
-#ifdef WIN32
+#ifdef _WIN32
 #  include <windows.h>
 #else
 #  include <unistd.h>
@@ -13,7 +15,7 @@
 
 using namespace std;
 
-#ifdef WIN32
+#ifdef _WIN32
   #define SLEEP(seconds) SleepEx(seconds * 1000);
 #else
   #define SLEEP(seconds) sleep(seconds);

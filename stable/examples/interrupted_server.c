@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server based on Abyss.
+/* A simple standalone XML-RPC server program based on Abyss.
 
    You can terminate this server in controlled fashion with a SIGTERM
    signal.
@@ -8,6 +8,8 @@
 */
 
 #define _XOPEN_SOURCE 600
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.h */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>

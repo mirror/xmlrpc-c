@@ -28,10 +28,10 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/lock.h"
+#include "xmlrpc-c/lock_platform.h"
 
 #include "curlversion.h"
-#include "lock.h"
-#include "lock_pthread.h"
 
 #include "curlmulti.h"
 
@@ -81,7 +81,7 @@ curlMulti_create(void) {
     if (curlMultiP == NULL)
         retval = NULL;
     else {
-        curlMultiP->lockP = curlLock_create_pthread();
+        curlMultiP->lockP = xmlrpc_lock_create();
 
         if (curlMultiP->lockP == NULL)
             retval = NULL;
@@ -119,24 +119,24 @@ void
 curlMulti_perform(xmlrpc_env * const envP,
                   curlMulti *  const curlMultiP,
                   bool *       const immediateWorkToDoP,
-                  int *        const runningHandlesP) {
+                  int *        const runningHandleCtP) {
 /*----------------------------------------------------------------------------
    Do whatever work is ready to be done under the control of multi
    manager 'curlMultiP'.  E.g. if HTTP response data has recently arrived
    from the network, process it as an HTTP response.
 
    Iff this results in some work being finished from our point of view,
-   return *immediateWorkToDoP.  (Caller can query the multi manager for
+   return *immediateWorkToDoP true.  (Caller can query the multi manager for
    messages and find out what it is).
 
-   Return as *runningHandlesP the number of Curl easy handles under the
+   Return as *runningHandleCtP the number of Curl easy handles under the
    multi manager's control that are still running -- yet to finish.
 -----------------------------------------------------------------------------*/
     CURLMcode rc;
 
     curlMultiP->lockP->acquire(curlMultiP->lockP);
 
-    rc = curl_multi_perform(curlMultiP->curlMultiP, runningHandlesP);
+    rc = curl_multi_perform(curlMultiP->curlMultiP, runningHandleCtP);
 
     curlMultiP->lockP->release(curlMultiP->lockP);
 

@@ -8,6 +8,8 @@ See the file copying.txt for copying permission.
 #include <stddef.h>
 #include <string.h>
 #include <fcntl.h>
+
+#include "xmlrpc_config.h"
 #include "xmlparse.h"
 #include "xmlfile.h"
 #include "xmltchar.h"
@@ -73,7 +75,7 @@ void processFile(const void *data,
     *retPtr = 1;
 }
 
-#ifdef WIN32
+#if MSVCRT
 
 static
 int isAsciiLetter(XML_Char c)
@@ -81,29 +83,33 @@ int isAsciiLetter(XML_Char c)
   return (T('a') <= c && c <= T('z')) || (T('A') <= c && c <= T('Z'));
 }
 
-#endif /* WIN32 */
+#endif /* MSVCRT */
 
 static
-const XML_Char *resolveSystemId(const XML_Char *base, const XML_Char *systemId, XML_Char **toFree)
+const XML_Char *
+resolveSystemId(const XML_Char *base,
+                const XML_Char *systemId,
+                XML_Char **toFree)
 {
   XML_Char *s;
   *toFree = 0;
   if (!base
       || *systemId == T('/')
-#ifdef WIN32
+#if MSVCRT
       || *systemId == T('\\')
       || (isAsciiLetter(systemId[0]) && systemId[1] == T(':'))
 #endif
      )
     return systemId;
-  *toFree = (XML_Char *)malloc((tcslen(base) + tcslen(systemId) + 2)*sizeof(XML_Char));
+  *toFree = (XML_Char *)
+      malloc((tcslen(base) + tcslen(systemId) + 2)*sizeof(XML_Char));
   if (!*toFree)
     return systemId;
   tcscpy(*toFree, base);
   s = *toFree;
   if (tcsrchr(s, T('/')))
     s = tcsrchr(s, T('/')) + 1;
-#ifdef WIN32
+#if MSVCRT
   if (tcsrchr(s, T('\\')))
     s = tcsrchr(s, T('\\')) + 1;
 #endif

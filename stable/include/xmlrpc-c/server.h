@@ -10,6 +10,19 @@
 extern "C" {
 #endif
 
+/*
+  XMLRPC_SERVER_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc_server.
+
+  XMLRPC_BUILDING_SERVER says this compilation is part of libxmlrpc_server, as
+  opposed to something that _uses_ libxmlrpc_server.
+*/
+#ifdef XMLRPC_BUILDING_SERVER
+#define XMLRPC_SERVER_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_SERVER_EXPORTED
+#endif
+
 typedef struct xmlrpc_registry xmlrpc_registry;
 
 typedef void
@@ -45,25 +58,25 @@ extern unsigned int const xmlrpc_server_version_major;
 extern unsigned int const xmlrpc_server_version_minor;
 extern unsigned int const xmlrpc_server_version_point;
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_server_version(unsigned int * const majorP,
                       unsigned int * const minorP,
                       unsigned int * const pointP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 xmlrpc_registry *
 xmlrpc_registry_new(xmlrpc_env * const envP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_free(xmlrpc_registry * const registryP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_disable_introspection(xmlrpc_registry * const registryP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_add_method(xmlrpc_env *      const envP,
                            xmlrpc_registry * const registryP,
@@ -72,7 +85,7 @@ xmlrpc_registry_add_method(xmlrpc_env *      const envP,
                            xmlrpc_method     const method,
                            void *            const serverInfo);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
                                  xmlrpc_registry * const registryP,
@@ -83,7 +96,7 @@ xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
                                  const char *      const signatureString,
                                  const char *      const help);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
                             xmlrpc_registry * const registryP,
@@ -102,21 +115,21 @@ struct xmlrpc_method_info3 {
     const char *      help;
 };
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_add_method3(
     xmlrpc_env *                       const envP,
     xmlrpc_registry *                  const registryP,
     const struct xmlrpc_method_info3 * const infoP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
                                    xmlrpc_registry *     const registryP,
                                    xmlrpc_default_method const handler,
                                    void *                const userData);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            const envP,
                                      xmlrpc_registry *       const registryP,
@@ -129,13 +142,13 @@ typedef void xmlrpc_server_shutdown_fn(xmlrpc_env * const envP,
                                        const char * const comment,
                                        void *       const callInfo);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
                              xmlrpc_server_shutdown_fn * const shutdownFn,
                              void *                      const context);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_set_dialect(xmlrpc_env *      const envP,
                             xmlrpc_registry * const registryP,
@@ -145,7 +158,7 @@ xmlrpc_registry_set_dialect(xmlrpc_env *      const envP,
    Lower interface -- services to be used by an HTTP request handler
 -----------------------------------------------------------------------------*/
                     
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 void
 xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
                               xmlrpc_registry *   const registryP,
@@ -154,7 +167,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
                               void *              const callInfo,
                               xmlrpc_mem_block ** const outputPP);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 xmlrpc_mem_block *
 xmlrpc_registry_process_call(xmlrpc_env *      const envP,
                              xmlrpc_registry * const registryP,
@@ -162,7 +175,7 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
                              const char *      const xmlData,
                              size_t            const xmlLen);
 
-XMLRPC_DLLEXPORT
+XMLRPC_SERVER_EXPORTED
 size_t
 xmlrpc_registry_max_stackSize(xmlrpc_registry * const registryP);
 

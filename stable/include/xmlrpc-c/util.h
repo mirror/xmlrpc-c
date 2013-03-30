@@ -31,6 +31,19 @@
 extern "C" {
 #endif
 
+/*
+  XMLRPC_UTIL_EXPORTED marks a symbol in this file that is exported from
+  libxmlrpc_util.
+
+  XMLRPC_BUILDING_UTIL says this compilation is part of libxmlrpc_util, as
+  opposed to something that _uses_ libxmlrpc_util.
+*/
+#ifdef XMLRPC_BUILDING_UTIL
+#define XMLRPC_UTIL_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_UTIL_EXPORTED
+#endif
+
 /*=========================================================================
 **  C struct size computations
 **=======================================================================*/
@@ -73,7 +86,7 @@ extern "C" {
 #define XMLRPC_ASSERT(cond) while (0) {}
 #endif
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_assertion_failed(const char * const fileName,
                         int          const lineNumber);
@@ -127,22 +140,22 @@ typedef struct _xmlrpc_env {
 
 /* Initialize and destroy the contents of the provided xmlrpc_env object.
 ** These functions will never fail. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void xmlrpc_env_init (xmlrpc_env* env);
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void xmlrpc_env_clean (xmlrpc_env* const env);
 
 /* Fill out an xmlrpc_fault with the specified values, and set the
 ** fault_occurred flag. This function will make a private copy of 'string',
 ** so you retain responsibility for your copy. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void 
 xmlrpc_env_set_fault(xmlrpc_env * const env, 
                      int          const faultCode, 
                      const char * const faultDescription);
 
 /* The same as the above, but using varargs */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
                              int          const code,
@@ -150,7 +163,7 @@ xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
                              va_list            args);
 
 /* The same as the above, but using a printf-style format string. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void 
 xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP, 
                                int          const code,
@@ -160,7 +173,7 @@ xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP,
 /* This one infers XMLRPC_INTERNAL_ERROR and has a shorter name.
    So a call takes up less source code space.
 */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_faultf(xmlrpc_env * const envP,
               const char * const format,
@@ -232,40 +245,40 @@ typedef struct _xmlrpc_mem_block {
 } xmlrpc_mem_block;
 
 /* Allocate a new xmlrpc_mem_block. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* const env, size_t const size);
 
 /* Destroy an existing xmlrpc_mem_block, and everything it contains. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void xmlrpc_mem_block_free (xmlrpc_mem_block* const block);
 
 /* Initialize the contents of the provided xmlrpc_mem_block. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void xmlrpc_mem_block_init
     (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Deallocate the contents of the provided xmlrpc_mem_block, but not the
 ** block itself. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void xmlrpc_mem_block_clean (xmlrpc_mem_block* const block);
 
 /* Get the size and contents of the xmlrpc_mem_block. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 size_t 
 xmlrpc_mem_block_size(const xmlrpc_mem_block * const block);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void * 
 xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block);
 
 /* Resize an xmlrpc_mem_block, preserving as much of the contents as
 ** possible. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void xmlrpc_mem_block_resize
     (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Append data to an existing xmlrpc_mem_block. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void xmlrpc_mem_block_append
     (xmlrpc_env* const env, xmlrpc_mem_block* const block, const void * const data, size_t const len);
 
@@ -312,14 +325,14 @@ void xmlrpc_mem_block_append
 **  UTF-8 Encoding and Decoding
 **=======================================================================*/
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void 
 xmlrpc_validate_utf8(xmlrpc_env * const envP,
                      const char * const utf8Data,
                      size_t       const utf8Len);
 
 /* Decode a UTF-8 string. */
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 xmlrpc_mem_block *
 xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
                    const char * const utf8_data,
@@ -328,20 +341,51 @@ xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
 /* Encode a UTF-8 string. */
 
 #if XMLRPC_HAVE_WCHAR
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 xmlrpc_mem_block *
 xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
                    const wchar_t * const wcsData,
                    size_t          const wcsLen);
 #endif
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_force_to_utf8(char * const buffer);
 
-XMLRPC_DLLEXPORT
+XMLRPC_UTIL_EXPORTED
 void
 xmlrpc_force_to_xml_chars(char * const buffer);
+
+/*=========================================================================
+**  XML-RPC Base64 Utilities
+**=========================================================================
+**  Here are some lightweight utilities which can be used to encode and
+**  decode Base64 data. These are exported mainly for testing purposes.
+*/
+
+/* This routine inserts newlines every 76 characters, as required by the
+** Base64 specification. */
+XMLRPC_UTIL_EXPORTED
+xmlrpc_mem_block *
+xmlrpc_base64_encode(xmlrpc_env *          const envP,
+                     const unsigned char * const binData,
+                     size_t                const binLen);
+
+/* This routine encodes everything in one line. This is needed for HTTP
+** authentication and similar tasks. */
+XMLRPC_UTIL_EXPORTED
+xmlrpc_mem_block *
+xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
+                                      const unsigned char * const binData,
+                                      size_t                const binLen);
+
+/* This decodes Base64 data with or without newlines. */
+XMLRPC_UTIL_EXPORTED
+extern xmlrpc_mem_block *
+xmlrpc_base64_decode(xmlrpc_env * const envP,
+                     const char * const asciiData,
+                     size_t       const asciiLen);
+
 
 #ifdef __cplusplus
 }

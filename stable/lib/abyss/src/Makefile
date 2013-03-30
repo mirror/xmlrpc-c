@@ -18,10 +18,16 @@ STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_abyss.a
 SHARED_LIBS_TO_BUILD := libxmlrpc_abyss
 SHARED_LIBS_TO_INSTALL := libxmlrpc_abyss
 
-ifeq ($(ENABLE_ABYSS_THREADS),yes)
-  THREAD_MODULE = thread_pthread
+ifeq ($(findstring mingw,$(HOST_OS)),mingw)
+  THREAD_MODULE = thread_windows
+  SOCKET_MODULE = socket_win
 else
-  THREAD_MODULE = thread_fork
+  SOCKET_MODULE = socket_unix
+  ifeq ($(ENABLE_ABYSS_THREADS),yes)
+    THREAD_MODULE = thread_pthread
+  else
+    THREAD_MODULE = thread_fork
+  endif
 endif
 
 TARGET_MODS = \
@@ -39,7 +45,7 @@ TARGET_MODS = \
   server \
   session \
   socket \
-  socket_unix \
+  $(SOCKET_MODULE) \
   token \
   $(THREAD_MODULE) \
   trace \
@@ -72,9 +78,12 @@ all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 $(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) \
 	$(LIBXMLRPC_UTIL)
 $(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
-$(ABYSS_SHLIB): LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+$(ABYSS_SHLIB): LIBDEP = $(LIBXMLRPC_UTIL_LIBDEP)
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
-  $(ABYSS_SHLIB):  LIBDEP += -lpthread
+  $(ABYSS_SHLIB):  LIBDEP += $(THREAD_LIBS)
+endif
+ifeq ($(MSVCRT),yes)
+  $(ABYSS_SHLIB):  LIBDEP += -lws2_32 -lwsock32
 endif
 
 # Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:

@@ -20,8 +20,6 @@ CFLAGS_LOCAL = -Wno-inline
 
 INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc_cpp_proxy
 
 OBJECTS = \
@@ -34,15 +32,19 @@ OBJECTS = \
 LIBS = \
   $(LIBXMLRPC_CLIENTPP) \
   $(LIBXMLRPCPP) \
-  $(LIBXMLRPC_CLIENT) \
+  $(CLIENT_LIBS_DEP) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_XML) \
   $(LIBXMLRPC_UTIL) \
 
 LDLIBS = $(CLIENTPP_LDLIBS) $(CLIENT_LDLIBS)
 
+ifeq ($(MSVCRT),yes)
+  LDLIBS += -lws2_32 -lwsock32 -lpthread
+endif
+
 xmlrpc_cpp_proxy:  $(OBJECTS) $(LIBS)
-	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS) $(LADD)
+	$(CXXLD) -o $@ $(LDFLAGS_ALL) $(OBJECTS) $(LDLIBS) $(LADD)
 
 %.o:%.cpp $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CXX) -c $(CXXFLAGS_ALL) $<

@@ -1,12 +1,16 @@
-This directory contains working examples of uses of XML-RPC-c.  There
-are XML-RPC servers and XML-RPC clients that use the Xmlrpc-c libraries.
+This directory contains working examples of uses of XML-RPC-c.  There are
+XML-RPC server programs and XML-RPC client programs that use the Xmlrpc-c
+libraries.
 
-The make file is a combination of an example of how to build programs
-that use Xmlrpc-c libraries and something that actually does build the
-programs in this directory.  As such, it isn't perfect for either of
-those purposes.  To build the examples, you must first build the
-libraries (make dependencies will not take care of that for you).  Then
-you can issue a simple 'make' in this directory.
+The make file is a combination of an example of how to build programs that use
+Xmlrpc-c libraries and something that actually does build the programs in this
+directory.  As such, it isn't perfect for either of those purposes.  To build
+the examples, you must first build the libraries (make dependencies will not
+take care of that for you).  Do that by running a default 'make' in the top
+level source directory.  Then you can issue a simple 'make' in this directory.
+
+A default make in the root of the Xmlrpc-c source directory does not build
+this directory, but a 'make all' does.
 
 
 The simplest server program is 'xmlrpc_sample_add_server'.  This

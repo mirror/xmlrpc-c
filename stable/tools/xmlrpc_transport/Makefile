@@ -20,9 +20,11 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include
 
-LDFLAGS = $(LADD)
-
 all: xmlrpc_transport
+
+ifeq ($(MSVCRT),yes)
+  CLIENT_LDLIBS += -lws2_32 -lwsock32 -lpthread
+endif
 
 UTIL_OBJS = \
   casprintf.o \
@@ -33,10 +35,8 @@ UTIL_OBJS = \
 
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
-
-xmlrpc_transport:%:%.o $(LIBS) $(UTILS)
-	$(CCLD) -o $@ $(LDFLAGS) $< $(CLIENT_LDLIBS) $(UTILS)
+xmlrpc_transport:%:%.o $(CLIENT_LIBS_DEP) $(UTILS)
+	$(CCLD) -o $@ $(LDFLAGS_ALL) $< $(CLIENT_LDLIBS) $(UTILS)
 
 %.o:%.c
 	$(CC) -c $(CFLAGS_ALL) $<

@@ -19,14 +19,6 @@ namespace xmlrpc_c {
 
 namespace {
 
-void
-throwIfError(env_wrap const& env) {
-
-    if (env.env_c.fault_occurred)
-        throw(error(env.env_c.fault_string));
-}
-
-
 class cValueWrapper {
 /*----------------------------------------------------------------------------
    Use an object of this class to set up to remove a reference to an

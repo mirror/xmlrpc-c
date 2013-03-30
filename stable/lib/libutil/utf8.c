@@ -137,11 +137,29 @@ validateContinuation(xmlrpc_env * const envP,
 static void
 validateUtf16(xmlrpc_env * const envP,
               wchar_t      const wc) {
+/*----------------------------------------------------------------------------
+   Validate that the string is a legal UTF16 encoding of a Unicode
+   character.
 
+   Actually, we validate that it is UCS-2.  The set of UCS-2 encodings is a
+   subset of the set of UTF16 encodings.  In particular, it is the set of
+   UTF16 encodings that are 16 bits.  UCS-2 is a fixed-length encoding, with
+   16 bits per character, whereas UTF16 is variable length, with 1 or more 16
+   bit units per character.
+
+   The name of the subroutine reflects the fact that in concept, we _should_
+   accept any UTF16, but we haven't taken the time yet to figure out how to do
+   that (in the big picture, not just this subroutine).  The user will notice
+   only if he uses those really arcane 3.1% of the Unicode characters that
+   take more than 16 bits to represent in UTF16.
+-----------------------------------------------------------------------------*/
     if (wc > UCS2_MAX_LEGAL_CHARACTER)
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_INVALID_UTF8_ERROR,
-            "UCS-2 characters > U+FFFD are illegal.  String contains 0x%04x",
+            "Xmlrpc-c is not capable of handling UTF16 character encodings "
+            "longer than 16 bits, which means you can't have a code point "
+            "> U+FFFD.  "
+            "This string contains 0x%04x",
             (unsigned)wc);
     else if (UTF16_FIRST_SURROGATE <= wc && wc <= UTF16_LAST_SURROGATE)
         xmlrpc_env_set_fault_formatted(
@@ -275,11 +293,14 @@ decodeUtf8(xmlrpc_env * const envP,
         } else {
             /* Look up the length of this UTF-8 sequence. */
             size_t const length = utf8SeqLength[(unsigned char) init];
-
+                /* Special value 0 means no length could be determined because
+                   it is not a valid initial byte for a UTF-8 sequence.
+                */
             if (length == 0)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INVALID_UTF8_ERROR,
-                    "Unrecognized UTF-8 initial byte value 0x%02x", init);
+                    "Unrecognized UTF-8 initial byte value 0x%02x",
+                    (unsigned char)init);
             else {
                 /* Make sure we have enough bytes to convert. */
                 if (utf8Cursor + length > utf8_len) {
@@ -437,13 +458,18 @@ xmlrpc_force_to_utf8(char * const buffer) {
    The buffer ends with a NUL character, and the mutation does not make
    it longer.
 
-   The most common reason for a string that's supposed to be UTF-8 not
-   to be UTF-8 is that it was supposed to be ASCII but instead
-   includes garbage with the high bit on (ASCII characters always have
-   the high bit off), or maybe a primitive 8-bit ASCII extension.
-   Therefore, we force it to UTF-8 by replacing some bytes that have
-   the high bit set with DEL (0x7F).  That would leave the other
-   characters meaningful.
+   The most common reason for a string that's supposed to be UTF-8 not to be
+   UTF-8 is that it was supposed to be ASCII but instead includes garbage with
+   the high bit on (ASCII characters always have the high bit off), or maybe a
+   primitive 8-bit ASCII extension such as Latin1 (ISO 8859-1).  Therefore,
+   we force it to UTF-8 by replacing some bytes that have the high bit set
+   with DEL (0x7F).  That would leave the other characters meaningful.
+
+   I've heard a standard way to do this is to substitute the Unicode character
+   U+FFFD for the garbage.  But that makes it harder to keep the length of
+   the code the same, and in the case that the originator of these bits
+   wasn't thinking UTF-8 at all, it does more violence to the string than
+   our DEL method.
 -----------------------------------------------------------------------------*/
     char * p;
 

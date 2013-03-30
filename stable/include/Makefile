@@ -28,7 +28,7 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	@echo '   This file was created by a make rule.'                  >>$@
 	@echo '*/'                                                        >>$@
 	@echo '#define XMLRPC_HAVE_WCHAR $(HAVE_WCHAR_H_DEFINE)'          >>$@
-	@echo '#ifdef WIN32'                                              >>$@
+	@echo '#ifdef _WIN32'                                             >>$@
 	@echo '  /* SOCKET is a type defined by <winsock.h>.  Anyone who' >>$@
 	@echo '     uses XMLRPC_SOCKET on a WIN32 system must #include'   >>$@
 	@echo '     <winsock.h>'                                          >>$@
@@ -37,11 +37,13 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	@echo '  #define XMLRPC_HAVE_TIMEVAL 0'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 0'                          >>$@
 	@echo '  #define XMLRPC_HAVE_PTHREAD 0'                           >>$@
+	@echo '  #define XMLRPC_HAVE_WINTHREAD 1'                         >>$@
 	@echo '#else'                                                     >>$@
 	@echo '  #define XMLRPC_SOCKET int'                               >>$@
 	@echo '  #define XMLRPC_HAVE_TIMEVAL 1'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 1'                          >>$@
 	@echo '  #define XMLRPC_HAVE_PTHREAD 1'                           >>$@
+	@echo '  #define XMLRPC_HAVE_WINTHREAD 0'                         >>$@
 	@echo '#endif'                                                    >>$@
 	@echo ''                                                          >>$@
 	@echo '#if defined(_MSC_VER)'                                     >>$@

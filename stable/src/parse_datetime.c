@@ -11,10 +11,10 @@
 #endif
 
 #include "bool.h"
+#include "c_util.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
-#include "xmlrpc-c/util.h"
 
 #include "parse_datetime.h"
 

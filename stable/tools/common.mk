@@ -1,27 +1,11 @@
-# We try to get Xmlrpc-c directories early in the link library search
-# path to avert problems with other versions of Xmlrpc-c being in more
-# general directories (such as /usr/local/lib) that are added to the
-# search path by curl-config, etc.  That's why we separate the -L from
-# the corresponding -l.
-# 
-# Note that in a properly configured system, curl-config, etc. do not
-# generate -L options for general directories.
+CLIENT_LDLIBS = $(shell cat blddir/src/libxmlrpc_client.ldflags) $(LDLIBS_XML)
 
-CLIENT_LDLIBS = -Lblddir/src -Lblddir/lib/libutil
-
-CLIENT_LDLIBS += -lxmlrpc_client -lxmlrpc -lxmlrpc_util
-
-ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  CLIENT_LDLIBS += $(shell libwww-config --libs)
-endif
-ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  CLIENT_LDLIBS += $(shell curl-config --libs)
-endif
-ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
-  CLIENT_LDLIBS += $(shell wininet-config --libs)
-endif
-
-CLIENT_LDLIBS += $(LDLIBS_XML)
+CLIENT_LIBS_DEP = \
+  $(LIBXMLRPC_CLIENT) \
+  $(LIBXMLRPC) \
+  $(LIBXMLRPC_XML) \
+  $(LIBXMLRPC_UTIL) \
+  $(BLDDIR)/src/libxmlrpc_client.ldflags \
 
 CLIENTPP_LDLIBS = -Lblddir/src/cpp
 CLIENTPP_LDLIBS += -lxmlrpc_client++ -lxmlrpc_packetsocket -lxmlrpc++

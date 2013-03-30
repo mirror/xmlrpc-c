@@ -36,6 +36,7 @@
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "env_wrap.hpp"
 
 #include "xmlrpc-c/base.hpp"
@@ -58,6 +59,12 @@ class cDatetimeValueWrapper {
 public:
     xmlrpc_value * valueP;
     
+    cDatetimeValueWrapper(xmlrpc_datetime const cppvalue) {
+        env_wrap env;
+        
+        this->valueP = xmlrpc_datetime_new(&env.env_c, cppvalue);
+        throwIfError(env);
+    }
     cDatetimeValueWrapper(time_t const cppvalue) {
         env_wrap env;
         
@@ -245,6 +252,15 @@ value::type() const {
     u.x = xmlrpc_value_type(this->cValueP);
 
     return u.y;
+}
+
+
+
+ostream& operator<<(ostream& out, value::type_t const& type) {
+
+    string typeName;
+
+    return out << string(xmlrpc_type_name((xmlrpc_type)type));
 }
 
 
@@ -448,6 +464,15 @@ value_datetime::value_datetime(string const cppvalue) {
 
 
 
+value_datetime::value_datetime(xmlrpc_datetime const cppvalue) {
+
+    cDatetimeValueWrapper wrapper(cppvalue);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+
 value_datetime::value_datetime(time_t const cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue);
@@ -486,6 +511,21 @@ value_datetime::value_datetime(xmlrpc_c::value const baseValue) {
     else {
         this->instantiate(baseValue.cValueP);
     }
+}
+
+
+
+value_datetime::operator xmlrpc_datetime() const {
+
+    this->validateInstantiated();
+
+    xmlrpc_datetime retval;
+    env_wrap env;
+
+    xmlrpc_read_datetime(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
 }
 
 
@@ -545,6 +585,28 @@ time_t
 value_datetime::cvalue() const {
 
     return static_cast<time_t>(*this);
+}
+
+
+
+string
+value_datetime::iso8601Value() const {
+
+    string retval;
+
+    this->validateInstantiated();
+
+    const char * iso8601;
+    env_wrap env;
+
+    xmlrpc_read_datetime_8601(&env.env_c, this->cValueP, &iso8601);
+    throwIfError(env);
+
+    retval = iso8601;
+
+    xmlrpc_strfree(iso8601);
+
+    return retval;
 }
 
 

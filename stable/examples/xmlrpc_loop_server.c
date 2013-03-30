@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server based on Abyss that contains a
+/* A simple standalone XML-RPC server program based on Abyss that contains a
    simple one-thread request processing loop.  
 
    This uses the "provide your own Abyss server" mode of operation.
@@ -9,11 +9,15 @@
 */
 
 #define _XOPEN_SOURCE 600
+#define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/server_abyss.h */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/abyss.h>
@@ -35,7 +39,7 @@ setupSignalHandlers(void) {
        obviously don't want to die just because a client didn't complete
        an RPC, so we ignore SIGPIPE.
     */
-#ifndef WIN32
+#ifndef _WIN32
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);
@@ -50,7 +54,11 @@ setupSignalHandlers(void) {
 static void
 printPeerIpAddr(TSession * const abyssSessionP) {
 
+#ifdef _WIN32
+    struct abyss_win_chaninfo * channelInfoP;
+#else
     struct abyss_unix_chaninfo * channelInfoP;
+#endif
     struct sockaddr_in * sockAddrInP;
     unsigned char * ipAddr;  /* 4 byte array */
 

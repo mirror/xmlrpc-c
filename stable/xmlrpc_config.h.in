@@ -120,9 +120,15 @@
 
 /* MSVCRT means we're using the Microsoft Visual C++ runtime library */
 
-#ifdef _MSC_VER
-/* The compiler is Microsoft Visual C++. */
+#if defined(_MSC_VER)
+  /* The compiler is Microsoft Visual C++ */
   #define MSVCRT _MSC_VER
+#elif defined(__MINGW32__)
+  /* The compiler is Mingw, which is the Windows version of the GNU
+     compiler. Programs built with this normally use the Microsoft Visual
+     C++ runtime library.
+  */
+  #define MSVCRT 1
 #else
   #define MSVCRT 0
 #endif
@@ -209,6 +215,34 @@
   # define XMLRPC_STRTOULL __strtoull /* HP-UX <= 11.11 */
 #elif HAVE__STRTOUI64
   #define XMLRPC_STRTOULL _strtoui64  /* Windows MSVC */
+#endif
+
+#if MSVCRT
+  #define snprintf _snprintf
+  #define popen _popen
+#endif
+
+/* S_IRUSR is POSIX, defined in <sys/stat.h> Some old BSD systems and Windows
+   systems have S_IREAD instead.  Most Unix today (2011) has both.  In 2011,
+   Android has S_IRUSR and not S_IREAD.
+
+   Some Windows has _S_IREAD.
+
+   We're ignoring S_IREAD now to see if anyone misses it.  If there are still
+   users that need it, we can handle it here.
+*/
+#if MSVCRT
+  #define XMLRPC_S_IWUSR _S_IWRITE
+  #define XMLRPC_S_IRUSR _S_IREAD
+#else
+  #define XMLRPC_S_IWUSR S_IWUSR
+  #define XMLRPC_S_IRUSR S_IRUSR
+#endif
+
+#if MSVCRT
+  #define XMLRPC_CHDIR _chdir
+#else
+  #define XMLRPC_CHDIR chdir
 #endif
 
 #endif

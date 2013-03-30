@@ -54,25 +54,4 @@ void
 ThreadHandleSigchld(pid_t const pid);
 #endif
 
-/*********************************************************************
-** Mutex
-*********************************************************************/
-
-typedef struct abyss_mutex TMutex;
-
-bool
-MutexCreate(TMutex ** const mutexP);
-
-bool
-MutexLock(TMutex * const mutexP);
-
-bool
-MutexUnlock(TMutex * const mutexP);
-
-bool
-MutexTryLock(TMutex * const mutexP);
-
-void
-MutexDestroy(TMutex * const mutexP);
-
 #endif
