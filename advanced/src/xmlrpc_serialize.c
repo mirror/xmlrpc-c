@@ -291,20 +291,20 @@ serializeDatetime(xmlrpc_env *       const envP,
     if (!envP->fault_occurred) {
         char dtString[64];
 
-        snprintf(dtString, sizeof(dtString),
-                 "%u%02u%02uT%02u:%02u:%02u",
-                 valueP->_value.dt.Y,
-                 valueP->_value.dt.M,
-                 valueP->_value.dt.D,
-                 valueP->_value.dt.h,
-                 valueP->_value.dt.m,
-                 valueP->_value.dt.s);
+        XMLRPC_SNPRINTF(dtString, sizeof(dtString),
+                        "%u%02u%02uT%02u:%02u:%02u",
+                        valueP->_value.dt.Y,
+                        valueP->_value.dt.M,
+                        valueP->_value.dt.D,
+                        valueP->_value.dt.h,
+                        valueP->_value.dt.m,
+                        valueP->_value.dt.s);
 
         if (valueP->_value.dt.u != 0) {
             char usecString[64];
             assert(valueP->_value.dt.u < 1000000);
-            snprintf(usecString, sizeof(usecString), ".%06u",
-                     valueP->_value.dt.u);
+            XMLRPC_SNPRINTF(usecString, sizeof(usecString), ".%06u",
+                            valueP->_value.dt.u);
             STRSCAT(dtString, usecString);
         }
         addString(envP, outputP, dtString);

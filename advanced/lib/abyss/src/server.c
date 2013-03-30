@@ -726,7 +726,7 @@ processRequestFromClient(TConn *  const connectionP,
     assert(session.status != 0);
 
     if (session.responseStarted)
-        HTTPWriteEndChunk(&session);
+        ResponseWriteEnd(&session);
     else
         ResponseError(&session);
 

@@ -74,9 +74,12 @@ ResponseError(TSession * const sessionP) {
 
 abyss_bool
 ResponseChunked(TSession * const sessionP) {
-    /* This is only a hope, things will be real only after a call of
-       ResponseWriteStart()
-    */
+/*----------------------------------------------------------------------------
+   Make the response chunked.
+
+   This is only a hope, things will be real only after a call of
+   ResponseWriteStart()
+-----------------------------------------------------------------------------*/
     assert(!sessionP->responseStarted);
 
     sessionP->chunkedwrite =

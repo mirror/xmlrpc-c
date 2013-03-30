@@ -468,7 +468,7 @@ handleDirectory(TSession *   const sessionP,
                                           sessionP->requestInfo.uri, mimeTypeP,
                                           sessionP);
             
-                HTTPWriteEndChunk(sessionP);
+                ResponseWriteEnd(sessionP);
             
                 ListFree(&list);
             }
