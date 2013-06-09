@@ -21,6 +21,7 @@
 #endif
 
 #if HAVE_TIMESPEC
+  # include <sys/time.h> /* for struct timespec */
   typedef struct timespec xmlrpc_timespec;
 #else
   typedef struct {
