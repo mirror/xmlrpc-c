@@ -583,7 +583,7 @@ ChannelUnixCreateFd(int                           const fd,
     socklen_t peerAddrLen;
     int rc;
 
-    peerAddrLen = sizeof(peerAddrLen);
+    peerAddrLen = sizeof(peerAddr);
 
     rc = getpeername(fd, &peerAddr, &peerAddrLen);
 
