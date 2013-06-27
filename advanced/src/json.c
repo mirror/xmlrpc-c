@@ -1084,7 +1084,7 @@ appendEscapeSeq(xmlrpc_env *       const envP,
    This is e.g. "\t" for tab, or "\u001C" for something exotic.
 -----------------------------------------------------------------------------*/
     unsigned int size;
-    char buffer[6];
+    char buffer[6+1];
     char slashChar;
         /* Character that goes after the backslash, including 'u' for \uHHHH */
     
