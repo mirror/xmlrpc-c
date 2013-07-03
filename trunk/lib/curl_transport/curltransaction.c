@@ -422,16 +422,16 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
 
 static void
 setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
-               unsigned int const timeout ATTR_UNUSED) {
+               unsigned int const timeoutMs ATTR_UNUSED) {
 
 #if HAVE_CURL_NOSIGNAL
-    unsigned int const timeoutMs = (timeout + 999)/1000;
+    unsigned int const timeoutSec = (timeoutMs + 999)/1000;
 
     curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
 
-    assert((long)timeoutMs == (int)timeoutMs);
+    assert((long)timeoutSec == (int)timeoutSec);
         /* Calling requirement */
-    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutMs);
+    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutSec);
 #else
     abort();
 #endif
