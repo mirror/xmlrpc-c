@@ -109,6 +109,7 @@ subParseDtRegex_standardtzd(regmatch_t *      const matches,
     dtP->h = digitStringValue(datetimeString, matches[4]);
     dtP->m = digitStringValue(datetimeString, matches[5]);
     dtP->s = digitStringValue(datetimeString, matches[6]);
+    dtP->u = 0;
 }
 
 #endif  /* HAVE_REGEX */
