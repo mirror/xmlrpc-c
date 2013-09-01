@@ -137,76 +137,88 @@ testEnv(void) {
 static void
 testMemBlock(void) {
     xmlrpc_env env;
-    xmlrpc_mem_block* block;
+    xmlrpc_mem_block * blockP;
 
-    xmlrpc_mem_block* typed_heap_block;
-    xmlrpc_mem_block typed_auto_block;
-    void** typed_contents;
+    xmlrpc_mem_block * typedHeapBlockP;
+    xmlrpc_mem_block typedAutoBlockP;
+    void ** typedContents;
 
     xmlrpc_env_init(&env);
 
     /* Allocate a zero-size block. */
-    block = xmlrpc_mem_block_new(&env, 0);
+    blockP = xmlrpc_mem_block_new(&env, 0);
     TEST_NO_FAULT(&env);
-    TEST(block != NULL);
-    TEST(xmlrpc_mem_block_size(block) == 0);
+    TEST(blockP != NULL);
+    TEST(xmlrpc_mem_block_size(blockP) == 0);
 
     /* Grow the block a little bit. */
-    xmlrpc_mem_block_resize(&env, block, strlen(test_string_1) + 1);
+    xmlrpc_mem_block_resize(&env, blockP, strlen(test_string_1) + 1);
     TEST_NO_FAULT(&env);
-    TEST(xmlrpc_mem_block_size(block) == strlen(test_string_1) + 1);
+    TEST(xmlrpc_mem_block_size(blockP) == strlen(test_string_1) + 1);
     
     /* Insert a string into the block, and resize it by large amount.
     ** We want to cause a reallocation and copy of the block contents. */
-    strcpy(xmlrpc_mem_block_contents(block), test_string_1);
-    xmlrpc_mem_block_resize(&env, block, 10000);
+    strcpy(xmlrpc_mem_block_contents(blockP), test_string_1);
+    xmlrpc_mem_block_resize(&env, blockP, 10000);
     TEST_NO_FAULT(&env);
-    TEST(xmlrpc_mem_block_size(block) == 10000);
-    TEST(xmlrpc_streq(xmlrpc_mem_block_contents(block), test_string_1));
+    TEST(xmlrpc_mem_block_size(blockP) == 10000);
+    TEST(xmlrpc_streq(xmlrpc_mem_block_contents(blockP), test_string_1));
+
+    /* Test growing beyond a megabyte */
+    xmlrpc_mem_block_resize(&env, blockP, 1024*1024+1);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_mem_block_size(blockP) == 1024*1024+1);
+    TEST(xmlrpc_streq(xmlrpc_mem_block_contents(blockP), test_string_1));
+
+    /* Test shrinking */
+    xmlrpc_mem_block_resize(&env, blockP, 2);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_mem_block_size(blockP) == 2);
+    TEST(xmlrpc_memeq(xmlrpc_mem_block_contents(blockP), test_string_1, 2));
 
     /* Test cleanup code (with help from memprof). */
-    xmlrpc_mem_block_free(block);
+    xmlrpc_mem_block_free(blockP);
     
     /* Allocate a bigger block. */
-    block = xmlrpc_mem_block_new(&env, 128);
+    blockP = xmlrpc_mem_block_new(&env, 128);
     TEST_NO_FAULT(&env);
-    TEST(block != NULL);
-    TEST(xmlrpc_mem_block_size(block) == 128);
+    TEST(blockP != NULL);
+    TEST(xmlrpc_mem_block_size(blockP) == 128);
 
     /* Test cleanup code (with help from memprof). */
-    xmlrpc_mem_block_free(block);
+    xmlrpc_mem_block_free(blockP);
 
     /* Allocate a "typed" memory block. */
-    typed_heap_block = XMLRPC_TYPED_MEM_BLOCK_NEW(void*, &env, 20);
+    typedHeapBlockP = XMLRPC_TYPED_MEM_BLOCK_NEW(void *, &env, 20);
     TEST_NO_FAULT(&env);
-    TEST(typed_heap_block != NULL);
-    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, typed_heap_block) == 20);
-    typed_contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(void*, typed_heap_block);
-    TEST(typed_contents != NULL);
+    TEST(typedHeapBlockP != NULL);
+    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, typedHeapBlockP) == 20);
+    typedContents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(void*, typedHeapBlockP);
+    TEST(typedContents != NULL);
 
     /* Resize a typed memory block. */
-    XMLRPC_TYPED_MEM_BLOCK_RESIZE(void*, &env, typed_heap_block, 100);
+    XMLRPC_TYPED_MEM_BLOCK_RESIZE(void*, &env, typedHeapBlockP, 100);
     TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, typed_heap_block) == 100);
+    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, typedHeapBlockP) == 100);
 
     /* Test cleanup code (with help from memprof). */
-    XMLRPC_TYPED_MEM_BLOCK_FREE(void*, typed_heap_block);
+    XMLRPC_TYPED_MEM_BLOCK_FREE(void*, typedHeapBlockP);
 
     /* Test _INIT and _CLEAN for stack-based memory blocks. */
-    XMLRPC_TYPED_MEM_BLOCK_INIT(void*, &env, &typed_auto_block, 30);
-    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, &typed_auto_block) == 30);
-    XMLRPC_TYPED_MEM_BLOCK_CLEAN(void*, &typed_auto_block);
+    XMLRPC_TYPED_MEM_BLOCK_INIT(void*, &env, &typedAutoBlockP, 30);
+    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, &typedAutoBlockP) == 30);
+    XMLRPC_TYPED_MEM_BLOCK_CLEAN(void*, &typedAutoBlockP);
 
     /* Test xmlrpc_mem_block_append. */
-    block = XMLRPC_TYPED_MEM_BLOCK_NEW(int, &env, 5);
+    blockP = XMLRPC_TYPED_MEM_BLOCK_NEW(int, &env, 5);
     TEST_NO_FAULT(&env);
-    memcpy(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(int, block),
+    memcpy(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(int, blockP),
            test_int_array_1, sizeof(test_int_array_1));
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(int, &env, block, test_int_array_2, 3);
-    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(int, block) == 8);
-    TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(int, block),
+    XMLRPC_TYPED_MEM_BLOCK_APPEND(int, &env, blockP, test_int_array_2, 3);
+    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(int, blockP) == 8);
+    TEST(memcmp(XMLRPC_TYPED_MEM_BLOCK_CONTENTS(int, blockP),
                 test_int_array_3, sizeof(test_int_array_3)) == 0);
-    XMLRPC_TYPED_MEM_BLOCK_FREE(int, block);
+    XMLRPC_TYPED_MEM_BLOCK_FREE(int, blockP);
 
     xmlrpc_env_clean(&env);
 }
