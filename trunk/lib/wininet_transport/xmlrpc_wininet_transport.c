@@ -506,6 +506,25 @@ Again:
                         "from the server is invalid.";
                 break;
 
+            case ERROR_INTERNET_SEC_CERT_REV_FAILED:
+                if (clientTransportP->allowInvalidSSLCerts) {
+                    OutputDebugString(
+                        "Sync HttpSendRequest failed: "
+                        "Check for revocation of the SSL certificate "
+                        "failed. ");
+
+                    reqFlags = INTERNET_FLAG_IGNORE_REVOCATION;
+
+                    InternetSetOption(winInetTransactionP->hHttpRequest,
+                                      INTERNET_OPTION_SECURITY_FLAGS,
+                                      &reqFlags, sizeof(reqFlags));
+
+                    goto Again;
+                } else
+                    pMsg = "Check for revocation of the SSL certificate "
+                        "failed.";
+                break;
+
             default:
                 pMsg = (LPTSTR)pMsgMem = LocalAlloc(LPTR, MAX_PATH);
                 sprintf(pMsg, "Sync HttpSendRequest failed: "
