@@ -451,7 +451,7 @@ Again:
                         "Sync HttpSendRequest failed: "
                         "The function is unfamiliar with the certificate "
                         "authority that generated the server's certificate. ");
-                    reqFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA;
+                    reqFlags |= SECURITY_FLAG_IGNORE_UNKNOWN_CA;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
@@ -474,7 +474,7 @@ Again:
                         "and the common name "
                         "on the certificate says www.different.com. ");
                     
-                    reqFlags = INTERNET_FLAG_IGNORE_CERT_CN_INVALID;
+                    reqFlags |= INTERNET_FLAG_IGNORE_CERT_CN_INVALID;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
@@ -494,7 +494,7 @@ Again:
                         "from the server is "
                         "bad. The certificate is expired. ");
 
-                    reqFlags = INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
+                    reqFlags |= INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
@@ -513,7 +513,7 @@ Again:
                         "Check for revocation of the SSL certificate "
                         "failed. ");
 
-                    reqFlags = INTERNET_FLAG_IGNORE_REVOCATION;
+                    reqFlags |= INTERNET_FLAG_IGNORE_REVOCATION;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
