@@ -207,7 +207,12 @@ ifeq ($(patsubst aix%,aix,$(HOST_OS)),aix)
   SHLIB_SUFFIX = a
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB = -qmkshrobj
+  # -brtl says "rtl option".  rtl option says to allow runtime linking, which
+  # means that the link editor can use a share object (.so) file instead of an
+  # archive (.a) file and build the library to link to that shared object at
+  # runtime.  Without -brtl, the link editor ignores .so files.  One thing
+  # that is typically a .so file is the Curl library.
+  LDFLAGS_SHLIB = -qmkshrobj -brtl
 endif
 
 ifeq ($(patsubst hpux%,hpux,$(HOST_OS)),hpux)
