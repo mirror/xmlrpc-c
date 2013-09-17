@@ -32,6 +32,14 @@
 **
 ******************************************************************************/
 
+/* There is a complex bug in AIX that is worked around by declaring this as
+   X/OPEN 6 source code even though we don't depend up on any specific stuff
+   from that standard.  The AIX bug causes <unistd.h> to define "lseek64"
+   twice.  We tried _POSIX_SOURCE and that made the lseek problem go away but
+   caused <sys/socket.h> not to define struct sockaddr!   AIX 5.3 13.09.16.
+*/
+#define _XOPEN_SOURCE 600
+
 #include "xmlrpc_config.h"
 #include "mallocvar.h"
 

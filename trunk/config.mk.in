@@ -204,7 +204,11 @@ ifeq ($(patsubst aix%,aix,$(HOST_OS)),aix)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
-  SHLIB_SUFFIX = a
+# AIX can use a classic .a archive file as a shared library, and that is
+# how e.g. libc works.  But as of late, it also can use an XCOFF file with
+# the shared flag set, with the conventional suffix .so.  We build our library
+# that way to avoid confusion with .a static link libraries.
+  SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   # -brtl says "rtl option".  rtl option says to allow runtime linking, which
