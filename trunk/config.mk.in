@@ -358,6 +358,12 @@ endif
 BUILDTOOL_CC = $(CC)
 BUILDTOOL_CCLD = $(CCLD)
 
+ifeq ($(C_COMPILER_GNU),yes)
+  CFLAGS_NO_INLINE_WARNING = -Wno-inline
+else
+  CFLAGS_NO_INLINE_WARNING =
+endif
+
 THREAD_LIBS = -lpthread
 
 # Here are the commands 'make install' uses to install various kinds of files:

@@ -20,7 +20,7 @@ include $(SRCDIR)/tools/common.mk
 
 # <sstream.h> in Glibc 2.2 has a bug that results in inlining failure,
 # so we disable warnings for that:
-CFLAGS_LOCAL = -Wno-inline
+CFLAGS_LOCAL = $(CFLAGS_NO_INLINE_WARNING)
 
 INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 

@@ -313,7 +313,7 @@ $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh): \
 # <sstream> in Glibc 2.2 has some failed inlines, so we disable that warning:
 $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o) \
 $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh): \
-  CFLAGS_LOCAL = -Wno-inline
+  CFLAGS_LOCAL = $(CFLAGS_NO_INLINE_WARNING)
 
 TRANSPORT_CONFIG_USERS = client curl libwww wininet
 
