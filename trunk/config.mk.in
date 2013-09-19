@@ -217,6 +217,10 @@ ifeq ($(patsubst aix%,aix,$(HOST_OS)),aix)
   # runtime.  Without -brtl, the link editor ignores .so files.  One thing
   # that is typically a .so file is the Curl library.
   LDFLAGS_SHLIB = -qmkshrobj -brtl
+  ifeq ($(C_COMPILER_GNU), no)
+    C_COMPILER_IBM = yes
+    CXX_COMPILER_IBM = yes
+  endif
 endif
 
 ifeq ($(patsubst hpux%,hpux,$(HOST_OS)),hpux)

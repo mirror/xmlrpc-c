@@ -56,6 +56,13 @@ ifeq ($(CXX_COMPILER_GNU),yes)
   CXXFLAGS_COMMON += $(GCC_CXX_WARNINGS) -g
 endif
 
+# -qrtti tell the IBM compilers to allow dynamic type casting.  Without it,
+# code that has a dynamic type cast fails at run time.
+
+ifeq ($(CXX_COMPILER_IBM),yes)
+  CXXFLAGS_COMMON += -qrtti
+endif
+
 DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
 # MIN is the minor version number for shared libraries.
