@@ -112,6 +112,11 @@ all: \
 
 LIBXMLRPC_CPP_SH = $(call shlibfn, libxmlrpc_cpp)
 
+# Sometimes -lpthread is necessary when link-editing a shared library that
+# uses pthread services, and sometimes it is not.  We've seen links on
+# Windows and AIX fail without it.  It seems to be a good idea in all cases,
+# as it declares an actual dependency of the shared library.
+
 $(LIBXMLRPC_CPP_SH): XmlRpcCpp.osh \
   $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC) \
@@ -132,10 +137,8 @@ $(LIBXMLRPCPP_SH): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
 $(LIBXMLRPCPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPCPP_SH):  LIBDEP += -lpthread
-endif
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+  -lpthread
 
 LIBXMLRPC_SERVERPP_SH = $(call shlibfn, libxmlrpc_server++)
 

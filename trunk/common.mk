@@ -270,7 +270,7 @@ endif
 # libxmlrpc_util itself, but we have found (2012.12) that in a Mingw build
 # it does not.
 
-LIBXMLRPC_UTIL_LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -lpthread
+LIBXMLRPC_UTIL_LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util $(THREAD_LIBS)
 
 ##############################################################################
 #            RULES TO BUILD OBJECT FILES TO LINK INTO LIBRARIES              #
