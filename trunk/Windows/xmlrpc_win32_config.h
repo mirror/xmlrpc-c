@@ -159,7 +159,7 @@
    of the complete string (regardless of how much of it got returned).
 */
 #if MSVCRT
-  #define XMLRPC_SNPRINTF _snprint
+  #define XMLRPC_SNPRINTF _snprintf
   #define XMLRPC_VSNPRINTF _vsnprintf
 #else
   #define XMLRPC_SNPRINTF snprintf
