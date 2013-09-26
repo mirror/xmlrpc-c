@@ -3,7 +3,15 @@
 
 #include "xmlrpc-c/lock.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 lock *
 xmlrpc_lock_create(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
