@@ -337,6 +337,10 @@ public:
 
         xmlrpc_c::registry myRegistry;
         
+        sampleAddMethod m;
+
+        myRegistry.addMethod("xyz", &m);
+
         myRegistry.addMethod("sample.add", 
                              xmlrpc_c::methodPtr(new sampleAddMethod));
         
@@ -388,6 +392,8 @@ public:
         // We're actually violating the spirit of setDefaultMethod by
         // doing this to a registry that's already been used, but as long
         // as it works, it's a convenient way to implement this test.
+        nameMethod dm;
+        myRegistry.setDefaultMethod(&dm);
         myRegistry.setDefaultMethod(defaultMethodPtr(new nameMethod));
 
         {
