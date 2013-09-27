@@ -1,9 +1,9 @@
 /* This code is just a first draft by someone who doesn't know anything
    about Windows.  It has never been compiled.  It is just a framework
-   for someone who knows Windows to pick and finish.
+   for someone who knows Windows to pick up and finish.
 
    Bryan Henderson redesigned the threading structure for Abyss in
-   April 2006 and wrote this file then.  He use the former
+   April 2006 and wrote this file then.  He used the former
    threading code, which did work on Windows, as a basis.
 */
 
