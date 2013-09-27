@@ -513,7 +513,7 @@ Again:
                         "Check for revocation of the SSL certificate "
                         "failed. ");
 
-                    reqFlags |= INTERNET_FLAG_IGNORE_REVOCATION;
+                    reqFlags |= SECURITY_FLAG_IGNORE_REVOCATION;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
