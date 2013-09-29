@@ -55,7 +55,7 @@ else
 endif
 
 LIBXMLRPCPP_MODS = \
-  base64 env_wrap fault girerr girmem global outcome param_list value xml
+  Lock base64 env_wrap fault girerr girmem global outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
 LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi

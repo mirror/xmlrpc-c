@@ -8,6 +8,8 @@
 #define WIN32_WIN_LEAN_AND_MEAN
 #include <windows.h>
 
+#include "mallocvar.h"
+
 #include "xmlrpc-c/lock.h"
 
 #include "xmlrpc-c/lock_windows.h"
@@ -64,7 +66,7 @@ xmlrpc_lock_create_windows(void) {
 
         MALLOCVAR(criticalSectionP);
 
-        if (critP) {
+        if (criticalSectionP) {
             InitializeCriticalSection(criticalSectionP);
 
             lockP->implementationP = criticalSectionP;
