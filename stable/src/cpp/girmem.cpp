@@ -1,12 +1,13 @@
 #include <cassert>
 
-#include "pthreadx.h"
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+#include "Lock.hpp"
+
 #include "xmlrpc-c/girmem.hpp"
 
 using namespace std;
-using namespace girmem;
+using namespace xmlrpc_c;
 
 
 namespace girmem {
@@ -14,7 +15,7 @@ namespace girmem {
 
 class autoObject::Impl {
 
-    pthread_mutex_t refcountLock;
+    Lock refcountLock;
     unsigned int refcount;
 
 public:
@@ -33,13 +34,6 @@ public:
 
 autoObject::Impl::Impl() {
 
-    int rc;
-
-    rc = pthread_mutex_init(&this->refcountLock, NULL);
-
-    if (rc != 0)
-        throw(error("Unable to initialize pthread mutex"));
-
     this->refcount = 0;
 }
 
@@ -49,22 +43,16 @@ autoObject::Impl::~Impl() {
 
     if (this->refcount > 0)
         throw(error("Destroying referenced object"));
-
-    int rc;
-
-    rc = pthread_mutex_destroy(&this->refcountLock);
-
-    if (rc != 0)
-        throw(error("Unable to destroy pthread mutex"));
 }
 
 
 
 void
 autoObject::Impl::incref() {
-    pthread_mutex_lock(&this->refcountLock);
+
+    Lock::Holder(&this->refcountLock);
+
     ++this->refcount;
-    pthread_mutex_unlock(&this->refcountLock);
 }
 
 
@@ -74,10 +62,11 @@ autoObject::Impl::decref(bool * const unreferencedP) {
 
     if (this->refcount == 0)
         throw(error("Decrementing ref count of unreferenced object"));
-    pthread_mutex_lock(&this->refcountLock);
+
+    Lock::Holder(&this->refcountLock);
+
     --this->refcount;
     *unreferencedP = (this->refcount == 0);
-    pthread_mutex_unlock(&this->refcountLock);
 }
  
 
