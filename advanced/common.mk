@@ -56,6 +56,13 @@ ifeq ($(CXX_COMPILER_GNU),yes)
   CXXFLAGS_COMMON += $(GCC_CXX_WARNINGS) -g
 endif
 
+# -qrtti tell the IBM compilers to allow dynamic type casting.  Without it,
+# code that has a dynamic type cast fails at run time.
+
+ifeq ($(CXX_COMPILER_IBM),yes)
+  CXXFLAGS_COMMON += -qrtti
+endif
+
 DISTDIR = $(BLDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
 
 # MIN is the minor version number for shared libraries.
@@ -263,7 +270,7 @@ endif
 # libxmlrpc_util itself, but we have found (2012.12) that in a Mingw build
 # it does not.
 
-LIBXMLRPC_UTIL_LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util -lpthread
+LIBXMLRPC_UTIL_LIBDEP = -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util $(THREAD_LIBS)
 
 ##############################################################################
 #            RULES TO BUILD OBJECT FILES TO LINK INTO LIBRARIES              #
