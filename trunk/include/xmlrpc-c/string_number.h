@@ -2,6 +2,7 @@
 #define STRING_NUMBER_H_INCLUDED
 
 #include <xmlrpc-c/config.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/util.h>
 
 #ifdef __cplusplus

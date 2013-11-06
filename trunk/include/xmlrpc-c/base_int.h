@@ -18,7 +18,7 @@
 #include "bool.h"
 #include "int.h"
 
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/util_int.h>
 #include <xmlrpc-c/base.h>
 

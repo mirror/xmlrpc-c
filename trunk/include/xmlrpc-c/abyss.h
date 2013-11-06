@@ -27,7 +27,7 @@ extern "C" {
 
 #include <sys/types.h>
 
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/inttypes.h>
 
 /*

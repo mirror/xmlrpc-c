@@ -1,7 +1,7 @@
 #ifndef BASE64_INT_H_INCLUDED
 #define BASE64_INT_H_INCLUDED
 
-#include "xmlrpc-c/c_util.h"
+#include "xmlrpc-c/c_util.h"  /* For XMLRPC_DLLEXPORT */
 
 /*
   XMLRPC_UTIL_EXPORTED marks a symbol in this file that is exported from
