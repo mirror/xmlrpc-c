@@ -1275,7 +1275,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\cpp\Lock.cpp"
+				RelativePath="..\..\..\src\cpp\libwww.cpp"
 				>
 				<FileConfiguration
 					Name="Debug-DLL|Win32"
@@ -1351,7 +1351,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\cpp\libwww.cpp"
+				RelativePath="..\..\..\src\cpp\Lock.cpp"
 				>
 				<FileConfiguration
 					Name="Debug-DLL|Win32"
@@ -1731,11 +1731,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\lib\libutil\lock_windows.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\lib\libutil\lock_platform.c"
+				RelativePath="..\..\..\lib\wininet_transport\pthreadx_win32.c"
 				>
 			</File>
 			<File
@@ -2360,10 +2356,6 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\..\include\xmlrpc-c\Lock.hpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\include\xmlrpc-c\base.hpp"
 				>
 			</File>
@@ -2393,6 +2385,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\xmlrpc-c\girmem.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\xmlrpc-c\Lock.hpp"
 				>
 			</File>
 			<File
