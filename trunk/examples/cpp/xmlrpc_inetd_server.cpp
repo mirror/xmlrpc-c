@@ -29,11 +29,11 @@
 #endif
 #include <cassert>
 
+using namespace std;
+
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/server_abyss.hpp>
-
-using namespace std;
 
 class sampleAddMethod : public xmlrpc_c::method {
 public:

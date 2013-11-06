@@ -26,13 +26,15 @@
 #include <iostream>
 #include <unistd.h>
 #include <signal.h>
+
+using namespace std;
+
 #include <xmlrpc-c/girerr.hpp>
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/client.hpp>
 #include <xmlrpc-c/client_transport.hpp>
 
 
-using namespace std;
 
 int
 main(int argc, char **) {

@@ -23,11 +23,11 @@
 #include <iostream>
 #include <signal.h>
 
+using namespace std;
+
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/server_pstream.hpp>
-
-using namespace std;
 
 
 class sampleAddMethod : public xmlrpc_c::method {
