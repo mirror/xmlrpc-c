@@ -722,6 +722,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\xmlrpc-c\lock.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\xmlrpc-c\lock_platform.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\xmlrpc-c\lock_windows.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\xmlrpc-c\select_int.h"
 				>
 			</File>
