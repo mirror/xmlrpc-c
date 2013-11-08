@@ -156,11 +156,12 @@ firstLfPos(TConn * const connectionP,
 
 
 static void
-getLineInBuffer(TConn * const connectionP,
-                char *  const lineStart,
-                time_t  const deadline,
-                char ** const lineEndP,
-                bool *  const errorP) {
+getLineInBuffer(TConn *       const connectionP,
+                char *        const lineStart,
+                time_t        const deadline,
+                char **       const lineEndP,
+                bool *        const timedOutP,
+                const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Get a line into the connection's read buffer, starting at position
    'lineStart', if there isn't one already there.   'lineStart' is either
@@ -169,32 +170,32 @@ getLineInBuffer(TConn * const connectionP,
    Read the channel until we get a full line, except fail if we don't get
    one by 'deadline'.
 -----------------------------------------------------------------------------*/
-    bool error;
     char * lfPos;
+    bool timedOut;
 
     assert(lineStart <= connectionP->buffer.t + connectionP->buffersize);
 
-    error = FALSE;  /* initial value */
-    lfPos = NULL;  /* initial value */
-
-    while (!error && !lfPos) {
+    for (*errorP = FALSE, lfPos = NULL, timedOut = false;
+         !*errorP && !lfPos && !timedOut;
+        ) {
         int const timeLeft = (int)(deadline - time(NULL));
         if (timeLeft <= 0)
-            error = TRUE;
+            timedOut = TRUE;
         else {
             lfPos = firstLfPos(connectionP, lineStart);
             if (!lfPos) {
                 const char * readError;
-                ConnRead(connectionP, timeLeft, NULL, NULL, &readError);
+                ConnRead(connectionP, timeLeft, NULL, &timedOut, &readError);
                 if (readError) {
-                    error = TRUE;
+                    xmlrpc_asprintf(errorP, "Failed to read from the "
+                                    "connection.  %s", readError);
                     xmlrpc_strfree(readError);
                 }
             }
         }
     }    
-    *errorP = error;
     *lineEndP = lfPos + 1;
+    *timedOutP = timedOut;
 }
 
 
@@ -241,7 +242,8 @@ getRestOfField(TConn *       const connectionP,
                char *        const lineEnd,
                time_t        const deadline,
                const char ** const fieldEndP,
-               bool *        const errorP) {
+               bool *        const timedOutP,
+               const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Given that the read buffer for connection *connectionP contains (at
    its current read position) the first line of an HTTP header field, which
@@ -261,12 +263,12 @@ getRestOfField(TConn *       const connectionP,
     char * fieldEnd;
         /* End of the field lines we've seen at so far */
     bool gotWholeField;
-    bool error;
+    bool timedOut;
 
     fieldEnd = lineEnd;  /* initial value - end of 1st line */
         
-    for (gotWholeField = FALSE, error = FALSE;
-         !gotWholeField && !error;) {
+    for (gotWholeField = FALSE, timedOut = false, *errorP = FALSE;
+         !gotWholeField && !timedOut && !*errorP;) {
 
         char * nextLineEnd;
 
@@ -275,8 +277,8 @@ getRestOfField(TConn *       const connectionP,
            case, it's the empty line that marks the end of the headers.
         */
         getLineInBuffer(connectionP, fieldEnd, deadline,
-                        &nextLineEnd, &error);
-        if (!error) {
+                        &nextLineEnd, &timedOut, errorP);
+        if (!*errorP) {
             if (isContinuationLine(fieldEnd)) {
                 /* Join previous line to this one */
                 convertLineEnd(fieldEnd, fieldStart, ' ');
@@ -291,17 +293,18 @@ getRestOfField(TConn *       const connectionP,
         }
     }
     *fieldEndP = fieldEnd;
-    *errorP    = error;
+    *timedOutP = timedOut;
 }
 
 
 
 static void
-readField(TConn * const connectionP,
-          time_t  const deadline,
-          bool *  const endOfHeaderP,
-          char ** const fieldP,
-          bool *  const errorP) {
+readField(TConn *       const connectionP,
+          time_t        const deadline,
+          bool *        const endOfHeaderP,
+          char **       const fieldP,
+          bool *        const timedOutP,
+          const char ** const errorP) {
 /*----------------------------------------------------------------------------
    Read an HTTP header field, or the end of header empty line, on connection
    *connectionP.
@@ -333,90 +336,106 @@ readField(TConn * const connectionP,
 -----------------------------------------------------------------------------*/
     char * const bufferStart = connectionP->buffer.t + connectionP->bufferpos;
 
-    bool error;
     char * lineEnd;
+    const char * getLineError;
 
-    getLineInBuffer(connectionP, bufferStart, deadline, &lineEnd, &error);
+    getLineInBuffer(connectionP, bufferStart, deadline, &lineEnd,
+                    timedOutP, &getLineError);
 
-    if (!error) {
+    if (getLineError) {
+        xmlrpc_asprintf(errorP, "Failed to get a line of HTTP header "
+                        "from client.  %s", getLineError);
+        xmlrpc_strfree(getLineError);
+    } else if (!*timedOutP) {
         if (isContinuationLine(bufferStart))
-            error = TRUE;
+            xmlrpc_asprintf(errorP, "Client sent continuation line when "
+                            "we were expecting a new header");
         else if (isEmptyLine(bufferStart)) {
             /* Consume the EOH mark from the buffer */
             connectionP->bufferpos = lineEnd - connectionP->buffer.t;
             *endOfHeaderP = TRUE;
+            *errorP = NULL;
         } else {
             /* We have the first line of a field; there may be more. */
 
             const char * fieldEnd;
+            const char * error;
 
             *endOfHeaderP = FALSE;
 
             getRestOfField(connectionP, lineEnd, deadline,
-                           &fieldEnd, &error);
+                           &fieldEnd, timedOutP, &error);
 
-            if (!error) {
-                *fieldP = bufferStart;
+            if (error) {
+                xmlrpc_asprintf(errorP, "After receiving the beginning of "
+                                "an HTTP header field, failed to read "
+                                "the rest of it.  %s", error);
+                xmlrpc_strfree(error);
+            } else {
+                *errorP = NULL;
 
-                /* Consume the header from the buffer (but be careful --
-                   you can't reuse that part of the buffer because the
-                   string we will return is in it!
-                */
-                connectionP->bufferpos = fieldEnd - connectionP->buffer.t;
+                if (!*timedOutP) {
+                    *fieldP = bufferStart;
+
+                    /* Consume the header from the buffer (but be careful --
+                       you can't reuse that part of the buffer because the
+                       string we will return is in it!
+                    */
+                    connectionP->bufferpos = fieldEnd - connectionP->buffer.t;
+                }
             }
         }
     }
-    *errorP = error;
 }
 
 
 
 static void
-skipToNonemptyLine(TConn * const connectionP,
-                   time_t  const deadline,
-                   bool *  const errorP) {
+skipToNonemptyLine(TConn *       const connectionP,
+                   time_t        const deadline,
+                   bool *        const timedOutP,
+                   const char ** const errorP) {
 
     char * const bufferStart = connectionP->buffer.t + connectionP->bufferpos;
 
     bool gotNonEmptyLine;
-    bool error;
     char * lineStart;
     
-    lineStart       = bufferStart;  /* initial value */
-    gotNonEmptyLine = FALSE;        /* initial value */
-    error           = FALSE;        /* initial value */          
+    for (lineStart = bufferStart, gotNonEmptyLine = false, *timedOutP = false,
+             *errorP = NULL;
+         !gotNonEmptyLine && !*timedOutP && !*errorP; ) {
 
-    while (!gotNonEmptyLine && !error) {
         char * lineEnd;
 
-        getLineInBuffer(connectionP, lineStart, deadline, &lineEnd, &error);
+        getLineInBuffer(connectionP, lineStart, deadline, &lineEnd,
+                        timedOutP, errorP);
 
-        if (!error) {
+        if (!*errorP && !*timedOutP) {
             if (!isEmptyLine(lineStart))
                 gotNonEmptyLine = TRUE;
             else
                 lineStart = lineEnd;
         }
     }
-    if (!error) {
+    if (!*errorP && !*timedOutP) {
         /* Consume all the empty lines; advance buffer pointer to first
            non-empty line.
         */
         connectionP->bufferpos = lineStart - connectionP->buffer.t;
     }
-    *errorP = error;
 }
 
 
 
 static void
-readRequestField(TSession * const sessionP,
-                 time_t     const deadline,
-                 char **    const requestLineP,
-                 uint16_t * const httpErrorCodeP) {
+readRequestField(TSession *    const sessionP,
+                 time_t        const deadline,
+                 char **       const requestLineP,
+                 bool *        const timedOutP,
+                 const char ** const errorP) {
 /*----------------------------------------------------------------------------
-   Read the HTTP request header field from session 'sessionP'.  We read
-   through the session's internal buffer; i.e.  we may get data that was
+   Read the HTTP request field (POST, etc.) from session 'sessionP'.  We read
+   through the session's internal buffer; i.e. we may get data that was
    previously read from the network, or we may read more from the network.
 
    We assume the connection is presently positioned to the beginning of
@@ -425,35 +444,44 @@ readRequestField(TSession * const sessionP,
    We ignore any empty lines at the beginning of the stream, per
    RFC2616 Section 4.1.
 
-   Fail if we can't get the field before 'deadline'.
+   If we can't get the field before 'deadline', return *timedOutP = true.
 
    Return as *requestLineP the request field read.  This ASCIIZ string is
    in the session's internal buffer.
-
-   Return as *httpErrorCodeP the HTTP error code that describes how we
-   are not able to read the request field, or 0 if we can.
-   If we can't, *requestLineP is meaningless.
 -----------------------------------------------------------------------------*/
     char * line;
-    bool error;
     bool endOfHeader;
+    const char * skipError;
 
-    skipToNonemptyLine(sessionP->connP, deadline, &error);
+    skipToNonemptyLine(sessionP->connP, deadline, timedOutP, &skipError);
 
-    if (!error) {
-        readField(sessionP->connP, deadline, &endOfHeader, &line, &error);
+    if (skipError) {
+        xmlrpc_asprintf(errorP, "Failed to find the request field, "
+                        "i.e. a non-empty line.  %s", skipError);
+        xmlrpc_strfree(skipError);
+    } else if (!*timedOutP) {
+        const char * error;
 
-        /* End of header is delimited by an empty line, and we skipped all
-           the empty lines above, so readField() could not have encountered
-           EOH:
-        */
-        assert(!endOfHeader);
-    }
-    if (error)
-        *httpErrorCodeP = 408;  /* Request Timeout */
-    else {
-        *httpErrorCodeP = 0;
-        *requestLineP = line;
+        readField(sessionP->connP, deadline, &endOfHeader, &line,
+                  timedOutP, &error);
+
+        if (error) {
+            xmlrpc_asprintf(errorP, "Got beginning of the request field, "
+                            "but failed to get the rest.  %s", error);
+            xmlrpc_strfree(error);
+        } else {
+            *errorP = NULL;
+
+            if (!*timedOutP) {
+                /* End of header is delimited by an empty line, and we skipped
+                   all the empty lines above, so readField() could not have
+                   encountered EOH:
+                */
+                assert(!endOfHeader);
+            
+                *requestLineP = line;
+            }
+        }
     }
 }
 
@@ -916,6 +944,10 @@ getFieldNameToken(char **       const pP,
 
    The field name is the lower case representation of the value of the
    field name token.
+
+   If the field name is invalid, return a text explanation as *errorP
+   and a suitable HTTP status code as *httpErrorCodeP.  If not, return
+   *errorP == NULL and nothing as *httpErrorCodeP.
 -----------------------------------------------------------------------------*/
     char * fieldName;
 
@@ -1020,21 +1052,26 @@ readAndProcessHeaderFields(TSession *    const sessionP,
    as *httpErrorCodeP.
 -----------------------------------------------------------------------------*/
     bool endOfHeader;
+    bool timedOut;
 
     assert(!sessionP->validRequest);
         /* Calling us doesn't make sense if there is already a valid request */
 
-    *errorP = NULL;  /* initial assumption */
-    endOfHeader = false;  /* Caller assures us there is at least one header */
-
-    while (!endOfHeader && !*errorP) {
+    for (endOfHeader = false, *errorP = NULL, timedOut = false;
+         !endOfHeader && !*errorP && !timedOut; ) {
         char * field;
-        bool error;
-        readField(sessionP->connP, deadline, &endOfHeader, &field, &error);
+        const char * error;
+        readField(sessionP->connP, deadline, &endOfHeader, &field,
+                  &timedOut, &error);
         if (error) {
             xmlrpc_asprintf(errorP, "Failed to read header from "
-                            "client connection.");
-            *httpErrorCodeP = 408;  /* Request Timeout */
+                            "client connection.  %s", error);
+            *httpErrorCodeP = 500;  /* Internal server error */
+            xmlrpc_strfree(error);
+        } else if (timedOut) {
+            xmlrpc_asprintf(errorP, "Timed out wating for client to send "
+                            "something");
+            *httpErrorCodeP = 408;  /* Request timed out */
         } else {
             if (!endOfHeader) {
                 char * p;
@@ -1076,16 +1113,29 @@ RequestRead(TSession *    const sessionP,
    Leave the connection positioned to the body of the request, ready
    to be read by an HTTP request handler (via SessionRefillBuffer() and
    SessionGetReadData()).
+
+   If we are unable to read the headers, we return a text description as
+   *errorP and a suitable HTTP status code as *httpErrorCodeP.
+
+   If we successfully read the headers, we return *errorP == NULL and
+   nothing as *httpErrorCodeP.
 -----------------------------------------------------------------------------*/
     time_t const deadline = time(NULL) + timeout;
 
-    uint16_t httpErrorCode;  /* zero for no error */
+    bool timedOut;
+    const char * error;
     char * requestLine;  /* In connection;s internal buffer */
 
-    readRequestField(sessionP, deadline, &requestLine, &httpErrorCode);
-    if (httpErrorCode) {
-        xmlrpc_asprintf(errorP, "Problem getting the request header");
-        *httpErrorCodeP = httpErrorCode;
+    readRequestField(sessionP, deadline, &requestLine, &timedOut, &error);
+    if (error) {
+        xmlrpc_asprintf(errorP, "Problem getting the request header.  %s",
+                        error);
+        *httpErrorCodeP = 500;  /* Internal error */
+        xmlrpc_strfree(error);
+    } else if (timedOut) {
+        xmlrpc_asprintf(errorP, "Timed out waiting for client to send "
+                        "the request field");
+        *httpErrorCodeP = 408;  /* Request timed out */
     } else {
         TMethod httpMethod;
         const char * host;
@@ -1093,6 +1143,7 @@ RequestRead(TSession *    const sessionP,
         const char * query;
         unsigned short port;
         bool moreFields;
+        uint16_t httpErrorCode;  /* zero means no error */
 
         parseRequestLine(requestLine, &httpMethod, &sessionP->version,
                          &host, &port, &path, &query,
