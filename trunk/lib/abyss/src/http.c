@@ -145,7 +145,7 @@ firstLfPos(TConn * const connectionP,
 
     char * p;
 
-    for (p = lineStart; p < bufferEnd && *p != LF; ++p);
+    for (p = lineStart; p < bufferEnd && *p != '\n'; ++p);
 
     if (p < bufferEnd)
         return p;
@@ -231,7 +231,7 @@ convertLineEnd(char * const lineStart,
     assert(lineStart >= prevLineStart + 1);
     *(lineStart-1) = newVal;
     if (prevLineStart + 1 < lineStart &&
-        *(lineStart-2) == CR)
+        *(lineStart-2) == '\r')
         *(lineStart-2) = newVal;
 }
 

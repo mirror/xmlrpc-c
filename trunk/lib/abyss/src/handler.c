@@ -247,7 +247,7 @@ sendDirectoryDocument(TList *      const listP,
     uint32_t k;
 
     if (text) {
-        sprintf(z, "Index of %s" CRLF, uri);
+        sprintf(z, "Index of %s\r\n", uri);
         i = strlen(z)-2;
         p = z + i + 2;
 
@@ -257,17 +257,17 @@ sendDirectoryDocument(TList *      const listP,
         }
 
         *p = '\0';
-        strcat(z, CRLF CRLF
+        strcat(z, "\r\n\r\n"
                "Name                      Size      "
-               "Date-Time             Type" CRLF
+               "Date-Time             Type\r\n"
                "------------------------------------"
-               "--------------------------------------------"CRLF);
+               "--------------------------------------------\r\n");
     } else {
         sprintf(z, "<HTML><HEAD><TITLE>Index of %s</TITLE></HEAD><BODY>"
                 "<H1>Index of %s</H1><PRE>",
                 uri, uri);
         strcat(z, "Name                      Size      "
-               "Date-Time             Type<HR WIDTH=100%>"CRLF);
+               "Date-Time             Type<HR WIDTH=100%>\r\n");
     }
 
     HTTPWriteBodyChunk(sessionP, z, strlen(z));
@@ -355,9 +355,9 @@ sendDirectoryDocument(TList *      const listP,
         }
 
         if (text)
-            sprintf(z, "%s%s %s    %s   %s"CRLF, z1, p, z3, z2, z4);
+            sprintf(z, "%s%s %s    %s   %s\r\n", z1, p, z3, z2, z4);
         else
-            sprintf(z, "<A HREF=\"%s%s\">%s</A>%s %s    %s   %s"CRLF,
+            sprintf(z, "<A HREF=\"%s%s\">%s</A>%s %s    %s   %s\r\n",
                     fi->name, fi->attrib & A_SUBDIR ? "/" : "",
                     z1, p, z3, z2, z4);
 
@@ -368,7 +368,7 @@ sendDirectoryDocument(TList *      const listP,
     if (text)
         strcpy(z, SERVER_PLAIN_INFO);
     else
-        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>" CRLF CRLF);
+        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>\r\n\r\n");
     
     HTTPWriteBodyChunk(sessionP, z, strlen(z));
 }
@@ -486,10 +486,10 @@ composeEntityHeader(const char ** const entityHeaderP,
                     uint64_t      const end,
                     uint64_t      const filesize) {
                          
-    xmlrpc_asprintf(entityHeaderP, "Content-type: %s" CRLF
+    xmlrpc_asprintf(entityHeaderP, "Content-type: %s\r\n" 
                     "Content-range: "
-                    "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64 CRLF
-                    "Content-length: %" PRIu64 CRLF CRLF,
+                    "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64 "\r\n"
+                    "Content-length: %" PRIu64 "\r\n\r\n",
                     mediatype, start, end, filesize, end-start+1);
 }
 
@@ -520,7 +520,7 @@ sendBody(TSession *      const sessionP,
         for (i = 0; i <= sessionP->ranges.size; ++i) {
             ConnWrite(sessionP->connP, "--", 2);
             ConnWrite(sessionP->connP, BOUNDARY, strlen(BOUNDARY));
-            ConnWrite(sessionP->connP, CRLF, 2);
+            ConnWrite(sessionP->connP, "\r\n", 2);
 
             if (i < sessionP->ranges.size) {
                 uint64_t start;

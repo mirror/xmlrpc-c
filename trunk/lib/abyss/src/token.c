@@ -36,8 +36,8 @@ GetToken(char ** const pP) {
         switch (**pP) {
         case '\t':
         case ' ':
-        case CR:
-        case LF:
+        case '\r':
+        case '\n':
         case '\0':
             if (p0 == *pP)
                 return NULL;
