@@ -62,9 +62,9 @@ struct curlTransaction {
         /* The data to send for the POST method */
     xmlrpc_mem_block * responseDataP;
         /* This is normally where to put the body of the HTTP response.  But
-           do to a quirk of Curl, if the response is not valid HTTP, rather
-           than this just being irrelevant, it is the place that Curl puts the
-           server's non-HTTP response.  That can be useful for error
+           because of a quirk of Curl, if the response is not valid HTTP,
+           rather than this just being irrelevant, it is the place that Curl
+           puts the server's non-HTTP response.  That can be useful for error
            reporting.
         */
 };

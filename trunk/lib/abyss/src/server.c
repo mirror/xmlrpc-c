@@ -128,7 +128,7 @@ setupTrace(struct _TServer * const srvP) {
     if (srvP->traceIsActive)
         fprintf(stderr, "Abyss server will trace "
                 "basic server activity "
-                "due to ABYSS_TRACE_SERVER environment variable\n");
+                "because of ABYSS_TRACE_SERVER environment variable\n");
 }
 
 
@@ -682,7 +682,7 @@ processRequestFromClient(TConn *  const connectionP,
    the connection buffer, and we may leave some of later requests in the
    connection buffer.
 
-   In fact, due to timing considerations, we assume the client has begun
+   In fact, because of timing considerations, we assume the client has begun
    sending the request, which as a practical matter means Caller has already
    deposited some of it in the connection buffer.
 
