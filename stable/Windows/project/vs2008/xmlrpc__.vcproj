@@ -1655,14 +1655,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\lib\libutil\lock_windows.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\lib\libutil\lock_platform.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\cpp\registry.cpp"
 				>
 				<FileConfiguration
@@ -2197,10 +2189,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\lib\wininet_transport\xmlrpc_wininet_transport.c"
-				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\cpp\XmlRpcCpp.cpp"
