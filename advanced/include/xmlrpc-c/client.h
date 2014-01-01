@@ -11,7 +11,7 @@
 #define  XMLRPC_CLIENT_H_INCLUDED
 
 #include <stdarg.h>
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/base.h>
 
 #ifdef __cplusplus
@@ -173,7 +173,7 @@ struct xmlrpc_clientparms {
 
 /* XMLRPC_CPSIZE(xyz) is the minimum size a struct xmlrpc_clientparms
    must be to include the 'xyz' member.  This is essential to forward and
-   backward compatbility, as new members will be added to the end of the
+   backward compatibility, as new members will be added to the end of the
    struct in future releases.  This is how the callee knows whether or
    not the caller is new enough to have supplied a certain parameter.
 */

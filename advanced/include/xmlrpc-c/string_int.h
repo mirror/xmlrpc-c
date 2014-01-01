@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "xmlrpc_config.h"
-#include "c_util.h"
+#include "xmlrpc-c/c_util.h"
 #include "bool.h"
 
 #ifdef __cplusplus

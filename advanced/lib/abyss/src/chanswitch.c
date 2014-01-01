@@ -59,7 +59,7 @@ ChanSwitchInit(const char ** const errorP) {
         if (SwitchTraceIsActive)
             fprintf(stderr, "Abyss channel switch layer will trace "
                     "channel connection activity "
-                    "due to ABYSS_TRACE_SWITCH environment variable\n");
+                    "because of ABYSS_TRACE_SWITCH environment variable\n");
     }
 }
 

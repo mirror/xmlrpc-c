@@ -272,7 +272,7 @@ public:
                                     .portNumber(65536));
             );
         
-        // Due to the vagaries of Abyss, construction of the following
+        // Because of the vagaries of Abyss, construction of the following
         // objects may exit the program if it detects an error, such as
         // port number already in use.  We need to fix Abyss some day.
     

@@ -27,7 +27,7 @@ extern "C" {
 
 #include <sys/types.h>
 
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/inttypes.h>
 
 /*
@@ -590,10 +590,6 @@ MIMETypeGuessFromFile(const char * const filename);
   Some day, we sort this out.
 ****************************************************************************/
 
-
-#define CR      '\r'
-#define LF      '\n'
-#define CRLF    "\r\n"
 
 /*********************************************************************
 ** Paths and so on...

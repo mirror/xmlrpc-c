@@ -88,7 +88,7 @@ ConfReadLine(TFile *  const fileP,
             break;
         };
 
-        if (*z == CR || *z == LF)
+        if (*z == '\r' || *z == '\n')
             break;
 
         ++z;
@@ -96,7 +96,7 @@ ConfReadLine(TFile *  const fileP,
 
     if (len == 0)
         while (FileRead(fileP, &c, 1) == 1)
-            if (c == CR || c == LF)
+            if (c == '\r' || c == '\n')
                 break;
 
     *z = '\0';
@@ -136,8 +136,8 @@ ConfGetToken(char **p) {
         {
         case '\t':
         case ' ':
-        case CR:
-        case LF:
+        case '\r':
+        case '\n':
         case '\0':
             if (p0==*p)
                 return NULL;

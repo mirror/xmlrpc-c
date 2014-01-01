@@ -10,9 +10,11 @@
   "</p>"
 
 #define SERVER_PLAIN_INFO \
-  CRLF "----------------------------------------" \
-       "----------------------------------------" \
-  CRLF "ABYSS Web Server for XML-RPC For C/C++ " \
-  "version " XMLRPC_C_VERSION CRLF "See xmlrpc-c.sourceforge.net"
+  "\r\n" \
+  "----------------------------------------" \
+  "----------------------------------------\r\n" \
+  "ABYSS Web Server for XML-RPC For C/C++ " \
+  "version " XMLRPC_C_VERSION "\r\n" \
+  "See xmlrpc-c.sourceforge.net"
 
 #endif

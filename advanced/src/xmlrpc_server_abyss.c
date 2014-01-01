@@ -1175,7 +1175,7 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
                     unsigned int                      const parmSize) {
 /*----------------------------------------------------------------------------
-   Note that this is not re-entrant and not thread-safe, due to the
+   Note that this is not re-entrant and not thread-safe, because of the
    global library initialization.  If you want to run a server inside
    a thread of a multi-threaded program, use
    xmlrpc_server_abyss_create() instead.  As required by that

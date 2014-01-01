@@ -183,6 +183,12 @@ channelWrite(TChannel *            const channelP,
         size_t const maxSend = (size_t)(-1) >> 1;
 
         ssize_t rc;
+
+        // We'd like to use MSG_NOSIGNAL here, to prevent this send() from
+        // causing a SIGPIPE if the other end of the socket is closed, but
+        // MSG_NOSIGNAL is not standard enough.  An SO_NOSIGPIPE socket
+        // option is another way, but even less standard.  So instead, the
+        // thread simply must be set to ignore SIGPIPE.
         
         rc = send(socketUnixP->fd, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
