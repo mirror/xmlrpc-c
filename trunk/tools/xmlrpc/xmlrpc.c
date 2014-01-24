@@ -705,7 +705,7 @@ buildValue(xmlrpc_env *    const envP,
         } else if (xmlrpc_strneq(cdata, "struct/", 7)) {
             if (cdata[7] != '\0')
                 setError(envP, "Junk after 'struct/' instead of "
-                         "left parenthesis: '%s'", &cdata[7]);
+                         "left brace: '%s'", &cdata[7]);
             else
                 buildStruct(envP, cursorP, valuePP);
         } else {
