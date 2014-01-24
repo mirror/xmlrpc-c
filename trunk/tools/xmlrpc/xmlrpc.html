@@ -53,6 +53,14 @@ http://gggeek.damacom.it/debugger/</a>
 </pre>
 <pre>
 <tt>
+     $ xmlrpc localhost:8080 foo array/(i/3,i/5,s/hello)
+     Result:
+       Nil
+
+</tt>
+</pre>
+<pre>
+<tt>
      $ xmlrpc http://xmlrpc.example.com sample.add i/3 i/5 \
          transport=curl -curlinterface=eth1 -username=bryanh -password=passw0rd
        Result:
@@ -140,6 +148,15 @@ possible XML-RPC types, as follows by prefix:
 
 <dt>I/
 <dd>64 bit integer (&lt;i8&gt;)
+
+<dt>array/
+<dd>Array (&lt;array&gt;).  Specify the value as a list of members,
+separated by commas, between parentheses, like this:
+<P>
+<tt>array/(i/3,i/5,s/hello)</tt>
+<p>
+You can nest complex types, for example:
+<tt>array/(i/3,array/(d/3.5, d/2.0),i/5,s/hello)</tt>
 
 </dl>
 
