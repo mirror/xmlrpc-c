@@ -503,6 +503,43 @@ buildI8(xmlrpc_env *    const envP,
 
 
 static void
+addArrayItem(xmlrpc_env *   const envP,
+             const char **  const cursorP,
+             xmlrpc_value * const arrayP,
+             bool *         const endP) {
+
+    xmlrpc_value * itemP;
+
+    buildValue(envP, cursorP, &itemP);
+
+    if (!envP->fault_occurred) {
+        xmlrpc_array_append_item(envP, arrayP, itemP);
+
+        if (!envP->fault_occurred) {
+            enum TokenType delim;
+
+            getDelimiter(envP, cursorP, &delim);
+
+            if (!envP->fault_occurred) {
+                switch (delim) {
+                case COMMA: break;
+                case RIGHTPAREN: *endP = true; break;
+                default:
+                    setError(envP, "Array specifier has garbage where "
+                             "there should be a comma "
+                             "(element separator) "
+                             "or close parenthesis "
+                             "(marking the end of the element list)");
+                }
+            }
+        }
+        xmlrpc_DECREF(itemP);
+    }
+}
+
+
+
+static void
 buildArray(xmlrpc_env *    const envP,
            const char **   const cursorP,
            xmlrpc_value ** const valuePP) {
@@ -519,33 +556,9 @@ buildArray(xmlrpc_env *    const envP,
             xmlrpc_value * const arrayP = xmlrpc_array_new(envP);
 
             if (!envP->fault_occurred) {
-                bool end;  // We've reached the end of the array elements
-                for (end = false; !end && !envP->fault_occurred; ) {
-                    xmlrpc_value * itemP;
-                    enum TokenType delim;
-
-                    buildValue(envP, cursorP, &itemP);
-
-                    getDelimiter(envP, cursorP, &delim);
-
-                    if (!envP->fault_occurred) {
-                        xmlrpc_array_append_item(envP, arrayP, itemP);
-                        xmlrpc_DECREF(itemP);
-                    }
-
-                    if (!envP->fault_occurred) {
-                        switch (delim) {
-                        case COMMA: break;
-                        case RIGHTPAREN: end = true; break;
-                        default:
-                            setError(envP, "Array specifier has garbage where "
-                                     "there should be a comma "
-                                     "(element separator) "
-                                     "or close parenthesis "
-                                     "(marking the end of the element list)");
-                        }
-                    }
-                }
+                bool end;  /* We've reached the end of the array elements */
+                for (end = false; !end && !envP->fault_occurred; )
+                    addArrayItem(envP, cursorP, arrayP, &end);
 
                 if (envP->fault_occurred)
                     xmlrpc_DECREF(arrayP);
@@ -559,21 +572,91 @@ buildArray(xmlrpc_env *    const envP,
 
 
 static void
+addStructMember(xmlrpc_env *   const envP,
+                const char **  const cursorP,
+                xmlrpc_value * const structP,
+                bool *         const endP) {
+
+    const char * key;
+
+    getCdata(envP, cursorP, &key);
+
+    if (!envP->fault_occurred) {
+        enum TokenType delim;
+
+        getDelimiter(envP, cursorP, &delim);
+
+        if (!envP->fault_occurred) {
+            if (delim != COLON)
+                setError(envP, "Something other than a colon follows the "
+                         "key value '%s' in a structure member.", key);
+            else {
+                xmlrpc_value * valueP;
+
+                buildValue(envP, cursorP, &valueP);
+
+                if (!envP->fault_occurred) {
+                    xmlrpc_struct_set_value(envP, structP, key, valueP);
+
+                    if (!envP->fault_occurred) {
+                        enum TokenType delim;
+
+                        getDelimiter(envP, cursorP, &delim);
+
+                        if (!envP->fault_occurred) {
+                            switch (delim) {
+                            case COMMA: break;
+                            case RIGHTBRACE: *endP = true; break;
+                            default:
+                                setError(envP, "Struct specifier "
+                                         "has garbage where "
+                                         "there should be a comma "
+                                         "(member separator) "
+                                         "or close brace "
+                                         "(marking the end of the "
+                                         "member list)");
+                            }
+                        }
+                    }
+                    xmlrpc_DECREF(valueP);
+                }
+            }
+        }
+        strfree(key);
+    }
+}
+
+
+
+
+static void
 buildStruct(xmlrpc_env *    const envP,
             const char **   const cursorP,
             xmlrpc_value ** const valuePP) {
 
-    /* We can't do compound values today, but here is how we plan to do them:
+    enum TokenType tokenType;
 
-         struct/{search:linux,descriptions:i/76,time_period:12hour}
+    getDelimiter(envP, cursorP, &tokenType);
 
-         array/(i/7,s/hello,struct/{a:7,b:5})
-    */
-    
-    *valuePP = NULL;
+    if (!envP->fault_occurred) {
+        if (tokenType != LEFTBRACE)
+            setError(envP, "Struct specifier value starts with %s instead of "
+                     "left brace", tokenTypeName(tokenType));
+        else {
+            xmlrpc_value * const structP = xmlrpc_struct_new(envP);
 
-    setError(envP, "Code to interpret struct parameters ('%s') has not been "
-             "written yet", *cursorP);
+            if (!envP->fault_occurred) {
+                bool end;  /* We've reached the end of the struct members */
+                for (end = false; !end && !envP->fault_occurred; )
+                    addStructMember(envP, cursorP, structP, &end);
+
+                if (envP->fault_occurred)
+                    xmlrpc_DECREF(structP);
+                else
+                    *valuePP = structP;
+            }
+        }
+    }
 }
 
 
@@ -592,6 +675,7 @@ buildValue(xmlrpc_env *    const envP,
     const char * cdata;
 
     getCdata(envP, cursorP, &cdata);
+        /* This should get e.g. "i/492" or "hello" or "array/" */
 
     if (!envP->fault_occurred) {
         if (strlen(cdata) == 0)

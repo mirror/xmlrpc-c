@@ -53,7 +53,17 @@ http://gggeek.damacom.it/debugger/</a>
 </pre>
 <pre>
 <tt>
-     $ xmlrpc localhost:8080 foo array/(i/3,i/5,s/hello)
+     $ xmlrpc localhost:8080 foo 'array/(i/3,i/5,s/hello)' \
+          'struct/{width:d/8.5,height:d/11}'
+     
+     Result:
+       Nil
+
+</tt>
+</pre>
+<pre>
+<tt>
+     $ xmlrpc localhost:8080 foo 'array/(s/hello\(goodbye\))'
      Result:
        Nil
 
@@ -123,15 +133,15 @@ no parameters if you like.
 a slash.  Example: <b>i/5</b>.  Here, the &quot;i&quot; signifies an
 integer data type.  &quot;5&quot; is the value.
 
-<p><b>xmlrpc</b> is capable of only a subset of the 
-possible XML-RPC types, as follows by prefix:
-
 <dl>
 <dt>i/
 <dd>integer (&lt;i4&gt;) (32 bit)
 
 <dt>s/
 <dd>string (&lt;string&gt;)
+
+<p>The parenthesis, brace, comma, colon, and backslash characters are special.
+If you want to include one in a string value, escape it with a backslash.
 
 <dt>h/
 <dd>byte string (&lt;base64&gt;).  Specify the value in hexadecimal.
@@ -150,8 +160,17 @@ possible XML-RPC types, as follows by prefix:
 <dd>64 bit integer (&lt;i8&gt;)
 
 <dt>array/
-<dd>Array (&lt;array&gt;).  Specify the value as a list of members,
+<dd>Array (&lt;array&gt;).  Specify the value as a list of items,
 separated by commas, between parentheses, like this:
+<P>
+<tt>struct/{width:d/8.5,height:d/11}</tt>
+<p>
+You can nest complex types, for example:
+<tt>struct/{width:d/8.5,height:d/11,colors:array/(blue,green,red)}</tt>
+
+<dt>struct/
+<dd>Struct (&lt;struct&gt;).  Specify the value as a list of members,
+separated by commas, between braces, like this:
 <P>
 <tt>array/(i/3,i/5,s/hello)</tt>
 <p>
@@ -162,6 +181,8 @@ You can nest complex types, for example:
 
 <p>As a shortcut, if you don't specify a prefix (i.e. your argument does
 not contain a slash), <b>xmlrpc</b> assumes string data type.
+
+<p><b>xmlrpc</b> cannot generate a parameter of datetime type.
 
 </dl>
 
