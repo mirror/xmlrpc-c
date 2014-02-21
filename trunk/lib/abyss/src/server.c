@@ -186,6 +186,7 @@ initChanSwitchStuff(struct _TServer * const srvP,
         srvP->weCreatedChanSwitch = FALSE;
         srvP->port = port;
     }
+    srvP->readyToAccept = FALSE;
 }
 
 
@@ -904,6 +905,8 @@ ServerInit2(TServer *     const serverP,
                                 "Failed to listen on bound socket.  %s",
                                 error);
                 xmlrpc_strfree(error);
+            } else {
+                srvP->readyToAccept = true;
             }
         }
     }
@@ -1181,6 +1184,9 @@ acceptAndProcessNextConnection(
     void * channelInfoP;
 
     trace(srvP, "Waiting for a new channel from channel switch");
+
+    assert(srvP->readyToAccept);
+    assert(srvP->chanSwitchP);
         
     ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
     
@@ -1261,10 +1267,13 @@ ServerRun(TServer * const serverP) {
 
     trace(srvP, "%s entered", __FUNCTION__);
 
-    if (!srvP->chanSwitchP)
+    if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
-                 "Try ServerRunConn() or ServerInit()");
+                 "Try ServerRunConn()");
+    else if (!srvP->readyToAccept)
+        TraceMsg("You cannot run this server until you initialize it to "
+                 "accept connections, with ServerInit()");
     else {
         const char * error;
 
@@ -1418,16 +1427,21 @@ ServerRunOnce(TServer * const serverP) {
 
     trace(srvP, "%s entered", __FUNCTION__);
 
-    if (!srvP->chanSwitchP)
+    if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
-                 "on its own, so you can't use ServerRunOnce().  "
-                 "Try ServerRunChannel() or ServerInit()");
+                 "on its own, so you can't use ServerRun().  "
+                 "Try ServerRunConn()");
+    else if (!srvP->readyToAccept)
+        TraceMsg("You cannot run this server until you initialize it to "
+                 "accept connections, with ServerInit()");
     else {
         const char * error;
         TChannel *   channelP;
         void *       channelInfoP;
     
         srvP->keepalivemaxconn = 1;
+
+        assert(srvP->chanSwitchP);
 
         ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
         if (error) {
