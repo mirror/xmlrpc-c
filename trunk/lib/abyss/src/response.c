@@ -96,7 +96,9 @@ ResponseChunked(TSession * const sessionP) {
 void
 ResponseStatus(TSession *     const sessionP,
                unsigned short const code) {
-
+/*----------------------------------------------------------------------------
+   Set the status code for the response to 'code'.
+-----------------------------------------------------------------------------*/
     sessionP->status = code;
 }
 
@@ -104,7 +106,9 @@ ResponseStatus(TSession *     const sessionP,
 
 xmlrpc_uint16_t
 ResponseStatusFromErrno(int const errnoArg) {
-
+/*----------------------------------------------------------------------------
+   The appropriate HTTP status code for a POSIX errno of 'errnoArg'.
+-----------------------------------------------------------------------------*/
     uint16_t code;
 
     switch (errnoArg) {
@@ -124,7 +128,10 @@ ResponseStatusFromErrno(int const errnoArg) {
 
 void
 ResponseStatusErrno(TSession * const sessionP) {
-
+/*----------------------------------------------------------------------------
+   Set the response state from the global 'errno' value (i.e. the result
+   of the last system call Caller made).
+-----------------------------------------------------------------------------*/
     ResponseStatus(sessionP, ResponseStatusFromErrno(errno));
 }
 
