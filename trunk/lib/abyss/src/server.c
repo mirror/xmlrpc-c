@@ -98,7 +98,7 @@ logOpen(struct _TServer * const srvP,
         srvP->logLockP = xmlrpc_lock_create();
         *errorP = NULL;
 
-        srvP->logfileisopen = TRUE;
+        srvP->logfileisopen = true;
             
         if (*errorP)
             FileClose(srvP->logfileP);
@@ -114,7 +114,7 @@ logClose(struct _TServer * const srvP) {
     if (srvP->logfileisopen) {
         FileClose(srvP->logfileP);
         srvP->logLockP->destroy(srvP->logLockP);
-        srvP->logfileisopen = FALSE;
+        srvP->logfileisopen = false;
     }
 }
 
@@ -171,22 +171,22 @@ initChanSwitchStuff(struct _TServer * const srvP,
 
     if (chanSwitchP) {
         *errorP = NULL;
-        srvP->serverAcceptsConnections = TRUE;
+        srvP->serverAcceptsConnections = true;
         srvP->chanSwitchP = chanSwitchP;
         srvP->weCreatedChanSwitch = !userChanSwitch;
     } else if (noAccept) {
         *errorP = NULL;
-        srvP->serverAcceptsConnections = FALSE;
+        srvP->serverAcceptsConnections = false;
         srvP->chanSwitchP = NULL;
-        srvP->weCreatedChanSwitch = FALSE;
+        srvP->weCreatedChanSwitch = false;
     } else {
         *errorP = NULL;
-        srvP->serverAcceptsConnections = TRUE;
+        srvP->serverAcceptsConnections = true;
         srvP->chanSwitchP = NULL;
-        srvP->weCreatedChanSwitch = FALSE;
+        srvP->weCreatedChanSwitch = false;
         srvP->port = port;
     }
-    srvP->readyToAccept = FALSE;
+    srvP->readyToAccept = false;
 }
 
 
@@ -228,8 +228,8 @@ createServer(struct _TServer ** const srvPP,
                 srvP->keepalivetimeout = 15;
                 srvP->keepalivemaxconn = 30;
                 srvP->timeout          = 15;
-                srvP->advertise        = TRUE;
-                srvP->useSigchld       = FALSE;
+                srvP->advertise        = true;
+                srvP->useSigchld       = false;
                 srvP->uriHandlerStackSize = 0;
                 srvP->maxConn          = 15;
                 srvP->maxConnBacklog   = 15;
@@ -238,7 +238,7 @@ createServer(struct _TServer ** const srvPP,
 
                 ListInitAutoFree(&srvP->handlers);
 
-                srvP->logfileisopen = FALSE;
+                srvP->logfileisopen = false;
                 
                 *errorP = NULL;
 
@@ -283,8 +283,8 @@ ServerCreate(TServer *       const serverP,
              const char *    const filesPath,
              const char *    const logFileName) {
 
-    bool const noAcceptFalse = FALSE;
-    bool const userChanSwitchFalse = FALSE;
+    bool const noAcceptFalse = false;
+    bool const userChanSwitchFalse = false;
 
     bool success;
     const char * error;
@@ -296,9 +296,9 @@ ServerCreate(TServer *       const serverP,
     if (error) {
         TraceMsg(error);
         xmlrpc_strfree(error);
-        success = FALSE;
+        success = false;
     } else {
-        success = TRUE;
+        success = true;
     
         setNamePathLog(serverP, name, filesPath, logFileName);
     }
@@ -356,11 +356,11 @@ ServerCreateSocket(TServer *    const serverP,
 
     if (error) {
         TraceMsg(error);
-        success = FALSE;
+        success = false;
         xmlrpc_strfree(error);
     } else {
-        bool const noAcceptFalse = FALSE;
-        bool const userChanSwitchFalse = FALSE;
+        bool const noAcceptFalse = false;
+        bool const userChanSwitchFalse = false;
 
         const char * error;
 
@@ -370,10 +370,10 @@ ServerCreateSocket(TServer *    const serverP,
 
         if (error) {
             TraceMsg(error);
-            success = FALSE;
+            success = false;
             xmlrpc_strfree(error);
         } else {
-            success = TRUE;
+            success = true;
             
             setNamePathLog(serverP, name, filesPath, logFileName);
         }
@@ -392,8 +392,8 @@ ServerCreateNoAccept(TServer *    const serverP,
                      const char * const filesPath,
                      const char * const logFileName) {
 
-    bool const noAcceptTrue = TRUE;
-    bool const userChanSwitchFalse = FALSE;
+    bool const noAcceptTrue = true;
+    bool const userChanSwitchFalse = false;
 
     bool success;
     const char * error;
@@ -404,10 +404,10 @@ ServerCreateNoAccept(TServer *    const serverP,
 
     if (error) {
         TraceMsg(error);
-        success = FALSE;
+        success = false;
         xmlrpc_strfree(error);
     } else {
-        success = TRUE;
+        success = true;
         
         setNamePathLog(serverP, name, filesPath, logFileName);
     }
@@ -421,8 +421,8 @@ ServerCreateSwitch(TServer *     const serverP,
                    TChanSwitch * const chanSwitchP,
                    const char ** const errorP) {
     
-    bool const noAcceptFalse = FALSE;
-    bool const userChanSwitchTrue = TRUE;
+    bool const noAcceptFalse = false;
+    bool const userChanSwitchTrue = true;
 
     assert(serverP);
     assert(chanSwitchP);
@@ -622,7 +622,7 @@ runUserHandler(TSession *        const sessionP,
     abyss_bool handled;
     int i;
     
-    for (i = srvP->handlers.size-1, handled = FALSE;
+    for (i = srvP->handlers.size-1, handled = false;
          i >= 0 && !handled;
          --i) {
         const struct uriHandler * const handlerP = srvP->handlers.item[i];
@@ -760,7 +760,7 @@ serverFunc(void * const userHandle) {
           "PID = %d", getpid());
 
     requestCount = 0;
-    connectionDone = FALSE;
+    connectionDone = false;
 
     while (!connectionDone) {
         bool timedOut, eof;
@@ -775,15 +775,15 @@ serverFunc(void * const userHandle) {
                  &timedOut, &eof, &readError);
 
         if (srvP->terminationRequested) {
-            connectionDone = TRUE;
+            connectionDone = true;
         } else if (readError) {
             TraceMsg("Failed to read from Abyss connection.  %s", readError);
             xmlrpc_strfree(readError);
-            connectionDone = TRUE;
+            connectionDone = true;
         } else if (timedOut) {
-            connectionDone = TRUE;
+            connectionDone = true;
         } else if (eof) {
-            connectionDone = TRUE;
+            connectionDone = true;
         } else {
             bool const lastReqOnConn =
                 requestCount + 1 >= srvP->keepalivemaxconn;
@@ -802,7 +802,7 @@ serverFunc(void * const userHandle) {
             ++requestCount;
 
             if (!keepalive)
-                connectionDone = TRUE;
+                connectionDone = true;
             
             /**************** Must adjust the read buffer *****************/
             ConnReadInit(connectionP);
@@ -854,7 +854,7 @@ createChanSwitch(struct _TServer * const srvP,
     } else {
         *errorP = NULL;
         
-        srvP->weCreatedChanSwitch = TRUE;
+        srvP->weCreatedChanSwitch = true;
         srvP->chanSwitchP         = chanSwitchP;
     }
 }
@@ -1101,7 +1101,7 @@ ServerUseSigchld(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
     
-    srvP->useSigchld = TRUE;
+    srvP->useSigchld = true;
 }
 
 
@@ -1587,7 +1587,7 @@ serverAddHandler(TServer *     const serverP,
 
     MALLOCVAR(handlerP);
     if (handlerP == NULL)
-        *successP = FALSE;
+        *successP = false;
     else {
         handlerP->init       = init;
         handlerP->term       = term;
@@ -1600,7 +1600,7 @@ serverAddHandler(TServer *     const serverP,
             MAX(srvP->uriHandlerStackSize, handleReqStackSize);
         
         if (handlerP->init == NULL)
-            *successP = TRUE;
+            *successP = true;
         else {
             URIHandler2 handler2 = makeUriHandler2(handlerP);
             handlerP->init(&handler2, successP);

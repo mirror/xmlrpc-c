@@ -490,7 +490,7 @@ extractServerCreateParms(
     if (parmSize >= XMLRPC_APSIZE(socket_bound))
         *socketBoundP = parmsP->socket_bound;
     else
-        *socketBoundP = FALSE;
+        *socketBoundP = false;
 
     if (*socketBoundP) {
         if (parmSize < XMLRPC_APSIZE(socket_handle))

@@ -152,26 +152,26 @@ determineSortType(const char *  const query,
                   bool *        const textP,
                   const char ** const errorP) {
 
-    *ascendingP = TRUE;
+    *ascendingP = true;
     *sortP = 1;
-    *textP = FALSE;
+    *textP = false;
     *errorP = NULL;
     
     if (query) {
         if (xmlrpc_streq(query, "plain"))
-            *textP = TRUE;
+            *textP = true;
         else if (xmlrpc_streq(query, "name-up")) {
             *sortP = 1;
-            *ascendingP = TRUE;
+            *ascendingP = true;
         } else if (xmlrpc_streq(query, "name-down")) {
             *sortP = 1;
-            *ascendingP = FALSE;
+            *ascendingP = false;
         } else if (xmlrpc_streq(query, "date-up")) {
             *sortP = 2;
-            *ascendingP = TRUE;
+            *ascendingP = true;
         } else if (xmlrpc_streq(query, "date-down")) {
             *sortP = 2;
-            *ascendingP = FALSE;
+            *ascendingP = false;
         } else  {
             xmlrpc_asprintf(errorP, "invalid query value '%s'", query);
         }
@@ -389,13 +389,13 @@ notRecentlyModified(TSession * const sessionP,
         DateDecode(imsHdr, &valid, &datetime);
         if (valid) {
             if (MIN(fileModTime, sessionP->date) <= datetime)
-                retval = TRUE;
+                retval = true;
             else
-                retval = FALSE;
+                retval = false;
         } else
-            retval = FALSE;
+            retval = false;
     } else
-        retval = FALSE;
+        retval = false;
 
     return retval;
 }
@@ -668,11 +668,11 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
     TFileStat fs;
     bool endingslash;
 
-    endingslash = FALSE;  /* initial value */
+    endingslash = false;  /* initial value */
 
     if (!RequestValidURIPath(sessionP)) {
         ResponseStatus(sessionP, 400);
-        return TRUE;
+        return true;
     }
 
     /* Must check for * (asterisk uri) in the future */
@@ -680,14 +680,14 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
         ResponseAddField(sessionP, "Allow", "GET, HEAD");
         ResponseContentLength(sessionP, 0);
         ResponseStatus(sessionP, 200);
-        return TRUE;
+        return true;
     }
 
     if ((sessionP->requestInfo.method != m_get) &&
         (sessionP->requestInfo.method != m_head)) {
         ResponseAddField(sessionP, "Allow", "GET, HEAD");
         ResponseStatus(sessionP, 405);
-        return TRUE;
+        return true;
     }
 
     strcpy(z, handlerP->filesPath);
@@ -695,7 +695,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
     p = z + strlen(z) - 1;
     if (*p == '/') {
-        endingslash = TRUE;
+        endingslash = true;
         *p = '\0';
     }
 
@@ -703,7 +703,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
     if (!FileStat(z, &fs)) {
         ResponseStatusErrno(sessionP);
-        return TRUE;
+        return true;
     }
 
     if (fs.st_mode & S_IFDIR) {
@@ -718,7 +718,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
             ResponseAddField(sessionP, "Location", z);
             ResponseStatus(sessionP, 302);
             ResponseWriteStart(sessionP);
-            return TRUE;
+            return true;
         }
 
         *p = DIRECTORY_SEPARATOR[0];
@@ -741,13 +741,13 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
         
         if (!FileStat(z, &fs)) {
             ResponseStatusErrno(sessionP);
-            return TRUE;
+            return true;
         }
         handleDirectory(sessionP, z, fs.st_mtime, handlerP->mimeTypeP);
     } else
         handleFile(sessionP, z, fs.st_mtime, handlerP->mimeTypeP);
 
-    return TRUE;
+    return true;
 }
 
 

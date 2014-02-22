@@ -66,9 +66,9 @@ initRequestInfo(TRequestInfo * const requestInfoP,
 
     if (httpVersion.major > 1 ||
         (httpVersion.major == 1 && httpVersion.minor >= 1))
-        requestInfoP->keepalive = TRUE;
+        requestInfoP->keepalive = true;
     else
-        requestInfoP->keepalive = FALSE;
+        requestInfoP->keepalive = false;
 }
 
 
@@ -97,12 +97,12 @@ RequestInit(TSession * const sessionP,
 
     sessionP->connP = connectionP;
 
-    sessionP->responseStarted = FALSE;
+    sessionP->responseStarted = false;
 
-    sessionP->chunkedwrite = FALSE;
-    sessionP->chunkedwritemode = FALSE;
+    sessionP->chunkedwrite = false;
+    sessionP->chunkedwritemode = false;
 
-    sessionP->continueRequired = FALSE;
+    sessionP->continueRequired = false;
 
     ListInit(&sessionP->cookies);
     ListInit(&sessionP->ranges);
@@ -175,12 +175,12 @@ getLineInBuffer(TConn *       const connectionP,
 
     assert(lineStart <= connectionP->buffer.t + connectionP->buffersize);
 
-    for (*errorP = FALSE, lfPos = NULL, timedOut = false;
+    for (*errorP = false, lfPos = NULL, timedOut = false;
          !*errorP && !lfPos && !timedOut;
         ) {
         int const timeLeft = (int)(deadline - time(NULL));
         if (timeLeft <= 0)
-            timedOut = TRUE;
+            timedOut = true;
         else {
             lfPos = firstLfPos(connectionP, lineStart);
             if (!lfPos) {
@@ -267,7 +267,7 @@ getRestOfField(TConn *       const connectionP,
 
     fieldEnd = lineEnd;  /* initial value - end of 1st line */
         
-    for (gotWholeField = FALSE, timedOut = false, *errorP = FALSE;
+    for (gotWholeField = false, timedOut = false, *errorP = false;
          !gotWholeField && !timedOut && !*errorP;) {
 
         char * nextLineEnd;
@@ -285,7 +285,7 @@ getRestOfField(TConn *       const connectionP,
                 /* Add this line to the header */
                 fieldEnd = nextLineEnd;
             } else {
-                gotWholeField = TRUE;
+                gotWholeField = true;
 
                 /* NUL-terminate the whole field */
                 convertLineEnd(fieldEnd, fieldStart, '\0');
@@ -353,7 +353,7 @@ readField(TConn *       const connectionP,
         else if (isEmptyLine(bufferStart)) {
             /* Consume the EOH mark from the buffer */
             connectionP->bufferpos = lineEnd - connectionP->buffer.t;
-            *endOfHeaderP = TRUE;
+            *endOfHeaderP = true;
             *errorP = NULL;
         } else {
             /* We have the first line of a field; there may be more. */
@@ -361,7 +361,7 @@ readField(TConn *       const connectionP,
             const char * fieldEnd;
             const char * error;
 
-            *endOfHeaderP = FALSE;
+            *endOfHeaderP = false;
 
             getRestOfField(connectionP, lineEnd, deadline,
                            &fieldEnd, timedOutP, &error);
@@ -412,7 +412,7 @@ skipToNonemptyLine(TConn *       const connectionP,
 
         if (!*errorP && !*timedOutP) {
             if (!isEmptyLine(lineStart))
-                gotNonEmptyLine = TRUE;
+                gotNonEmptyLine = true;
             else
                 lineStart = lineEnd;
         }
@@ -895,13 +895,13 @@ parseRequestLine(char *           const requestLine,
                         httpVersionP->minor = vmin;
                         *httpErrorCodeP = 0;  /* no error */
                     }
-                    *moreLinesP = TRUE;
+                    *moreLinesP = true;
                 } else {
                     /* There is no HTTP version, so this is a single
                        line request.
                     */
                     *httpErrorCodeP = 0;  /* no error */
-                    *moreLinesP = FALSE;
+                    *moreLinesP = false;
                 }
                 if (*httpErrorCodeP) {
                     xmlrpc_strfree(host);
@@ -993,9 +993,9 @@ processField(const char *  const fieldName,
 
     if (xmlrpc_streq(fieldName, "connection")) {
         if (xmlrpc_strcaseeq(fieldValue, "keep-alive"))
-            sessionP->requestInfo.keepalive = TRUE;
+            sessionP->requestInfo.keepalive = true;
         else
-            sessionP->requestInfo.keepalive = FALSE;
+            sessionP->requestInfo.keepalive = false;
     } else if (xmlrpc_streq(fieldName, "host")) {
         if (sessionP->requestInfo.host) {
             xmlrpc_strfree(sessionP->requestInfo.host);
@@ -1030,7 +1030,7 @@ processField(const char *  const fieldName,
         }
     } else if (xmlrpc_streq(fieldName, "expect")) {
         if (xmlrpc_strcaseeq(fieldValue, "100-continue"))
-            sessionP->continueRequired = TRUE;
+            sessionP->continueRequired = true;
     }
 }
 
@@ -1189,15 +1189,15 @@ bool
 RequestValidURI(TSession * const sessionP) {
 
     if (!sessionP->requestInfo.uri)
-        return FALSE;
+        return false;
     
     if (xmlrpc_streq(sessionP->requestInfo.uri, "*"))
         return (sessionP->requestInfo.method != m_options);
 
     if (strchr(sessionP->requestInfo.uri, '*'))
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 
@@ -1229,7 +1229,7 @@ RequestValidURIPath(TSession * const sessionP) {
                 }
                 /* Prevent accessing hidden files (starting with .) */
                 else if (*p == '.')
-                    return FALSE;
+                    return false;
                 else
                     if (*p)
                         ++i;
@@ -1250,11 +1250,11 @@ RequestAuth(TSession *   const sessionP,
 
    If the request executing on session *sessionP specifies basic
    authentication (via Authorization header) with username 'user', password
-   'pass', then return TRUE.  Else, return FALSE and set up an authorization
+   'pass', then return true.  Else, return false and set up an authorization
    failure response (HTTP response status 401) that says user must supply an
    identity in the 'credential' domain.
 
-   When we return TRUE, we also set the username in the request info for the
+   When we return true, we also set the username in the request info for the
    session to 'user' so that a future SessionGetRequestInfo can get it.
 -----------------------------------------------------------------------------*/
     bool authorized;
@@ -1279,15 +1279,15 @@ RequestAuth(TSession *   const sessionP,
 
                 if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
                     sessionP->requestInfo.user = xmlrpc_strdupsol(user);
-                    authorized = TRUE;
+                    authorized = true;
                 } else
-                    authorized = FALSE;
+                    authorized = false;
             } else
-                authorized = FALSE;
+                authorized = false;
         } else
-            authorized = FALSE;
+            authorized = false;
     } else
-        authorized = FALSE;
+        authorized = false;
 
     if (!authorized) {
         const char * hdrValue;
@@ -1330,19 +1330,19 @@ RangeDecode(char *            const strArg,
     *start=strtol(str,&ss,10);
 
     if ((ss==str) || (*ss!='-'))
-        return FALSE;
+        return false;
 
     str=ss+1;
 
     if (!*str)
-        return TRUE;
+        return true;
 
     *end=strtol(str,&ss,10);
 
     if ((ss==str) || (*ss) || (*end<*start))
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 /*********************************************************************
@@ -1456,10 +1456,10 @@ HTTPWriteEndChunk(TSession * const sessionP) {
 
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
         /* May be one day trailer dumping will be added */
-        sessionP->chunkedwritemode = FALSE;
+        sessionP->chunkedwritemode = false;
         retval = ConnWrite(sessionP->connP, "0\r\n\r\n", 5);
     } else
-        retval = TRUE;
+        retval = true;
 
     return retval;
 }

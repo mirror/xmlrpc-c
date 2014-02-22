@@ -612,22 +612,6 @@ MIMETypeGuessFromFile(const char * const filename);
 #endif
 
 /*********************************************************************
-** General purpose definitions
-*********************************************************************/
-
-#ifndef NULL
-#define NULL ((void *)0)
-#endif  /* NULL */
-
-#ifndef TRUE
-#define TRUE    1
-#endif  /* TRUE */
-
-#ifndef FALSE
-#define FALSE    0
-#endif  /* FALSE */
-
-/*********************************************************************
 ** Range
 *********************************************************************/
 

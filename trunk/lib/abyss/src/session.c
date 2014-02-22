@@ -26,7 +26,7 @@ SessionRefillBuffer(TSession * const sessionP) {
     struct _TServer * const srvP = sessionP->connP->server->srvP;
     bool failed;
 
-    failed = FALSE;  /* initial value */
+    failed = false;  /* initial value */
             
     /* Reset our read buffer & flush data from previous reads. */
     ConnReadInit(sessionP->connP);
@@ -37,7 +37,7 @@ SessionRefillBuffer(TSession * const sessionP) {
     if (!failed) {
         const char * readError;
 
-        sessionP->continueRequired = FALSE;
+        sessionP->continueRequired = false;
 
         /* Read more network data into our buffer.  Fail if we time out before
            client sends any data or client closes the connection or there's
@@ -48,7 +48,7 @@ SessionRefillBuffer(TSession * const sessionP) {
         */
         ConnRead(sessionP->connP, srvP->timeout, NULL, NULL, &readError);	
         if (readError) {
-            failed = TRUE;
+            failed = true;
             xmlrpc_strfree(readError);
         }
     }

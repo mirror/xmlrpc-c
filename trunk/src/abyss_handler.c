@@ -271,10 +271,10 @@ processContentLength(TSession *    const httpRequestP,
         RequestHeaderValue(httpRequestP, "content-length");
 
     if (content_length == NULL) {
-        *missingP = TRUE;
+        *missingP = true;
         *errorP = NULL;
     } else {
-        *missingP = FALSE;
+        *missingP = false;
         *inputLenP = 0;  /* quiet compiler warning */
         if (content_length[0] == '\0')
             xmlrpc_asprintf(errorP, "The value in your content-length "
@@ -540,7 +540,7 @@ xmlrpc_handleIfXmlrpcReq(void *        const handlerArg,
    call for this XML-RPC server, we handle it.  If it's not, we refuse
    it and Abyss can try some other handler.
 
-   Our return code is TRUE to mean we handled it; FALSE to mean we didn't.
+   We return *handledP true to mean we handled it; false to mean we didn't.
 
    Note that failing the request counts as handling it, and not handling
    it does not mean we failed it.
@@ -563,9 +563,9 @@ xmlrpc_handleIfXmlrpcReq(void *        const handlerArg,
         /* It's not for the path (e.g. "/RPC2") that we're supposed to
            handle.
         */
-        *handledP = FALSE;
+        *handledP = false;
     else {
-        *handledP = TRUE;
+        *handledP = true;
 
         switch (requestInfoP->method) {
         case m_post:
@@ -631,7 +631,7 @@ xmlrpc_serverAbyssDefaultUriHandler(TSession * const sessionP) {
 
     xmlrpc_strfree(explanation);
 
-    return TRUE;
+    return true;
 }
 
 
