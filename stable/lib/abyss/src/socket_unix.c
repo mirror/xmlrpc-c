@@ -696,6 +696,15 @@ waitForConnection(struct socketUnix * const listenSocketP,
                             errno, strerror(errno));
             *interruptedP = FALSE; /* quiet compiler warning */
         }
+    } else if (pollfds[0].revents & POLLHUP) {
+        xmlrpc_asprintf(errorP, "INTERNAL ERROR: listening socket "
+                        "is not listening");
+    } else if (pollfds[1].revents & POLLHUP) {
+        xmlrpc_asprintf(errorP, "INTERNAL ERROR: interrupt socket hung up");
+    } else if (pollfds[0].revents & POLLERR) {
+        xmlrpc_asprintf(errorP, "listening socket is in POLLERR status");
+    } else if (pollfds[1].revents & POLLHUP) {
+        xmlrpc_asprintf(errorP, "interrupt socket is in POLLERR status");
     } else {
         *errorP       = NULL;
         *interruptedP = !(pollfds[0].revents & POLLIN);
