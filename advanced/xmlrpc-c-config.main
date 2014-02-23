@@ -8,6 +8,7 @@ The features are:
   abyss-server   ABYSS-based server functions
   pstream-server pstream-based server functions
   server-util    basic server functions (implied by *-server)
+  abyss          Abyss HTTP server (implied by abyss-server)
 
 Options are:
   --version      The version number of the package
@@ -132,6 +133,10 @@ while test $# -gt 0; do
         the_libs="-lxmlrpc_client++ $the_libs"
         packetsocket_lib="-lxmlrpc_packetsocket"
         fi
+      ;;
+    abyss)
+      the_libs="${LSOCKET} -lxmlrpc_util -lpthread"
+      the_libs="-lxmlrpc_abyss $the_libs"
       ;;
     --version)
       echo "$XMLRPC_MAJOR_RELEASE.$XMLRPC_MINOR_RELEASE.$XMLRPC_POINT_RELEASE"
