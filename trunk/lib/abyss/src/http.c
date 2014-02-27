@@ -815,6 +815,47 @@ parseRequestUri(char *           const requestUri,
 
 
 
+static TMethod
+methodFromMethodName(const char * const httpMethodName) {
+
+    if (xmlrpc_streq(httpMethodName, "GET"))
+        return m_get;
+    else if (xmlrpc_streq(httpMethodName, "PUT"))
+        return m_put;
+    else if (xmlrpc_streq(httpMethodName, "OPTIONS"))
+        return m_options;
+    else if (xmlrpc_streq(httpMethodName, "DELETE"))
+        return m_delete;
+    else if (xmlrpc_streq(httpMethodName, "POST"))
+        return m_post;
+    else if (xmlrpc_streq(httpMethodName, "TRACE"))
+        return m_trace;
+    else if (xmlrpc_streq(httpMethodName, "HEAD"))
+        return m_head;
+    else
+        return m_unknown;
+}
+
+
+
+static void
+parseHttpVersion(const char *  const textFromReqLine,
+                 httpVersion * const httpVersionP,
+                 const char ** const errorP) {
+
+    uint32_t vmin, vmaj;
+
+    if (sscanf(textFromReqLine, "HTTP/%d.%d", &vmaj, &vmin) != 2)
+        xmlrpc_asprintf(errorP, "Does not have the form HTTP/n.n");
+    else {
+        *errorP = NULL;
+        httpVersionP->major = vmaj;
+        httpVersionP->minor = vmin;
+    }
+}
+
+
+
 static void
 parseRequestLine(char *           const requestLine,
                  TMethod *        const httpMethodP,
@@ -824,96 +865,91 @@ parseRequestLine(char *           const requestLine,
                  const char **    const pathP,
                  const char **    const queryP,
                  bool *           const moreLinesP,
-                 uint16_t *       const httpErrorCodeP) {
-/*----------------------------------------------------------------------------
-   Modifies *requestLine!
------------------------------------------------------------------------------*/
+                 const char **    const errorP) {
+
+    char * const requestBuffer = strdup(requestLine);
+
     const char * httpMethodName;
     char * p;
 
-    p = requestLine;
-
-    /* Jump over spaces */
-    NextToken((const char **)&p);
-
-    httpMethodName = GetToken(&p);
-    if (!httpMethodName)
-        *httpErrorCodeP = 400;  /* Bad Request */
+    if (requestBuffer == NULL)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for working buffer");
     else {
-        char * requestUri;
+        p = requestBuffer;
 
-        if (xmlrpc_streq(httpMethodName, "GET"))
-            *httpMethodP = m_get;
-        else if (xmlrpc_streq(httpMethodName, "PUT"))
-            *httpMethodP = m_put;
-        else if (xmlrpc_streq(httpMethodName, "OPTIONS"))
-            *httpMethodP = m_options;
-        else if (xmlrpc_streq(httpMethodName, "DELETE"))
-            *httpMethodP = m_delete;
-        else if (xmlrpc_streq(httpMethodName, "POST"))
-            *httpMethodP = m_post;
-        else if (xmlrpc_streq(httpMethodName, "TRACE"))
-            *httpMethodP = m_trace;
-        else if (xmlrpc_streq(httpMethodName, "HEAD"))
-            *httpMethodP = m_head;
-        else
-            *httpMethodP = m_unknown;
-        
-        /* URI and Query Decoding */
+        /* Jump over spaces */
         NextToken((const char **)&p);
 
-        requestUri = GetToken(&p);
-        if (!requestUri)
-            *httpErrorCodeP = 400;  /* Bad Request */
+        httpMethodName = GetToken(&p);
+        if (!httpMethodName)
+            xmlrpc_asprintf(errorP, "No method name (e.g. \"GET\")");
         else {
-            const char * host;
-            unsigned short port;
-            const char * path;
-            const char * query;
-            const char * error;
+            char * requestUri;
 
-            parseRequestUri(requestUri, &host, &port, &path, &query, &error);
+            *httpMethodP = methodFromMethodName(httpMethodName);
 
-            if (error) {
-                *httpErrorCodeP = 400;  /* Bad Request */
-                xmlrpc_strfree(error);
-                    /* Someday we should do something with this */
-            } else {
-                const char * httpVersion;
+            /* URI and Query Decoding */
+            NextToken((const char **)&p);
 
-                NextToken((const char **)&p);
-        
-                /* HTTP Version Decoding */
-                
-                httpVersion = GetToken(&p);
-                if (httpVersion) {
-                    uint32_t vmin, vmaj;
-                    if (sscanf(httpVersion, "HTTP/%d.%d", &vmaj, &vmin) != 2)
-                        *httpErrorCodeP = 400;  /* Bad Request */
-                    else {
-                        httpVersionP->major = vmaj;
-                        httpVersionP->minor = vmin;
-                        *httpErrorCodeP = 0;  /* no error */
-                    }
-                    *moreLinesP = true;
+            requestUri = GetToken(&p);
+            if (!requestUri)
+                xmlrpc_asprintf(errorP, "No URI after the method name ('%s')",
+                                httpMethodName);
+            else {
+                const char * host;
+                unsigned short port;
+                const char * path;
+                const char * query;
+                const char * error;
+
+                parseRequestUri(requestUri,
+                                &host, &port, &path, &query, &error);
+
+                if (error) {
+                    xmlrpc_asprintf(errorP, "Invalid URI ('%s').  %s",
+                                    requestUri, error);
+                    xmlrpc_strfree(error);
                 } else {
-                    /* There is no HTTP version, so this is a single
-                       line request.
-                    */
-                    *httpErrorCodeP = 0;  /* no error */
-                    *moreLinesP = false;
+                    const char * httpVersion;
+
+                    NextToken((const char **)&p);
+        
+                    /* HTTP Version Decoding */
+                
+                    httpVersion = GetToken(&p);
+                    if (httpVersion) {
+                        const char * error;
+                        parseHttpVersion(httpVersion, httpVersionP, &error);
+
+                        if (error) {
+                            xmlrpc_asprintf(errorP, "Invalid HTTP version "
+                                            "token ('%s').  %s",
+                                            httpVersion, error);
+                            xmlrpc_strfree(error);
+                        } else {
+                            *errorP = NULL;
+                            *moreLinesP = true;
+                        }
+                    } else {
+                        /* There is no HTTP version, so this is a single
+                           line request.
+                        */
+                        *errorP = NULL;
+                        *moreLinesP = false;
+                    }
+                    if (*errorP) {
+                        xmlrpc_strfree(host);
+                        xmlrpc_strfree(path);
+                        xmlrpc_strfree(query);
+                    }
+                    *hostP = host;
+                    *portP = port;
+                    *pathP = path;
+                    *queryP = query;
                 }
-                if (*httpErrorCodeP) {
-                    xmlrpc_strfree(host);
-                    xmlrpc_strfree(path);
-                    xmlrpc_strfree(query);
-                }
-                *hostP = host;
-                *portP = port;
-                *pathP = path;
-                *queryP = query;
             }
         }
+        xmlrpc_strfree(requestBuffer);
     }
 }
 
@@ -1124,7 +1160,7 @@ RequestRead(TSession *    const sessionP,
 
     bool timedOut;
     const char * error;
-    char * requestLine;  /* In connection;s internal buffer */
+    char * requestLine;  /* In connection's internal buffer */
 
     readRequestField(sessionP, deadline, &requestLine, &timedOut, &error);
     if (error) {
@@ -1143,16 +1179,17 @@ RequestRead(TSession *    const sessionP,
         const char * query;
         unsigned short port;
         bool moreFields;
-        uint16_t httpErrorCode;  /* zero means no error */
+        const char * error;
 
         parseRequestLine(requestLine, &httpMethod, &sessionP->version,
                          &host, &port, &path, &query,
-                         &moreFields, &httpErrorCode);
+                         &moreFields, &error);
 
-        if (httpErrorCode) {
+        if (error) {
             xmlrpc_asprintf(errorP, "Unable to parse the request header "
-                            "'%s'", requestLine);
-            *httpErrorCodeP = httpErrorCode;
+                            "'%s'.  %s", requestLine, error);
+            *httpErrorCodeP = 400;  /* Bad request */
+            xmlrpc_strfree(error);
         } else {
             initRequestInfo(&sessionP->requestInfo, sessionP->version,
                             requestLine,
