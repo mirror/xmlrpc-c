@@ -485,6 +485,48 @@ hexDigitValue(char           const digit,
 
 
 static void
+parsePerCentEscape(const char ** const srcP,
+                   char *        const unescapedP,
+                   const char ** const errorP) {
+/*-----------------------------------------------------------------------------
+   With *srcP pointing to a supposed %HH escape sequence in a buffer, set
+   *unescapedP to the character that the sequence represents and advance *srcP
+   past it.
+-----------------------------------------------------------------------------*/
+    unsigned int digit0;
+
+    const char * src;
+
+    src = *srcP;  /* initial value */
+
+    ++src;  /* Move past per cent sign */
+
+    if (!*src)
+        xmlrpc_asprintf(errorP, "URI ends after the %%");
+    else {
+        *errorP = NULL;  /* initial assumption */
+
+        hexDigitValue(*src++, &digit0, errorP);
+        
+        if (!*errorP) {
+            unsigned int digit1;
+            
+            if (!*src)
+                xmlrpc_asprintf(errorP, "URI ends after the first digit");
+            else {
+                hexDigitValue(*src++, &digit1, errorP);
+                
+                if (!*errorP)
+                    *unescapedP = ((digit0 << 4) | digit1);
+            }
+        }
+    }
+    *srcP = src;
+}
+
+
+
+static void
 unescapeUri(const char *  const uriComponent,
             const char ** const unescapedP,
             const char ** const errorP) {
@@ -512,16 +554,18 @@ unescapeUri(const char *  const uriComponent,
         while (*src && !*errorP) {
             switch (*src) {
             case '%': {
-                unsigned int digit0;
-                hexDigitValue(*src++, &digit0, errorP);
-            
-                if (!*errorP) {
-                    unsigned int digit1;
-                    hexDigitValue(*src++, &digit1, errorP);
-                
-                    if (!*errorP)
-                        *dst++ = ((digit0 << 4) | digit1);
-                }
+                char unescaped;
+                const char * error;
+
+                parsePerCentEscape(&src, &unescaped, &error);
+
+                if (error) {
+                    xmlrpc_asprintf(errorP,
+                                    "Invalid %%HH escape sequence.  %s",
+                                    error);
+                    xmlrpc_strfree(error);
+                } else
+                    *dst++ = unescaped;
             } break;
 
             default:
