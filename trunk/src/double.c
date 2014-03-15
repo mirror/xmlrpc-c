@@ -87,7 +87,7 @@ floatWhole(double   const value,
            double * const formattedAmountP,
            double * const precisionP) {
 /*----------------------------------------------------------------------------
-   Format into *formattedP the whole partof 'value', i.e. the part before the
+   Format into *formattedP the whole part of 'value', i.e. the part before the
    decimal point.
 
    Return as *formattedAmountP the whole amount; e.g. if 'value' is 35.2,
@@ -220,17 +220,21 @@ xmlrpc_formatFloat(xmlrpc_env *  const envP,
         absvalue = value;
 
     if (absvalue >= 1.0) {
-        double wholePart, fractionPart;
+        double wholePart;
         double wholePrecision;
 
         floatWhole(absvalue, &formatted, &wholePart, &wholePrecision);
 
-        fractionPart = absvalue - wholePart;
+        if (wholePrecision >= 1.0) {
+            /* We ran out of precision before we got to the decimal point */
+        } else {
+            double const fractionPart = absvalue - wholePart;
 
-        if (fractionPart > wholePrecision) {
-            bufferConcat(&formatted, '.');
+            if (fractionPart > wholePrecision) {
+                bufferConcat(&formatted, '.');
 
-            floatFractionPart(fractionPart, wholePrecision, &formatted);
+                floatFractionPart(fractionPart, wholePrecision, &formatted);
+            }
         }    
     } else {
         bufferConcat(&formatted, '0');
