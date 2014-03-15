@@ -9,6 +9,11 @@
 
 typedef struct {
     char * bytes;
+        /* NULL means there has been a memory allocation failure.
+           bufferConcat() still works in this case, because we dont' want
+           callers to have to deal with the out-of-memory possibility;
+           it's just a no-op.
+        */
     char * next;
     char * end;
 } buffer;
@@ -81,7 +86,17 @@ floatWhole(double   const value,
            buffer * const formattedP,
            double * const formattedAmountP,
            double * const precisionP) {
+/*----------------------------------------------------------------------------
+   Format into *formattedP the whole part of 'value', i.e. the part before the
+   decimal point.
 
+   Return as *formattedAmountP the whole amount; e.g. if 'value' is 35.2,
+   we return *formattedAmountP = 35.
+
+   As there is imprecision involved in our calculations, return as *precisionP
+   the maximum difference there may be be between 'double' and what we
+   formatted.
+-----------------------------------------------------------------------------*/
     if (value < 1.0) {
         /* No digits to add to the whole part */
         *formattedAmountP = 0;
@@ -205,17 +220,21 @@ xmlrpc_formatFloat(xmlrpc_env *  const envP,
         absvalue = value;
 
     if (absvalue >= 1.0) {
-        double wholePart, fractionPart;
+        double wholePart;
         double wholePrecision;
 
         floatWhole(absvalue, &formatted, &wholePart, &wholePrecision);
 
-        fractionPart = absvalue - wholePart;
+        if (wholePrecision >= 1.0) {
+            /* We ran out of precision before we got to the decimal point */
+        } else {
+            double const fractionPart = absvalue - wholePart;
 
-        if (fractionPart > wholePrecision) {
-            bufferConcat(&formatted, '.');
+            if (fractionPart > wholePrecision) {
+                bufferConcat(&formatted, '.');
 
-            floatFractionPart(fractionPart, wholePrecision, &formatted);
+                floatFractionPart(fractionPart, wholePrecision, &formatted);
+            }
         }    
     } else {
         bufferConcat(&formatted, '0');
