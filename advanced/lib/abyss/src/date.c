@@ -188,7 +188,7 @@ DateDecode(const char * const dateString,
                 xmlrpc_timegm(&tm, datetimeP, &timeError);
                 
                 if (timeError) {
-                    error = TRUE;
+                    error = true;
                     xmlrpc_strfree(timeError);
                 }
             }

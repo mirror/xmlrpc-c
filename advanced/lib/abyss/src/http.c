@@ -66,9 +66,9 @@ initRequestInfo(TRequestInfo * const requestInfoP,
 
     if (httpVersion.major > 1 ||
         (httpVersion.major == 1 && httpVersion.minor >= 1))
-        requestInfoP->keepalive = TRUE;
+        requestInfoP->keepalive = true;
     else
-        requestInfoP->keepalive = FALSE;
+        requestInfoP->keepalive = false;
 }
 
 
@@ -97,12 +97,12 @@ RequestInit(TSession * const sessionP,
 
     sessionP->connP = connectionP;
 
-    sessionP->responseStarted = FALSE;
+    sessionP->responseStarted = false;
 
-    sessionP->chunkedwrite = FALSE;
-    sessionP->chunkedwritemode = FALSE;
+    sessionP->chunkedwrite = false;
+    sessionP->chunkedwritemode = false;
 
-    sessionP->continueRequired = FALSE;
+    sessionP->continueRequired = false;
 
     ListInit(&sessionP->cookies);
     ListInit(&sessionP->ranges);
@@ -175,12 +175,12 @@ getLineInBuffer(TConn *       const connectionP,
 
     assert(lineStart <= connectionP->buffer.t + connectionP->buffersize);
 
-    for (*errorP = FALSE, lfPos = NULL, timedOut = false;
+    for (*errorP = false, lfPos = NULL, timedOut = false;
          !*errorP && !lfPos && !timedOut;
         ) {
         int const timeLeft = (int)(deadline - time(NULL));
         if (timeLeft <= 0)
-            timedOut = TRUE;
+            timedOut = true;
         else {
             lfPos = firstLfPos(connectionP, lineStart);
             if (!lfPos) {
@@ -267,7 +267,7 @@ getRestOfField(TConn *       const connectionP,
 
     fieldEnd = lineEnd;  /* initial value - end of 1st line */
         
-    for (gotWholeField = FALSE, timedOut = false, *errorP = FALSE;
+    for (gotWholeField = false, timedOut = false, *errorP = false;
          !gotWholeField && !timedOut && !*errorP;) {
 
         char * nextLineEnd;
@@ -285,7 +285,7 @@ getRestOfField(TConn *       const connectionP,
                 /* Add this line to the header */
                 fieldEnd = nextLineEnd;
             } else {
-                gotWholeField = TRUE;
+                gotWholeField = true;
 
                 /* NUL-terminate the whole field */
                 convertLineEnd(fieldEnd, fieldStart, '\0');
@@ -353,7 +353,7 @@ readField(TConn *       const connectionP,
         else if (isEmptyLine(bufferStart)) {
             /* Consume the EOH mark from the buffer */
             connectionP->bufferpos = lineEnd - connectionP->buffer.t;
-            *endOfHeaderP = TRUE;
+            *endOfHeaderP = true;
             *errorP = NULL;
         } else {
             /* We have the first line of a field; there may be more. */
@@ -361,7 +361,7 @@ readField(TConn *       const connectionP,
             const char * fieldEnd;
             const char * error;
 
-            *endOfHeaderP = FALSE;
+            *endOfHeaderP = false;
 
             getRestOfField(connectionP, lineEnd, deadline,
                            &fieldEnd, timedOutP, &error);
@@ -412,7 +412,7 @@ skipToNonemptyLine(TConn *       const connectionP,
 
         if (!*errorP && !*timedOutP) {
             if (!isEmptyLine(lineStart))
-                gotNonEmptyLine = TRUE;
+                gotNonEmptyLine = true;
             else
                 lineStart = lineEnd;
         }
@@ -859,6 +859,47 @@ parseRequestUri(char *           const requestUri,
 
 
 
+static TMethod
+methodFromMethodName(const char * const httpMethodName) {
+
+    if (xmlrpc_streq(httpMethodName, "GET"))
+        return m_get;
+    else if (xmlrpc_streq(httpMethodName, "PUT"))
+        return m_put;
+    else if (xmlrpc_streq(httpMethodName, "OPTIONS"))
+        return m_options;
+    else if (xmlrpc_streq(httpMethodName, "DELETE"))
+        return m_delete;
+    else if (xmlrpc_streq(httpMethodName, "POST"))
+        return m_post;
+    else if (xmlrpc_streq(httpMethodName, "TRACE"))
+        return m_trace;
+    else if (xmlrpc_streq(httpMethodName, "HEAD"))
+        return m_head;
+    else
+        return m_unknown;
+}
+
+
+
+static void
+parseHttpVersion(const char *  const textFromReqLine,
+                 httpVersion * const httpVersionP,
+                 const char ** const errorP) {
+
+    uint32_t vmin, vmaj;
+
+    if (sscanf(textFromReqLine, "HTTP/%d.%d", &vmaj, &vmin) != 2)
+        xmlrpc_asprintf(errorP, "Does not have the form HTTP/n.n");
+    else {
+        *errorP = NULL;
+        httpVersionP->major = vmaj;
+        httpVersionP->minor = vmin;
+    }
+}
+
+
+
 static void
 parseRequestLine(char *           const requestLine,
                  TMethod *        const httpMethodP,
@@ -868,96 +909,91 @@ parseRequestLine(char *           const requestLine,
                  const char **    const pathP,
                  const char **    const queryP,
                  bool *           const moreLinesP,
-                 uint16_t *       const httpErrorCodeP) {
-/*----------------------------------------------------------------------------
-   Modifies *requestLine!
------------------------------------------------------------------------------*/
+                 const char **    const errorP) {
+
+    char * const requestBuffer = strdup(requestLine);
+
     const char * httpMethodName;
     char * p;
 
-    p = requestLine;
-
-    /* Jump over spaces */
-    NextToken((const char **)&p);
-
-    httpMethodName = GetToken(&p);
-    if (!httpMethodName)
-        *httpErrorCodeP = 400;  /* Bad Request */
+    if (requestBuffer == NULL)
+        xmlrpc_asprintf(errorP, "Couldn't get memory for working buffer");
     else {
-        char * requestUri;
+        p = requestBuffer;
 
-        if (xmlrpc_streq(httpMethodName, "GET"))
-            *httpMethodP = m_get;
-        else if (xmlrpc_streq(httpMethodName, "PUT"))
-            *httpMethodP = m_put;
-        else if (xmlrpc_streq(httpMethodName, "OPTIONS"))
-            *httpMethodP = m_options;
-        else if (xmlrpc_streq(httpMethodName, "DELETE"))
-            *httpMethodP = m_delete;
-        else if (xmlrpc_streq(httpMethodName, "POST"))
-            *httpMethodP = m_post;
-        else if (xmlrpc_streq(httpMethodName, "TRACE"))
-            *httpMethodP = m_trace;
-        else if (xmlrpc_streq(httpMethodName, "HEAD"))
-            *httpMethodP = m_head;
-        else
-            *httpMethodP = m_unknown;
-        
-        /* URI and Query Decoding */
+        /* Jump over spaces */
         NextToken((const char **)&p);
 
-        requestUri = GetToken(&p);
-        if (!requestUri)
-            *httpErrorCodeP = 400;  /* Bad Request */
+        httpMethodName = GetToken(&p);
+        if (!httpMethodName)
+            xmlrpc_asprintf(errorP, "No method name (e.g. \"GET\")");
         else {
-            const char * host;
-            unsigned short port;
-            const char * path;
-            const char * query;
-            const char * error;
+            char * requestUri;
 
-            parseRequestUri(requestUri, &host, &port, &path, &query, &error);
+            *httpMethodP = methodFromMethodName(httpMethodName);
 
-            if (error) {
-                *httpErrorCodeP = 400;  /* Bad Request */
-                xmlrpc_strfree(error);
-                    /* Someday we should do something with this */
-            } else {
-                const char * httpVersion;
+            /* URI and Query Decoding */
+            NextToken((const char **)&p);
 
-                NextToken((const char **)&p);
-        
-                /* HTTP Version Decoding */
-                
-                httpVersion = GetToken(&p);
-                if (httpVersion) {
-                    uint32_t vmin, vmaj;
-                    if (sscanf(httpVersion, "HTTP/%d.%d", &vmaj, &vmin) != 2)
-                        *httpErrorCodeP = 400;  /* Bad Request */
-                    else {
-                        httpVersionP->major = vmaj;
-                        httpVersionP->minor = vmin;
-                        *httpErrorCodeP = 0;  /* no error */
-                    }
-                    *moreLinesP = TRUE;
+            requestUri = GetToken(&p);
+            if (!requestUri)
+                xmlrpc_asprintf(errorP, "No URI after the method name ('%s')",
+                                httpMethodName);
+            else {
+                const char * host;
+                unsigned short port;
+                const char * path;
+                const char * query;
+                const char * error;
+
+                parseRequestUri(requestUri,
+                                &host, &port, &path, &query, &error);
+
+                if (error) {
+                    xmlrpc_asprintf(errorP, "Invalid URI ('%s').  %s",
+                                    requestUri, error);
+                    xmlrpc_strfree(error);
                 } else {
-                    /* There is no HTTP version, so this is a single
-                       line request.
-                    */
-                    *httpErrorCodeP = 0;  /* no error */
-                    *moreLinesP = FALSE;
+                    const char * httpVersion;
+
+                    NextToken((const char **)&p);
+        
+                    /* HTTP Version Decoding */
+                
+                    httpVersion = GetToken(&p);
+                    if (httpVersion) {
+                        const char * error;
+                        parseHttpVersion(httpVersion, httpVersionP, &error);
+
+                        if (error) {
+                            xmlrpc_asprintf(errorP, "Invalid HTTP version "
+                                            "token ('%s').  %s",
+                                            httpVersion, error);
+                            xmlrpc_strfree(error);
+                        } else {
+                            *errorP = NULL;
+                            *moreLinesP = true;
+                        }
+                    } else {
+                        /* There is no HTTP version, so this is a single
+                           line request.
+                        */
+                        *errorP = NULL;
+                        *moreLinesP = false;
+                    }
+                    if (*errorP) {
+                        xmlrpc_strfree(host);
+                        xmlrpc_strfree(path);
+                        xmlrpc_strfree(query);
+                    }
+                    *hostP = host;
+                    *portP = port;
+                    *pathP = path;
+                    *queryP = query;
                 }
-                if (*httpErrorCodeP) {
-                    xmlrpc_strfree(host);
-                    xmlrpc_strfree(path);
-                    xmlrpc_strfree(query);
-                }
-                *hostP = host;
-                *portP = port;
-                *pathP = path;
-                *queryP = query;
             }
         }
+        xmlrpc_strfree(requestBuffer);
     }
 }
 
@@ -1037,9 +1073,9 @@ processField(const char *  const fieldName,
 
     if (xmlrpc_streq(fieldName, "connection")) {
         if (xmlrpc_strcaseeq(fieldValue, "keep-alive"))
-            sessionP->requestInfo.keepalive = TRUE;
+            sessionP->requestInfo.keepalive = true;
         else
-            sessionP->requestInfo.keepalive = FALSE;
+            sessionP->requestInfo.keepalive = false;
     } else if (xmlrpc_streq(fieldName, "host")) {
         if (sessionP->requestInfo.host) {
             xmlrpc_strfree(sessionP->requestInfo.host);
@@ -1074,7 +1110,7 @@ processField(const char *  const fieldName,
         }
     } else if (xmlrpc_streq(fieldName, "expect")) {
         if (xmlrpc_strcaseeq(fieldValue, "100-continue"))
-            sessionP->continueRequired = TRUE;
+            sessionP->continueRequired = true;
     }
 }
 
@@ -1168,7 +1204,7 @@ RequestRead(TSession *    const sessionP,
 
     bool timedOut;
     const char * error;
-    char * requestLine;  /* In connection;s internal buffer */
+    char * requestLine;  /* In connection's internal buffer */
 
     readRequestField(sessionP, deadline, &requestLine, &timedOut, &error);
     if (error) {
@@ -1187,16 +1223,17 @@ RequestRead(TSession *    const sessionP,
         const char * query;
         unsigned short port;
         bool moreFields;
-        uint16_t httpErrorCode;  /* zero means no error */
+        const char * error;
 
         parseRequestLine(requestLine, &httpMethod, &sessionP->version,
                          &host, &port, &path, &query,
-                         &moreFields, &httpErrorCode);
+                         &moreFields, &error);
 
-        if (httpErrorCode) {
+        if (error) {
             xmlrpc_asprintf(errorP, "Unable to parse the request header "
-                            "'%s'", requestLine);
-            *httpErrorCodeP = httpErrorCode;
+                            "'%s'.  %s", requestLine, error);
+            *httpErrorCodeP = 400;  /* Bad request */
+            xmlrpc_strfree(error);
         } else {
             initRequestInfo(&sessionP->requestInfo, sessionP->version,
                             requestLine,
@@ -1233,15 +1270,15 @@ bool
 RequestValidURI(TSession * const sessionP) {
 
     if (!sessionP->requestInfo.uri)
-        return FALSE;
+        return false;
     
     if (xmlrpc_streq(sessionP->requestInfo.uri, "*"))
         return (sessionP->requestInfo.method != m_options);
 
     if (strchr(sessionP->requestInfo.uri, '*'))
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 
@@ -1273,7 +1310,7 @@ RequestValidURIPath(TSession * const sessionP) {
                 }
                 /* Prevent accessing hidden files (starting with .) */
                 else if (*p == '.')
-                    return FALSE;
+                    return false;
                 else
                     if (*p)
                         ++i;
@@ -1294,11 +1331,11 @@ RequestAuth(TSession *   const sessionP,
 
    If the request executing on session *sessionP specifies basic
    authentication (via Authorization header) with username 'user', password
-   'pass', then return TRUE.  Else, return FALSE and set up an authorization
+   'pass', then return true.  Else, return false and set up an authorization
    failure response (HTTP response status 401) that says user must supply an
    identity in the 'credential' domain.
 
-   When we return TRUE, we also set the username in the request info for the
+   When we return true, we also set the username in the request info for the
    session to 'user' so that a future SessionGetRequestInfo can get it.
 -----------------------------------------------------------------------------*/
     bool authorized;
@@ -1323,15 +1360,15 @@ RequestAuth(TSession *   const sessionP,
 
                 if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
                     sessionP->requestInfo.user = xmlrpc_strdupsol(user);
-                    authorized = TRUE;
+                    authorized = true;
                 } else
-                    authorized = FALSE;
+                    authorized = false;
             } else
-                authorized = FALSE;
+                authorized = false;
         } else
-            authorized = FALSE;
+            authorized = false;
     } else
-        authorized = FALSE;
+        authorized = false;
 
     if (!authorized) {
         const char * hdrValue;
@@ -1374,19 +1411,19 @@ RangeDecode(char *            const strArg,
     *start=strtol(str,&ss,10);
 
     if ((ss==str) || (*ss!='-'))
-        return FALSE;
+        return false;
 
     str=ss+1;
 
     if (!*str)
-        return TRUE;
+        return true;
 
     *end=strtol(str,&ss,10);
 
     if ((ss==str) || (*ss) || (*end<*start))
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 /*********************************************************************
@@ -1500,10 +1537,10 @@ HTTPWriteEndChunk(TSession * const sessionP) {
 
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
         /* May be one day trailer dumping will be added */
-        sessionP->chunkedwritemode = FALSE;
+        sessionP->chunkedwritemode = false;
         retval = ConnWrite(sessionP->connP, "0\r\n\r\n", 5);
     } else
-        retval = TRUE;
+        retval = true;
 
     return retval;
 }

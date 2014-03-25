@@ -86,9 +86,9 @@ ResponseChunked(TSession * const sessionP) {
         (sessionP->version.major > 1) ||
         (sessionP->version.major == 1 && (sessionP->version.minor >= 1));
 
-    sessionP->chunkedwritemode = TRUE;
+    sessionP->chunkedwritemode = true;
 
-    return TRUE;
+    return true;
 }
 
 
@@ -96,7 +96,9 @@ ResponseChunked(TSession * const sessionP) {
 void
 ResponseStatus(TSession *     const sessionP,
                unsigned short const code) {
-
+/*----------------------------------------------------------------------------
+   Set the status code for the response to 'code'.
+-----------------------------------------------------------------------------*/
     sessionP->status = code;
 }
 
@@ -104,7 +106,9 @@ ResponseStatus(TSession *     const sessionP,
 
 xmlrpc_uint16_t
 ResponseStatusFromErrno(int const errnoArg) {
-
+/*----------------------------------------------------------------------------
+   The appropriate HTTP status code for a POSIX errno of 'errnoArg'.
+-----------------------------------------------------------------------------*/
     uint16_t code;
 
     switch (errnoArg) {
@@ -124,7 +128,10 @@ ResponseStatusFromErrno(int const errnoArg) {
 
 void
 ResponseStatusErrno(TSession * const sessionP) {
-
+/*----------------------------------------------------------------------------
+   Set the response state from the global 'errno' value (i.e. the result
+   of the last system call Caller made).
+-----------------------------------------------------------------------------*/
     ResponseStatus(sessionP, ResponseStatusFromErrno(errno));
 }
 
@@ -338,7 +345,7 @@ ResponseWriteStart(TSession * const sessionP) {
         sessionP->status = 500;
     }
 
-    sessionP->responseStarted = TRUE;
+    sessionP->responseStarted = true;
 
     {
         const char * const reason = HTTPReasonByStatus(sessionP->status);
@@ -517,7 +524,7 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
         extIsInList = ListFindString(&MIMETypeP->extList, ext, &index);
         if (extIsInList) {
             MIMETypeP->typeList.item[index] = mimeTypesItem;
-            *successP = TRUE;
+            *successP = true;
         } else {
             void * extItem = (void*)PoolStrdup(&MIMETypeP->pool, ext);
             if (extItem) {
@@ -533,14 +540,14 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
                     if (!*successP)
                         ListRemove(&MIMETypeP->typeList);
                 } else
-                    *successP = FALSE;
+                    *successP = false;
                 if (!*successP)
                     PoolReturn(&MIMETypeP->pool, extItem);
             } else
-                *successP = FALSE;
+                *successP = false;
         }
     } else
-        *successP = FALSE;
+        *successP = false;
 }
 
 
@@ -556,7 +563,7 @@ MIMETypeAdd2(MIMEType *   const MIMETypeArg,
     bool success;
 
     if (MIMETypeP == NULL)
-        success = FALSE;
+        success = false;
     else 
         mimeTypeAdd(MIMETypeP, type, ext, &success);
 
@@ -631,15 +638,15 @@ findExtension(const char *  const fileName,
     unsigned int i;
 
     /* We're looking for the last dot after the last slash */
-    for (i = 0, extFound = FALSE; fileName[i]; ++i) {
+    for (i = 0, extFound = false; fileName[i]; ++i) {
         char const c = fileName[i];
         
         if (c == '.') {
-            extFound = TRUE;
+            extFound = true;
             extPos = i + 1;
         }
         if (c == '/')
-            extFound = FALSE;
+            extFound = false;
     }
 
     if (extFound)
@@ -720,19 +727,19 @@ fileContainsText(const char * const fileName) {
             unsigned int bytesRead = readRc;
             bool nonTextFound;
 
-            nonTextFound = FALSE;  /* initial value */
+            nonTextFound = false;  /* initial value */
     
             for (i = 0; i < bytesRead; ++i) {
                 char const c = buffer[i];
                 if (c < ' ' && !isspace(c) && c != ctlZ)
-                    nonTextFound = TRUE;
+                    nonTextFound = true;
             }
             retval = !nonTextFound;
         } else
-            retval = FALSE;
+            retval = false;
         FileClose(fileP);
     } else
-        retval = FALSE;
+        retval = false;
 
     return retval;
 }

@@ -119,14 +119,14 @@ ThreadCreate(TThread **      const threadPP,
 
 bool
 ThreadRun(TThread * const threadP ATTR_UNUSED) {
-    return TRUE;    
+    return true;    
 }
 
 
 
 bool
 ThreadStop(TThread * const threadP ATTR_UNUSED) {
-    return TRUE;
+    return true;
 }
 
 
@@ -177,7 +177,7 @@ ThreadRelease(TThread * const threadP) {
 bool
 ThreadForks(void) {
 
-    return FALSE;
+    return false;
 }
 
 

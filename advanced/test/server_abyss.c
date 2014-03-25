@@ -98,11 +98,11 @@ testServerParms(void) {
     parms.keepalive_timeout = 5;
     parms.keepalive_max_conn = 4;
     parms.timeout = 50;
-    parms.dont_advertise = TRUE;
+    parms.dont_advertise = true;
     parms.uri_path = "/RPC9";
-    parms.chunk_response = TRUE;
+    parms.chunk_response = true;
     parms.allow_origin = "*";
-    parms.access_ctl_expires = TRUE;
+    parms.access_ctl_expires = true;
     parms.access_ctl_max_age = 5;
     parms.sockaddr_p = &sockaddr;
     parms.sockaddrlen = sizeof(sockaddr);
@@ -261,7 +261,7 @@ test_server_abyss(void) {
     ServerSetKeepaliveTimeout(&abyssServer, 60);
     ServerSetKeepaliveMaxConn(&abyssServer, 10);
     ServerSetTimeout(&abyssServer, 0);
-    ServerSetAdvertise(&abyssServer, FALSE);
+    ServerSetAdvertise(&abyssServer, false);
 
     ServerFree(&abyssServer);
 

@@ -229,6 +229,104 @@ computeUrl(const char *  const urlArg,
 }
 
 
+enum TokenType {COMMA, COLON, LEFTPAREN, RIGHTPAREN,
+                LEFTBRACE, RIGHTBRACE, END};
+
+static const char *
+tokenTypeName(enum TokenType const type) {
+
+    switch (type) {
+    case COMMA:      return "comma";             
+    case COLON:      return "colon";             
+    case LEFTPAREN:  return "left parenthesis";  
+    case RIGHTPAREN: return "right parenthesis"; 
+    case LEFTBRACE:  return "left brace";        
+    case RIGHTBRACE: return "right brace";       
+    case END:        return "end of string";     
+    }
+    return NULL; /* defeat bogus compiler warning */
+}
+
+
+
+static void
+getDelimiter(xmlrpc_env *     const envP,
+             const char **    const cursorP,
+             enum TokenType * const typeP) {
+
+    const char * cursor;
+    enum TokenType tokenType;
+
+    cursor = *cursorP;
+
+    switch (*cursor) {
+    case ',': tokenType = COMMA; break;
+    case ':': tokenType = COLON; break;
+    case '(': tokenType = LEFTPAREN; break;
+    case ')': tokenType = RIGHTPAREN; break;
+    case '{': tokenType = LEFTBRACE; break;
+    case '}': tokenType = RIGHTBRACE; break;
+    case '\0': tokenType = END; break;
+    default:
+        setError(envP, "Unrecognized delimiter character '%c'", *cursor);
+    }
+
+    if (!envP->fault_occurred && tokenType != END)
+        ++cursor;
+
+    *cursorP = cursor;
+    *typeP = tokenType;
+}
+
+
+
+static void
+getCdata(xmlrpc_env *  const envP,
+         const char ** const cursorP,
+         const char ** const cdataP) {
+
+    const char * cursor;
+    cursor = *cursorP;
+
+    char text[strlen(cursor)+1];
+    unsigned int textCursor;
+    bool end;
+
+    for (textCursor = 0, end = false; !end; ) {
+        switch (*cursor) {
+        case ',': 
+        case ':': 
+        case '(': 
+        case ')': 
+        case '{': 
+        case '}': 
+        case '\0':
+            end = true;
+            break;
+        case '\\': {
+            ++cursor;  // skip backslash escape character
+            if (!*cursor)
+                setError(envP, "Nothing after escape character ('\\')");
+            else
+                text[textCursor++] = *cursor++;
+        }; break;
+        default:
+            text[textCursor++]= *cursor++;
+        }
+    }
+    text[textCursor++] = '\0';
+
+    *cdataP = strdup(text);
+    *cursorP = cursor;
+}
+
+
+
+static void
+buildValue(xmlrpc_env *    const envP,
+           const char **   const cursorP,
+           xmlrpc_value ** const valuePP);  // for recursion
+
 
 static void
 buildString(xmlrpc_env *    const envP,
@@ -405,64 +503,237 @@ buildI8(xmlrpc_env *    const envP,
 
 
 static void
-buildArray(xmlrpc_env *    const envP,
-           const char *    const valueString,
-           xmlrpc_value ** const paramPP) {
+addArrayItem(xmlrpc_env *   const envP,
+             const char **  const cursorP,
+             xmlrpc_value * const arrayP,
+             bool *         const endP) {
 
-    /* We can't do compound values today, but here is how we plan to do them:
+    xmlrpc_value * itemP;
 
-         struct/{search:linux,descriptions:i/76,time_period:12hour}
+    buildValue(envP, cursorP, &itemP);
 
-         array/(i/7,s/hello,struct/{a:7,b:5})
-    */
-    
-    *paramPP = NULL;
-    setError(envP, "Code to interpret array parameters ('%s') has not been "
-             "written yet", valueString);
+    if (!envP->fault_occurred) {
+        xmlrpc_array_append_item(envP, arrayP, itemP);
+
+        if (!envP->fault_occurred) {
+            enum TokenType delim;
+
+            getDelimiter(envP, cursorP, &delim);
+
+            if (!envP->fault_occurred) {
+                switch (delim) {
+                case COMMA: break;
+                case RIGHTPAREN: *endP = true; break;
+                default:
+                    setError(envP, "Array specifier has garbage where "
+                             "there should be a comma "
+                             "(element separator) "
+                             "or close parenthesis "
+                             "(marking the end of the element list)");
+                }
+            }
+        }
+        xmlrpc_DECREF(itemP);
+    }
 }
+
+
+
+static void
+buildArray(xmlrpc_env *    const envP,
+           const char **   const cursorP,
+           xmlrpc_value ** const valuePP) {
+
+    enum TokenType tokenType;
+
+    getDelimiter(envP, cursorP, &tokenType);
+
+    if (!envP->fault_occurred) {
+        if (tokenType != LEFTPAREN)
+            setError(envP, "Array specifier value starts with %s instead of "
+                     "left parenthesis", tokenTypeName(tokenType));
+        else {
+            xmlrpc_value * const arrayP = xmlrpc_array_new(envP);
+
+            if (!envP->fault_occurred) {
+                bool end;  /* We've reached the end of the array elements */
+                for (end = false; !end && !envP->fault_occurred; )
+                    addArrayItem(envP, cursorP, arrayP, &end);
+
+                if (envP->fault_occurred)
+                    xmlrpc_DECREF(arrayP);
+                else
+                    *valuePP = arrayP;
+            }
+        }
+    }
+}
+
+
+
+static void
+addStructMember(xmlrpc_env *   const envP,
+                const char **  const cursorP,
+                xmlrpc_value * const structP,
+                bool *         const endP) {
+
+    const char * key;
+
+    getCdata(envP, cursorP, &key);
+
+    if (!envP->fault_occurred) {
+        enum TokenType delim;
+
+        getDelimiter(envP, cursorP, &delim);
+
+        if (!envP->fault_occurred) {
+            if (delim != COLON)
+                setError(envP, "Something other than a colon follows the "
+                         "key value '%s' in a structure member.", key);
+            else {
+                xmlrpc_value * valueP;
+
+                buildValue(envP, cursorP, &valueP);
+
+                if (!envP->fault_occurred) {
+                    xmlrpc_struct_set_value(envP, structP, key, valueP);
+
+                    if (!envP->fault_occurred) {
+                        enum TokenType delim;
+
+                        getDelimiter(envP, cursorP, &delim);
+
+                        if (!envP->fault_occurred) {
+                            switch (delim) {
+                            case COMMA: break;
+                            case RIGHTBRACE: *endP = true; break;
+                            default:
+                                setError(envP, "Struct specifier "
+                                         "has garbage where "
+                                         "there should be a comma "
+                                         "(member separator) "
+                                         "or close brace "
+                                         "(marking the end of the "
+                                         "member list)");
+                            }
+                        }
+                    }
+                    xmlrpc_DECREF(valueP);
+                }
+            }
+        }
+        strfree(key);
+    }
+}
+
 
 
 
 static void
 buildStruct(xmlrpc_env *    const envP,
-            const char *    const valueString,
-            xmlrpc_value ** const paramPP) {
+            const char **   const cursorP,
+            xmlrpc_value ** const valuePP) {
 
-    *paramPP = NULL;
-    setError(envP, "Code to interpret struct parameters ('%s') has not been "
-             "written yet", valueString);
+    enum TokenType tokenType;
+
+    getDelimiter(envP, cursorP, &tokenType);
+
+    if (!envP->fault_occurred) {
+        if (tokenType != LEFTBRACE)
+            setError(envP, "Struct specifier value starts with %s instead of "
+                     "left brace", tokenTypeName(tokenType));
+        else {
+            xmlrpc_value * const structP = xmlrpc_struct_new(envP);
+
+            if (!envP->fault_occurred) {
+                bool end;  /* We've reached the end of the struct members */
+                for (end = false; !end && !envP->fault_occurred; )
+                    addStructMember(envP, cursorP, structP, &end);
+
+                if (envP->fault_occurred)
+                    xmlrpc_DECREF(structP);
+                else
+                    *valuePP = structP;
+            }
+        }
+    }
 }
 
 
 
 static void
-computeParameter(xmlrpc_env *    const envP,
-                 const char *    const paramArg,
-                 xmlrpc_value ** const paramPP) {
+buildValue(xmlrpc_env *    const envP,
+           const char **   const cursorP,
+           xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+   Parse the text at *cursorP as a specification of an XML-RPC value
+   (e.g. "i/4" or "array/(i/0,i/2,i/2)")
 
-    if (xmlrpc_strneq(paramArg, "s/", 2))
-        buildString(envP, &paramArg[2], paramPP);
-    else if (xmlrpc_strneq(paramArg, "h/", 2))
-        buildBytestring(envP, &paramArg[2], paramPP);
-    else if (xmlrpc_strneq(paramArg, "i/", 2)) 
-        buildInt(envP, &paramArg[2], paramPP);
-    else if (xmlrpc_strneq(paramArg, "I/", 2)) 
-        buildI8(envP, &paramArg[2], paramPP);
-    else if (xmlrpc_strneq(paramArg, "d/", 2)) 
-        buildDouble(envP, &paramArg[2], paramPP);
-    else if (xmlrpc_strneq(paramArg, "b/", 2))
-        buildBool(envP, &paramArg[2], paramPP);
-    else if (xmlrpc_strneq(paramArg, "n/", 2))
-        buildNil(envP, &paramArg[2], paramPP);
-    else if (xmlrpc_strneq(paramArg, "array/", 6))
-        buildArray(envP, &paramArg[6], paramPP);
-    else if (xmlrpc_strneq(paramArg, "struct/", 7))
-        buildStruct(envP, &paramArg[7], paramPP);
-    else {
-        /* It's not in normal type/value format, so we take it to be
-           the shortcut string notation 
-        */
-        buildString(envP, paramArg, paramPP);
+   Stop parsing at the end of the specification of one value.  Advance
+   *cursorP to that spot.
+-----------------------------------------------------------------------------*/
+    const char * cdata;
+
+    getCdata(envP, cursorP, &cdata);
+        /* This should get e.g. "i/492" or "hello" or "array/" */
+
+    if (!envP->fault_occurred) {
+        if (strlen(cdata) == 0)
+            setError(envP, "Expected value type specifier such as 'i/' or "
+                     "'array/' but found '%s'", *cursorP);
+
+        if (xmlrpc_strneq(cdata, "s/", 2))
+            buildString(envP, &cdata[2], valuePP);
+        else if (xmlrpc_strneq(cdata, "h/", 2))
+            buildBytestring(envP, &cdata[2], valuePP);
+        else if (xmlrpc_strneq(cdata, "i/", 2)) 
+            buildInt(envP, &cdata[2], valuePP);
+        else if (xmlrpc_strneq(cdata, "I/", 2)) 
+            buildI8(envP, &cdata[2], valuePP);
+        else if (xmlrpc_strneq(cdata, "d/", 2)) 
+            buildDouble(envP, &cdata[2], valuePP);
+        else if (xmlrpc_strneq(cdata, "b/", 2))
+            buildBool(envP, &cdata[2], valuePP);
+        else if (xmlrpc_strneq(cdata, "n/", 2))
+            buildNil(envP, &cdata[2], valuePP);
+        else if (xmlrpc_strneq(cdata, "array/", 6)) {
+            if (cdata[6] != '\0')
+                setError(envP, "Junk after 'array/' instead of "
+                         "left parenthesis: '%s'", &cdata[6]);
+            else
+                buildArray(envP, cursorP, valuePP);
+        } else if (xmlrpc_strneq(cdata, "struct/", 7)) {
+            if (cdata[7] != '\0')
+                setError(envP, "Junk after 'struct/' instead of "
+                         "left brace: '%s'", &cdata[7]);
+            else
+                buildStruct(envP, cursorP, valuePP);
+        } else {
+            /* It's not in normal type/value format, so we take it to be
+               the shortcut string notation 
+            */
+            buildString(envP, cdata, valuePP);
+        }
+        strfree(cdata);
+    }
+}
+
+
+
+static void
+computeParam(xmlrpc_env *    const envP,
+             const char *    const paramArg,
+             xmlrpc_value ** const paramPP) {
+
+    const char * cursor;
+
+    cursor = &paramArg[0];
+
+    buildValue(envP, &cursor, paramPP);
+
+    if (!envP->fault_occurred) {
+        if (*cursor != '\0')
+            setError(envP, "Junk after parameter specification: '%s'", cursor);
     }
 }
 
@@ -482,14 +753,22 @@ computeParamArray(xmlrpc_env *    const envP,
 
     for (i = 0; i < paramCount && !envP->fault_occurred; ++i) {
         xmlrpc_value * paramP;
+        xmlrpc_env paramEnv;
 
-        computeParameter(envP, params[i], &paramP);
+        xmlrpc_env_init(&paramEnv);
 
-        if (!envP->fault_occurred) {
-            xmlrpc_array_append_item(envP, paramArrayP, paramP);
+        computeParam(&paramEnv, params[i], &paramP);
+
+        if (!paramEnv.fault_occurred) {
+            xmlrpc_array_append_item(&paramEnv, paramArrayP, paramP);
 
             xmlrpc_DECREF(paramP);
         }
+        if (paramEnv.fault_occurred)
+            setError(envP, "Invalid specification of parameter %u "
+                     "(starting at zero).  %s", i, paramEnv.fault_string);
+
+        xmlrpc_env_clean(&paramEnv);
     }
     *paramArrayPP = paramArrayP;
 }
