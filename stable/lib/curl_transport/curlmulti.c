@@ -170,7 +170,11 @@ curlMulti_addHandle(xmlrpc_env *       const envP,
     
     curlMultiP->lockP->release(curlMultiP->lockP);
 
-    if (rc != CURLM_OK) {
+    /* Old libcurl (e.g. 7.12) actually returns CURLM_CALL_MULTI_PERFORM
+       (by design) when it succeeds.  Current libcurl returns CURLM_OK.
+    */
+
+    if (rc != CURLM_OK && rc != CURLM_CALL_MULTI_PERFORM) {
         const char * reason;
         interpretCurlMultiError(&reason, rc);
         xmlrpc_faultf(envP, "Could not add Curl session to the "
