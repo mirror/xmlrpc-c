@@ -1346,7 +1346,6 @@ RequestAuth(TSession *   const sessionP,
         const char * authType;
         NextToken((const char **)&authHdrPtr);
         GetTokenConst(&authHdrPtr, &authType);
-        authType = GetToken(&authHdrPtr);
         if (authType) {
             if (xmlrpc_strcaseeq(authType, "basic")) {
                 const char * userPass;
