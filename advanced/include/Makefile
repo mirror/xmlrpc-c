@@ -88,6 +88,7 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
     xmlrpc-c/girerr.hpp \
     xmlrpc-c/girmem.hpp \
     xmlrpc-c/base.hpp \
+    xmlrpc-c/base64.hpp \
     xmlrpc-c/timeout.hpp \
     xmlrpc-c/xml.hpp \
     xmlrpc-c/registry.hpp \
