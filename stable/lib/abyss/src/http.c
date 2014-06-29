@@ -1233,7 +1233,7 @@ RequestValidURIPath(TSession * const sessionP) {
 
 
 
-bool
+abyss_bool
 RequestAuth(TSession *   const sessionP,
             const char * const credential,
             const char * const user,
@@ -1258,7 +1258,6 @@ RequestAuth(TSession *   const sessionP,
         const char * authType;
         NextToken((const char **)&authHdrPtr);
         GetTokenConst(&authHdrPtr, &authType);
-        authType = GetToken(&authHdrPtr);
         if (authType) {
             if (xmlrpc_strcaseeq(authType, "basic")) {
                 const char * userPass;

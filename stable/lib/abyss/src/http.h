@@ -23,12 +23,6 @@ RequestRead(TSession *    const sessionP,
 void RequestInit(TSession * const r,TConn * const c);
 void RequestFree(TSession * const r);
 
-bool
-RequestAuth(TSession *   const sessionP,
-            const char * const credential,
-            const char * const user,
-            const char * const pass);
-
 /*********************************************************************
 ** HTTP
 *********************************************************************/
