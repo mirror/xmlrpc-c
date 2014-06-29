@@ -1321,7 +1321,7 @@ RequestValidURIPath(TSession * const sessionP) {
 
 
 
-bool
+abyss_bool
 RequestAuth(TSession *   const sessionP,
             const char * const credential,
             const char * const user,
