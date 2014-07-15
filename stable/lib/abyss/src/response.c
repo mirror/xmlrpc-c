@@ -415,6 +415,10 @@ ResponseAccessControl(TSession *        const abyssSessionP,
                          accessControl.allowOrigin);
         ResponseAddField(abyssSessionP, "Access-Control-Allow-Methods",
                          "POST");
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Headers",
+                         "Content-Type");
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Headers",
+                         "Content-Length");
         if (accessControl.expires) {
             char buffer[64];
             sprintf(buffer, "%u", accessControl.maxAge);
