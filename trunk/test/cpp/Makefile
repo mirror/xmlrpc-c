@@ -31,6 +31,7 @@ include $(SRCDIR)/common.mk
 
 TEST_OBJS = \
   test.o \
+  abyss.o \
   base64.o \
   registry.o \
   server_abyss.o \
@@ -59,6 +60,7 @@ TEST_LIBS = \
   $(LIBXMLRPC_SERVER_A) \
   $(LIBXMLRPC_A) \
   $(LIBXMLRPC_ABYSS_A) \
+  $(LIBXMLRPC_ABYSSPP_A) \
   $(LIBXMLRPC_PACKETSOCKET_A) \
   $(LIBXMLRPC_UTIL_A) \
 
