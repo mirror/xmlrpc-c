@@ -1,3 +1,9 @@
+/*============================================================================
+                              AbyssServer.hpp
+==============================================================================
+  This declares class AbyssServer, which provides facilities for running an
+  Abyss server, which is a simple HTTP server
+============================================================================*/
 #ifndef ABYSS_SERVER_HPP_INCLUDED
 #define ABYSS_SERVER_HPP_INCLUDED
 
@@ -8,8 +14,18 @@
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/AbyssChanSwitch.hpp>
 
-class AbyssServer {
+namespace xmlrpc_c {
 
+class AbyssServer {
+/*----------------------------------------------------------------------------
+   An object of this class represents an Abyss HTTP server.
+
+   The class does not provide any specific HTTP service, such as web service
+   from files or XML-RPC.  Rather, it provides a basic framework that handles
+   the details of the HTTP protocol and the user provides request handlers
+   that do the real work.  For example, the user can provide an XML-RPC
+   request handler and then the server is an XML-RPC server.
+-----------------------------------------------------------------------------*/
 public:
 
     class Exception : public std::runtime_error {
@@ -133,7 +149,19 @@ public:
     };
 
     class ReqHandler {
+    /*------------------------------------------------------------------------
+      An object of this class handles HTTP requests, which essentially means
+      it provides responses to them.  An AbyssServer object calls methods of
+      objects of this class to execute HTTP requests.
 
+      The object also decides and reports whether a particular request is
+      appropriate for this object to handle.  An AbyssServer object may have
+      multiple ReqHandler object on which it can call, each specializing in
+      different kinds of requests.
+
+      This is an abstract base class.  A derived class knows how to handle,
+      for example, HTTP requests that are XML-RPC RPCs.
+    -------------------------------------------------------------------------*/
     public:
         virtual
         ~ReqHandler();
@@ -169,4 +197,5 @@ private:
     TServer cServer;
 };
 
+}  // namespace
 #endif

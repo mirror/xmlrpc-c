@@ -11,6 +11,10 @@ using girerr::throwf;
 
 
 
+namespace xmlrpc_c {
+
+
+
 AbyssEnvironment::AbyssEnvironment() {
 
     const char * error;
@@ -35,3 +39,4 @@ AbyssEnvironment::~AbyssEnvironment() {
 
 
 
+}  // namespace

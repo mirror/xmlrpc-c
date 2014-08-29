@@ -8,6 +8,10 @@ using namespace std;
 
 
 
+namespace xmlrpc_c {
+
+
+
 AbyssChanSwitch::AbyssChanSwitch() {
 
     this->_cChanSwitchP = NULL;
@@ -43,3 +47,4 @@ AbyssChanSwitchUnix::AbyssChanSwitchUnix(unsigned short const listenPortNum) {
 
 
 
+}  // namespace

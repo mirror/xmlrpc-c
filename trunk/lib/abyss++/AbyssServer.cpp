@@ -15,6 +15,8 @@ using girerr::throwf;
 
 
 
+namespace xmlrpc_c {
+
 AbyssServer::Exception::Exception(unsigned short const  httpStatusCode,
                                   string         const& explanation) :
 
@@ -622,3 +624,4 @@ AbyssServer::addRequestHandler(ReqHandler * const handlerP) {
 
 
 
+}  // namespace
