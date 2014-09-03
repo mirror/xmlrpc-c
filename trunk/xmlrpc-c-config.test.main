@@ -111,9 +111,13 @@ while test $# -gt 0; do
         fi
       ;;
     abyss)
-      the_libs="${LSOCKET} ${LIBXMLRPC_UTIL} -lpthread"
+      the_libs="${LSOCKET} ${LIBXMLRPC_UTIL} -lpthread $the_libs"
       the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
       sopath="${BLDDIR}/lib/abyss/src:$sopath"
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/lib/abyss++/libxmlrpc_abyss++.a $the_libs"
+        fi
+      sopath="${BLDDIR}/lib/abyss++:$sopath"
       ;;
     --version)
       echo "$XMLRPC_MAJOR_RELEASE.$XMLRPC_MINOR_RELEASE.$XMLRPC_POINT_RELEASE"
