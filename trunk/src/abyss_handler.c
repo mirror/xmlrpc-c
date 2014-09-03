@@ -207,12 +207,13 @@ getBody(xmlrpc_env *        const envP,
     body = xmlrpc_mem_block_new(envP, 0);
     if (!envP->fault_occurred) {
         size_t bytesRead;
-        const char * chunkPtr;
-        size_t chunkLen;
 
         bytesRead = 0;
 
         while (!envP->fault_occurred && bytesRead < contentSize) {
+            const char * chunkPtr;
+            size_t chunkLen;
+
             SessionGetReadData(abyssSessionP, contentSize - bytesRead, 
                                &chunkPtr, &chunkLen);
             bytesRead += chunkLen;
