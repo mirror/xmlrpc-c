@@ -1,8 +1,10 @@
 #include <cassert>
 #include <string>
 #include <stdexcept>
+#include <ostream>
 #include <map>
 #include <string.h>
+#include <cstdlib>
 
 using namespace std;
 
@@ -50,10 +52,38 @@ AbyssServer::ReqHandler::terminate() {}
 
 
 
+}  // namespace
+
+ostream&
+operator<<(ostream                                     & out,
+           xmlrpc_c::AbyssServer::Session::Method const& method) {
+
+    string desc;
+
+    typedef xmlrpc_c::AbyssServer::Session Session;
+
+    switch (method) {
+    case Session::METHOD_UNKNOWN: desc = "UNKNOWN"; break;
+    case Session::METHOD_GET:     desc = "GET";     break;
+    case Session::METHOD_PUT:     desc = "PUT";     break;
+    case Session::METHOD_HEAD:    desc = "HEAD";    break;
+    case Session::METHOD_POST:    desc = "POST";    break;
+    case Session::METHOD_DELETE:  desc = "DELETE";  break;
+    case Session::METHOD_TRACE:   desc = "TRACE";   break;
+    case Session::METHOD_OPTIONS: desc = "OPTIONS"; break;
+    }
+    return out << desc;
+}
+
+
+
+namespace xmlrpc_c {
+
 AbyssServer::Session::Session(TSession * const cSessionP) :
     cSessionP(cSessionP)
 {
     this->responseStarted = false;
+    this->requestBodyDelivered = false;
 }
 
 
@@ -410,6 +440,120 @@ AbyssServer::Session::keepalive() const {
 
     return requestInfoP->keepalive;
 }
+
+
+
+bool
+AbyssServer::Session::hasContentLength() const {
+
+    return RequestHeaderValue(this->cSessionP, "content-length") != NULL;
+}
+
+
+
+size_t
+AbyssServer::Session::contentLength() const {
+
+    try {
+        const char * const contentLength = 
+            RequestHeaderValue(this->cSessionP, "content-length");
+        
+        if (contentLength == NULL)
+            throwf("Header is not present");
+        else {
+            if (contentLength[0] == '\0')
+                throwf("The value is a null string");
+            else {
+                unsigned long contentLengthValue;
+                char * tail;
+        
+                contentLengthValue = strtoul(contentLength, &tail, 10);
+        
+                if (*tail != '\0')
+                    throwf("There's non-numeric crap in the value: '%s'",
+                           tail);
+                else if ((unsigned long)(size_t)contentLengthValue 
+                         != contentLengthValue)
+                    throwf("Value is too large; "
+                           "we can't even do arithmetic on it: '%s'",
+                           contentLength);
+                else
+                    return (size_t)contentLengthValue;
+            }
+        }
+    } catch (exception const& e) {
+        throw AbyssServer::Exception(
+            400, string("Invalid content-length header field.  ") + e.what());
+    }
+}
+
+
+
+void  // private
+AbyssServer::Session::refillBufferFromConnection() {
+/*----------------------------------------------------------------------------
+   Get the next chunk of data from the connection into the buffer.
+-----------------------------------------------------------------------------*/
+    bool succeeded;
+
+    succeeded = SessionRefillBuffer(this->cSessionP);
+
+    if (!succeeded)
+        throw AbyssServer::Exception(
+            408, "Timed out waiting for client to send the request body");
+}
+
+
+
+string const
+AbyssServer::Session::body() {
+/*-----------------------------------------------------------------------------
+   The body of the HTTP request (client may send a body with PUT or POST).
+
+   We throw an error if there is no content-size header field.  That means
+   we don't work with a chunked request.
+
+   Some of the body may already be in Abyss's buffer.  We retrieve that before
+   reading more, but then do the network I/O while we run, waiting as
+   necessary for the body to arrive.
+
+   This works only once.  If you call it a second time, it throws an error.
+-----------------------------------------------------------------------------*/
+    // This implementation is really inefficient on large bodies.  For those,
+    // even returning the body as a string return value of the function is
+    // probably not a good idea, so we should have an alternative 'getBody'
+    // method that reads the body into Caller's buffer.
+
+    if (this->requestBodyDelivered)
+        throwf("The request body has already been delivered; you cannot "
+               "retrieve it twice");
+
+    this->requestBodyDelivered = true;
+
+    size_t const contentLength(this->contentLength());
+
+    string body;
+    size_t bytesRead;
+
+    body.reserve(contentLength);
+
+    bytesRead = 0;
+
+    while (body.size() < contentLength) {
+        const char * chunkPtr;
+        size_t chunkLen;
+
+        SessionGetReadData(this->cSessionP, contentLength - bytesRead, 
+                           &chunkPtr, &chunkLen);
+
+        body += string(chunkPtr, chunkPtr + chunkLen);
+        
+        if (body.size() < contentLength)
+            this->refillBufferFromConnection();
+    }
+    return body;
+}
+
 
 
 void

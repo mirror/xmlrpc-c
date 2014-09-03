@@ -11,6 +11,8 @@
 
 #include <vector>
 #include <string>
+#include <map>
+#include <ostream>
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/AbyssChanSwitch.hpp>
 
@@ -31,7 +33,7 @@ public:
     class Exception : public std::runtime_error {
     public:
         Exception(unsigned short const  httpStatusCode,
-                  string         const& explanation);
+                  std::string    const& explanation);
 
         unsigned short
         httpStatusCode() const;
@@ -112,6 +114,15 @@ public:
         bool
         keepalive() const;
 
+        bool
+        hasContentLength() const;
+
+        size_t
+        contentLength() const;
+
+        std::string const
+        body();
+
         void
         setRespStatus(unsigned short const statusCode);
 
@@ -146,6 +157,13 @@ public:
         bool responseStarted;
             // We've started (and possibly finished) a response in this
             // session.
+
+        bool requestBodyDelivered;
+            // We have delivered the request body to the object user.
+            // (or tried to and failed).
+
+        void
+        refillBufferFromConnection();
     };
 
     class ReqHandler {
@@ -198,4 +216,8 @@ private:
 };
 
 }  // namespace
+
+std::ostream& operator<<(std::ostream                                & out,
+                         xmlrpc_c::AbyssServer::Session::Method const& method);
+
 #endif
