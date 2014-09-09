@@ -79,11 +79,206 @@ operator<<(ostream                                     & out,
 
 namespace xmlrpc_c {
 
-AbyssServer::Session::Session(TSession * const cSessionP) :
+        
+class AbyssServer::Session::Impl {
+
+public:
+
+    Impl(TSession * const cSessionP);
+
+    size_t
+    contentLength() const;
+
+    void
+    readRequestBody(unsigned char * const buffer,
+                    size_t          const size);
+
+    string const
+    body();
+
+    void
+    startWriteResponse();
+
+    // The external class has lots of trivial methods that are just frontends
+    // to the C object, so we make 'cSessionP' public to avoid all the work
+    // of writing Impl methods for all of those.
+
+    TSession * const cSessionP;
+
+private:
+
+    bool responseStarted;
+        // We've started (and possibly finished) a response in this session.
+
+    bool requestBodyDelivered;
+        // We have delivered the request body to the object user.  (or tried
+        // to and failed).
+    
+    void
+    refillBufferFromConnection();
+};
+
+
+
+AbyssServer::Session::Impl::Impl(TSession* const cSessionP) :
     cSessionP(cSessionP)
 {
     this->responseStarted = false;
     this->requestBodyDelivered = false;
+}
+
+
+
+size_t
+AbyssServer::Session::Impl::contentLength() const {
+
+    try {
+        const char * const contentLength = 
+            RequestHeaderValue(this->cSessionP, "content-length");
+        
+        if (contentLength == NULL)
+            throwf("Header is not present");
+        else {
+            if (contentLength[0] == '\0')
+                throwf("The value is a null string");
+            else {
+                unsigned long contentLengthValue;
+                char * tail;
+        
+                contentLengthValue = strtoul(contentLength, &tail, 10);
+        
+                if (*tail != '\0')
+                    throwf("There's non-numeric crap in the value: '%s'",
+                           tail);
+                else if ((unsigned long)(size_t)contentLengthValue 
+                         != contentLengthValue)
+                    throwf("Value is too large; "
+                           "we can't even do arithmetic on it: '%s'",
+                           contentLength);
+                else
+                    return (size_t)contentLengthValue;
+            }
+        }
+    } catch (exception const& e) {
+        throw AbyssServer::Exception(
+            400, string("Invalid content-length header field.  ") + e.what());
+    }
+}
+
+
+
+void  // private
+AbyssServer::Session::Impl::refillBufferFromConnection() {
+/*----------------------------------------------------------------------------
+   Get the next chunk of data from the connection into the buffer.
+-----------------------------------------------------------------------------*/
+    bool succeeded;
+
+    succeeded = SessionRefillBuffer(this->cSessionP);
+
+    if (!succeeded)
+        throw AbyssServer::Exception(
+            408, "Client disconnected or sent nothing for a long time "
+            "when the server was expecting the request body "
+            );
+}
+
+
+
+void
+AbyssServer::Session::Impl::readRequestBody(unsigned char * const buffer,
+                                            size_t          const size) {
+
+    for (size_t bytesRemainingCt = size; bytesRemainingCt > 0; ) {
+        const char * chunkPtr;
+        size_t chunkLen;
+
+        SessionGetReadData(this->cSessionP, bytesRemainingCt, 
+                           &chunkPtr, &chunkLen);
+
+        assert(chunkLen <= bytesRemainingCt);
+
+        memcpy(buffer, chunkPtr, chunkLen);
+
+        bytesRemainingCt -= chunkLen;
+
+        if (bytesRemainingCt > 0)
+            this->refillBufferFromConnection();
+    }
+}
+
+
+
+string const
+AbyssServer::Session::Impl::body() {
+/*-----------------------------------------------------------------------------
+   The body of the HTTP request (client may send a body with PUT or POST).
+
+   We throw an error if there is no content-size header field.  That means
+   we don't work with a chunked request.
+
+   Some of the body may already be in Abyss's buffer.  We retrieve that before
+   reading more, but then do the network I/O while we run, waiting as
+   necessary for the body to arrive.
+
+   This works only once.  If you call it a second time, it throws an error.
+-----------------------------------------------------------------------------*/
+    if (this->requestBodyDelivered)
+        throwf("The request body has already been delivered; you cannot "
+               "retrieve it twice");
+
+    this->requestBodyDelivered = true;
+
+    size_t const contentLength(this->contentLength());
+
+    string body;
+    size_t bytesRead;
+
+    body.reserve(contentLength);
+
+    bytesRead = 0;
+
+    while (body.size() < contentLength) {
+        const char * chunkPtr;
+        size_t chunkLen;
+
+        SessionGetReadData(this->cSessionP, contentLength - bytesRead, 
+                           &chunkPtr, &chunkLen);
+
+        body += string(chunkPtr, chunkPtr + chunkLen);
+        
+        if (body.size() < contentLength)
+            this->refillBufferFromConnection();
+    }
+    return body;
+}
+
+
+
+void
+AbyssServer::Session::Impl::startWriteResponse() {
+
+    // Note that ResponseWriteStart() assumes no response has been started; it
+    // asserts that fact.
+
+    if (this->responseStarted)
+        throwf("Attempt to write multiple responses in same session");
+
+    ResponseWriteStart(this->cSessionP);
+
+    this->responseStarted = true;
+}
+
+
+
+AbyssServer::Session::Session(TSession * const cSessionP) :
+    implP(new Impl(cSessionP))
+{}
+
+
+
+AbyssServer::Session::~Session() {
+    delete this->implP;
 }
 
 
@@ -93,7 +288,7 @@ AbyssServer::Session::method() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     switch (requestInfoP->method) {
     case m_unknown: return METHOD_UNKNOWN;
@@ -114,7 +309,7 @@ AbyssServer::Session::requestLine() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     assert(requestInfoP->requestline);
 
@@ -137,7 +332,7 @@ AbyssServer::Session::uriPathName() const {
 -----------------------------------------------------------------------------*/
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     string const requestInfoUri(requestInfoP->uri);
 
@@ -155,7 +350,7 @@ AbyssServer::Session::uriPathNameSegment() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     string const requestInfoUri(requestInfoP->uri);
 
@@ -198,7 +393,7 @@ AbyssServer::Session::uriHasQuery() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->query != NULL;
 }
@@ -210,7 +405,7 @@ AbyssServer::Session::uriQuery() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     if (requestInfoP->query)
         return string(requestInfoP->query);
@@ -288,7 +483,7 @@ AbyssServer::Session::hasHost() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->host != NULL;
 }
@@ -300,7 +495,7 @@ AbyssServer::Session::host() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     if (requestInfoP->host)
         return string(requestInfoP->host);
@@ -315,7 +510,7 @@ AbyssServer::Session::hasFrom() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->from != NULL;
 }
@@ -327,7 +522,7 @@ AbyssServer::Session::from() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     if (requestInfoP->from)
         return string(requestInfoP->from);
@@ -342,7 +537,7 @@ AbyssServer::Session::hasUseragent() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->useragent != NULL;
 }
@@ -354,7 +549,7 @@ AbyssServer::Session::useragent() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     if (requestInfoP->from)
         return string(requestInfoP->useragent);
@@ -369,7 +564,7 @@ AbyssServer::Session::hasReferer() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->referer != NULL;
 }
@@ -381,7 +576,7 @@ AbyssServer::Session::referer() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     if (requestInfoP->referer)
         return string(requestInfoP->from);
@@ -396,7 +591,7 @@ AbyssServer::Session::userIsAuthenticated() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->user != NULL;
 }
@@ -408,7 +603,7 @@ AbyssServer::Session::user() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     if (requestInfoP->user)
         return string(requestInfoP->user);
@@ -424,7 +619,7 @@ AbyssServer::Session::port() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->port;
 }
@@ -436,7 +631,7 @@ AbyssServer::Session::keepalive() const {
 
     const TRequestInfo * requestInfoP;
 
-    SessionGetRequestInfo(this->cSessionP, &requestInfoP);
+    SessionGetRequestInfo(this->implP->cSessionP, &requestInfoP);
 
     return requestInfoP->keepalive;
 }
@@ -446,7 +641,8 @@ AbyssServer::Session::keepalive() const {
 bool
 AbyssServer::Session::hasContentLength() const {
 
-    return RequestHeaderValue(this->cSessionP, "content-length") != NULL;
+    return
+        RequestHeaderValue(this->implP->cSessionP, "content-length")!= NULL;
 }
 
 
@@ -454,53 +650,7 @@ AbyssServer::Session::hasContentLength() const {
 size_t
 AbyssServer::Session::contentLength() const {
 
-    try {
-        const char * const contentLength = 
-            RequestHeaderValue(this->cSessionP, "content-length");
-        
-        if (contentLength == NULL)
-            throwf("Header is not present");
-        else {
-            if (contentLength[0] == '\0')
-                throwf("The value is a null string");
-            else {
-                unsigned long contentLengthValue;
-                char * tail;
-        
-                contentLengthValue = strtoul(contentLength, &tail, 10);
-        
-                if (*tail != '\0')
-                    throwf("There's non-numeric crap in the value: '%s'",
-                           tail);
-                else if ((unsigned long)(size_t)contentLengthValue 
-                         != contentLengthValue)
-                    throwf("Value is too large; "
-                           "we can't even do arithmetic on it: '%s'",
-                           contentLength);
-                else
-                    return (size_t)contentLengthValue;
-            }
-        }
-    } catch (exception const& e) {
-        throw AbyssServer::Exception(
-            400, string("Invalid content-length header field.  ") + e.what());
-    }
-}
-
-
-
-void  // private
-AbyssServer::Session::refillBufferFromConnection() {
-/*----------------------------------------------------------------------------
-   Get the next chunk of data from the connection into the buffer.
------------------------------------------------------------------------------*/
-    bool succeeded;
-
-    succeeded = SessionRefillBuffer(this->cSessionP);
-
-    if (!succeeded)
-        throw AbyssServer::Exception(
-            408, "Timed out waiting for client to send the request body");
+    return this->implP->contentLength();
 }
 
 
@@ -515,68 +665,15 @@ AbyssServer::Session::readRequestBody(unsigned char * const buffer,
 
    You can call this multiple times for one request.
 -----------------------------------------------------------------------------*/
-    for (size_t bytesRemainingCt = size; bytesRemainingCt > 0; ) {
-        const char * chunkPtr;
-        size_t chunkLen;
-
-        SessionGetReadData(this->cSessionP, bytesRemainingCt, 
-                           &chunkPtr, &chunkLen);
-
-        assert(chunkLen <= bytesRemainingCt);
-
-        memcpy(buffer, chunkPtr, chunkLen);
-
-        bytesRemainingCt -= chunkLen;
-
-        if (bytesRemainingCt > 0)
-            this->refillBufferFromConnection();
-    }
+    this->implP->readRequestBody(buffer, size);
 }
 
 
 
 string const
 AbyssServer::Session::body() {
-/*-----------------------------------------------------------------------------
-   The body of the HTTP request (client may send a body with PUT or POST).
 
-   We throw an error if there is no content-size header field.  That means
-   we don't work with a chunked request.
-
-   Some of the body may already be in Abyss's buffer.  We retrieve that before
-   reading more, but then do the network I/O while we run, waiting as
-   necessary for the body to arrive.
-
-   This works only once.  If you call it a second time, it throws an error.
------------------------------------------------------------------------------*/
-    if (this->requestBodyDelivered)
-        throwf("The request body has already been delivered; you cannot "
-               "retrieve it twice");
-
-    this->requestBodyDelivered = true;
-
-    size_t const contentLength(this->contentLength());
-
-    string body;
-    size_t bytesRead;
-
-    body.reserve(contentLength);
-
-    bytesRead = 0;
-
-    while (body.size() < contentLength) {
-        const char * chunkPtr;
-        size_t chunkLen;
-
-        SessionGetReadData(this->cSessionP, contentLength - bytesRead, 
-                           &chunkPtr, &chunkLen);
-
-        body += string(chunkPtr, chunkPtr + chunkLen);
-        
-        if (body.size() < contentLength)
-            this->refillBufferFromConnection();
-    }
-    return body;
+    return this->implP->body();
 }
 
 
@@ -584,7 +681,7 @@ AbyssServer::Session::body() {
 void
 AbyssServer::Session::setRespStatus(unsigned short const statusCode) {
 
-    ResponseStatus(this->cSessionP, statusCode);
+    ResponseStatus(this->implP->cSessionP, statusCode);
 }
 
 
@@ -592,7 +689,7 @@ AbyssServer::Session::setRespStatus(unsigned short const statusCode) {
 void
 AbyssServer::Session::setRespContentType(string const& contentType) {
 
-    ResponseContentType(this->cSessionP, contentType.c_str());
+    ResponseContentType(this->implP->cSessionP, contentType.c_str());
 }
 
 
@@ -600,7 +697,7 @@ AbyssServer::Session::setRespContentType(string const& contentType) {
 void
 AbyssServer::Session::setRespContentLength(uint64_t const contentLength) {
 
-    ResponseContentLength(this->cSessionP, contentLength);
+    ResponseContentLength(this->implP->cSessionP, contentLength);
 }
 
 
@@ -608,15 +705,7 @@ AbyssServer::Session::setRespContentLength(uint64_t const contentLength) {
 void
 AbyssServer::Session::startWriteResponse() {
 
-    // Note that ResponseWriteStart() assumes no response has been started; it
-    // asserts that fact.
-
-    if (this->responseStarted)
-        throwf("Attempt to write multiple responses in same session");
-
-    ResponseWriteStart(this->cSessionP);
-
-    this->responseStarted = true;
+    this->implP->startWriteResponse();
 }
 
 
@@ -624,7 +713,7 @@ AbyssServer::Session::startWriteResponse() {
 void
 AbyssServer::Session::endWriteResponse() {
 
-    ResponseWriteEnd(this->cSessionP);
+    ResponseWriteEnd(this->implP->cSessionP);
 }
 
 
@@ -637,7 +726,7 @@ AbyssServer::Session::writeResponseBody(const unsigned char * const data,
    constitutes one chunk.  If not, it's just part of the monolithic response.
    Either way, you can call this multiple times for one response.
 -----------------------------------------------------------------------------*/
-    ResponseWriteBody(this->cSessionP,
+    ResponseWriteBody(this->implP->cSessionP,
                       reinterpret_cast<const char *>(data),
                       size);
 }
@@ -668,7 +757,7 @@ AbyssServer::Session::sendErrorResponse(string const& explanation) {
 
   Assume the HTTP status code is already set in the object.
 -----------------------------------------------------------------------------*/
-    ResponseError2(this->cSessionP, explanation.c_str());
+    ResponseError2(this->implP->cSessionP, explanation.c_str());
 }
 
 

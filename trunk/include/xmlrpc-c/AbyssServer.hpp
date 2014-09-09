@@ -44,7 +44,11 @@ public:
 
     class Session {
     public:
+        class Impl;
+
         Session(TSession * const cSessionP);
+
+        ~Session();
 
         enum Method {
             METHOD_UNKNOWN,
@@ -156,19 +160,8 @@ public:
         sendErrorResponse(Exception const& e);
 
     private:
-        
-        TSession * const cSessionP;
 
-        bool responseStarted;
-            // We've started (and possibly finished) a response in this
-            // session.
-
-        bool requestBodyDelivered;
-            // We have delivered the request body to the object user.
-            // (or tried to and failed).
-
-        void
-        refillBufferFromConnection();
+        Impl * const implP;
     };
 
     class ReqHandler {
