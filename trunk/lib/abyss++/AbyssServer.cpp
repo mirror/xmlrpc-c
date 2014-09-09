@@ -505,6 +505,36 @@ AbyssServer::Session::refillBufferFromConnection() {
 
 
 
+void
+AbyssServer::Session::readRequestBody(unsigned char * const buffer,
+                                      size_t          const size) {
+/*-----------------------------------------------------------------------------
+   Read some of the request body.  We read 'size' bytes, waiting as long as
+   necessary for the client to send that much.  If the client closes the
+   TCP connection before sending that much, we throw an error.
+
+   You can call this multiple times for one request.
+-----------------------------------------------------------------------------*/
+    for (size_t bytesRemainingCt = size; bytesRemainingCt > 0; ) {
+        const char * chunkPtr;
+        size_t chunkLen;
+
+        SessionGetReadData(this->cSessionP, bytesRemainingCt, 
+                           &chunkPtr, &chunkLen);
+
+        assert(chunkLen <= bytesRemainingCt);
+
+        memcpy(buffer, chunkPtr, chunkLen);
+
+        bytesRemainingCt -= chunkLen;
+
+        if (bytesRemainingCt > 0)
+            this->refillBufferFromConnection();
+    }
+}
+
+
+
 string const
 AbyssServer::Session::body() {
 /*-----------------------------------------------------------------------------
@@ -519,11 +549,6 @@ AbyssServer::Session::body() {
 
    This works only once.  If you call it a second time, it throws an error.
 -----------------------------------------------------------------------------*/
-    // This implementation is really inefficient on large bodies.  For those,
-    // even returning the body as a string return value of the function is
-    // probably not a good idea, so we should have an alternative 'getBody'
-    // method that reads the body into Caller's buffer.
-
     if (this->requestBodyDelivered)
         throwf("The request body has already been delivered; you cannot "
                "retrieve it twice");
@@ -605,13 +630,16 @@ AbyssServer::Session::endWriteResponse() {
 
 
 void
-AbyssServer::Session::writeResponseBody(string const& bodyPart) {
+AbyssServer::Session::writeResponseBody(const unsigned char * const data,
+                                        size_t                const size) {
 /*-----------------------------------------------------------------------------
-   Write some of the response.  If it's a chunked response, this constitutes
-   one chunk.  If not, it's just part of the monolithic response.  Either
-   way, you can call this multiple times for one response.
+   Write some of the response body.  If it's a chunked response, this
+   constitutes one chunk.  If not, it's just part of the monolithic response.
+   Either way, you can call this multiple times for one response.
 -----------------------------------------------------------------------------*/
-    ResponseWriteBody(this->cSessionP, bodyPart.data(), bodyPart.size());
+    ResponseWriteBody(this->cSessionP,
+                      reinterpret_cast<const char *>(data),
+                      size);
 }
 
 
@@ -621,7 +649,9 @@ AbyssServer::Session::writeResponse(string const& body) {
 
     this->startWriteResponse();
 
-    this->writeResponseBody(body);
+    this->writeResponseBody(
+        reinterpret_cast<const unsigned char *>(body.data()),
+        body.size());
 
     this->endWriteResponse();
 }

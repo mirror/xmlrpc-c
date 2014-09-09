@@ -120,6 +120,10 @@ public:
         size_t
         contentLength() const;
 
+        void
+        readRequestBody(unsigned char * const buffer,
+                        size_t          const size);
+
         std::string const
         body();
 
@@ -139,7 +143,8 @@ public:
         endWriteResponse();
 
         void
-        writeResponseBody(std::string const& bodyPart);
+        writeResponseBody(const unsigned char * const data,
+                          size_t                const size);
 
         void
         writeResponse(std::string const& body);
