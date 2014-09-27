@@ -143,7 +143,7 @@ ConnCreate(TConn **            const connectionPP,
    function 'job' once.  Some connections can do that autonomously, as
    soon as the connection is created.  Others don't until Caller
    subsequently calls ConnProcess.  Some connections complete the
-   processing before ConnProcess return, while others may run the
+   processing before ConnProcess returns, while others may run the
    connection asynchronously to the creator, in the background, via a
    TThread thread.  'foregroundBackground' determines which.
 

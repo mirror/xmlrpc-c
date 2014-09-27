@@ -226,6 +226,14 @@ LIBXMLRPC_ABYSS          = \
 LIBXMLRPC_ABYSS_A        = $(LIBXMLRPC_ABYSS_DIR)/libxmlrpc_abyss.a
 endif
 
+LIBXMLRPC_ABYSSPP_DIR = $(BLDDIR)/lib/abyss++
+
+ifneq ($(OMIT_ABYSSPP_LIB_RULE),Y)
+LIBXMLRPC_ABYSSPP        = \
+  $(call shliblefn, $(LIBXMLRPC_ABYSSPP_DIR)/libxmlrpc_abyss++)
+LIBXMLRPC_ABYSSPP_A      = $(LIBXMLRPC_ABYSSPP_DIR)/libxmlrpc_abyss++.a
+endif
+
 LIBXMLRPC_CPP              = \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_cpp)
 LIBXMLRPC_CPP_A            = $(BLDDIR)/src/cpp/libxmlrpc_cpp.a
@@ -448,6 +456,10 @@ $(LIBXMLRPC_XMLTOK) $(LIBXMLRPC_XMLTOK_A) : FORCE
 
 $(LIBXMLRPC_ABYSS) $(LIBXMLRPC_ABYSS_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
+	    $(notdir $@)
+
+$(LIBXMLRPC_ABYSSPP) $(LIBXMLRPC_ABYSSPP_A): FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss++/Makefile \
 	    $(notdir $@)
 
 ifneq ($(OMIT_CPP_LIB_RULES),Y)
