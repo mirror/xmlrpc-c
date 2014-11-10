@@ -189,20 +189,20 @@ void
 AbyssServer::Session::Impl::readRequestBody(unsigned char * const buffer,
                                             size_t          const size) {
 
-    for (size_t bytesRemainingCt = size; bytesRemainingCt > 0; ) {
+    for (size_t bytesXferredCt = 0; bytesXferredCt < size; ) {
         const char * chunkPtr;
         size_t chunkLen;
 
-        SessionGetReadData(this->cSessionP, bytesRemainingCt, 
+        SessionGetReadData(this->cSessionP, size - bytesXferredCt, 
                            &chunkPtr, &chunkLen);
 
-        assert(chunkLen <= bytesRemainingCt);
+        assert(bytesXferredCt + chunkLen <= size);
 
-        memcpy(buffer, chunkPtr, chunkLen);
+        memcpy(&buffer[bytesXferredCt], chunkPtr, chunkLen);
 
-        bytesRemainingCt -= chunkLen;
+        bytesXferredCt += chunkLen;
 
-        if (bytesRemainingCt > 0)
+        if (bytesXferredCt < size)
             this->refillBufferFromConnection();
     }
 }
