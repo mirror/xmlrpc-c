@@ -21,7 +21,7 @@ using girerr::throwf;
 #include "xmlrpc-c/abyss.h"
 #include "xmlrpc-c/server_abyss.h"
 #include "xmlrpc-c/registry.hpp"
-#include "env_wrap.hpp"
+#include "xmlrpc-c/env_wrap.hpp"
 
 #include "xmlrpc-c/server_abyss.hpp"
 

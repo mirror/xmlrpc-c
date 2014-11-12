@@ -124,12 +124,18 @@ public:
         size_t
         contentLength() const;
 
+        std::string const
+        body();
+
         void
         readRequestBody(unsigned char * const buffer,
                         size_t          const size);
 
-        std::string const
-        body();
+        void
+        readSomeRequestBody(size_t          const max,
+                            unsigned char * const buffer,
+                            bool *          const eofP,
+                            size_t *        const byteCtP);
 
         void
         setRespStatus(unsigned short const statusCode);

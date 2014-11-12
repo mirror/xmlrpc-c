@@ -15,7 +15,7 @@ using girerr::throwf;
 #include "xmlrpc-c/girmem.hpp"
 using girmem::autoObjectPtr;
 using girmem::autoObject;
-#include "env_wrap.hpp"
+#include "xmlrpc-c/env_wrap.hpp"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
