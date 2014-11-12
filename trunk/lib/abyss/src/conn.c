@@ -184,6 +184,17 @@ ConnCreate(TConn **            const connectionPP,
 
 
 
+uint32_t
+ConnBufferSpace(TConn * const connectionP) {
+
+    assert(connectionP->buffersize + 1 <= BUFFER_SIZE);
+
+    return BUFFER_SIZE - connectionP->buffersize - 1;
+        /* - 1 is because we reserve the last byte of the buffer for a NUL. */
+}
+
+
+
 bool
 ConnProcess(TConn * const connectionP) {
 /*----------------------------------------------------------------------------
@@ -356,14 +367,6 @@ traceChannelWrite(TConn *      const connectionP,
 
 
 
-static uint32_t
-bufferSpace(TConn * const connectionP) {
-    
-    return BUFFER_SIZE - connectionP->buffersize;
-}
-                    
-
-
 static void
 readFromChannel(TConn *       const connectionP,
                 bool *        const eofP,
@@ -371,28 +374,41 @@ readFromChannel(TConn *       const connectionP,
 /*----------------------------------------------------------------------------
    Read some data from the channel of Connection *connectionP.
 
-   Iff there is none available to read, return *eofP == true.
+   Iff there are no more bytes forthcoming on the channel, return *eofP ==
+   true.
+
+   Wait if necessary for at least one byte to arrive, or to learn that there
+   are no more bytes coming (EOF).  But don't wait for any more than that -
+   just read whatever is immediately available past that first byte.
+
+   Fail if the buffer is full.
 -----------------------------------------------------------------------------*/
     uint32_t bytesRead;
     bool readError;
 
-    ChannelRead(connectionP->channelP,
-                connectionP->buffer.b + connectionP->buffersize,
-                bufferSpace(connectionP) - 1,
-                &bytesRead, &readError);
+    assert(connectionP->buffersize <= BUFFER_SIZE);
 
-    if (readError)
-        xmlrpc_asprintf(errorP, "Error reading from channel");
+    if (BUFFER_SIZE - connectionP->buffersize < 2)
+        xmlrpc_asprintf(errorP, "Connection buffer full.");
     else {
-        *errorP = NULL;
-        if (bytesRead > 0) {
-            *eofP = false;
-            traceChannelRead(connectionP, bytesRead);
-            connectionP->inbytes += bytesRead;
-            connectionP->buffersize += bytesRead;
-            connectionP->buffer.t[connectionP->buffersize] = '\0';
-        } else
-            *eofP = true;
+        ChannelRead(connectionP->channelP,
+                    connectionP->buffer.b + connectionP->buffersize,
+                    BUFFER_SIZE - connectionP->buffersize - 1,
+                    &bytesRead, &readError);
+
+        if (readError)
+            xmlrpc_asprintf(errorP, "Error reading from channel");
+        else {
+            *errorP = NULL;
+            if (bytesRead > 0) {
+                *eofP = false;
+                traceChannelRead(connectionP, bytesRead);
+                connectionP->inbytes += bytesRead;
+                connectionP->buffersize += bytesRead;
+                connectionP->buffer.t[connectionP->buffersize] = '\0';
+            } else
+                *eofP = true;
+        }
     }
 }
 
@@ -457,6 +473,9 @@ ConnRead(TConn *       const connectionP,
    If 'eofP' is non-null, return *eofP == true, without reading anything, iff
    there will no more data forthcoming on the connection because client has
    closed the connection.  If 'eofP' is null, fail in that case.
+
+   Fail if the connection buffer is full.  (Caller can use ConnBufferSpace()
+   to find out beforehand if this is going to be a problem).
 -----------------------------------------------------------------------------*/
     uint32_t const timeoutMs = timeout * 1000;
 

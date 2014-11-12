@@ -76,6 +76,9 @@ ConnCreate(TConn **            const connectionPP,
            bool                const useSigchld,
            const char **       const errorP);
 
+uint32_t
+ConnBufferSpace(TConn * const connectionP);
+
 bool
 ConnProcess(TConn * const connectionP);
 
