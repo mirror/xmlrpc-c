@@ -676,7 +676,7 @@ DEP_SOURCES = $(wildcard *.c *.cpp)
 
 # This is a filter to turn "foo.o:" rules into "foo.o foo.lo foo.osh:"
 # to make dependencies for all the various forms of object file out of
-# a file made by a depedency generator that knows only about .o.
+# a file made by a dependency generator that knows only about .o.
 
 DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo $$1.osh:}'
 
