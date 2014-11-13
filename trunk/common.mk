@@ -184,9 +184,9 @@ endif
 LIBXMLRPC_UTILPP_DIR = $(BLDDIR)/lib/libutil++
 
 ifneq ($(OMIT_LIBXMLRPC_UTILPP_RULE),Y)
-LIBXMLRPCPP_UTIL           = \
+LIBXMLRPC_UTILPP         = \
   $(call shliblefn, $(LIBXMLRPC_UTILPP_DIR)/libxmlrpc_util++)
-LIBXMLRPC_UTILPP_A         = $(LIBXMLRPC_UTILPP_DIR)/libxmlrpc_util++.a
+LIBXMLRPC_UTILPP_A       = $(LIBXMLRPC_UTILPP_DIR)/libxmlrpc_util++.a
 endif
 
 ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
