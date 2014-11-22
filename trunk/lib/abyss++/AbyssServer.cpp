@@ -1,7 +1,11 @@
 #include <cassert>
 #include <string>
 #include <stdexcept>
+#if defined(__GNUC__) && __GNUC__ < 3
+#include <iostream>
+#else
 #include <ostream>
+#endif
 #include <map>
 #include <string.h>
 #include <cstdlib>
