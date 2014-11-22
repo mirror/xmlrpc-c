@@ -547,7 +547,8 @@ $(BLDDIR)/xmlrpc-c-config.test:
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/GNUmakefile $(notdir $@)
 endif
 
-$(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh): \
+$(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh) \
+  $(TARGET_MODS_PP:%=%.o) $(TARGET_MODS_PP:%=%.osh): \
   $(BLDDIR)/include/xmlrpc-c/config.h
 
 ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
