@@ -12,7 +12,11 @@
 #include <vector>
 #include <string>
 #include <map>
+#if defined(__GNUC__) && __GNUC__ < 3
+#include <iostream>
+#else
 #include <ostream>
+#endif
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/AbyssChanSwitch.hpp>
 
