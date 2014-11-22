@@ -231,6 +231,38 @@ generateListing(TList *       const listP,
 
 
 
+static const char *
+plainTail(void) {
+/*----------------------------------------------------------------------------
+   The bottom part of the response body, in plain text format.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+
+    xmlrpc_asprintf(&retval, SERVER_PLAIN_INFO);
+    
+    return retval;
+}
+
+
+
+static const char *
+htmlTail(void) {
+/*----------------------------------------------------------------------------
+  The bottom part of the response body, in HTML format.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+
+    xmlrpc_asprintf(
+        &retval,
+        "</PRE>"
+        SERVER_HTML_INFO
+        "</BODY></HTML>\r\n\r\n");
+
+    return retval;
+}
+
+
+
 static void
 sendDirectoryDocument(TList *      const listP,
                       bool         const ascending,
@@ -364,13 +396,13 @@ sendDirectoryDocument(TList *      const listP,
         HTTPWriteBodyChunk(sessionP, z, strlen(z));
     }
         
-    /* Write the tail of the file */
-    if (text)
-        strcpy(z, SERVER_PLAIN_INFO);
-    else
-        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>\r\n\r\n");
-    
-    HTTPWriteBodyChunk(sessionP, z, strlen(z));
+    {
+        const char * const tail = text ? plainTail() : htmlTail();
+
+        HTTPWriteBodyChunk(sessionP, tail, strlen(tail));
+
+        xmlrpc_strfree(tail);
+    }
 }
 
 
