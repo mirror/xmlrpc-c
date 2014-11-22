@@ -3,7 +3,7 @@
 
 #include "lock.h"
 
-lock *
+struct lock *
 xmlrpc_lock_create_none(void);
 
 #endif

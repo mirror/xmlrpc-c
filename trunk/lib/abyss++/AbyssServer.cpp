@@ -403,6 +403,7 @@ AbyssServer::Session::method() const {
     case m_trace:   return METHOD_TRACE;
     case m_options: return METHOD_OPTIONS;
     }
+    assert(false);  // All values of TMethod are handled in switch.
 }
 
 

@@ -194,7 +194,7 @@ struct xmlrpc_client_transport {
            and consequently does not share things such as persistent
            connections and cookies with any other RPC.
         */
-    lock * syncCurlSessionLockP;
+    struct lock * syncCurlSessionLockP;
         /* Hold this lock while accessing or using *syncCurlSessionP.
            You're using the session from the time you set any
            attributes in it or start a transaction with it until any

@@ -35,7 +35,7 @@ struct _TServer {
     const char * logfilename;
     bool logfileisopen;
     struct TFile * logfileP;
-    lock * logLockP;
+    struct lock * logLockP;
     const char * name;
     bool serverAcceptsConnections;
         /* We listen for and accept TCP connections for HTTP transactions.

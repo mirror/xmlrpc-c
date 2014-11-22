@@ -26,7 +26,7 @@ public:
 
 private:
 
-    lock * const c_lockP;
+    struct lock * const c_lockP;
 };
 
 }  // namespace
