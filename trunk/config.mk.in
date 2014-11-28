@@ -395,6 +395,7 @@ LIBINST_DIR = @libdir@
 HEADERINST_DIR = @includedir@
 PROGRAMINST_DIR = @bindir@
 MANINST_DIR = @mandir@/man1
+PKGCONFIGINST_DIR = @libdir@/pkgconfig
 
 # DESTDIR is designed to be overridden at make time in order to relocate
 # the entire install into a subdirectory.

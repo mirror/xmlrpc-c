@@ -58,13 +58,18 @@ UTIL_SHLIB = $(call shlibfn,libxmlrpc_util)
 UTIL_SHLIBLE = $(call shliblefn,libxmlrpc_util)
 #UTIL_SHLIBLE is e.g. libxmlrpc_util.so
 
+PKGCONFIG_FILES_TO_INSTALL := xmlrpc_util.pc
+
 # This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
 $(SRCDIR)/common.mk: srcdir blddir
 
 .PHONY: all
-all: libxmlrpc_util.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_util.a \
+  $(TARGET_SHARED_LIBRARIES) \
+  $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 # Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
@@ -85,6 +90,24 @@ libxmlrpc_util.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 
 # Rules to compile object modules from which to build the static and shared
 # library are in common.mk, courtesy of TARGET_MODS.
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc_util.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_util"                                   >>$@
+	@echo "Description: Xmlrpc-c utility functions library"            >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: "                                                 >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_util"                    >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 .PHONY: install
 install: install-common

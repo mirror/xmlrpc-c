@@ -71,6 +71,12 @@ TARGET_MODS_PP = \
   $(LIBXMLRPC_CLIENTPP_MODS) \
   $(LIBXMLRPC_PACKETSOCKET_MODS) \
 
+PKGCONFIG_FILES_TO_INSTALL := \
+  xmlrpc++.pc \
+  xmlrpc_client++.pc \
+  xmlrpc_server++.pc \
+  xmlrpc_server_pstream++.pc \
+
 OMIT_CPP_LIB_RULES = Y
 MAJ = 8
   # Major number of shared libraries in this directory
@@ -96,7 +102,8 @@ BASIC_INCLUDES = \
 all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBS_PP) \
-  $(TARGET_SHARED_LE_LIBS)
+  $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 
 #-----------------------------------------------------------------------------
@@ -347,6 +354,68 @@ TRANSPORT_CONFIG_USERS = client curl libwww wininet
 
 $(TRANSPORT_CONFIG_USERS:%=%.o) $(TRANSPORT_CONFIG_USERS:%=%.osh): \
   $(BLDDIR)/transport_config.h
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc++"                                      >>$@
+	@echo "Description: Xmlrpc-c basic XML-RPC C++ library"            >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc++"                       >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_client++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_client++"                               >>$@
+	@echo "Description: Xmlrpc-c XML-RPC client C++ library"           >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc_client xmlrpc_util++ xmlrpc_util" >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_client++"                >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server++"                               >>$@
+	@echo "Description: Xmlrpc-c XML-RPC server C++ library"           >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server xmlrpc_util++ xmlrpc_util" >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server++"                >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server_abyss++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server_abyss++"                         >>$@
+	@echo "Description: Xmlrpc-c Abyss XML-RPC server C++ library"     >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_abyss xmlrpc_util++ xmlrpc_util"    >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_abyss"            >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server_pstream++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server_pstream"                         >>$@
+	@echo "Description: Xmlrpc-c packet stream XML-RPC server library" >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_util++ xmlrpc_util"                 >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_pstream++ -lxmlrpc_packetsocket"              >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

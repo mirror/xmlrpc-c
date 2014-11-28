@@ -27,6 +27,8 @@ LIBXMLRPC_ABYSSPP_MODS = AbyssServer AbyssChanSwitch AbyssEnvironment
 TARGET_MODS_PP = \
   $(LIBXMLRPC_ABYSSPP_MODS) \
 
+PKGCONFIG_FILES_TO_INSTALL := xmlrpc_abyss++.pc
+
 OMIT_ABYSSPP_LIB_RULE = Y
 MAJ = 8
   # Major number of shared libraries in this directory
@@ -52,7 +54,8 @@ BASIC_INCLUDES = \
 all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBS_PP) \
-  $(TARGET_SHARED_LE_LIBS)
+  $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 
 #-----------------------------------------------------------------------------
@@ -99,6 +102,24 @@ libxmlrpc_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_ABYSSPP_MODS:%=%.o)
 $(LIBXMLRPC_ABYSSPP_MODS:%=%.o) \
 $(LIBXMLRPC_ABYSSPP_MODS:%=%.osh): \
   INCLUDES = $(BASIC_INCLUDES)
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc_abyss++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_abyss++"                                >>$@
+	@echo "Description: Xmlrpc-c Abyss HTTP C++ library"               >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc_abyss xmlrpc_util++"                       >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_abyss++"                 >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES
