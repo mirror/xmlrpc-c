@@ -881,6 +881,7 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
         
         res = curl_easy_getinfo(curlTransactionP->curlSessionP,
                                 CURLINFO_HTTP_CODE, &http_result);
+            /* CURLINFO_HTTP_CODE is the old name for CURLINFO_RESPONSE_CODE */
     
         if (res != CURLE_OK)
             xmlrpc_env_set_fault_formatted(
