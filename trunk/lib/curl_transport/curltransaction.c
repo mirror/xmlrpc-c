@@ -295,9 +295,12 @@ collect(void *  const ptr,
     xmlrpc_mem_block_append(&env, responseXmlP, buffer, length);
     if (env.fault_occurred)
         retval = (size_t)-1;
-    else
-        /* Really?  Shouldn't it be like fread() and return 'nmemb'? */
+    else {
         retval = length;
+            /* Really.  Analogy to fread() would require this to be 'nmemb',
+               but Curl does expect the byte count.
+            */
+    }
     
     return retval;
 }
