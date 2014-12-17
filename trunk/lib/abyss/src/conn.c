@@ -186,7 +186,12 @@ ConnCreate(TConn **            const connectionPP,
 
 uint32_t
 ConnBufferSpace(TConn * const connectionP) {
+/*-----------------------------------------------------------------------------
+   The amount of space left at the end of the connection buffer.
 
+   Note that the space before the read pointer (connectionP->bufferpos)
+   is also unused, but we don't consider that.
+-----------------------------------------------------------------------------*/
     assert(connectionP->buffersize + 1 <= BUFFER_SIZE);
 
     return BUFFER_SIZE - connectionP->buffersize - 1;
@@ -248,7 +253,14 @@ ConnKill(TConn * const connectionP) {
 
 void
 ConnReadInit(TConn * const connectionP) {
+/*-----------------------------------------------------------------------------
+   Prepare to read data from the channel into the connection buffer.
 
+   The connection buffer is not circular, so to make maximal room available
+   for this new data, we move everything now in the buffer (not yet
+   delivered to our client) down to the beginning of the buffer.  Caller
+   can then read from the end of that data through the end of the buffer.
+-----------------------------------------------------------------------------*/
     if (connectionP->buffersize > connectionP->bufferpos) {
         connectionP->buffersize -= connectionP->bufferpos;
         memmove(connectionP->buffer.b,
@@ -372,7 +384,8 @@ readFromChannel(TConn *       const connectionP,
                 bool *        const eofP,
                 const char ** const errorP) {
 /*----------------------------------------------------------------------------
-   Read some data from the channel of Connection *connectionP.
+   Read some data from the channel of Connection *connectionP into the
+   connection buffer.
 
    Iff there are no more bytes forthcoming on the channel, return *eofP ==
    true.
