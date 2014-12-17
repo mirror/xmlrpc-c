@@ -179,8 +179,15 @@ getLine(TConn *       const connectionP,
             *lineP = line;
         }
     } else {
-        if (connectionP->buffersize + 1 + 1 > BUFFER_SIZE) {
-            /* One byte of space for more data, one byte for a NUL */
+        unsigned int const usedByteCt =
+            connectionP->buffersize - connectionP->bufferpos;
+
+        if (usedByteCt + 1 >= BUFFER_SIZE) {
+            /* + 1 for a NUL.
+
+               We don't have a full line yet, and a buffer refill won't
+               help because the buffer is full.
+            */
             xmlrpc_asprintf(errorP, "Line received from client does not "
                             "fit in the server's connection buffer.");
         } else {
@@ -317,17 +324,21 @@ processChunkDelimIfThere(TSession *    const sessionP,
     if (byteCt < 1) {
         *errorP = NULL;
     } else {
-        if (sessionP->connP->buffer.t[0] != '\r')
+        const char * const next = 
+            &sessionP->connP->buffer.t[sessionP->connP->bufferpos];
+
+        if (next[0] != '\r')
             xmlrpc_asprintf(errorP, "Garbage where chunk delimiter should be");
         if (byteCt < 2)
             *errorP = NULL;
         else {
-            if (sessionP->connP->buffer.t[1] != '\n')
+            if (next[1] != '\n')
                 xmlrpc_asprintf(errorP,
                                 "Garbage where chunk delimiter should be");
             else {
                 *errorP = NULL;
                 sessionP->chunkState.position = CHUNK_ATHEADER;
+                sessionP->connP->bufferpos += 2;
             }
         }
     }
