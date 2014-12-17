@@ -7,7 +7,11 @@
 
 struct TFile;
 
-#define BUFFER_SIZE 4096 
+#define BUFFER_SIZE 4097
+    /* It's a typical page size plus a byte because we always make sure the
+       data in the buffer ends with an ASCII NUL, and this way in a large
+       transfer we actually transfer in 4096 byte chunks.
+    */
 
 struct _TConn {
     struct _TConn * nextOutstandingP;
