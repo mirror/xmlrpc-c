@@ -23,7 +23,7 @@ refillBuffer(TSession *    const sessionP,
 
     struct _TServer * const srvP = sessionP->connP->server->srvP;
 
-    /* Reset our read buffer & flush data from previous reads. */
+    /* Reset our read buffer and flush data from previous reads. */
     ConnReadInit(sessionP->connP);
 
     *errorP = NULL;  /* initial assumption */
@@ -146,6 +146,9 @@ getLine(TConn *       const connectionP,
    Do not include the line end delimiter in the returned line.
 
    If there is no full line, return NULL as *lineP.
+
+   But if there is no full line and the connection buffer is full (so that
+   there won't ever be a full line), fail.
 -----------------------------------------------------------------------------*/
     const char * lfPos;
 
@@ -333,8 +336,8 @@ processChunkDelimIfThere(TSession *    const sessionP,
 
 
 static void
-processHeaderIfThere(TSession *    const sessionP,
-                     const char ** const errorP) {
+processChunkHeaderIfThere(TSession *    const sessionP,
+                          const char ** const errorP) {
 
     bool gotHeader;
     uint32_t chunkSize;
@@ -411,15 +414,16 @@ getSomeChunkedRequestBody(TSession *    const sessionP,
             processChunkDelimIfThere(sessionP, errorP);
         }
         if (!*errorP) {
-            if (sessionP->chunkState.position == CHUNK_ATHEADER)
-                processHeaderIfThere(sessionP, errorP);
+            if (sessionP->chunkState.position == CHUNK_ATHEADER) {
+                processChunkHeaderIfThere(sessionP, errorP);
+            }
         }
         if (!*errorP) {
             if (sessionP->chunkState.position == CHUNK_INCHUNK) {
-                *eofP      = false;
+                *eofP = false;
                 getChunkData(sessionP, max, outStartP, outLenP);
             } else if (sessionP->chunkState.position == CHUNK_EOF) {
-                *eofP   = true;
+                *eofP = true;
             } else {
                 *eofP      = false;
                 *outLenP   = 0;
