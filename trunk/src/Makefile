@@ -395,7 +395,12 @@ install: install-common $(SUBDIRS:%=%/install)
 clean:  $(SUBDIRS:%=%/clean) clean-common clean-local
 clean-local:
 
-distclean: $(SUBDIRS:%=%/distclean) clean distclean-local distclean-common
+distclean: $(SUBDIRS:%=%/distclean) \
+  clean-common \
+  clean-local \
+  distclean-local \
+  distclean-common \
+
 distclean-local:
 	rm -f *.cflags *.ldflags
 
