@@ -119,9 +119,10 @@ by modifying the file 'config.mk' after 'configure' creates it.  The default
 value of these variables (as set in 'config.mk') is the same compile and link
 commands as for building target code.
 
-(There is probably a way to do this with GNU Autoconf facilities and avoid the
-BUILDTOOL_CC complication.  If you know how (without using Automake), tell the
-Xmlrpc-c maintainer and he will change the build system to use it).
+(There is probably a way to do this with GNU Autoconf facilities, using
+'configure --build=XXX' and avoid the BUILDTOOL_CC complication.  If you know
+how (without using Automake), tell the Xmlrpc-c maintainer and he will change
+the build system to use it).
 
 
 COMMON PROBLEMS
