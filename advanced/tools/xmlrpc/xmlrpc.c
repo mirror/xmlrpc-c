@@ -286,11 +286,12 @@ getCdata(xmlrpc_env *  const envP,
          const char ** const cdataP) {
 
     const char * cursor;
-    cursor = *cursorP;
 
     char text[strlen(cursor)+1];
     unsigned int textCursor;
     bool end;
+
+    cursor = *cursorP;  /* initial value */
 
     for (textCursor = 0, end = false; !end; ) {
         switch (*cursor) {

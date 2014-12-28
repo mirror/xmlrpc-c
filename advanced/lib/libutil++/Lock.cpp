@@ -3,7 +3,7 @@
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 
-#include "Lock.hpp"
+#include "xmlrpc-c/Lock.hpp"
 
 
 namespace xmlrpc_c {

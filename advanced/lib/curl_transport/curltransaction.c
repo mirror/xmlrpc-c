@@ -295,9 +295,12 @@ collect(void *  const ptr,
     xmlrpc_mem_block_append(&env, responseXmlP, buffer, length);
     if (env.fault_occurred)
         retval = (size_t)-1;
-    else
-        /* Really?  Shouldn't it be like fread() and return 'nmemb'? */
+    else {
         retval = length;
+            /* Really.  Analogy to fread() would require this to be 'nmemb',
+               but Curl does expect the byte count.
+            */
+    }
     
     return retval;
 }
@@ -606,6 +609,7 @@ setupCurlSession(xmlrpc_env *               const envP,
                          XMLRPC_MEMBLOCK_CONTENTS(char, transP->postDataP));
         curl_easy_setopt(curlSessionP, CURLOPT_WRITEFUNCTION, collect);
         curl_easy_setopt(curlSessionP, CURLOPT_FILE, transP->responseDataP);
+            /* CURLOPT_FILE is the older name for CURLOPT_WRITEDATA */
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, transP->curlError);
         if (transP->progress) {
@@ -854,6 +858,10 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
    terms.  Assume the transaction did complete.  Return as *envP an indication
    of whether the transaction failed and if so, how.
 -----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
     if (curlTransactionP->result != CURLE_OK) {
         /* We've seen Curl just return a null string for an explanation
            (e.g. when TCP connect() fails because IP address doesn't exist).
@@ -866,8 +874,8 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
             xmlrpc_asprintf(&explanation, "%s", curlTransactionP->curlError);
 
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_NETWORK_ERROR, "libcurl failed to execute the "
-            "HTTP POST transaction, explaining:  %s", explanation);
+            &env, XMLRPC_NETWORK_ERROR, "libcurl failed even to execute the "
+            "HTTP transaction, explaining:  %s", explanation);
 
         xmlrpc_strfree(explanation);
     } else {
@@ -876,11 +884,12 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
         
         res = curl_easy_getinfo(curlTransactionP->curlSessionP,
                                 CURLINFO_HTTP_CODE, &http_result);
+            /* CURLINFO_HTTP_CODE is the old name for CURLINFO_RESPONSE_CODE */
     
         if (res != CURLE_OK)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, 
-                "Curl performed the HTTP POST request, but was "
+                &env, XMLRPC_INTERNAL_ERROR, 
+                "Curl performed the HTTP transaction, but was "
                 "unable to say what the HTTP result code was.  "
                 "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
                 curlTransactionP->curlError);
@@ -891,18 +900,27 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
                     formatDataReceived(curlTransactionP);
 
                 xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_NETWORK_ERROR,
+                    &env, XMLRPC_NETWORK_ERROR,
                     "Server is not an XML-RPC server.  Its response to our "
                     "call is not valid HTTP.  Or it's valid HTTP with a "
                     "response code of zero.  %s", dataReceived);
                 xmlrpc_strfree(dataReceived);
             } else if (http_result != 200)
                 xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_NETWORK_ERROR,
+                    &env, XMLRPC_NETWORK_ERROR,
                     "HTTP response code is %ld, not 200",
                     http_result);
         }
     }
+
+    if (env.fault_occurred) {
+        xmlrpc_env_set_fault_formatted(
+            envP,
+            env.fault_code,
+            "HTTP POST to URL '%s' failed.  %s",
+            curlTransactionP->serverUrl, env.fault_string);
+    }
+    xmlrpc_env_clean(&env);
 }
 
 

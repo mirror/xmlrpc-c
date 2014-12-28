@@ -52,6 +52,7 @@ while test $# -gt 0; do
       ;;
     c++2)
       needCpp=yes
+      the_libs="${BLDDIR}/lib/libutil++/libxmlrpc_util++.a $the_libs"
       the_libs="${BLDDIR}/src/cpp/lib$LIBXMLRPCPP_NAME.a $the_libs"
       ;;
     server-util)
@@ -75,6 +76,7 @@ while test $# -gt 0; do
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       the_libs="${BLDDIR}/src/libxmlrpc_server_abyss.a $the_libs"
       if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/lib/abyss++/libxmlrpc_abyss++.a $the_libs"
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
         fi

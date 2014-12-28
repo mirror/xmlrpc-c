@@ -12,7 +12,11 @@
 #include <vector>
 #include <string>
 #include <map>
+#if defined(__GNUC__) && __GNUC__ < 3
+#include <iostream>
+#else
 #include <ostream>
+#endif
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/AbyssChanSwitch.hpp>
 
@@ -124,12 +128,18 @@ public:
         size_t
         contentLength() const;
 
+        std::string const
+        body();
+
         void
         readRequestBody(unsigned char * const buffer,
                         size_t          const size);
 
-        std::string const
-        body();
+        void
+        readSomeRequestBody(size_t          const max,
+                            unsigned char * const buffer,
+                            bool *          const eofP,
+                            size_t *        const byteCtP);
 
         void
         setRespStatus(unsigned short const statusCode);

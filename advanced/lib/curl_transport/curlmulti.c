@@ -52,7 +52,7 @@ interpretCurlMultiError(const char ** const descriptionP,
 
 struct curlMulti {
     CURLM * curlMultiP;
-    lock * lockP;
+    struct lock * lockP;
         /* Hold this lock while accessing or using *curlMultiP.  You're
            using the multi manager whenever you're calling a Curl
            library multi manager function.

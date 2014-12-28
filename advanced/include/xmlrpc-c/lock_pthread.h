@@ -18,7 +18,7 @@
 #endif
 
 XMLRPC_UTIL_EXPORTED
-lock *
+struct lock *
 xmlrpc_lock_create_pthread(void);
 
 #endif

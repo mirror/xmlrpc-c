@@ -7,7 +7,7 @@ using girerr::throwf;
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/base.hpp"
-#include "env_wrap.hpp"
+#include "xmlrpc-c/env_wrap.hpp"
 
 #include "xmlrpc-c/xml.hpp"
 

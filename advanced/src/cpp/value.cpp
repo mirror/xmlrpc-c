@@ -37,7 +37,7 @@ using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
-#include "env_wrap.hpp"
+#include "xmlrpc-c/env_wrap.hpp"
 
 #include "xmlrpc-c/base.hpp"
 

@@ -71,6 +71,7 @@ while test $# -gt 0; do
       ;;
     c++2)
       needCpp=yes
+      the_libs="-lxmlrpc_util++ $the_libs"
       the_libs="-l$LIBXMLRPCPP_NAME $the_libs"
       ;;
     server-util)
@@ -94,6 +95,7 @@ while test $# -gt 0; do
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server_abyss $the_libs"
       if test "${needCpp}" = "yes"; then
+        the_libs="-lxmlrpc_abyss++ $the_libs"
         the_libs="-lxmlrpc_server++ $the_libs"
         the_libs="-lxmlrpc_server_abyss++ $the_libs"
         fi

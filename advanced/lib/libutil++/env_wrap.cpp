@@ -1,6 +1,6 @@
 #include "xmlrpc-c/util.h"
 
-#include "env_wrap.hpp"
+#include "xmlrpc-c/env_wrap.hpp"
 
 namespace xmlrpc_c {
 

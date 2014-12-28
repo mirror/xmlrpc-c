@@ -3,27 +3,18 @@
 #include <vector>
 #include <bitset>
 
+using namespace std;
+
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
 #include "xmlrpc-c/base64.hpp"
 
-using namespace std;
 using namespace xmlrpc_c;
 
 
-namespace {
 
-char const table_a2b_base64[] = {
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
-    52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1, 0,-1,-1, /* Note PAD->0 */
-    -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
-    15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
-    -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
-    41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1
-};
+namespace {
 
 char const base64Pad('=');
 size_t const base64MaxChunkSize(57);
@@ -189,6 +180,42 @@ base64FromBytes(vector<unsigned char> const& bytes,
 
 
 
+static unsigned char
+base64CharValue(char const base64Char) {
+/*----------------------------------------------------------------------------
+   The 6 bits represented by 'base64Char' in Base 64.
+
+   Throw an error if 'base64Char' is not a valid Base64 character.
+-----------------------------------------------------------------------------*/
+    static int const table_a2b_base64[] = {
+        /* Indexed by the ASCII code for a base64 character, this gives the
+           numerical value that that character encodes.  When indexed by
+           anything else, this gives -1.  Note that the table size is 128, so
+           you can't index it with just any old byte.
+        */
+        -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+        -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+        -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
+        52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1, 0,-1,-1, /* Note PAD->0 */
+        -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
+        15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
+        -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
+        41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1
+    };
+
+    assert((unsigned int)base64Char < 128);
+
+    unsigned int const tableIndex(base64Char);
+
+    if (table_a2b_base64[tableIndex] < 0)
+        throwf("Contains non-base64 character "
+               "with ASCII code 0x%02x", base64Char);
+
+    return (unsigned char)table_a2b_base64[tableIndex];
+}
+
+
+
 vector<unsigned char>
 bytesFromBase64(string const& base64) {
 
@@ -209,13 +236,8 @@ bytesFromBase64(string const& base64) {
                 // a multiple of 24 bits (4 base64 characters; 3 bytes).
                 buffer.discardResidue();
             } else {
-                unsigned int const tableIndex(thisChar);
-                if (table_a2b_base64[tableIndex] == -1)
-                    throwf("Contains non-base64 character "
-                           "with ASCII code 0x%02x", thisChar);
-                
-                buffer.shiftIn6Bits(table_a2b_base64[tableIndex]);
-            
+                buffer.shiftIn6Bits(base64CharValue(thisChar));
+
                 if (buffer.bitCount() >= 8) {
                     unsigned char thisByte;
                     buffer.shiftOut8Bits(&thisByte);
