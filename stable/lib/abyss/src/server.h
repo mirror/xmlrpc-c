@@ -42,6 +42,10 @@ struct _TServer {
            (The alternative is the user supplies a TCP-connected socket
            for each transaction)
         */
+    bool readyToAccept;
+        /* We are the kind of server that listens for TCP connections and the
+           user has initialized us to do so (called ServerInit()).
+        */
     uint16_t port;
         /* Meaningful only when 'chanSwitchBound' is false: TCP port
            number to which we should bind the switch.

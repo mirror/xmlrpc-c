@@ -451,7 +451,7 @@ Again:
                         "Sync HttpSendRequest failed: "
                         "The function is unfamiliar with the certificate "
                         "authority that generated the server's certificate. ");
-                    reqFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA;
+                    reqFlags |= SECURITY_FLAG_IGNORE_UNKNOWN_CA;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
@@ -474,7 +474,7 @@ Again:
                         "and the common name "
                         "on the certificate says www.different.com. ");
                     
-                    reqFlags = INTERNET_FLAG_IGNORE_CERT_CN_INVALID;
+                    reqFlags |= INTERNET_FLAG_IGNORE_CERT_CN_INVALID;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
@@ -494,7 +494,7 @@ Again:
                         "from the server is "
                         "bad. The certificate is expired. ");
 
-                    reqFlags = INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
+                    reqFlags |= INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
@@ -504,6 +504,25 @@ Again:
                 } else
                     pMsg = "The SSL certificate date that was received "
                         "from the server is invalid.";
+                break;
+
+            case ERROR_INTERNET_SEC_CERT_REV_FAILED:
+                if (clientTransportP->allowInvalidSSLCerts) {
+                    OutputDebugString(
+                        "Sync HttpSendRequest failed: "
+                        "Check for revocation of the SSL certificate "
+                        "failed. ");
+
+                    reqFlags |= SECURITY_FLAG_IGNORE_REVOCATION;
+
+                    InternetSetOption(winInetTransactionP->hHttpRequest,
+                                      INTERNET_OPTION_SECURITY_FLAGS,
+                                      &reqFlags, sizeof(reqFlags));
+
+                    goto Again;
+                } else
+                    pMsg = "Check for revocation of the SSL certificate "
+                        "failed.";
                 break;
 
             default:

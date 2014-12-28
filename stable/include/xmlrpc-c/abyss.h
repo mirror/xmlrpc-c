@@ -27,7 +27,7 @@ extern "C" {
 
 #include <sys/types.h>
 
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/inttypes.h>
 
 /*
@@ -598,10 +598,6 @@ MIMETypeGuessFromFile(const char * const filename);
 ****************************************************************************/
 
 
-#define CR      '\r'
-#define LF      '\n'
-#define CRLF    "\r\n"
-
 /*********************************************************************
 ** Paths and so on...
 *********************************************************************/
@@ -621,22 +617,6 @@ MIMETypeGuessFromFile(const char * const filename);
 #define DEFAULT_CONF_FILE   DEFAULT_ROOT"/conf/abyss.conf"
 #define DEFAULT_LOG_FILE    DEFAULT_ROOT"/log/abyss.log"
 #endif
-
-/*********************************************************************
-** General purpose definitions
-*********************************************************************/
-
-#ifndef NULL
-#define NULL ((void *)0)
-#endif  /* NULL */
-
-#ifndef TRUE
-#define TRUE    1
-#endif  /* TRUE */
-
-#ifndef FALSE
-#define FALSE    0
-#endif  /* FALSE */
 
 /*********************************************************************
 ** Range

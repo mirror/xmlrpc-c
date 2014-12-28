@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "xmlrpc_config.h"
+#include "xmlrpc-c/c_util.h"  /* For XMLRPC_DLLEXPORT */
 #include "xmlrpc-c/util.h"
 #include "int.h"
 

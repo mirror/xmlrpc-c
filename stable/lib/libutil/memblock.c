@@ -1,28 +1,76 @@
 /* Copyright information is at end of file */
 #include "xmlrpc_config.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
+#include "bool.h"
+#include "girmath.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/util.h"
 
-#ifdef EFENCE
-        /* when looking for corruption don't allocate extra slop */
-#define BLOCK_ALLOC_MIN (1)
-#else
 #define BLOCK_ALLOC_MIN (16)
+
+static bool const tracingMemory =
+#ifdef EFENCE
+    true
+#else
+    false
 #endif
-#define BLOCK_ALLOC_MAX (128 * 1024 * 1024)
+    ;
+
+
+
+void
+xmlrpc_mem_block_init(xmlrpc_env *       const envP,
+                      xmlrpc_mem_block * const blockP,
+                      size_t             const size) {
+/*----------------------------------------------------------------------------
+   Initialize the provided xmlrpc_mem_block.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(blockP != NULL);
+
+    blockP->_size = size;
+
+    if (tracingMemory)
+        blockP->_allocated = size;
+    else
+        blockP->_allocated = MAX(BLOCK_ALLOC_MIN, size);
+    
+    blockP->_block = malloc(blockP->_allocated);
+    if (!blockP->_block)
+        xmlrpc_faultf(envP, "Can't allocate %u-byte memory block",
+                      (unsigned)blockP->_allocated);
+}
+
+
+
+void
+xmlrpc_mem_block_clean(xmlrpc_mem_block * const blockP) {
+/*----------------------------------------------------------------------------
+   Terminate *blockP, but don't destroy it (i.e. don't free the memory of
+   the structure itself).
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT(blockP != NULL);
+    XMLRPC_ASSERT(blockP->_block != NULL);
+
+    free(blockP->_block);
+    blockP->_block = XMLRPC_BAD_POINTER;
+}
+
 
 
 xmlrpc_mem_block * 
 xmlrpc_mem_block_new(xmlrpc_env * const envP, 
                      size_t       const size) {
-
+/*----------------------------------------------------------------------------
+   Create an xmlrpc_mem_block of size 'size'.
+-----------------------------------------------------------------------------*/
     xmlrpc_mem_block * block;
 
     XMLRPC_ASSERT_ENV_OK(envP);
@@ -44,10 +92,11 @@ xmlrpc_mem_block_new(xmlrpc_env * const envP,
 
 
 
-/* Destroy an existing xmlrpc_mem_block, and everything it contains. */
 void
 xmlrpc_mem_block_free(xmlrpc_mem_block * const blockP) {
-
+/*----------------------------------------------------------------------------
+   Destroy xmlrpc_mem_block *blockP.
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(blockP != NULL);
     XMLRPC_ASSERT(blockP->_block != NULL);
 
@@ -57,110 +106,98 @@ xmlrpc_mem_block_free(xmlrpc_mem_block * const blockP) {
 
 
 
-/* Initialize the contents of the provided xmlrpc_mem_block. */
-void
-xmlrpc_mem_block_init(xmlrpc_env *       const envP,
-                      xmlrpc_mem_block * const blockP,
-                      size_t             const size) {
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT(blockP != NULL);
-
-    blockP->_size = size;
-    if (size < BLOCK_ALLOC_MIN)
-        blockP->_allocated = BLOCK_ALLOC_MIN;
-    else
-        blockP->_allocated = size;
-
-    blockP->_block = (void*) malloc(blockP->_allocated);
-    if (!blockP->_block)
-        xmlrpc_faultf(envP, "Can't allocate %u-byte memory block",
-                      (unsigned)blockP->_allocated);
-}
-
-
-
-/* Deallocate the contents of the provided xmlrpc_mem_block, but not
-   the block itself.
-*/
-void
-xmlrpc_mem_block_clean(xmlrpc_mem_block * const blockP) {
-
-    XMLRPC_ASSERT(blockP != NULL);
-    XMLRPC_ASSERT(blockP->_block != NULL);
-
-    free(blockP->_block);
-    blockP->_block = XMLRPC_BAD_POINTER;
-}
-
-
-
-/* Get the size of the xmlrpc_mem_block. */
 size_t 
 xmlrpc_mem_block_size(const xmlrpc_mem_block * const blockP) {
-
+/*----------------------------------------------------------------------------
+   The size of the xmlrpc_mem_block.
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(blockP != NULL);
     return blockP->_size;
 }
 
 
 
-/* Get the contents of the xmlrpc_mem_block. */
 void * 
 xmlrpc_mem_block_contents(const xmlrpc_mem_block * const blockP) {
-
+/*----------------------------------------------------------------------------
+   The contents of the xmlrpc_mem_block
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(blockP != NULL);
     return blockP->_block;
 }
 
 
 
-/* Resize an xmlrpc_mem_block, preserving as much of the contents as
-   possible.
-*/
-void 
-xmlrpc_mem_block_resize (xmlrpc_env *       const envP,
-                         xmlrpc_mem_block * const blockP,
-                         size_t             const size) {
+static size_t
+allocSize(size_t const requestedSize) {
+/*----------------------------------------------------------------------------
+   The size we allocate when the user reuests to resize to 'requesteddSize'.
 
-    size_t proposed_alloc;
-    void* new_block;
+   We give him more than he requested in an attempt to avoid lots of copying
+   when Caller repeatedly resizes by small amounts.
+
+   We make some arbitrary judgments about how much memory or copying
+   constitutes lots.
+-----------------------------------------------------------------------------*/
+    size_t const oneMegabyte = 1024*1024;
+
+    size_t retval;
+
+    if (tracingMemory)
+        retval = requestedSize;
+    else {
+        /* We make it a power of two unless it is more than a megabyte,
+           in which case we just make it a multiple of a megabyte.
+        */
+        if (requestedSize >= oneMegabyte)
+            retval = ROUNDUPU(requestedSize, oneMegabyte);
+        else {
+            unsigned int i;
+            for (i = BLOCK_ALLOC_MIN; i < requestedSize; i *= 2);
+            retval = i;
+        }
+    }
+    return retval;
+}
+
+
+
+void 
+xmlrpc_mem_block_resize(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const blockP,
+                        size_t             const size) {
+/*----------------------------------------------------------------------------
+  Resize an xmlrpc_mem_block by allocating new memory for it and copying
+  whatever might be in it to the new memory.
+-----------------------------------------------------------------------------*/
+    size_t const newAllocSize = allocSize(size);
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(blockP != NULL);
 
-    /* Check to see if we already have enough space. Maybe we'll get lucky. */
-    if (size <= blockP->_allocated) {
-        blockP->_size = size;
-        return;
+    if (newAllocSize != blockP->_allocated) {
+        /* Reallocate */
+
+        void * newMem;
+
+        newMem = malloc(newAllocSize);
+        if (!newMem)
+            xmlrpc_faultf(envP, 
+                          "Failed to allocate %u bytes of memory from the OS",
+                          (unsigned) size);
+        else {
+            /* Copy over the data */
+            size_t const sizeToCopy = MIN(blockP->_size, size);
+            assert(sizeToCopy <= newAllocSize);
+            memcpy(newMem, blockP->_block, sizeToCopy);
+            
+            free(blockP->_block);
+
+            blockP->_block     = newMem;
+            blockP->_allocated = newAllocSize;
+        }
     }
-
-    /* Calculate a new allocation size. */
-#ifdef EFENCE
-    proposed_alloc = size;
-#else
-    proposed_alloc = blockP->_allocated;
-    while (proposed_alloc < size && proposed_alloc <= BLOCK_ALLOC_MAX)
-        proposed_alloc *= 2;
-#endif /* DEBUG_MEM_ERRORS */
-
-    if (proposed_alloc > BLOCK_ALLOC_MAX)
-        XMLRPC_FAIL(envP, XMLRPC_INTERNAL_ERROR, "Memory block too large");
-
-    /* Allocate our new memory block. */
-    new_block = (void*) malloc(proposed_alloc);
-    XMLRPC_FAIL_IF_NULL(new_block, envP, XMLRPC_INTERNAL_ERROR,
-                        "Can't resize memory block");
-
-    /* Copy over our data and update the xmlrpc_mem_block struct. */
-    memcpy(new_block, blockP->_block, blockP->_size);
-    free(blockP->_block);
-    blockP->_block     = new_block;
-    blockP->_size      = size;
-    blockP->_allocated = proposed_alloc;
-
- cleanup:
-    return;
+    blockP->_size = size;
 }
 
 

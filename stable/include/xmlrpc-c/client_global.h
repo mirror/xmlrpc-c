@@ -1,7 +1,7 @@
 #ifndef CLIENT_GLOBAL_H_INCLUDED
 #define CLIENT_GLOBAL_H_INCLUDED
 
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/client.h>
 
 /*
@@ -129,27 +129,17 @@ void
 xmlrpc_client_call_server_asynch_params(
     xmlrpc_server_info * const server,
     const char *         const method_name,
-    xmlrpc_response_handler responseHandler,
+    xmlrpc_response_handler    responseHandler,
     void *               const user_data,
     xmlrpc_value *       const paramArrayP);
     
-/*=========================================================================
-**  Event Loop Interface
-**=========================================================================
-**  These functions can be used to run the XML-RPC event loop. If you
-**  don't like these, you can also run the libwww event loop directly.
-*/
-
-/* Finish all outstanding asynchronous calls. Alternatively, the loop
-** will exit if someone calls xmlrpc_client_event_loop_end. */
 XMLRPC_CLIENT_EXPORTED
 extern void
 xmlrpc_client_event_loop_finish_asynch(void);
 
-
-/* Finish all outstanding asynchronous calls. */
 XMLRPC_CLIENT_EXPORTED
 extern void
-xmlrpc_client_event_loop_finish_asynch_timeout(unsigned long const milliseconds);
+xmlrpc_client_event_loop_finish_asynch_timeout(
+    unsigned long const milliseconds);
 
 #endif

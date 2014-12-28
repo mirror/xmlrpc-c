@@ -2,6 +2,7 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "xmlrpc_config.h"
 
@@ -9,7 +10,6 @@
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
-#include "pthreadx.h"
 
 #include "xmlrpc-c/abyss.h"
 
@@ -119,14 +119,14 @@ ThreadCreate(TThread **      const threadPP,
 
 bool
 ThreadRun(TThread * const threadP ATTR_UNUSED) {
-    return TRUE;    
+    return true;    
 }
 
 
 
 bool
 ThreadStop(TThread * const threadP ATTR_UNUSED) {
-    return TRUE;
+    return true;
 }
 
 
@@ -177,7 +177,7 @@ ThreadRelease(TThread * const threadP) {
 bool
 ThreadForks(void) {
 
-    return FALSE;
+    return false;
 }
 
 

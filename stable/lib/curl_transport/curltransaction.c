@@ -62,9 +62,9 @@ struct curlTransaction {
         /* The data to send for the POST method */
     xmlrpc_mem_block * responseDataP;
         /* This is normally where to put the body of the HTTP response.  But
-           do to a quirk of Curl, if the response is not valid HTTP, rather
-           than this just being irrelevant, it is the place that Curl puts the
-           server's non-HTTP response.  That can be useful for error
+           because of a quirk of Curl, if the response is not valid HTTP,
+           rather than this just being irrelevant, it is the place that Curl
+           puts the server's non-HTTP response.  That can be useful for error
            reporting.
         */
 };
@@ -107,10 +107,10 @@ xmlrpcUserAgentPart(bool const reportIt) {
             curl_version_info(CURLVERSION_NOW);
         char curlVersion[32];
         
-        snprintf(curlVersion, sizeof(curlVersion), "%u.%u.%u",
-                 (curlInfoP->version_num >> 16) & 0xff,
-                 (curlInfoP->version_num >>  8) & 0xff,
-                 (curlInfoP->version_num >>  0) & 0xff
+        XMLRPC_SNPRINTF(curlVersion, sizeof(curlVersion), "%u.%u.%u",
+                        (curlInfoP->version_num >> 16) & 0xff,
+                        (curlInfoP->version_num >>  8) & 0xff,
+                        (curlInfoP->version_num >>  0) & 0xff
             );
 
         xmlrpc_asprintf(&retval,
@@ -422,16 +422,16 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
 
 static void
 setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
-               unsigned int const timeout ATTR_UNUSED) {
+               unsigned int const timeoutMs ATTR_UNUSED) {
 
 #if HAVE_CURL_NOSIGNAL
-    unsigned int const timeoutMs = (timeout + 999)/1000;
+    unsigned int const timeoutSec = (timeoutMs + 999)/1000;
 
     curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
 
-    assert((long)timeoutMs == (int)timeoutMs);
+    assert((long)timeoutSec == (int)timeoutSec);
         /* Calling requirement */
-    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutMs);
+    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutSec);
 #else
     abort();
 #endif

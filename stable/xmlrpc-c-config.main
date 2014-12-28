@@ -8,6 +8,7 @@ The features are:
   abyss-server   ABYSS-based server functions
   pstream-server pstream-based server functions
   server-util    basic server functions (implied by *-server)
+  abyss          Abyss HTTP server (not necessary with abyss-server)
 
 Options are:
   --version      The version number of the package
@@ -45,7 +46,7 @@ packetsocket_lib=
 
 the_libdirs="-L$LIBINST_DIR $the_libdirs"
 
-the_libs="-lxmlrpc  ${LIBXML} -lxmlrpc_util"
+the_libs="-lxmlrpc  ${LIBXML} -lxmlrpc_util -lpthread"
 the_rpath="-R$LIBINST_DIR $the_rpath"
 the_wl_rpath="-Wl,-rpath,$LIBINST_DIR $the_wl_rpath"
 
@@ -88,9 +89,6 @@ while test $# -gt 0; do
         fi
       ;;
     abyss-server)
-      if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
-        the_libs="$THREAD_LIBS $the_libs"
-        fi
       the_libs="${LSOCKET} $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
@@ -134,6 +132,13 @@ while test $# -gt 0; do
       if test "${needCpp}" = "yes"; then
         the_libs="-lxmlrpc_client++ $the_libs"
         packetsocket_lib="-lxmlrpc_packetsocket"
+        fi
+      ;;
+    abyss)
+      the_libs="${LSOCKET} -lxmlrpc_util -lpthread $the_libs"
+      the_libs="-lxmlrpc_abyss $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="-lxmlrpc_abyss++ $the_libs"
         fi
       ;;
     --version)

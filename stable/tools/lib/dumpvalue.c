@@ -96,8 +96,30 @@ static void
 dumpDatetime(const char *   const prefix,
              xmlrpc_value * const valueP) {
 
-    printf("%sDon't know how to print datetime value %lx.\n", 
-           prefix, (unsigned long) valueP);
+    xmlrpc_env env;
+    xmlrpc_datetime value;
+    
+    xmlrpc_env_init(&env);
+
+    xmlrpc_read_datetime(&env, valueP, &value);
+    
+    if (env.fault_occurred)
+        printf("Internal error: Unable to extract value from "
+               "datetime xmlrpc_value %lx.  %s\n",
+               (unsigned long)valueP, env.fault_string);
+    else
+        printf("%sDatetime: %u.%02u.%02u %02u:%02u:%02u.%06u\n",
+               prefix,
+               value.Y,
+               value.M,
+               value.D,
+               value.h,
+               value.m,
+               value.s,
+               value.u
+            );
+
+    xmlrpc_env_clean(&env);
 }
 
 

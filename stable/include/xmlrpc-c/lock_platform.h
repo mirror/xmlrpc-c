@@ -1,6 +1,7 @@
 #ifndef LOCK_PLATFORM_H_INCLUDED
 #define LOCK_PLATFORM_H_INCLUDED
 
+#include "xmlrpc-c/c_util.h"  /* For XMLRPC_DLLEXPORT */
 #include "xmlrpc-c/lock.h"
 
 /*

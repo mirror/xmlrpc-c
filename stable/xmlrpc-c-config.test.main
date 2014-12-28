@@ -33,7 +33,7 @@ needCpp=no
 LIBXMLRPC="${BLDDIR}/src/libxmlrpc.a"
 LIBXMLRPC_UTIL="${BLDDIR}/lib/libutil/libxmlrpc_util.a"
 
-the_libs="${LIBXMLRPC} ${LIBXML} ${LIBXMLRPC_UTIL} $the_libs"
+the_libs="${LIBXMLRPC} ${LIBXML} ${LIBXMLRPC_UTIL} -lpthread $the_libs"
 the_includes="-I${BLDDIR}/include -I${ABS_SRCDIR}/include $the_includes"
 sopath="${BLDDIR}/src:$sopath"
 
@@ -70,9 +70,6 @@ while test $# -gt 0; do
         fi
       ;;
     abyss-server)
-      if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
-        the_libs="$THREAD_LIBS $the_libs"
-        fi
       the_libs="${LSOCKET} $the_libs"
       the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
@@ -112,6 +109,15 @@ while test $# -gt 0; do
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_client++.a $the_libs"
         packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
         fi
+      ;;
+    abyss)
+      the_libs="${LSOCKET} ${LIBXMLRPC_UTIL} -lpthread $the_libs"
+      the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
+      sopath="${BLDDIR}/lib/abyss/src:$sopath"
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/lib/abyss++/libxmlrpc_abyss++.a $the_libs"
+        fi
+      sopath="${BLDDIR}/lib/abyss++:$sopath"
       ;;
     --version)
       echo "$XMLRPC_MAJOR_RELEASE.$XMLRPC_MINOR_RELEASE.$XMLRPC_POINT_RELEASE"

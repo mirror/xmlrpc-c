@@ -1,15 +1,16 @@
-#include "xmlrpc-c/abyss.h"
+#include <stddef.h>
 
 #include "bool.h"
 
 #include "token.h"
+
 
 void
 NextToken(const char ** const pP) {
 
     bool gotToken;
 
-    gotToken = FALSE;
+    gotToken = false;
 
     while (!gotToken) {
         switch (**pP) {
@@ -18,7 +19,7 @@ NextToken(const char ** const pP) {
             ++(*pP);
             break;
         default:
-            gotToken = TRUE;
+            gotToken = true;
         };
     }
 }
@@ -36,8 +37,8 @@ GetToken(char ** const pP) {
         switch (**pP) {
         case '\t':
         case ' ':
-        case CR:
-        case LF:
+        case '\r':
+        case '\n':
         case '\0':
             if (p0 == *pP)
                 return NULL;

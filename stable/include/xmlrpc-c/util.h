@@ -21,7 +21,7 @@
 #include <stdarg.h>
 
 #include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
-#include <xmlrpc-c/c_util.h>  /* for XMLRPC_PRINTF_ATTR */
+#include <xmlrpc-c/c_util.h>  /* for XMLRPC_PRINTF_ATTR, _DLLEXPORT */
 
 #if XMLRPC_HAVE_WCHAR
 #include <wchar.h>

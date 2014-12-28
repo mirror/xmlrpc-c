@@ -1,3 +1,14 @@
+These are instructions for using the Curl HTTP client library for the XML-RPC
+communication in an XML-RPC client, on Windows.  Normally, an XML-RPC client
+running on Windows uses the HTTP client facilities built into Windows
+(Wininet) instead.
+
+These instructions worked at one time, but they do not appear to work with
+current Xmlrpc-c code.  If you are able to update them to work with current
+Xmlrpc-c code, please send the updates to the Xmlrpc-c maintainer to help the
+next person.
+
+
 Motivation:
 
 Let’s say you need to have a Xmlrpc-c client running as a service.  In this
@@ -46,10 +57,11 @@ After running xmlrpc-c\Windows\configurewin32.bat, start Visual Studio.
 
 In the File View, in the 'xmlrpc' project, in the properties of
 xmlrpc_curl_transport.c, change "Exclude file from build" from "yes" to "no",
-for Debug and Release.  ==>BUT NOTE: as late as Xmlrpc-c 1.30, this is
-broken - there is no xmlrpc_curl_transport.c in the projects.  You need to
-add it.  If you do, please send your changes to the Xmlrpc-c maintainer to
-help the next person.
+for Debug and Release.  ==>BUT NOTE: in current Xmlrpc-c, this is broken -
+there is no 'xmlrpc' project and no xmlrpc_curl_transport.c in any projects.
+You need to add it.  What you need to do is apparently to get
+xmlrpc_curl_transport.c, curltransaction.c, curlmulti.c into the
+libxmlrpc_client library built by the libxmlrpc_client project.
 
 In the 'Header Files' section, open the "transport_config.h" file,
 and change MUST_BUILD_CURL_CLIENT to 1, and the XMLRPC_DEFAULT_TRANSPORT
@@ -67,7 +79,8 @@ Debug and Release static Curl libraries.
 Now, Xmlrpc-c should build using the Curl transport.
 
 Note, for the final linking, all libraries must be linked the same.  A mixture
-of /MD and /MT will give big linkage problems. Any one project built with the
-alterate library will show many items defined more than once. And of course,
+of /MD and /MT will give big linkage problems.  Any one project built with the
+alternate library will show many items defined more than once.  And of course,
 you also cannot mix Debug with Release. That is /MDd with /MD, nor /MTd with
 /MT.  Otherwise, there will be unresolved debug items.
+

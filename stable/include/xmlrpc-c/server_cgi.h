@@ -6,7 +6,7 @@
 #ifndef  XMLRPC_CGI_H_INCLUDED
 #define  XMLRPC_CGI_H_INCLUDED
 
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/server.h>
 
 #ifdef __cplusplus

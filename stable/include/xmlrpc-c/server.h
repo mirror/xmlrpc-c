@@ -3,7 +3,7 @@
 #ifndef  XMLRPC_SERVER_H_INCLUDED
 #define  XMLRPC_SERVER_H_INCLUDED
 
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/base.h>
 
 #ifdef __cplusplus

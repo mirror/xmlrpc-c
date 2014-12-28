@@ -125,17 +125,23 @@ struct registry_impl {
         // Pointer to the C registry object we use to implement this
         // object.
 
-    std::list<xmlrpc_c::methodPtr> methodList;
-        // This is a list of all the method objects (actually, pointers
-        // to them).  But since the real registry is the C registry object,
-        // all this list is for is to maintain references to the objects
-        // to which the C registry points so that they continue to exist.
+    std::list<xmlrpc_c::methodPtr> managedMethodList;
+        // This is a list of pointers to method objects whose existence is
+        // managed by methodPtr shared pointers (so that the reference to
+        // the object by the registry keeps it in existence and if the
+        // registry's reference is the last reference to a method object,
+        // the method object disappears when the registry does).
+        // 
+        // The real registry is the C registry object, so the list of methods
+        // in that object, not this member, is the operative list of
+        // registered methods.
+        //
+        // The registry may refer to method objects that are not managed by
+        // methodPtrs (it's the user's choice), so this member is not 
+        // necessarily a complete list.
 
     xmlrpc_c::defaultMethodPtr defaultMethodP;
-        // The real identifier of the default method is the C registry
-        // object; this member exists only to maintain a reference to the
-        // object to which the C registry points so that it will continue
-        // to exist.
+        // Analogous to 'managedMethodList', but for the default method object.
 
     registry_impl();
 
@@ -369,17 +375,18 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
 
 
 void
-registry::addMethod(string    const name,
-                    methodPtr const methodP) {
-
-    this->implP->methodList.push_back(methodP);
-
+registry::addMethod(string   const name,
+                    method * const methodP) {
+/*----------------------------------------------------------------------------
+   Caller is responsible for ensuring *methodP exists as long as this
+   registry does.
+-----------------------------------------------------------------------------*/
     struct xmlrpc_method_info3 methodInfo;
     env_wrap env;
 
     methodInfo.methodName      = name.c_str();
     methodInfo.methodFunction  = &c_executeMethod;
-    methodInfo.serverInfo      = methodP.get();
+    methodInfo.serverInfo      = methodP;
     methodInfo.stackSize       = 0;
     string const signatureString(methodP->signature());
     methodInfo.signatureString = signatureString.c_str();
@@ -395,17 +402,39 @@ registry::addMethod(string    const name,
 
 
 void
-registry::setDefaultMethod(defaultMethodPtr const methodP) {
+registry::addMethod(string    const name,
+                    methodPtr const methodP) {
 
-    this->implP->defaultMethodP = methodP;
+    this->addMethod(name, dynamic_cast<method *>(methodP.get()));
 
+    this->implP->managedMethodList.push_back(methodP);
+}
+
+
+
+void
+registry::setDefaultMethod(defaultMethod * const methodP) {
+/*----------------------------------------------------------------------------
+   Caller is responsible for ensuring *methodP exists as long as this
+   registry does.
+-----------------------------------------------------------------------------*/
     env_wrap env;
     
     xmlrpc_registry_set_default_method(
         &env.env_c, this->implP->c_registryP,
-        &c_executeDefaultMethod, (void*) methodP.get());
+        &c_executeDefaultMethod, (void*) methodP);
 
     throwIfError(env);
+}
+
+
+
+void
+registry::setDefaultMethod(defaultMethodPtr const methodP) {
+
+    this->setDefaultMethod(dynamic_cast<defaultMethod *>(methodP.get()));
+
+    this->implP->defaultMethodP = methodP;
 }
 
 

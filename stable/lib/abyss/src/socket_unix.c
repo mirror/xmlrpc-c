@@ -119,9 +119,9 @@ connected(int const fd) {
     rc = getpeername(fd, &sockaddr, &nameLen);
 
     if (rc == 0)
-        connected = TRUE;
+        connected = true;
     else
-        connected = FALSE;
+        connected = false;
 
     return connected;
 }
@@ -177,12 +177,18 @@ channelWrite(TChannel *            const channelP,
 
     assert(sizeof(size_t) >= sizeof(len));
 
-    for (bytesLeft = len, error = FALSE;
+    for (bytesLeft = len, error = false;
          bytesLeft > 0 && !error;
         ) {
         size_t const maxSend = (size_t)(-1) >> 1;
 
         ssize_t rc;
+
+        // We'd like to use MSG_NOSIGNAL here, to prevent this send() from
+        // causing a SIGPIPE if the other end of the socket is closed, but
+        // MSG_NOSIGNAL is not standard enough.  An SO_NOSIGPIPE socket
+        // option is another way, but even less standard.  So instead, the
+        // thread simply must be set to ignore SIGPIPE.
         
         rc = send(socketUnixP->fd, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
@@ -204,7 +210,7 @@ channelWrite(TChannel *            const channelP,
         }
         if (rc <= 0)
             /* 0 means connection closed; < 0 means severe error */
-            error = TRUE;
+            error = true;
         else
             bytesLeft -= rc;
     }
@@ -228,14 +234,14 @@ channelRead(TChannel *      const channelP,
     rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
 
     if (rc < 0) {
-        *failedP = TRUE;
+        *failedP = true;
         if (ChannelTraceIsActive)
             fprintf(stderr, "Abyss channel: "
                     "Failed to receive data from socket.  "
                     "recv() failed with errno %d (%s)\n",
                     errno, strerror(errno));
     } else {
-        *failedP = FALSE;
+        *failedP = false;
         *bytesReceivedP = rc;
 
         if (ChannelTraceIsActive)
@@ -314,16 +320,16 @@ channelWait(TChannel * const channelP,
 
     if (rc < 0) {
         if (errno == EINTR) {
-            failed       = FALSE;
-            readyToRead  = FALSE;
-            readyToWrite = FALSE;
+            failed       = false;
+            readyToRead  = false;
+            readyToWrite = false;
         } else {
-            failed       = TRUE;
-            readyToRead  = FALSE; /* quiet compiler warning */
-            readyToWrite = FALSE; /* quiet compiler warning */
+            failed       = true;
+            readyToRead  = false; /* quiet compiler warning */
+            readyToWrite = false; /* quiet compiler warning */
         }
     } else {
-        failed       = FALSE;
+        failed       = false;
         readyToRead  = !!(pollfds[0].revents & POLLIN);
         readyToWrite = !!(pollfds[0].revents & POLLOUT);
     }
@@ -549,7 +555,7 @@ makeChannelFromFd(int           const fd,
         TChannel * channelP;
         
         socketUnixP->fd = fd;
-        socketUnixP->userSuppliedFd = TRUE;
+        socketUnixP->userSuppliedFd = true;
 
         initInterruptPipe(&socketUnixP->interruptPipe, errorP);
 
@@ -690,11 +696,11 @@ waitForConnection(struct socketUnix * const listenSocketP,
     if (rc < 0) {
         if (errno == EINTR) {
             *errorP       = NULL;
-            *interruptedP = TRUE;
+            *interruptedP = true;
         } else {
             xmlrpc_asprintf(errorP, "poll() failed, errno = %d (%s)",
                             errno, strerror(errno));
-            *interruptedP = FALSE; /* quiet compiler warning */
+            *interruptedP = false; /* quiet compiler warning */
         }
     } else if (pollfds[0].revents & POLLHUP) {
         xmlrpc_asprintf(errorP, "INTERNAL ERROR: listening socket "
@@ -739,7 +745,7 @@ createChannelForAccept(int             const acceptedFd,
             xmlrpc_asprintf(errorP, "Unable to allocate memory");
         else {
             acceptedSocketP->fd = acceptedFd;
-            acceptedSocketP->userSuppliedFd = FALSE;
+            acceptedSocketP->userSuppliedFd = false;
 
             initInterruptPipe(&acceptedSocketP->interruptPipe, errorP);
 
@@ -789,7 +795,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
     bool interrupted;
     TChannel * channelP;
 
-    interrupted = FALSE; /* Haven't been interrupted yet */
+    interrupted = false; /* Haven't been interrupted yet */
     channelP    = NULL;  /* No connection yet */
     *errorP     = NULL;  /* No error yet */
 
@@ -813,7 +819,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
                 if (*errorP)
                     close(acceptedFd);
             } else if (errno == EINTR)
-                interrupted = TRUE;
+                interrupted = true;
             else
                 xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
                                 errno, strerror(errno));

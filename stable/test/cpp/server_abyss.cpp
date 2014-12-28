@@ -1,7 +1,7 @@
 /*=============================================================================
                                   server_abyss
 ===============================================================================
-  Test the Abyss server C++ facilities of XML-RPC for C/C++.
+  Test the Abyss XML-RPC server C++ facilities of XML-RPC for C/C++.
   
 =============================================================================*/
 #define WIN32_LEAN_AND_MEAN  /* required by xmlrpc-c/abyss.h */
@@ -24,6 +24,8 @@
   #include <netinet/in.h>
 #endif
 
+using namespace std;
+
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
@@ -32,11 +34,10 @@ using girerr::throwf;
 #include "xmlrpc-c/server_abyss.hpp"
 #include "xmlrpc-c/abyss.h"
 
+using namespace xmlrpc_c;
+
 #include "tools.hpp"
 #include "server_abyss.hpp"
-
-using namespace xmlrpc_c;
-using namespace std;
 
 
 
@@ -272,7 +273,7 @@ public:
                                     .portNumber(65536));
             );
         
-        // Due to the vagaries of Abyss, construction of the following
+        // Because of the vagaries of Abyss, construction of the following
         // objects may exit the program if it detects an error, such as
         // port number already in use.  We need to fix Abyss some day.
     

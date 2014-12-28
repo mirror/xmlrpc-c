@@ -25,12 +25,12 @@
 #include <netinet/in.h>
 #endif
 
+using namespace std;
+
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/registry.hpp>
 #include <xmlrpc-c/server_abyss.hpp>
 #include <xmlrpc-c/abyss.h>
-
-using namespace std;
 
 
 struct tcpPortAddr {

@@ -52,8 +52,8 @@ xmlrpc_makePrintable_lp(const char * const input,
             } else if (isprint(input[inputCursor])) {
                 output[outputCursor++] = input[inputCursor]; 
             } else {
-                snprintf(&output[outputCursor], 5, "\\x%02x", 
-                         (unsigned char)input[inputCursor]);
+                XMLRPC_SNPRINTF(&output[outputCursor], 5, "\\x%02x", 
+                                (unsigned char)input[inputCursor]);
                 outputCursor += 4;
             }
         }

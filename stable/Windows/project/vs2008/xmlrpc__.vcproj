@@ -1351,6 +1351,82 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\cpp\Lock.cpp"
+				>
+				<FileConfiguration
+					Name="Debug-DLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-DLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-DLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-DLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug-Static|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Static|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\src\cpp\outcome.cpp"
 				>
 				<FileConfiguration
@@ -1653,6 +1729,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\wininet_transport\pthreadx_win32.c"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\cpp\registry.cpp"
@@ -2191,6 +2271,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\lib\wininet_transport\xmlrpc_wininet_transport.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\cpp\XmlRpcCpp.cpp"
 				>
 				<FileConfiguration
@@ -2301,6 +2385,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\xmlrpc-c\girmem.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\xmlrpc-c\Lock.hpp"
 				>
 			</File>
 			<File

@@ -107,9 +107,21 @@
 
 /* MSVCRT means we're using the Microsoft Visual C++ runtime library */
 
-#ifdef _MSC_VER
-/* The compiler is Microsoft Visual C++. */
+/* MSVCRT means we're using the Microsoft Visual C++ runtime library,
+   msvcrt.dll.  Note that there are other DLLs in the suite, but only the
+   basic msvcrt.dll comes with Windows.
+*/
+
+#if defined(_MSC_VER)
+  /* The compiler is Microsoft Visual C++ */
   #define MSVCRT _MSC_VER
+#elif defined(__MINGW32__)
+  /* The compiler is Mingw, which is the Windows version of the GNU
+     compiler. Programs built with this normally use the Microsoft Visual
+     C++ runtime library, in addition to a small library with some of the
+     things a program would expect to find on a GNU system: libmingwex.a.
+  */
+  #define MSVCRT 1
 #else
   #define MSVCRT 0
 #endif
@@ -142,12 +154,15 @@
 */
 #define HAVE_PTHREAD 0
 
-/* Note that the return value of XMLRPC_VSNPRINTF is int on Windows,
-   ssize_t on POSIX.
+/* Note that the return value of XMLRPC_[V]SNPRINTF is int on Windows,
+   ssize_t on POSIX.  On Windows, it is a return code; on POSIX, the size
+   of the complete string (regardless of how much of it got returned).
 */
 #if MSVCRT
+  #define XMLRPC_SNPRINTF _snprintf
   #define XMLRPC_VSNPRINTF _vsnprintf
 #else
+  #define XMLRPC_SNPRINTF snprintf
   #define XMLRPC_VSNPRINTF vsnprintf
 #endif
 
@@ -218,7 +233,6 @@
 #endif
 
 #if MSVCRT
-  #define snprintf _snprintf
   #define popen _popen
 #endif
 

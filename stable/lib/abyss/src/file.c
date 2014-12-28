@@ -32,6 +32,14 @@
 **
 ******************************************************************************/
 
+/* There is a complex bug in AIX that is worked around by declaring this as
+   X/OPEN 6 source code even though we don't depend up on any specific stuff
+   from that standard.  The AIX bug causes <unistd.h> to define "lseek64"
+   twice.  We tried _POSIX_SOURCE and that made the lseek problem go away but
+   caused <sys/socket.h> not to define struct sockaddr!   AIX 5.3 13.09.16.
+*/
+#define _XOPEN_SOURCE 600
+
 #include "xmlrpc_config.h"
 #include "mallocvar.h"
 
@@ -67,9 +75,9 @@
 
 bool const win32 =
 #ifdef _WIN32
-TRUE;
+    true;
 #else
-FALSE;
+    false;
 #endif
 
 struct TFileFind {
@@ -102,7 +110,7 @@ createFileImage(TFile **     const filePP,
 
     MALLOCVAR(fileP);
     if (fileP == NULL)
-        *succeededP = FALSE;
+        *succeededP = false;
     else {
         int rc;
 
@@ -112,10 +120,10 @@ createFileImage(TFile **     const filePP,
             rc = open(name, attrib);
 
         if (rc < 0)
-            *succeededP = FALSE;
+            *succeededP = false;
         else {
             fileP->fd = rc;
-            *succeededP = TRUE;
+            *succeededP = true;
         }
         if (!*succeededP)
             free(fileP);
@@ -132,7 +140,7 @@ FileOpen(TFile **     const filePP,
 
     bool succeeded;
 
-    createFileImage(filePP, name, attrib, FALSE, &succeeded);
+    createFileImage(filePP, name, attrib, false, &succeeded);
 
     return succeeded;
 }
@@ -146,7 +154,7 @@ FileOpenCreate(TFile **     const filePP,
 
     bool succeeded;
 
-    createFileImage(filePP, name, attrib, TRUE, &succeeded);
+    createFileImage(filePP, name, attrib, true, &succeeded);
 
     return succeeded;
 }
@@ -284,7 +292,7 @@ fileFindFirstPosix(TFileFind *  const filefindP,
     if (filefindP->handle)
         *retP = FileFindNext(filefindP, fileinfo);
     else
-        *retP = FALSE;
+        *retP = false;
 #endif
 }
     
@@ -302,7 +310,7 @@ FileFindFirst(TFileFind ** const filefindPP,
     MALLOCVAR(filefindP);
 
     if (filefindP == NULL)
-        succeeded = FALSE;
+        succeeded = false;
     else {
         if (win32)
             fileFindFirstWin(filefindP, path, fileinfo, &succeeded);
@@ -374,9 +382,9 @@ fileFindNextPosix(TFileFind * const filefindP,
         fileinfoP->size       = fs.st_size;
         fileinfoP->time_write = fs.st_mtime;
         
-        *retvalP = TRUE;
+        *retvalP = true;
     } else
-        *retvalP = FALSE;
+        *retvalP = false;
 #endif
 }
 

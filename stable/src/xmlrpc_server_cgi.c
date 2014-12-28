@@ -212,7 +212,7 @@ xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP) {
 	size_t err_len = strlen(template) + strlen(type) + 1;
 	char *err = malloc(err_len);
 
-	(void)snprintf(err, err_len, template, type);
+	XMLRPC_SNPRINTF(err, err_len, template, type);
         code = 400; message = "Bad Request";
         XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, err);
 	free(err);

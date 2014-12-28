@@ -24,7 +24,7 @@
 #endif
 
 #include <xmlrpc-c/config.h>  /* For XMLRPC_SOCKET */
-#include <xmlrpc-c/c_util.h>
+#include <xmlrpc-c/c_util.h>  /* For XMLRPC_DLLEXPORT */
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 

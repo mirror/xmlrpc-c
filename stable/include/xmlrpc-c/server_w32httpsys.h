@@ -38,7 +38,7 @@
 #ifndef  _XMLRPC_SERVER_HTTPSYS_H_
 #define  _XMLRPC_SERVER_HTTPSYS_H_ 1
 
-#include "c_util.h"
+#include "xmlrpc-c/c_util.h"  /* For XMLRPC_DLLEXPORT */
 #include "transport_config.h"
 
 #ifdef __cplusplus

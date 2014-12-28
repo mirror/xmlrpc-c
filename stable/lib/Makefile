@@ -12,6 +12,9 @@ SUBDIRS =
 SUBDIRS += util libutil
 ifeq ($(ENABLE_ABYSS_SERVER),yes)
   SUBDIRS += abyss
+  ifeq ($(ENABLE_CPLUSPLUS),yes)
+    SUBDIRS += abyss++
+  endif
 endif
 ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
   SUBDIRS += wininet_transport

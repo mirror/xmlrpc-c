@@ -1,7 +1,7 @@
 #ifndef SLEEP_INT_H_INCLUDED
 #define SLEEP_INT_H_INCLUDED
 
-#include "xmlrpc-c/c_util.h"
+#include "xmlrpc-c/c_util.h"  /* For XMLRPC_DLLEXPORT */
 
 #ifdef __cplusplus
 extern "C" {

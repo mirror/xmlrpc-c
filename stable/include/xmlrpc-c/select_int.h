@@ -16,7 +16,7 @@
 
 #include <signal.h>
 
-#include "xmlrpc-c/c_util.h"
+#include "xmlrpc-c/c_util.h"  /* For XMLRPC_DLLEXPORT */
 #include "xmlrpc-c/time_int.h"
 #if MSVCRT
   #include <winsock2.h>

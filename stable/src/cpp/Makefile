@@ -35,8 +35,7 @@ SHARED_LIBS_TO_BUILD = $(TARGET_LIB_NAMES_PP)
 SHARED_LIBS_TO_INSTALL = $(TARGET_LIB_NAMES_PP)
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
-INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
-  $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) \
+INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) \
   $(shell cat blddir/src/libxmlrpc_client.cflags)
 DEP_SOURCES = *.cpp
 
@@ -112,6 +111,11 @@ all: \
 
 LIBXMLRPC_CPP_SH = $(call shlibfn, libxmlrpc_cpp)
 
+# Sometimes -lpthread is necessary when link-editing a shared library that
+# uses pthread services, and sometimes it is not.  We've seen links on
+# Windows and AIX fail without it.  It seems to be a good idea in all cases,
+# as it declares an actual dependency of the shared library.
+
 $(LIBXMLRPC_CPP_SH): XmlRpcCpp.osh \
   $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC) \
@@ -132,10 +136,8 @@ $(LIBXMLRPCPP_SH): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
 $(LIBXMLRPCPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPCPP_SH):  LIBDEP += -lpthread
-endif
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+  -lpthread
 
 LIBXMLRPC_SERVERPP_SH = $(call shlibfn, libxmlrpc_server++)
 
@@ -313,7 +315,7 @@ $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh): \
 # <sstream> in Glibc 2.2 has some failed inlines, so we disable that warning:
 $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o) \
 $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh): \
-  CFLAGS_LOCAL = -Wno-inline
+  CFLAGS_LOCAL = $(CFLAGS_NO_INLINE_WARNING)
 
 TRANSPORT_CONFIG_USERS = client curl libwww wininet
 

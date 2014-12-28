@@ -44,6 +44,10 @@ struct _TChanSwitch {
         */
     void *                 implP;
     struct TChanSwitchVtbl vtbl;
+    bool                   isListening;
+        /* The switch is in listening state; i.e. user has done a successful
+           ChanSwitchListen().
+        */
 };
 
 extern bool SwitchTraceIsActive;

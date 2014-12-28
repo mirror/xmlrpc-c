@@ -101,8 +101,8 @@ main(int           const argc,
     serverparm.keepalive_timeout  = 0;
     serverparm.keepalive_max_conn = 0;
     serverparm.timeout            = 0;
-    serverparm.dont_advertise     = FALSE;
-    serverparm.socket_bound       = TRUE;
+    serverparm.dont_advertise     = 0;  /* false */
+    serverparm.socket_bound       = 1;  /* true */
     serverparm.socket_handle      = STDIN_FILENO;
 
     printf("Running XML-RPC server...\n");

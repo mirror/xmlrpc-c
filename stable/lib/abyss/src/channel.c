@@ -61,7 +61,7 @@ ChannelInit(const char ** const errorP) {
         ChannelTraceIsActive = (getenv("ABYSS_TRACE_CHANNEL") != NULL);
         if (ChannelTraceIsActive)
             fprintf(stderr, "Abyss channel layer will trace channel traffic "
-                    "due to ABYSS_TRACE_CHANNEL environment variable\n");
+                    "because of ABYSS_TRACE_CHANNEL environment variable\n");
     }
 }
 

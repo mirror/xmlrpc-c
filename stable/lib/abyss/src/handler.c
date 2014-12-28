@@ -152,26 +152,26 @@ determineSortType(const char *  const query,
                   bool *        const textP,
                   const char ** const errorP) {
 
-    *ascendingP = TRUE;
+    *ascendingP = true;
     *sortP = 1;
-    *textP = FALSE;
+    *textP = false;
     *errorP = NULL;
     
     if (query) {
         if (xmlrpc_streq(query, "plain"))
-            *textP = TRUE;
+            *textP = true;
         else if (xmlrpc_streq(query, "name-up")) {
             *sortP = 1;
-            *ascendingP = TRUE;
+            *ascendingP = true;
         } else if (xmlrpc_streq(query, "name-down")) {
             *sortP = 1;
-            *ascendingP = FALSE;
+            *ascendingP = false;
         } else if (xmlrpc_streq(query, "date-up")) {
             *sortP = 2;
-            *ascendingP = TRUE;
+            *ascendingP = true;
         } else if (xmlrpc_streq(query, "date-down")) {
             *sortP = 2;
-            *ascendingP = FALSE;
+            *ascendingP = false;
         } else  {
             xmlrpc_asprintf(errorP, "invalid query value '%s'", query);
         }
@@ -247,7 +247,7 @@ sendDirectoryDocument(TList *      const listP,
     uint32_t k;
 
     if (text) {
-        sprintf(z, "Index of %s" CRLF, uri);
+        sprintf(z, "Index of %s\r\n", uri);
         i = strlen(z)-2;
         p = z + i + 2;
 
@@ -257,17 +257,17 @@ sendDirectoryDocument(TList *      const listP,
         }
 
         *p = '\0';
-        strcat(z, CRLF CRLF
+        strcat(z, "\r\n\r\n"
                "Name                      Size      "
-               "Date-Time             Type" CRLF
+               "Date-Time             Type\r\n"
                "------------------------------------"
-               "--------------------------------------------"CRLF);
+               "--------------------------------------------\r\n");
     } else {
         sprintf(z, "<HTML><HEAD><TITLE>Index of %s</TITLE></HEAD><BODY>"
                 "<H1>Index of %s</H1><PRE>",
                 uri, uri);
         strcat(z, "Name                      Size      "
-               "Date-Time             Type<HR WIDTH=100%>"CRLF);
+               "Date-Time             Type<HR WIDTH=100%>\r\n");
     }
 
     HTTPWriteBodyChunk(sessionP, z, strlen(z));
@@ -355,9 +355,9 @@ sendDirectoryDocument(TList *      const listP,
         }
 
         if (text)
-            sprintf(z, "%s%s %s    %s   %s"CRLF, z1, p, z3, z2, z4);
+            sprintf(z, "%s%s %s    %s   %s\r\n", z1, p, z3, z2, z4);
         else
-            sprintf(z, "<A HREF=\"%s%s\">%s</A>%s %s    %s   %s"CRLF,
+            sprintf(z, "<A HREF=\"%s%s\">%s</A>%s %s    %s   %s\r\n",
                     fi->name, fi->attrib & A_SUBDIR ? "/" : "",
                     z1, p, z3, z2, z4);
 
@@ -368,7 +368,7 @@ sendDirectoryDocument(TList *      const listP,
     if (text)
         strcpy(z, SERVER_PLAIN_INFO);
     else
-        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>" CRLF CRLF);
+        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>\r\n\r\n");
     
     HTTPWriteBodyChunk(sessionP, z, strlen(z));
 }
@@ -389,13 +389,13 @@ notRecentlyModified(TSession * const sessionP,
         DateDecode(imsHdr, &valid, &datetime);
         if (valid) {
             if (MIN(fileModTime, sessionP->date) <= datetime)
-                retval = TRUE;
+                retval = true;
             else
-                retval = FALSE;
+                retval = false;
         } else
-            retval = FALSE;
+            retval = false;
     } else
-        retval = FALSE;
+        retval = false;
 
     return retval;
 }
@@ -468,7 +468,7 @@ handleDirectory(TSession *   const sessionP,
                                           sessionP->requestInfo.uri, mimeTypeP,
                                           sessionP);
             
-                HTTPWriteEndChunk(sessionP);
+                ResponseWriteEnd(sessionP);
             
                 ListFree(&list);
             }
@@ -486,10 +486,10 @@ composeEntityHeader(const char ** const entityHeaderP,
                     uint64_t      const end,
                     uint64_t      const filesize) {
                          
-    xmlrpc_asprintf(entityHeaderP, "Content-type: %s" CRLF
+    xmlrpc_asprintf(entityHeaderP, "Content-type: %s\r\n" 
                     "Content-range: "
-                    "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64 CRLF
-                    "Content-length: %" PRIu64 CRLF CRLF,
+                    "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64 "\r\n"
+                    "Content-length: %" PRIu64 "\r\n\r\n",
                     mediatype, start, end, filesize, end-start+1);
 }
 
@@ -520,7 +520,7 @@ sendBody(TSession *      const sessionP,
         for (i = 0; i <= sessionP->ranges.size; ++i) {
             ConnWrite(sessionP->connP, "--", 2);
             ConnWrite(sessionP->connP, BOUNDARY, strlen(BOUNDARY));
-            ConnWrite(sessionP->connP, CRLF, 2);
+            ConnWrite(sessionP->connP, "\r\n", 2);
 
             if (i < sessionP->ranges.size) {
                 uint64_t start;
@@ -668,11 +668,11 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
     TFileStat fs;
     bool endingslash;
 
-    endingslash = FALSE;  /* initial value */
+    endingslash = false;  /* initial value */
 
     if (!RequestValidURIPath(sessionP)) {
         ResponseStatus(sessionP, 400);
-        return TRUE;
+        return true;
     }
 
     /* Must check for * (asterisk uri) in the future */
@@ -680,14 +680,14 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
         ResponseAddField(sessionP, "Allow", "GET, HEAD");
         ResponseContentLength(sessionP, 0);
         ResponseStatus(sessionP, 200);
-        return TRUE;
+        return true;
     }
 
     if ((sessionP->requestInfo.method != m_get) &&
         (sessionP->requestInfo.method != m_head)) {
         ResponseAddField(sessionP, "Allow", "GET, HEAD");
         ResponseStatus(sessionP, 405);
-        return TRUE;
+        return true;
     }
 
     strcpy(z, handlerP->filesPath);
@@ -695,7 +695,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
     p = z + strlen(z) - 1;
     if (*p == '/') {
-        endingslash = TRUE;
+        endingslash = true;
         *p = '\0';
     }
 
@@ -703,7 +703,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
     if (!FileStat(z, &fs)) {
         ResponseStatusErrno(sessionP);
-        return TRUE;
+        return true;
     }
 
     if (fs.st_mode & S_IFDIR) {
@@ -718,7 +718,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
             ResponseAddField(sessionP, "Location", z);
             ResponseStatus(sessionP, 302);
             ResponseWriteStart(sessionP);
-            return TRUE;
+            return true;
         }
 
         *p = DIRECTORY_SEPARATOR[0];
@@ -741,13 +741,13 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
         
         if (!FileStat(z, &fs)) {
             ResponseStatusErrno(sessionP);
-            return TRUE;
+            return true;
         }
         handleDirectory(sessionP, z, fs.st_mtime, handlerP->mimeTypeP);
     } else
         handleFile(sessionP, z, fs.st_mtime, handlerP->mimeTypeP);
 
-    return TRUE;
+    return true;
 }
 
 
