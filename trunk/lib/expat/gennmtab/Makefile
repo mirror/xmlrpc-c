@@ -9,8 +9,6 @@ SUBDIR := lib/expat/gennmtab
 
 include $(BLDDIR)/config.mk
 
-LDFLAGS = $(LADD)
-
 INCLUDES = -I$(BLDDIR) -Isrcdir/lib/util/include
 
 default: all
@@ -43,6 +41,6 @@ gennmtab.o:%.o:%.c
 	$(BUILDTOOL_CC) -c $< -o $@ $(CFLAGS_ALL) $(INCLUDES)
 
 gennmtab:%:%.o
-	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS_PERSONAL) $(LDFLAGS) $^
+	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS_ALL) $^
 
 include depend.mk
