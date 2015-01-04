@@ -145,9 +145,9 @@ currentDocumentPosition(Tokenizer * const tokP) {
 
 
 static void
-setParseErr(xmlrpc_env *   const envP,
-            Tokenizer * const tokP,
-            const char *   const format,
+setParseErr(xmlrpc_env * const envP,
+            Tokenizer *  const tokP,
+            const char * const format,
             ...) {
 
     struct docPosition const pos = currentDocumentPosition(tokP);
@@ -175,8 +175,8 @@ setParseErr(xmlrpc_env *   const envP,
 
 
 static void
-finishStringToken(xmlrpc_env *   const envP,
-                  Tokenizer * const tokP) {
+finishStringToken(xmlrpc_env * const envP,
+                  Tokenizer *  const tokP) {
 
     ++tokP->end;
 
@@ -211,7 +211,10 @@ finishStringToken(xmlrpc_env *   const envP,
                 else
                     tokP->end = cur;
             } break;
-
+            case '\0':
+                setParseErr(envP, tokP, "JSON document ends in the middle "
+                            "of a backslash escape sequence");
+                break;
             default:
                 setParseErr(envP, tokP, "unknown escape character "
                             "after backslash: '%c'", *tokP->end);
@@ -222,7 +225,7 @@ finishStringToken(xmlrpc_env *   const envP,
     if (!envP->fault_occurred) {
         if (*tokP->end == '\0')
             setParseErr(envP, tokP, "JSON document ends in the middle "
-                        "of a backslash escape sequence");
+                        "of a string literal");
         else {
             ++tokP->end;
             tokP->size = (tokP->end - tokP->begin) - 1;
@@ -392,8 +395,8 @@ advanceToNextToken(Tokenizer * const tokP) {
 
 
 static void
-getToken(xmlrpc_env *   const envP,
-         Tokenizer * const tokP) {
+getToken(xmlrpc_env * const envP,
+         Tokenizer *  const tokP) {
 
     /* The token starts where the last one left off */
     tokP->begin = tokP->end;
