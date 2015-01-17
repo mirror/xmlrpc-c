@@ -110,6 +110,8 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 # using the libraries we build)
 #-----------------------------------------------------------------------------
 
+SOCKLIB=$(SOCKETLIBOPT)
+
 xmlrpc_abyss.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
@@ -118,7 +120,7 @@ xmlrpc_abyss.pc:
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc_util"                                      >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_abyss"                   >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_abyss $(SOCKLIB)"        >>$@
 	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 # Need this dependency for those who don't use depend.mk.
