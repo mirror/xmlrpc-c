@@ -24,6 +24,12 @@ DEP_SOURCES = *.cpp
 
 LIBXMLRPC_ABYSSPP_MODS = AbyssServer AbyssChanSwitch AbyssEnvironment
 
+ifeq ($(findstring mingw,$(HOST_OS)),mingw)
+  LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchWin
+else
+  LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchUnix
+endif
+
 TARGET_MODS_PP = \
   $(LIBXMLRPC_ABYSSPP_MODS) \
 
