@@ -24,9 +24,7 @@ CFLAGS_LOCAL = $(CFLAGS_NO_INLINE_WARNING)
 
 INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -Isrcdir/include
 
-ifeq ($(MSVCRT),yes)
-  CLIENT_LDLIBS += -lws2_32 -lwsock32 -lpthread
-endif
+CLIENT_LDLIBS += $(SOCKETLIBOPT)
 
 LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -L$(BLDDIR)/src -lxmlrpc_server \
   $(CLIENT_LDLIBS)

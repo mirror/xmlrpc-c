@@ -373,6 +373,10 @@ else
   CFLAGS_NO_INLINE_WARNING =
 endif
 
+# Today, we use make files only on systems that have pthreads (libpthread),
+# so the following is hardcoded.  But it is conceivable that we could later
+# use make files on something that doesn't, like some Windows environment.
+HAVE_PTHREAD = yes
 THREAD_LIBS = -lpthread
 
 # Here are the commands 'make install' uses to install various kinds of files:

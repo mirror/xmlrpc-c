@@ -82,12 +82,9 @@ all: libxmlrpc_abyss.a \
 $(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) \
 	$(LIBXMLRPC_UTIL)
 $(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
-$(ABYSS_SHLIB): LIBDEP = $(LIBXMLRPC_UTIL_LIBDEP)
+$(ABYSS_SHLIB): LIBDEP = $(LIBXMLRPC_UTIL_LIBDEP) $(SOCKETLIBOPT)
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
   $(ABYSS_SHLIB):  LIBDEP += $(THREAD_LIBS)
-endif
-ifeq ($(MSVCRT),yes)
-  $(ABYSS_SHLIB):  LIBDEP += -lws2_32 -lwsock32
 endif
 
 # Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:

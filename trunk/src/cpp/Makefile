@@ -147,7 +147,7 @@ $(LIBXMLRPCPP_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-  -lpthread \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVERPP_SH = $(call shlibfn, libxmlrpc_server++)
 
@@ -164,10 +164,8 @@ $(LIBXMLRPC_SERVERPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVERPP_SH):  LIBDEP += -lpthread
-endif
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVER_ABYSSPP_SH = $(call shlibfn, libxmlrpc_server_abyss++)
 
@@ -190,10 +188,8 @@ $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \
   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVER_ABYSSPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  $(SOCKETLIBOBT) \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVER_CGIPP_SH = $(call shlibfn, libxmlrpc_server_cgi++)
 
@@ -210,10 +206,8 @@ $(LIBXMLRPC_SERVER_CGIPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVER_CGIPP_SH):  LIBDEP += -lpthread
-endif
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVER_PSTREAMPP_SH = $(call shlibfn, libxmlrpc_server_pstream++)
 
@@ -232,10 +226,8 @@ $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVER_PSTREAMPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  $(SOCKETLIBOPT) \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_CLIENTPP_SH = $(call shlibfn, libxmlrpc_client++)
 
@@ -255,10 +247,9 @@ $(LIBXMLRPC_CLIENTPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc_client -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_CLIENTPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+  $(SOCKETLIBOPT) \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_PACKETSOCKET_SH = $(call shlibfn, libxmlrpc_packetsocket)
 
@@ -274,9 +265,8 @@ $(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_PACKETSOCKET_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  $(SOCKETLIBOPT) \
+  $(THREAD_LIBS) \
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o

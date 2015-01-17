@@ -18,7 +18,7 @@ XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 LIBS := 
 
-LIBS += -lpthread
+LIBS += $(THREAD_LIBS)
 
 INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 
