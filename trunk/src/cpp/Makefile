@@ -264,7 +264,7 @@ $(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
   $(SOCKETLIBOPT) \
   $(THREAD_LIBS) \
 
