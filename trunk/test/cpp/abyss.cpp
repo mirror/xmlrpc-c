@@ -17,6 +17,7 @@ using girerr::throwf;
 #include "xmlrpc-c/AbyssServer.hpp"
 #include "xmlrpc-c/AbyssEnvironment.hpp"
 #include "xmlrpc-c/AbyssChanSwitch.hpp"
+#include "xmlrpc-c/AbyssChanSwitchUnix.hpp"
 
 using namespace xmlrpc_c;
 
