@@ -307,6 +307,7 @@ public:
         constrOpt & proxy_userpwd     (std::string  const& arg);
         constrOpt & proxy_type        (xmlrpc_httpproxytype const& arg);
         constrOpt & gssapi_delegation (bool         const& arg);
+        constrOpt & connect_timeout   (unsigned int const& arg);
 
     private:
         struct constrOpt_impl * implP;

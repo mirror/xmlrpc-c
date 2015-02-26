@@ -27,6 +27,53 @@
 #include "curltransaction.h"
 
 
+/* ABOUT LIBCURL AND SIGNALS:
+
+   The Curl library has two timeout functions: one on original connection
+   (including DNS lookup) and another on the individual transactions.  In the
+   original implementation, both use SIGALRM.  But it is a terrible idea for a
+   library to mess with signals, because they are process-global.  In fact, if
+   the program is multithreaded, this can be disastrous as a different thread
+   can receive the signal from the thread that is waiting.  Programs even
+   crash.
+
+   It is easy enough for Curl to time out the transaction without using
+   SIGALRM, and in current implementations it does.  But for the DNS lookup,
+   using the traditional DNS lookup library, SIGALRM is the only way.
+   Therefore, the user must make a choice: have a timeout or have multiple
+   threads.  To reflect that choice, Curl has the CURLOPT_NOSIGNAL setting.
+   When you set that, Curl does the right thing as keeps its hands off the
+   signals, but DNS lookups are indefinite.  If you don't, then the connect
+   timeout (which defaults to 5 minutes and is user-settable) is effective
+   against the DNS lookup, but you had better not have multiple threads.
+
+   For backward compatibilty, the default is to use SIGALRM.  That means
+   single-threaded programs continue to enjoy DNS lookup timeouts even when
+   using new Curl.
+
+   There is an optional way of building the Curl library -- with the ARES
+   library -- that allows the connect timeout to work on the DNS lookup without
+   SIGALRM
+
+   In Xmlrpc-c, we always set CURLOPT_NOSIGNAL, to avoid undefined behavior in
+   multithreaded programs.  This means that if the Curl library was not built
+   for ARES, the DNS lookup will not time out.  For consistency, we also set
+   CURLOPT_CONNECTTIMEOUT to infinite.  That way, users see the same behavior
+   with ARES.
+   
+   It wasn't always this way, Before Xmlrpc-c 1.41, we set CURLOPT_NOSIGNAL
+   only when the user specified the 'timeout' curl transport option, and we
+   never set CURLOPT_CONNECTTIMEOUT.  This means programs that have a nice 5
+   minute (Curl default) DNS lookup timeout with old Xmlrpc-c, (and happen not
+   to have the SIGALRM-related crash problem) have an indefinite wait with
+   current Xmlrpc-c.  This was an unfortunate break to provide a more usable
+   interface to future users.
+
+   For the old Curl that does not have CURLOPT_NOSIGNAL, we fail any attempt
+   to set a timeout (and we provide the user a way to know whether such
+   failure would occur).
+*/
+
 struct curlTransaction {
     /* This is all stuff that really ought to be in a Curl object, but
        the Curl library is a little too simple for that.  So we build
@@ -430,12 +477,29 @@ setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
 #if HAVE_CURL_NOSIGNAL
     unsigned int const timeoutSec = (timeoutMs + 999)/1000;
 
-    curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
+    assert((long)timeoutSec == (int)timeoutSec);
+        /* Calling requirement */
+    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutSec);
+#else
+    /* Caller should not have called us */
+    abort();
+#endif
+}
+
+
+
+static void
+setCurlConnectTimeout(CURL *       const curlSessionP ATTR_UNUSED,
+                      unsigned int const timeoutMs ATTR_UNUSED) {
+
+#if HAVE_CURL_NOSIGNAL
+    unsigned int const timeoutSec = (timeoutMs + 999)/1000;
 
     assert((long)timeoutSec == (int)timeoutSec);
         /* Calling requirement */
     curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutSec);
 #else
+    /* Caller should not have called us */
     abort();
 #endif
 }
@@ -598,6 +662,9 @@ setupCurlSession(xmlrpc_env *               const envP,
        don't exercise any more of libcurl than we have to.
     */
 
+    curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
+        /* See discussion of CURLOPT_NOSIGNAL above */
+
     curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, transP);
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
@@ -699,6 +766,14 @@ setupCurlSession(xmlrpc_env *               const envP,
 
         if (curlSetupP->timeout)
             setCurlTimeout(curlSessionP, curlSetupP->timeout);
+
+        if (curlSetupP->connectTimeout)
+            setCurlConnectTimeout(curlSessionP, curlSetupP->connectTimeout);
+        else
+            curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT, LONG_MAX);
+                /* Some documentation says 0 means indefinite and other says
+                   0 means 5 minutes.  The latter appears to be true.
+                */
 
         if (curlSetupP->gssapiDelegation) {
             bool gotIt;
