@@ -176,7 +176,7 @@ $(LIBXMLRPC_SERVER_ABYSSPP_SH): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
   $(LIBXMLRPC_ABYSS) \
   $(LIBXMLRPC_SERVER_ABYSS) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
-  $(call shlibfn, libxmlrpc_server++) \
+  $(call shliblefn, libxmlrpc_server++) \
   $(LIBXMLRPC_UTILPP) \
   $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC) \

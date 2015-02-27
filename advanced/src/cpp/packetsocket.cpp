@@ -460,9 +460,9 @@ private:
     packetPtr packetAccumP;
         // The receive packet we're currently accumulating; it will join
         // 'readBuffer' when we've received the whole packet (and we've
-        // seen the END escape sequence so we know we've received it all).
+        // seen the END control word so we know we've received it all).
         // If we're not currently accumulating a packet (haven't seen a
-        // PKT escape sequence), this points to nothing.
+        // PKT control word), this points to nothing.
     bool inEscapeSeq;
         // In our trek through the data read from the underlying stream
         // socket, we are after an ESC character and before the end of the
@@ -470,8 +470,8 @@ private:
         // we've seen so far.
     bool inPacket;
         // We're now receiving packet data from the underlying stream
-        // socket.  We've seen a complete PKT escape sequence, but have not
-        // seen a complete END escape sequence since.
+        // socket.  We've seen a complete PKT control word, but have not
+        // seen a complete END control word since.
     struct {
         unsigned char bytes[3];
         size_t len;
@@ -543,6 +543,24 @@ packetSocket_impl::packetSocket_impl(int const sockFd) :
 -----------------------------------------------------------------------------*/
 
 
+static const unsigned char *
+escapePos(const unsigned char * const start,
+          const unsigned char * const end) {
+/*----------------------------------------------------------------------------
+   Return a pointer to the next escape character at or after 'start', but
+   before 'end'.  If there is none, return 'end'.
+-----------------------------------------------------------------------------*/
+    const unsigned char * cursor;
+
+    for (cursor = start; cursor < end; ++cursor) {
+        if (*cursor == ESC)
+            break;
+    }
+    return cursor;
+}
+
+
+
 void
 packetSocket_impl::writeWait(packetPtr const& packetP) const {
 
@@ -550,11 +568,36 @@ packetSocket_impl::writeWait(packetPtr const& packetP) const {
         reinterpret_cast<const unsigned char *>(ESC_STR "PKT"));
     const unsigned char * const packetEnd(
         reinterpret_cast<const unsigned char *>(ESC_STR "END"));
+    const unsigned char * const escapeChar(
+        reinterpret_cast<const unsigned char *>(ESC_STR "ESC"));
 
     this->sock.writeWait(packetStart, 4);
 
-    this->sock.writeWait(packetP->getBytes(), packetP->getLength());
+    const unsigned char * const end(
+        packetP->getBytes() + packetP->getLength());
 
+    const unsigned char * cursor;
+
+    for (cursor = packetP->getBytes(); cursor < end; ) {
+        // Send up to the next escape character in the packet (or end of
+        // packet).
+
+        const unsigned char * const nextEscapePos(escapePos(cursor, end));
+
+        this->sock.writeWait(cursor, nextEscapePos - cursor);
+
+        cursor = nextEscapePos;
+
+        if (cursor == end) {
+            // We didn't find an escape character; we sent everything
+        } else {
+            // We stopped at an escape character.  Send an ESC control word.
+            // for that.
+            this->sock.writeWait(escapeChar, 4);
+
+            cursor += 1;
+        }
+    }
     this->sock.writeWait(packetEnd, 4);
 }
 
@@ -596,7 +639,7 @@ packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
             if (this->inPacket)
                 this->packetAccumP->addData((const unsigned char *)ESC_STR, 1);
             else
-                throwf("ESC control work received outside of a packet");
+                throwf("ESC control word received outside of a packet");
         } else
             throwf("Invalid escape sequence 0x%02x%02x%02x read from "
                    "stream socket under packet socket",
