@@ -15,8 +15,8 @@ include $(BLDDIR)/config.mk
 
 default: all
 
-CFLAGS += $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS += $(LDFLAGS_PERSONAL) $(LADD)
+CFLAGS_ALL = $(CFLAGS_PERSONAL) $(CFLAGS) $(CADD)
+LDFLAGS_ALL = $(LDFLAGS_PERSONAL) $(LDFLAGS) $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
@@ -102,22 +102,22 @@ $(BLDDIR)/examples/cpp:
 	mkdir $@
 
 $(CLIENTPROGS):%:%.o
-	$(CCLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS)
+	$(CCLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS_ALL)
 
 $(SERVERPROGS_CGI):%.cgi:%_cgi.o
-	$(CCLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS)
+	$(CCLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS_ALL)
 
 $(SERVERPROGS_ABYSS):%:%.o
-	$(CCLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS)
+	$(CCLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS_ALL)
 
 $(BASIC_PROGS):%:%.o
-	$(CCLD) -o $@ $^ $(LIBS_BASE) $(LDFLAGS) 
+	$(CCLD) -o $@ $^ $(LIBS_BASE) $(LDFLAGS_ALL)
 
 
 OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
 
 $(OBJECTS):%.o:%.c
-	$(CC) -c $(INCLUDES) $(CFLAGS) $<
+	$(CC) -c $(INCLUDES) $(CFLAGS_ALL) $<
 
 # config.h and xmlrpc_amconfig.h just describe the build environment.
 # We use them so that the example programs will build in users'
