@@ -48,8 +48,8 @@ GCC_CXX_WARNINGS = $(GCC_WARNINGS)  -Wsynth
 # assertion and crash the program if it isn't really true.  You can add
 # -UNDEBUG (in any of various ways) to override this.
 #
-CFLAGS_COMMON = -DNDEBUG
-CXXFLAGS_COMMON = -DNDEBUG
+CFLAGS_COMMON = -DNDEBUG $(CFLAGS_PTHREAD)
+CXXFLAGS_COMMON = -DNDEBUG $(CFLAGS_PTHREAD)
 
 ifeq ($(C_COMPILER_GNU),yes)
   CFLAGS_COMMON += $(GCC_C_WARNINGS) -fno-common -g -O3
@@ -94,7 +94,7 @@ ifneq ($(LADD),)
   LDFLAGS := $(LADD)
 endif
 
-LDFLAGS_ALL = $(LDFLAGS_PERSONAL) $(LDFLAGS)
+LDFLAGS_ALL = $(LDFLAGS_PTHREAD) $(LDFLAGS_PERSONAL) $(LDFLAGS)
 
 ##############################################################################
 #                        STATIC LINK LIBRARY RULES                           #
