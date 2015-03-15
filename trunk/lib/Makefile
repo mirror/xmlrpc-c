@@ -41,7 +41,8 @@ all: $(SUBDIRS:%=%/all)
 # Extra dependencies to make parallel make work in spite of all the submakes
 # (See top level make file for details)
 abyss/all curl_transport/all: $(BLDDIR)/version.h
-abyss/all expat/all: $(LIBXMLRPC_UTIL)
+abyss++/all: abyss/all
+abyss/all expat/all libutil++/all: libutil/all
 
 clean: $(SUBDIRS:%=%/clean) clean-common
 
