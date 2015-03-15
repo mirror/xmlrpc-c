@@ -398,10 +398,10 @@ endif
 
 # Here are the commands 'make install' uses to install various kinds of files:
 
-INSTALL_PROGRAM = $(INSTALL) -c -m 755
-INSTALL_SHLIB = $(INSTALL) -c -m 755
-INSTALL_DATA = $(INSTALL) -c -m 644
-INSTALL_SCRIPT = $(INSTALL) -c -m 755
+INSTALL_PROGRAM ?= $(INSTALL) -c -m 755
+INSTALL_SHLIB   ?= $(INSTALL) -c -m 755
+INSTALL_DATA    ?= $(INSTALL) -c -m 644
+INSTALL_SCRIPT  ?= $(INSTALL) -c -m 755
 
 # Here are the locations at which 'make install' puts files:
 
