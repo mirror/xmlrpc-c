@@ -32,6 +32,7 @@ CLIENTPROGS = \
 
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   ifneq ($(MSVCRT),yes)
+    CLIENTPROGS += curl_client
     CLIENTPROGS += interrupted_client
   endif
 endif
