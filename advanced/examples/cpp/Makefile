@@ -15,8 +15,8 @@ include $(BLDDIR)/config.mk
 
 default: all
 
-CXXFLAGS = $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS += $(LADD)
+CXXFLAGS_ALL = $(CFLAGS_PERSONAL) $(CXX_FLAGS) $(CADD)
+LDFLAGS_ALL = $(LDFLAGS) $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
@@ -76,31 +76,31 @@ LIBS_BASE = \
 all: $(PROGS)
 
 $(SERVERPROGS_CGI):%.cgi:%_cgi.o
-	$(CXXLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_SERVER_CGI) $(LDFLAGS_ALL)
 
 $(SERVERPROGS_ABYSS):%:%.o
-	$(CXXLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_SERVER_ABYSS) $(LDFLAGS_ALL)
 
 $(CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_CLIENT) $(LDFLAGS_ALL)
 
 
 LIBS_PSTREAM_CLIENT = \
   $(shell $(XMLRPC_C_CONFIG) c++2 client --libs)
 
 pstream_client:%:%.o
-	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_CLIENT) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_CLIENT) $(LDFLAGS_ALL)
 
 LIBS_PSTREAM_SERVER = \
   $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --libs)
 
 pstream_inetd_server pstream_serial_server:%:%.o
-	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_SERVER) $(LDFLAGS)
+	$(CXXLD) -o $@ $^ $(LIBS_PSTREAM_SERVER) $(LDFLAGS_ALL)
 
 OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
 
 $(OBJECTS):%.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 # See example/Makefile for an explanation of config.h and xmlrpc_amconfig.h
 

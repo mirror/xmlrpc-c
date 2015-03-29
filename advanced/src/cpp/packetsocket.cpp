@@ -452,6 +452,8 @@ public:
 private:
     socketx sock;
         // The kernel stream socket we use.
+    bool const mustTrace;
+        // We must trace our execution to Standard Error
     bool eof;
         // The packet socket is at end-of-file for reads.
         // 'readBuffer' is empty and there won't be any more data to fill
@@ -501,12 +503,16 @@ private:
 
 
 packetSocket_impl::packetSocket_impl(int const sockFd) :
-    sock(sockFd) {
+    sock(sockFd),
+    mustTrace(getenv("XMLRPC_TRACE_PACKETSOCKET") != NULL) {
 
     this->inEscapeSeq  = false;
     this->inPacket     = false;
     this->escAccum.len = 0;
     this->eof          = false;
+
+    if (this->mustTrace)
+        fprintf(stderr, "Tracing Xmlrpc-c packet socket\n");
 }
 
 
@@ -543,6 +549,23 @@ packetSocket_impl::packetSocket_impl(int const sockFd) :
 -----------------------------------------------------------------------------*/
 
 
+static void
+traceWrite(const unsigned char * const data,
+           size_t                const size) {
+
+    fprintf(stderr, "Sending %u-byte packet\n", (unsigned) size);
+
+    if (size > 0) {
+        fprintf(stderr, "Data: ");
+        for (unsigned int i = 0; i < size; ++i)
+            fprintf(stderr, "%02x", data[i]);
+
+        fprintf(stderr, "\n");
+    }
+}
+
+
+
 static const unsigned char *
 escapePos(const unsigned char * const start,
           const unsigned char * const end) {
@@ -570,6 +593,9 @@ packetSocket_impl::writeWait(packetPtr const& packetP) const {
         reinterpret_cast<const unsigned char *>(ESC_STR "END"));
     const unsigned char * const escapeChar(
         reinterpret_cast<const unsigned char *>(ESC_STR "ESC"));
+
+    if (this->mustTrace)
+        traceWrite(packetP->getBytes(), packetP->getLength());
 
     this->sock.writeWait(packetStart, 4);
 
@@ -603,6 +629,23 @@ packetSocket_impl::writeWait(packetPtr const& packetP) const {
 
 
 
+static void
+traceReceivedPacket(const unsigned char * const data,
+                    size_t                const size) {
+
+    fprintf(stderr, "%u-byte packet received\n", (unsigned) size);
+
+    if (size > 0) {
+        fprintf(stderr, "Data: ");
+        for (unsigned int i = 0; i < size; ++i)
+            fprintf(stderr, "%02x", data[i]);
+
+        fprintf(stderr, "\n");
+    }
+}
+
+
+
 void
 packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
                                      size_t                const length,
@@ -630,6 +673,9 @@ packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
             this->inPacket = true;
         } else if (xmlrpc_memeq(this->escAccum.bytes, "END", 3)) {
             if (this->inPacket) {
+                if (this->mustTrace)
+                    traceReceivedPacket(this->packetAccumP->getBytes(),
+                                        this->packetAccumP->getLength());
                 this->readBuffer.push(this->packetAccumP);
                 this->inPacket = false;
                 this->packetAccumP = packetPtr();
@@ -659,7 +705,13 @@ void
 packetSocket_impl::takeSomePacket(const unsigned char * const buffer,
                                   size_t                const length,
                                   size_t *              const bytesTakenP) {
+/*----------------------------------------------------------------------------
+   Add to the object's packet accumulator the data in 'buffer' (of which there
+   is 'length' bytes) up to the next escape sequence, or the whole buffer if
+   there isn't an escape sequence.
 
+   Return as *bytesTakenP the number of bytes we added to the accumulator.
+-----------------------------------------------------------------------------*/
     assert(!this->inEscapeSeq);
 
     const unsigned char * const escPos(
@@ -733,6 +785,22 @@ packetSocket_impl::processBytesRead(const unsigned char * const buffer,
 
 
 
+static void
+traceBytesRead(const unsigned char * const buffer,
+               size_t                const bytesReadCt) {
+
+    fprintf(stderr, "%u bytes read\n", (unsigned) bytesReadCt);
+
+    fprintf(stderr, "Data: ");
+
+    for (unsigned int i = 0; i < bytesReadCt; ++i)
+        fprintf(stderr, "%02x", buffer[i]);
+
+    fprintf(stderr, "\n");
+}
+
+
+
 void
 packetSocket_impl::readFromFile() {
 /*----------------------------------------------------------------------------
@@ -757,9 +825,13 @@ packetSocket_impl::readFromFile() {
 
         if (!wouldblock) {
             if (bytesRead == 0) {
+                if (this->mustTrace)
+                    fprintf(stderr, "EOF on read\n");
                 this->eof = true;
                 this->verifyNothingAccumulated();
             } else
+                if (this->mustTrace)
+                    traceBytesRead(buffer, bytesRead);
                 this->processBytesRead(buffer, bytesRead);
         }
     }

@@ -695,6 +695,35 @@ getTimeoutParm(xmlrpc_env *                          const envP,
 
 
 static void
+getConnectTimeoutParm(
+    xmlrpc_env *                          const envP,
+    const struct xmlrpc_curl_xportparms * const curlXportParmsP,
+    size_t                                const parmSize,
+    unsigned int *                        const timeoutP) {
+               
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(connect_timeout))
+        *timeoutP = 0;
+    else {
+        if (curlHasNosignal()) {
+            /* libcurl takes a 'long' in milliseconds for the timeout value */
+            if ((unsigned)(long)(curlXportParmsP->connect_timeout) !=
+                curlXportParmsP->connect_timeout)
+                xmlrpc_faultf(envP, "Timeout value %u is too large.",
+                              curlXportParmsP->connect_timeout);
+            else
+                *timeoutP = curlXportParmsP->connect_timeout;
+        } else
+            xmlrpc_faultf(envP, "You cannot specify a "
+                          "'connectTtimeout' parameter "
+                          "because the Curl library is too old and is not "
+                          "capable of doing timeouts except by using "
+                          "signals.  You need at least Curl 7.10");
+    }
+}
+
+
+
+static void
 setVerbose(bool * const verboseP) {
 
     const char * const xmlrpcTraceCurl = getenv("XMLRPC_TRACE_CURL");
@@ -905,6 +934,9 @@ getXportParms(xmlrpc_env *                          const envP,
         curlSetupP->referer = strdup(curlXportParmsP->referer);
 
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
+
+    getConnectTimeoutParm(envP, curlXportParmsP, parmSize,
+                          &curlSetupP->connectTimeout);
 }
 
 

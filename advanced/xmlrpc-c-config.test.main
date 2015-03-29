@@ -71,7 +71,7 @@ while test $# -gt 0; do
         fi
       ;;
     abyss-server)
-      the_libs="${LSOCKET} $the_libs"
+      the_libs="${SOCKETLIBOPT} $the_libs"
       the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       the_libs="${BLDDIR}/src/libxmlrpc_server_abyss.a $the_libs"
@@ -83,7 +83,7 @@ while test $# -gt 0; do
       sopath="${BLDDIR}/lib/abyss/src:$sopath"
       ;;
     pstream-server)
-      the_libs="${LSOCKET} $the_libs"
+      the_libs="${SOCKETLIBOPT} $the_libs"
       the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_pstream++.a $the_libs"
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
@@ -113,7 +113,7 @@ while test $# -gt 0; do
         fi
       ;;
     abyss)
-      the_libs="${LSOCKET} ${LIBXMLRPC_UTIL} -lpthread $the_libs"
+      the_libs="${SOCKETLIBOPT} ${LIBXMLRPC_UTIL} -lpthread $the_libs"
       the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
       sopath="${BLDDIR}/lib/abyss/src:$sopath"
       if test "${needCpp}" = "yes"; then

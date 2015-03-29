@@ -182,7 +182,7 @@ public:
 
       The object also decides and reports whether a particular request is
       appropriate for this object to handle.  An AbyssServer object may have
-      multiple ReqHandler object on which it can call, each specializing in
+      multiple ReqHandler objects on which it can call, each specializing in
       different kinds of requests.
 
       This is an abstract base class.  A derived class knows how to handle,

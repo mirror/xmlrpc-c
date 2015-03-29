@@ -29,7 +29,6 @@ MUST_BUILD_CURL_CLIENT    = @MUST_BUILD_CURL_CLIENT@
 MUST_BUILD_LIBWWW_CLIENT  = @MUST_BUILD_LIBWWW_CLIENT@
 BUILD_TOOLS  = @BUILD_TOOLS@
 BUILD_XMLRPC_PSTREAM  = @BUILD_XMLRPC_PSTREAM@
-LSOCKET = @LSOCKET@
 WININET_LDADD = @WININET_LDADD@
 WININET_LIBDIR = @WININET_LIBDIR@
 CURL_LDADD = @CURL_LDADD@
@@ -346,6 +345,12 @@ ifeq ($(patsubst mingw32%,mingw32,$(HOST_OS)),mingw32)
   MSVCRT = yes
 endif
 
+ifeq ($(patsubst mingw32%,mingw32,$(HOST_OS)),mingw32)
+  SOCKETLIBOPT = -lws2_32 -lwsock32
+else
+  SOCKETLIBOPT = @LSOCKET@
+endif
+
 ##############################################################################
 #                     MISCELLANEOUS
 ##############################################################################
@@ -368,14 +373,35 @@ else
   CFLAGS_NO_INLINE_WARNING =
 endif
 
-THREAD_LIBS = -lpthread
+# Today, we use make files only on systems that have pthreads (libpthread),
+# so the following is hardcoded.  But it is conceivable that we could later
+# use make files on something that doesn't, like some Windows environment.
+HAVE_PTHREAD = yes
+# Much of our code uses pthreads and some code that doesn't use them directly
+# needs them anyway because it uses libraries that are meant to work with othe
+# code that does.  So we build everything with pthread capability.
+#
+# On some systems, that just means we have to link a pthread library.  But
+# on other systems, it is more involved and the compiler and linker have a
+# -pthread option to take care of everything, including linking whatever
+# libraries are required.
+ifeq ($(C_COMPILER_GNU),yes)
+  # We assume the linker is GCC as well.
+  CFLAGS_PTHREAD = -pthread
+  LDFLAGS_PTHREAD = -pthread
+  THREAD_LIBS =
+else
+  CFLAGS_PTHREAD =
+  LDFLAGS_PTHREAD =
+  THREAD_LIBS = -lpthread
+endif
 
 # Here are the commands 'make install' uses to install various kinds of files:
 
-INSTALL_PROGRAM = $(INSTALL) -c -m 755
-INSTALL_SHLIB = $(INSTALL) -c -m 755
-INSTALL_DATA = $(INSTALL) -c -m 644
-INSTALL_SCRIPT = $(INSTALL) -c -m 755
+INSTALL_PROGRAM ?= $(INSTALL) -c -m 755
+INSTALL_SHLIB   ?= $(INSTALL) -c -m 755
+INSTALL_DATA    ?= $(INSTALL) -c -m 644
+INSTALL_SCRIPT  ?= $(INSTALL) -c -m 755
 
 # Here are the locations at which 'make install' puts files:
 

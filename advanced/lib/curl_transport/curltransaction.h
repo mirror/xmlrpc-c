@@ -86,7 +86,10 @@ struct curlSetup {
         /* allow GSSAPI credential delegation */
 
     unsigned int timeout;
-        /* 0 = no Curl timeout.  This is in milliseconds. */
+        /* 0 = no Curl timeout after connect.  This is in milliseconds. */
+
+    unsigned int connectTimeout;
+        /* 0 = no Curl timeout on connect.  This is in milliseconds. */
 
     bool verbose;
 };

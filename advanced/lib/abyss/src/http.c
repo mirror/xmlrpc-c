@@ -1280,11 +1280,11 @@ RequestRead(TSession *    const sessionP,
 
 
 
-char *
+const char *
 RequestHeaderValue(TSession *   const sessionP,
                    const char * const name) {
 
-    return (TableFind(&sessionP->requestHeaderFields, name));
+    return TableValue(&sessionP->requestHeaderFields, name);
 }
 
 
@@ -1362,33 +1362,48 @@ RequestAuth(TSession *   const sessionP,
    session to 'user' so that a future SessionGetRequestInfo can get it.
 -----------------------------------------------------------------------------*/
     bool authorized;
-    char * authHdrPtr;
+    const char * authValue;
 
-    authHdrPtr = RequestHeaderValue(sessionP, "authorization");
-    if (authHdrPtr) {
-        const char * authType;
-        NextToken((const char **)&authHdrPtr);
-        GetTokenConst(&authHdrPtr, &authType);
-        if (authType) {
-            if (xmlrpc_strcaseeq(authType, "basic")) {
-                const char * userPass;
-                char userPassEncoded[80];
+    authValue = RequestHeaderValue(sessionP, "authorization");
+    if (authValue) {
+        char * const valueBuffer = malloc(strlen(authValue));
+            /* A buffer we can mangle as we parse the authorization: value */
 
-                NextToken((const char **)&authHdrPtr);
+        if (!authValue)
+            /* Should return error, but we have no way to do that */
+            authorized = false;
+        else {
+            const char * authType;
+            char * authHdrPtr;
 
-                xmlrpc_asprintf(&userPass, "%s:%s", user, pass);
-                xmlrpc_base64Encode(userPass, userPassEncoded);
-                xmlrpc_strfree(userPass);
+            strcpy(valueBuffer, authValue);
+            authHdrPtr = &valueBuffer[0];
 
-                if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
-                    sessionP->requestInfo.user = xmlrpc_strdupsol(user);
-                    authorized = true;
+            NextToken((const char **)&authHdrPtr);
+            GetTokenConst(&authHdrPtr, &authType);
+            if (authType) {
+                if (xmlrpc_strcaseeq(authType, "basic")) {
+                    const char * userPass;
+                    char userPassEncoded[80];
+    
+                    NextToken((const char **)&authHdrPtr);
+    
+                    xmlrpc_asprintf(&userPass, "%s:%s", user, pass);
+                    xmlrpc_base64Encode(userPass, userPassEncoded);
+                    xmlrpc_strfree(userPass);
+    
+                    if (xmlrpc_streq(authHdrPtr, userPassEncoded)) {
+                        sessionP->requestInfo.user = xmlrpc_strdupsol(user);
+                        authorized = true;
+                    } else
+                        authorized = false;
                 } else
                     authorized = false;
             } else
                 authorized = false;
-        } else
-            authorized = false;
+
+            free(valueBuffer);
+        }
     } else
         authorized = false;
 

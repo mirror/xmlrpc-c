@@ -24,6 +24,12 @@ DEP_SOURCES = *.cpp
 
 LIBXMLRPC_ABYSSPP_MODS = AbyssServer AbyssChanSwitch AbyssEnvironment
 
+ifeq ($(findstring mingw,$(HOST_OS)),mingw)
+  LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchWin
+else
+  LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchUnix
+endif
+
 TARGET_MODS_PP = \
   $(LIBXMLRPC_ABYSSPP_MODS) \
 
@@ -85,10 +91,8 @@ $(LIBXMLRPC_ABYSSPP_SH): LIBDEP = \
    -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
    -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
    -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_ABYSSPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+   $(SOCKETLIBOPT) \
+   $(THREADLIBS) \
 
 libxmlrpc_abyss++.a: $(LIBXMLRPC_ABYSSPP_MODS:%=%.o)
 libxmlrpc_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_ABYSSPP_MODS:%=%.o)

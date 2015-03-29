@@ -465,7 +465,7 @@ void *
 SessionGetDefaultHandlerCtx(TSession * const sessionP);
 
 XMLRPC_ABYSS_EXPORTED
-char *
+const char *
 RequestHeaderValue(TSession *   const sessionP,
                    const char * const name);
 

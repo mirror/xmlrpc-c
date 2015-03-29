@@ -126,14 +126,9 @@ TableAddReplace(TTable *     const t,
                 const char * const name,
                 const char * const value);
 
-bool
-TableFindIndex(TTable *     const t,
-               const char * const name,
-               uint16_t *   const index);
-
-char *
-TableFind(TTable *     const t,
-          const char * const name);
+const char *
+TableValue(TTable *     const tableP,
+           const char * const name);
 
 
 /*********************************************************************

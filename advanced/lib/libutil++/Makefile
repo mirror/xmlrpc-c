@@ -79,11 +79,7 @@ $(LIBXMLRPC_UTILPP_SH): $(LIBXMLRPC_UTILPP_MODS:%=%.osh) \
 $(LIBXMLRPC_UTILPP_SH): LIBOBJECTS = $(LIBXMLRPC_UTILPP_MODS:%=%.osh)
 $(LIBXMLRPC_UTILPP_SH): LIBDEP = \
    -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_UTILPP_SH):  LIBDEP += -lpthread
-endif
+   $(THREADLIBS) \
 
 libxmlrpc_util++.a: $(LIBXMLRPC_UTILPP_MODS:%=%.o)
 libxmlrpc_util++.a: LIBOBJECTS = $(LIBXMLRPC_UTILPP_MODS:%=%.o)

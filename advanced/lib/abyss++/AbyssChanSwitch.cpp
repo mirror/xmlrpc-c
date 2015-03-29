@@ -35,16 +35,4 @@ AbyssChanSwitch::cChanSwitchP() const {
 
 
 
-AbyssChanSwitchUnix::AbyssChanSwitchUnix(unsigned short const listenPortNum) {
-
-    const char * error;
-
-    ChanSwitchUnixCreate(listenPortNum, &this->_cChanSwitchP, &error);
-
-    if (error)
-        throw runtime_error(error);
-}
-
-
-
 }  // namespace

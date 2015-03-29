@@ -29,12 +29,25 @@ STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_util.a
 SHARED_LIBS_TO_BUILD := libxmlrpc_util
 SHARED_LIBS_TO_INSTALL := libxmlrpc_util
 
+ifeq ($(HAVE_PTHREAD),yes)
+  LOCK_PTHREAD = lock_pthread
+else
+  LOCK_PTHREAD =
+endif
+
+ifeq ($(MSVCRT),yes)
+  LOCK_WINDOWS = lock_windows
+else
+  LOCK_WINDOWS =
+endif
+
 TARGET_MODS = \
   asprintf \
   base64 \
   error \
   lock_platform \
-  lock_pthread \
+  $(LOCK_PTHREAD) \
+  $(LOCK_WINDOWS) \
   lock_none \
   make_printable \
   memblock \
@@ -74,10 +87,7 @@ all: libxmlrpc_util.a \
 # Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
 $(UTIL_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
-$(UTIL_SHLIB): LIBDEP += -lpthread
-ifeq ($(MSVCRT), yes)
-    $(UTIL_SHLIB): LIBDEP += -lws2_32 -lwsock32
-endif
+$(UTIL_SHLIB): LIBDEP += $(SOCKET_LIBOPT) $(THREAD_LIBS)
 
 # Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 

@@ -38,11 +38,7 @@ LIBS = \
   $(LIBXMLRPC_UTILPP) \
   $(LIBXMLRPC_UTIL) \
 
-LDLIBS = $(CLIENTPP_LDLIBS) $(CLIENT_LDLIBS)
-
-ifeq ($(MSVCRT),yes)
-  LDLIBS += -lws2_32 -lwsock32 -lpthread
-endif
+LDLIBS = $(CLIENTPP_LDLIBS) $(CLIENT_LDLIBS) $(SOCKETLIBOPT) $(THREAD_LIBS)
 
 xmlrpc_cpp_proxy:  $(OBJECTS) $(LIBS)
 	$(CXXLD) -o $@ $(LDFLAGS_ALL) $(OBJECTS) $(LDLIBS) $(LADD)
