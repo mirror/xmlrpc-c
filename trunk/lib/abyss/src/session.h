@@ -81,7 +81,7 @@ struct _TSession {
 
            Each table item is an HTTP header field.  The Name component of the
            table item is the header field name (it is syntactically valid but
-           not necessarily a defined field name) and the Value comonent is the
+           not necessarily a defined field name) and the Value component is the
            header field value (it is syntactically valid but not necessarily
            semantically valid).
         */
