@@ -351,6 +351,42 @@ AbyssServer::Session::body() {
 
 
 void
+AbyssServer::Session::getHeaderField(string   const& fieldName,
+                                     bool *   const  isPresentP,
+                                     string * const  valueP) const {
+
+    const char * const value = 
+        RequestHeaderValue(this->implP->cSessionP, fieldName.c_str());
+        
+    if (value == NULL)
+        *isPresentP = false;
+    else {
+        *isPresentP = true;
+
+        *valueP = string(value);
+    }
+}
+
+
+
+string const
+AbyssServer::Session::headerFieldValue(string const& fieldName) const {
+
+    bool isPresent;
+    string value;
+
+    this->getHeaderField(fieldName, &isPresent, &value);
+
+    if (isPresent)
+        return value;
+    else
+        throw AbyssServer::Exception(
+            400, string("No '") + fieldName + "' field in header");
+}
+
+
+
+void
 AbyssServer::Session::Impl::startWriteResponse() {
 
     // Note that ResponseWriteStart() assumes no response has been started; it
