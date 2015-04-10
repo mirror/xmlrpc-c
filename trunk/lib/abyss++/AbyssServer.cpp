@@ -124,6 +124,9 @@ private:
     bool requestBodyDelivered;
         // We have delivered the request body to the object user.  (or tried
         // to and failed).
+
+    size_t bodyReadCt;
+        // Number of bytes of the request body the object user has read.
 };
 
 
@@ -133,6 +136,7 @@ AbyssServer::Session::Impl::Impl(TSession* const cSessionP) :
 {
     this->responseStarted = false;
     this->requestBodyDelivered = false;
+    this->bodyReadCt = 0;
 }
 
 
@@ -191,9 +195,16 @@ AbyssServer::Session::Impl::readSomeRequestBody(
     size_t *        const byteCtP) {
 /*-----------------------------------------------------------------------------
    Read some of the request body.  We read up to 'size' bytes, returning as
-   soon as we have at least one byte.  If the client sends an end-of-data
-   indication (possible with chunked transfer encoding only), we return
-   an indication of that instead.
+   soon as we have at least one byte.  If we know there is no more data
+   coming, we send an indication of that instead.
+
+   We know there is no more data coming in one of two ways: With chunked
+   transfer encoding, we know when the client sends an end-of-data indication
+   in the data stream.  Without chunked transfer encoding, we know when the
+   this object has already transferred the full length indicated by the
+   content-size header field, when there is one.  If the client doesn't supply
+   content-size and does not use chunked transfer encoding, we never know the
+   client isn't going to send any more data, so never return *eofP == true.
 
    If the client closes the TCP connection before sending anything, we
    throw an error.
@@ -204,26 +215,34 @@ AbyssServer::Session::Impl::readSomeRequestBody(
    If you call this method and 'body' on the same session, results are
    undefined.
 -----------------------------------------------------------------------------*/
-    const char * piecePtr;
-    size_t pieceLen;
-    abyss_bool eof;
-    const char * error;
-
-    SessionGetBody(this->cSessionP, max, &eof, &piecePtr, &pieceLen, &error);
-
-    if (error) {
-        string const errorMsg(error);
-        xmlrpc_strfree(error);
-        throw girerr::error(errorMsg);
-    }
-
-    if (eof)
+    if (RequestHeaderValue(this->cSessionP, "content-length")
+        && this->contentLength() <= this->bodyReadCt)
         *eofP = true;
     else {
-        *eofP    = false;
-        *byteCtP = pieceLen;
+        const char * piecePtr;
+        size_t pieceLen;
+        abyss_bool eof;
+        const char * error;
 
-        memcpy(buffer, piecePtr, pieceLen);
+        SessionGetBody(this->cSessionP, max,
+                       &eof, &piecePtr, &pieceLen, &error);
+
+        if (error) {
+            string const errorMsg(error);
+            xmlrpc_strfree(error);
+            throw girerr::error(errorMsg);
+        }
+
+        if (eof)
+            *eofP = true;
+        else {
+            this->bodyReadCt += pieceLen;
+
+            *eofP    = false;
+            *byteCtP = pieceLen;
+
+            memcpy(buffer, piecePtr, pieceLen);
+        }
     }
 }
 
@@ -270,7 +289,8 @@ AbyssServer::Session::Impl::readRequestBody(unsigned char * const buffer,
 
             if (eof)
                 throwf("Request body ended early (client sent the chunked "
-                       "transfer end-of-data mark)");
+                       "transfer end-of-data mark "
+                       "or we exhausted content-length)");
         } catch (exception const& e) {
             throwf("Failed to get a piece of the request body.  %s",
                    e.what());
@@ -932,7 +952,14 @@ static void
 cHandleRequest(void *       const handlerPtr,
                TSession *   const cSessionP,
                abyss_bool * const handledP) {
+/*-----------------------------------------------------------------------------
+   This is an HTTP request handler function for the C abyss server.
+   I.e. it translates a call from the C Abyss server to a call to the
+   C++ HTTP request handler method.
 
+   'handlerPtr' is the handle of an Abyss::ReqHandler object; we call that
+   object's 'handleRequest' method.
+-----------------------------------------------------------------------------*/
     AbyssServer::ReqHandler * const reqHandlerP(
         reinterpret_cast<AbyssServer::ReqHandler *>(handlerPtr));
 
