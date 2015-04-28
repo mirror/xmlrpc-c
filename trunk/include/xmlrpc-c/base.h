@@ -327,6 +327,11 @@ xmlrpc_string_new_cr(xmlrpc_env * const envP,
 
 XMLRPC_LIB_EXPORTED
 void
+xmlrpc_string_validate(xmlrpc_env *   const envP,
+                       xmlrpc_value * const valueP);
+
+XMLRPC_LIB_EXPORTED
+void
 xmlrpc_read_string(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    const char **        const stringValueP);

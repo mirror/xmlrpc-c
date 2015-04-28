@@ -513,6 +513,36 @@ test_value_string_cr(void) {
 }
 
 
+
+static void
+test_value_string_ctlchar(void) {
+
+    xmlrpc_env env;
+    xmlrpc_value * vCtl;
+    xmlrpc_value * vNoCtl;
+
+    xmlrpc_env_init(&env);
+    vNoCtl = xmlrpc_string_new(&env, "foo bar");
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_string_validate(&env, vNoCtl);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_env_init(&env);
+    vCtl = xmlrpc_string_new(&env, "foo\x18 bar");
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_string_validate(&env, vCtl);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    xmlrpc_DECREF(vNoCtl);
+    xmlrpc_DECREF(vCtl);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 #if HAVE_UNICODE_WCHAR
 
 /* Here is a 3-character, NUL-terminated string, once in UTF-8 chars,
@@ -1858,6 +1888,7 @@ test_value(void) {
     test_value_string_multiline();
     test_value_string_cr();
     test_value_string_wide();
+    test_value_string_ctlchar();
     test_value_base64();
     test_value_array();
     test_value_array2();
