@@ -224,7 +224,7 @@ wouldBlock() {
 
 
 
-static string
+static string const
 lastErrorDesc() {
 /*----------------------------------------------------------------------------
    A description suitable for an error message of why the most recent
@@ -236,7 +236,7 @@ lastErrorDesc() {
     msg << "winsock error code " << lastError << " "
         << "(" << strerror(lastError) << ")";
 #else
-    msg << "errno = " << errno << ", (" << strerror(errno);
+    msg << "errno = " << errno << ", (" << strerror(errno) << ")";
 #endif
     return msg.str();
 }
