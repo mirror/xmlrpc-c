@@ -32,14 +32,16 @@
 **
 ******************************************************************************/
 
+#include "xmlrpc_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <fcntl.h>
 
-#ifdef _WIN32
+#if MSVCRT
 #include <io.h>
-#endif  /* _WIN32 */
+#endif
 
 #ifdef _UNIX
 #include <signal.h>
