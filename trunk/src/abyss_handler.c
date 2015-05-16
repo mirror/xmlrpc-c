@@ -10,13 +10,6 @@
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
-#ifdef _WIN32
-#  include <io.h>
-#else
-#  include <signal.h>
-#  include <sys/wait.h>
-#  include <grp.h>
-#endif
 
 #include "bool.h"
 #include "int.h"
