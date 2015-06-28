@@ -398,6 +398,10 @@ typedef enum {
 } TMethod;
 
 typedef struct {
+    /* Note that some common or important information from the HTTP request
+       header is in the members of this structure, but all header information
+       is available via the RequestHeaderValue method of Tsession.
+    */
     TMethod method;
     const char * uri;
         /* This is NOT the URI.  It is the pathname part of the URI.

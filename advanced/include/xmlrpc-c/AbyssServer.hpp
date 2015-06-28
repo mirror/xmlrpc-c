@@ -142,6 +142,14 @@ public:
                             size_t *        const byteCtP);
 
         void
+        getHeaderField(std::string   const& fieldName,
+                       bool *        const  isPresentP,
+                       std::string * const  valueP) const;
+
+        std::string const
+        headerFieldValue(std::string const& fieldName) const;
+
+        void
         setRespStatus(unsigned short const statusCode);
 
         void

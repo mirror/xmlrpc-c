@@ -701,6 +701,27 @@ value_string::crlfValue() const {
 
 
 
+void
+value_string::validate() const {
+/*----------------------------------------------------------------------------
+   Throw an error if the value contains non-XML characters, so that if it
+   were serialized into a call or response, it would not be valid XML, and
+   therefore not proper XML-RPC.
+
+   Note that the object must have the ability to have this property (i.e. it
+   is possible to construct an object that fails this validation) because of
+   the poor original specification of XML-RPC.  Some recipients of XML-RPC
+   don't mind it being invalid XML.
+-----------------------------------------------------------------------------*/
+    env_wrap env;
+
+    xmlrpc_string_validate(&env.env_c, this->cValueP);
+
+    throwIfError(env);
+}
+
+
+
 value_string::operator string() const {
 
     this->validateInstantiated();

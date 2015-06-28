@@ -381,6 +381,8 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     /* We assume there is work to do at least every 3 seconds, because
        the Curl multi manager often has retries and other scheduled work
        that doesn't involve file handles on which we can select().
+       One thing that might cause work to do without any file handle becoming
+       ready is Curl timing out a request.
     */
     switch (timeoutType) {
     case timeout_no:

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "bool.h"
 #include "mallocvar.h"
@@ -577,6 +578,48 @@ xmlrpc_read_string_w_lp_old(xmlrpc_env *     const envP,
 
 
 
+void
+xmlrpc_string_validate(xmlrpc_env *   const envP,
+                       xmlrpc_value * const valueP) {
+/*----------------------------------------------------------------------------
+   Validate that *valueP is not the kind of value that would serialize into
+   invalid XML.
+
+   To wit, the string does not contain any characters that are not valid XML
+   characters, which means it does not contain ASCII control characters
+   other than carriage return, line feed, and tab.
+
+   Xmlrpc-c has the odd function, because of mistakes that were made in the
+   early days of XML-RPC, that it is possible to cause it to generate an
+   XML-RPC call or response that is invalid XML, which you do with a string
+   value which contains things other than XML characters.  But it's a really
+   bad idea to exercise that option, so code that constructs string values can
+   use this function to ensure that it does not.  See the discussion of the
+   string data type in the Xmlrpc-c user's guide for a detailed explanation of
+   this issue.
+-----------------------------------------------------------------------------*/
+    enum {LF = 0x0a, CR = 0x0d, TAB = 0x08};
+
+    size_t length;
+    const char * contents;
+
+    accessStringValue(envP, valueP, &length, &contents);
+
+    if (!envP->fault_occurred) {
+        unsigned int i;
+        for (i = 0; i < length && !envP->fault_occurred; ++i) {
+            char const c = contents[i];
+            if (iscntrl(c) && c != LF && c != CR && c != TAB)
+                xmlrpc_faultf(envP, "String contains an invalid value "
+                              "(Not a Unicode codepoint for a legal XML "
+                              "character) x%02x at position %u",
+                              c, i);
+        }
+    }
+}
+
+
+
 static void
 copyLines(xmlrpc_env *       const envP,
           const char *       const src,
@@ -881,4 +924,9 @@ xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
     return valP;
 }
 
+
+
 #endif   /* HAVE_UNICODE_WCHAR */
+
+
+

@@ -185,6 +185,7 @@ curlMulti_addHandle(xmlrpc_env *       const envP,
 }
 
 
+
 void
 curlMulti_removeHandle(curlMulti *       const curlMultiP,
                        CURL *            const curlSessionP) {

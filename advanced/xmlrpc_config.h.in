@@ -121,6 +121,11 @@
 /* MSVCRT means we're using the Microsoft Visual C++ runtime library,
    msvcrt.dll.  Note that there are other DLLs in the suite, but only the
    basic msvcrt.dll comes with Windows.
+
+   _WIN32, defined by the compiler, means we're using som Microsoft C runtime
+   library - it could be either the Microsoft Visual C++ runtime library or an
+   older one.  Note that Xmlrpc-c is not supposed to be buildable with an
+   older one, so we have no use for _WIN32.
 */
 
 #if defined(_MSC_VER)

@@ -224,8 +224,13 @@ serializeUtf8MemBlock(xmlrpc_env *       const envP,
    *inputP contains Unicode characters in UTF-8.
 
    We assume *inputP ends with a NUL character that marks end of
-   string, and we ignore that.  (There might also be NUL characters
-   inside the string, though).
+   string, and we ignore that.
+
+   To the extent that *inputP contains code points that do not represent an
+   XML character (for example, ASCII control characters), we generate a
+   non-XML stream.  But it is important for us to do that, because the
+   unfortunate way in which Xmlrpc-c defines its string type means Caller
+   is actually supposed to generate non-XML output sometimes.
 -----------------------------------------------------------------------------*/
     xmlrpc_mem_block * escapedP;
 

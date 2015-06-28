@@ -282,6 +282,16 @@ public:
         value const string2x(toValue(string("hello world")));
         TEST(string2x.type() == value::TYPE_STRING);
         TEST(static_cast<string>(value_string(string2x)) == "hello world");
+
+        string1.validate();
+
+        value_string badString("hello \x18 there");
+
+        try {
+            badString.validate();
+            TEST_FAILED("'validate' of string containging a control "
+                        "character succeeded");
+        } catch (error const&) {}        
     }
 };
 

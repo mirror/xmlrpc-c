@@ -676,7 +676,7 @@ handleFile(TSession *   const sessionP,
 static void
 convertToNativeFileName(char * const fileName ATTR_UNUSED) {
 
-#ifdef _WIN32
+#if MSVCRT
     char * p;
     p = &fileName[0];
     while (*p) {
@@ -685,7 +685,7 @@ convertToNativeFileName(char * const fileName ATTR_UNUSED) {
 
         ++p;
     }
-#endif  /* _WIN32 */
+#endif
 }
 
 
