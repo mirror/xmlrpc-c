@@ -707,7 +707,9 @@ getConnectTimeoutParm(
         *timeoutP = 0;
     else {
         if (curlHasNosignal()) {
-            /* libcurl takes a 'long' in milliseconds for the timeout value */
+            /* libcurl represents the timeout in milliseconds with a 'long',
+               giving wrong results if it doesn't fit.
+            */
             if ((unsigned)(long)(curlXportParmsP->connect_timeout) !=
                 curlXportParmsP->connect_timeout)
                 xmlrpc_faultf(envP, "Timeout value %u is too large.",
@@ -716,7 +718,7 @@ getConnectTimeoutParm(
                 *timeoutP = curlXportParmsP->connect_timeout;
         } else
             xmlrpc_faultf(envP, "You cannot specify a "
-                          "'connectTtimeout' parameter "
+                          "'connect_timeout' parameter "
                           "because the Curl library is too old and is not "
                           "capable of doing timeouts except by using "
                           "signals.  You need at least Curl 7.10");
