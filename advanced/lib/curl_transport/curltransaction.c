@@ -497,7 +497,7 @@ setCurlConnectTimeout(CURL *       const curlSessionP ATTR_UNUSED,
 
     assert((long)timeoutSec == (int)timeoutSec);
         /* Calling requirement */
-    curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutSec);
+    curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT, (long)timeoutSec);
 #else
     /* Caller should not have called us */
     abort();
@@ -769,10 +769,14 @@ setupCurlSession(xmlrpc_env *               const envP,
 
         if (curlSetupP->connectTimeout)
             setCurlConnectTimeout(curlSessionP, curlSetupP->connectTimeout);
-        else
-            curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT, LONG_MAX);
-                /* Some documentation says 0 means indefinite and other says
-                   0 means 5 minutes.  The latter appears to be true.
+        else 
+            curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT,
+                             LONG_MAX/1000);
+                /* Some documentation says 0 means indefinite and other says 0
+                   means 5 minutes.  The latter appears to be true.  Some
+                   libcurl (e.g. 7.12.2, but not 7.21.0) has an apparent bug
+                   in which anything larger than LONG_MAX/1000 results in an
+                   instantaneous timeout.
                 */
 
         if (curlSetupP->gssapiDelegation) {
@@ -837,6 +841,11 @@ curlTransaction_create(xmlrpc_env *               const envP,
         curlTransactionP->curlSessionP = curlSessionP;
         curlTransactionP->userContextP = userContextP;
         curlTransactionP->progress     = progress;
+
+        /* Curl sometimes neglects to set 'curlError', so we set it here to
+           a value that means no explanation available.
+        */
+        curlTransactionP->curlError[0] = '\0';
 
         curlTransactionP->serverUrl = strdup(serverP->serverUrl);
         if (curlTransactionP->serverUrl == NULL)
