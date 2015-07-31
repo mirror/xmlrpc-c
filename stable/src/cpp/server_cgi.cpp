@@ -344,7 +344,7 @@ serverCgi::processCall() {
 -----------------------------------------------------------------------------*/
     try {
         this->implP->tryToProcessCall();
-    } catch (httpError const e) {
+    } catch (httpError const& e) {
         sendHttpErrorResp(stdout, e);
     }
 }

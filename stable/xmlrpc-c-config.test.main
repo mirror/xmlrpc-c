@@ -52,6 +52,7 @@ while test $# -gt 0; do
       ;;
     c++2)
       needCpp=yes
+      the_libs="${BLDDIR}/lib/libutil++/libxmlrpc_util++.a $the_libs"
       the_libs="${BLDDIR}/src/cpp/lib$LIBXMLRPCPP_NAME.a $the_libs"
       ;;
     server-util)

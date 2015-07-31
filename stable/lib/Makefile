@@ -9,7 +9,7 @@ include $(BLDDIR)/config.mk
 
 # Build up SUBDIRS:
 SUBDIRS = 
-SUBDIRS += util libutil
+SUBDIRS += util libutil libutil++
 ifeq ($(ENABLE_ABYSS_SERVER),yes)
   SUBDIRS += abyss
   ifeq ($(ENABLE_CPLUSPLUS),yes)

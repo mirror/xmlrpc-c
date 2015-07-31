@@ -3,7 +3,7 @@
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
-#include "env_wrap.hpp"
+#include "xmlrpc-c/env_wrap.hpp"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/client.hpp"

@@ -181,6 +181,14 @@ LIBXMLRPC_UTIL           = \
 LIBXMLRPC_UTIL_A         = $(LIBXMLRPC_UTIL_DIR)/libxmlrpc_util.a
 endif
 
+LIBXMLRPC_UTILPP_DIR = $(BLDDIR)/lib/libutil++
+
+ifneq ($(OMIT_LIBXMLRPC_UTILPP_RULE),Y)
+LIBXMLRPC_UTILPP         = \
+  $(call shliblefn, $(LIBXMLRPC_UTILPP_DIR)/libxmlrpc_util++)
+LIBXMLRPC_UTILPP_A       = $(LIBXMLRPC_UTILPP_DIR)/libxmlrpc_util++.a
+endif
+
 ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
 
 LIBXMLRPC              = \
@@ -444,6 +452,10 @@ $(LIBXMLRPC_SERVER_CGI_A): FORCE
 
 $(LIBXMLRPC_UTIL) $(LIBXMLRPC_UTIL_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libutil/Makefile \
+	    $(notdir $@)
+
+$(LIBXMLRPC_UTILPP) $(LIBXMLRPC_UTILPP_A) : FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libutil++/Makefile \
 	    $(notdir $@)
 
 $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLPARSE_A) : FORCE

@@ -1,17 +1,16 @@
 ifeq ($(SRCDIR),)
   updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
-  LIBDIR := $(call updir,$(CURDIR))
-  SRCDIR := $(call updir,$(LIBDIR))
+  srcDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(srcDIR))
   BLDDIR := $(SRCDIR)
 endif
-SUBDIR := lib/abyss++
+SUBDIR := lib/libutil++
 
 include $(BLDDIR)/config.mk
 
 default: all
 
-TARGET_LIB_NAMES_PP = \
-  libxmlrpc_abyss++ \
+TARGET_LIB_NAMES_PP = libxmlrpc_util++
 
 STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
 
@@ -22,12 +21,12 @@ SHARED_LIBS_TO_INSTALL = $(TARGET_LIB_NAMES_PP)
 INCLUDES = $(BASIC_INCLUDES)
 DEP_SOURCES = *.cpp
 
-LIBXMLRPC_ABYSSPP_MODS = AbyssServer AbyssChanSwitch AbyssEnvironment
+LIBXMLRPC_UTILPP_MODS = Lock base64 env_wrap girerr girmem
 
 TARGET_MODS_PP = \
-  $(LIBXMLRPC_ABYSSPP_MODS) \
+  $(LIBXMLRPC_UTILPP_MODS) \
 
-OMIT_ABYSSPP_LIB_RULE = Y
+OMIT_LIBXMLRPC_UTILPP_RULE = Y
 MAJ = 8
   # Major number of shared libraries in this directory
 
@@ -52,14 +51,14 @@ BASIC_INCLUDES = \
 all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBS_PP) \
-  $(TARGET_SHARED_LE_LIBS)
+  $(TARGET_SHARED_LE_LIBS) \
 
 
 #-----------------------------------------------------------------------------
-#  RULE TO LINK LIBRARIES
+#  RULES TO LINK LIBRARIES
 #-----------------------------------------------------------------------------
 
-# The actual rules for this is in common.mk, courtesy of TARGET_LIB_NAMES_PP
+# Rules for these are in common.mk, courtesy of TARGET_LIB_NAMES_PP:
 
 # shlibfn generates e.g. libxmlrpc.so.3.1
 # shliblefn generates e.g. libxmlrpc.so
@@ -69,36 +68,25 @@ all: \
 # Windows and AIX fail without it.  It seems to be a good idea in all cases,
 # as it declares an actual dependency of the shared library.
 
-LIBXMLRPC_ABYSSPP_SH = $(call shlibfn, libxmlrpc_abyss++)
+LIBXMLRPC_UTILPP_SH = $(call shlibfn, libxmlrpc_util++)
 
-$(LIBXMLRPC_ABYSSPP_SH): $(LIBXMLRPC_ABYSSPP_MODS:%=%.osh) \
-  $(LIBXMLRPC_ABYSS) \
-  $(LIBXMLRPC_UTILPP) \
+$(LIBXMLRPC_UTILPP_SH): $(LIBXMLRPC_UTILPP_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
 
-$(LIBXMLRPC_ABYSSPP_SH): LIBOBJECTS = $(LIBXMLRPC_ABYSSPP_MODS:%=%.osh)
-$(LIBXMLRPC_ABYSSPP_SH): LIBDEP = \
-   -L. -Lblddir/src \
-   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
-   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
+$(LIBXMLRPC_UTILPP_SH): LIBOBJECTS = $(LIBXMLRPC_UTILPP_MODS:%=%.osh)
+$(LIBXMLRPC_UTILPP_SH): LIBDEP = \
    -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+   $(THREADLIBS) \
 
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_ABYSSPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
-
-libxmlrpc_abyss++.a: $(LIBXMLRPC_ABYSSPP_MODS:%=%.o)
-libxmlrpc_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_ABYSSPP_MODS:%=%.o)
+libxmlrpc_util++.a: $(LIBXMLRPC_UTILPP_MODS:%=%.o)
+libxmlrpc_util++.a: LIBOBJECTS = $(LIBXMLRPC_UTILPP_MODS:%=%.o)
 
 #-----------------------------------------------------------------------------
-#  RULE TO COMPILE OBJECT MODULES FOR LIBRARY
+#  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
 #-----------------------------------------------------------------------------
 
-# The actual rule for this is in common.mk, courtesy of TARGET_MODS_PP
+# Rules for these are in common.mk, courtesy of TARGET_MODS_PP.
 
-$(LIBXMLRPC_ABYSSPP_MODS:%=%.o) \
-$(LIBXMLRPC_ABYSSPP_MODS:%=%.osh): \
-  INCLUDES = $(BASIC_INCLUDES)
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES
@@ -116,7 +104,6 @@ distclean: clean distclean-local distclean-common
 distclean-local:
 
 .PHONY: dep
-dep: dep-common $(BLDDIR)/transport_config.h
-dep-common: $(BLDDIR)/src/libxmlrpc_client.cflags
+dep: dep-common
 
 include depend.mk

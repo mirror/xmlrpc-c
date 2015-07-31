@@ -10,7 +10,7 @@ using girmem::autoObject;
 using girmem::autoObjectPtr;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
-#include "env_wrap.hpp"
+#include "xmlrpc-c/env_wrap.hpp"
 
 #include "xmlrpc-c/registry.hpp"
 

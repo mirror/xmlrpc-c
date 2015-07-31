@@ -53,8 +53,7 @@ else
     -L$(BLDDIR)/lib/expat/xmltok -lxmlrpc_xmltok
 endif
 
-LIBXMLRPCPP_MODS = \
-  Lock base64 env_wrap fault girerr girmem global outcome param_list value xml
+LIBXMLRPCPP_MODS = fault global outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
 LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
 LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi
@@ -131,11 +130,15 @@ LIBXMLRPCPP_SH = $(call shlibfn, lib$(LIBXMLRPCPP_NAME))
 
 $(LIBXMLRPCPP_SH): $(LIBXMLRPCPP_MODS:%=%.osh) \
   $(LIBXMLRPC) \
-  $(LIBXMLRPC_UTIL)
+  $(LIBXMLRPC_UTILPP) \
+  $(LIBXMLRPC_UTIL) \
+
 $(LIBXMLRPCPP_SH): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
+
 $(LIBXMLRPCPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
   -lpthread
 
@@ -144,6 +147,7 @@ LIBXMLRPC_SERVERPP_SH = $(call shlibfn, libxmlrpc_server++)
 $(LIBXMLRPC_SERVERPP_SH): $(LIBXMLRPC_SERVERPP_MODS:%=%.osh) \
   $(LIBXMLRPC_SERVER) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
+  $(LIBXMLRPC_UTILPP) \
   $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVERPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.osh)
@@ -151,7 +155,9 @@ $(LIBXMLRPC_SERVERPP_SH): LIBDEP = \
   -L. -l$(LIBXMLRPCPP_NAME) \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+
 ifeq ($(MSVCRT),yes)
   $(LIBXMLRPC_SERVERPP_SH):  LIBDEP += -lpthread
 endif
@@ -159,10 +165,12 @@ endif
 LIBXMLRPC_SERVER_ABYSSPP_SH = $(call shlibfn, libxmlrpc_server_abyss++)
 
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_ABYSSPP) \
   $(LIBXMLRPC_ABYSS) \
   $(LIBXMLRPC_SERVER_ABYSS) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
   $(call shliblefn, libxmlrpc_server++) \
+  $(LIBXMLRPC_UTILPP) \
   $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
@@ -171,6 +179,7 @@ $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \
    -Lblddir/src -lxmlrpc_server_abyss -lxmlrpc_server -lxmlrpc \
    $(XML_PARSER_LIBDEP) \
    -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
+   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
    -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
 
 ifeq ($(MSVCRT),yes)
@@ -188,7 +197,9 @@ $(LIBXMLRPC_SERVER_CGIPP_SH): LIBDEP = \
   -L. -lxmlrpc_server++  -l$(LIBXMLRPCPP_NAME) \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
- -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+ -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
+ -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+
 ifeq ($(MSVCRT),yes)
   $(LIBXMLRPC_SERVER_CGIPP_SH):  LIBDEP += -lpthread
 endif
@@ -205,6 +216,7 @@ $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBDEP = \
   -L. -lxmlrpc_server++ -l$(LIBXMLRPCPP_NAME) -lxmlrpc_packetsocket \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
 
 ifeq ($(MSVCRT),yes)
@@ -214,6 +226,7 @@ endif
 LIBXMLRPC_CLIENTPP_SH = $(call shlibfn, libxmlrpc_client++)
 
 $(LIBXMLRPC_CLIENTPP_SH): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_UTILPP) \
   $(LIBXMLRPC_UTIL) \
   $(call shliblefn, libxmlrpc_packetsocket) \
   $(LIBXMLRPC) \
@@ -226,7 +239,9 @@ $(LIBXMLRPC_CLIENTPP_SH): LIBDEP = \
   $(shell cat blddir/src/libxmlrpc_client.ldflags) \
   -Lblddir/src -lxmlrpc_client -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+
 ifeq ($(MSVCRT),yes)
   $(LIBXMLRPC_CLIENTPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
 endif
@@ -240,7 +255,9 @@ $(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = \
   -L. -l$(LIBXMLRPCPP_NAME) \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
-  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util
+  -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+
 ifeq ($(MSVCRT),yes)
   $(LIBXMLRPC_PACKETSOCKET_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
 endif
