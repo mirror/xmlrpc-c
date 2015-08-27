@@ -930,3 +930,50 @@ xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
 
 
 
+xmlrpc_value *
+xmlrpc_string_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP) {
+
+    xmlrpc_value * valP;
+
+    if (valueP->_type != XMLRPC_TYPE_STRING) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not a string.  "
+                                       "It is type #%d", valueP->_type);
+        valP = NULL;
+    } else {
+        xmlrpc_createXmlrpcValue(envP, &valP);
+
+        if (!envP->fault_occurred) {
+            valP->_type = XMLRPC_TYPE_STRING;
+
+            xmlrpc_mem_block_init(envP, &valP->_block,
+                                 xmlrpc_mem_block_size(&valueP->_block));
+
+            if (!envP->fault_occurred) {
+                memcpy(xmlrpc_mem_block_contents(&valP->_block),
+                       xmlrpc_mem_block_contents(&valueP->_block),
+                       xmlrpc_mem_block_size(&valueP->_block));
+            }
+        }
+        if (!envP->fault_occurred) {
+            if (valueP->_wcs_block) {
+                valP->_wcs_block =
+                    xmlrpc_mem_block_new(
+                        envP, 
+                        xmlrpc_mem_block_size(valueP->_wcs_block));
+                
+                if (!envP->fault_occurred) {
+                    memcpy(xmlrpc_mem_block_contents(valP->_wcs_block),
+                           xmlrpc_mem_block_contents(valueP->_wcs_block),
+                           xmlrpc_mem_block_size(valueP->_wcs_block));
+                }
+            } else
+                valP->_wcs_block = NULL;
+        }
+    }
+    return valP;
+}
+
+
+

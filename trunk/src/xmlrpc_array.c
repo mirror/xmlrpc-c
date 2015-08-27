@@ -203,6 +203,54 @@ xmlrpc_array_new(xmlrpc_env * const envP) {
 
 
 
+xmlrpc_value *
+xmlrpc_array_new_value(xmlrpc_env *   const envP,
+                       xmlrpc_value * const valueP) {
+
+    xmlrpc_value * arrayP;
+
+    if (valueP->_type != XMLRPC_TYPE_ARRAY) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not an array.  "
+                                       "It is type #%d", valueP->_type);
+        arrayP = NULL;
+    } else {
+        size_t const size = 
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &valueP->_block);
+
+        xmlrpc_createXmlrpcValue(envP, &arrayP);
+        if (!envP->fault_occurred) {
+            arrayP->_type = XMLRPC_TYPE_ARRAY;
+
+            XMLRPC_MEMBLOCK_INIT(xmlrpc_value*, envP, &arrayP->_block, 0);
+
+            if (envP->fault_occurred)
+                free(arrayP);
+            else {
+                xmlrpc_value ** const srcValuePList =
+                    XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, &valueP->_block);
+                
+                unsigned int i;
+            
+                for (i = 0; i < size && !envP->fault_occurred; ++i) {
+                    xmlrpc_value * const newEltP =
+                        xmlrpc_value_new(envP, srcValuePList[i]);
+                    if (!envP->fault_occurred)
+                        xmlrpc_array_append_item(envP, arrayP, newEltP);
+                }
+                if (envP->fault_occurred)
+                    xmlrpc_destroyArrayContents(arrayP);
+            }
+
+            if (envP->fault_occurred)
+                free(arrayP);
+        }
+    }
+    return arrayP;
+}
+
+
+
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 ** Copyright (C) 2001 by Eric Kidd. All rights reserved.
 **

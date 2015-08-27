@@ -55,6 +55,7 @@ static void
 test_value_int(void) { 
 
     xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
     xmlrpc_int32 i;
 
@@ -87,6 +88,17 @@ test_value_int(void) {
     TEST_NO_FAULT(&env);
     TEST(i == 10);
 
+    v = xmlrpc_int_new(&env, (xmlrpc_int32) 25);
+    TEST_NO_FAULT(&env);
+    v2 = xmlrpc_value_new(&env, v);
+    TEST_NO_FAULT(&env);
+    xmlrpc_DECREF(v);
+    TEST(xmlrpc_value_type(v2) == XMLRPC_TYPE_INT);
+    xmlrpc_read_int(&env, v2, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == 25);
+    xmlrpc_DECREF(v2);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -96,6 +108,7 @@ static void
 test_value_bool(void) {
 
     xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
     xmlrpc_bool b;
 
@@ -122,6 +135,17 @@ test_value_bool(void) {
     TEST_NO_FAULT(&env);
     TEST(!b);
 
+    v = xmlrpc_bool_new(&env, (xmlrpc_bool) 1);
+    TEST_NO_FAULT(&env);
+    v2 = xmlrpc_value_new(&env, v);
+    TEST_NO_FAULT(&env);
+    xmlrpc_DECREF(v);
+    TEST(XMLRPC_TYPE_BOOL == xmlrpc_value_type(v2));
+    xmlrpc_read_bool(&env, v2, &b);
+    TEST_NO_FAULT(&env);
+    TEST(b);
+    xmlrpc_DECREF(v2);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -131,6 +155,7 @@ static void
 test_value_double(void) {
 
     xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
     double d;
 
@@ -154,6 +179,16 @@ test_value_double(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
     TEST(d == 1.0);
+
+    v = xmlrpc_double_new(&env, -3.25);
+    TEST_NO_FAULT(&env);
+    v2 = xmlrpc_value_new(&env, v);
+    xmlrpc_DECREF(v);
+    TEST(XMLRPC_TYPE_DOUBLE == xmlrpc_value_type(v2));
+    xmlrpc_read_double(&env, v2, &d);
+    TEST_NO_FAULT(&env);
+    TEST(d == -3.25);
+    xmlrpc_DECREF(v2);
 
     xmlrpc_env_clean(&env);
 }
@@ -254,6 +289,21 @@ test_value_string_no_null(void) {
 
     xmlrpc_DECREF(v);
 
+    {
+        const char * const simpleAsciiString = "foo";
+        xmlrpc_value * v2;
+        v = xmlrpc_string_new(&env, simpleAsciiString);
+        TEST_NO_FAULT(&env);
+        v2 = xmlrpc_value_new(&env, v);
+        TEST_NO_FAULT(&env);
+        xmlrpc_DECREF(v);
+        TEST(xmlrpc_value_type(v2) == XMLRPC_TYPE_STRING);
+        xmlrpc_read_string(&env, v2, &str);
+        TEST_NO_FAULT(&env);
+        TEST(streq(str, simpleAsciiString));
+        xmlrpc_DECREF(v2);
+        strfree(str);
+    }        
     xmlrpc_env_clean(&env);
 }
 
@@ -659,6 +709,7 @@ test_value_string_wide(void) {
 #if HAVE_UNICODE_WCHAR
     xmlrpc_env env;
     xmlrpc_value * valueP;
+    xmlrpc_value * value2P;
     const wchar_t * wcs;
     size_t len;
 
@@ -761,6 +812,18 @@ test_value_string_wide(void) {
     xmlrpc_read_string_w(&env, valueP, &wcs);
     TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
 
+    value2P = xmlrpc_value_new(&env, valueP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_read_string_w_lp(&env, value2P, &len, &wcs);
+    TEST_NO_FAULT(&env);
+    TEST(wcs != NULL);
+    TEST(len == 4);
+    TEST(wcs[len] == '\0');
+    TEST(wcsneq(wcs, wcs_data, len));
+    free((void*)wcs);
+    xmlrpc_DECREF(value2P);
+
     xmlrpc_DECREF(valueP);
 
     test_value_string_wide_line();
@@ -780,6 +843,7 @@ test_value_base64(void) {
     unsigned char const data2[3] = {'a', '\0', 'b'};
 
     xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
     const unsigned char * data;
     size_t len;
@@ -807,6 +871,19 @@ test_value_base64(void) {
     TEST(len == sizeof(data2));
     TEST(memeq(data, data1, sizeof(data2)));
     free((void *)data);
+
+    v = xmlrpc_base64_new(&env, sizeof(data1), data1);
+    TEST_NO_FAULT(&env);
+    v2 = xmlrpc_value_new(&env, v);
+    TEST_NO_FAULT(&env);
+    xmlrpc_DECREF(v);
+    TEST(XMLRPC_TYPE_BASE64 == xmlrpc_value_type(v2));
+    xmlrpc_read_base64(&env, v2, &len, &data);
+    TEST_NO_FAULT(&env);
+    TEST(memeq(data, data1, sizeof(data1)));
+    TEST(len == sizeof(data1));
+    xmlrpc_DECREF(v2);
+    free((void*)data);
 
     xmlrpc_env_clean(&env);
 }
@@ -843,7 +920,8 @@ test_value_value(void) {
 static void
 test_value_array(void) {
 
-    xmlrpc_value *v;
+    xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
     size_t len;
     xmlrpc_value * itemP;
@@ -869,6 +947,14 @@ test_value_array(void) {
     TEST_NO_FAULT(&env);
     TEST(len == 1);
     xmlrpc_DECREF(itemP);
+
+    v2 = xmlrpc_value_new(&env, v);
+    TEST_NO_FAULT(&env);
+    TEST(XMLRPC_TYPE_ARRAY == xmlrpc_value_type(v));
+    len = xmlrpc_array_size(&env, v);
+    TEST_NO_FAULT(&env);
+    TEST(len == 1);
+    xmlrpc_DECREF(v2);
 
     xmlrpc_DECREF(v);
 
@@ -1118,6 +1204,7 @@ test_value_cptr(void) {
     int destroyConfirmation;
 
     xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
     void * ptr;
     int myObject;
@@ -1149,6 +1236,13 @@ test_value_cptr(void) {
     TEST_NO_FAULT(&env);
     TEST(ptr == (void*) 0x00000017);
 
+    v = xmlrpc_cptr_new(&env, &myObject);
+    TEST_NO_FAULT(&env);
+    v2 = xmlrpc_value_new(&env, v);
+    xmlrpc_DECREF(v);
+    TEST(xmlrpc_value_type(v2) == XMLRPC_TYPE_C_PTR);
+    xmlrpc_DECREF(v2);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -1158,6 +1252,7 @@ static void
 test_value_nil(void) {
 
     xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
@@ -1176,6 +1271,14 @@ test_value_nil(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
 
+    v = xmlrpc_nil_new(&env);
+    TEST_NO_FAULT(&env);
+    v2 = xmlrpc_value_new(&env, v);
+    TEST_NO_FAULT(&env);
+    xmlrpc_DECREF(v);
+    TEST(xmlrpc_value_type(v2) == XMLRPC_TYPE_NIL);
+    xmlrpc_DECREF(v2);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -1185,6 +1288,7 @@ static void
 test_value_i8(void) { 
 
     xmlrpc_value * v;
+    xmlrpc_value * v2;
     xmlrpc_env env;
     xmlrpc_int64 i;
 
@@ -1225,6 +1329,17 @@ test_value_i8(void) {
     TEST_NO_FAULT(&env);
     TEST(i == 10);
 
+    v = xmlrpc_i8_new(&env, (xmlrpc_int64) 25);
+    TEST_NO_FAULT(&env);
+    v2 = xmlrpc_value_new(&env, v);
+    TEST_NO_FAULT(&env);
+    xmlrpc_DECREF(v);
+    TEST(xmlrpc_value_type(v2) == XMLRPC_TYPE_I8);
+    xmlrpc_read_i8(&env, v2, &i);
+    TEST_NO_FAULT(&env);
+    TEST(i == 25);
+    xmlrpc_DECREF(v2);
+
     xmlrpc_env_clean(&env);
 }
 
@@ -1239,7 +1354,8 @@ test_value_type_mismatch(void) {
     char * str;
 
     /* Test for one, simple kind of type mismatch error. We assume that
-    ** if one of these typechecks works, the rest work fine. */
+       if one of these typechecks works, the rest work fine.
+    */
 
     xmlrpc_env_init(&env);
     xmlrpc_env_init(&env2);
@@ -1883,12 +1999,14 @@ test_value(void) {
     test_value_bool();
     test_value_double();
     test_value_datetime();
+    printf("\n  Running string value tests.");
     test_value_string_no_null();
     test_value_string_null();
     test_value_string_multiline();
     test_value_string_cr();
     test_value_string_wide();
     test_value_string_ctlchar();
+    printf("\n  String value tests done.\n");
     test_value_base64();
     test_value_array();
     test_value_array2();

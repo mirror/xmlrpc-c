@@ -2,6 +2,7 @@
 
 #include "xmlrpc_config.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -384,6 +385,44 @@ xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
 
 
 xmlrpc_value *
+xmlrpc_value_new(xmlrpc_env *   const envP,
+                 xmlrpc_value * const sourceValP) {
+
+    switch (sourceValP->_type) {
+    case XMLRPC_TYPE_INT:
+        return xmlrpc_int_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_I8:
+        return xmlrpc_i8_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_BOOL:
+        return xmlrpc_bool_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_DOUBLE:
+        return xmlrpc_double_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_DATETIME:
+        return xmlrpc_datetime_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_STRING:
+        return xmlrpc_string_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_BASE64:
+        return xmlrpc_base64_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_ARRAY:
+        return xmlrpc_array_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_STRUCT:
+        return xmlrpc_struct_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_C_PTR:
+        return xmlrpc_cptr_new_value(envP, sourceValP);
+    case XMLRPC_TYPE_NIL:
+        return xmlrpc_nil_new(envP);
+    case XMLRPC_TYPE_DEAD:
+        xmlrpc_faultf(envP, "Attempt to copy a dead xmlrpc_value");
+        return NULL;
+    }
+    assert(false);  /* All cases are handled above */
+
+    return NULL; /* Quiet compiler warning */
+}
+
+
+
+xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP, 
                xmlrpc_int32 const value) {
 
@@ -396,6 +435,25 @@ xmlrpc_int_new(xmlrpc_env * const envP,
         valP->_value.i = value;
     }
     return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_int_new_value(xmlrpc_env *   const envP,
+                     xmlrpc_value * const valueP) {
+
+    xmlrpc_value * retval;
+
+    if (valueP->_type != XMLRPC_TYPE_INT) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not an integer.  "
+                                       "It is type #%d", valueP->_type);
+        retval = NULL;
+    } else
+        retval = xmlrpc_int_new(envP, valueP->_value.i);
+
+    return retval;
 }
 
 
@@ -418,6 +476,25 @@ xmlrpc_i8_new(xmlrpc_env * const envP,
 
 
 xmlrpc_value *
+xmlrpc_i8_new_value(xmlrpc_env *   const envP,
+                    xmlrpc_value * const valueP) {
+
+    xmlrpc_value * retval;
+
+    if (valueP->_type != XMLRPC_TYPE_I8) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not a 64-bit integer.  "
+                                       "It is type #%d", valueP->_type);
+        retval = NULL;
+    } else
+        retval = xmlrpc_i8_new(envP, valueP->_value.i8);
+
+    return retval;
+}
+
+
+
+xmlrpc_value *
 xmlrpc_bool_new(xmlrpc_env * const envP, 
                 xmlrpc_bool  const value) {
 
@@ -435,6 +512,25 @@ xmlrpc_bool_new(xmlrpc_env * const envP,
 
 
 xmlrpc_value *
+xmlrpc_bool_new_value(xmlrpc_env *   const envP,
+                      xmlrpc_value * const valueP) {
+
+    xmlrpc_value * retval;
+
+    if (valueP->_type != XMLRPC_TYPE_BOOL) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not a boolean.  "
+                                       "It is type #%d", valueP->_type);
+        retval = NULL;
+    } else
+        retval = xmlrpc_bool_new(envP, valueP->_value.b);
+
+    return retval;
+}
+
+
+
+xmlrpc_value *
 xmlrpc_double_new(xmlrpc_env * const envP, 
                   double       const value) {
 
@@ -447,6 +543,26 @@ xmlrpc_double_new(xmlrpc_env * const envP,
         valP->_value.d = value;
     }
     return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_double_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP) {
+
+    xmlrpc_value * retval;
+
+    if (valueP->_type != XMLRPC_TYPE_DOUBLE) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR,
+            "Value is not a floating point number.  "
+            "It is type #%d", valueP->_type);
+        retval = NULL;
+    } else
+        retval = xmlrpc_double_new(envP, valueP->_value.d);
+
+    return retval;
 }
 
 
@@ -473,6 +589,27 @@ xmlrpc_base64_new(xmlrpc_env *          const envP,
             free(valP);
     }
     return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_base64_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP) {
+
+    xmlrpc_value * retval;
+
+    if (valueP->_type != XMLRPC_TYPE_BASE64) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not a datetime.  "
+                                       "It is type #%d", valueP->_type);
+        retval = NULL;
+    } else
+        retval = xmlrpc_base64_new(envP,
+                                   xmlrpc_mem_block_size(&valueP->_block),
+                                   xmlrpc_mem_block_contents(&valueP->_block));
+
+    return retval;
 }
 
 
@@ -507,6 +644,27 @@ xmlrpc_cptr_new_dtor(xmlrpc_env *        const envP,
         valP->_value.cptr.dtorContext = dtorContext;
     }
     return valP;
+}
+
+
+
+xmlrpc_value *
+xmlrpc_cptr_new_value(xmlrpc_env *   const envP,
+                      xmlrpc_value * const valueP) {
+
+    xmlrpc_value * retval;
+
+    if (valueP->_type != XMLRPC_TYPE_C_PTR) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not a C poitner.  "
+                                       "It is type #%d", valueP->_type);
+        retval = NULL;
+    } else
+        retval = xmlrpc_cptr_new_dtor(envP,
+                                      valueP->_value.cptr.objectP,
+                                      valueP->_value.cptr.dtor,
+                                      valueP->_value.cptr.dtorContext);
+    return retval;
 }
 
 

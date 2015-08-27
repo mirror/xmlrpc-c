@@ -12,9 +12,86 @@
 #define KEY_ERROR_BUFFER_SZ (32)
 
 
+
+static uint32_t
+hashStructKey(const char * const key, 
+              size_t       const keyLen) {
+
+    uint32_t hash;
+    size_t i;
+
+    XMLRPC_ASSERT(key != NULL);
+    
+    /* This is the Bernstein hash, optimized for lower case ASCII
+       keys.  Note that the bytes of such a key differ only in their
+       lower 5 bits.
+    */
+    for (hash = 0, i = 0; i < keyLen; ++i)
+        hash = hash + key[i] + (hash << 5);
+
+    return hash;
+}
+
+
+
+static void
+changeMemberValue(xmlrpc_value * const structP,
+                  unsigned int   const mbrIndex,
+                  xmlrpc_value * const newValueP) {
+/*----------------------------------------------------------------------------
+  Change the value of an existing member. (But be careful--the original and
+  new values might be the same object, so watch the order of INCREF and DECREF
+  calls!)
+-----------------------------------------------------------------------------*/
+    _struct_member * const members =
+        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+    _struct_member * const memberP = &members[mbrIndex];
+    xmlrpc_value * const oldValueP = memberP->value;
+
+    /* Juggle our references. */
+    memberP->value = newValueP;
+    xmlrpc_INCREF(memberP->value);
+    xmlrpc_DECREF(oldValueP);
+}
+
+
+
+static void
+addNewMember(xmlrpc_env *   const envP,
+             xmlrpc_value * const structP,
+             xmlrpc_value * const keyvalP,
+             xmlrpc_value * const valueP) {
+/*----------------------------------------------------------------------------
+   Add a new member.  Assume no member already exists with this key.
+-----------------------------------------------------------------------------*/
+    const char * const key =
+        XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+    size_t const keyLen =
+        XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
+
+    _struct_member newMember;
+
+    newMember.keyHash = hashStructKey(key, keyLen);
+    newMember.key     = keyvalP;
+    newMember.value   = valueP;
+
+    XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &structP->_block,
+                           &newMember, 1);
+
+    if (!envP->fault_occurred) {
+        xmlrpc_INCREF(keyvalP);
+        xmlrpc_INCREF(valueP);
+    }
+}
+
+
+
 void
 xmlrpc_destroyStruct(xmlrpc_value * const structP) {
-
+/*----------------------------------------------------------------------------
+   Dispose of the contents of struct *structP (but not the struct value
+   itself).  The value is not valid after this.
+-----------------------------------------------------------------------------*/
     _struct_member * const members = 
         XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
     size_t const size = 
@@ -63,6 +140,66 @@ xmlrpc_struct_new(xmlrpc_env * const envP) {
 
 
 
+xmlrpc_value *
+xmlrpc_struct_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP) {
+
+    xmlrpc_value * structP;
+
+    if (valueP->_type != XMLRPC_TYPE_STRUCT) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not a structure.  "
+                                       "It is type #%d", valueP->_type);
+        structP = NULL;
+    } else {
+        size_t const size = 
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &structP->_block);
+
+        xmlrpc_createXmlrpcValue(envP, &structP);
+        if (!envP->fault_occurred) {
+            structP->_type = XMLRPC_TYPE_STRUCT;
+
+            XMLRPC_MEMBLOCK_INIT(xmlrpc_value*, envP, &structP->_block, 0);
+
+            if (envP->fault_occurred)
+                free(structP);
+            else {
+                _struct_member * const srcMemberList =
+                    XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &valueP->_block);
+                
+                unsigned int i;
+            
+                for (i = 0; i < size && !envP->fault_occurred; ++i) {
+                    const _struct_member * const thisMemberP =
+                        &srcMemberList[i];
+
+                    xmlrpc_value * keyValP =
+                        xmlrpc_string_new_value(envP, thisMemberP->key);
+                    if (!envP->fault_occurred) {
+                        xmlrpc_value * valueP =
+                            xmlrpc_value_new(envP, thisMemberP->value);
+
+                        if (!envP->fault_occurred) {
+                            addNewMember(envP, structP, keyValP, valueP);
+
+                            xmlrpc_DECREF(valueP);
+                        }
+                        xmlrpc_DECREF(keyValP);
+                    }
+                }
+                if (envP->fault_occurred)
+                    xmlrpc_destroyStruct(structP);
+            }
+
+            if (envP->fault_occurred)
+                free(structP);
+        }
+    }
+    return structP;
+}
+
+
+
 /*=========================================================================
 **  xmlrpc_struct_size
 **=========================================================================
@@ -94,27 +231,6 @@ xmlrpc_struct_size(xmlrpc_env *   const envP,
         retval = (int)size;
     }
     return retval;
-}
-
-
-
-static uint32_t
-hashStructKey(const char * const key, 
-              size_t       const keyLen) {
-
-    uint32_t hash;
-    size_t i;
-
-    XMLRPC_ASSERT(key != NULL);
-    
-    /* This is the Bernstein hash, optimized for lower case ASCII
-       keys.  Note that the bytes of such a key differ only in their
-       lower 5 bits.
-    */
-    for (hash = 0, i = 0; i < keyLen; ++i)
-        hash = hash + key[i] + (hash << 5);
-
-    return hash;
 }
 
 
@@ -449,58 +565,6 @@ xmlrpc_struct_set_value_n(xmlrpc_env *    const envP,
             xmlrpc_struct_set_value_v(envP, strctP, keyvalP, valueP);
 
         xmlrpc_DECREF(keyvalP);
-    }
-}
-
-
-
-static void
-changeMemberValue(xmlrpc_value * const structP,
-                  unsigned int   const mbrIndex,
-                  xmlrpc_value * const newValueP) {
-/*----------------------------------------------------------------------------
-  Change the value of an existing member. (But be careful--the original and
-  new values might be the same object, so watch the order of INCREF and DECREF
-  calls!)
------------------------------------------------------------------------------*/
-    _struct_member * const members =
-        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
-    _struct_member * const memberP = &members[mbrIndex];
-    xmlrpc_value * const oldValueP = memberP->value;
-
-    /* Juggle our references. */
-    memberP->value = newValueP;
-    xmlrpc_INCREF(memberP->value);
-    xmlrpc_DECREF(oldValueP);
-}
-
-
-
-static void
-addNewMember(xmlrpc_env *   const envP,
-             xmlrpc_value * const structP,
-             xmlrpc_value * const keyvalP,
-             xmlrpc_value * const valueP) {
-/*----------------------------------------------------------------------------
-   Add a new member.  Assume no member already exists with this key.
------------------------------------------------------------------------------*/
-    const char * const key =
-        XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
-    size_t const keyLen =
-        XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
-
-    _struct_member newMember;
-
-    newMember.keyHash = hashStructKey(key, keyLen);
-    newMember.key     = keyvalP;
-    newMember.value   = valueP;
-
-    XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &structP->_block,
-                           &newMember, 1);
-
-    if (!envP->fault_occurred) {
-        xmlrpc_INCREF(keyvalP);
-        xmlrpc_INCREF(valueP);
     }
 }
 
