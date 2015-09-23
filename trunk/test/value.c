@@ -190,6 +190,15 @@ test_value_double(void) {
     TEST(d == -3.25);
     xmlrpc_DECREF(v2);
 
+    v = xmlrpc_double_new(&env, 1.0/0.0);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    v = xmlrpc_double_new(&env, -1.0/0.0);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
+    v = xmlrpc_double_new(&env, 0.0/0.0);
+    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
+
     xmlrpc_env_clean(&env);
 }
 
