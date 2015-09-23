@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <math.h>
 
 #include "bool.h"
 #include "mallocvar.h"
@@ -536,11 +537,16 @@ xmlrpc_double_new(xmlrpc_env * const envP,
 
     xmlrpc_value * valP;
 
-    xmlrpc_createXmlrpcValue(envP, &valP);
+    if (!finite(value))
+        xmlrpc_faultf(envP, "Value is not a finite number, "
+                      "so cannot be represented in XML-RPC");
+    else {
+        xmlrpc_createXmlrpcValue(envP, &valP);
 
-    if (!envP->fault_occurred) {
-        valP->_type = XMLRPC_TYPE_DOUBLE;
-        valP->_value.d = value;
+        if (!envP->fault_occurred) {
+            valP->_type = XMLRPC_TYPE_DOUBLE;
+            valP->_value.d = value;
+        }
     }
     return valP;
 }
