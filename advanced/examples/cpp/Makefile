@@ -15,8 +15,8 @@ include $(BLDDIR)/config.mk
 
 default: all
 
-CXXFLAGS_ALL = $(CFLAGS_PERSONAL) $(CXX_FLAGS) $(CADD)
-LDFLAGS_ALL = $(LDFLAGS) $(LADD)
+CXXFLAGS_ALL = $(CFLAGS_PERSONAL) $(CXXFLAGS) $(CADD)
+LDFLAGS_ALL = $(LDFLAGS_PERSONAL) $(LDFLAGS) $(LADD)
 
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be

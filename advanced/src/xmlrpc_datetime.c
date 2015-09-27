@@ -641,6 +641,25 @@ xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP,
 
 
 
+xmlrpc_value *
+xmlrpc_datetime_new_value(xmlrpc_env *   const envP,
+                          xmlrpc_value * const valueP) {
+
+    xmlrpc_value * retval;
+
+    if (valueP->_type != XMLRPC_TYPE_DATETIME) {
+        xmlrpc_env_set_fault_formatted(envP, XMLRPC_TYPE_ERROR,
+                                       "Value is not a datetime.  "
+                                       "It is type #%d", valueP->_type);
+        retval = NULL;
+    } else
+        retval = xmlrpc_datetime_new(envP, valueP->_value.dt);
+
+    return retval;
+}
+
+
+
 void
 xmlrpc_destroyDatetime(xmlrpc_value * const datetimeP) {
 

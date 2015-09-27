@@ -634,10 +634,6 @@ setupCurlSession(xmlrpc_env *               const envP,
    Set up the Curl session for the transaction *transP so that
    a subsequent curl_easy_perform() would perform said transaction.
 
-   The data curl_easy_perform() would send for that transaction would 
-   be the contents of *callXmlP; the data curl_easy_perform() gets back
-   would go into *responseXmlP.
-
    *serverInfoP tells what sort of authentication to set up.  This is
    an embarassment, as the xmlrpc_server_info type is part of the
    Xmlrpc-c interface.  Some day, we need to replace this with a type

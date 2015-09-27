@@ -941,6 +941,22 @@ AbyssServer::runOnce() {
 
 
 
+void
+AbyssServer::terminate() {
+
+    ServerTerminate(&this->cServer);
+}
+
+
+
+void
+AbyssServer::resetTerminate() {
+
+    ServerResetTerminate(&this->cServer);
+}
+
+
+
 AbyssServer::~AbyssServer() {
 
     ServerFree(&this->cServer);

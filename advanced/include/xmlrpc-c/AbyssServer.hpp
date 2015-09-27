@@ -227,6 +227,12 @@ public:
     void
     runOnce();
 
+    void
+    terminate();
+
+    void
+    resetTerminate();
+
 private:
     TServer cServer;
 };
