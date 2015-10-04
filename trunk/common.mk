@@ -632,9 +632,9 @@ MANDESTDIR = $(DESTDIR)$(MANINST_DIR)
 INSTALL_MAN_CMD = $(INSTALL_DATA) $$p $(MANDESTDIR)/$$p
 
 install-man: $(MAN_FILES_TO_INSTALL)
-	$(MKINSTALLDIRS) $(MANDESTDIR)
 	@list='$(MAN_FILES_TO_INSTALL)'; \
          for p in $$list; do \
+	   $(MKINSTALLDIRS) $(MANDESTDIR) \
 	   echo "$(INSTALL_MAN_CMD)"; \
 	   $(INSTALL_MAN_CMD); \
 	 done
