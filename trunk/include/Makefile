@@ -95,6 +95,8 @@ ifeq ($(ENABLE_CPLUSPLUS),yes)
     xmlrpc-c/server_abyss.hpp \
     xmlrpc-c/packetsocket.hpp \
     xmlrpc-c/server_pstream.hpp \
+    xmlrpc-c/AbyssServer.hpp \
+    xmlrpc-c/abyss_reqhandler_xmlrpc.hpp \
 
     COMPAT_LINK_CMDS += $(LN_S) xmlrpc-c/oldcppwrapper.hpp XmlRpcCpp.h;
 endif
