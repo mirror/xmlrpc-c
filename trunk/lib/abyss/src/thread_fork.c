@@ -189,6 +189,7 @@ ThreadCreate(TThread **      const threadPP,
                             errno, strerror(errno));
         else if (rc == 0) {
             /* This is the child */
+            free(threadP);
             (*func)(userHandle);
             /* Note that thread cleanup (threadDone) is done by the _parent_,
                upon seeing our exit.
@@ -259,7 +260,7 @@ ThreadExit(TThread * const threadP ATTR_UNUSED,
     /* Note that the OS will automatically send a SIGCHLD signal to
        the parent process after we exit.  The handler for that signal
        will run threadDone in parent's context.  Alternatively, if
-       the parent is set up for signals, the parent will eventually
+       the parent isn't set up for signals, the parent will eventually
        poll for the existence of our PID and call threadDone when he
        sees we've gone.
     */
