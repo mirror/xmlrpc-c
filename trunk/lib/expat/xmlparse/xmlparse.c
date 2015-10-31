@@ -2414,6 +2414,118 @@ cdataSectionProcessor(XML_Parser       const xmlParserP,
 
 
 static void
+doCharacterEntityRef(XML_Parser       const xmlParserP,
+                     const ENCODING * const enc,
+                     const char *     const s,
+                     const char *     const next,
+                     XML_Char         const ch,
+                     enum XML_Error * const errorCodeP,
+                     const char **    const errorP) {
+
+    Parser * const parserP = (Parser *) xmlParserP;
+
+    if (parserP->m_characterDataHandler)
+        parserP->m_characterDataHandler(parserP->m_handlerArg, &ch, 1);
+    else if (parserP->m_defaultHandler)
+        reportDefault(xmlParserP, enc, s, next);
+
+    *errorCodeP = XML_ERROR_NONE;
+    *errorP = NULL;
+}
+
+
+
+static void
+doInternalEntityRef(XML_Parser       const xmlParserP,
+                    const ENCODING * const enc,
+                    const char *     const s,
+                    const char *     const next,
+                    ENTITY *         const entityP,
+                    enum XML_Error * const errorCodeP,
+                    const char **    const errorP) {
+
+    Parser * const parserP = (Parser *) xmlParserP;
+
+    if (parserP->m_defaultHandler &&
+        !parserP->m_defaultExpandInternalEntities) {
+        reportDefault(xmlParserP, enc, s, next);
+        *errorCodeP = XML_ERROR_NONE;
+        *errorP = NULL;
+    } else {
+        OPEN_INTERNAL_ENTITY openEntity;
+
+        entityP->open = 1;  /* recursion control */
+
+        openEntity.next = parserP->m_openInternalEntities;
+
+        parserP->m_openInternalEntities = &openEntity;
+        openEntity.entity = entityP;
+        openEntity.internalEventPtr = 0;
+        openEntity.internalEventEndPtr = 0;
+
+        doContent(xmlParserP,
+                  parserP->m_tagLevel,
+                  parserP->m_internalEncoding,
+                  (char *)entityP->textPtr,
+                  (char *)(entityP->textPtr + entityP->textLen),
+                  0, errorCodeP, errorP);
+
+        entityP->open = 0;  /* recursion control */
+        parserP->m_openInternalEntities = openEntity.next;
+    }
+}
+
+
+
+static void
+doExternalEntityRef(XML_Parser       const xmlParserP,
+                    const ENCODING * const enc,
+                    const char *     const s,
+                    const char *     const next,
+                    ENTITY *         const entityP,
+                    enum XML_Error * const errorCodeP,
+                    const char **    const errorP) {
+
+    Parser * const parserP = (Parser *) xmlParserP;
+
+    *errorP = NULL;
+
+    if (parserP->m_externalEntityRefHandler) {
+        const XML_Char * contextP;
+
+        entityP->open = 1;
+        contextP = getContext(xmlParserP);
+        entityP->open = 0;
+
+        if (!contextP)
+            *errorCodeP = XML_ERROR_NO_MEMORY;
+        else {
+            int rc;
+
+            rc = parserP->m_externalEntityRefHandler(
+                parserP->m_externalEntityRefHandlerArg,
+                contextP,
+                entityP->base,
+                entityP->systemId,
+                entityP->publicId);
+            if (rc != 0)
+                *errorCodeP = XML_ERROR_EXTERNAL_ENTITY_HANDLING;
+            else {
+                poolDiscard(&parserP->m_tempPool);
+                *errorCodeP = XML_ERROR_NONE;
+            }
+        }
+    } else if (parserP->m_defaultHandler) {
+        reportDefault(xmlParserP, enc, s, next);
+    
+        *errorCodeP = XML_ERROR_NONE;
+    } else
+        *errorCodeP = XML_ERROR_NONE;
+}
+
+
+
+static void
 doEntityRef(XML_Parser       const xmlParserP,
             const ENCODING * const enc,
             const char *     const s,
@@ -2421,96 +2533,53 @@ doEntityRef(XML_Parser       const xmlParserP,
             enum XML_Error * const errorCodeP,
             const char **    const errorP) {
             
-    Parser * const parser = (Parser *) xmlParserP;
-
     XML_Char const ch = XmlPredefinedEntityName(enc,
                                                 s + enc->minBytesPerChar,
                                                 next - enc->minBytesPerChar);
-    const XML_Char *name;
-    ENTITY *entity;
-    *errorP = NULL;
 
-    if (ch) {
-        if (characterDataHandler)
-            characterDataHandler(handlerArg, &ch, 1);
-        else if (defaultHandler)
-            reportDefault(xmlParserP, enc, s, next);
-        *errorCodeP = XML_ERROR_NONE;
-        return;
-    }
-    name = poolStoreString(&dtd.pool, enc,
-                           s + enc->minBytesPerChar,
-                           next - enc->minBytesPerChar);
-    if (!name) {
-        *errorCodeP = XML_ERROR_NO_MEMORY;
-        return;
-    }
-    entity = (ENTITY *)lookup(parser, &dtd.generalEntities, name, 0);
-    poolDiscard(&dtd.pool);
-    if (!entity) {
-        if (dtd.complete || dtd.standalone)
-            *errorCodeP = XML_ERROR_UNDEFINED_ENTITY;
-        else {
-            if (defaultHandler)
-                reportDefault(xmlParserP, enc, s, next);
-            *errorCodeP = XML_ERROR_NONE;
+    if (ch)
+        doCharacterEntityRef(xmlParserP, enc, s, next, ch, errorCodeP, errorP);
+    else {
+        Parser * const parserP = (Parser *) xmlParserP;
+
+        const XML_Char * name;
+        ENTITY * entityP;
+
+        *errorP = NULL;
+
+        name = poolStoreString(&parserP->m_dtd.pool, enc,
+                               s + enc->minBytesPerChar,
+                               next - enc->minBytesPerChar);
+        if (!name) {
+            *errorCodeP = XML_ERROR_NO_MEMORY;
+        } else {
+            entityP = (ENTITY *)
+                lookup(parserP, &parserP->m_dtd.generalEntities, name, 0);
+            poolDiscard(&parserP->m_dtd.pool);
+            if (!entityP) {
+                if (parserP->m_dtd.complete || parserP->m_dtd.standalone)
+                    *errorCodeP = XML_ERROR_UNDEFINED_ENTITY;
+                else {
+                    if (parserP->m_defaultHandler)
+                        reportDefault(xmlParserP, enc, s, next);
+                    *errorCodeP = XML_ERROR_NONE;
+                }
+            } else {
+                if (entityP->open)
+                    *errorCodeP = XML_ERROR_RECURSIVE_ENTITY_REF;
+                else if (entityP->notation)
+                    *errorCodeP = XML_ERROR_BINARY_ENTITY_REF;
+                else {
+                    if (entityP->textPtr)
+                        doInternalEntityRef(xmlParserP, enc, s, next, entityP,
+                                            errorCodeP, errorP);
+                    else
+                        doExternalEntityRef(xmlParserP, enc, s, next, entityP,
+                                            errorCodeP, errorP);
+                }
+            }
         }
-        return;
     }
-    if (entity->open) {
-        *errorCodeP = XML_ERROR_RECURSIVE_ENTITY_REF;
-        return;
-    }
-    if (entity->notation) {
-        *errorCodeP = XML_ERROR_BINARY_ENTITY_REF;
-        return;
-    }
-    if (entity) {
-        if (entity->textPtr) {
-            OPEN_INTERNAL_ENTITY openEntity;
-            if (defaultHandler && !defaultExpandInternalEntities) {
-                reportDefault(xmlParserP, enc, s, next);
-                *errorCodeP = XML_ERROR_NONE;
-                return;
-            }
-            entity->open = 1;
-            openEntity.next = openInternalEntities;
-            openInternalEntities = &openEntity;
-            openEntity.entity = entity;
-            openEntity.internalEventPtr = 0;
-            openEntity.internalEventEndPtr = 0;
-            doContent(xmlParserP,
-                      tagLevel,
-                      internalEncoding,
-                      (char *)entity->textPtr,
-                      (char *)(entity->textPtr + entity->textLen),
-                      0, errorCodeP, errorP);
-            entity->open = 0;
-            openInternalEntities = openEntity.next;
-            if (*errorCodeP != XML_ERROR_NONE)
-                return;
-        } else if (externalEntityRefHandler) {
-            const XML_Char *context;
-            entity->open = 1;
-            context = getContext(xmlParserP);
-            entity->open = 0;
-            if (!context) {
-                *errorCodeP = XML_ERROR_NO_MEMORY;
-                return;
-            }
-            if (!externalEntityRefHandler(externalEntityRefHandlerArg,
-                                          context,
-                                          entity->base,
-                                          entity->systemId,
-                                          entity->publicId)) {
-                *errorCodeP = XML_ERROR_EXTERNAL_ENTITY_HANDLING;
-                return;
-            }
-            poolDiscard(&tempPool);
-        } else if (defaultHandler)
-            reportDefault(xmlParserP, enc, s, next);
-    }
-    *errorCodeP = XML_ERROR_NONE;
 }
 
 
