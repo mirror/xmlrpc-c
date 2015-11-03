@@ -20,7 +20,7 @@ $(XMLRPC_MAJOR_RELEASE).$(XMLRPC_MINOR_RELEASE).$(XMLRPC_POINT_RELEASE)
 # fully made.
 .DELETE_ON_ERROR:
 
-GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit \
+GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef \
   -Wno-unknown-pragmas
   # We need -Wwrite-strings after we fix all the missing consts
   #
@@ -30,7 +30,7 @@ GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit \
   # on -Wuninitialized for all the others.
 
 GCC_C_WARNINGS = $(GCC_WARNINGS) \
-  -Wmissing-declarations -Wstrict-prototypes -Wmissing-prototypes
+  -Wmissing-declarations -Wstrict-prototypes -Wmissing-prototypes -Wimplicit
 
 GCC_CXX_WARNINGS = $(GCC_WARNINGS)  -Wsynth
 
