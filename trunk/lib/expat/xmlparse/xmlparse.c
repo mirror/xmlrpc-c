@@ -3482,7 +3482,8 @@ doProlog(XML_Parser       const xmlParserP,
     case XML_ROLE_DOCTYPE_CLOSE:
       if (dtd.complete && hadExternalDoctype) {
         dtd.complete = 0;
-        if (parser->m_paramEntityParsing && externalEntityRefHandler) {
+        if (parser->m_paramEntityParsing != XML_PARAM_ENTITY_PARSING_NEVER
+            && externalEntityRefHandler) {
           ENTITY *entity = (ENTITY *)lookup(parser, &dtd.paramEntities,
                                             externalSubsetName,
                                             0);
@@ -3615,7 +3616,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_DOCTYPE_SYSTEM_ID:
       if (!dtd.standalone
-          && !parser->m_paramEntityParsing
+          && parser->m_paramEntityParsing == XML_PARAM_ENTITY_PARSING_NEVER
           && notStandaloneHandler
           && !notStandaloneHandler(handlerArg)) {
         *errorCodeP = XML_ERROR_NOT_STANDALONE;
@@ -3847,7 +3848,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_PARAM_ENTITY_REF:
     case XML_ROLE_INNER_PARAM_ENTITY_REF:
-      if (parser->m_paramEntityParsing
+      if (parser->m_paramEntityParsing != XML_PARAM_ENTITY_PARSING_NEVER
           && (dtd.complete || role == XML_ROLE_INNER_PARAM_ENTITY_REF)) {
         const XML_Char *name;
         ENTITY *entity;
