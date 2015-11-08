@@ -15,8 +15,10 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/xmlparser.h"
 
-/* Define the contents of our internal structure. */
 struct _xml_element {
+/*----------------------------------------------------------------------------
+   Information about an XML element
+-----------------------------------------------------------------------------*/
     struct _xml_element *_parent;
     char *_name;
     xmlrpc_mem_block _cdata;    /* char */
@@ -53,17 +55,13 @@ xml_term(void) {
 
 
 
-/*=========================================================================
-**  xml_element_new
-**=========================================================================
-**  Create a new xml_element. This routine isn't exported, because the
-**  arguments are implementation-dependent.
-*/
-
 static xml_element *
-xml_element_new (xmlrpc_env * const env,
-                 const char * const name) {
-
+xmlElementNew(xmlrpc_env * const env,
+              const char * const name) {
+/*----------------------------------------------------------------------------
+   A new skeleton element object - ready to be filled in to represent an
+   actual element.
+-----------------------------------------------------------------------------*/
     xml_element *retval;
     int name_valid, cdata_valid, children_valid;
 
@@ -166,18 +164,25 @@ xml_element_name(const xml_element * const elemP) {
 
 
 
-/* The result of this function is NOT VALID until the end_element handler
-** has been called! */
-size_t xml_element_cdata_size (xml_element *elem)
-{
-    XMLRPC_ASSERT_ELEM_OK(elem);
-    return XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &elem->_cdata) - 1;
+size_t
+xml_element_cdata_size (const xml_element * const elemP) {
+/*----------------------------------------------------------------------------
+  The result of this function is NOT VALID until the end_element handler
+  has been called!
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ELEM_OK(elemP);
+
+    return XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &elemP->_cdata) - 1;
 }
 
-char *xml_element_cdata (xml_element *elem)
-{
-    XMLRPC_ASSERT_ELEM_OK(elem);
-    return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &elem->_cdata);
+
+
+const char *
+xml_element_cdata(const xml_element * const elemP) {
+
+    XMLRPC_ASSERT_ELEM_OK(elemP);
+
+    return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(const char, &elemP->_cdata);
 }
 
 
@@ -266,7 +271,7 @@ startElement(void *      const userData,
     if (!contextP->env.fault_occurred) {
         xml_element * elemP;
 
-        elemP = xml_element_new(&contextP->env, name);
+        elemP = xmlElementNew(&contextP->env, name);
         if (!contextP->env.fault_occurred) {
             XMLRPC_ASSERT(elemP != NULL);
 
@@ -370,6 +375,8 @@ createParser(xmlrpc_env *   const envP,
              XML_Parser *   const parserP) {
 /*----------------------------------------------------------------------------
    Create an Expat parser to parse our XML.
+
+   Return the parser handle as *parserP.
 -----------------------------------------------------------------------------*/
     XML_Parser parser;
 
