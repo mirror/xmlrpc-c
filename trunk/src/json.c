@@ -572,12 +572,14 @@ getBackslashSequence(xmlrpc_env *       const envP,
 
 
 static void
-unescapeString(xmlrpc_env *       const envP,
-               const char *       const begin,
-               const char *       const end,
-               xmlrpc_mem_block * const memBlockP) {
+unescapeString(xmlrpc_env *        const envP,
+               const char *        const begin,
+               const char *        const end,
+               xmlrpc_mem_block ** const memBlockPP) {
 
-    XMLRPC_MEMBLOCK_INIT(char, envP, memBlockP, 0);
+    xmlrpc_mem_block * memBlockP;
+
+    memBlockP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
 
     if (!envP->fault_occurred) {
         const char * cur;
@@ -621,8 +623,9 @@ unescapeString(xmlrpc_env *       const envP,
             XMLRPC_MEMBLOCK_APPEND(char, envP, memBlockP, "", 1);
         }
         if (envP->fault_occurred)
-            XMLRPC_MEMBLOCK_CLEAN(char, memBlockP);
+            XMLRPC_MEMBLOCK_FREE(char, memBlockP);
     }
+    *memBlockPP = memBlockP;
 }
 
 
@@ -646,7 +649,7 @@ makeUtf8String(xmlrpc_env * const envP,
         valP->_wcs_block = NULL;
 
         if (!envP->fault_occurred)
-            unescapeString(envP, begin, end, &valP->_block);
+            unescapeString(envP, begin, end, &valP->blockP);
 
         if (envP->fault_occurred)
             xmlrpc_DECREF(valP);
@@ -1156,9 +1159,6 @@ makeJsonString(xmlrpc_env *       const envP,
     /* Copy all characters since the last escaped character to the output */
     if (cur != last)
         XMLRPC_MEMBLOCK_APPEND(char, envP, outP, last, cur - last);
-
-    if (envP->fault_occurred)
-        XMLRPC_MEMBLOCK_CLEAN(char, outP);
 }
 
 
@@ -1408,7 +1408,11 @@ serializeValue(xmlrpc_env *       const envP,
                xmlrpc_value *     const valP,
                unsigned int       const level,
                xmlrpc_mem_block * const outP) {
+/*----------------------------------------------------------------------------
+   Generate JSON to represent the value *valP.  Append it to *outP.
 
+   The JSON consists of lines of text.  Indent them 'level' levels.
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
 
     indent(envP, level, outP);
@@ -1474,6 +1478,8 @@ void
 xmlrpc_serialize_json(xmlrpc_env *       const envP,
                       xmlrpc_value *     const valP,
                       xmlrpc_mem_block * const outP) {
-
+/*----------------------------------------------------------------------------
+   Generate JSON to represent the value *valP.  Append it to *outP.
+-----------------------------------------------------------------------------*/
     serializeValue(envP, valP, 0, outP);
 }

@@ -140,7 +140,6 @@ testMemBlock(void) {
     xmlrpc_mem_block * blockP;
 
     xmlrpc_mem_block * typedHeapBlockP;
-    xmlrpc_mem_block typedAutoBlockP;
     void ** typedContents;
 
     xmlrpc_env_init(&env);
@@ -203,11 +202,6 @@ testMemBlock(void) {
 
     /* Test cleanup code (with help from memprof). */
     XMLRPC_TYPED_MEM_BLOCK_FREE(void*, typedHeapBlockP);
-
-    /* Test _INIT and _CLEAN for stack-based memory blocks. */
-    XMLRPC_TYPED_MEM_BLOCK_INIT(void*, &env, &typedAutoBlockP, 30);
-    TEST(XMLRPC_TYPED_MEM_BLOCK_SIZE(void*, &typedAutoBlockP) == 30);
-    XMLRPC_TYPED_MEM_BLOCK_CLEAN(void*, &typedAutoBlockP);
 
     /* Test xmlrpc_mem_block_append. */
     blockP = XMLRPC_TYPED_MEM_BLOCK_NEW(int, &env, 5);

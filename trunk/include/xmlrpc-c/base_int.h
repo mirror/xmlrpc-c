@@ -77,7 +77,7 @@ struct _xmlrpc_value {
 
        For base64, this is bytes of the byte string, directly.
     */
-    xmlrpc_mem_block _block;
+    xmlrpc_mem_block * blockP;
 
     xmlrpc_mem_block *_wcs_block;
         /* This is a copy of the string value in _block, but in UTF-16

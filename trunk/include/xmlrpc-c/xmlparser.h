@@ -43,8 +43,11 @@ xml_element_name(const xml_element * const elemP);
 ** The value returned by xml_element_cdata should be '\0'-terminated
 ** (although it may contain other '\0' characters internally).
 ** xml_element_cdata_size should not include the final '\0'. */
-size_t xml_element_cdata_size (xml_element *elem);
-char *xml_element_cdata (xml_element *elem);
+size_t
+xml_element_cdata_size(const xml_element * const elemP);
+
+const char *
+xml_element_cdata(const xml_element * const elemP);
 
 /* Return the xml_element's child elements. Do not free this pointer! */
 size_t

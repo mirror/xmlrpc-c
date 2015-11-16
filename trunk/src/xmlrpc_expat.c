@@ -12,6 +12,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/xmlparser.h"
 
@@ -19,10 +20,10 @@ struct _xml_element {
 /*----------------------------------------------------------------------------
    Information about an XML element
 -----------------------------------------------------------------------------*/
-    struct _xml_element *_parent;
-    char *_name;
-    xmlrpc_mem_block _cdata;    /* char */
-    xmlrpc_mem_block _children; /* xml_element* */
+    struct _xml_element * parentP;
+    const char * name;
+    xmlrpc_mem_block * cdataP;    /* char */
+    xmlrpc_mem_block * childrenP; /* xml_element* */
 };
 
 /* Check that we're using expat in UTF-8 mode, not wchar_t mode.
@@ -37,7 +38,7 @@ struct _xml_element {
 */
 
 #define XMLRPC_ASSERT_ELEM_OK(elem) \
-    XMLRPC_ASSERT((elem) != NULL && (elem)->_name != XMLRPC_BAD_POINTER)
+    XMLRPC_ASSERT((elem) != NULL && (elem)->name != XMLRPC_BAD_POINTER)
 
 
 void
@@ -56,16 +57,16 @@ xml_term(void) {
 
 
 static xml_element *
-xmlElementNew(xmlrpc_env * const env,
+xmlElementNew(xmlrpc_env * const envP,
               const char * const name) {
 /*----------------------------------------------------------------------------
    A new skeleton element object - ready to be filled in to represent an
    actual element.
 -----------------------------------------------------------------------------*/
-    xml_element *retval;
+    xml_element * retval;
     int name_valid, cdata_valid, children_valid;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(name != NULL);
 
     /* Set up our error-handling preconditions. */
@@ -74,38 +75,35 @@ xmlElementNew(xmlrpc_env * const env,
 
     /* Allocate our xml_element structure. */
     retval = (xml_element*) malloc(sizeof(xml_element));
-    XMLRPC_FAIL_IF_NULL(retval, env, XMLRPC_INTERNAL_ERROR,
+    XMLRPC_FAIL_IF_NULL(retval, envP, XMLRPC_INTERNAL_ERROR,
                         "Couldn't allocate memory for XML element");
 
     /* Set our parent field to NULL. */
-    retval->_parent = NULL;
-    
+    retval->parentP = NULL;
+
     /* Copy over the element name. */
-    retval->_name = (char*) malloc(strlen(name) + 1);
-    XMLRPC_FAIL_IF_NULL(retval->_name, env, XMLRPC_INTERNAL_ERROR,
+    retval->name = xmlrpc_strdupnull(name);
+    XMLRPC_FAIL_IF_NULL(retval->name, envP, XMLRPC_INTERNAL_ERROR,
                         "Couldn't allocate memory for XML element");
     name_valid = 1;
-    strcpy(retval->_name, name);
 
-    /* Initialize a block to hold our CDATA. */
-    XMLRPC_TYPED_MEM_BLOCK_INIT(char, env, &retval->_cdata, 0);
-    XMLRPC_FAIL_IF_FAULT(env);
+    retval->cdataP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
+    XMLRPC_FAIL_IF_FAULT(envP);
     cdata_valid = 1;
 
-    /* Initialize a block to hold our child elements. */
-    XMLRPC_TYPED_MEM_BLOCK_INIT(xml_element*, env, &retval->_children, 0);
-    XMLRPC_FAIL_IF_FAULT(env);
+    retval->childrenP = XMLRPC_MEMBLOCK_NEW(xml_element *, envP, 0);
+    XMLRPC_FAIL_IF_FAULT(envP);
     children_valid = 1;
 
  cleanup:
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         if (retval) {
             if (name_valid)
-                free(retval->_name);
+                xmlrpc_strfree(retval->name);
             if (cdata_valid)
-                xmlrpc_mem_block_clean(&retval->_cdata);
+                XMLRPC_MEMBLOCK_FREE(char, retval->cdataP);
             if (children_valid)
-                xmlrpc_mem_block_clean(&retval->_children);
+                XMLRPC_MEMBLOCK_FREE(xml_element *, retval->childrenP);
             free(retval);
         }
         return NULL;
@@ -129,18 +127,19 @@ xml_element_free(xml_element * const elemP) {
 
     XMLRPC_ASSERT_ELEM_OK(elemP);
 
-    free(elemP->_name);
-    elemP->_name = XMLRPC_BAD_POINTER;
-    XMLRPC_MEMBLOCK_CLEAN(xml_element *, &elemP->_cdata);
+    xmlrpc_strfree(elemP->name);
+    elemP->name = XMLRPC_BAD_POINTER;
+
+    XMLRPC_MEMBLOCK_FREE(char, elemP->cdataP);
 
     /* Deallocate all of our children recursively. */
-    childrenP = &elemP->_children;
+    childrenP = elemP->childrenP;
     contents = XMLRPC_MEMBLOCK_CONTENTS(xml_element *, childrenP);
     size = XMLRPC_MEMBLOCK_SIZE(xml_element *, childrenP);
     for (i = 0; i < size; ++i)
         xml_element_free(contents[i]);
 
-    XMLRPC_MEMBLOCK_CLEAN(xml_element *, &elemP->_children);
+    XMLRPC_MEMBLOCK_FREE(xml_element *, elemP->childrenP);
 
     free(elemP);
 }
@@ -159,7 +158,8 @@ const char *
 xml_element_name(const xml_element * const elemP) {
 
     XMLRPC_ASSERT_ELEM_OK(elemP);
-    return elemP->_name;
+
+    return elemP->name;
 }
 
 
@@ -172,7 +172,7 @@ xml_element_cdata_size (const xml_element * const elemP) {
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ELEM_OK(elemP);
 
-    return XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &elemP->_cdata) - 1;
+    return XMLRPC_MEMBLOCK_SIZE(char, elemP->cdataP) - 1;
 }
 
 
@@ -182,15 +182,17 @@ xml_element_cdata(const xml_element * const elemP) {
 
     XMLRPC_ASSERT_ELEM_OK(elemP);
 
-    return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(const char, &elemP->_cdata);
+    return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(const char, elemP->cdataP);
 }
 
 
 
 size_t
 xml_element_children_size(const xml_element * const elemP) {
+
     XMLRPC_ASSERT_ELEM_OK(elemP);
-    return XMLRPC_TYPED_MEM_BLOCK_SIZE(xml_element *, &elemP->_children);
+
+    return XMLRPC_MEMBLOCK_SIZE(xml_element *, elemP->childrenP);
 }
 
 
@@ -198,65 +200,64 @@ xml_element_children_size(const xml_element * const elemP) {
 xml_element **
 xml_element_children(const xml_element * const elemP) {
     XMLRPC_ASSERT_ELEM_OK(elemP);
-    return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xml_element *, &elemP->_children);
+    return XMLRPC_MEMBLOCK_CONTENTS(xml_element *, elemP->childrenP);
 }
 
 
 
-/*=========================================================================
-**  Internal xml_element Utility Functions
-**=========================================================================
-*/
+/*=============================================================================
+  Internal xml_element Utility Functions
+=============================================================================*/
 
-static void xml_element_append_cdata (xmlrpc_env *env,
-                                      xml_element *elem,
-                                      char *cdata,
-                                      size_t size)
-{
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_ELEM_OK(elem);    
+static void
+xml_element_append_cdata(xmlrpc_env *  const envP,
+                         xml_element * const elemP,
+                         const char *  const cdata,
+                         size_t        const size) {
 
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, &elem->_cdata, cdata, size);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_ELEM_OK(elemP);
+
+    XMLRPC_MEMBLOCK_APPEND(char, envP, elemP->cdataP, cdata, size);
 }
 
-/* Whether or not this function succeeds, it takes ownership of the 'child'
-** argument.
-** WARNING - This is the exact opposite of the usual memory ownership
-** rules for xmlrpc_value! So please pay attention. */
-static void xml_element_append_child (xmlrpc_env *env,
-                                      xml_element *elem,
-                                      xml_element *child)
-{
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_ELEM_OK(elem);
-    XMLRPC_ASSERT_ELEM_OK(child);
-    XMLRPC_ASSERT(child->_parent == NULL);
 
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(xml_element*, env, &elem->_children,
-                                  &child, 1);
-    if (!env->fault_occurred)
-        child->_parent = elem;
+
+static void
+xml_element_append_child(xmlrpc_env *  const envP,
+                         xml_element * const elemP,
+                         xml_element * const childP) {
+/*----------------------------------------------------------------------------
+  Whether or not this function succeeds, it takes ownership of *childP.
+-----------------------------------------------------------------------------*/
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_ELEM_OK(elemP);
+    XMLRPC_ASSERT_ELEM_OK(childP);
+    XMLRPC_ASSERT(childP->parentP == NULL);
+
+    XMLRPC_MEMBLOCK_APPEND(xml_element *, envP, elemP->childrenP, &childP, 1);
+    if (!envP->fault_occurred)
+        childP->parentP = elemP;
     else
-        xml_element_free(child);
+        xml_element_free(childP);
 }
 
 
-/*=========================================================================
-**  Our parse context. We pass this around as expat user data.
-**=========================================================================
-*/
 
 typedef struct {
+/*----------------------------------------------------------------------------
+   Our parse context. We pass this around as expat user data.
+-----------------------------------------------------------------------------*/
     xmlrpc_env env;
     xml_element * rootP;
     xml_element * currentP;
 } parseContext;
 
 
-/*=========================================================================
-**  Expat Event Handler Functions
-**=========================================================================
-*/
+
+/*=============================================================================
+  Expat Event Handler Functions
+=============================================================================*/
 
 static void
 startElement(void *      const userData,
@@ -319,15 +320,15 @@ endElement(void *     const userData,
 
     if (!contextP->env.fault_occurred) {
         /* I think Expat enforces these facts: */
-        XMLRPC_ASSERT(xmlrpc_streq(name, contextP->currentP->_name));
-        XMLRPC_ASSERT(contextP->currentP->_parent != NULL ||
+        XMLRPC_ASSERT(xmlrpc_streq(name, contextP->currentP->name));
+        XMLRPC_ASSERT(contextP->currentP->parentP != NULL ||
                       contextP->currentP == contextP->rootP);
 
         /* Add a trailing NUL to our cdata. */
         xml_element_append_cdata(&contextP->env, contextP->currentP, "\0", 1);
         if (!contextP->env.fault_occurred)
             /* Pop our "stack" of elements. */
-            contextP->currentP = contextP->currentP->_parent;
+            contextP->currentP = contextP->currentP->parentP;
 
         if (contextP->env.fault_occurred) {
             /* Having changed *contextP to reflect failure, we are responsible

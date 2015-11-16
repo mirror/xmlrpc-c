@@ -235,32 +235,20 @@ xmlrpc_faultf(xmlrpc_env * const envP,
 **=========================================================================
 **  A resizable chunk of memory. This is mostly used internally, but it is
 **  also used by the public API in a few places.
-**  The struct fields are private!
 */
 
-typedef struct _xmlrpc_mem_block {
-    size_t _size;
-    size_t _allocated;
-    void*  _block;
-} xmlrpc_mem_block;
+typedef struct _xmlrpc_mem_block xmlrpc_mem_block;
 
 /* Allocate a new xmlrpc_mem_block. */
 XMLRPC_UTIL_EXPORTED
-xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* const env, size_t const size);
+xmlrpc_mem_block *
+xmlrpc_mem_block_new(xmlrpc_env * const envP,
+                     size_t       const size);
 
 /* Destroy an existing xmlrpc_mem_block, and everything it contains. */
 XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_free (xmlrpc_mem_block* const block);
-
-/* Initialize the contents of the provided xmlrpc_mem_block. */
-XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_init
-    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
-
-/* Deallocate the contents of the provided xmlrpc_mem_block, but not the
-** block itself. */
-XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_clean (xmlrpc_mem_block* const block);
+void
+xmlrpc_mem_block_free(xmlrpc_mem_block * const blockP);
 
 /* Get the size and contents of the xmlrpc_mem_block. */
 XMLRPC_UTIL_EXPORTED
@@ -279,17 +267,15 @@ void xmlrpc_mem_block_resize
 
 /* Append data to an existing xmlrpc_mem_block. */
 XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_append
-    (xmlrpc_env* const env, xmlrpc_mem_block* const block, const void * const data, size_t const len);
+void xmlrpc_mem_block_append(xmlrpc_env *       const envP,
+                             xmlrpc_mem_block * const blockP,
+                             const void *       const data,
+                             size_t             const len);
 
 #define XMLRPC_MEMBLOCK_NEW(type,env,size) \
     xmlrpc_mem_block_new((env), sizeof(type) * (size))
 #define XMLRPC_MEMBLOCK_FREE(type,block) \
     xmlrpc_mem_block_free(block)
-#define XMLRPC_MEMBLOCK_INIT(type,env,block,size) \
-    xmlrpc_mem_block_init((env), (block), sizeof(type) * (size))
-#define XMLRPC_MEMBLOCK_CLEAN(type,block) \
-    xmlrpc_mem_block_clean(block)
 #define XMLRPC_MEMBLOCK_SIZE(type,block) \
     (xmlrpc_mem_block_size(block) / sizeof(type))
 #define XMLRPC_MEMBLOCK_CONTENTS(type,block) \
@@ -307,10 +293,6 @@ void xmlrpc_mem_block_append
     XMLRPC_MEMBLOCK_NEW(type,env,size)
 #define XMLRPC_TYPED_MEM_BLOCK_FREE(type,block) \
     XMLRPC_MEMBLOCK_FREE(type,block)
-#define XMLRPC_TYPED_MEM_BLOCK_INIT(type,env,block,size) \
-    XMLRPC_MEMBLOCK_INIT(type,env,block,size)
-#define XMLRPC_TYPED_MEM_BLOCK_CLEAN(type,block) \
-    XMLRPC_MEMBLOCK_CLEAN(type,block)
 #define XMLRPC_TYPED_MEM_BLOCK_SIZE(type,block) \
     XMLRPC_MEMBLOCK_SIZE(type,block)
 #define XMLRPC_TYPED_MEM_BLOCK_CONTENTS(type,block) \

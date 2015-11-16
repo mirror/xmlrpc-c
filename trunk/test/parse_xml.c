@@ -18,7 +18,7 @@ static void test_expat (void)
 {
     xmlrpc_env env;
     xml_element *elem, *array, *data, *value1, *i4;
-    char *cdata;
+    const char *cdata;
     size_t size;
 
     xmlrpc_env_init(&env);

@@ -25,43 +25,11 @@ static bool const tracingMemory =
 
 
 
-void
-xmlrpc_mem_block_init(xmlrpc_env *       const envP,
-                      xmlrpc_mem_block * const blockP,
-                      size_t             const size) {
-/*----------------------------------------------------------------------------
-   Initialize the provided xmlrpc_mem_block.
------------------------------------------------------------------------------*/
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT(blockP != NULL);
-
-    blockP->_size = size;
-
-    if (tracingMemory)
-        blockP->_allocated = size;
-    else
-        blockP->_allocated = MAX(BLOCK_ALLOC_MIN, size);
-    
-    blockP->_block = malloc(blockP->_allocated);
-    if (!blockP->_block)
-        xmlrpc_faultf(envP, "Can't allocate %u-byte memory block",
-                      (unsigned)blockP->_allocated);
-}
-
-
-
-void
-xmlrpc_mem_block_clean(xmlrpc_mem_block * const blockP) {
-/*----------------------------------------------------------------------------
-   Terminate *blockP, but don't destroy it (i.e. don't free the memory of
-   the structure itself).
------------------------------------------------------------------------------*/
-    XMLRPC_ASSERT(blockP != NULL);
-    XMLRPC_ASSERT(blockP->_block != NULL);
-
-    free(blockP->_block);
-    blockP->_block = XMLRPC_BAD_POINTER;
-}
+struct _xmlrpc_mem_block {
+    size_t _size;
+    size_t _allocated;
+    void*  _block;
+};
 
 
 
@@ -71,23 +39,33 @@ xmlrpc_mem_block_new(xmlrpc_env * const envP,
 /*----------------------------------------------------------------------------
    Create an xmlrpc_mem_block of size 'size'.
 -----------------------------------------------------------------------------*/
-    xmlrpc_mem_block * block;
+    xmlrpc_mem_block * blockP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
 
-    MALLOCVAR(block);
+    MALLOCVAR(blockP);
     
-    if (block == NULL)
+    if (blockP == NULL)
         xmlrpc_faultf(envP, "Can't allocate memory block");
     else {
-        xmlrpc_mem_block_init(envP, block, size);
+        blockP->_size = size;
+
+        if (tracingMemory)
+            blockP->_allocated = size;
+        else
+            blockP->_allocated = MAX(BLOCK_ALLOC_MIN, size);
+    
+        blockP->_block = malloc(blockP->_allocated);
+        if (!blockP->_block)
+            xmlrpc_faultf(envP, "Can't allocate %u-byte memory block",
+                          (unsigned)blockP->_allocated);
 
         if (envP->fault_occurred) {
-            free(block);
-            block = NULL;
+            free(blockP);
+            blockP = NULL;
         }
     }
-    return block;
+    return blockP;
 }
 
 
@@ -100,7 +78,8 @@ xmlrpc_mem_block_free(xmlrpc_mem_block * const blockP) {
     XMLRPC_ASSERT(blockP != NULL);
     XMLRPC_ASSERT(blockP->_block != NULL);
 
-    xmlrpc_mem_block_clean(blockP);
+    free(blockP->_block);
+
     free(blockP);
 }
 

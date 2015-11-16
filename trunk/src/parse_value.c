@@ -717,8 +717,8 @@ xmlrpc_parseValue(xmlrpc_env *    const envP,
 
             if (childCount == 0) {
                 /* We have no type element, so treat the value as a string. */
-                char * const cdata      = xml_element_cdata(elemP);
-                size_t const cdata_size = xml_element_cdata_size(elemP);
+                const char * const cdata      = xml_element_cdata(elemP);
+                size_t       const cdata_size = xml_element_cdata_size(elemP);
                 *valuePP = xmlrpc_string_new_lp(envP, cdata_size, cdata);
             } else if (childCount > 1)
                 setParseFault(envP, "<value> has %u child elements.  "
