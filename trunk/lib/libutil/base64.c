@@ -3,7 +3,7 @@
 #include "xmlrpc_config.h"
 
 #include "bool.h"
-#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 #include "int.h"
 #include "xmlrpc-c/base64_int.h"
 

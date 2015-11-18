@@ -74,7 +74,7 @@
 #include "linklist.h"
 #include "girstring.h"
 
-#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/select_int.h"
 #include "xmlrpc-c/client_int.h"

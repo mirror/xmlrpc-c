@@ -13,6 +13,7 @@
 #include "mallocvar.h"
 #include "cmdline_parser.h"
 
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
 

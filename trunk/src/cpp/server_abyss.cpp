@@ -16,7 +16,7 @@
 using girerr::error;
 using girerr::throwf;
 #include "xmlrpc-c/base.h"
-#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/abyss.h"
 #include "xmlrpc-c/server_abyss.h"

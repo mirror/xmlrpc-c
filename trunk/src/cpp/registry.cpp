@@ -8,6 +8,7 @@ using girerr::throwf;
 #include "xmlrpc-c/girmem.hpp"
 using girmem::autoObject;
 using girmem::autoObjectPtr;
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/env_wrap.hpp"

@@ -46,7 +46,7 @@ xmlrpc_mem_block_new(xmlrpc_env * const envP,
     MALLOCVAR(blockP);
     
     if (blockP == NULL)
-        xmlrpc_faultf(envP, "Can't allocate memory block");
+        xmlrpc_faultf(envP, "Can't allocate memory block descriptor");
     else {
         blockP->_size = size;
 
