@@ -26,10 +26,68 @@ static bool const tracingMemory =
 
 
 struct _xmlrpc_mem_block {
-    size_t _size;
-    size_t _allocated;
-    void*  _block;
+    xmlrpc_mem_pool * poolP;
+        /* Pool this block is in; NULL if it is not in a pool */
+    size_t size;
+        /* Size of the block */
+    size_t allocated;
+        /* How much memory we've allocated from the system for this block
+           (pointed to by 'blockP')
+        */
+    void * blockP;
 };
+
+
+
+xmlrpc_mem_block *
+xmlrpc_mem_block_new_pool(xmlrpc_env *      const envP,
+                          size_t            const size,
+                          xmlrpc_mem_pool * const poolP) {
+/*----------------------------------------------------------------------------
+   Create an xmlrpc_mem_block of size 'size' in pool *poolP.
+
+   If 'poolP' is NULL, don't put it in any pool.
+-----------------------------------------------------------------------------*/
+    xmlrpc_mem_block * blockP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+
+    if (!envP->fault_occurred) {
+        MALLOCVAR(blockP);
+    
+        if (blockP == NULL)
+            xmlrpc_faultf(envP, "Can't allocate memory block descriptor");
+        else {
+            blockP->poolP = poolP;
+
+            blockP->size = size;
+
+            if (tracingMemory)
+                blockP->allocated = size;
+            else
+                blockP->allocated = MAX(BLOCK_ALLOC_MIN, size);
+            
+            if (poolP)
+                xmlrpc_mem_pool_alloc(envP, poolP, blockP->allocated);
+
+            if (!envP->fault_occurred) {
+                blockP->blockP = malloc(blockP->allocated);
+                if (!blockP->blockP)
+                    xmlrpc_faultf(envP, "Can't allocate %u-byte memory block",
+                                  (unsigned)blockP->allocated);
+                
+
+                if (envP->fault_occurred)
+                    xmlrpc_mem_pool_release(poolP, blockP->allocated);
+            }
+            if (envP->fault_occurred) {
+                free(blockP);
+                blockP = NULL;
+            }
+        }
+    }
+    return blockP;
+}
 
 
 
@@ -37,35 +95,9 @@ xmlrpc_mem_block *
 xmlrpc_mem_block_new(xmlrpc_env * const envP, 
                      size_t       const size) {
 /*----------------------------------------------------------------------------
-   Create an xmlrpc_mem_block of size 'size'.
+   Create an xmlrpc_mem_block of size 'size', not in any pool
 -----------------------------------------------------------------------------*/
-    xmlrpc_mem_block * blockP;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-
-    MALLOCVAR(blockP);
-    
-    if (blockP == NULL)
-        xmlrpc_faultf(envP, "Can't allocate memory block descriptor");
-    else {
-        blockP->_size = size;
-
-        if (tracingMemory)
-            blockP->_allocated = size;
-        else
-            blockP->_allocated = MAX(BLOCK_ALLOC_MIN, size);
-    
-        blockP->_block = malloc(blockP->_allocated);
-        if (!blockP->_block)
-            xmlrpc_faultf(envP, "Can't allocate %u-byte memory block",
-                          (unsigned)blockP->_allocated);
-
-        if (envP->fault_occurred) {
-            free(blockP);
-            blockP = NULL;
-        }
-    }
-    return blockP;
+    return xmlrpc_mem_block_new_pool(envP, size, NULL);
 }
 
 
@@ -76,9 +108,12 @@ xmlrpc_mem_block_free(xmlrpc_mem_block * const blockP) {
    Destroy xmlrpc_mem_block *blockP.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(blockP != NULL);
-    XMLRPC_ASSERT(blockP->_block != NULL);
+    XMLRPC_ASSERT(blockP->blockP != NULL);
 
-    free(blockP->_block);
+    if (blockP->poolP)
+        xmlrpc_mem_pool_release(blockP->poolP, blockP->allocated);
+
+    free(blockP->blockP);
 
     free(blockP);
 }
@@ -91,7 +126,7 @@ xmlrpc_mem_block_size(const xmlrpc_mem_block * const blockP) {
    The size of the xmlrpc_mem_block.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(blockP != NULL);
-    return blockP->_size;
+    return blockP->size;
 }
 
 
@@ -102,7 +137,7 @@ xmlrpc_mem_block_contents(const xmlrpc_mem_block * const blockP) {
    The contents of the xmlrpc_mem_block
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT(blockP != NULL);
-    return blockP->_block;
+    return blockP->blockP;
 }
 
 
@@ -110,7 +145,7 @@ xmlrpc_mem_block_contents(const xmlrpc_mem_block * const blockP) {
 static size_t
 allocSize(size_t const requestedSize) {
 /*----------------------------------------------------------------------------
-   The size we allocate when the user reuests to resize to 'requesteddSize'.
+   The size we allocate when the user requests to resize to 'requesteddSize'.
 
    We give him more than he requested in an attempt to avoid lots of copying
    when Caller repeatedly resizes by small amounts.
@@ -154,29 +189,39 @@ xmlrpc_mem_block_resize(xmlrpc_env *       const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(blockP != NULL);
 
-    if (newAllocSize != blockP->_allocated) {
+    if (newAllocSize > blockP->allocated) {
         /* Reallocate */
 
-        void * newMem;
+        if (blockP->poolP)
+            xmlrpc_mem_pool_alloc(envP, blockP->poolP,
+                                  newAllocSize - blockP->allocated);
 
-        newMem = malloc(newAllocSize);
-        if (!newMem)
-            xmlrpc_faultf(envP, 
-                          "Failed to allocate %u bytes of memory from the OS",
-                          (unsigned) size);
-        else {
-            /* Copy over the data */
-            size_t const sizeToCopy = MIN(blockP->_size, size);
-            assert(sizeToCopy <= newAllocSize);
-            memcpy(newMem, blockP->_block, sizeToCopy);
-            
-            free(blockP->_block);
+        if (!envP->fault_occurred) {
+            void * newMem;
 
-            blockP->_block     = newMem;
-            blockP->_allocated = newAllocSize;
+            newMem = malloc(newAllocSize);
+            if (!newMem)
+                xmlrpc_faultf(envP, 
+                              "Failed to allocate %u bytes of memory "
+                              "from the OS",
+                              (unsigned) size);
+            else {
+                /* Copy over the data */
+                size_t const sizeToCopy = MIN(blockP->size, size);
+                assert(sizeToCopy <= newAllocSize);
+                memcpy(newMem, blockP->blockP, sizeToCopy);
+                
+                free(blockP->blockP);
+                
+                blockP->blockP    = newMem;
+                blockP->allocated = newAllocSize;
+            }
+            if (envP->fault_occurred)
+                xmlrpc_mem_pool_release(blockP->poolP,
+                                        newAllocSize - blockP->allocated);
         }
     }
-    blockP->_size = size;
+    blockP->size = size;
 }
 
 
@@ -187,14 +232,14 @@ xmlrpc_mem_block_append(xmlrpc_env *       const envP,
                         const void *       const data, 
                         size_t             const len) {
 
-    size_t const originalSize = blockP->_size;
+    size_t const originalSize = blockP->size;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(blockP != NULL);
 
     xmlrpc_mem_block_resize(envP, blockP, originalSize + len);
     if (!envP->fault_occurred) {
-        memcpy(((unsigned char*) blockP->_block) + originalSize, data, len);
+        memcpy(((unsigned char*) blockP->blockP) + originalSize, data, len);
     }
 }
 
