@@ -70,10 +70,11 @@ xmlrpc_mem_pool_alloc(xmlrpc_env *      const envP,
     XMLRPC_ASSERT(poolP->allocated <= poolP->size);
 
     if (poolP->size - poolP->allocated < size)
-        xmlrpc_faultf(envP, "Memory pool is out of memory.  "
-                      "%u-byte pool is %u bytes short",
-                      (unsigned)poolP->size,
-                      (unsigned)(poolP->allocated + size - poolP->size));
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_LIMIT_EXCEEDED_ERROR,
+            "Memory pool is out of memory.  %u-byte pool is %u bytes short",
+            (unsigned)poolP->size,
+            (unsigned)(poolP->allocated + size - poolP->size));
     else
         poolP->allocated += size;
 }
