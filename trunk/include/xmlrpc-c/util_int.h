@@ -84,11 +84,13 @@ XMLRPC_UTIL_EXPORTED
 void * 
 xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block);
 
-/* Resize an xmlrpc_mem_block, preserving as much of the contents as
-** possible. */
+/* Resize an xmlrpc_mem_block, preserving as much of the contents as possible.
+*/
 XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_resize
-    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
+void
+xmlrpc_mem_block_resize(xmlrpc_env *       const envP,
+                        xmlrpc_mem_block * const blockP,
+                        size_t             const size);
 
 /* Append data to an existing xmlrpc_mem_block. */
 XMLRPC_UTIL_EXPORTED
