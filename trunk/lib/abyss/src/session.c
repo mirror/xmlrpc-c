@@ -625,3 +625,70 @@ SessionGetDefaultHandlerCtx(TSession * const sessionP) {
 
     return srvP->defaultHandlerContext;
 }
+
+
+
+void
+SessionInit(TSession * const sessionP,
+            TConn *    const connectionP) {
+
+    sessionP->validRequest = false;  /* Don't have valid request yet */
+
+    sessionP->failureReason = NULL;
+
+    time(&sessionP->date);
+
+    sessionP->connP = connectionP;
+
+    sessionP->responseStarted = false;
+
+    sessionP->chunkedwrite = false;
+    sessionP->chunkedwritemode = false;
+
+    sessionP->continueRequired = false;
+
+    sessionP->requestIsChunked = false;
+
+    sessionP->chunkState.position = CHUNK_ATHEADER;
+
+    ListInit(&sessionP->cookies);
+    ListInit(&sessionP->ranges);
+    TableInit(&sessionP->requestHeaderFields);
+    TableInit(&sessionP->responseHeaderFields);
+
+    sessionP->status = 0;  /* No status from handler yet */
+
+    StringAlloc(&(sessionP->header));
+}
+
+
+
+static void
+freeRequestInfo(TRequestInfo * const requestInfoP) {
+
+    xmlrpc_strfreenull(requestInfoP->host);
+
+    xmlrpc_strfreenull(requestInfoP->user);
+
+    xmlrpc_strfree(requestInfoP->uri);
+
+    xmlrpc_strfree(requestInfoP->requestline);
+}
+
+
+
+void
+SessionTerm(TSession * const sessionP) {
+
+    if (sessionP->validRequest)
+        freeRequestInfo(&sessionP->requestInfo);
+
+    ListFree(&sessionP->cookies);
+    ListFree(&sessionP->ranges);
+    TableFree(&sessionP->requestHeaderFields);
+    TableFree(&sessionP->responseHeaderFields);
+    StringFree(&(sessionP->header));
+}
+
+
+

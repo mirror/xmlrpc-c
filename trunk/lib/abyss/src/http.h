@@ -3,37 +3,14 @@
 
 #include <sys/types.h>
 
-#include "bool.h"
-#include "conn.h"
+bool
+HTTPRequestHasValidUri(TSession * const sessionP);
 
-/*********************************************************************
-** Request
-*********************************************************************/
-
-bool RequestValidURI(TSession * const r);
-bool RequestValidURIPath(TSession * const r);
-bool RequestUnescapeURI(TSession *r);
-
-void
-RequestRead(TSession *    const sessionP,
-            uint32_t      const timeout,
-            const char ** const errorP,
-            uint16_t *    const httpErrorCodeP);
-
-void RequestInit(TSession * const r,TConn * const c);
-void RequestFree(TSession * const r);
-
-/*********************************************************************
-** HTTP
-*********************************************************************/
+bool
+HTTPRequestHasValidUriPath(TSession * const sessionP);
 
 const char *
 HTTPReasonByStatus(uint16_t const code);
-
-int32_t
-HTTPRead(TSession *   const sessionP,
-         const char * const buffer,
-         uint32_t     const len);
 
 bool
 HTTPWriteBodyChunk(TSession *   const sessionP,

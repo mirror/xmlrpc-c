@@ -5,6 +5,7 @@
 #include "bool.h"
 #include "date.h"
 #include "data.h"
+#include "conn.h"
 
 typedef struct {
     uint8_t major;
@@ -113,5 +114,17 @@ struct _TSession {
     } chunkState;
 };
 
+/*----------------------------------------------------------------------------
+   Following are methods of a TSession object private to Abyss.  Other
+   methods are for use by user Uri handlers and are declared in the
+   external abyss.h header file.
+-----------------------------------------------------------------------------*/
+
+void
+SessionInit(TSession * const sessionP,
+            TConn *    const c);
+
+void
+SessionTerm(TSession * const sessionP);
 
 #endif

@@ -39,6 +39,7 @@
 #endif
 #include "http.h"
 #include "handler.h"
+#include "sessionReadRequest.h"
 
 #include "server.h"
 
@@ -706,11 +707,11 @@ processRequestFromClient(TConn *  const connectionP,
     const char * error;
     uint16_t httpErrorCode;
 
-    RequestInit(&session, connectionP);
+    SessionInit(&session, connectionP);
 
     session.serverDeniesKeepalive = lastReqOnConn;
         
-    RequestRead(&session, timeout, &error, &httpErrorCode);
+    SessionReadRequest(&session, timeout, &error, &httpErrorCode);
 
     if (error) {
         ResponseStatus(&session, httpErrorCode);
@@ -719,7 +720,7 @@ processRequestFromClient(TConn *  const connectionP,
     } else {
         if (session.version.major >= 2)
             handleReqTooNewHttpVersion(&session);
-        else if (!RequestValidURI(&session))
+        else if (!HTTPRequestHasValidUri(&session))
             handleReqInvalidURI(&session);
         else
             runUserHandler(&session, connectionP->server->srvP);
@@ -736,7 +737,7 @@ processRequestFromClient(TConn *  const connectionP,
 
     SessionLog(&session);
 
-    RequestFree(&session);
+    SessionTerm(&session);
 }
 
 

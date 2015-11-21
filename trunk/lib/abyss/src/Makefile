@@ -44,6 +44,7 @@ TARGET_MODS = \
   response \
   server \
   session \
+  sessionReadRequest \
   socket \
   $(SOCKET_MODULE) \
   token \
