@@ -651,6 +651,8 @@ SessionInit(TSession * const sessionP,
 
     sessionP->chunkState.position = CHUNK_ATHEADER;
 
+    sessionP->memPoolP = NULL;
+
     ListInit(&sessionP->cookies);
     ListInit(&sessionP->ranges);
     TableInit(&sessionP->requestHeaderFields);
@@ -688,7 +690,34 @@ SessionTerm(TSession * const sessionP) {
     TableFree(&sessionP->requestHeaderFields);
     TableFree(&sessionP->responseHeaderFields);
     StringFree(&(sessionP->header));
+
+    if (sessionP->memPoolP)
+        xmlrpc_mem_pool_free(sessionP->memPoolP);
 }
 
 
 
+void
+SessionMakeMemPool(TSession *    const sessionP,
+                   size_t        const size,
+                   const char ** const errorP) {
+/*----------------------------------------------------------------------------
+  Set up a memory pool for this session.  All future allocations of memory
+  for certain purposes will come from this pool.
+
+  The point of this is that the pool has limited size, so this puts a limit
+  on how much memory the session can use.
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
+    sessionP->memPoolP = xmlrpc_mem_pool_new(&env, size);
+
+    if (env.fault_occurred)
+        *errorP = xmlrpc_strdupsol(env.fault_string);
+    else
+        *errorP = NULL;
+
+    xmlrpc_env_clean(&env);
+}

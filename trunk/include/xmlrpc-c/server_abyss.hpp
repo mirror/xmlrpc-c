@@ -60,6 +60,7 @@ public:
         constrOpt & portNumber        (unsigned int   const& arg);
         constrOpt & maxConn           (unsigned int   const& arg);
         constrOpt & maxConnBacklog    (unsigned int   const& arg);
+        constrOpt & maxRpcMem         (size_t         const& arg);
         constrOpt & keepaliveTimeout  (unsigned int   const& arg);
         constrOpt & keepaliveMaxConn  (unsigned int   const& arg);
         constrOpt & timeout           (unsigned int   const& arg);

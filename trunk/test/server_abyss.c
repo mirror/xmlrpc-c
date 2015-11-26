@@ -260,6 +260,7 @@ test_server_abyss(void) {
 
     ServerSetMaxConn(&abyssServer, 10);
     ServerSetMaxConnBacklog(&abyssServer, 10);
+    ServerSetMaxSessionMem(&abyssServer, 64*1024);
     ServerSetKeepaliveTimeout(&abyssServer, 60);
     ServerSetKeepaliveMaxConn(&abyssServer, 10);
     ServerSetTimeout(&abyssServer, 0);

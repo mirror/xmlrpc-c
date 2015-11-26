@@ -409,6 +409,10 @@ setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
         if (parmsP->max_conn_backlog != 0)
             ServerSetMaxConnBacklog(serverP, parmsP->max_conn_backlog);
     }
+    if (parmSize >= XMLRPC_APSIZE(max_rpc_mem)) {
+        if (parmsP->max_rpc_mem != 0)
+            ServerSetMaxSessionMem(serverP, parmsP->max_rpc_mem);
+    }
 }
 
 

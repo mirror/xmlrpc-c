@@ -235,7 +235,8 @@ createServer(struct _TServer ** const srvPP,
                 srvP->uriHandlerStackSize = 0;
                 srvP->maxConn          = 15;
                 srvP->maxConnBacklog   = 15;
-            
+                srvP->maxSessionMem    = 0;
+
                 initUnixStuff(srvP);
 
                 ListInitAutoFree(&srvP->handlers);
@@ -597,6 +598,16 @@ ServerSetMaxConnBacklog(TServer *    const serverP,
     if (maxConnBacklog > 0) {
         serverP->srvP->maxConnBacklog = maxConnBacklog;
     }
+}
+
+
+
+void
+ServerSetMaxSessionMem(TServer * const serverP,
+                       size_t    const size) {
+
+    if (size > 0)
+        serverP->srvP->maxSessionMem = size;
 }
 
 
