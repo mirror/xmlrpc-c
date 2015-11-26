@@ -15,7 +15,7 @@
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/string_number.h"
 #include "xmlrpc-c/util.h"
-#include "xmlrpc-c/xmlparser.h"
+#include "xmlparser.h"
 #include "parse_datetime.h"
 
 #include "parse_value.h"

@@ -14,7 +14,8 @@
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/string_int.h"
-#include "xmlrpc-c/xmlparser.h"
+
+#include "xmlparser.h"
 
 struct _xml_element {
 /*----------------------------------------------------------------------------
