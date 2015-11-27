@@ -188,7 +188,7 @@ xml_element_cdata(const xml_element * const elemP) {
 
 
 
-size_t
+unsigned int
 xml_element_children_size(const xml_element * const elemP) {
 
     XMLRPC_ASSERT_ELEM_OK(elemP);

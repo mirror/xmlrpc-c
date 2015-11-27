@@ -3,73 +3,83 @@
 #ifndef XMLRPC_XMLPARSER_H_INCLUDED
 #define XMLRPC_XMLPARSER_H_INCLUDED
 
-/*=========================================================================
-**  Abstract XML Parser Interface
-**=========================================================================
-**  This file provides an abstract interface to the XML parser. For now,
-**  this interface is implemented by expat, but feel free to change it
-**  if necessary.
-*/
+/*=============================================================================
+  Abstract XML Parser Interface
+===============================================================================
+  This file provides an abstract interface to the XML parser, so we can
+  use multiple XML parsers with the main XML-RPC code not having to know
+  their specific interfaces.
+
+  It works like this: When you need to parse some XML (we don't care what the
+  XML is as long as it is one valid XML element, but in practice it is going
+  to be an XML-RPC call or response), you call our 'xml_init' with the XML
+  text as argument.  That generates an object of type 'xml_element' to
+  represent the XML element.
+
+  You then call methods of that object to parse the XML element, e.g. to
+  find out its name or its children.
+=============================================================================*/
 
 
-/*=========================================================================
-**  xml_element
-**=========================================================================
-**  This data structure represents an XML element. We provide no more API
-**  than we'll need in xmlrpc_parse.c.
-**
-**  The pointers returned by the various accessor methods belong to the
-**  xml_element structure. Do not free them, and do not use them after
-**  the xml_element has been destroyed.
-*/
-
-/* You'll need to finish defining struct _xml_element elsewhere. */
 typedef struct _xml_element xml_element;
+    /* An object that represents an XML element */
 
-/* Destroy an xml_element. */
-void xml_element_free (xml_element * const elem);
+void
+xml_element_free(xml_element * const elemP);
+    /* Destroy the element */
 
-/* Return a pointer to the element's name. Do not free this pointer!
-** This pointer should point to standard ASCII or UTF-8 data. */
 const char *
 xml_element_name(const xml_element * const elemP);
+    /* The XML element name.  UTF-8.
+       
+       This points to memory owned by *elemP.
+    */
 
-/* Return the xml_element's CDATA. Do not free this pointer!
-** This pointer should point to standard ASCII or UTF-8 data.
-** The implementation is allowed to concatenate all the CDATA in the
-** element regardless of child elements. Alternatively, if there are
-** any child elements, the implementation is allowed to dispose
-** of whitespace characters.
-** The value returned by xml_element_cdata should be '\0'-terminated
-** (although it may contain other '\0' characters internally).
-** xml_element_cdata_size should not include the final '\0'. */
 size_t
 xml_element_cdata_size(const xml_element * const elemP);
+    /* The size of the element's cdata */
 
 const char *
 xml_element_cdata(const xml_element * const elemP);
+    /* The XML element's CDATA.  UTF-8.
 
-/* Return the xml_element's child elements. Do not free this pointer! */
-size_t
+       This is a pointer to the cdata.
+       
+       There is a NUL character appended to the CDATA, but it is not part of
+       the CDATA, so is not included in the value returned by
+       xml_element_cdata_size().
+  
+       This is memory owned by *elemP.
+  
+       The implementation is allowed to concatenate all the CDATA in the
+       element regardless of child elements. Alternatively, if there are
+       any child elements, the implementation is allowed to dispose
+       of whitespace characters.
+    */
+
+unsigned int
 xml_element_children_size(const xml_element * const elemP);
+    /* Number of children the XML element has */
 
 xml_element **
 xml_element_children(const xml_element * const elemP);
+    /* All the child elements of the element.
 
-
-/*=========================================================================
-**  xml_parse
-**=========================================================================
-**  Parse a chunk of XML data and return the top-level element. If this
-**  routine fails, it will return NULL and set up the env appropriately.
-**  You are responsible for calling xml_element_free on the returned pointer.
-*/
+       Each pointer points to an object owned by *elemP.
+    */
 
 void
 xml_parse(xmlrpc_env *   const envP,
           const char *   const xmlData,
           size_t         const xmlDataLen,
           xml_element ** const resultPP);
+    /* Parse a chunk of XML text and return the top-level element.
+
+       Create an xml_elemnt object to represent it.
+
+       Caller must ultimately destroy this object.
+    */
+
 
 /* Initialize and terminate static global parser state.  This should be done
    once per run of a program, and while the program is just one thread.

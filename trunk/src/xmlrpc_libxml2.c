@@ -193,7 +193,7 @@ xml_element_name(const xml_element * const elemP) {
 }
 
 size_t
-xml_element_cdata_size(xml_element * const elemP) {
+xml_element_cdata_size(const xml_element * const elemP) {
     /* The result of this function is NOT VALID until the end_element handler
        has been called!
     */
@@ -203,15 +203,15 @@ xml_element_cdata_size(xml_element * const elemP) {
 
 
 
-char *
-xml_element_cdata(xml_element * const elemP) {
+const char *
+xml_element_cdata(const xml_element * const elemP) {
     XMLRPC_ASSERT_ELEM_OK(elemP);
     return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &elemP->cdata);
 }
 
 
 
-size_t
+unsigned int
 xml_element_children_size(const xml_element * const elemP) {
     XMLRPC_ASSERT_ELEM_OK(elemP);
     return XMLRPC_TYPED_MEM_BLOCK_SIZE(xml_element *, &elemP->children);
