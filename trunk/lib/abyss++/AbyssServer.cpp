@@ -460,6 +460,7 @@ AbyssServer::Session::method() const {
     case m_options: return METHOD_OPTIONS;
     }
     assert(false);  // All values of TMethod are handled in switch.
+    return METHOD_UNKNOWN;  /* Defeat bogus compiler warning */
 }
 
 
