@@ -20,6 +20,7 @@
 #include "xmlparser.h"
 #include "parse_value.h"
 
+#include "xmlrpc_parse.h"
 
 /* Notes about XML-RPC XML documents:
 
@@ -162,10 +163,11 @@ convertParams(xmlrpc_env *        const envP,
 
 
 static void
-parseCallXml(xmlrpc_env *   const envP,
-             const char *   const xmlData,
-             size_t         const xmlDataLen,
-             xml_element ** const callElemPP) {
+parseCallXml(xmlrpc_env *      const envP,
+             const char *      const xmlData,
+             size_t            const xmlDataLen,
+             xmlrpc_mem_pool * const memPoolP,
+             xml_element **    const callElemPP) {
 /*----------------------------------------------------------------------------
    Parse the XML of an XML-RPC call.
 -----------------------------------------------------------------------------*/
@@ -173,7 +175,7 @@ parseCallXml(xmlrpc_env *   const envP,
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
-    xml_parse(&env, xmlData, xmlDataLen, &callElemP);
+    xml_parse(&env, xmlData, xmlDataLen, memPoolP, &callElemP);
     if (env.fault_occurred)
         xmlrpc_env_set_fault_formatted(
             envP, env.fault_code, "Call is not valid XML.  %s",
@@ -223,10 +225,10 @@ parseMethodNameElement(xmlrpc_env *  const envP,
 
 
 static void
-parseCallChildren(xmlrpc_env *    const envP,
-                  xml_element *   const callElemP,
-                  const char **   const methodNameP,
-                  xmlrpc_value ** const paramArrayPP ) {
+parseCallChildren(xmlrpc_env *      const envP,
+                  xml_element *     const callElemP,
+                  const char **     const methodNameP,
+                  xmlrpc_value **   const paramArrayPP ) {
 /*----------------------------------------------------------------------------
   Parse the children of a <methodCall> XML element *callElemP.  They should
   be <methodName> and <params>.
@@ -278,11 +280,12 @@ parseCallChildren(xmlrpc_env *    const envP,
 
 
 void 
-xmlrpc_parse_call(xmlrpc_env *    const envP,
-                  const char *    const xmlData,
-                  size_t          const xmlDataLen,
-                  const char **   const methodNameP,
-                  xmlrpc_value ** const paramArrayPP) {
+xmlrpc_parse_call2(xmlrpc_env *      const envP,
+                   const char *      const xmlData,
+                   size_t            const xmlDataLen,
+                   xmlrpc_mem_pool * const memPoolP,
+                   const char **     const methodNameP,
+                   xmlrpc_value **   const paramArrayPP) {
 /*----------------------------------------------------------------------------
   Given some XML text, attempt to parse it as an XML-RPC call.
   Return as *methodNameP the name of the method identified in the call
@@ -305,7 +308,7 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
             (unsigned)xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID));
     else {
         xml_element * callElemP;
-        parseCallXml(envP, xmlData, xmlDataLen, &callElemP);
+        parseCallXml(envP, xmlData, xmlDataLen, memPoolP, &callElemP);
         if (!envP->fault_occurred) {
             parseCallChildren(envP, callElemP, methodNameP, paramArrayPP);
 
@@ -317,6 +320,19 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
         *methodNameP  = NULL;
         *paramArrayPP = NULL;
     }
+}
+
+
+
+void 
+xmlrpc_parse_call(xmlrpc_env *    const envP,
+                  const char *    const xmlData,
+                  size_t          const xmlDataLen,
+                  const char **   const methodNameP,
+                  xmlrpc_value ** const paramArrayPP) {
+
+    xmlrpc_parse_call2(envP, xmlData, xmlDataLen, NULL,
+                       methodNameP, paramArrayPP);
 }
 
 
@@ -520,13 +536,34 @@ parseMethodResponseElt(xmlrpc_env *        const envP,
 
 
 
+static void
+parseResponseXml(xmlrpc_env *      const envP,
+                 const char *      const xmlData,
+                 size_t            const xmlDataLen,
+                 xmlrpc_mem_pool * const memPoolP,
+                 xml_element **    const responseEltPP) {
+
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+
+    xml_parse(&env, xmlData, xmlDataLen, memPoolP, responseEltPP);
+
+    if (env.fault_occurred)
+        setParseFault(envP, "Not valid XML.  %s", env.fault_string);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
 void
-xmlrpc_parse_response2(xmlrpc_env *    const envP,
-                       const char *    const xmlData,
-                       size_t          const xmlDataLen,
-                       xmlrpc_value ** const resultPP,
-                       int *           const faultCodeP,
-                       const char **   const faultStringP) {
+xmlrpc_parse_response3(xmlrpc_env *      const envP,
+                       const char *      const xmlData,
+                       size_t            const xmlDataLen,
+                       xmlrpc_mem_pool * const memPoolP,
+                       xmlrpc_value **   const resultPP,
+                       int *             const faultCodeP,
+                       const char **     const faultStringP) {
 /*----------------------------------------------------------------------------
   Given some XML text, attempt to parse it as an XML-RPC response.
 
@@ -541,8 +578,6 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
   If the XML text is not a valid response or something prevents us from
   parsing it, return a description of the error as *envP and nothing else.
 -----------------------------------------------------------------------------*/
-    xml_element * responseEltP;
-
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(xmlData != NULL);
 
@@ -558,15 +593,10 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
             (unsigned)xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID),
             (unsigned)xmlDataLen);
     else {
-        xmlrpc_env env;
-        xmlrpc_env_init(&env);
+        xml_element * responseEltP;
+        parseResponseXml(envP, xmlData, xmlDataLen, memPoolP, &responseEltP);
 
-        xml_parse(&env, xmlData, xmlDataLen, &responseEltP);
-
-        if (env.fault_occurred)
-            setParseFault(envP, "Not valid XML.  %s", env.fault_string);
-        else {
-            /* Pick apart and verify our structure. */
+        if (!envP->fault_occurred) {
             if (xmlrpc_streq(xml_element_name(responseEltP),
                              "methodResponse")) {
                 parseMethodResponseElt(envP, responseEltP,
@@ -579,8 +609,25 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
             
             xml_element_free(responseEltP);
         }
-        xmlrpc_env_clean(&env);
     }
+}
+
+
+
+void
+xmlrpc_parse_response2(xmlrpc_env *      const envP,
+                       const char *      const xmlData,
+                       size_t            const xmlDataLen,
+                       xmlrpc_value **   const resultPP,
+                       int *             const faultCodeP,
+                       const char **     const faultStringP) {
+/*----------------------------------------------------------------------------
+   This exists for backward compatibility.  It is like
+   xmlrpc_parse_response3(), except that it uses the unlimited system memory
+   pool.
+-----------------------------------------------------------------------------*/
+    xmlrpc_parse_response3(envP, xmlData, xmlDataLen, NULL,
+                           resultPP, faultCodeP, faultStringP);
 }
 
 
@@ -599,7 +646,7 @@ xmlrpc_parse_response(xmlrpc_env * const envP,
     const char * faultString;
     int faultCode;
 
-    xmlrpc_parse_response2(envP, xmlData, xmlDataLen,
+    xmlrpc_parse_response3(envP, xmlData, xmlDataLen, NULL,
                            &result, &faultCode, &faultString);
     
     if (envP->fault_occurred)
@@ -618,10 +665,11 @@ xmlrpc_parse_response(xmlrpc_env * const envP,
 
 
 void
-xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
-                       const char *    const xmlData,
-                       size_t          const xmlDataLen,
-                       xmlrpc_value ** const valuePP) {
+xmlrpc_parse_value_xml2(xmlrpc_env *      const envP,
+                        const char *      const xmlData,
+                        size_t            const xmlDataLen,
+                        xmlrpc_mem_pool * const memPoolP,
+                        xmlrpc_value **   const valuePP) {
 /*----------------------------------------------------------------------------
    Compute the xmlrpc_value represented by the XML document 'xmlData' (of
    length 'xmlDataLen' characters), which must consist of a single <value>
@@ -648,7 +696,7 @@ xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
 
     xmlrpc_env_init(&env);
 
-    xml_parse(&env, xmlData, xmlDataLen, &valueEltP);
+    xml_parse(&env, xmlData, xmlDataLen, memPoolP, &valueEltP);
 
     if (env.fault_occurred) {
         setParseFault(envP, "Not valid XML.  %s", env.fault_string);
@@ -664,6 +712,17 @@ xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
         xml_element_free(valueEltP);
     }
     xmlrpc_env_clean(&env);
+}
+
+
+
+void
+xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
+                       const char *    const xmlData,
+                       size_t          const xmlDataLen,
+                       xmlrpc_value ** const valuePP) {
+
+    xmlrpc_parse_value_xml2(envP, xmlData, xmlDataLen, NULL, valuePP);
 }
 
 

@@ -3,6 +3,7 @@
 #ifndef XMLRPC_XMLPARSER_H_INCLUDED
 #define XMLRPC_XMLPARSER_H_INCLUDED
 
+#include "xmlrpc-c/util_int.h"
 /*=============================================================================
   Abstract XML Parser Interface
 ===============================================================================
@@ -69,15 +70,26 @@ xml_element_children(const xml_element * const elemP);
     */
 
 void
-xml_parse(xmlrpc_env *   const envP,
-          const char *   const xmlData,
-          size_t         const xmlDataLen,
-          xml_element ** const resultPP);
-    /* Parse a chunk of XML text and return the top-level element.
-
+xml_parse(xmlrpc_env *      const envP,
+          const char *      const xmlData,
+          size_t            const xmlDataLen,
+          xmlrpc_mem_pool * const memPoolP,
+          xml_element **    const resultPP);
+    /* 
        Create an xml_elemnt object to represent it.
 
        Caller must ultimately destroy this object.
+
+       Parse the XML text 'xmlData', of length 'xmlDataLen'.  Return the
+       description of the element that the XML text contains as *resultPP.
+       Normally, the element has children, so that *resultPP is just the
+       root of a tree of elements.
+
+       Use *memPoolP for some memory allocations.  It is primarily for memory
+       uses whose size we cannot bound right now, like because it depends on
+       what the XML looks like - *memPoolP has bounds, so this prevents us
+       from using more than our share of system memory.  If 'memPoolP' is
+       null, just use the default system pool (which is unbounded).
     */
 
 

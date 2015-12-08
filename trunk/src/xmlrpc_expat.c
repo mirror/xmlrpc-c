@@ -13,6 +13,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 
 #include "xmlparser.h"
@@ -249,11 +250,38 @@ typedef struct {
 /*----------------------------------------------------------------------------
    Our parse context. We pass this around as expat user data.
 -----------------------------------------------------------------------------*/
-    xmlrpc_env env;
-    xml_element * rootP;
-    xml_element * currentP;
-} parseContext;
+    xmlrpc_env        env;
+    xml_element *     rootP;
+    xml_element *     currentP;
+    xmlrpc_mem_pool * memPoolP;
+        /* The memory pool we use for as much memory allocation as we can;
+           It's purpose is that it is of limited size, so especially use it
+           for things that need to be limited, like to prevent an XML-RPC
+           client from using up all the memory by sending a cleverly crafted
+           XML document.
+        */
+} ParseContext;
 
+
+
+static void
+initParseContext(ParseContext *    const contextP,
+                 xmlrpc_mem_pool * const memPoolP) {
+
+    xmlrpc_env_init(&contextP->env);
+
+    contextP->rootP    = NULL;
+    contextP->currentP = NULL;
+    contextP->memPoolP = memPoolP;
+}
+
+
+
+static void
+termParseContext(ParseContext * const contextP) {
+
+    xmlrpc_env_clean(&contextP->env);
+}
 
 
 /*=============================================================================
@@ -265,7 +293,7 @@ startElement(void *      const userData,
              XML_Char *  const name,
              XML_Char ** const atts ATTR_UNUSED) {
 
-    parseContext * const contextP = userData;
+    ParseContext * const contextP = userData;
 
     XMLRPC_ASSERT(contextP != NULL);
     XMLRPC_ASSERT(name != NULL);
@@ -314,7 +342,7 @@ static void
 endElement(void *     const userData,
            XML_Char * const name ATTR_UNUSED) {
 
-    parseContext * const contextP = userData;
+    ParseContext * const contextP = userData;
 
     XMLRPC_ASSERT(contextP != NULL);
     XMLRPC_ASSERT(name != NULL);
@@ -356,7 +384,7 @@ characterData(void *     const userData,
    We simply append the cdata to the cdata buffer for whatever XML
    element the parser is presently parsing.
 -----------------------------------------------------------------------------*/
-    parseContext * const contextP = userData;
+    ParseContext * const contextP = userData;
 
     XMLRPC_ASSERT(contextP != NULL);
     XMLRPC_ASSERT(s != NULL);
@@ -372,13 +400,22 @@ characterData(void *     const userData,
 
 
 static void
-createParser(xmlrpc_env *   const envP,
-             parseContext * const contextP,
-             XML_Parser *   const parserP) {
+createParser(xmlrpc_env *      const envP,
+             xmlrpc_mem_pool * const memPoolP,
+             ParseContext *    const contextP,
+             XML_Parser *      const parserP) {
 /*----------------------------------------------------------------------------
    Create an Expat parser to parse our XML.
 
    Return the parser handle as *parserP.
+
+   Set up *contextP as a context specific to this module for Expat to
+   associate with the parser.  The XML element handlers in this module get a
+   pointer to *contextP to use for context.
+
+   Use memory pool *memPoolP for certain memory allocations needed to parse
+   the document.  Especially allocations for which we cannot predict a bound
+   until we see the XML.
 -----------------------------------------------------------------------------*/
     XML_Parser parser;
 
@@ -386,10 +423,7 @@ createParser(xmlrpc_env *   const envP,
     if (parser == NULL)
         xmlrpc_faultf(envP, "Could not create expat parser");
     else {
-        /* Initialize our parse context. */
-        xmlrpc_env_init(&contextP->env);
-        contextP->rootP    = NULL;
-        contextP->currentP = NULL;
+        initParseContext(contextP, memPoolP);
 
         xmlrpc_XML_SetUserData(parser, contextP);
         xmlrpc_XML_SetElementHandler(
@@ -407,9 +441,9 @@ createParser(xmlrpc_env *   const envP,
 
 static void
 destroyParser(XML_Parser     const parser,
-              parseContext * const contextP) {
+              ParseContext * const contextP) {
 
-    xmlrpc_env_clean(&contextP->env);
+    termParseContext(contextP);
 
     xmlrpc_XML_ParserFree(parser);
 }
@@ -417,13 +451,14 @@ destroyParser(XML_Parser     const parser,
 
 
 void
-xml_parse(xmlrpc_env *   const envP,
-          const char *   const xmlData,
-          size_t         const xmlDataLen,
-          xml_element ** const resultPP) {
+xml_parse(xmlrpc_env *      const envP,
+          const char *      const xmlData,
+          size_t            const xmlDataLen,
+          xmlrpc_mem_pool * const memPoolP,
+          xml_element **    const resultPP) {
 /*----------------------------------------------------------------------------
-  Parse the XML text 'xmlData', of length 'xmlDataLen'.  Return the
-  description of the element that the XML text contains as *resultPP.
+  This is an implementation of the interface declared in xmlparser.h.  This
+  implementation uses Xmlrpc-c's private fork of Expat.
 -----------------------------------------------------------------------------*/
     /* 
        This is an Expat driver.
@@ -438,12 +473,12 @@ xml_parse(xmlrpc_env *   const envP,
        we don't.
     */
     XML_Parser parser;
-    parseContext context;
+    ParseContext context;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(xmlData != NULL);
 
-    createParser(envP, &context, &parser);
+    createParser(envP, memPoolP, &context, &parser);
 
     if (!envP->fault_occurred) {
         bool ok;

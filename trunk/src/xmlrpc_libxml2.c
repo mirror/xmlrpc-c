@@ -428,11 +428,15 @@ static xmlSAXHandler const saxHandler = {
 
 
 void
-xml_parse(xmlrpc_env *   const envP,
-          const char *   const xmlData,
-          size_t         const xmlDataLen,
-          xml_element ** const resultPP) {
-
+xml_parse(xmlrpc_env *      const envP,
+          const char *      const xmlData,
+          size_t            const xmlDataLen,
+          xmlrpc_mem_pool * const memPoolP ATTR_UNUSED,
+          xml_element **    const resultPP) {
+/*----------------------------------------------------------------------------
+  This is an implementation of the interface declared in xmlparser.h.  This
+  implementation uses Xmlrpc-c's private fork of Expat.
+-----------------------------------------------------------------------------*/
     ParseContext context;
     xmlParserCtxt * parserP;
 
