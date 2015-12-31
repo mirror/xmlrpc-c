@@ -26,9 +26,9 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP) {
         abort();
     else {
         size_t const arraySize =
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value*, &arrayP->_block);
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, arrayP->blockP);
         xmlrpc_value ** const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, arrayP->blockP);
         
         if (contents == NULL)
             abort();
@@ -55,9 +55,9 @@ xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP) {
    The value is not valid after this.
 -----------------------------------------------------------------------------*/
     size_t const arraySize =
-        XMLRPC_MEMBLOCK_SIZE(xmlrpc_value*, &arrayP->_block);
+        XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, arrayP->blockP);
     xmlrpc_value ** const contents = 
-        XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
+        XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, arrayP->blockP);
 
     size_t index;
     
@@ -68,7 +68,7 @@ xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP) {
         xmlrpc_value * const itemP = contents[index];
         xmlrpc_DECREF(itemP);
     }
-    XMLRPC_MEMBLOCK_CLEAN(xmlrpc_value *, &arrayP->_block);
+    XMLRPC_MEMBLOCK_FREE(xmlrpc_value *, arrayP->blockP);
 }
 
 
@@ -88,7 +88,7 @@ xmlrpc_array_size(xmlrpc_env *         const envP,
         retval = -1;
     } else {
         size_t const size =
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &arrayP->_block);
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, arrayP->blockP);
 
         assert((size_t)(int)(size) == size);
 
@@ -112,13 +112,13 @@ xmlrpc_array_append_item(xmlrpc_env *   const envP,
             envP, XMLRPC_TYPE_ERROR, "Value is not an array");
     else {
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &arrayP->_block);
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, arrayP->blockP);
 
-        XMLRPC_MEMBLOCK_RESIZE(xmlrpc_value *, envP, &arrayP->_block, size+1);
+        XMLRPC_MEMBLOCK_RESIZE(xmlrpc_value *, envP, arrayP->blockP, size+1);
 
         if (!envP->fault_occurred) {
             xmlrpc_value ** const contents =
-                XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
+                XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, arrayP->blockP);
             xmlrpc_INCREF(valueP);
             contents[size] = valueP;
         }
@@ -143,9 +143,9 @@ xmlrpc_array_read_item(xmlrpc_env *         const envP,
             "a value that is not an array");
     else {
         xmlrpc_value ** const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, &arrayP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, arrayP->blockP);
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &arrayP->_block);
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, arrayP->blockP);
 
         if (index >= size)
             xmlrpc_env_set_fault_formatted(
@@ -194,7 +194,7 @@ xmlrpc_array_new(xmlrpc_env * const envP) {
     xmlrpc_createXmlrpcValue(envP, &arrayP);
     if (!envP->fault_occurred) {
         arrayP->_type = XMLRPC_TYPE_ARRAY;
-        XMLRPC_MEMBLOCK_INIT(xmlrpc_value*, envP, &arrayP->_block, 0);
+        arrayP->blockP = XMLRPC_MEMBLOCK_NEW(xmlrpc_value *, envP, 0);
         if (envP->fault_occurred)
             free(arrayP);
     }
@@ -216,19 +216,19 @@ xmlrpc_array_new_value(xmlrpc_env *   const envP,
         arrayP = NULL;
     } else {
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &valueP->_block);
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, valueP->blockP);
 
         xmlrpc_createXmlrpcValue(envP, &arrayP);
         if (!envP->fault_occurred) {
             arrayP->_type = XMLRPC_TYPE_ARRAY;
 
-            XMLRPC_MEMBLOCK_INIT(xmlrpc_value*, envP, &arrayP->_block, 0);
+            arrayP->blockP = XMLRPC_MEMBLOCK_NEW(xmlrpc_value *, envP, 0);
 
             if (envP->fault_occurred)
                 free(arrayP);
             else {
                 xmlrpc_value ** const srcValuePList =
-                    XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, &valueP->_block);
+                    XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, valueP->blockP);
                 
                 unsigned int i;
             

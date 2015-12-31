@@ -16,7 +16,7 @@
 using girerr::error;
 using girerr::throwf;
 #include "xmlrpc-c/base.h"
-#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/abyss.h"
 #include "xmlrpc-c/server_abyss.h"
@@ -184,6 +184,7 @@ struct serverAbyss::constrOpt_impl {
         unsigned int   portNumber;
         unsigned int   maxConn;
         unsigned int   maxConnBacklog;
+        size_t         maxRpcMem;
         unsigned int   keepaliveTimeout;
         unsigned int   keepaliveMaxConn;
         unsigned int   timeout;
@@ -205,6 +206,7 @@ struct serverAbyss::constrOpt_impl {
         bool portNumber;
         bool maxConn;
         bool maxConnBacklog;
+        bool maxRpcMem;
         bool keepaliveTimeout;
         bool keepaliveMaxConn;
         bool timeout;
@@ -231,6 +233,7 @@ serverAbyss::constrOpt_impl::constrOpt_impl() {
     present.logFileName       = false;
     present.maxConn           = false;
     present.maxConnBacklog    = false;
+    present.maxRpcMem         = false;
     present.keepaliveTimeout  = false;
     present.keepaliveMaxConn  = false;
     present.timeout           = false;
@@ -268,6 +271,7 @@ DEFINE_OPTION_SETTER(socketFd,          XMLRPC_SOCKET);
 DEFINE_OPTION_SETTER(portNumber,        unsigned int);
 DEFINE_OPTION_SETTER(maxConn,           unsigned int);
 DEFINE_OPTION_SETTER(maxConnBacklog,    unsigned int);
+DEFINE_OPTION_SETTER(maxRpcMem,         size_t);
 DEFINE_OPTION_SETTER(keepaliveTimeout,  unsigned int);
 DEFINE_OPTION_SETTER(keepaliveMaxConn,  unsigned int);
 DEFINE_OPTION_SETTER(timeout,           unsigned int);
@@ -602,6 +606,8 @@ setAdditionalServerParms(TServer *                   const  serverP,
         ServerSetMaxConn(serverP, opt.value.maxConn);
     if (opt.present.maxConnBacklog)
         ServerSetMaxConnBacklog(serverP, opt.value.maxConnBacklog);
+    if (opt.present.maxRpcMem)
+        ServerSetMaxSessionMem(serverP, opt.value.maxRpcMem);
     if (opt.present.keepaliveTimeout)
         ServerSetKeepaliveTimeout(serverP, opt.value.keepaliveTimeout);
     if (opt.present.keepaliveMaxConn)

@@ -702,7 +702,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
     endingslash = false;  /* initial value */
 
-    if (!RequestValidURIPath(sessionP)) {
+    if (!HTTPRequestHasValidUriPath(sessionP)) {
         ResponseStatus(sessionP, 400);
         return true;
     }

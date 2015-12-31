@@ -252,6 +252,12 @@ void
 ServerSetMaxConnBacklog(TServer *    const serverP,
                         unsigned int const maxConnBacklog);
 
+#define HAVE_SERVER_SET_MAX_SESSION_MEM 1
+XMLRPC_ABYSS_EXPORTED
+void
+ServerSetMaxSessionMem(TServer * const serverP,
+                       size_t    const size);
+
 XMLRPC_ABYSS_EXPORTED
 void
 ServerInit2(TServer *     const serverP,

@@ -375,6 +375,14 @@ public:
             value_i8 int4(value_double(3.7));
             TEST_FAILED("invalid cast double-i8 suceeded");
         } catch (error const&) {}
+
+        value const int1x(toValue((xmlrpc_int64)7));
+        TEST(int1x.type() == value::TYPE_I8);
+        TEST(static_cast<xmlrpc_int64>(value_i8(int1x)) == 7);
+
+        xmlrpc_int64 test1x;
+        fromValue(test1x, int1x);
+        TEST(test1x == 7);
     }
 };
 

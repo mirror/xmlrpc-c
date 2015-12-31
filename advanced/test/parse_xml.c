@@ -18,7 +18,7 @@ static void test_expat (void)
 {
     xmlrpc_env env;
     xml_element *elem, *array, *data, *value1, *i4;
-    char *cdata;
+    const char *cdata;
     size_t size;
 
     xmlrpc_env_init(&env);
@@ -483,13 +483,12 @@ testParseFaultResponse(void) {
     }
     /* Now with the old interface */
     {
-        xmlrpc_value * valueP;
         xmlrpc_env fault;
 
         /* Parse a valid fault. */
         xmlrpc_env_init(&fault);
-        valueP = xmlrpc_parse_response(&fault, serialized_fault,
-                                       strlen(serialized_fault));
+        xmlrpc_parse_response(&fault, serialized_fault,
+                              strlen(serialized_fault));
 
         TEST(fault.fault_occurred);
         TEST(fault.fault_code == 6);

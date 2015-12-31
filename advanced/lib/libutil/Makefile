@@ -51,6 +51,7 @@ TARGET_MODS = \
   lock_none \
   make_printable \
   memblock \
+  mempool \
   select \
   sleep \
   string_number \

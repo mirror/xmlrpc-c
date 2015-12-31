@@ -26,6 +26,7 @@ TEST_OBJS = \
   testtool.o \
   test.o \
   cgi.o \
+  memblock.o \
   method_registry.o \
   parse_xml.o \
   serialize.o \

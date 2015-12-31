@@ -1384,14 +1384,13 @@ test_value_type_mismatch(void) {
 static void
 test_value_invalid_type(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
 
     /* Test invalid type specifier in format string */
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "Q");
+    xmlrpc_build_value(&env, "Q");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1402,17 +1401,16 @@ test_value_invalid_type(void) {
 static void
 test_value_missing_array_delim(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
 
     /* Test missing close parenthesis on array */
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "(");
+    xmlrpc_build_value(&env, "(");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "(i");
+    xmlrpc_build_value(&env, "(i");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1423,20 +1421,19 @@ test_value_missing_array_delim(void) {
 static void
 test_value_missing_struct_delim(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
     
     /* Test missing closing brace on struct */
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "{");
+    xmlrpc_build_value(&env, "{");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{s:i", "key1", 7);
+    xmlrpc_build_value(&env, "{s:i", "key1", 7);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{s:i,s:i", "key1", 9, "key2", -4);
+    xmlrpc_build_value(&env, "{s:i,s:i", "key1", 9, "key2", -4);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1447,7 +1444,6 @@ test_value_missing_struct_delim(void) {
 static void
 test_value_invalid_struct(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
 
     /* Note that even though the format strings are invalid, we have
@@ -1458,13 +1454,13 @@ test_value_invalid_struct(void) {
     
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "{s:ii", "key1", 9, 9);
+    xmlrpc_build_value(&env, "{s:ii", "key1", 9, 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{si:", "key1", 9);
+    xmlrpc_build_value(&env, "{si:", "key1", 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{s", "key1");
+    xmlrpc_build_value(&env, "{s", "key1");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);

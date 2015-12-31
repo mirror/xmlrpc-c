@@ -22,6 +22,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/util.h"
 
 
 
@@ -31,7 +32,7 @@ xmlrpc_destroyString(xmlrpc_value * const valueP) {
     if (valueP->_wcs_block)
         xmlrpc_mem_block_free(valueP->_wcs_block);
 
-    xmlrpc_mem_block_clean(&valueP->_block);
+    xmlrpc_mem_block_free(valueP->blockP);
 }
 
 
@@ -102,9 +103,9 @@ accessStringValue(xmlrpc_env *         const envP,
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP);
         const char * const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(char, valueP->blockP);
         size_t const len = size - 1;
             /* The memblock has a null character added to the end */
 
@@ -263,9 +264,9 @@ xmlrpc_read_string_lp(xmlrpc_env *         const envP,
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP);
         const char * const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(char, valueP->blockP);
 
         char * stringValue;
 
@@ -292,9 +293,9 @@ xmlrpc_read_string_lp_crlf(xmlrpc_env *         const envP,
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block); /* Includes NUL */
+            XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP); /* Includes NUL */
         const char * const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(char, valueP->blockP);
 
         copyAndConvertLfToCrlf(envP, size-1, contents,
                                lengthP, stringValueP);
@@ -314,8 +315,8 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
 -----------------------------------------------------------------------------*/
     validateStringType(envP, valueP);
     if (!envP->fault_occurred) {
-        *lengthP =      XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block) - 1;
-        *stringValueP = XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+        *lengthP =      XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP) - 1;
+        *stringValueP = XMLRPC_MEMBLOCK_CONTENTS(char, valueP->blockP);
     }
 }
 
@@ -330,9 +331,9 @@ setupWcsBlock(xmlrpc_env *   const envP,
 -----------------------------------------------------------------------------*/
     if (!valueP->_wcs_block) {
         char * const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(char, valueP->blockP);
         size_t const len = 
-            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block) - 1;
+            XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP) - 1;
         valueP->_wcs_block = 
             xmlrpc_utf8_to_wcs(envP, contents, len + 1);
     }
@@ -621,14 +622,14 @@ xmlrpc_string_validate(xmlrpc_env *   const envP,
 
 
 static void
-copyLines(xmlrpc_env *       const envP,
-          const char *       const src,
-          size_t             const srcLen,
-          xmlrpc_mem_block * const dstP) {
+copyLines(xmlrpc_env *        const envP,
+          const char *        const src,
+          size_t              const srcLen,
+          xmlrpc_mem_block ** const dstPP) {
 /*----------------------------------------------------------------------------
-   Copy the string 'src', 'srcLen' characters long, into 'dst', where
-   'dst' is the internal representation of string xmlrpc_value contents,
-   and 'src' has lines separated by LF, CR, and/or CRLF.
+   Generate the internal representation of string xmlrpc_value contents for
+   string 'src', which is 'srcLen' characters long and has lines separated by
+   LF, CR, and/or CRLF.  Return it as a new xmlrpc_mem_block at *dstPP.
 
    Note that the source format differs from the destination format in
    that in the destination format, lines are separated only by newline
@@ -656,7 +657,9 @@ copyLines(xmlrpc_env *       const envP,
        skip the CR and any following LF, and repeat.
     */
 
-    XMLRPC_MEMBLOCK_INIT(char, envP, dstP, srcLen + 1);
+    xmlrpc_mem_block * dstP;
+
+    dstP = XMLRPC_MEMBLOCK_NEW(char, envP, srcLen + 1);
 
     if (!envP->fault_occurred) {
         const char * const srcEnd = &src[srcLen];
@@ -695,30 +698,40 @@ copyLines(xmlrpc_env *       const envP,
         XMLRPC_ASSERT((unsigned)(dstCursor - &contents[0]) <= srcLen + 1);
 
         XMLRPC_MEMBLOCK_RESIZE(char, envP, dstP, dstCursor - &contents[0]);
+
+        if (envP->fault_occurred)
+            XMLRPC_MEMBLOCK_FREE(char, dstP);
     }
+    *dstPP = dstP;
 }
 
 
 
 static void
-copySimple(xmlrpc_env *       const envP,
-           const char *       const src,
-           size_t             const srcLen,
-           xmlrpc_mem_block * const dstP) {
+copySimple(xmlrpc_env *        const envP,
+           const char *        const src,
+           size_t              const srcLen,
+           xmlrpc_mem_block ** const dstPP) {
 /*----------------------------------------------------------------------------
-   Copy the string 'src', 'srcLen' characters long, into 'dst', where
-   'dst' is the internal representation of string xmlrpc_value contents,
-   and 'src', conveniently enough, is in the exact same format.
+   Generate the internal representation of string xmlrpc_value contents for
+   string 'src', which is 'srcLen' characters long and, conveniently enough,
+   has the exact same format as the internal representation.
 
    To wit, 'src' has lines separated by LFs only -- no CR or CRLF.
+
+   Return it as a new xmlrpc_mem_block at *dstPP.
 -----------------------------------------------------------------------------*/
-    XMLRPC_MEMBLOCK_INIT(char, envP, dstP, srcLen + 1);
+    xmlrpc_mem_block * dstP;
+
+    dstP = XMLRPC_MEMBLOCK_NEW(char, envP, srcLen + 1);
+
     if (!envP->fault_occurred) {
         char * const contents = XMLRPC_MEMBLOCK_CONTENTS(char, dstP);
         
         memcpy(contents, src, srcLen);
         contents[srcLen] = '\0';
     }
+    *dstPP = dstP;
 }
 
 
@@ -747,9 +760,9 @@ stringNew(xmlrpc_env *     const envP,
                it's slower.
             */
             if (memchr(value, '\r', length) && crTreatment == CR_IS_LINEDELIM)
-                copyLines(envP, value, length, &valP->_block);
+                copyLines(envP, value, length, &valP->blockP);
             else
-                copySimple(envP, value, length, &valP->_block);
+                copySimple(envP, value, length, &valP->blockP);
 
             if (envP->fault_occurred)
                 free(valP);
@@ -947,13 +960,14 @@ xmlrpc_string_new_value(xmlrpc_env *   const envP,
         if (!envP->fault_occurred) {
             valP->_type = XMLRPC_TYPE_STRING;
 
-            xmlrpc_mem_block_init(envP, &valP->_block,
-                                 xmlrpc_mem_block_size(&valueP->_block));
+            valP->blockP =
+                xmlrpc_mem_block_new(envP,
+                                     xmlrpc_mem_block_size(valueP->blockP));
 
             if (!envP->fault_occurred) {
-                memcpy(xmlrpc_mem_block_contents(&valP->_block),
-                       xmlrpc_mem_block_contents(&valueP->_block),
-                       xmlrpc_mem_block_size(&valueP->_block));
+                memcpy(xmlrpc_mem_block_contents(valP->blockP),
+                       xmlrpc_mem_block_contents(valueP->blockP),
+                       xmlrpc_mem_block_size(valueP->blockP));
             }
         }
         if (!envP->fault_occurred) {

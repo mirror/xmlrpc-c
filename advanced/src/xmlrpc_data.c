@@ -72,7 +72,7 @@ destroyValue(xmlrpc_value * const valueP) {
         break;
         
     case XMLRPC_TYPE_BASE64:
-        xmlrpc_mem_block_clean(&valueP->_block);
+        xmlrpc_mem_block_free(valueP->blockP);
         break;
 
     case XMLRPC_TYPE_ARRAY:
@@ -263,9 +263,9 @@ xmlrpc_read_base64(xmlrpc_env *           const envP,
     validateType(envP, valueP, XMLRPC_TYPE_BASE64);
     if (!envP->fault_occurred) {
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP);
         const char * const contents = 
-            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(char, valueP->blockP);
 
         char * byteStringValue;
 
@@ -293,9 +293,9 @@ xmlrpc_read_base64_old(xmlrpc_env *           const envP,
     validateType(envP, valueP, XMLRPC_TYPE_BASE64);
     if (!envP->fault_occurred) {
         *lengthP =
-            XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP);
         *byteStringValueP = (const unsigned char *)
-            XMLRPC_MEMBLOCK_CONTENTS(char, &valueP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(char, valueP->blockP);
     }
 }
 
@@ -308,7 +308,7 @@ xmlrpc_read_base64_size(xmlrpc_env *           const envP,
 
     validateType(envP, valueP, XMLRPC_TYPE_BASE64);
     if (!envP->fault_occurred)
-        *lengthP = XMLRPC_MEMBLOCK_SIZE(char, &valueP->_block);
+        *lengthP = XMLRPC_MEMBLOCK_SIZE(char, valueP->blockP);
 }
 
 
@@ -585,10 +585,10 @@ xmlrpc_base64_new(xmlrpc_env *          const envP,
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_BASE64;
 
-        xmlrpc_mem_block_init(envP, &valP->_block, length);
+        valP->blockP = xmlrpc_mem_block_new(envP, length);
         if (!envP->fault_occurred) {
             char * const contents = 
-                xmlrpc_mem_block_contents(&valP->_block);
+                xmlrpc_mem_block_contents(valP->blockP);
             memcpy(contents, value, length);
         }
         if (envP->fault_occurred)
@@ -612,8 +612,8 @@ xmlrpc_base64_new_value(xmlrpc_env *   const envP,
         retval = NULL;
     } else
         retval = xmlrpc_base64_new(envP,
-                                   xmlrpc_mem_block_size(&valueP->_block),
-                                   xmlrpc_mem_block_contents(&valueP->_block));
+                                   xmlrpc_mem_block_size(valueP->blockP),
+                                   xmlrpc_mem_block_contents(valueP->blockP));
 
     return retval;
 }

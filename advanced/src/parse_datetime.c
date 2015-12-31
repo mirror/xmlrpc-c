@@ -188,7 +188,7 @@ parseDtRegex(xmlrpc_env *      const envP,
         status = regcomp(&re, thisParserP->regex, REG_ICASE | REG_EXTENDED);
 
         /* Our regex is valid, so it must have compiled: */
-        assert(status == 0);
+        assert(status == 0); if (status){};  /* quiet compiler warning */
         {
             int status;
     

@@ -68,6 +68,15 @@ struct _TServer {
            connections on the server's behalf and holds them waiting for the
            server to accept them from the OS.
         */
+    size_t maxSessionMem;
+        /* The maximum memory the server can use for certain purposes for a
+           single session.  These purposes consist of things where the size
+           of the memory is unpredictable, especially under the control of the
+           client.  This limit stops clients from using too much memory and
+           consequently denying service to other clients.
+
+           Zero means no limit.
+        */
     TList handlers;
         /* Ordered list of HTTP request handlers.  For each HTTP request,
            Server calls each one in order until one reports that it handled

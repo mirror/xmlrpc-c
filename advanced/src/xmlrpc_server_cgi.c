@@ -36,6 +36,7 @@
 #include <fcntl.h> 
 #endif 
 
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/string_int.h"

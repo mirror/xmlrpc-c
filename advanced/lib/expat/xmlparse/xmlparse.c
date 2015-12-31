@@ -214,10 +214,7 @@ int setContext(XML_Parser parser, const XML_Char *context);
 #define poolLastChar(pool) (((pool)->ptr)[-1])
 #define poolDiscard(pool) ((pool)->ptr = (pool)->start)
 #define poolFinish(pool) ((pool)->start = (pool)->ptr)
-#define poolAppendChar(pool, c) \
-  (((pool)->ptr == (pool)->end && !poolGrow(pool)) \
-   ? 0 \
-   : ((*((pool)->ptr)++ = c), 1))
+
 
 typedef struct {
   /* The first member must be userData so that the XML_GetUserData macro works. */
@@ -442,123 +439,250 @@ void poolDestroy(STRING_POOL *pool)
   pool->end = 0;
 }
 
-static
-int poolGrow(STRING_POOL *pool)
-{
-  if (pool->freeBlocks) {
-    if (pool->start == 0) {
-      pool->blocks = pool->freeBlocks;
-      pool->freeBlocks = pool->freeBlocks->next;
-      pool->blocks->next = 0;
-      pool->start = pool->blocks->s;
-      pool->end = pool->start + pool->blocks->size;
-      pool->ptr = pool->start;
-      return 1;
+
+
+static void
+poolGrowFromFreeBlocks(STRING_POOL * const poolP,
+                       bool *        const wasGrownFromFreeBlocksP) {
+
+    if (poolP->freeBlocks) {
+        if (poolP->start == 0) {
+            poolP->blocks = poolP->freeBlocks;
+            poolP->freeBlocks = poolP->freeBlocks->next;
+            poolP->blocks->next = 0;
+            poolP->start = poolP->blocks->s;
+            poolP->end = poolP->start + poolP->blocks->size;
+            poolP->ptr = poolP->start;
+            
+            *wasGrownFromFreeBlocksP = true;
+        } else if (poolP->end - poolP->start < poolP->freeBlocks->size) {
+            BLOCK * const newFreeBlocks = poolP->freeBlocks->next;
+
+            poolP->freeBlocks->next = poolP->blocks;
+            poolP->blocks = poolP->freeBlocks;
+            poolP->freeBlocks = newFreeBlocks;
+            memcpy(poolP->blocks->s, poolP->start,
+                   (poolP->end - poolP->start) * sizeof(XML_Char));
+            poolP->ptr = poolP->blocks->s + (poolP->ptr - poolP->start);
+            poolP->start = poolP->blocks->s;
+            poolP->end = poolP->start + poolP->blocks->size;
+
+            *wasGrownFromFreeBlocksP = true;
+        }
+    } else
+        *wasGrownFromFreeBlocksP = false;
+}
+
+
+
+static void
+poolGrow(STRING_POOL * const poolP,
+         const char ** const errorP) {
+
+    bool wasGrownFromFreeBlocks;
+
+    poolGrowFromFreeBlocks(poolP, &wasGrownFromFreeBlocks);
+
+    if (wasGrownFromFreeBlocks)
+        *errorP = NULL;
+    else {
+        if (poolP->blocks && poolP->start == poolP->blocks->s) {
+            size_t const blockSize = (poolP->end - poolP->start)*2;
+            size_t const newSize =
+                offsetof(BLOCK, s) + blockSize * sizeof(XML_Char);
+
+            BLOCK * const newBlocks = realloc(poolP->blocks, newSize);
+
+            if (newBlocks) {
+                poolP->blocks = newBlocks;
+                poolP->blocks->size = blockSize;
+                poolP->ptr = poolP->blocks->s + (poolP->ptr - poolP->start);
+                poolP->start = poolP->blocks->s;
+                poolP->end = poolP->start + blockSize;
+                *errorP = NULL;
+            } else
+                xmlrpc_asprintf(errorP,
+                                "Failed to allocate %u bytes of memory",
+                               (unsigned)newSize);
+        } else {
+            size_t const poolLen = poolP->end - poolP->start;
+            size_t const blockSize =
+                poolLen < INIT_BLOCK_SIZE ? INIT_BLOCK_SIZE : poolLen * 2;
+            size_t const newSize =
+                offsetof(BLOCK, s) + blockSize * sizeof(XML_Char);
+
+                BLOCK * const newBlocksP = malloc(newSize);
+
+            if (newBlocksP) {
+                newBlocksP->size = blockSize;
+                newBlocksP->next = poolP->blocks;
+                poolP->blocks = newBlocksP;
+                if (poolP->ptr != poolP->start)
+                    memcpy(newBlocksP->s, poolP->start,
+                           (poolP->ptr - poolP->start) * sizeof(XML_Char));
+                poolP->ptr = newBlocksP->s + (poolP->ptr - poolP->start);
+                poolP->start = newBlocksP->s;
+                poolP->end = newBlocksP->s + blockSize;
+                *errorP = NULL;
+            } else
+                xmlrpc_asprintf(errorP,
+                                "Failed to allocate %u bytes of memory",
+                                (unsigned)newSize);
+        }
     }
-    if (pool->end - pool->start < pool->freeBlocks->size) {
-      BLOCK *tem = pool->freeBlocks->next;
-      pool->freeBlocks->next = pool->blocks;
-      pool->blocks = pool->freeBlocks;
-      pool->freeBlocks = tem;
-      memcpy(pool->blocks->s, pool->start,
-             (pool->end - pool->start) * sizeof(XML_Char));
-      pool->ptr = pool->blocks->s + (pool->ptr - pool->start);
-      pool->start = pool->blocks->s;
-      pool->end = pool->start + pool->blocks->size;
-      return 1;
-    }
-  }
-  if (pool->blocks && pool->start == pool->blocks->s) {
-    size_t const blockSize = (pool->end - pool->start)*2;
-    BLOCK *temp = realloc(pool->blocks, offsetof(BLOCK, s) +
-                          blockSize * sizeof(XML_Char));
-    if (!temp)
-      return 0;
-    pool->blocks = temp;
-    pool->blocks->size = blockSize;
-    pool->ptr = pool->blocks->s + (pool->ptr - pool->start);
-    pool->start = pool->blocks->s;
-    pool->end = pool->start + blockSize;
-  }
-  else {
-    size_t const poolLen = pool->end - pool->start;
-    size_t const blockSize =
-        poolLen < INIT_BLOCK_SIZE ? INIT_BLOCK_SIZE : poolLen * 2;
-    BLOCK *tem;
-
-    tem = malloc(offsetof(BLOCK, s) + blockSize * sizeof(XML_Char));
-    if (!tem)
-      return 0;
-    tem->size = blockSize;
-    tem->next = pool->blocks;
-    pool->blocks = tem;
-    if (pool->ptr != pool->start)
-      memcpy(tem->s, pool->start,
-             (pool->ptr - pool->start) * sizeof(XML_Char));
-    pool->ptr = tem->s + (pool->ptr - pool->start);
-    pool->start = tem->s;
-    pool->end = tem->s + blockSize;
-  }
-  return 1;
 }
 
 
 
 static
-XML_Char *poolAppend(STRING_POOL *pool, const ENCODING *enc,
-                     const char *ptr, const char *end)
-{
-  if (!pool->ptr && !poolGrow(pool))
-    return 0;
-  for (;;) {
-    XmlConvert(enc, &ptr, end, (ICHAR **)&(pool->ptr), (ICHAR *)pool->end);
-    if (ptr == end)
-      break;
-    if (!poolGrow(pool))
-      return 0;
-  }
-  return pool->start;
+XML_Char *
+poolAppend(STRING_POOL *    const poolP,
+           const ENCODING * const encodingP,
+           const char *     const initialPtr,
+           const char *     const end) {
+
+    const char * ptr;
+
+    ptr = initialPtr;  /* initial value */
+
+    if (!poolP->ptr) {
+        const char * error;
+
+        poolGrow(poolP, &error);
+
+        if (error) {
+            xmlrpc_strfree(error);
+            return NULL;
+        }
+    }
+
+    for (;;) {
+        const char * error;
+
+        XmlConvert(encodingP, &ptr, end, (ICHAR **)&(poolP->ptr),
+                   (ICHAR *)poolP->end);
+
+        if (ptr == end)
+            break;
+
+        poolGrow(poolP, &error);
+
+        if (error) {
+            xmlrpc_strfree(error);
+            return NULL;
+        }
+    }
+    return poolP->start;
 }
 
-static const XML_Char *poolCopyString(STRING_POOL *pool, const XML_Char *s)
-{
-  do {
-    if (!poolAppendChar(pool, *s))
-      return 0;
-  } while (*s++);
-  s = pool->start;
-  poolFinish(pool);
-  return s;
+
+
+static bool
+poolAppendChar(STRING_POOL * const poolP,
+               XML_Char      const c) {
+
+    bool retval;
+    const char * error;
+
+    if (poolP->ptr == poolP->end)
+        poolGrow(poolP, &error);
+    else
+        error = NULL;
+
+    if (error) {
+        xmlrpc_strfree(error);
+        retval = false;
+    } else {
+        *poolP->ptr++ = c;
+
+        retval = true;
+    }
+    return retval;
 }
+
+
 
 static const XML_Char *
-poolCopyStringN(STRING_POOL *pool,
-                const XML_Char *s,
-                int n)
-{
-  if (!pool->ptr && !poolGrow(pool))
-    return 0;
-  for (; n > 0; --n, s++) {
-    if (!poolAppendChar(pool, *s))
-      return 0;
+poolCopyString(STRING_POOL *    const poolP,
+               const XML_Char * const source) {
 
-  }
-  s = pool->start;
-  poolFinish(pool);
-  return s;
+    const XML_Char * retval;
+    const XML_Char * s;
+
+    s = &source[0];  /* initial value */
+
+    do {
+        if (!poolAppendChar(poolP, *s))
+            return 0;
+    } while (*s++);
+
+    retval = poolP->start;
+
+    poolFinish(poolP);
+
+    return retval;
 }
 
-static
-XML_Char *poolStoreString(STRING_POOL *pool, const ENCODING *enc,
-                          const char *ptr, const char *end)
-{
-  if (!poolAppend(pool, enc, ptr, end))
-    return 0;
-  if (pool->ptr == pool->end && !poolGrow(pool))
-    return 0;
-  *(pool->ptr)++ = 0;
-  return pool->start;
+
+
+static const XML_Char *
+poolCopyStringN(STRING_POOL *    const poolP,
+                const XML_Char * const source,
+                int              const size) {
+
+    const XML_Char * retval;
+    const XML_Char * s;
+    int n;
+
+    s = source;  /* initial value */
+    n = size;    /* initial value */
+
+    if (!poolP->ptr) {
+        const char * error;
+        poolGrow(poolP, &error);
+        if (error) {
+            xmlrpc_strfree(error);
+            return NULL;
+        }
+    }
+
+    for (; n > 0; --n, ++s) {
+        if (!poolAppendChar(poolP, *s))
+            return NULL;
+    }
+    retval = poolP->start;
+
+    poolFinish(poolP);
+
+    return retval;
 }
+
+
+
+static XML_Char *
+poolStoreString(STRING_POOL *    const poolP,
+                const ENCODING * const encodingP,
+                const char *     const ptr,
+                const char *     const end) {
+
+    if (!poolAppend(poolP, encodingP, ptr, end))
+        return NULL;
+
+    if (poolP->ptr == poolP->end) {
+        const char * error;
+        poolGrow(poolP, &error);
+        if (error) {
+            xmlrpc_strfree(error);
+            return NULL;
+        }
+    }
+
+    *(poolP->ptr)++ = 0;
+
+    return poolP->start;
+}
+
+
 
 static unsigned long
 generate_hash_secret_salt(void)
@@ -1775,8 +1899,7 @@ storeAttributeValue(XML_Parser parser, const ENCODING *enc, int isCdata,
 
 
 
-static
-enum XML_Error
+static enum XML_Error
 storeEntityValue(XML_Parser       const xmlParserP,
                  const ENCODING * const enc,
                  const char *     const entityTextPtrArg,
@@ -1844,11 +1967,17 @@ storeEntityValue(XML_Parser       const xmlParserP,
     case XML_TOK_TRAILING_CR:
       next = entityTextPtr + enc->minBytesPerChar;
       /* fall through */
-    case XML_TOK_DATA_NEWLINE:
-      if (pool->end == pool->ptr && !poolGrow(pool))
-        return XML_ERROR_NO_MEMORY;
+    case XML_TOK_DATA_NEWLINE: {
+        if (pool->end == pool->ptr) {
+            const char * error;
+            poolGrow(pool, &error);
+            if (error) {
+                xmlrpc_strfree(error);
+                return XML_ERROR_NO_MEMORY;
+            }
+        }
       *(pool->ptr)++ = 0xA;
-      break;
+    } break;
     case XML_TOK_CHAR_REF:
       {
         XML_Char buf[XML_ENCODE_MAX];
@@ -1866,8 +1995,14 @@ storeEntityValue(XML_Parser       const xmlParserP,
           return XML_ERROR_BAD_CHAR_REF;
         }
         for (i = 0; i < n; i++) {
-          if (pool->end == pool->ptr && !poolGrow(pool))
-            return XML_ERROR_NO_MEMORY;
+            if (pool->end == pool->ptr) {
+                const char * error;
+                poolGrow(pool, &error);
+                if (error) {
+                    xmlrpc_strfree(error);
+                    return XML_ERROR_NO_MEMORY;
+                }
+            }
           *(pool->ptr)++ = buf[i];
         }
       }
@@ -2414,6 +2549,118 @@ cdataSectionProcessor(XML_Parser       const xmlParserP,
 
 
 static void
+doCharacterEntityRef(XML_Parser       const xmlParserP,
+                     const ENCODING * const enc,
+                     const char *     const s,
+                     const char *     const next,
+                     XML_Char         const ch,
+                     enum XML_Error * const errorCodeP,
+                     const char **    const errorP) {
+
+    Parser * const parserP = (Parser *) xmlParserP;
+
+    if (parserP->m_characterDataHandler)
+        parserP->m_characterDataHandler(parserP->m_handlerArg, &ch, 1);
+    else if (parserP->m_defaultHandler)
+        reportDefault(xmlParserP, enc, s, next);
+
+    *errorCodeP = XML_ERROR_NONE;
+    *errorP = NULL;
+}
+
+
+
+static void
+doInternalEntityRef(XML_Parser       const xmlParserP,
+                    const ENCODING * const enc,
+                    const char *     const s,
+                    const char *     const next,
+                    ENTITY *         const entityP,
+                    enum XML_Error * const errorCodeP,
+                    const char **    const errorP) {
+
+    Parser * const parserP = (Parser *) xmlParserP;
+
+    if (parserP->m_defaultHandler &&
+        !parserP->m_defaultExpandInternalEntities) {
+        reportDefault(xmlParserP, enc, s, next);
+        *errorCodeP = XML_ERROR_NONE;
+        *errorP = NULL;
+    } else {
+        OPEN_INTERNAL_ENTITY openEntity;
+
+        entityP->open = 1;  /* recursion control */
+
+        openEntity.next = parserP->m_openInternalEntities;
+
+        parserP->m_openInternalEntities = &openEntity;
+        openEntity.entity = entityP;
+        openEntity.internalEventPtr = 0;
+        openEntity.internalEventEndPtr = 0;
+
+        doContent(xmlParserP,
+                  parserP->m_tagLevel,
+                  parserP->m_internalEncoding,
+                  (char *)entityP->textPtr,
+                  (char *)(entityP->textPtr + entityP->textLen),
+                  0, errorCodeP, errorP);
+
+        entityP->open = 0;  /* recursion control */
+        parserP->m_openInternalEntities = openEntity.next;
+    }
+}
+
+
+
+static void
+doExternalEntityRef(XML_Parser       const xmlParserP,
+                    const ENCODING * const enc,
+                    const char *     const s,
+                    const char *     const next,
+                    ENTITY *         const entityP,
+                    enum XML_Error * const errorCodeP,
+                    const char **    const errorP) {
+
+    Parser * const parserP = (Parser *) xmlParserP;
+
+    *errorP = NULL;
+
+    if (parserP->m_externalEntityRefHandler) {
+        const XML_Char * contextP;
+
+        entityP->open = 1;
+        contextP = getContext(xmlParserP);
+        entityP->open = 0;
+
+        if (!contextP)
+            *errorCodeP = XML_ERROR_NO_MEMORY;
+        else {
+            int rc;
+
+            rc = parserP->m_externalEntityRefHandler(
+                parserP->m_externalEntityRefHandlerArg,
+                contextP,
+                entityP->base,
+                entityP->systemId,
+                entityP->publicId);
+            if (rc != 0)
+                *errorCodeP = XML_ERROR_EXTERNAL_ENTITY_HANDLING;
+            else {
+                poolDiscard(&parserP->m_tempPool);
+                *errorCodeP = XML_ERROR_NONE;
+            }
+        }
+    } else if (parserP->m_defaultHandler) {
+        reportDefault(xmlParserP, enc, s, next);
+    
+        *errorCodeP = XML_ERROR_NONE;
+    } else
+        *errorCodeP = XML_ERROR_NONE;
+}
+
+
+
+static void
 doEntityRef(XML_Parser       const xmlParserP,
             const ENCODING * const enc,
             const char *     const s,
@@ -2421,96 +2668,53 @@ doEntityRef(XML_Parser       const xmlParserP,
             enum XML_Error * const errorCodeP,
             const char **    const errorP) {
             
-    Parser * const parser = (Parser *) xmlParserP;
-
     XML_Char const ch = XmlPredefinedEntityName(enc,
                                                 s + enc->minBytesPerChar,
                                                 next - enc->minBytesPerChar);
-    const XML_Char *name;
-    ENTITY *entity;
-    *errorP = NULL;
 
-    if (ch) {
-        if (characterDataHandler)
-            characterDataHandler(handlerArg, &ch, 1);
-        else if (defaultHandler)
-            reportDefault(xmlParserP, enc, s, next);
-        *errorCodeP = XML_ERROR_NONE;
-        return;
-    }
-    name = poolStoreString(&dtd.pool, enc,
-                           s + enc->minBytesPerChar,
-                           next - enc->minBytesPerChar);
-    if (!name) {
-        *errorCodeP = XML_ERROR_NO_MEMORY;
-        return;
-    }
-    entity = (ENTITY *)lookup(parser, &dtd.generalEntities, name, 0);
-    poolDiscard(&dtd.pool);
-    if (!entity) {
-        if (dtd.complete || dtd.standalone)
-            *errorCodeP = XML_ERROR_UNDEFINED_ENTITY;
-        else {
-            if (defaultHandler)
-                reportDefault(xmlParserP, enc, s, next);
-            *errorCodeP = XML_ERROR_NONE;
+    if (ch)
+        doCharacterEntityRef(xmlParserP, enc, s, next, ch, errorCodeP, errorP);
+    else {
+        Parser * const parserP = (Parser *) xmlParserP;
+
+        const XML_Char * name;
+        ENTITY * entityP;
+
+        *errorP = NULL;
+
+        name = poolStoreString(&parserP->m_dtd.pool, enc,
+                               s + enc->minBytesPerChar,
+                               next - enc->minBytesPerChar);
+        if (!name) {
+            *errorCodeP = XML_ERROR_NO_MEMORY;
+        } else {
+            entityP = (ENTITY *)
+                lookup(parserP, &parserP->m_dtd.generalEntities, name, 0);
+            poolDiscard(&parserP->m_dtd.pool);
+            if (!entityP) {
+                if (parserP->m_dtd.complete || parserP->m_dtd.standalone)
+                    *errorCodeP = XML_ERROR_UNDEFINED_ENTITY;
+                else {
+                    if (parserP->m_defaultHandler)
+                        reportDefault(xmlParserP, enc, s, next);
+                    *errorCodeP = XML_ERROR_NONE;
+                }
+            } else {
+                if (entityP->open)
+                    *errorCodeP = XML_ERROR_RECURSIVE_ENTITY_REF;
+                else if (entityP->notation)
+                    *errorCodeP = XML_ERROR_BINARY_ENTITY_REF;
+                else {
+                    if (entityP->textPtr)
+                        doInternalEntityRef(xmlParserP, enc, s, next, entityP,
+                                            errorCodeP, errorP);
+                    else
+                        doExternalEntityRef(xmlParserP, enc, s, next, entityP,
+                                            errorCodeP, errorP);
+                }
+            }
         }
-        return;
     }
-    if (entity->open) {
-        *errorCodeP = XML_ERROR_RECURSIVE_ENTITY_REF;
-        return;
-    }
-    if (entity->notation) {
-        *errorCodeP = XML_ERROR_BINARY_ENTITY_REF;
-        return;
-    }
-    if (entity) {
-        if (entity->textPtr) {
-            OPEN_INTERNAL_ENTITY openEntity;
-            if (defaultHandler && !defaultExpandInternalEntities) {
-                reportDefault(xmlParserP, enc, s, next);
-                *errorCodeP = XML_ERROR_NONE;
-                return;
-            }
-            entity->open = 1;
-            openEntity.next = openInternalEntities;
-            openInternalEntities = &openEntity;
-            openEntity.entity = entity;
-            openEntity.internalEventPtr = 0;
-            openEntity.internalEventEndPtr = 0;
-            doContent(xmlParserP,
-                      tagLevel,
-                      internalEncoding,
-                      (char *)entity->textPtr,
-                      (char *)(entity->textPtr + entity->textLen),
-                      0, errorCodeP, errorP);
-            entity->open = 0;
-            openInternalEntities = openEntity.next;
-            if (*errorCodeP != XML_ERROR_NONE)
-                return;
-        } else if (externalEntityRefHandler) {
-            const XML_Char *context;
-            entity->open = 1;
-            context = getContext(xmlParserP);
-            entity->open = 0;
-            if (!context) {
-                *errorCodeP = XML_ERROR_NO_MEMORY;
-                return;
-            }
-            if (!externalEntityRefHandler(externalEntityRefHandlerArg,
-                                          context,
-                                          entity->base,
-                                          entity->systemId,
-                                          entity->publicId)) {
-                *errorCodeP = XML_ERROR_EXTERNAL_ENTITY_HANDLING;
-                return;
-            }
-            poolDiscard(&tempPool);
-        } else if (defaultHandler)
-            reportDefault(xmlParserP, enc, s, next);
-    }
-    *errorCodeP = XML_ERROR_NONE;
 }
 
 
@@ -3413,7 +3617,8 @@ doProlog(XML_Parser       const xmlParserP,
     case XML_ROLE_DOCTYPE_CLOSE:
       if (dtd.complete && hadExternalDoctype) {
         dtd.complete = 0;
-        if (parser->m_paramEntityParsing && externalEntityRefHandler) {
+        if (parser->m_paramEntityParsing != XML_PARAM_ENTITY_PARSING_NEVER
+            && externalEntityRefHandler) {
           ENTITY *entity = (ENTITY *)lookup(parser, &dtd.paramEntities,
                                             externalSubsetName,
                                             0);
@@ -3546,7 +3751,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_DOCTYPE_SYSTEM_ID:
       if (!dtd.standalone
-          && !parser->m_paramEntityParsing
+          && parser->m_paramEntityParsing == XML_PARAM_ENTITY_PARSING_NEVER
           && notStandaloneHandler
           && !notStandaloneHandler(handlerArg)) {
         *errorCodeP = XML_ERROR_NOT_STANDALONE;
@@ -3778,7 +3983,7 @@ doProlog(XML_Parser       const xmlParserP,
       break;
     case XML_ROLE_PARAM_ENTITY_REF:
     case XML_ROLE_INNER_PARAM_ENTITY_REF:
-      if (parser->m_paramEntityParsing
+      if (parser->m_paramEntityParsing != XML_PARAM_ENTITY_PARSING_NEVER
           && (dtd.complete || role == XML_ROLE_INNER_PARAM_ENTITY_REF)) {
         const XML_Char *name;
         ENTITY *entity;

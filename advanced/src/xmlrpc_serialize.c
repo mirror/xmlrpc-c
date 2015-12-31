@@ -332,7 +332,7 @@ serializeStructMember(xmlrpc_env *       const envP,
     addString(envP, outputP, "<member><name>");
 
     if (!envP->fault_occurred) {
-        serializeUtf8MemBlock(envP, outputP, &memberKeyP->_block);
+        serializeUtf8MemBlock(envP, outputP, memberKeyP->blockP);
 
         if (!envP->fault_occurred) {
             addString(envP, outputP, "</name>"CRLF);
@@ -465,7 +465,7 @@ formatValueContent(xmlrpc_env *       const envP,
     case XMLRPC_TYPE_STRING:
         addString(envP, outputP, "<string>");
         if (!envP->fault_occurred) {
-            serializeUtf8MemBlock(envP, outputP, &valueP->_block);
+            serializeUtf8MemBlock(envP, outputP, valueP->blockP);
             if (!envP->fault_occurred)
                 addString(envP, outputP, "</string>");
         }
@@ -473,9 +473,9 @@ formatValueContent(xmlrpc_env *       const envP,
 
     case XMLRPC_TYPE_BASE64: {
         unsigned char * const contents =
-            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, &valueP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, valueP->blockP);
         size_t const size =
-            XMLRPC_MEMBLOCK_SIZE(unsigned char, &valueP->_block);
+            XMLRPC_MEMBLOCK_SIZE(unsigned char, valueP->blockP);
         addString(envP, outputP, "<base64>"CRLF);
         if (!envP->fault_occurred) {
             xmlrpc_serialize_base64_data(envP, outputP, contents, size);

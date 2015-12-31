@@ -44,6 +44,7 @@
 #include "xmlrpc_config.h"
 #include "bool.h"
 #include "xmlrpc-c/base.h"
+#include "xmlrpc-c/util_int.h"
 
 /*=========================================================================
 **  Tables and Constants
