@@ -70,12 +70,14 @@ ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
   XMLRPC_XML_PARSER = xmlrpc_libxml2
   XML_PARSER_LIBDEP = $(shell xml2-config --libs)
   XML_PARSER_LIBDEP_DEP =
+  XML_PKGCONFIG_REQ = libxml-2.0
 else
   XMLRPC_XML_PARSER = xmlrpc_expat
   XML_PARSER_LIBDEP = \
     -Lblddir/lib/expat/xmlparse -lxmlrpc_xmlparse \
     -Lblddir/lib/expat/xmltok -lxmlrpc_xmltok
   XML_PARSER_LIBDEP_DEP = $(LIBXMLRPC_XMLPARSE) $(LIBXMLRPC_XMLTOK)
+  XML_PKGCONFIG_REQ = xmlrpc_expat
 endif
 
 # LIBxxx_OBJS is the list of object files that make up library libxxx.
@@ -116,6 +118,13 @@ TARGET_MODS = \
   $(LIBXMLRPC_SERVER_CGI_MODS) \
   $(LIBXMLRPC_CLIENT_MODS) \
 
+PKGCONFIG_FILES_TO_INSTALL := \
+  xmlrpc.pc \
+  xmlrpc_client.pc \
+  xmlrpc_server.pc \
+  xmlrpc_server_abyss.pc \
+  xmlrpc_server_cgi.pc \
+
 OMIT_XMLRPC_LIB_RULE=Y
 MAJ=3
   # Major number of shared libraries in this directory
@@ -135,6 +144,7 @@ all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBRARIES) \
   $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
   $(SUBDIRS:%=%/all) \
 
 # Extra dependencies to make parallel make work in spite of all the submakes
@@ -230,10 +240,10 @@ LIBXMLRPC_CLIENT_LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   $(TRANSPORT_LIBDEP) \
 
-$(LIBXMLRPC_CLIENT): LIBDEP = $(LIBXMLRPC_CLIENT_LIBDEP)
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_CLIENT):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+$(LIBXMLRPC_CLIENT): LIBDEP = \
+  $(LIBXMLRPC_CLIENT_LIBDEP) \
+  $(SOCKETLIBOPT) \
+  $(THREAD_LIBS) \
 
 libxmlrpc.a: $(LIBXMLRPC_MODS:%=%.o)
 libxmlrpc.a: LIBOBJECTS = $(LIBXMLRPC_MODS:%=%.o)
@@ -299,7 +309,7 @@ $(LIBXMLRPC_SERVER_CGI_MODS:%=%.osh): \
 #  libxmlrpc_client from this directory.  So the link of libxmlrpc_client++
 #  must specify a dependency upon libxmlrpc_client and any library upon which
 #  libxmlrpc_client depends, so the link command for libxmlrpc_client++
-#  $(shell cat libxmlrpc_client.ldflags).
+#  should include $(shell cat libxmlrpc_client.ldflags).
 #  
 #  Note that some systems don't need this because there is information in
 #  libxmlrpc_client that tells libxmlrpc_client's dependencies, so you need
@@ -314,6 +324,67 @@ libxmlrpc_client.ldflags:
 
 
 #-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc"                                        >>$@
+	@echo "Description: Xmlrpc-c basic XML-RPC library"                >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc_util $(XML_PKGCONFIG_REQ)"                 >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc"                         >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_client.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_client"                                 >>$@
+	@echo "Description: Xmlrpc-c XML-RPC client library"               >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_client"                  >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server"                                 >>$@
+	@echo "Description: Xmlrpc-c XML-RPC server library"               >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server"                  >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server_abyss.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server_abyss"                           >>$@
+	@echo "Description: Xmlrpc-c Abyss XML-RPC server library"         >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc xmlrpc_server xmlrpc_abyss xmlrpc_util"    >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_abyss"            >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server_cgi.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server_cgi"                             >>$@
+	@echo "Description: Xmlrpc-c CGI XML-RPC server library"           >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc xmlrpc_server xmlrpc_util"                 >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_cgi"              >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
 .PHONY: check
 check:
 

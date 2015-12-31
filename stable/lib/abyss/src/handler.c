@@ -231,6 +231,38 @@ generateListing(TList *       const listP,
 
 
 
+static const char *
+plainTail(void) {
+/*----------------------------------------------------------------------------
+   The bottom part of the response body, in plain text format.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+
+    xmlrpc_asprintf(&retval, SERVER_PLAIN_INFO);
+    
+    return retval;
+}
+
+
+
+static const char *
+htmlTail(void) {
+/*----------------------------------------------------------------------------
+  The bottom part of the response body, in HTML format.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+
+    xmlrpc_asprintf(
+        &retval,
+        "</PRE>"
+        SERVER_HTML_INFO
+        "</BODY></HTML>\r\n\r\n");
+
+    return retval;
+}
+
+
+
 static void
 sendDirectoryDocument(TList *      const listP,
                       bool         const ascending,
@@ -364,13 +396,13 @@ sendDirectoryDocument(TList *      const listP,
         HTTPWriteBodyChunk(sessionP, z, strlen(z));
     }
         
-    /* Write the tail of the file */
-    if (text)
-        strcpy(z, SERVER_PLAIN_INFO);
-    else
-        strcpy(z, "</PRE>" SERVER_HTML_INFO "</BODY></HTML>\r\n\r\n");
-    
-    HTTPWriteBodyChunk(sessionP, z, strlen(z));
+    {
+        const char * const tail = text ? plainTail() : htmlTail();
+
+        HTTPWriteBodyChunk(sessionP, tail, strlen(tail));
+
+        xmlrpc_strfree(tail);
+    }
 }
 
 
@@ -644,7 +676,7 @@ handleFile(TSession *   const sessionP,
 static void
 convertToNativeFileName(char * const fileName ATTR_UNUSED) {
 
-#ifdef _WIN32
+#if MSVCRT
     char * p;
     p = &fileName[0];
     while (*p) {
@@ -653,7 +685,7 @@ convertToNativeFileName(char * const fileName ATTR_UNUSED) {
 
         ++p;
     }
-#endif  /* _WIN32 */
+#endif
 }
 
 

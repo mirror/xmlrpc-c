@@ -55,7 +55,7 @@ endif
 
 LIBXMLRPCPP_MODS = fault global outcome param_list value xml
 LIBXMLRPC_SERVERPP_MODS = registry
-LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
+LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss abyss_reqhandler_xmlrpc
 LIBXMLRPC_SERVER_CGIPP_MODS = server_cgi
 LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream_conn server_pstream
 LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet pstream
@@ -70,6 +70,12 @@ TARGET_MODS_PP = \
   $(LIBXMLRPC_SERVER_PSTREAMPP_MODS) \
   $(LIBXMLRPC_CLIENTPP_MODS) \
   $(LIBXMLRPC_PACKETSOCKET_MODS) \
+
+PKGCONFIG_FILES_TO_INSTALL := \
+  xmlrpc++.pc \
+  xmlrpc_client++.pc \
+  xmlrpc_server++.pc \
+  xmlrpc_server_pstream++.pc \
 
 OMIT_CPP_LIB_RULES = Y
 MAJ = 8
@@ -96,7 +102,8 @@ BASIC_INCLUDES = \
 all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBS_PP) \
-  $(TARGET_SHARED_LE_LIBS)
+  $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 
 #-----------------------------------------------------------------------------
@@ -119,7 +126,8 @@ $(LIBXMLRPC_CPP_SH): XmlRpcCpp.osh \
   $(LIBXMLRPC_UTIL) \
   $(LIBXMLRPC) \
   $(LIBXMLRPC_SERVER) \
-  $(LIBXMLRPC_UTIL)
+  $(LIBXMLRPC_UTIL) \
+
 $(LIBXMLRPC_CPP_SH): LIBOBJECTS = XmlRpcCpp.osh
 $(LIBXMLRPC_CPP_SH): LIBDEP = \
   -Lblddir/src  -lxmlrpc_server -lxmlrpc \
@@ -134,13 +142,12 @@ $(LIBXMLRPCPP_SH): $(LIBXMLRPCPP_MODS:%=%.osh) \
   $(LIBXMLRPC_UTIL) \
 
 $(LIBXMLRPCPP_SH): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
-
 $(LIBXMLRPCPP_SH): LIBDEP = \
   -Lblddir/src -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-  -lpthread
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVERPP_SH = $(call shlibfn, libxmlrpc_server++)
 
@@ -149,7 +156,8 @@ $(LIBXMLRPC_SERVERPP_SH): $(LIBXMLRPC_SERVERPP_MODS:%=%.osh) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
   $(LIBXMLRPC_UTILPP) \
   $(LIBXMLRPC_UTIL) \
-  $(LIBXMLRPC)
+  $(LIBXMLRPC) \
+
 $(LIBXMLRPC_SERVERPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVERPP_SH): LIBDEP = \
   -L. -l$(LIBXMLRPCPP_NAME) \
@@ -157,10 +165,7 @@ $(LIBXMLRPC_SERVERPP_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVERPP_SH):  LIBDEP += -lpthread
-endif
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVER_ABYSSPP_SH = $(call shlibfn, libxmlrpc_server_abyss++)
 
@@ -172,37 +177,37 @@ $(LIBXMLRPC_SERVER_ABYSSPP_SH): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
   $(call shliblefn, libxmlrpc_server++) \
   $(LIBXMLRPC_UTILPP) \
   $(LIBXMLRPC_UTIL) \
-  $(LIBXMLRPC)
+  $(LIBXMLRPC) \
+
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_ABYSSPP_SH): LIBDEP = \
-   -L. -lxmlrpc_server++  -l$(LIBXMLRPCPP_NAME) \
-   -Lblddir/src -lxmlrpc_server_abyss -lxmlrpc_server -lxmlrpc \
-   $(XML_PARSER_LIBDEP) \
-   -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
-   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
-   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVER_ABYSSPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  -L. -lxmlrpc_server++  -l$(LIBXMLRPCPP_NAME) \
+  -Lblddir/src -lxmlrpc_server_abyss -lxmlrpc_server -lxmlrpc \
+  $(XML_PARSER_LIBDEP) \
+  -L$(LIBXMLRPC_ABYSSPP_DIR) -lxmlrpc_abyss++ \
+  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
+  -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+  $(SOCKETLIBOBT) \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVER_CGIPP_SH = $(call shlibfn, libxmlrpc_server_cgi++)
 
 $(LIBXMLRPC_SERVER_CGIPP_SH): $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh) \
   $(call shliblefn, libxmlrpc_server++) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
-  $(LIBXMLRPC)
+  $(LIBXMLRPC_UTILPP) \
+  $(LIBXMLRPC_UTIL) \
+  $(LIBXMLRPC) \
+
 $(LIBXMLRPC_SERVER_CGIPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_CGIPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_CGIPP_SH): LIBDEP = \
   -L. -lxmlrpc_server++  -l$(LIBXMLRPCPP_NAME) \
   -Lblddir/src -lxmlrpc_server -lxmlrpc \
   $(XML_PARSER_LIBDEP) \
- -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
- -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVER_CGIPP_SH):  LIBDEP += -lpthread
-endif
+  -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
+  -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_SERVER_PSTREAMPP_SH = $(call shlibfn, libxmlrpc_server_pstream++)
 
@@ -210,7 +215,10 @@ $(LIBXMLRPC_SERVER_PSTREAMPP_SH): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh) \
   $(LIBXMLRPC_SERVER) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
   $(call shliblefn, libxmlrpc_packetsocket) \
-  $(call shliblefn, libxmlrpc_server++)
+  $(call shliblefn, libxmlrpc_server++) \
+  $(LIBXMLRPC_UTILPP) \
+  $(LIBXMLRPC_UTIL) \
+
 $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBOBJECTS = $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh)
 $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBDEP = \
   -L. -lxmlrpc_server++ -l$(LIBXMLRPCPP_NAME) -lxmlrpc_packetsocket \
@@ -218,10 +226,8 @@ $(LIBXMLRPC_SERVER_PSTREAMPP_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_SERVER_PSTREAMPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  $(SOCKETLIBOPT) \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_CLIENTPP_SH = $(call shlibfn, libxmlrpc_client++)
 
@@ -232,7 +238,8 @@ $(LIBXMLRPC_CLIENTPP_SH): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
   $(LIBXMLRPC) \
   $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
   $(LIBXMLRPC_CLIENT) \
-  $(BLDDIR)/src/libxmlrpc_client.ldflags
+  $(BLDDIR)/src/libxmlrpc_client.ldflags \
+
 $(LIBXMLRPC_CLIENTPP_SH): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
 $(LIBXMLRPC_CLIENTPP_SH): LIBDEP = \
   -L. -l$(LIBXMLRPCPP_NAME) -lxmlrpc_packetsocket \
@@ -241,15 +248,16 @@ $(LIBXMLRPC_CLIENTPP_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_CLIENTPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  $(SOCKETLIBOPT) \
+  $(THREAD_LIBS) \
 
 LIBXMLRPC_PACKETSOCKET_SH = $(call shlibfn, libxmlrpc_packetsocket)
 
 $(LIBXMLRPC_PACKETSOCKET_SH): $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh) \
-  $(call shliblefn, lib$(LIBXMLRPCPP_NAME))
+  $(LIBXMLRPC_UTILPP) \
+  $(LIBXMLRPC_UTIL) \
+  $(call shliblefn, lib$(LIBXMLRPCPP_NAME)) \
+
 $(LIBXMLRPC_PACKETSOCKET_SH): LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
 $(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = \
   -L. -l$(LIBXMLRPCPP_NAME) \
@@ -257,10 +265,8 @@ $(LIBXMLRPC_PACKETSOCKET_SH): LIBDEP = \
   $(XML_PARSER_LIBDEP) \
   -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
   -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_PACKETSOCKET_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+  $(SOCKETLIBOPT) \
+  $(THREAD_LIBS) \
 
 libxmlrpc_cpp.a: XmlRpcCpp.o
 libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o
@@ -338,6 +344,68 @@ TRANSPORT_CONFIG_USERS = client curl libwww wininet
 
 $(TRANSPORT_CONFIG_USERS:%=%.o) $(TRANSPORT_CONFIG_USERS:%=%.osh): \
   $(BLDDIR)/transport_config.h
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc++"                                      >>$@
+	@echo "Description: Xmlrpc-c basic XML-RPC C++ library"            >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc++"                       >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_client++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_client++"                               >>$@
+	@echo "Description: Xmlrpc-c XML-RPC client C++ library"           >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc_client xmlrpc_util++ xmlrpc_util" >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_client++"                >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server++"                               >>$@
+	@echo "Description: Xmlrpc-c XML-RPC server C++ library"           >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server xmlrpc_util++ xmlrpc_util" >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server++"                >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server_abyss++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server_abyss++"                         >>$@
+	@echo "Description: Xmlrpc-c Abyss XML-RPC server C++ library"     >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_abyss xmlrpc_util++ xmlrpc_util"    >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_abyss"            >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+xmlrpc_server_pstream++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_server_pstream"                         >>$@
+	@echo "Description: Xmlrpc-c packet stream XML-RPC server library" >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_util++ xmlrpc_util"                 >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_pstream++ -lxmlrpc_packetsocket"              >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

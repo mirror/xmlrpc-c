@@ -83,7 +83,7 @@ protected:
            int const addend(paramList.getInt(0));
            int const adder(paramList.getInt(1));
 
-           *retvalP = xmlrpc_c::value(addend, adder);
+           *retvalP = xmlrpc_c::value_int(addend + adder);
       }
    };
 

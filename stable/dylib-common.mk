@@ -1,7 +1,7 @@
 # -*-makefile-*-    <-- an Emacs control
 
 # See unix-common.mk for an explanation of this file.  This file is
-# analogous to unix-common.mk, but is for an Irix system.
+# analogous to unix-common.mk, but is for a Darwin/Mac OSX system.
 
 SONAME = $(@:%.$(MIN)=%)
 

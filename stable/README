@@ -36,6 +36,7 @@ prerequisite here.  But if you separately obtain Libxml2, you can
 configure the build to use that instead.  There's no really pressing
 reason to do that, though.
 
+
 BUILDING, INSTALLING
 --------------------
 

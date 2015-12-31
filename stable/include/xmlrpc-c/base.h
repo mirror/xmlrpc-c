@@ -167,8 +167,18 @@ extern xmlrpc_type xmlrpc_value_type (xmlrpc_value* const value);
 
 XMLRPC_LIB_EXPORTED
 xmlrpc_value *
+xmlrpc_value_new(xmlrpc_env *   const envP,
+                 xmlrpc_value * const sourceValP);
+
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
 xmlrpc_int_new(xmlrpc_env * const envP,
                int          const intValue);
+
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_int_new_value(xmlrpc_env *   const envP,
+                     xmlrpc_value * const valueP);
 
 XMLRPC_LIB_EXPORTED
 void 
@@ -182,6 +192,11 @@ xmlrpc_i8_new(xmlrpc_env * const envP,
               xmlrpc_int64 const value);
 
 XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_i8_new_value(xmlrpc_env *   const envP,
+                    xmlrpc_value * const valueP);
+
+XMLRPC_LIB_EXPORTED
 void 
 xmlrpc_read_i8(xmlrpc_env *         const envP,
                const xmlrpc_value * const valueP,
@@ -193,6 +208,11 @@ xmlrpc_bool_new(xmlrpc_env * const envP,
                 xmlrpc_bool  const boolValue);
 
 XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_bool_new_value(xmlrpc_env *   const envP,
+                      xmlrpc_value * const valueP);
+
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_bool(xmlrpc_env *         const envP,
                  const xmlrpc_value * const valueP,
@@ -202,6 +222,11 @@ XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_double_new(xmlrpc_env * const envP,
                   double       const doubleValue);
+
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_double_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP);
 
 XMLRPC_LIB_EXPORTED
 void
@@ -243,6 +268,11 @@ xmlrpc_value *
 xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
                              struct timespec const value);
 #endif
+
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_datetime_new_value(xmlrpc_env *   const envP,
+                          xmlrpc_value * const valueP);
 
 void
 XMLRPC_LIB_EXPORTED
@@ -327,6 +357,11 @@ xmlrpc_string_new_cr(xmlrpc_env * const envP,
 
 XMLRPC_LIB_EXPORTED
 void
+xmlrpc_string_validate(xmlrpc_env *   const envP,
+                       xmlrpc_value * const valueP);
+
+XMLRPC_LIB_EXPORTED
+void
 xmlrpc_read_string(xmlrpc_env *         const envP,
                    const xmlrpc_value * const valueP,
                    const char **        const stringValueP);
@@ -405,9 +440,19 @@ xmlrpc_string_w_new_cr(xmlrpc_env *    const envP,
 
 XMLRPC_LIB_EXPORTED
 xmlrpc_value *
+xmlrpc_string_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP);
+
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
 xmlrpc_base64_new(xmlrpc_env *          const envP, 
                   size_t                const length,
                   const unsigned char * const value);
+
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_base64_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP);
 
 XMLRPC_LIB_EXPORTED
 void
@@ -426,8 +471,11 @@ XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_array_new(xmlrpc_env * const envP);
 
-/* Return the number of elements in an XML-RPC array.
-** Sets XMLRPC_TYPE_ERROR if 'array' is not an array. */
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_array_new_value(xmlrpc_env *   const envP,
+                       xmlrpc_value * const valueP);
+
 XMLRPC_LIB_EXPORTED
 int 
 xmlrpc_array_size(xmlrpc_env *         const env, 
@@ -472,8 +520,11 @@ XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_struct_new(xmlrpc_env * const env);
 
-/* Return the number of key/value pairs in a struct.
-** Sets XMLRPC_TYPE_ERROR if 'strct' is not a struct. */
+XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_struct_new_value(xmlrpc_env *   const envP,
+                        xmlrpc_value * const valueP);
+
 XMLRPC_LIB_EXPORTED
 int
 xmlrpc_struct_size (xmlrpc_env   * const env, 
@@ -639,6 +690,11 @@ xmlrpc_cptr_new_dtor(xmlrpc_env *        const envP,
                      void *              const dtorContext);
 
 XMLRPC_LIB_EXPORTED
+xmlrpc_value *
+xmlrpc_cptr_new_value(xmlrpc_env *   const envP,
+                      xmlrpc_value * const valueP);
+
+XMLRPC_LIB_EXPORTED
 void
 xmlrpc_read_cptr(xmlrpc_env *         const envP,
                  const xmlrpc_value * const valueP,
@@ -652,7 +708,6 @@ xmlrpc_read_nil(xmlrpc_env *   const envP,
 XMLRPC_LIB_EXPORTED
 xmlrpc_value *
 xmlrpc_nil_new(xmlrpc_env * const envP);
-
 
 /* Build an xmlrpc_value from a format string. */
 

@@ -12,7 +12,11 @@
 #include <vector>
 #include <string>
 #include <map>
+#if defined(__GNUC__) && __GNUC__ < 3
+#include <iostream>
+#else
 #include <ostream>
+#endif
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/AbyssChanSwitch.hpp>
 
@@ -124,12 +128,26 @@ public:
         size_t
         contentLength() const;
 
+        std::string const
+        body();
+
         void
         readRequestBody(unsigned char * const buffer,
                         size_t          const size);
 
+        void
+        readSomeRequestBody(size_t          const max,
+                            unsigned char * const buffer,
+                            bool *          const eofP,
+                            size_t *        const byteCtP);
+
+        void
+        getHeaderField(std::string   const& fieldName,
+                       bool *        const  isPresentP,
+                       std::string * const  valueP) const;
+
         std::string const
-        body();
+        headerFieldValue(std::string const& fieldName) const;
 
         void
         setRespStatus(unsigned short const statusCode);
@@ -172,7 +190,7 @@ public:
 
       The object also decides and reports whether a particular request is
       appropriate for this object to handle.  An AbyssServer object may have
-      multiple ReqHandler object on which it can call, each specializing in
+      multiple ReqHandler objects on which it can call, each specializing in
       different kinds of requests.
 
       This is an abstract base class.  A derived class knows how to handle,
@@ -208,6 +226,12 @@ public:
 
     void
     runOnce();
+
+    void
+    terminate();
+
+    void
+    resetTerminate();
 
 private:
     TServer cServer;

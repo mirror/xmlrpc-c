@@ -11,12 +11,27 @@ typedef struct {
     uint8_t minor;
 } httpVersion;
 
+typedef enum {
+    /* This tells what is supposed to be at the current read position
+       in the connection buffer.
+    */
+    CHUNK_ATHEADER,   /* A chunk header (including EOF marker) */
+    CHUNK_INCHUNK,    /* Somewhere in chunk data */
+    CHUNK_AFTERCHUNK, /* The delimiter after a chunk */
+    CHUNK_EOF         /* Past EOF marker */
+} ChunkPosition;
+
 struct _TSession {
     bool validRequest;
         /* Client has sent, and server has recognized, a valid HTTP request.
            This is false when the session is new.  If and when the server
            reads the request from the client and finds it to be valid HTTP,
            it becomes true.
+        */
+    const char * failureReason;
+        /* This is non-null to indicate that we have encountered a protocol
+           error or other problem in the session and the session cannot
+           continue.  The value is a text explanation of the problem.
         */
     TRequestInfo requestInfo;
         /* Some of the strings this references are in individually malloc'ed
@@ -66,7 +81,7 @@ struct _TSession {
 
            Each table item is an HTTP header field.  The Name component of the
            table item is the header field name (it is syntactically valid but
-           not necessarily a defined field name) and the Value comonent is the
+           not necessarily a defined field name) and the Value component is the
            header field value (it is syntactically valid but not necessarily
            semantically valid).
         */
@@ -80,6 +95,22 @@ struct _TSession {
         /* This client must receive 100 (continue) status before it will
            send more of the body of the request.
         */
+
+    bool requestIsChunked;
+        /* The request body (PUT/POST data) is chunked. */
+
+    struct {
+        /* Meaningful only when 'requestIsChunked' is true */
+
+        ChunkPosition position;
+
+        uint32_t bytesLeftCt;
+            /* Number of bytes left to read in the current chunk.  Always
+               greater than zero except locally.
+
+               Meaningful only when 'position' is INCHUNK.
+            */
+    } chunkState;
 };
 
 

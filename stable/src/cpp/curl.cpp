@@ -159,6 +159,7 @@ struct clientXmlTransport_curl::constrOpt_impl {
         std::string  proxy_userpwd;
         xmlrpc_httpproxytype proxy_type;
         bool         gssapi_delegation;
+        unsigned int connect_timeout;
     } value;
     struct {
         bool network_interface;
@@ -188,6 +189,7 @@ struct clientXmlTransport_curl::constrOpt_impl {
         bool proxy_userpwd;
         bool proxy_type;
         bool gssapi_delegation;
+        bool connect_timeout;
     } present;
 };
 
@@ -220,6 +222,7 @@ clientXmlTransport_curl::constrOpt_impl::constrOpt_impl() {
     present.proxy_userpwd     = false;
     present.proxy_type        = false;
     present.gssapi_delegation = false;
+    present.connect_timeout   = false;
 }
 
 
@@ -259,6 +262,7 @@ DEFINE_OPTION_SETTER(proxy_auth, unsigned int);
 DEFINE_OPTION_SETTER(proxy_userpwd, string);
 DEFINE_OPTION_SETTER(proxy_type, xmlrpc_httpproxytype);
 DEFINE_OPTION_SETTER(gssapi_delegation, bool);
+DEFINE_OPTION_SETTER(connect_timeout, unsigned int);
 
 #undef DEFINE_OPTION_SETTER
 
@@ -345,6 +349,8 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
         opt.value.proxy_type                : XMLRPC_HTTPPROXY_HTTP;
     transportParms.gssapi_delegation = opt.present.gssapi_delegation ?
         opt.value.gssapi_delegation         : false;
+    transportParms.connect_timeout   = opt.present.connect_timeout ? 
+        opt.value.connect_timeout           : 0;
 
     this->c_transportOpsP = &xmlrpc_curl_transport_ops;
 

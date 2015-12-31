@@ -194,7 +194,7 @@ struct xmlrpc_client_transport {
            and consequently does not share things such as persistent
            connections and cookies with any other RPC.
         */
-    lock * syncCurlSessionLockP;
+    struct lock * syncCurlSessionLockP;
         /* Hold this lock while accessing or using *syncCurlSessionP.
            You're using the session from the time you set any
            attributes in it or start a transaction with it until any
@@ -381,6 +381,8 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     /* We assume there is work to do at least every 3 seconds, because
        the Curl multi manager often has retries and other scheduled work
        that doesn't involve file handles on which we can select().
+       One thing that might cause work to do without any file handle becoming
+       ready is Curl timing out a request.
     */
     switch (timeoutType) {
     case timeout_no:
@@ -695,6 +697,37 @@ getTimeoutParm(xmlrpc_env *                          const envP,
 
 
 static void
+getConnectTimeoutParm(
+    xmlrpc_env *                          const envP,
+    const struct xmlrpc_curl_xportparms * const curlXportParmsP,
+    size_t                                const parmSize,
+    unsigned int *                        const timeoutP) {
+               
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(connect_timeout))
+        *timeoutP = 0;
+    else {
+        if (curlHasNosignal()) {
+            /* libcurl represents the timeout in milliseconds with a 'long',
+               giving wrong results if it doesn't fit.
+            */
+            if ((unsigned)(long)(curlXportParmsP->connect_timeout) !=
+                curlXportParmsP->connect_timeout)
+                xmlrpc_faultf(envP, "Timeout value %u is too large.",
+                              curlXportParmsP->connect_timeout);
+            else
+                *timeoutP = curlXportParmsP->connect_timeout;
+        } else
+            xmlrpc_faultf(envP, "You cannot specify a "
+                          "'connect_timeout' parameter "
+                          "because the Curl library is too old and is not "
+                          "capable of doing timeouts except by using "
+                          "signals.  You need at least Curl 7.10");
+    }
+}
+
+
+
+static void
 setVerbose(bool * const verboseP) {
 
     const char * const xmlrpcTraceCurl = getenv("XMLRPC_TRACE_CURL");
@@ -905,6 +938,9 @@ getXportParms(xmlrpc_env *                          const envP,
         curlSetupP->referer = strdup(curlXportParmsP->referer);
 
     getTimeoutParm(envP, curlXportParmsP, parmSize, &curlSetupP->timeout);
+
+    getConnectTimeoutParm(envP, curlXportParmsP, parmSize,
+                          &curlSetupP->connectTimeout);
 }
 
 

@@ -104,7 +104,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'NEED_RPATH="$(NEED_RPATH)"'				>>$@
 	@echo 'NEED_WL_RPATH="$(NEED_WL_RPATH)"'			>>$@
 	@echo 'LIBXMLRPCPP_NAME="$(LIBXMLRPCPP_NAME)"'                  >>$@
-	@echo 'LSOCKET="$(LSOCKET)"'					>>$@
+	@echo 'SOCKETLIBOPT="$(SOCKETLIBOPT)"'				>>$@
 	@echo 'WININET_LDADD="$(WININET_LDADD)"'			>>$@
 	@echo 'WININET_LIBDIR="$(WININET_LIBDIR)"'			>>$@
 	@echo 'CURL_LDADD="$(CURL_LDADD)"'				>>$@

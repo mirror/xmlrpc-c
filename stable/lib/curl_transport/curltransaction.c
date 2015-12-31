@@ -27,6 +27,53 @@
 #include "curltransaction.h"
 
 
+/* ABOUT LIBCURL AND SIGNALS:
+
+   The Curl library has two timeout functions: one on original connection
+   (including DNS lookup) and another on the individual transactions.  In the
+   original implementation, both use SIGALRM.  But it is a terrible idea for a
+   library to mess with signals, because they are process-global.  In fact, if
+   the program is multithreaded, this can be disastrous as a different thread
+   can receive the signal from the thread that is waiting.  Programs even
+   crash.
+
+   It is easy enough for Curl to time out the transaction without using
+   SIGALRM, and in current implementations it does.  But for the DNS lookup,
+   using the traditional DNS lookup library, SIGALRM is the only way.
+   Therefore, the user must make a choice: have a timeout or have multiple
+   threads.  To reflect that choice, Curl has the CURLOPT_NOSIGNAL setting.
+   When you set that, Curl does the right thing as keeps its hands off the
+   signals, but DNS lookups are indefinite.  If you don't, then the connect
+   timeout (which defaults to 5 minutes and is user-settable) is effective
+   against the DNS lookup, but you had better not have multiple threads.
+
+   For backward compatibilty, the default is to use SIGALRM.  That means
+   single-threaded programs continue to enjoy DNS lookup timeouts even when
+   using new Curl.
+
+   There is an optional way of building the Curl library -- with the ARES
+   library -- that allows the connect timeout to work on the DNS lookup without
+   SIGALRM
+
+   In Xmlrpc-c, we always set CURLOPT_NOSIGNAL, to avoid undefined behavior in
+   multithreaded programs.  This means that if the Curl library was not built
+   for ARES, the DNS lookup will not time out.  For consistency, we also set
+   CURLOPT_CONNECTTIMEOUT to infinite.  That way, users see the same behavior
+   with ARES.
+   
+   It wasn't always this way, Before Xmlrpc-c 1.41, we set CURLOPT_NOSIGNAL
+   only when the user specified the 'timeout' curl transport option, and we
+   never set CURLOPT_CONNECTTIMEOUT.  This means programs that have a nice 5
+   minute (Curl default) DNS lookup timeout with old Xmlrpc-c, (and happen not
+   to have the SIGALRM-related crash problem) have an indefinite wait with
+   current Xmlrpc-c.  This was an unfortunate break to provide a more usable
+   interface to future users.
+
+   For the old Curl that does not have CURLOPT_NOSIGNAL, we fail any attempt
+   to set a timeout (and we provide the user a way to know whether such
+   failure would occur).
+*/
+
 struct curlTransaction {
     /* This is all stuff that really ought to be in a Curl object, but
        the Curl library is a little too simple for that.  So we build
@@ -295,9 +342,12 @@ collect(void *  const ptr,
     xmlrpc_mem_block_append(&env, responseXmlP, buffer, length);
     if (env.fault_occurred)
         retval = (size_t)-1;
-    else
-        /* Really?  Shouldn't it be like fread() and return 'nmemb'? */
+    else {
         retval = length;
+            /* Really.  Analogy to fread() would require this to be 'nmemb',
+               but Curl does expect the byte count.
+            */
+    }
     
     return retval;
 }
@@ -427,12 +477,29 @@ setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
 #if HAVE_CURL_NOSIGNAL
     unsigned int const timeoutSec = (timeoutMs + 999)/1000;
 
-    curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
-
     assert((long)timeoutSec == (int)timeoutSec);
         /* Calling requirement */
     curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutSec);
 #else
+    /* Caller should not have called us */
+    abort();
+#endif
+}
+
+
+
+static void
+setCurlConnectTimeout(CURL *       const curlSessionP ATTR_UNUSED,
+                      unsigned int const timeoutMs ATTR_UNUSED) {
+
+#if HAVE_CURL_NOSIGNAL
+    unsigned int const timeoutSec = (timeoutMs + 999)/1000;
+
+    assert((long)timeoutSec == (int)timeoutSec);
+        /* Calling requirement */
+    curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT, (long)timeoutSec);
+#else
+    /* Caller should not have called us */
     abort();
 #endif
 }
@@ -567,10 +634,6 @@ setupCurlSession(xmlrpc_env *               const envP,
    Set up the Curl session for the transaction *transP so that
    a subsequent curl_easy_perform() would perform said transaction.
 
-   The data curl_easy_perform() would send for that transaction would 
-   be the contents of *callXmlP; the data curl_easy_perform() gets back
-   would go into *responseXmlP.
-
    *serverInfoP tells what sort of authentication to set up.  This is
    an embarassment, as the xmlrpc_server_info type is part of the
    Xmlrpc-c interface.  Some day, we need to replace this with a type
@@ -595,6 +658,9 @@ setupCurlSession(xmlrpc_env *               const envP,
        don't exercise any more of libcurl than we have to.
     */
 
+    curl_easy_setopt(curlSessionP, CURLOPT_NOSIGNAL, 1);
+        /* See discussion of CURLOPT_NOSIGNAL above */
+
     curl_easy_setopt(curlSessionP, CURLOPT_PRIVATE, transP);
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
@@ -606,6 +672,7 @@ setupCurlSession(xmlrpc_env *               const envP,
                          XMLRPC_MEMBLOCK_CONTENTS(char, transP->postDataP));
         curl_easy_setopt(curlSessionP, CURLOPT_WRITEFUNCTION, collect);
         curl_easy_setopt(curlSessionP, CURLOPT_FILE, transP->responseDataP);
+            /* CURLOPT_FILE is the older name for CURLOPT_WRITEDATA */
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, transP->curlError);
         if (transP->progress) {
@@ -696,6 +763,18 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->timeout)
             setCurlTimeout(curlSessionP, curlSetupP->timeout);
 
+        if (curlSetupP->connectTimeout)
+            setCurlConnectTimeout(curlSessionP, curlSetupP->connectTimeout);
+        else 
+            curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT,
+                             LONG_MAX/1000);
+                /* Some documentation says 0 means indefinite and other says 0
+                   means 5 minutes.  The latter appears to be true.  Some
+                   libcurl (e.g. 7.12.2, but not 7.21.0) has an apparent bug
+                   in which anything larger than LONG_MAX/1000 results in an
+                   instantaneous timeout.
+                */
+
         if (curlSetupP->gssapiDelegation) {
             bool gotIt;
             requestGssapiDelegation(curlSessionP, &gotIt);
@@ -758,6 +837,11 @@ curlTransaction_create(xmlrpc_env *               const envP,
         curlTransactionP->curlSessionP = curlSessionP;
         curlTransactionP->userContextP = userContextP;
         curlTransactionP->progress     = progress;
+
+        /* Curl sometimes neglects to set 'curlError', so we set it here to
+           a value that means no explanation available.
+        */
+        curlTransactionP->curlError[0] = '\0';
 
         curlTransactionP->serverUrl = strdup(serverP->serverUrl);
         if (curlTransactionP->serverUrl == NULL)
@@ -854,6 +938,10 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
    terms.  Assume the transaction did complete.  Return as *envP an indication
    of whether the transaction failed and if so, how.
 -----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);
+
     if (curlTransactionP->result != CURLE_OK) {
         /* We've seen Curl just return a null string for an explanation
            (e.g. when TCP connect() fails because IP address doesn't exist).
@@ -866,8 +954,8 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
             xmlrpc_asprintf(&explanation, "%s", curlTransactionP->curlError);
 
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_NETWORK_ERROR, "libcurl failed to execute the "
-            "HTTP POST transaction, explaining:  %s", explanation);
+            &env, XMLRPC_NETWORK_ERROR, "libcurl failed even to execute the "
+            "HTTP transaction, explaining:  %s", explanation);
 
         xmlrpc_strfree(explanation);
     } else {
@@ -876,11 +964,12 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
         
         res = curl_easy_getinfo(curlTransactionP->curlSessionP,
                                 CURLINFO_HTTP_CODE, &http_result);
+            /* CURLINFO_HTTP_CODE is the old name for CURLINFO_RESPONSE_CODE */
     
         if (res != CURLE_OK)
             xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, 
-                "Curl performed the HTTP POST request, but was "
+                &env, XMLRPC_INTERNAL_ERROR, 
+                "Curl performed the HTTP transaction, but was "
                 "unable to say what the HTTP result code was.  "
                 "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
                 curlTransactionP->curlError);
@@ -891,18 +980,27 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
                     formatDataReceived(curlTransactionP);
 
                 xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_NETWORK_ERROR,
+                    &env, XMLRPC_NETWORK_ERROR,
                     "Server is not an XML-RPC server.  Its response to our "
                     "call is not valid HTTP.  Or it's valid HTTP with a "
                     "response code of zero.  %s", dataReceived);
                 xmlrpc_strfree(dataReceived);
             } else if (http_result != 200)
                 xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_NETWORK_ERROR,
+                    &env, XMLRPC_NETWORK_ERROR,
                     "HTTP response code is %ld, not 200",
                     http_result);
         }
     }
+
+    if (env.fault_occurred) {
+        xmlrpc_env_set_fault_formatted(
+            envP,
+            env.fault_code,
+            "HTTP POST to URL '%s' failed.  %s",
+            curlTransactionP->serverUrl, env.fault_string);
+    }
+    xmlrpc_env_clean(&env);
 }
 
 

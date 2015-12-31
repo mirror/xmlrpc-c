@@ -1,7 +1,11 @@
 #include <cassert>
 #include <string>
 #include <stdexcept>
+#if defined(__GNUC__) && __GNUC__ < 3
+#include <iostream>
+#else
 #include <ostream>
+#endif
 #include <map>
 #include <string.h>
 #include <cstdlib>
@@ -11,7 +15,8 @@ using namespace std;
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 using girerr::throwf;
-#include <xmlrpc-c/abyss.h>
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/abyss.h"
 
 #include "xmlrpc-c/AbyssServer.hpp"
 
@@ -90,6 +95,12 @@ public:
     contentLength() const;
 
     void
+    readSomeRequestBody(size_t          const max,
+                        unsigned char * const buffer,
+                        bool *          const eofP,
+                        size_t *        const byteCtP);
+
+    void
     readRequestBody(unsigned char * const buffer,
                     size_t          const size);
 
@@ -113,9 +124,9 @@ private:
     bool requestBodyDelivered;
         // We have delivered the request body to the object user.  (or tried
         // to and failed).
-    
-    void
-    refillBufferFromConnection();
+
+    size_t bodyReadCt;
+        // Number of bytes of the request body the object user has read.
 };
 
 
@@ -125,6 +136,7 @@ AbyssServer::Session::Impl::Impl(TSession* const cSessionP) :
 {
     this->responseStarted = false;
     this->requestBodyDelivered = false;
+    this->bodyReadCt = 0;
 }
 
 
@@ -167,20 +179,83 @@ AbyssServer::Session::Impl::contentLength() const {
 
 
 
-void  // private
-AbyssServer::Session::Impl::refillBufferFromConnection() {
-/*----------------------------------------------------------------------------
-   Get the next chunk of data from the connection into the buffer.
+size_t
+AbyssServer::Session::contentLength() const {
+
+    return this->implP->contentLength();
+}
+
+
+
+void
+AbyssServer::Session::Impl::readSomeRequestBody(
+    size_t          const max,
+    unsigned char * const buffer,
+    bool *          const eofP,
+    size_t *        const byteCtP) {
+/*-----------------------------------------------------------------------------
+   Read some of the request body.  We read up to 'size' bytes, returning as
+   soon as we have at least one byte.  If we know there is no more data
+   coming, we send an indication of that instead.
+
+   We know there is no more data coming in one of two ways: With chunked
+   transfer encoding, we know when the client sends an end-of-data indication
+   in the data stream.  Without chunked transfer encoding, we know when the
+   this object has already transferred the full length indicated by the
+   content-size header field, when there is one.  If the client doesn't supply
+   content-size and does not use chunked transfer encoding, we never know the
+   client isn't going to send any more data, so never return *eofP == true.
+
+   If the client closes the TCP connection before sending anything, we
+   throw an error.
+
+   You can call this multiple times for one request, getting more of the
+   body each time.
+
+   If you call this method and 'body' on the same session, results are
+   undefined.
 -----------------------------------------------------------------------------*/
-    bool succeeded;
+    if (RequestHeaderValue(this->cSessionP, "content-length")
+        && this->contentLength() <= this->bodyReadCt)
+        *eofP = true;
+    else {
+        const char * piecePtr;
+        size_t pieceLen;
+        abyss_bool eof;
+        const char * error;
 
-    succeeded = SessionRefillBuffer(this->cSessionP);
+        SessionGetBody(this->cSessionP, max,
+                       &eof, &piecePtr, &pieceLen, &error);
 
-    if (!succeeded)
-        throw AbyssServer::Exception(
-            408, "Client disconnected or sent nothing for a long time "
-            "when the server was expecting the request body "
-            );
+        if (error) {
+            string const errorMsg(error);
+            xmlrpc_strfree(error);
+            throw girerr::error(errorMsg);
+        }
+
+        if (eof)
+            *eofP = true;
+        else {
+            this->bodyReadCt += pieceLen;
+
+            *eofP    = false;
+            *byteCtP = pieceLen;
+
+            memcpy(buffer, piecePtr, pieceLen);
+        }
+    }
+}
+
+
+
+void
+AbyssServer::Session::readSomeRequestBody(
+    size_t          const max,
+    unsigned char * const buffer,
+    bool *          const eofP,
+    size_t *        const byteCtP) {
+
+    this->implP->readSomeRequestBody(max, buffer, eofP, byteCtP);
 }
 
 
@@ -188,23 +263,50 @@ AbyssServer::Session::Impl::refillBufferFromConnection() {
 void
 AbyssServer::Session::Impl::readRequestBody(unsigned char * const buffer,
                                             size_t          const size) {
+/*-----------------------------------------------------------------------------
+   Read some of the request body.  We read 'size' bytes, waiting as long as
+   necessary for the client to send that much.  If the client sends an
+   end-of-data indication (possible with chunked transfer encoding only) or
+   closes the TCP connection before sending that much, we throw an error.
 
+   You can call this multiple times for one request, getting more of the
+   body each time.
+
+   If you call this method and 'body' on the same session, results are
+   undefined.
+-----------------------------------------------------------------------------*/
     for (size_t bytesXferredCt = 0; bytesXferredCt < size; ) {
-        const char * chunkPtr;
-        size_t chunkLen;
 
-        SessionGetReadData(this->cSessionP, size - bytesXferredCt, 
-                           &chunkPtr, &chunkLen);
+        size_t pieceLen;
 
-        assert(bytesXferredCt + chunkLen <= size);
+        try {
+            bool eof;
 
-        memcpy(&buffer[bytesXferredCt], chunkPtr, chunkLen);
+            this->readSomeRequestBody(size - bytesXferredCt,
+                                      &buffer[bytesXferredCt],
+                                      &eof,
+                                      &pieceLen);
 
-        bytesXferredCt += chunkLen;
-
-        if (bytesXferredCt < size)
-            this->refillBufferFromConnection();
+            if (eof)
+                throwf("Request body ended early (client sent the chunked "
+                       "transfer end-of-data mark "
+                       "or we exhausted content-length)");
+        } catch (exception const& e) {
+            throwf("Failed to get a piece of the request body.  %s",
+                   e.what());
+        }
+        bytesXferredCt += pieceLen;
+        assert(bytesXferredCt <= size);
     }
+}
+
+
+
+void
+AbyssServer::Session::readRequestBody(unsigned char * const buffer,
+                                      size_t          const size) {
+
+    this->implP->readRequestBody(buffer, size);
 }
 
 
@@ -222,6 +324,9 @@ AbyssServer::Session::Impl::body() {
    necessary for the body to arrive.
 
    This works only once.  If you call it a second time, it throws an error.
+
+   If you call this method and 'readRequestBody' on the same session,
+   results are undefined.
 -----------------------------------------------------------------------------*/
     if (this->requestBodyDelivered)
         throwf("The request body has already been delivered; you cannot "
@@ -232,25 +337,71 @@ AbyssServer::Session::Impl::body() {
     size_t const contentLength(this->contentLength());
 
     string body;
-    size_t bytesRead;
+    abyss_bool eof;
 
     body.reserve(contentLength);
 
-    bytesRead = 0;
-
-    while (body.size() < contentLength) {
-        const char * chunkPtr;
-        size_t chunkLen;
-
-        SessionGetReadData(this->cSessionP, contentLength - bytesRead, 
-                           &chunkPtr, &chunkLen);
-
-        body += string(chunkPtr, chunkPtr + chunkLen);
+    for (eof = false; body.size() < contentLength && !eof; ) {
+        const char * piecePtr;
+        size_t pieceLen;
+        const char * error;
         
-        if (body.size() < contentLength)
-            this->refillBufferFromConnection();
+        SessionGetBody(this->cSessionP, contentLength - body.size(), 
+                       &eof, &piecePtr, &pieceLen, &error);
+
+        if (error) {
+            string const errorMsg(error);
+            xmlrpc_strfree(error);
+            throw girerr::error(errorMsg);
+        }
+        if (!eof)
+            body.append(piecePtr, pieceLen);
     }
     return body;
+}
+
+
+
+string const
+AbyssServer::Session::body() {
+
+    return this->implP->body();
+}
+
+
+
+void
+AbyssServer::Session::getHeaderField(string   const& fieldName,
+                                     bool *   const  isPresentP,
+                                     string * const  valueP) const {
+
+    const char * const value = 
+        RequestHeaderValue(this->implP->cSessionP, fieldName.c_str());
+        
+    if (value == NULL)
+        *isPresentP = false;
+    else {
+        *isPresentP = true;
+
+        *valueP = string(value);
+    }
+}
+
+
+
+string const
+AbyssServer::Session::headerFieldValue(string const& fieldName) const {
+
+    bool isPresent;
+    string value;
+
+    this->getHeaderField(fieldName, &isPresent, &value);
+
+    if (isPresent)
+        return value;
+    else
+        throw AbyssServer::Exception(
+            400, string("No '") + fieldName + "' field in header");
 }
 
 
@@ -267,6 +418,14 @@ AbyssServer::Session::Impl::startWriteResponse() {
     ResponseWriteStart(this->cSessionP);
 
     this->responseStarted = true;
+}
+
+
+
+void
+AbyssServer::Session::startWriteResponse() {
+
+    this->implP->startWriteResponse();
 }
 
 
@@ -300,6 +459,7 @@ AbyssServer::Session::method() const {
     case m_trace:   return METHOD_TRACE;
     case m_options: return METHOD_OPTIONS;
     }
+    assert(false);  // All values of TMethod are handled in switch.
 }
 
 
@@ -647,37 +807,6 @@ AbyssServer::Session::hasContentLength() const {
 
 
 
-size_t
-AbyssServer::Session::contentLength() const {
-
-    return this->implP->contentLength();
-}
-
-
-
-void
-AbyssServer::Session::readRequestBody(unsigned char * const buffer,
-                                      size_t          const size) {
-/*-----------------------------------------------------------------------------
-   Read some of the request body.  We read 'size' bytes, waiting as long as
-   necessary for the client to send that much.  If the client closes the
-   TCP connection before sending that much, we throw an error.
-
-   You can call this multiple times for one request.
------------------------------------------------------------------------------*/
-    this->implP->readRequestBody(buffer, size);
-}
-
-
-
-string const
-AbyssServer::Session::body() {
-
-    return this->implP->body();
-}
-
-
-
 void
 AbyssServer::Session::setRespStatus(unsigned short const statusCode) {
 
@@ -698,14 +827,6 @@ void
 AbyssServer::Session::setRespContentLength(uint64_t const contentLength) {
 
     ResponseContentLength(this->implP->cSessionP, contentLength);
-}
-
-
-
-void
-AbyssServer::Session::startWriteResponse() {
-
-    this->implP->startWriteResponse();
 }
 
 
@@ -820,6 +941,22 @@ AbyssServer::runOnce() {
 
 
 
+void
+AbyssServer::terminate() {
+
+    ServerTerminate(&this->cServer);
+}
+
+
+
+void
+AbyssServer::resetTerminate() {
+
+    ServerResetTerminate(&this->cServer);
+}
+
+
+
 AbyssServer::~AbyssServer() {
 
     ServerFree(&this->cServer);
@@ -831,7 +968,14 @@ static void
 cHandleRequest(void *       const handlerPtr,
                TSession *   const cSessionP,
                abyss_bool * const handledP) {
+/*-----------------------------------------------------------------------------
+   This is an HTTP request handler function for the C abyss server.
+   I.e. it translates a call from the C Abyss server to a call to the
+   C++ HTTP request handler method.
 
+   'handlerPtr' is the handle of an Abyss::ReqHandler object; we call that
+   object's 'handleRequest' method.
+-----------------------------------------------------------------------------*/
     AbyssServer::ReqHandler * const reqHandlerP(
         reinterpret_cast<AbyssServer::ReqHandler *>(handlerPtr));
 

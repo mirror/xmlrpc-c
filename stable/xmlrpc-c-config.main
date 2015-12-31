@@ -90,11 +90,12 @@ while test $# -gt 0; do
         fi
       ;;
     abyss-server)
-      the_libs="${LSOCKET} $the_libs"
+      the_libs="${SOCKETLIBOPT} $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server_abyss $the_libs"
       if test "${needCpp}" = "yes"; then
+        the_libs="-lxmlrpc_abyss++ $the_libs"
         the_libs="-lxmlrpc_server++ $the_libs"
         the_libs="-lxmlrpc_server_abyss++ $the_libs"
         fi
@@ -105,7 +106,7 @@ while test $# -gt 0; do
         echo "Pstream server facilities are available only in a C++ version."
         exit 10
         fi
-      the_libs="${LSOCKET} $the_libs"
+      the_libs="${SOCKETLIBOPT} $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server++ $the_libs"
       the_libs="-lxmlrpc_server_pstream++ $the_libs"
@@ -136,7 +137,7 @@ while test $# -gt 0; do
         fi
       ;;
     abyss)
-      the_libs="${LSOCKET} -lxmlrpc_util -lpthread $the_libs"
+      the_libs="${SOCKETLIBOPT} -lxmlrpc_util -lpthread $the_libs"
       the_libs="-lxmlrpc_abyss $the_libs"
       if test "${needCpp}" = "yes"; then
         the_libs="-lxmlrpc_abyss++ $the_libs"

@@ -11,8 +11,6 @@ SUBDIRS = cpp
 
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
-LDADD_ABYSS_SERVER = \
-  $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
 LDADD_CGI_SERVER = \
   $(shell $(XMLRPC_C_CONFIG) cgi-server --ldadd)
 
@@ -27,13 +25,11 @@ all: $(PROGS) $(SUBDIRS:%=%/all)
 TEST_OBJS = \
   testtool.o \
   test.o \
-  abyss.o \
   cgi.o \
   method_registry.o \
   parse_xml.o \
   serialize.o \
   serialize_value.o \
-  server_abyss.o \
   value.o \
   value_datetime.o \
   xml_data.o \
@@ -48,6 +44,19 @@ else
   LDADD_CLIENT =
 endif
 
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  TEST_OBJS += abyss.o server_abyss.o
+  LIBXMLRPC_ABYSS_DEP = $(LIBXMLRPC_ABYSS_A)
+  LIBXMLRPC_SERVER_ABYSS_DEP = $(LIBXMLRPC_ABYSS_A)
+  LDADD_ABYSS_SERVER = \
+    $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
+else
+  TEST_OBJS += abyss_dummy.o server_abyss_dummy.o
+  LIBXMLRPC_ABYSS_DEP =
+  LIBXMLRPC_SERVER_ABYSS_DEP =
+  LDADD_ABYSS_SERVER =
+endif
+
 include $(SRCDIR)/common.mk
 
 # This 'common.mk' dependency makes sure the symlinks get built before
@@ -58,8 +67,8 @@ $(SRCDIR)/common.mk: srcdir blddir
 test: \
   $(XMLRPC_C_CONFIG) \
   $(TEST_OBJS) $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) \
-  $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_ABYSS_A) $(LIBXMLRPC_XML) \
-  $(LIBXMLRPC_CLIENT_DEP) $(LIBXMLRPC_ABYSS_A) \
+  $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_ABYSS_DEP) $(LIBXMLRPC_XML) \
+  $(LIBXMLRPC_CLIENT_DEP) $(LIBXMLRPC_ABYSS_DEP) \
   $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A) \
   $(CASPRINTF)
 	$(CCLD) -o $@ $(LDFLAGS_ALL) \

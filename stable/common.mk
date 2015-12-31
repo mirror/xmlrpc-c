@@ -11,6 +11,9 @@
 
 include $(SRCDIR)/version.mk
 
+XMLRPC_VERSION_STRING=\
+$(XMLRPC_MAJOR_RELEASE).$(XMLRPC_MINOR_RELEASE).$(XMLRPC_POINT_RELEASE)
+
 # .DELETE_ON_ERROR is a special predefined Make target that says to delete
 # the target if a command in the rule for it fails.  That's important,
 # because we don't want a half-made target sitting around looking like it's
@@ -45,8 +48,8 @@ GCC_CXX_WARNINGS = $(GCC_WARNINGS)  -Wsynth
 # assertion and crash the program if it isn't really true.  You can add
 # -UNDEBUG (in any of various ways) to override this.
 #
-CFLAGS_COMMON = -DNDEBUG
-CXXFLAGS_COMMON = -DNDEBUG
+CFLAGS_COMMON = -DNDEBUG $(CFLAGS_PTHREAD)
+CXXFLAGS_COMMON = -DNDEBUG $(CFLAGS_PTHREAD)
 
 ifeq ($(C_COMPILER_GNU),yes)
   CFLAGS_COMMON += $(GCC_C_WARNINGS) -fno-common -g -O3
@@ -91,7 +94,7 @@ ifneq ($(LADD),)
   LDFLAGS := $(LADD)
 endif
 
-LDFLAGS_ALL = $(LDFLAGS_PERSONAL) $(LDFLAGS)
+LDFLAGS_ALL = $(LDFLAGS_PTHREAD) $(LDFLAGS_PERSONAL) $(LDFLAGS)
 
 ##############################################################################
 #                        STATIC LINK LIBRARY RULES                           #
@@ -547,7 +550,8 @@ $(BLDDIR)/xmlrpc-c-config.test:
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/GNUmakefile $(notdir $@)
 endif
 
-$(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh): \
+$(TARGET_MODS:%=%.o) $(TARGET_MODS:%=%.osh) \
+  $(TARGET_MODS_PP:%=%.o) $(TARGET_MODS_PP:%=%.osh): \
   $(BLDDIR)/include/xmlrpc-c/config.h
 
 ifneq ($(OMIT_XMLRPC_LIB_RULE),Y)
@@ -572,14 +576,19 @@ MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
 .PHONY: install-common install-headers install-bin install-man
 install-common: \
-  install-static-libraries install-shared-libraries \
-  install-headers install-bin install-man
+  install-static-libraries \
+  install-shared-libraries \
+  install-headers \
+  install-bin \
+  install-man \
+  install-pkgconfig \
 
-INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
+LIBDESTDIR = $(DESTDIR)$(LIBINST_DIR)
+INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(LIBDESTDIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
 
 install-static-libraries: $(STATIC_LIBRARIES_TO_INSTALL)
-	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
+	$(MKINSTALLDIRS) $(LIBDESTDIR)
 	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    echo " $(INSTALL_LIB_CMD)"; \
@@ -626,8 +635,19 @@ install-man: $(MAN_FILES_TO_INSTALL)
 	$(MKINSTALLDIRS) $(MANDESTDIR)
 	@list='$(MAN_FILES_TO_INSTALL)'; \
          for p in $$list; do \
-	   echo "$(MAN_FILES_TO_INSTALL)"; \
+	   echo "$(INSTALL_MAN_CMD)"; \
 	   $(INSTALL_MAN_CMD); \
+	 done
+
+PKGCONFIGDESTDIR = $(DESTDIR)$(PKGCONFIGINST_DIR)
+INSTALL_PKGCONFIG_CMD = $(INSTALL_DATA) $$p $(PKGCONFIGDESTDIR)/$$p
+
+install-pkgconfig: $(PKGCONFIG_FILES_TO_INSTALL)
+	$(MKINSTALLDIRS) $(PKGCONFIGDESTDIR)
+	@list='$(PKGCONFIG_FILES_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(INSTALL_PKGCONFIG_CMD)"; \
+	   $(INSTALL_PKGCONFIG_CMD); \
 	 done
 
 ##############################################################################
@@ -636,7 +656,7 @@ install-man: $(MAN_FILES_TO_INSTALL)
 
 .PHONY: clean-common
 clean-common:
-	rm -f *.o *.osh *.a *.s *.i *.la *.lo
+	rm -f *.o *.osh *.a *.s *.i *.la *.lo *.cflags *.ldflags *.pc
 	rm -f *.$(SHLIB_SUFFIX) *.$(SHLIB_SUFFIX).*
 	rm -rf .libs
 ifneq ($(OMIT_VERSION_H),Y)
@@ -688,7 +708,7 @@ DEP_SOURCES = $(wildcard *.c *.cpp)
 
 # This is a filter to turn "foo.o:" rules into "foo.o foo.lo foo.osh:"
 # to make dependencies for all the various forms of object file out of
-# a file made by a depedency generator that knows only about .o.
+# a file made by a dependency generator that knows only about .o.
 
 DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo $$1.osh:}'
 

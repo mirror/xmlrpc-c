@@ -24,8 +24,16 @@ DEP_SOURCES = *.cpp
 
 LIBXMLRPC_ABYSSPP_MODS = AbyssServer AbyssChanSwitch AbyssEnvironment
 
+ifeq ($(findstring mingw,$(HOST_OS)),mingw)
+  LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchWin
+else
+  LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchUnix
+endif
+
 TARGET_MODS_PP = \
   $(LIBXMLRPC_ABYSSPP_MODS) \
+
+PKGCONFIG_FILES_TO_INSTALL := xmlrpc_abyss++.pc
 
 OMIT_ABYSSPP_LIB_RULE = Y
 MAJ = 8
@@ -52,7 +60,8 @@ BASIC_INCLUDES = \
 all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBS_PP) \
-  $(TARGET_SHARED_LE_LIBS)
+  $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 
 #-----------------------------------------------------------------------------
@@ -82,10 +91,8 @@ $(LIBXMLRPC_ABYSSPP_SH): LIBDEP = \
    -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss \
    -L$(LIBXMLRPC_UTILPP_DIR) -lxmlrpc_util++ \
    -L$(LIBXMLRPC_UTIL_DIR) -lxmlrpc_util \
-
-ifeq ($(MSVCRT),yes)
-  $(LIBXMLRPC_ABYSSPP_SH):  LIBDEP += -lws2_32 -lwsock32 -lpthread
-endif
+   $(SOCKETLIBOPT) \
+   $(THREADLIBS) \
 
 libxmlrpc_abyss++.a: $(LIBXMLRPC_ABYSSPP_MODS:%=%.o)
 libxmlrpc_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_ABYSSPP_MODS:%=%.o)
@@ -99,6 +106,24 @@ libxmlrpc_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_ABYSSPP_MODS:%=%.o)
 $(LIBXMLRPC_ABYSSPP_MODS:%=%.o) \
 $(LIBXMLRPC_ABYSSPP_MODS:%=%.osh): \
   INCLUDES = $(BASIC_INCLUDES)
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc_abyss++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_abyss++"                                >>$@
+	@echo "Description: Xmlrpc-c Abyss HTTP C++ library"               >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc_abyss xmlrpc_util++"                       >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_abyss++"                 >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

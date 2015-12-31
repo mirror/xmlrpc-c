@@ -7,8 +7,13 @@ CLIENT_LIBS_DEP = \
   $(LIBXMLRPC_UTIL) \
   $(BLDDIR)/src/libxmlrpc_client.ldflags \
 
-CLIENTPP_LDLIBS = -Lblddir/src/cpp
-CLIENTPP_LDLIBS += -lxmlrpc_client++ -lxmlrpc_packetsocket -lxmlrpc++
+CLIENTPP_LDLIBS = \
+  -Lblddir/src/cpp \
+  -lxmlrpc_client++ \
+  -lxmlrpc_packetsocket \
+  -lxmlrpc++ \
+  -Lblddir/lib/libutil++ \
+  -lxmlrpc_util++ \
 
 include $(SRCDIR)/common.mk
 

@@ -357,6 +357,8 @@ public:
             .proxy_auth(XMLRPC_HTTPAUTH_BASIC)
             .proxy_userpwd("mypassword")
             .gssapi_delegation(true)
+            .timeout(0)
+            .connect_timeout(0)
             );            
 
         clientXmlTransport_curl transport5(

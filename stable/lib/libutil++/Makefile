@@ -26,6 +26,8 @@ LIBXMLRPC_UTILPP_MODS = Lock base64 env_wrap girerr girmem
 TARGET_MODS_PP = \
   $(LIBXMLRPC_UTILPP_MODS) \
 
+PKGCONFIG_FILES_TO_INSTALL := xmlrpc_util++.pc
+
 OMIT_LIBXMLRPC_UTILPP_RULE = Y
 MAJ = 8
   # Major number of shared libraries in this directory
@@ -52,6 +54,7 @@ all: \
   $(TARGET_STATIC_LIBRARIES) \
   $(TARGET_SHARED_LIBS_PP) \
   $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 
 #-----------------------------------------------------------------------------
@@ -87,6 +90,24 @@ libxmlrpc_util++.a: LIBOBJECTS = $(LIBXMLRPC_UTILPP_MODS:%=%.o)
 
 # Rules for these are in common.mk, courtesy of TARGET_MODS_PP.
 
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc_util++.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_util++"                                 >>$@
+	@echo "Description: Xmlrpc-c C++ utility functions library"        >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc_util"                                      >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_util++"                  >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

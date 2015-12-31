@@ -398,6 +398,10 @@ typedef enum {
 } TMethod;
 
 typedef struct {
+    /* Note that some common or important information from the HTTP request
+       header is in the members of this structure, but all header information
+       is available via the RequestHeaderValue method of Tsession.
+    */
     TMethod method;
     const char * uri;
         /* This is NOT the URI.  It is the pathname part of the URI.
@@ -426,6 +430,14 @@ typedef struct {
         */
     abyss_bool keepalive;
 } TRequestInfo;
+
+void
+SessionGetBody(TSession *    const sessionP, 
+               size_t        const max, 
+               abyss_bool *  const eofP,
+               const char ** const outStartP, 
+               size_t *      const outLenP,
+               const char ** const errorP);
 
 XMLRPC_ABYSS_EXPORTED
 abyss_bool
@@ -457,7 +469,7 @@ void *
 SessionGetDefaultHandlerCtx(TSession * const sessionP);
 
 XMLRPC_ABYSS_EXPORTED
-char *
+const char *
 RequestHeaderValue(TSession *   const sessionP,
                    const char * const name);
 

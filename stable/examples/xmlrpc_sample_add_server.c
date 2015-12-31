@@ -65,7 +65,7 @@ sample_add(xmlrpc_env *   const envP,
        to do an RPC that takes a while).
     */
     if (y == 1)
-        SLEEP(3);
+        SLEEP(5);
 
     /* Return our result. */
     return xmlrpc_build_value(envP, "i", z);

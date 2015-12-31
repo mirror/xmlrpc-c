@@ -184,6 +184,22 @@ ConnCreate(TConn **            const connectionPP,
 
 
 
+uint32_t
+ConnBufferSpace(TConn * const connectionP) {
+/*-----------------------------------------------------------------------------
+   The amount of space left at the end of the connection buffer.
+
+   Note that the space before the read pointer (connectionP->bufferpos)
+   is also unused, but we don't consider that.
+-----------------------------------------------------------------------------*/
+    assert(connectionP->buffersize + 1 <= BUFFER_SIZE);
+
+    return BUFFER_SIZE - connectionP->buffersize - 1;
+        /* - 1 is because we reserve the last byte of the buffer for a NUL. */
+}
+
+
+
 bool
 ConnProcess(TConn * const connectionP) {
 /*----------------------------------------------------------------------------
@@ -237,7 +253,14 @@ ConnKill(TConn * const connectionP) {
 
 void
 ConnReadInit(TConn * const connectionP) {
+/*-----------------------------------------------------------------------------
+   Prepare to read data from the channel into the connection buffer.
 
+   The connection buffer is not circular, so to make maximal room available
+   for this new data, we move everything now in the buffer (not yet
+   delivered to our client) down to the beginning of the buffer.  Caller
+   can then read from the end of that data through the end of the buffer.
+-----------------------------------------------------------------------------*/
     if (connectionP->buffersize > connectionP->bufferpos) {
         connectionP->buffersize -= connectionP->bufferpos;
         memmove(connectionP->buffer.b,
@@ -356,43 +379,49 @@ traceChannelWrite(TConn *      const connectionP,
 
 
 
-static uint32_t
-bufferSpace(TConn * const connectionP) {
-    
-    return BUFFER_SIZE - connectionP->buffersize;
-}
-                    
-
-
 static void
 readFromChannel(TConn *       const connectionP,
                 bool *        const eofP,
                 const char ** const errorP) {
 /*----------------------------------------------------------------------------
-   Read some data from the channel of Connection *connectionP.
+   Read some data from the channel of Connection *connectionP into the
+   connection buffer.
 
-   Iff there is none available to read, return *eofP == true.
+   Iff there are no more bytes forthcoming on the channel, return *eofP ==
+   true.
+
+   Wait if necessary for at least one byte to arrive, or to learn that there
+   are no more bytes coming (EOF).  But don't wait for any more than that -
+   just read whatever is immediately available past that first byte.
+
+   Fail if the buffer is full.
 -----------------------------------------------------------------------------*/
     uint32_t bytesRead;
     bool readError;
 
-    ChannelRead(connectionP->channelP,
-                connectionP->buffer.b + connectionP->buffersize,
-                bufferSpace(connectionP) - 1,
-                &bytesRead, &readError);
+    assert(connectionP->buffersize <= BUFFER_SIZE);
 
-    if (readError)
-        xmlrpc_asprintf(errorP, "Error reading from channel");
+    if (BUFFER_SIZE - connectionP->buffersize < 2)
+        xmlrpc_asprintf(errorP, "Connection buffer full.");
     else {
-        *errorP = NULL;
-        if (bytesRead > 0) {
-            *eofP = false;
-            traceChannelRead(connectionP, bytesRead);
-            connectionP->inbytes += bytesRead;
-            connectionP->buffersize += bytesRead;
-            connectionP->buffer.t[connectionP->buffersize] = '\0';
-        } else
-            *eofP = true;
+        ChannelRead(connectionP->channelP,
+                    connectionP->buffer.b + connectionP->buffersize,
+                    BUFFER_SIZE - connectionP->buffersize - 1,
+                    &bytesRead, &readError);
+
+        if (readError)
+            xmlrpc_asprintf(errorP, "Error reading from channel");
+        else {
+            *errorP = NULL;
+            if (bytesRead > 0) {
+                *eofP = false;
+                traceChannelRead(connectionP, bytesRead);
+                connectionP->inbytes += bytesRead;
+                connectionP->buffersize += bytesRead;
+                connectionP->buffer.t[connectionP->buffersize] = '\0';
+            } else
+                *eofP = true;
+        }
     }
 }
 
@@ -457,6 +486,9 @@ ConnRead(TConn *       const connectionP,
    If 'eofP' is non-null, return *eofP == true, without reading anything, iff
    there will no more data forthcoming on the connection because client has
    closed the connection.  If 'eofP' is null, fail in that case.
+
+   Fail if the connection buffer is full.  (Caller can use ConnBufferSpace()
+   to find out beforehand if this is going to be a problem).
 -----------------------------------------------------------------------------*/
     uint32_t const timeoutMs = timeout * 1000;
 

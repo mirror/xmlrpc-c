@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 
+#include "xmlrpc_config.h"
 #include "bool.h"
 #include "xmlrpc-c/lock.h"
 #include "xmlrpc-c/abyss.h"
@@ -35,7 +36,7 @@ struct _TServer {
     const char * logfilename;
     bool logfileisopen;
     struct TFile * logfileP;
-    lock * logLockP;
+    struct lock * logLockP;
     const char * name;
     bool serverAcceptsConnections;
         /* We listen for and accept TCP connections for HTTP transactions.
@@ -99,7 +100,7 @@ struct _TServer {
            of the function itself, not the stack size for the thread
            that runs it.
         */
-#ifndef _WIN32
+#if !MSVCRT
     uid_t uid;
     gid_t gid;
 #endif

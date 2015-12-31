@@ -74,19 +74,15 @@
 #include "file.h"
 
 bool const win32 =
-#ifdef _WIN32
+#if MSVCRT
     true;
 #else
     false;
 #endif
 
 struct TFileFind {
-#ifdef _WIN32
-  #if MSVCRT
-      intptr_t handle;
-  #else
-      HANDLE handle;
-  #endif
+#if MSVCRT
+    intptr_t handle;
 #else
     char path[NAME_MAX+1];
     DIR * handle;
@@ -259,20 +255,6 @@ fileFindFirstWin(TFileFind *  const filefindP ATTR_UNUSED,
 #if MSVCRT
     filefindP->handle = _findfirsti64(search, fileinfo);
     *retP = filefindP->handle != -1;
-#else
-#ifdef _WIN32
-    filefindP->handle = FindFirstFile(search, &fileinfo->data);
-    *retP = filefindP->handle != INVALID_HANDLE_VALUE;
-    if (*retP) {
-        LARGE_INTEGER li;
-        li.LowPart = fileinfo->data.nFileSizeLow;
-        li.HighPart = fileinfo->data.nFileSizeHigh;
-        strcpy( fileinfo->name, fileinfo->data.cFileName );
-        fileinfo->attrib = fileinfo->data.dwFileAttributes;
-        fileinfo->size   = li.QuadPart;
-        fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
-    }
-#endif
 #endif
     xmlrpc_strfree(search);
 }
@@ -333,21 +315,6 @@ fileFindNextWin(TFileFind * const filefindP ATTR_UNUSED,
 
 #if MSVCRT
     *retvalP = _findnexti64(filefindP->handle, fileinfo) != -1;
-#else
-#ifdef _WIN32
-    bool found;
-    found = FindNextFile(filefindP->handle, &fileinfo->data);
-    if (found) {
-        LARGE_INTEGER li;
-        li.LowPart = fileinfo->data.nFileSizeLow;
-        li.HighPart = fileinfo->data.nFileSizeHigh;
-        strcpy(fileinfo->name, fileinfo->data.cFileName);
-        fileinfo->attrib = fileinfo->data.dwFileAttributes;
-        fileinfo->size   = li.QuadPart;
-        fileinfo->time_write = fileinfo->data.ftLastWriteTime.dwLowDateTime;
-    }
-    *retvalP = found;
-#endif
 #endif
 }
 
@@ -358,7 +325,7 @@ fileFindNextPosix(TFileFind * const filefindP,
                   TFileInfo * const fileinfoP,
                   bool *      const retvalP) {
 
-#ifndef _WIN32
+#if !MSVCRT
     struct dirent * deP;
 
     deP = readdir(filefindP->handle);
@@ -408,12 +375,8 @@ FileFindNext(TFileFind * const filefindP,
 
 void
 FileFindClose(TFileFind * const filefindP) {
-#ifdef _WIN32
 #if MSVCRT
     _findclose(filefindP->handle);
-#else
-   FindClose(filefindP->handle);
-#endif
 #else
     closedir(filefindP->handle);
 #endif

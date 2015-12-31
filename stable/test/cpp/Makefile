@@ -18,7 +18,7 @@ XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 LIBS := 
 
-LIBS += -lpthread
+LIBS += $(SOCKETLIBOPT) $(THREAD_LIBS)
 
 INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 
@@ -31,10 +31,8 @@ include $(SRCDIR)/common.mk
 
 TEST_OBJS = \
   test.o \
-  abyss.o \
   base64.o \
   registry.o \
-  server_abyss.o \
   server_pstream.o \
   tools.o \
   value.o \
@@ -42,36 +40,55 @@ TEST_OBJS = \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
-  CLIENT_LIBS = $(LIBXMLRPC_CLIENTPP_A) $(LIBXMLRPC_CLIENT_A)
   LIBS += $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 else
   TEST_OBJS += testclient_dummy.o
-  CLIENT_LIBS =
 endif
 
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  TEST_OBJS += abyss.o server_abyss.o
+  LIBS += $(shell $(XMLRPC_C_CONFIG) abyss-server --ldadd)
+else
+  TEST_OBJS += abyss_dummy.o server_abyss_dummy.o
+endif
 
-TEST_LIBS = \
-  $(LIBXMLRPC_SERVER_ABYSSPP_A) \
-  $(LIBXMLRPC_SERVER_PSTREAMPP_A) \
-  $(LIBXMLRPC_SERVERPP_A) \
-  $(CLIENT_LIBS) $(LIBXMLRPCPP_A) \
-  $(LIBXMLRPC_CPP_A) \
-  $(LIBXMLRPC_SERVER_ABYSS_A) \
-  $(LIBXMLRPC_SERVER_A) \
-  $(LIBXMLRPC_A) \
-  $(LIBXMLRPC_ABYSS_A) \
-  $(LIBXMLRPC_ABYSSPP_A) \
-  $(LIBXMLRPC_PACKETSOCKET_A) \
-  $(LIBXMLRPC_UTILPP_A) \
-  $(LIBXMLRPC_UTIL_A) \
-
+#-----------------------------------------------------------------------------
+#  TEST_LIBS
+#-----------------------------------------------------------------------------
+TEST_LIBS =
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  TEST_LIBS += $(LIBXMLRPC_SERVER_ABYSSPP_A)
+endif
+TEST_LIBS += $(LIBXMLRPC_SERVER_PSTREAMPP_A)
+TEST_LIBS += $(LIBXMLRPC_SERVERPP_A)
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  TEST_LIBS +=  $(LIBXMLRPC_CLIENTPP_A) $(LIBXMLRPC_CLIENT_A)
+endif
+TEST_LIBS += $(LIBXMLRPCPP_A)
+TEST_LIBS += $(LIBXMLRPC_CPP_A)
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  TEST_LIBS +=   $(LIBXMLRPC_SERVER_ABYSS_A)
+endif
+TEST_LIBS += $(LIBXMLRPC_SERVER_A)
+TEST_LIBS +=  $(LIBXMLRPC_A)
+ifeq ($(ENABLE_ABYSS_SERVER),yes)
+  TEST_LIBS += $(LIBXMLRPC_ABYSS_A)
+  TEST_LIBS += $(LIBXMLRPC_ABYSSPP_A)
+endif
+TEST_LIBS += $(LIBXMLRPC_PACKETSOCKET_A)
+TEST_LIBS += $(LIBXMLRPC_UTILPP_A)
+TEST_LIBS += $(LIBXMLRPC_UTIL_A)
 ifeq ($(MSVCRT),yes)
-TEST_LIBS += socketpair.o
+  TEST_LIBS += socketpair.o
+endif
+ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
+  # We're using the internal Expat XML parser
+  TEST_LIBS += $(LIBXMLRPC_XMLPARSE_A)
+  TEST_LIBS += $(LIBXMLRPC_XMLTOK_A)
 endif
 
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
-  TEST_LIBS += $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
   LIB_XML =
   registry.o: D_INTERNAL_EXPAT=-DINTERNAL_EXPAT
 else

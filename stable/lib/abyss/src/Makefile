@@ -50,6 +50,8 @@ TARGET_MODS = \
   $(THREAD_MODULE) \
   trace \
 
+PKGCONFIG_FILES_TO_INSTALL := xmlrpc_abyss.pc
+
 OMIT_ABYSS_LIB_RULE = Y
 MAJ=3
   # Major number of shared libraries in this directory
@@ -71,19 +73,18 @@ ABYSS_SHLIBLE = $(call shliblefn,libxmlrpc_abyss)
 $(SRCDIR)/common.mk: srcdir blddir
 
 .PHONY: all
-all: libxmlrpc_abyss.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
-
+all: libxmlrpc_abyss.a \
+  $(TARGET_SHARED_LIBRARIES) \
+  $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 # Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES
 $(ABYSS_SHLIB): $(TARGET_MODS:%=%.osh) \
 	$(LIBXMLRPC_UTIL)
 $(ABYSS_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
-$(ABYSS_SHLIB): LIBDEP = $(LIBXMLRPC_UTIL_LIBDEP)
+$(ABYSS_SHLIB): LIBDEP = $(LIBXMLRPC_UTIL_LIBDEP) $(SOCKETLIBOPT)
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
   $(ABYSS_SHLIB):  LIBDEP += $(THREAD_LIBS)
-endif
-ifeq ($(MSVCRT),yes)
-  $(ABYSS_SHLIB):  LIBDEP += -lws2_32 -lwsock32
 endif
 
 # Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:
@@ -98,6 +99,26 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 # Rules to compile object modules from which to build the static and shared
 # Abyss library are in common.mk, courtesy of TARGET_MODS.
 
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+SOCKLIB=$(SOCKETLIBOPT)
+
+xmlrpc_abyss.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_abyss"                                  >>$@
+	@echo "Description: Xmlrpc-c Abyss HTTP C library"                 >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc_util"                                      >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_abyss $(SOCKLIB)"        >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
 
 # Need this dependency for those who don't use depend.mk.
 # Without it, version.h doesn't get created.
