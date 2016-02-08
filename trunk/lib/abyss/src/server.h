@@ -12,9 +12,13 @@
 
 struct TFile;
 
-struct _TServer {
+struct Tracer {
     bool traceIsActive;
         /* We should report to Standard Error our internal activities */
+};
+
+struct _TServer {
+    struct Tracer tracer;
 
     bool terminationRequested;
         /* User wants this server to terminate as soon as possible,

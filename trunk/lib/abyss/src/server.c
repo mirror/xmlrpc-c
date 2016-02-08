@@ -125,9 +125,9 @@ logClose(struct _TServer * const srvP) {
 static void
 setupTrace(struct _TServer * const srvP) {
 
-    srvP->traceIsActive = (getenv("ABYSS_TRACE_SERVER") != NULL);
+    srvP->tracer.traceIsActive = (getenv("ABYSS_TRACE_SERVER") != NULL);
 
-    if (srvP->traceIsActive)
+    if (srvP->tracer.traceIsActive)
         fprintf(stderr, "Abyss server will trace "
                 "basic server activity "
                 "because of ABYSS_TRACE_SERVER environment variable\n");
@@ -147,11 +147,11 @@ tracev(const char * const fmt,
 
 
 static void
-trace(struct _TServer * const srvP,
-      const char *      const fmt,
+trace(struct Tracer * const tracerP,
+      const char *    const fmt,
       ...) {
 
-    if (srvP->traceIsActive) {
+    if (tracerP->traceIsActive) {
         va_list argptr;
 
         va_start(argptr, fmt);
@@ -686,10 +686,24 @@ handleReqInvalidURI(TSession * const sessionP) {
 
 
 static void
-processRequestFromClient(TConn *  const connectionP,
-                         bool     const lastReqOnConn,
-                         uint32_t const timeout,
-                         bool *   const keepAliveP) {
+traceRequestStart(struct Tracer * const tracerP,
+                  TSession *      const sessionP) {
+
+    if (sessionP->requestInfo.uri) {
+        trace(tracerP, "Processing request with URI '%s', method %s",
+              sessionP->requestInfo.uri,
+              HTTPMethodName(sessionP->requestInfo.method));
+    }
+}
+
+
+
+static void
+processRequestFromClient(TConn *         const connectionP,
+                         bool            const lastReqOnConn,
+                         uint32_t        const timeout,
+                         struct Tracer * const tracerP,
+                         bool *          const keepAliveP) {
 /*----------------------------------------------------------------------------
    Get and execute one HTTP request from client connection *connectionP,
    through the connection buffer.  I.e. Some of the request may already be in
@@ -729,6 +743,7 @@ processRequestFromClient(TConn *  const connectionP,
         ResponseError2(&session, error);
         xmlrpc_strfree(error);
     } else {
+        traceRequestStart(tracerP, &session);
         if (session.version.major >= 2)
             handleReqTooNewHttpVersion(&session);
         else if (!HTTPRequestHasValidUri(&session))
@@ -769,7 +784,8 @@ serverFunc(void * const userHandle) {
     bool connectionDone;
         /* No more need for this HTTP connection */
 
-    trace(srvP, "Thread starting to handle requests on a new connection.  "
+    trace(&srvP->tracer,
+          "Thread starting to handle requests on a new connection.  "
           "PID = %d", getpid());
 
     requestCount = 0;
@@ -803,13 +819,15 @@ serverFunc(void * const userHandle) {
 
             bool keepalive;
 
-            trace(srvP, "HTTP request %u at least partially received.  "
+            trace(&srvP->tracer,
+                  "HTTP request %u at least partially received.  "
                   "Receiving the rest and processing", requestCount);
             
             processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
-                                     &keepalive);
+                                     &srvP->tracer, &keepalive);
 
-            trace(srvP, "Done processing the HTTP request.  Keepalive = %s",
+            trace(&srvP->tracer,
+                  "Done processing the HTTP request.  Keepalive = %s",
                   keepalive ? "YES" : "NO");
             
             ++requestCount;
@@ -821,7 +839,7 @@ serverFunc(void * const userHandle) {
             ConnReadInit(connectionP);
         }
     }
-    trace(srvP, "PID %d done with connection", getpid());
+    trace(&srvP->tracer, "PID %d done with connection", getpid());
 }
 
 
@@ -1156,7 +1174,7 @@ processNewChannel(TServer *             const serverP,
 
     freeFinishedConns(outstandingConnListP);
             
-    trace(srvP, "Waiting for there to be fewer than the maximum "
+    trace(&srvP->tracer, "Waiting for there to be fewer than the maximum "
           "%u sessions in progress",
           srvP->maxConn);
 
@@ -1196,7 +1214,7 @@ acceptAndProcessNextConnection(
     TChannel * channelP;
     void * channelInfoP;
 
-    trace(srvP, "Waiting for a new channel from channel switch");
+    trace(&srvP->tracer, "Waiting for a new channel from channel switch");
 
     assert(srvP->readyToAccept);
     assert(srvP->chanSwitchP);
@@ -1212,7 +1230,7 @@ acceptAndProcessNextConnection(
         if (channelP) {
             const char * error;
 
-            trace(srvP, "Got a new channel from channel switch");
+            trace(&srvP->tracer, "Got a new channel from channel switch");
 
             processNewChannel(serverP, channelP, channelInfoP,
                               outstandingConnListP, &error);
@@ -1223,14 +1241,16 @@ acceptAndProcessNextConnection(
                 ChannelDestroy(channelP);
                 free(channelInfoP);
             } else {
-                trace(srvP, "successfully processed newly accepted channel");
+                trace(&srvP->tracer,
+                      "successfully processed newly accepted channel");
                 /* Connection created above will destroy *channelP
                    and *channelInfoP as it terminates.
                 */
             }
         } else {
             /* Accept function was interrupted before it got a connection */
-            trace(srvP, "Wait for new channel from switch was interrupted");
+            trace(&srvP->tracer,
+                  "Wait for new channel from switch was interrupted");
             *errorP = NULL;
         }
     }
@@ -1249,15 +1269,16 @@ serverRun2(TServer *     const serverP,
 
     *errorP = NULL;  /* initial value */
 
-    trace(srvP, "Starting main connection accepting loop");
+    trace(&srvP->tracer, "Starting main connection accepting loop");
     
     while (!srvP->terminationRequested && !*errorP)
         acceptAndProcessNextConnection(serverP, outstandingConnListP, errorP);
 
-    trace(srvP, "Main connection accepting loop is done");
+    trace(&srvP->tracer, "Main connection accepting loop is done");
 
     if (!*errorP) {
-        trace(srvP, "Interrupting and waiting for %u existing connections "
+        trace(&srvP->tracer,
+              "Interrupting and waiting for %u existing connections "
               "to finish",
               outstandingConnListP->count);
 
@@ -1265,7 +1286,7 @@ serverRun2(TServer *     const serverP,
 
         waitForNoConnections(outstandingConnListP);
     
-        trace(srvP, "No connections left");
+        trace(&srvP->tracer, "No connections left");
 
         destroyOutstandingConnList(outstandingConnListP);
     }
@@ -1278,7 +1299,7 @@ ServerRun(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
-    trace(srvP, "%s entered", __FUNCTION__);
+    trace(&srvP->tracer, "%s entered", __FUNCTION__);
 
     if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
@@ -1298,7 +1319,7 @@ ServerRun(TServer * const serverP) {
             xmlrpc_strfree(error);
         }
     }
-    trace(srvP, "%s exiting", __FUNCTION__);
+    trace(&srvP->tracer, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1320,7 +1341,7 @@ serverRunChannel(TServer *     const serverP,
     TConn * connectionP;
     const char * error;
 
-    trace(srvP, "%s entered", __FUNCTION__);
+    trace(&srvP->tracer, "%s entered", __FUNCTION__);
 
     srvP->keepalivemaxconn = 1;
 
@@ -1340,7 +1361,7 @@ serverRunChannel(TServer *     const serverP,
 
         ConnWaitAndRelease(connectionP);
     }
-    trace(srvP, "%s exiting", __FUNCTION__);
+    trace(&srvP->tracer, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1358,7 +1379,7 @@ ServerRunChannel(TServer *     const serverP,
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
-    trace(srvP, "%s entered", __FUNCTION__);
+    trace(&srvP->tracer, "%s entered", __FUNCTION__);
 
     if (srvP->serverAcceptsConnections)
         xmlrpc_asprintf(errorP,
@@ -1368,7 +1389,7 @@ ServerRunChannel(TServer *     const serverP,
     else
         serverRunChannel(serverP, channelP, channelInfoP, errorP);
 
-    trace(srvP, "%s exiting", __FUNCTION__);
+    trace(&srvP->tracer, "%s exiting", __FUNCTION__);
 }
 
 
@@ -1438,7 +1459,7 @@ ServerRunOnce(TServer * const serverP) {
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 
-    trace(srvP, "%s entered", __FUNCTION__);
+    trace(&srvP->tracer, "%s entered", __FUNCTION__);
 
     if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
@@ -1480,7 +1501,7 @@ ServerRunOnce(TServer * const serverP) {
             }
         }
     }
-    trace(srvP, "%s exiting", __FUNCTION__);
+    trace(&srvP->tracer, "%s exiting", __FUNCTION__);
 }
 
 
