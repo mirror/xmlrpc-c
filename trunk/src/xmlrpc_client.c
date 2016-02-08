@@ -512,7 +512,13 @@ makeCallXml(xmlrpc_env *               const envP,
             xmlrpc_value *             const paramArrayP,
             xmlrpc_dialect             const dialect,
             xmlrpc_mem_block **        const callXmlPP) {
+/*----------------------------------------------------------------------------
+   Make the XML for an XML-RPC call of method named 'methodName', with
+   parameters *paramArrayP, in XML-RPC dialect 'dialect'.
 
+   Return the XML in a newly created xmlrpc_memblock and return a pointer to
+   it as *callXmlPP.
+-----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
     XMLRPC_ASSERT_PTR_OK(callXmlPP);
 
