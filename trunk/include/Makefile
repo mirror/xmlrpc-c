@@ -122,9 +122,14 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
 
   endif
 endif
+
 ifeq ($(ENABLE_CGI_SERVER),yes)
   HEADERS_TO_INSTALL += xmlrpc-c/server_cgi.h
   COMPAT_LINK_CMDS += $(LN_S) xmlrpc-c/server_cgi.h xmlrpc_cgi.h;
+endif
+
+ifeq ($(HAVE_OPENSSL),Y)
+  HEADERS_TO_INSTALL += xmlrpc-c/openssl_thread.h
 endif
 
 default: all

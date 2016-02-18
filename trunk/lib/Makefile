@@ -32,8 +32,6 @@ ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   SUBDIRS += expat
 endif
 
-HAVE_OPENSSL := $(shell if pkg-config openssl; then echo Y; fi)
-
 ifeq ($(HAVE_OPENSSL),Y)
   SUBDIRS += openssl
 endif

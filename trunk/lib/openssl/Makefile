@@ -21,6 +21,8 @@ STATIC_LIBRARIES_TO_INSTALL = libxmlrpc_openssl.a
 SHARED_LIBS_TO_BUILD := libxmlrpc_openssl
 SHARED_LIBS_TO_INSTALL := libxmlrpc_openssl
 
+PKGCONFIG_FILES_TO_INSTALL := xmlrpc_openssl.pc
+
 MAJ := 1
 
 OPENSSL_INCLUDES := $(shell pkg-config openssl --cflags)
@@ -42,6 +44,7 @@ $(SRCDIR)/common.mk: srcdir blddir
 all: libxmlrpc_openssl.a \
   $(TARGET_SHARED_LIBRARIES) \
   $(TARGET_SHARED_LE_LIBS) \
+  $(PKGCONFIG_FILES_TO_INSTALL) \
 
 # Rules for the above dependencies are in common.mk,
 # courtesy of TARGET_MODS.
@@ -67,6 +70,28 @@ INCLUDES = \
   -Isrcdir/include \
   -Isrcdir/lib/util/include \
   $(OPENSSL_INCLUDES)
+
+#-----------------------------------------------------------------------------
+# RULES TO MAKE PKGCONFIG FILES
+#
+# (These are files used by the 'pkg-config' program to get information about
+# using the libraries we build)
+#-----------------------------------------------------------------------------
+
+xmlrpc_openssl.pc:
+	rm -f $@
+	@echo "Echoes to '$@' suppressed here ..."
+	@echo "Name:        xmlrpc_openssl"                                >>$@
+	@echo "Description: Openssl convenience function from Xmlrpc-c package"                 >>$@
+	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo	                                                           >>$@
+	@echo "Requires: xmlrpc_util"                                      >>$@
+	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_openssl"                 >>$@
+	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+
+#-----------------------------------------------------------------------------
+#  MISCELLANEOUS
+#-----------------------------------------------------------------------------
 
 .PHONY: clean
 clean: clean-common

@@ -7,8 +7,7 @@
 
 #include "xmlrpc-c/string_int.h"
 
-
-#include "xmlrpc_openssl_thread.h"
+#include "xmlrpc-c/openssl_thread.h"
 
 
 /* These ugly global variables are necessary and appropriate because our

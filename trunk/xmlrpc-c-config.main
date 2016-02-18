@@ -9,6 +9,7 @@ The features are:
   pstream-server pstream-based server functions
   server-util    basic server functions (implied by *-server)
   abyss          Abyss HTTP server (not necessary with abyss-server)
+  openssl        Openssl convenience functions
 
 Options are:
   --version      The version number of the package
@@ -73,6 +74,10 @@ while test $# -gt 0; do
       needCpp=yes
       the_libs="-lxmlrpc_util++ $the_libs"
       the_libs="-l$LIBXMLRPCPP_NAME $the_libs"
+      ;;
+    openssl)
+      the_libs="${OPENSSL_LDADD} $the_libs"
+      the_libs="-lxmlrpc_openssl $the_libs"
       ;;
     server-util)
       the_libs="-lxmlrpc_server $the_libs"

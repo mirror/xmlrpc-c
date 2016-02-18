@@ -120,6 +120,8 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'LIBINST_DIR="$(LIBINST_DIR)"'                            >>$@
 	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
+	@echo 'HAVE_OPENSSL="$(HAVE_OPENSSL)"'                          >>$@
+	@echo 'OPENSSL_LDADD="$(OPENSSL_LDADD)"'                        >>$@
 	@echo '#######################################################' >>$@
 
 xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config
