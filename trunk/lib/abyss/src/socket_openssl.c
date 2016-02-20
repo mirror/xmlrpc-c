@@ -39,57 +39,30 @@
 #include "channel.h"
 #include "socket.h"
 #include "xmlrpc-c/abyss.h"
+#include "xmlrpc-c/abyss_openssl.h"
 
+#include "sockutil.h"
 #include "socket_openssl.h"
 
 
 
-struct channelOpenSsl {
+struct ChannelOpenSsl {
 /*----------------------------------------------------------------------------
    The properties/state of a TChannel unique to the OpenSSL variety.
 -----------------------------------------------------------------------------*/
+    int fd;
+        /* File descriptor of the TCP connection underlying the SSL connection
+        */
     SSL * sslP;
-        /* SSL connection handle (such as is created by SSL_new() in
-           the openssl library).
-        */
-    bool userSuppliedConn;
-        /* The SSL connection belongs to the user; we did not create
-           it.
-        */
+        /* SSL connection handle */
+    bool userSuppliedSsl;
+        /* The SSL connection belongs to the user; we did not create it. */
 };
 
 
 
-static bool
-connected(int const fd) {
-/*----------------------------------------------------------------------------
-   Return TRUE iff the socket on file descriptor 'fd' is in the connected
-   state.
-
-   If 'fd' does not identify a stream socket or we are unable to determine
-   the state of the stream socket, the answer is "false".
------------------------------------------------------------------------------*/
-    bool connected;
-    struct sockaddr sockaddr;
-    socklen_t nameLen;
-    int rc;
-
-    nameLen = sizeof(sockaddr);
-
-    rc = getpeername(fd, &sockaddr, &nameLen);
-
-    if (rc == 0)
-        connected = TRUE;
-    else
-        connected = FALSE;
-
-    return connected;
-}
-
-
-
 void
-SocketOpensslInit(const char ** const errorP) {
+SocketOpenSslInit(const char ** const errorP) {
 
 	SSL_load_error_strings();
         /* readable error messages, don't call this if memory is tight */
@@ -105,7 +78,7 @@ SocketOpensslInit(const char ** const errorP) {
 void
 SocketOpenSslTerm(void) {
 
-	ERR_free_string();
+	ERR_free_strings();
 
 }
 
@@ -120,12 +93,12 @@ static ChannelDestroyImpl channelDestroy;
 static void
 channelDestroy(TChannel * const channelP) {
 
-    struct channelOpenssl * const channelOpensslP = channelP->implP;
+    struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
 
-    if (!socketUnixP->userSuppliedConn)
-        SSL_shutdown(channelOpensslP->sslP);
+    if (!channelOpenSslP->userSuppliedSsl)
+        SSL_shutdown(channelOpenSslP->sslP);
 
-    free(channelOpensslP);
+    free(channelOpenSslP);
 }
 
 
@@ -138,35 +111,33 @@ channelWrite(TChannel *            const channelP,
              uint32_t              const len,
              bool *                const failedP) {
 
-    struct channelOpenssl * const channelOpensslP = channelP->implP;
+    struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
 
     int bytesLeft;
     bool error;
 
     assert(sizeof(int) >= sizeof(len));
 
-    for (bytesLeft = len, error = FALSE;
-         bytesLeft > 0 && !error;
-        ) {
+    for (bytesLeft = len, error = false; bytesLeft > 0 && !error; ) {
         int const maxSend = (int)(-1) >> 1;
 
         int rc;
         
-        rc = SSL_write(channelOpensslP->ssl, &buffer[len-bytesLeft],
+        rc = SSL_write(channelOpenSslP->sslP, &buffer[len-bytesLeft],
                        MIN(maxSend, bytesLeft));
 
         if (ChannelTraceIsActive) {
             if (rc <= 0)
                 fprintf(stderr,
-                        "Abyss socket: SSL_write() failed.  rc=%d (%s)",
-                        rc, SSL_get_error(rc));
+                        "Abyss socket: SSL_write() failed.  rc=%d/%d",
+                        rc, SSL_get_error(channelOpenSslP->sslP, rc));
             else
                 fprintf(stderr, "Abyss socket: sent %u bytes: '%.*s'\n",
                         rc, rc, &buffer[len-bytesLeft]);
         }
         if (rc <= 0)
             /* 0 means connection closed; < 0 means severe error */
-            error = TRUE;
+            error = true;
         else
             bytesLeft -= rc;
     }
@@ -175,7 +146,7 @@ channelWrite(TChannel *            const channelP,
 
 
 
-ChannelReadImpl channelRead;
+static ChannelReadImpl channelRead;
 
 static void
 channelRead(TChannel *      const channelP, 
@@ -184,19 +155,19 @@ channelRead(TChannel *      const channelP,
             uint32_t *      const bytesReceivedP,
             bool *          const failedP) {
 
-    struct channelOpenssl * const channelOpensslP = channelP->implP;
+    struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
 
     int rc;
-    rc = SSL_read(channelOpensslP->sslP, buf, len);
+    rc = SSL_read(channelOpenSslP->sslP, buffer, bufferSize);
 
     if (rc < 0) {
-        *failedP = TRUE;
+        *failedP = true;
         if (ChannelTraceIsActive)
             fprintf(stderr, "Failed to receive data from OpenSSL connection.  "
-                    "SSL_read() failed with rc %d (%s)\n",
-                    rc, SSL_get_error(rc));
+                    "SSL_read() failed with rc %d/%d\n",
+                    rc, SSL_get_error(channelOpenSslP->sslP, rc));
     } else {
-        *failedP = FALSE;
+        *failedP = false;
         *bytesReceivedP = rc;
 
         if (ChannelTraceIsActive)
@@ -210,10 +181,10 @@ channelRead(TChannel *      const channelP,
 static ChannelWaitImpl channelWait;
 
 static void
-channelWait(TChannel * const channelP,
-            bool       const waitForRead,
-            bool       const waitForWrite,
-            uint32_t   const timeoutMs,
+channelWait(TChannel * const channelP ATTR_UNUSED,
+            bool       const waitForRead ATTR_UNUSED,
+            bool       const waitForWrite ATTR_UNUSED,
+            uint32_t   const timeoutMs ATTR_UNUSED,
             bool *     const readyToReadP,
             bool *     const readyToWriteP,
             bool *     const failedP) {
@@ -225,7 +196,9 @@ channelWait(TChannel * const channelP,
   how yet.  Instead, we return immediately and hope that if Caller
   subsequently does a read or write, it blocks until it can do its thing.
 -----------------------------------------------------------------------------*/
-
+    *readyToReadP = true;
+    *readyToWriteP = true;
+    *failedP = false;
 }
 
 
@@ -233,13 +206,26 @@ channelWait(TChannel * const channelP,
 static ChannelInterruptImpl channelInterrupt;
 
 static void
-channelInterrupt(TChannel * const channelP) {
+channelInterrupt(TChannel * const channelP ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
   Interrupt any waiting that a thread might be doing in channelWait()
   now or in the future.
 -----------------------------------------------------------------------------*/
 
     /* This is trivial, since channelWait() doesn't actually wait */
+}
+
+
+
+static ChannelFormatPeerInfoImpl channelFormatPeerInfo;
+
+static void
+channelFormatPeerInfo(TChannel *    const channelP,
+                      const char ** const peerStringP) {
+
+    struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
+
+    sockutil_formatPeerInfo(channelOpenSslP->fd, peerStringP);
 }
 
 
@@ -256,21 +242,39 @@ static struct TChannelVtbl const channelVtbl = {
 
 
 static void
-makeChannelInfo(struct abyss_openssl_chaninfo ** const channelInfoPP,
+makeChannelInfo(struct abyss_openSsl_chaninfo ** const channelInfoPP,
                 SSL *                            const sslP,
                 const char **                    const errorP) {
 
-    struct abyss_openssl_chaninfo * channelInfoP;
+    struct abyss_openSsl_chaninfo * channelInfoP;
 
     MALLOCVAR(channelInfoP);
     
     if (channelInfoP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory");
     else {
-        
-        *channelInfoPP = channelInfoP;
+        int const sockFd = SSL_get_fd(sslP);
+        struct sockaddr * peerAddrP;
+        size_t peerAddrLen;
+        const char * error;
 
-        *errorP = NULL;
+        sockutil_getPeerName(sockFd, &peerAddrP, &peerAddrLen, &error);
+
+        if (error) {
+            xmlrpc_asprintf(errorP, "Could not get identity of client.  %s",
+                            error);
+            xmlrpc_strfree(error);
+        } else {
+            channelInfoP->peerAddrLen = peerAddrLen;
+            channelInfoP->peerAddr    = *peerAddrP;
+
+            free(peerAddrP);
+        }
+
+        if (*errorP)
+            free(channelInfoP);
+        else
+            *channelInfoPP = channelInfoP;
     }
 }
 
@@ -278,24 +282,25 @@ makeChannelInfo(struct abyss_openssl_chaninfo ** const channelInfoPP,
 
 static void
 makeChannelFromSsl(SSL *         const sslP,
+                   bool          const userSuppliedSsl,
                    TChannel **   const channelPP,
                    const char ** const errorP) {
 
-    struct channelOpenssl * channelOpensslP;
+    struct ChannelOpenSsl * channelOpenSslP;
 
-    MALLOCVAR(channelOpensslP);
+    MALLOCVAR(channelOpenSslP);
     
-    if (channelOpensslP == NULL)
+    if (channelOpenSslP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for OpenSSL "
                         "socket descriptor");
     else {
         TChannel * channelP;
         
-        channelOpensslP->sslP = sslP;
-        channelOpensslP->userSuppliedSsl = TRUE;
+        channelOpenSslP->sslP = sslP;
+        channelOpenSslP->userSuppliedSsl = userSuppliedSsl;
         
         /* This should be ok as far as I can tell */
-        ChannelCreate(&channelVtbl, channelOpensslP, &channelP);
+        ChannelCreate(&channelVtbl, channelOpenSslP, &channelP);
         
         if (channelP == NULL)
             xmlrpc_asprintf(errorP, "Unable to allocate memory for "
@@ -305,23 +310,25 @@ makeChannelFromSsl(SSL *         const sslP,
             *errorP = NULL;
         }
         if (*errorP)
-            free(channelOpensslP);
+            free(channelOpenSslP);
     }
 }
 
 
 
 void
-ChannelOpensslCreateSsl(SSL *                            const sslP,
+ChannelOpenSslCreateSsl(SSL *                            const sslP,
                         TChannel **                      const channelPP,
-                        struct abyss_openssl_chaninfo ** const channelInfoPP,
+                        struct abyss_openSsl_chaninfo ** const channelInfoPP,
                         const char **                    const errorP) {
 
     assert(sslP);
 
     makeChannelInfo(channelInfoPP, sslP, errorP);
     if (!*errorP) {
-        makeChannelFromSsl(ssl, channelPP, errorP);
+        bool const userSuppliedTrue = true;
+
+        makeChannelFromSsl(sslP, userSuppliedTrue, channelPP, errorP);
         
         if (*errorP) {
             free(*channelInfoPP);
@@ -335,7 +342,7 @@ ChannelOpensslCreateSsl(SSL *                            const sslP,
       TChanSwitch
 =============================================================================*/
 
-struct opensslSwitch {
+struct ChanSwitchOpenSsl {
 /*----------------------------------------------------------------------------
    The properties/state of a TChanSwitch uniqe to the OpenSSL variety.
 
@@ -344,14 +351,19 @@ struct opensslSwitch {
    creates OpenSSL TChannels.  The switch is just a POSIX listening
    socket, and is almost identical to the Abyss Unix channel switch.
 -----------------------------------------------------------------------------*/
-    int fd;
+    int listenFd;
         /* File descriptor of the POSIX socket (such as is created by
-           socket() in the C library) for the socket.
+           socket() in the C library) for the listening socket.
         */
     bool userSuppliedFd;
         /* The file descriptor and associated POSIX socket belong to the
            user; we did not create it.
         */
+    SSL_CTX * sslCtxP;
+        /* The context in which we create all our OpenSSL connections */
+
+    sockutil_InterruptPipe interruptPipe;
+        /* We use this to interrupt a wait for the next client to arrive */
 };
 
 
@@ -361,15 +373,16 @@ static SwitchDestroyImpl chanSwitchDestroy;
 static void
 chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
 
-static void
-chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
+    struct ChanSwitchOpenSsl * const chanSwitchOpenSslP = chanSwitchP->implP;
+ 
+    sockutil_interruptPipeTerm(chanSwitchOpenSslP->interruptPipe);
 
-    struct opensslSwitch * const opensslSwitchP = chanSwitchP->implP;
+    SSL_CTX_free(chanSwitchOpenSslP->sslCtxP);
 
-    if (!opensslSwitchP->userSuppliedFd)
-        close(opensslSwitchP->fd);
+    if (!chanSwitchOpenSslP->userSuppliedFd)
+        close(chanSwitchOpenSslP->listenFd);
 
-    free(opensslSwitchP);
+    free(chanSwitchOpenSslP);
 }
 
 
@@ -381,24 +394,98 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
                  uint32_t      const backlog,
                  const char ** const errorP) {
 
-    struct opensslSwitch * const opensslSwitchP = chanSwitchP->implP;
+    struct ChanSwitchOpenSsl * const chanSwitchOpenSslP = chanSwitchP->implP;
 
-    int32_t const minus1 = -1;
+    sockutil_listen(chanSwitchOpenSslP->listenFd, backlog, errorP);
+}
 
-    int rc;
 
-    /* Disable the Nagle algorithm to make persistant connections faster */
 
-    setsockopt(opensslSwitchP->fd, IPPROTO_TCP, TCP_NODELAY,
-               &minus1, sizeof(minus1));
+static void
+createSslFromAcceptedConn(int           const acceptedFd,
+                          SSL_CTX *     const sslCtxP,
+                          SSL **        const sslPP,
+                          const char ** const errorP) {
+          
+    SSL * sslP;
+      
+    sslP = SSL_new(sslCtxP);
 
-    rc = listen(opensslSwitchP->fd, backlog);
+    if (!sslP)
+        xmlrpc_asprintf(errorP, "Failed to create SSL connection "
+                        "object.  SSL_new() failed");
+    else {
+        int succeeded;
 
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "listen() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else
-        *errorP = NULL;
+        succeeded = SSL_set_fd(sslP, acceptedFd);
+        
+        if (!succeeded)
+            xmlrpc_asprintf(errorP, "SSL_set_fd(%d) failed.", acceptedFd);
+        else {
+            int rc;
+
+            rc = SSL_accept(sslP);
+
+            if (rc != 1)
+                xmlrpc_asprintf(errorP, "SSL_accept() failed.  rc=%d/%d",
+                                rc, SSL_get_error(sslP, rc));
+        }
+        if (*errorP)
+            SSL_free(sslP);
+        else {
+            *sslPP = sslP;
+        }
+    }
+}
+
+
+
+static void
+createChannelFromAcceptedConn(int             const acceptedFd,
+                              SSL_CTX *       const sslCtxP,
+                              TChannel **     const channelPP,
+                              void **         const channelInfoPP,
+                              const char **   const errorP) {
+
+    struct ChannelOpenSsl * channelOpenSslP;
+
+    MALLOCVAR(channelOpenSslP);
+
+    if (!channelOpenSslP)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory");
+    else {
+        SSL * sslP;
+        const char * error;
+
+        createSslFromAcceptedConn(acceptedFd, sslCtxP, &sslP, &error);
+        
+        if (error) {
+            xmlrpc_asprintf(errorP, "Failed to create an OpenSSL connection "
+                            "from the accepted TCP connection.  %s", error);
+            xmlrpc_strfree(error);
+        } else {
+            struct abyss_openSsl_chaninfo * channelInfoP;
+
+            makeChannelInfo(&channelInfoP, sslP, errorP);
+            if (!*errorP) {
+                bool const userSuppliedFalse = false;
+
+                makeChannelFromSsl(sslP, userSuppliedFalse,
+                                   channelPP, errorP);
+
+                if (*errorP)
+                    free(channelInfoP);
+                else
+                    *channelInfoPP = channelInfoP;
+            }
+            if (*errorP)
+                SSL_free(sslP);
+            else
+                channelOpenSslP->sslP = sslP;
+        }
+        if (*errorP)
+            free(channelOpenSslP);
+    }
 }
 
 
@@ -419,58 +506,42 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
    If we receive a signal while waiting, return immediately with
    *channelPP == NULL.
 -----------------------------------------------------------------------------*/
-    struct opensslSwitch * const listenSocketP = chanSwitchP->implP;
+    struct ChanSwitchOpenSsl * const chanSwitchOpenSslP = chanSwitchP->implP;
 
     bool interrupted;
     TChannel * channelP;
 
-    interrupted = FALSE; /* Haven't been interrupted yet */
+    interrupted = false; /* Haven't been interrupted yet */
     channelP    = NULL;  /* No connection yet */
     *errorP     = NULL;  /* No error yet */
 
     while (!channelP && !*errorP && !interrupted) {
         struct sockaddr peerAddr;
-        socklen_t size = sizeof(peerAddr);
+        socklen_t peerAddrLen;
         int rc;
 
-        rc = accept(listenSocketP->fd, &peerAddr, &size);
+        peerAddrLen = sizeof(peerAddr);  /* initial value */
+
+        rc = accept(chanSwitchOpenSslP->listenFd, &peerAddr, &peerAddrLen);
 
         if (rc >= 0) {
             int const acceptedFd = rc;
-            struct channelOpenssl * opensslChannelP;
 
-            MALLOCVAR(opensslChannelP);
+            const char * error;
 
-            if (!opensslChannelP)
-                xmlrpc_asprintf(errorP, "Unable to allocate memory");
-            else {
-                struct abyss_openssl_chaninfo * channelInfoP;
-                
-                openChannelP->userSuppliedFd = FALSE;
-                TODO("turn connected socket 'acceptedFd' into an OpenSSL "
-                     "connection opensslChannelP->sslP");
+            createChannelFromAcceptedConn(
+                acceptedFd, chanSwitchOpenSslP->sslCtxP,
+                channelPP, channelInfoPP, &error);
 
-                makeChannelInfo(&channelInfoP, peerAddr, size, errorP);
-                if (!*errorP) {
-                    *channelInfoPP = channelInfoP;
-
-                    ChannelCreate(&channelVtbl, opensslChannelP, &channelP);
-                    if (!channelP)
-                        xmlrpc_asprintf(errorP,
-                                        "Failed to create TChannel object.");
-                    else
-                        *errorP = NULL;
-
-                    if (*errorP)
-                        free(channelInfoP);
-                }
-                if (*errorP)
-                    free(opensslChannelP);
+            if (error) {
+                xmlrpc_asprintf(errorP, "Failed to create a channel from the "
+                                "TCP connection we accepted.  %s", error);
+                xmlrpc_strfree(error);
             }
             if (*errorP)
                 close(acceptedFd);
         } else if (errno == EINTR)
-            interrupted = TRUE;
+            interrupted = true;
         else
             xmlrpc_asprintf(errorP, "accept() failed, errno = %d (%s)",
                             errno, strerror(errno));
@@ -488,10 +559,15 @@ chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
   Interrupt any waiting that a thread might be doing in chanSwitchAccept()
   now or in the future.
 
-  Actually, this is a no-op, since we don't yet know how to accomplish
-  that.
+  TODO: Make a way to reset this so that future chanSwitchAccept()s can once
+  again wait.
 -----------------------------------------------------------------------------*/
+    struct ChanSwitchOpenSsl * const chanSwitchOpenSslP = chanSwitchP->implP;
 
+    unsigned char const zero[1] = {0u};
+
+    write(chanSwitchOpenSslP->interruptPipe.interruptorFd,
+          &zero, sizeof(zero));
 }
 
 
@@ -500,131 +576,44 @@ static struct TChanSwitchVtbl const chanSwitchVtbl = {
     &chanSwitchDestroy,
     &chanSwitchListen,
     &chanSwitchAccept,
+    &chanSwitchInterrupt,
 };
 
 
 
 static void
-setSocketOptions(int           const fd,
-                 const char ** const errorP) {
+createChanSwitch(int            const fd,
+                 bool           const userSuppliedFd,
+                 TChanSwitch ** const chanSwitchPP,
+                 const char **  const errorP) {
 
-    int32_t n = 1;
-    int rc;
+    struct ChanSwitchOpenSsl * chanSwitchOpenSslP;
 
-    rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n));
+    assert(!sockutil_connected(fd));
 
-    if (rc < 0)
-        xmlrpc_asprintf(errorP, "Failed to set socket options.  "
-                        "setsockopt() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
+    if (SwitchTraceIsActive)
+        fprintf(stderr, "Creating OpenSSL-based channel switch\n");
 
+    MALLOCVAR(chanSwitchOpenSslP);
 
-
-static void
-bindSocketToPort(int              const fd,
-                 struct in_addr * const addrP,
-                 uint16_t         const portNumber,
-                 const char **    const errorP) {
-
-    struct sockaddr_in name;
-    int rc;
-
-    name.sin_family = AF_INET;
-    name.sin_port   = htons(portNumber);
-    if (addrP)
-        name.sin_addr = *addrP;
-    else
-        name.sin_addr.s_addr = INADDR_ANY;
-
-    rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
-
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "Unable to bind socket to port number %hu.  "
-                        "bind() failed with errno %d (%s)",
-                        portNumber, errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
-
-
-
-void
-ChanSwitchOpensslCreate(unsigned short const portNumber,
-                        TChanSwitch ** const chanSwitchPP,
-                        const char **  const errorP) {
-/*----------------------------------------------------------------------------
-   Create an OpenSSL-based channel switch.
-
-   Use an IP socket.
-
-   Set the socket's local address so that a subsequent "listen" will listen
-   on all IP addresses, port number 'portNumber'.
------------------------------------------------------------------------------*/
-    struct opensslSwitch * opensslSwitchP;
-
-    MALLOCVAR(opensslSwitchP);
-
-    if (!opensslSwitchP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory for Openssl "
-                        "channel switch descriptor structure.");
+    if (chanSwitchOpenSslP == NULL)
+        xmlrpc_asprintf(errorP, "unable to allocate memory for OpenSSL "
+                        "channel switch descriptor.");
     else {
-        int rc;
-        rc = socket(AF_INET, SOCK_STREAM, 0);
-        if (rc < 0)
-            xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
-                            errno, strerror(errno));
-        else {
-            opensslSwitchP->fd = rc;
-            opensslSwitchP->userSuppliedFd = FALSE;
+        TChanSwitch * chanSwitchP;
 
-            setSocketOptions(opensslSwitchP->fd, errorP);
-            if (!*errorP) {
-                bindSocketToPort(opensslSwitchP->fd, NULL, portNumber, errorP);
-                
-                if (!*errorP)
-                    ChanSwitchCreate(&chanSwitchVtbl, opensslSwitchP,
-                                     chanSwitchPP);
-            }
-            if (*errorP)
-                close(opensslSwitchP->fd);
-        }
-        if (*errorP)
-            free(opensslSwitchP);
-    }
-}
+        chanSwitchOpenSslP->sslCtxP = SSL_CTX_new(SSLv23_server_method());
 
-
-
-void
-ChanSwitchOpensslCreateFd(int            const fd,
-                          TChanSwitch ** const chanSwitchPP,
-                          const char **  const errorP) {
-/*----------------------------------------------------------------------------
-   Create an OpenSSL-based channel switch, based on a POSIX socket that
-   is in listen state.
------------------------------------------------------------------------------*/
-    struct opensslSwitch * opensslSwitchP;
-
-    if (connected(fd))
-        xmlrpc_asprintf(errorP,
-                        "Socket (file descriptor %d) is in connected "
-                        "state.", fd);
-    else {
-        MALLOCVAR(opensslSwitchP);
-
-        if (opensslSwitchP == NULL)
-            xmlrpc_asprintf(errorP, "unable to allocate memory for Openssl "
-                            "channel switch descriptor.");
-        else {
-            TChanSwitch * chanSwitchP;
-
-            opensslSwitchP->fd = fd;
-            opensslSwitchP->userSuppliedFd = TRUE;
+        chanSwitchOpenSslP->listenFd = fd;
+        chanSwitchOpenSslP->userSuppliedFd = userSuppliedFd;
             
-            ChanSwitchCreate(&chanSwitchVtbl, opensslSwitchP, &chanSwitchP);
+        sockutil_interruptPipeInit(&chanSwitchOpenSslP->interruptPipe, errorP);
+
+        if (!*errorP) {
+            ChanSwitchCreate(&chanSwitchVtbl, chanSwitchOpenSslP,
+                             &chanSwitchP);
+            if (*errorP)
+                sockutil_interruptPipeTerm(chanSwitchOpenSslP->interruptPipe);
 
             if (chanSwitchP == NULL)
                 xmlrpc_asprintf(errorP, "Unable to allocate memory for "
@@ -633,8 +622,149 @@ ChanSwitchOpensslCreateFd(int            const fd,
                 *chanSwitchPP = chanSwitchP;
                 *errorP = NULL;
             }
-            if (*errorP)
-                free(opensslSwitchP);
         }
+        if (*errorP)
+            free(chanSwitchOpenSslP);
     }
 }
+
+
+
+static void
+switchCreateIpV4Port(unsigned short          const portNumber,
+                     TChanSwitch **          const chanSwitchPP,
+                     const char **           const errorP) {
+/*----------------------------------------------------------------------------
+   Create a POSIX-socket-based channel switch for an IPv4 endpoint.
+
+   Set the socket's local address so that a subsequent "listen" will listen on
+   all interfaces, port number 'portNumber'.
+-----------------------------------------------------------------------------*/
+    int rc;
+    rc = socket(PF_INET, SOCK_STREAM, 0);
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else {
+        int const socketFd = rc;
+
+        sockutil_setSocketOptions(socketFd, errorP);
+        if (!*errorP) {
+            sockutil_bindSocketToPortInet(socketFd, portNumber, errorP);
+
+            if (!*errorP) {
+                bool const userSupplied = false;
+                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
+            }
+        }
+        if (*errorP)
+            close(socketFd);
+    }
+}
+
+
+
+static void
+switchCreateIpV6Port(unsigned short          const portNumber,
+                     TChanSwitch **          const chanSwitchPP,
+                     const char **           const errorP) {
+/*----------------------------------------------------------------------------
+  Same as switchCreateIpV4Port(), except for IPv6.
+-----------------------------------------------------------------------------*/
+    int rc;
+    rc = socket(PF_INET6, SOCK_STREAM, 0);
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else {
+        int const socketFd = rc;
+
+        sockutil_setSocketOptions(socketFd, errorP);
+        if (!*errorP) {
+            sockutil_bindSocketToPortInet6(socketFd, portNumber, errorP);
+
+            if (!*errorP) {
+                bool const userSupplied = false;
+                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
+            }
+        }
+        if (*errorP)
+            close(socketFd);
+    }
+}
+
+
+
+void
+ChanSwitchOpenSslCreate(int                     const protocolFamily,
+                        const struct sockaddr * const sockAddrP,
+                        socklen_t               const sockAddrLen,
+                        TChanSwitch **          const chanSwitchPP,
+                        const char **           const errorP) {
+
+    int rc;
+    rc = socket(protocolFamily, SOCK_STREAM, 0);
+    if (rc < 0)
+        xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
+                        errno, strerror(errno));
+    else {
+        int const socketFd = rc;
+
+        if (SwitchTraceIsActive)
+            fprintf(stderr, "Created socket for protocol family %d\n",
+                    protocolFamily);
+
+        sockutil_setSocketOptions(socketFd, errorP);
+        if (!*errorP) {
+            sockutil_bindSocketToPort(socketFd, sockAddrP, sockAddrLen,
+                                      errorP);
+
+            if (!*errorP) {
+                bool const userSupplied = false;
+                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
+            }
+        }
+        if (*errorP)
+            close(socketFd);
+    }
+
+}
+
+
+
+void
+ChanSwitchOpenSslCreateIpV4Port(unsigned short const portNumber,
+                                TChanSwitch ** const chanSwitchPP,
+                                const char **  const errorP) {
+
+    switchCreateIpV4Port(portNumber, chanSwitchPP, errorP);
+}
+
+
+
+void
+ChanSwitchOpenSslCreateIpV6Port(unsigned short const portNumber,
+                                TChanSwitch ** const chanSwitchPP,
+                                const char **  const errorP) {
+
+    switchCreateIpV6Port(portNumber, chanSwitchPP, errorP);
+}
+
+
+
+void
+ChanSwitchOpenSslCreateFd(int            const fd,
+                          TChanSwitch ** const chanSwitchPP,
+                          const char **  const errorP) {
+
+    if (sockutil_connected(fd))
+        xmlrpc_asprintf(errorP,
+                        "Socket (file descriptor %d) is in connected "
+                        "state.", fd);
+    else {
+        bool const userSupplied = true;
+        createChanSwitch(fd, userSupplied, chanSwitchPP, errorP);
+    }
+}
+
+

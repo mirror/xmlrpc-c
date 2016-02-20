@@ -438,8 +438,6 @@ DESTDIR =
 
 VPATH := .:$(SRCDIR)/$(SUBDIR)
 
-HAVE_OPENSSL := $(shell if pkg-config openssl; then echo Y; fi)
-
-ifeq ($(HAVE_OPENSSL),Y)
-  OPENSSL_LDADD := $(shell pkg-config openssl --libs)
-endif
+HAVE_OPENSSL = @HAVE_OPENSSL@
+OPENSSL_LDADD = @OPENSSL_LDADD@
+OPENSSL_CFLAGS = @OPENSSL_CFLAGS@

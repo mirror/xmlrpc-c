@@ -256,4 +256,8 @@
   #define XMLRPC_CHDIR chdir
 #endif
 
+#define HAVE_OPENSSL @HAVE_OPENSSL_DEFINE@
+
+
+
 #endif

@@ -557,10 +557,12 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
         if (!*errorP && !interrupted) {
             struct sockaddr peerAddr;
-            socklen_t size = sizeof(peerAddr);
+            socklen_t peerAddrLen;
             int rc;
 
-            rc = accept(listenSocketP->fd, &peerAddr, &size);
+            peerAddrLen = sizeof(peerAddr);  /* initial value */
+
+            rc = accept(listenSocketP->fd, &peerAddr, &peerAddrLen);
 
             if (rc >= 0) {
                 int const acceptedFd = rc;
