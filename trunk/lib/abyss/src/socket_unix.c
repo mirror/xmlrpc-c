@@ -404,28 +404,29 @@ ChannelUnixCreateFd(int                           const fd,
                     struct abyss_unix_chaninfo ** const channelInfoPP,
                     const char **                 const errorP) {
 
-    struct sockaddr peerAddr;
-    socklen_t peerAddrLen;
-    int rc;
+    if (!sockutil_connected(fd))
+        xmlrpc_asprintf(errorP, "Socket on file descriptor %d is not in "
+                        "connected state.", fd);
+    else {
+        struct sockaddr * peerAddrP;
+        size_t peerAddrLen;
+        const char * error;
 
-    peerAddrLen = sizeof(peerAddr);
+        sockutil_getPeerName(fd, &peerAddrP, &peerAddrLen, &error);
 
-    rc = getpeername(fd, &peerAddr, &peerAddrLen);
+        if (error) {
+            xmlrpc_asprintf(errorP, "Failed to get identity of client.  %s",
+                            error);
+            xmlrpc_strfree(error);
+        } else {
+            makeChannelInfo(channelInfoPP, *peerAddrP, peerAddrLen, errorP);
+            if (!*errorP) {
+                makeChannelFromFd(fd, channelPP, errorP);
 
-    if (rc != 0) {
-        if (errno == ENOTCONN)
-            xmlrpc_asprintf(errorP, "Socket on file descriptor %d is not in "
-                            "connected state.", fd);
-        else
-            xmlrpc_asprintf(errorP, "getpeername() failed on fd %d.  "
-                            "errno=%d (%s)", fd, errno, strerror(errno));
-    } else {
-        makeChannelInfo(channelInfoPP, peerAddr, peerAddrLen, errorP);
-        if (!*errorP) {
-            makeChannelFromFd(fd, channelPP, errorP);
-
-            if (*errorP)
-                free(*channelInfoPP);
+                if (*errorP)
+                    free(*channelInfoPP);
+            }
+            free(peerAddrP);
         }
     }
 }
