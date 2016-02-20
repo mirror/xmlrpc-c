@@ -200,7 +200,9 @@ createServer(struct _TServer ** const srvPP,
              bool               const userChanSwitch,
              unsigned short     const portNumber,             
              const char **      const errorP) {
-
+/*----------------------------------------------------------------------------
+   Create a server object and return it as *srvPP.
+-----------------------------------------------------------------------------*/
     struct _TServer * srvP;
 
     MALLOCVAR(srvP);
@@ -285,6 +287,12 @@ ServerCreate(TServer *       const serverP,
              xmlrpc_uint16_t const portNumber,
              const char *    const filesPath,
              const char *    const logFileName) {
+/*----------------------------------------------------------------------------
+   Create a server that will listen for and accept client connections on TCP
+   port 'portNumber'.  Those connections will be raw TCP connections.
+
+   Set *serverP to represent that server.
+-----------------------------------------------------------------------------*/
 
     bool const noAcceptFalse = false;
     bool const userChanSwitchFalse = false;
@@ -350,7 +358,12 @@ ServerCreateSocket(TServer *    const serverP,
                    TOsSocket    const socketFd,
                    const char * const filesPath,
                    const char * const logFileName) {
+/*----------------------------------------------------------------------------
+   Create a server that will listen for and accept client connections on
+   socket 'socketFd'.  Those connections will be raw TCP connections.
 
+   Set *serverP to represent that server.
+-----------------------------------------------------------------------------*/
     bool success;
     TChanSwitch * chanSwitchP;
     const char * error;
@@ -394,7 +407,13 @@ ServerCreateNoAccept(TServer *    const serverP,
                      const char * const name,
                      const char * const filesPath,
                      const char * const logFileName) {
+/*----------------------------------------------------------------------------
+   Create a server that will not get client connections; the user will have to
+   get the client connections and use server methods that take an existing
+   connection as an argument.
 
+   Set *serverP to represent that server.
+-----------------------------------------------------------------------------*/
     bool const noAcceptTrue = true;
     bool const userChanSwitchFalse = false;
 
@@ -423,7 +442,14 @@ void
 ServerCreateSwitch(TServer *     const serverP,
                    TChanSwitch * const chanSwitchP,
                    const char ** const errorP) {
-    
+/*----------------------------------------------------------------------------
+   Create a server that will get client connections from channel switch
+   *chanSwitchP.  Those connections would typically be raw TCP connections,
+   but could be anything that can be abstracted by a Channel object.  For
+   example, an SSL encrypted TCP connection.
+
+   Set *serverP to represent that server.
+-----------------------------------------------------------------------------*/
     bool const noAcceptFalse = false;
     bool const userChanSwitchTrue = true;
 
@@ -1451,11 +1477,11 @@ ServerRunConn(TServer * const serverP,
 void
 ServerRunOnce(TServer * const serverP) {
 /*----------------------------------------------------------------------------
-   Accept a connection from the channel switch and do the HTTP
-   transaction that comes over it.
+   Accept a connection from the channel switch and do the HTTP transaction
+   that comes over it.
 
-   If no connection is presently waiting at the switch, wait for one.
-   But return immediately if we receive a signal during the wait.
+   If no connection is presently waiting at the switch, wait for one.  But
+   return immediately if we receive a signal during the wait.
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
 

@@ -20,9 +20,9 @@ SHARED_LIBS_TO_INSTALL := libxmlrpc_abyss
 
 ifeq ($(findstring mingw,$(HOST_OS)),mingw)
   THREAD_MODULE = thread_windows
-  SOCKET_MODULE = socket_win
+  SOCKET_MODS = socket_win
 else
-  SOCKET_MODULE = socket_unix
+  SOCKET_MODS = socket_unix sockutil
   ifeq ($(ENABLE_ABYSS_THREADS),yes)
     THREAD_MODULE = thread_pthread
   else
@@ -46,7 +46,7 @@ TARGET_MODS = \
   session \
   sessionReadRequest \
   socket \
-  $(SOCKET_MODULE) \
+  $(SOCKET_MODS) \
   token \
   $(THREAD_MODULE) \
   trace \
