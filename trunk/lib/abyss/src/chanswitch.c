@@ -232,7 +232,7 @@ ChanSwitchAccept(TChanSwitch * const chanSwitchP,
         (*chanSwitchP->vtbl.accept)(chanSwitchP,
                                     channelPP, channelInfoPP, errorP);
 
-        if (SwitchTraceIsActive)
+        if (SwitchTraceIsActive && *errorP == NULL)
             fprintf(stderr, "Got connection from channel switch.  "
                     "Channel = %p\n", *channelPP);
     }
