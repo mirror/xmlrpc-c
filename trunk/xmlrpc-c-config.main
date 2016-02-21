@@ -96,6 +96,9 @@ while test $# -gt 0; do
       ;;
     abyss-server)
       the_libs="${SOCKETLIBOPT} $the_libs"
+      if test "${HAVE_OPENSSL}" = "yes"; then
+        the_libs="${OPENSSL_LDADD} $the_libs"
+        fi
       the_libs="-lxmlrpc_abyss $the_libs"
       the_libs="-lxmlrpc_server $the_libs"
       the_libs="-lxmlrpc_server_abyss $the_libs"
