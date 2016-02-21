@@ -46,6 +46,122 @@
 
 
 
+static const char *
+sslErrorMsg(void) {
+/*----------------------------------------------------------------------------
+   The information on the OpenSSL error stack, in human-readable (barely)
+   form.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+    bool eof;
+
+    retval = xmlrpc_strdupsol("");
+
+    for (eof = false; !eof; ) {
+
+        int const errCode = ERR_get_error();
+
+        if (errCode == 0)
+            eof = true;
+        else {
+            const char * newRetval;
+
+            xmlrpc_asprintf(&newRetval, "%s %s; ",
+                            retval, ERR_error_string(errCode, NULL));
+
+            xmlrpc_strfree(retval);
+
+            retval = newRetval;
+        }
+    }
+    return retval;
+}
+
+
+
+static const char *
+sslResultMsg(int const resultCode) {
+/*----------------------------------------------------------------------------
+   English description of a result code such as OpenSSL's SSL_get_error
+   returns.
+-----------------------------------------------------------------------------*/
+    switch (resultCode) {
+    case SSL_ERROR_NONE:             return "None";
+    case SSL_ERROR_SSL:              return "SSL";
+    case SSL_ERROR_WANT_READ:        return "Want Read";
+    case SSL_ERROR_WANT_WRITE:       return "Want Write";
+    case SSL_ERROR_WANT_X509_LOOKUP: return "Want X509_LOOKUP";
+    case SSL_ERROR_SYSCALL:          return "Syscall";
+    case SSL_ERROR_ZERO_RETURN:      return "Zero Return";
+    case SSL_ERROR_WANT_CONNECT:     return "Want Connect";
+    case SSL_ERROR_WANT_ACCEPT:      return "Want Accept";
+    default:                         return "???";
+    }
+}
+
+
+
+static void
+sslCreate(SSL_CTX *     const sslCtxP,
+          SSL **        const sslPP,
+          const char ** const errorP) {
+
+    *sslPP = SSL_new(sslCtxP);
+
+    if (!*sslPP) {
+        const char * const sslMsg = sslErrorMsg();
+
+        xmlrpc_asprintf(errorP, "Failed to create SSL connection "
+                        "object.  SSL_new() failed.  %s", sslMsg);
+        xmlrpc_strfree(sslMsg);
+    } else
+        *errorP = NULL;
+}
+
+
+
+static void
+sslSetFd(SSL *         const sslP,
+         int           const acceptedFd,
+         const char ** const errorP) {
+
+    int succeeded;
+
+    succeeded = SSL_set_fd(sslP, acceptedFd);
+        
+    if (!succeeded) {
+        const char * sslMsg;
+
+        sslMsg = sslErrorMsg();
+
+        xmlrpc_asprintf(errorP, "SSL_set_fd(%d) failed.  %s",
+                        acceptedFd, sslMsg);
+
+        xmlrpc_strfree(sslMsg);
+    } else
+        *errorP = NULL;
+}
+
+
+
+static void
+sslAccept(SSL *         const sslP,
+          const char ** const errorP) {
+
+    int rc;
+
+    rc = SSL_accept(sslP);
+
+    if (rc != 1) {
+        int const resultCode = SSL_get_error(sslP, rc);
+
+        xmlrpc_asprintf(errorP, "SSL_accept() failed.  rc=%d/%d: %s",
+                        rc, resultCode, sslResultMsg(resultCode));
+    }
+}
+
+
+
 struct ChannelOpenSsl {
 /*----------------------------------------------------------------------------
    The properties/state of a TChannel unique to the OpenSSL variety.
@@ -68,6 +184,7 @@ SocketOpenSslInit(const char ** const errorP) {
         /* readable error messages, don't call this if memory is tight */
 	SSL_library_init();   /* initialize library */
 
+    fprintf(stderr, "SSL_library_init() called\n");
 	/* actions_to_seed_PRNG(); */
 
 	*errorP = NULL;
@@ -377,8 +494,6 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
  
     sockutil_interruptPipeTerm(chanSwitchOpenSslP->interruptPipe);
 
-    SSL_CTX_free(chanSwitchOpenSslP->sslCtxP);
-
     if (!chanSwitchOpenSslP->userSuppliedFd)
         close(chanSwitchOpenSslP->listenFd);
 
@@ -408,27 +523,33 @@ createSslFromAcceptedConn(int           const acceptedFd,
                           const char ** const errorP) {
           
     SSL * sslP;
-      
-    sslP = SSL_new(sslCtxP);
+    const char * error;
 
-    if (!sslP)
+    sslCreate(sslCtxP, &sslP, &error);
+
+    if (error) {
         xmlrpc_asprintf(errorP, "Failed to create SSL connection "
-                        "object.  SSL_new() failed");
-    else {
-        int succeeded;
+                        "object.  %s", error);
+        xmlrpc_strfree(error);
+    } else {
+        const char * error;
 
-        succeeded = SSL_set_fd(sslP, acceptedFd);
-        
-        if (!succeeded)
-            xmlrpc_asprintf(errorP, "SSL_set_fd(%d) failed.", acceptedFd);
-        else {
-            int rc;
+        sslSetFd(sslP, acceptedFd, &error);
 
-            rc = SSL_accept(sslP);
+        if (error) {
+            xmlrpc_asprintf(errorP, "Failed to set file descriptor for SSL "
+                            "connection.  %s", error);
+            xmlrpc_strfree(error);
+        } else {
+            const char * error;
+           
+            sslAccept(sslP, &error);
 
-            if (rc != 1)
-                xmlrpc_asprintf(errorP, "SSL_accept() failed.  rc=%d/%d",
-                                rc, SSL_get_error(sslP, rc));
+            if (error) {
+                xmlrpc_asprintf(errorP, "Failed to set up SSL communication on "
+                                "working TCP connection.  %s", error);
+                xmlrpc_strfree(error);
+            }
         }
         if (*errorP)
             SSL_free(sslP);
@@ -584,6 +705,7 @@ static struct TChanSwitchVtbl const chanSwitchVtbl = {
 static void
 createChanSwitch(int            const fd,
                  bool           const userSuppliedFd,
+                 SSL_CTX *      const sslCtxP,
                  TChanSwitch ** const chanSwitchPP,
                  const char **  const errorP) {
 
@@ -602,7 +724,7 @@ createChanSwitch(int            const fd,
     else {
         TChanSwitch * chanSwitchP;
 
-        chanSwitchOpenSslP->sslCtxP = SSL_CTX_new(SSLv23_server_method());
+        chanSwitchOpenSslP->sslCtxP = sslCtxP;
 
         chanSwitchOpenSslP->listenFd = fd;
         chanSwitchOpenSslP->userSuppliedFd = userSuppliedFd;
@@ -631,9 +753,10 @@ createChanSwitch(int            const fd,
 
 
 static void
-switchCreateIpV4Port(unsigned short          const portNumber,
-                     TChanSwitch **          const chanSwitchPP,
-                     const char **           const errorP) {
+switchCreateIpV4Port(unsigned short const portNumber,
+                     SSL_CTX *      const sslCtxP,
+                     TChanSwitch ** const chanSwitchPP,
+                     const char **  const errorP) {
 /*----------------------------------------------------------------------------
    Create a POSIX-socket-based channel switch for an IPv4 endpoint.
 
@@ -654,7 +777,8 @@ switchCreateIpV4Port(unsigned short          const portNumber,
 
             if (!*errorP) {
                 bool const userSupplied = false;
-                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
+                createChanSwitch(socketFd, userSupplied, sslCtxP,
+                                 chanSwitchPP, errorP);
             }
         }
         if (*errorP)
@@ -665,9 +789,10 @@ switchCreateIpV4Port(unsigned short          const portNumber,
 
 
 static void
-switchCreateIpV6Port(unsigned short          const portNumber,
-                     TChanSwitch **          const chanSwitchPP,
-                     const char **           const errorP) {
+switchCreateIpV6Port(unsigned short const portNumber,
+                     SSL_CTX *      const sslCtxP,
+                     TChanSwitch ** const chanSwitchPP,
+                     const char **  const errorP) {
 /*----------------------------------------------------------------------------
   Same as switchCreateIpV4Port(), except for IPv6.
 -----------------------------------------------------------------------------*/
@@ -685,7 +810,8 @@ switchCreateIpV6Port(unsigned short          const portNumber,
 
             if (!*errorP) {
                 bool const userSupplied = false;
-                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
+                createChanSwitch(socketFd, userSupplied, sslCtxP,
+                                 chanSwitchPP, errorP);
             }
         }
         if (*errorP)
@@ -699,6 +825,7 @@ void
 ChanSwitchOpenSslCreate(int                     const protocolFamily,
                         const struct sockaddr * const sockAddrP,
                         socklen_t               const sockAddrLen,
+                        SSL_CTX *               const sslCtxP,
                         TChanSwitch **          const chanSwitchPP,
                         const char **           const errorP) {
 
@@ -721,7 +848,8 @@ ChanSwitchOpenSslCreate(int                     const protocolFamily,
 
             if (!*errorP) {
                 bool const userSupplied = false;
-                createChanSwitch(socketFd, userSupplied, chanSwitchPP, errorP);
+                createChanSwitch(socketFd, userSupplied, sslCtxP,
+                                 chanSwitchPP, errorP);
             }
         }
         if (*errorP)
@@ -734,26 +862,29 @@ ChanSwitchOpenSslCreate(int                     const protocolFamily,
 
 void
 ChanSwitchOpenSslCreateIpV4Port(unsigned short const portNumber,
+                                SSL_CTX *      const sslCtxP,
                                 TChanSwitch ** const chanSwitchPP,
                                 const char **  const errorP) {
 
-    switchCreateIpV4Port(portNumber, chanSwitchPP, errorP);
+    switchCreateIpV4Port(portNumber, sslCtxP, chanSwitchPP, errorP);
 }
 
 
 
 void
 ChanSwitchOpenSslCreateIpV6Port(unsigned short const portNumber,
+                                SSL_CTX *      const sslCtxP,
                                 TChanSwitch ** const chanSwitchPP,
                                 const char **  const errorP) {
 
-    switchCreateIpV6Port(portNumber, chanSwitchPP, errorP);
+    switchCreateIpV6Port(portNumber, sslCtxP, chanSwitchPP, errorP);
 }
 
 
 
 void
 ChanSwitchOpenSslCreateFd(int            const fd,
+                          SSL_CTX *      const sslCtxP,
                           TChanSwitch ** const chanSwitchPP,
                           const char **  const errorP) {
 
@@ -763,7 +894,7 @@ ChanSwitchOpenSslCreateFd(int            const fd,
                         "state.", fd);
     else {
         bool const userSupplied = true;
-        createChanSwitch(fd, userSupplied, chanSwitchPP, errorP);
+        createChanSwitch(fd, userSupplied, sslCtxP, chanSwitchPP, errorP);
     }
 }
 

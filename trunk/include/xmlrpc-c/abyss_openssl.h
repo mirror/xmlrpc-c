@@ -12,6 +12,7 @@
 =============================================================================*/
 #include <sys/socket.h>
 #include <xmlrpc-c/abyss.h>
+#include <openssl/ssl.h>
 
 struct abyss_openSsl_chaninfo {
     /* TODO: figure out useful information to put in here.
@@ -27,21 +28,25 @@ void
 ChanSwitchOpenSslCreate(int                     const protocolFamily,
                         const struct sockaddr * const sockAddrP,
                         socklen_t               const sockAddrLen,
+                        SSL_CTX *               const sslCtxP,
                         TChanSwitch **          const chanSwitchPP,
                         const char **           const errorP);
 
 void
 ChanSwitchOpenSslCreateIpV4Port(unsigned short const portNumber,
+                                SSL_CTX *      const sslCtxP,
                                 TChanSwitch ** const chanSwitchPP,
                                 const char **  const errorP);
 
 void
 ChanSwitchOpenSslCreateIpV6Port(unsigned short const portNumber,
+                                SSL_CTX *      const sslCtxP,
                                 TChanSwitch ** const chanSwitchPP,
                                 const char **  const errorP);
 
 void
 ChanSwitchOpenSslCreateFd(int            const fd,
+                          SSL_CTX *      const sslCtxP,
                           TChanSwitch ** const chanSwitchPP,
                           const char **  const errorP);
 
