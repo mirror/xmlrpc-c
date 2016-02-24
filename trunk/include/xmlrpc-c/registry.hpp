@@ -211,7 +211,7 @@ public:
 
     void
     processCall(std::string                const& callXml,
-                const xmlrpc_c::callInfo * const callInfoP,
+                const xmlrpc_c::callInfo * const  callInfoP,
                 std::string *              const  responseXmlP) const;
         
     size_t
