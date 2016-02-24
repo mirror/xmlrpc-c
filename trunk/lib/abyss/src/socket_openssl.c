@@ -5,8 +5,10 @@
   for an SSL (Secure Sockets Layer) connection based on an OpenSSL
   connection object -- what you create with SSL_new().
 
-  This is just a template for future development.  It does not function
-  (or even compile) today.
+  This is just a template for future development.  We haven't been able to
+  make it work yet.  It compiles and runs, but in tests, an attempt to make an
+  SSL connection with it fails with message from libssl: "no shared cipher."
+  We don't yet know what to do about that.
 
 =============================================================================*/
 
@@ -58,16 +60,19 @@ sslErrorMsg(void) {
     retval = xmlrpc_strdupsol("");
 
     for (eof = false; !eof; ) {
+        const char * sourceFileName;
+        int lineNum;
 
-        int const errCode = ERR_get_error();
+        int const errCode = ERR_get_error_line(&sourceFileName, &lineNum);
 
         if (errCode == 0)
             eof = true;
         else {
             const char * newRetval;
 
-            xmlrpc_asprintf(&newRetval, "%s %s; ",
-                            retval, ERR_error_string(errCode, NULL));
+            xmlrpc_asprintf(&newRetval, "%s %s (%s:%d); ",
+                            retval, ERR_error_string(errCode, NULL),
+                            sourceFileName, lineNum);
 
             xmlrpc_strfree(retval);
 
@@ -145,18 +150,60 @@ sslSetFd(SSL *         const sslP,
 
 
 static void
+traceCipherList(SSL * const sslP) {
+
+    int priority;
+    bool eof;
+
+    fprintf(stderr, "SSL object will consider using the following "
+            "ciphers in priority order: ");
+
+    for (priority = 0, eof = false; !eof; ++priority) {
+        const char * const cipherName = SSL_get_cipher_list(sslP, priority);
+
+        if (cipherName)
+            fprintf(stderr, "%s ", cipherName);
+        else
+            eof = true;
+    }
+    {
+        const char * list;
+        char buffer[1024];
+
+        list = SSL_get_shared_ciphers(sslP, buffer, sizeof(buffer));
+        if (list)
+            fprintf(stderr, "Shared ciphers: '%s'\n", list);
+        else {
+            // There is evidence that this case can mean there are no
+            // shared ciphers, in which case the following message is wrong.
+            fprintf(stderr, "SSL_get_shared_ciphers() failed\n");
+        }
+    }
+}
+
+
+
+static void
 sslAccept(SSL *         const sslP,
           const char ** const errorP) {
 
     int rc;
+
+    if (SwitchTraceIsActive)
+        traceCipherList(sslP);
 
     rc = SSL_accept(sslP);
 
     if (rc != 1) {
         int const resultCode = SSL_get_error(sslP, rc);
 
-        xmlrpc_asprintf(errorP, "SSL_accept() failed.  rc=%d/%d: %s",
-                        rc, resultCode, sslResultMsg(resultCode));
+        const char * const errorStack = sslErrorMsg();
+
+        xmlrpc_asprintf(errorP, "SSL_accept() failed.  rc=%d/%d: %s.  "
+                        "OpenSSL error stack: %s\n",
+                        rc, resultCode, sslResultMsg(resultCode), errorStack);
+
+        xmlrpc_strfree(errorStack);
     }
 }
 
@@ -183,9 +230,6 @@ SocketOpenSslInit(const char ** const errorP) {
 	SSL_load_error_strings();
         /* readable error messages, don't call this if memory is tight */
 	SSL_library_init();   /* initialize library */
-
-    fprintf(stderr, "SSL_library_init() called\n");
-	/* actions_to_seed_PRNG(); */
 
 	*errorP = NULL;
 }
@@ -546,7 +590,8 @@ createSslFromAcceptedConn(int           const acceptedFd,
             sslAccept(sslP, &error);
 
             if (error) {
-                xmlrpc_asprintf(errorP, "Failed to set up SSL communication on "
+                xmlrpc_asprintf(errorP,
+                                "Failed to set up SSL communication on "
                                 "working TCP connection.  %s", error);
                 xmlrpc_strfree(error);
             }
@@ -655,12 +700,16 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
                 channelPP, channelInfoPP, &error);
 
             if (error) {
-                xmlrpc_asprintf(errorP, "Failed to create a channel from the "
-                                "TCP connection we accepted.  %s", error);
+                close(acceptedFd);
+
+                if (SwitchTraceIsActive)
+                    fprintf(stderr,
+                            "Failed to create a channel from the "
+                            "TCP connection we accepted.  %s.  "
+                            "Closing TCP connection, waiting for the "
+                            "next one\n", error);
                 xmlrpc_strfree(error);
             }
-            if (*errorP)
-                close(acceptedFd);
         } else if (errno == EINTR)
             interrupted = true;
         else
