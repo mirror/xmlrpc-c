@@ -59,7 +59,7 @@ TARGET_MODS = \
   utf8 \
 
 OMIT_LIBXMLRPC_UTIL_RULE=Y
-MAJ=3
+MAJ=4
   # Major number of shared libraries in this directory
 
 include $(SRCDIR)/common.mk
