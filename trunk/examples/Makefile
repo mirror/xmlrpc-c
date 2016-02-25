@@ -52,6 +52,10 @@ ifneq ($(MSVCRT),yes)
   SERVERPROGS_ABYSS += interrupted_server
 endif
 
+ifeq ($(HAVE_OPENSSL),yes)
+  SERVERPROGS_ABYSS += ssl_server
+endif
+
 BASIC_PROGS = \
   json \
   gen_sample_add_xml \
