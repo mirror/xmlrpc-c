@@ -166,6 +166,7 @@ traceCipherList(SSL * const sslP) {
         else
             eof = true;
     }
+    fprintf(stderr, "\n");
     {
         const char * list;
         char buffer[1024];
