@@ -6,57 +6,10 @@
 #include "girstring.h"
 #include "casprintf.h"
 #include "xmlrpc-c/base.h"
-#include "xmlrpc-c/xmlparser.h"
 
 #include "testtool.h"
 #include "xml_data.h"
 #include "parse_xml.h"
-
-
-
-static void test_expat (void)
-{
-    xmlrpc_env env;
-    xml_element *elem, *array, *data, *value1, *i4;
-    const char *cdata;
-    size_t size;
-
-    xmlrpc_env_init(&env);
-
-    /* Parse a moderately complex XML document. */
-    xml_parse(&env, expat_data, strlen(expat_data), &elem);
-    TEST_NO_FAULT(&env);
-    TEST(elem != NULL);
-
-    /* Verify our results. */
-    TEST(streq(xml_element_name(elem), "value"));
-    TEST(xml_element_children_size(elem) == 1);
-    array = xml_element_children(elem)[0];
-    TEST(streq(xml_element_name(array), "array"));
-    TEST(xml_element_children_size(array) == 1);
-    data = xml_element_children(array)[0];
-    TEST(streq(xml_element_name(data), "data"));
-    TEST(xml_element_children_size(data) > 1);
-    value1 = xml_element_children(data)[0];
-    TEST(streq(xml_element_name(value1), "value"));
-    TEST(xml_element_children_size(value1) == 1);
-    i4 = xml_element_children(value1)[0];
-    TEST(streq(xml_element_name(i4), "i4"));
-    TEST(xml_element_children_size(i4) == 0);
-    cdata = xml_element_cdata(i4);
-    size = xml_element_cdata_size(i4);
-    TEST(size == strlen("2147483647"));
-    TEST(memcmp(cdata, "2147483647", strlen("2147483647")) == 0);
-
-    /* Test cleanup code (w/memprof). */
-    xml_element_free(elem);
-
-    /* Test broken XML */
-    xml_parse(&env, expat_error_data, strlen(expat_error_data), &elem);
-    TEST(env.fault_occurred);
-
-    xmlrpc_env_clean(&env);
-}
 
 
 
@@ -375,15 +328,8 @@ testParseBadResponseXmlRpc(void) {
         const char * const bad_resp = bad_responses[i];
         xmlrpc_env env;
         xmlrpc_value * v;
-        xml_element *elem;
 
         xmlrpc_env_init(&env);
-    
-        /* First, check to make sure that our test case is well-formed XML.
-        ** (It's easy to make mistakes when writing the test cases!) */
-        xml_parse(&env, bad_resp, strlen(bad_resp), &elem);
-        TEST_NO_FAULT(&env);
-        xml_element_free(elem);
     
         /* Now, make sure the higher-level routine barfs appropriately. */
         v = xmlrpc_parse_response(&env, bad_resp, strlen(bad_resp));
@@ -409,20 +355,11 @@ testParseBadResult(void) {
         const char * const bad_resp = bad_values[i];
         xmlrpc_env env;
         xmlrpc_value * valueP;
-        xml_element *elem;
         int faultCode;
         const char * faultString;
     
         xmlrpc_env_init(&env);
 
-        /* First, check to make sure that our test case is well-formed XML.
-        ** (It's easy to make mistakes when writing the test cases!) */
-        xml_parse(&env, bad_resp, strlen(bad_resp), &elem);
-        TEST_NO_FAULT(&env);
-        xml_element_free(elem);
-    
-        /* Now, make sure the higher-level routine barfs appropriately. */
-        
         xmlrpc_parse_response2(&env, bad_resp, strlen(bad_resp),
                                &valueP, &faultCode, &faultString);
 
@@ -509,7 +446,6 @@ testParseXmlCall(void) {
     xmlrpc_value *params;
     int i1, i2;
     const char **bad_call;
-    xml_element *elem;
 
     xmlrpc_env_init(&env);
 
@@ -535,14 +471,6 @@ testParseXmlCall(void) {
        they aren't legal XML-RPC.
     */
     for (bad_call = bad_calls; *bad_call != NULL; ++bad_call) {
-    
-        /* First, check to make sure that our test case is well-formed XML.
-        ** (It's easy to make mistakes when writing the test cases!) */
-        xml_parse(&env, *bad_call, strlen(*bad_call), &elem);
-        TEST_NO_FAULT(&env);
-        xml_element_free(elem);
-
-        /* Now, make sure the higher-level routine barfs appropriately. */
         xmlrpc_parse_call(&env, *bad_call, strlen(*bad_call),
                           &method_name, &params);
         TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
@@ -589,7 +517,6 @@ void
 test_parse_xml(void) {
 
     printf("Running XML parsing tests.\n");
-    test_expat();
     testParseNumberValue();
     testParseMiscSimpleValue();
     testParseGoodResponse();
