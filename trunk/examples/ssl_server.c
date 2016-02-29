@@ -8,9 +8,11 @@
    follows.
    
       $ ./ssl_server 8080 &
-      $ openssl -connect localhost:8080 -state
+      $ openssl -connect localhost:8080 -cipher ALL:aNULL:eNULL -state 
 
-   But we have never seen this successfully form a connection.  (See above).
+   we have seen this successfully form a connection, but the server dies
+   shortly thereafter, before having a chance to notice that the 'openssl'
+   program isn't an HTTP client.
 
    This uses the "provide your own Abyss server" mode of operation, 
    as opposed to other Xmlrpc-c facilities that create an Abyss server under
@@ -116,8 +118,8 @@ main(int           const argc,
         .methodFunction = &sample_add,
         .serverInfo = NULL
     };
-    SSL_CTX * const sslCtxP = SSL_CTX_new(SSLv23_server_method());
 
+    SSL_CTX * sslCtxP;
     TChanSwitch * chanSwitchP;
     TServer abyssServer;
     xmlrpc_registry * registryP;
@@ -134,6 +136,17 @@ main(int           const argc,
     AbyssInit(&error);
     
     xmlrpc_env_init(&env);
+
+    sslCtxP = SSL_CTX_new(SSLv23_server_method());
+
+    SSL_CTX_set_cipher_list(sslCtxP, "ALL:aNULL:eNULL");
+
+    EC_KEY * const ecdhP = EC_KEY_new_by_curve_name(NID_sect163r2);
+
+    // The following makes ECDH ciphers available.  Without it, no
+    // ciphers are available.
+    SSL_CTX_set_tmp_ecdh(sslCtxP, ecdhP);
+    EC_KEY_free(ecdhP);
 
     ChanSwitchOpenSslCreateIpV4Port(atoi(argv[1]), sslCtxP,
                                     &chanSwitchP, &error);
