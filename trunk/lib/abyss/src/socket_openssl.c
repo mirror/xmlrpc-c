@@ -265,13 +265,13 @@ channelWrite(TChannel *            const channelP,
 
     struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
 
-    int bytesLeft;
+    unsigned int bytesLeft;
     bool error;
 
     assert(sizeof(int) >= sizeof(len));
 
     for (bytesLeft = len, error = false; bytesLeft > 0 && !error; ) {
-        int const maxSend = (int)(-1) >> 1;
+        uint32_t const maxSend = (uint32_t)(-1) >> 1;
 
         int rc;
         
