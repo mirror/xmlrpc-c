@@ -156,7 +156,8 @@ traceCipherList(SSL * const sslP) {
     bool eof;
 
     fprintf(stderr, "SSL object will consider using the following "
-            "ciphers in priority order: ");
+            "ciphers in priority order, if conditions are right to use "
+            "them and the client agrees: ");
 
     for (priority = 0, eof = false; !eof; ++priority) {
         const char * const cipherName = SSL_get_cipher_list(sslP, priority);
@@ -167,19 +168,6 @@ traceCipherList(SSL * const sslP) {
             eof = true;
     }
     fprintf(stderr, "\n");
-    {
-        const char * list;
-        char buffer[1024];
-
-        list = SSL_get_shared_ciphers(sslP, buffer, sizeof(buffer));
-        if (list)
-            fprintf(stderr, "Shared ciphers: '%s'\n", list);
-        else {
-            // There is evidence that this case can mean there are no
-            // shared ciphers, in which case the following message is wrong.
-            fprintf(stderr, "SSL_get_shared_ciphers() failed\n");
-        }
-    }
 }
 
 
@@ -195,7 +183,9 @@ sslAccept(SSL *         const sslP,
 
     rc = SSL_accept(sslP);
 
-    if (rc != 1) {
+    if (rc == 1)
+        *errorP = NULL;
+    else {
         int const resultCode = SSL_get_error(sslP, rc);
 
         const char * const errorStack = sslErrorMsg();
@@ -358,9 +348,12 @@ channelWait(TChannel * const channelP ATTR_UNUSED,
   how yet.  Instead, we return immediately and hope that if Caller
   subsequently does a read or write, it blocks until it can do its thing.
 -----------------------------------------------------------------------------*/
-    *readyToReadP = true;
-    *readyToWriteP = true;
-    *failedP = false;
+    if (readyToReadP)
+        *readyToReadP = true;
+    if (readyToWriteP)
+        *readyToWriteP = true;
+    if (failedP)
+        *failedP = false;
 }
 
 
@@ -427,6 +420,7 @@ makeChannelInfo(struct abyss_openSsl_chaninfo ** const channelInfoPP,
                             error);
             xmlrpc_strfree(error);
         } else {
+            *errorP = NULL;
             channelInfoP->peerAddrLen = peerAddrLen;
             channelInfoP->peerAddr    = *peerAddrP;
 
@@ -595,7 +589,8 @@ createSslFromAcceptedConn(int           const acceptedFd,
                                 "Failed to set up SSL communication on "
                                 "working TCP connection.  %s", error);
                 xmlrpc_strfree(error);
-            }
+            } else
+                *errorP = NULL;
         }
         if (*errorP)
             SSL_free(sslP);
@@ -698,7 +693,7 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
             createChannelFromAcceptedConn(
                 acceptedFd, chanSwitchOpenSslP->sslCtxP,
-                channelPP, channelInfoPP, &error);
+                &channelP, channelInfoPP, &error);
 
             if (error) {
                 close(acceptedFd);
