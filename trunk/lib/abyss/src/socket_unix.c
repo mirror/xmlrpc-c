@@ -218,12 +218,13 @@ channelWait(TChannel * const channelP,
    for most purposes).
 
    Return *readyToReadP == true if the reason for returning is that
-   the channel is immediately readable.  *readyToWriteP is analogous
+   the channel is immediately readable.  But only if 'readyToReadP' is
+   non-null.  *readyToWriteP is analogous
    for writable.  Both may be true.
 
-   Return *failedP true iff we fail to wait for the requested
-   condition because of some unusual problem.  Being interrupted by a
-   signal is not a failure.
+   Return *failedP true iff we fail to wait for the requested condition
+   because of some unusual problem and 'failedP' is non-null.  Being
+   interrupted by a signal is not a failure.
 
    If one of these return value pointers is NULL, don't return that
    value.
