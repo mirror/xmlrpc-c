@@ -1,18 +1,30 @@
 /* A simple standalone XML-RPC server program based on Abyss that uses SSL
    (Secure Sockets Layer) via OpenSSL.
 
-   ===> WE HAVE NEVER SEEN THIS EXAMPLE WORK.  EITHER IT OR THE ABYSS
-   ===> OPENSSL LIBRARY STUFF IS PROBABLY BROKEN.
+   This server is not sophisticated enough to do any actual verification of
+   client or server, but it works with a client that is willing to do an
+   HTTPS connection using a non-authenticating cipher.  The 'curl_client'
+   example program is one way to run such a client.
 
-   You can drive this with the 'openssl' program that comes with OpenSSL as
-   follows.
+   Example:
+
+     $ ./ssl_server 8080 &
+     $ ./curl_client https://localhost:8080/RPC2
+
+   You can drive the most difficult part of this example (initial SSL
+   handshake) with the 'openssl' program that comes with OpenSSL, as follows.
    
       $ ./ssl_server 8080 &
       $ openssl -connect localhost:8080 -cipher ALL:aNULL:eNULL -state 
 
-   we have seen this successfully form a connection, but the server dies
-   shortly thereafter, before having a chance to notice that the 'openssl'
-   program isn't an HTTP client.
+   The 'openssl' command connects and handshakes with the server, then waits
+   for you to type stuff to send to the server.  You would have to type a
+   complete HTTP header followed by a valid XML-RPC call to complete the
+   demonstration.
+
+   Note that the examples above do no authentication, so you don't have to
+   supply certificates and keys to the server.  We don't yet have a working
+   example that does authentication.
 
    This uses the "provide your own Abyss server" mode of operation, 
    as opposed to other Xmlrpc-c facilities that create an Abyss server under
