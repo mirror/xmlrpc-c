@@ -1,5 +1,17 @@
 /* Same as xmlrpc_sample_add_client.c, except it demonstrates use of Curl
-   transport parameters, including timeout.
+   transport parameters, including timeout and SSL stuff.
+
+   You specify the server URL as an argument, which can be an "http:" URL for
+   true XML-RPC or "https:" for the secure SSL/TLS variation of XML-RPC.
+
+   Example that works with 'xmlrpc_sample_add_server' example server:
+
+     $ ./curl_client http::/localhost:8080/RPC2
+
+   Example that works with 'ssl_server' example server:
+
+     $ ./curl_client https::/localhost:8080/RPC2
+   
 */
 
 #define _XOPEN_SOURCE 600
@@ -66,16 +78,19 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
-    const char * const serverUrl = "http://localhost:8080/RPC2";
+    const char * serverUrl;
 
     xmlrpc_env env;
     struct xmlrpc_curl_xportparms transportParms;
     struct xmlrpc_clientparms clientParms;
     xmlrpc_client * clientP;
 
-    if (argc-1 > 0) {
-        fprintf(stderr, "This program has no arguments\n");
+    if (argc-1 < 1) {
+        fprintf(stderr, "You must specify the server URL as an argument.  "
+                "Example: http://localhost:8080/RPC2\n");
         exit(1);
+    } else {
+        serverUrl = argv[1];
     }
 
     /* Initialize our error-handling environment. */
@@ -86,8 +101,8 @@ main(int           const argc,
     die_if_fault_occurred(&env);
 
     transportParms.network_interface = NULL;
-    transportParms.no_ssl_verifypeer = 0;
-    transportParms.no_ssl_verifyhost = 0;
+    transportParms.no_ssl_verifypeer = 1;
+    transportParms.no_ssl_verifyhost = 1;
     transportParms.user_agent = NULL;
     transportParms.ssl_cert = NULL;
     transportParms.sslcerttype = NULL;
@@ -101,7 +116,7 @@ main(int           const argc,
     transportParms.capath = NULL;
     transportParms.randomfile = NULL;
     transportParms.egdsocket= NULL;
-    transportParms.ssl_cipher_list= NULL;
+    transportParms.ssl_cipher_list= "ALL:eNULL:aNULL";
     transportParms.timeout = 2000;  /* milliseconds */
 
     clientParms.transport = "curl";
