@@ -4,12 +4,6 @@
   This is the implementation of TChanSwitch and TChannel
   for an SSL (Secure Sockets Layer) connection based on an OpenSSL
   connection object -- what you create with SSL_new().
-
-  This is just a template for future development.  We haven't been able to
-  make it work yet.  It compiles and runs, but in tests, an attempt to make an
-  SSL connection with it fails with message from libssl: "no shared cipher."
-  We don't yet know what to do about that.
-
 =============================================================================*/
 
 #include "xmlrpc_config.h"
