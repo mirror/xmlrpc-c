@@ -58,6 +58,42 @@
 
 
 static void
+sslInfoCallback(const SSL * const sslP,
+                int         const where,
+                int         const ret) {
+
+    const char * str;
+    int const w = where & ~SSL_ST_MASK;
+
+    if (w & SSL_ST_CONNECT)
+        str = "SSL_connect";
+    else if (w & SSL_ST_ACCEPT)
+        str = "SSL_accept";
+    else
+        str = "undefined";
+
+    if (where & SSL_CB_LOOP) {
+        fprintf(stderr, "%s:%s\n", str, SSL_state_string_long(sslP));
+    } else if (where & SSL_CB_ALERT) {
+        str = (where & SSL_CB_READ) ? "read" : "write";
+        fprintf(stderr, "SSL3 alert %s:%s:%s\n",
+                str,
+                SSL_alert_type_string_long(ret),
+                SSL_alert_desc_string_long(ret));
+    } else if (where & SSL_CB_EXIT) {
+        if (ret == 0)
+            fprintf(stderr, "%s:failed in %s\n", 
+                    str, SSL_state_string_long(sslP));
+        else if (ret < 0) {
+            fprintf(stderr, "%s:error in %s\n",
+                    str, SSL_state_string_long(sslP));
+        }
+    }
+}
+
+
+
+static void
 printPeerIpAddr(TSession * const abyssSessionP) {
 
 #ifdef _WIN32
@@ -155,10 +191,13 @@ main(int           const argc,
 
     EC_KEY * const ecdhP = EC_KEY_new_by_curve_name(NID_sect163r2);
 
-    // The following makes ECDH ciphers available.  Without it, no
-    // ciphers are available.
+    // The following makes ECDH ciphers available.  Without it (or some
+    // alternative), no ciphers are available
     SSL_CTX_set_tmp_ecdh(sslCtxP, ecdhP);
     EC_KEY_free(ecdhP);
+
+    // Provide handy tracing to Standard Error of the SSL handshake
+    SSL_CTX_set_info_callback(sslCtxP, sslInfoCallback);
 
     ChanSwitchOpenSslCreateIpV4Port(atoi(argv[1]), sslCtxP,
                                     &chanSwitchP, &error);
