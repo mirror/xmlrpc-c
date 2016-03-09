@@ -1,30 +1,37 @@
 /* A simple standalone XML-RPC server program based on Abyss that uses SSL
-   (Secure Sockets Layer) via OpenSSL.
+   (Secure Sockets Layer) via OpenSSL, with authentication.
 
-   This server is not sophisticated enough to do any actual verification of
-   client or server, but it works with a client that is willing to do an
-   HTTPS connection using a non-authenticating cipher.  The 'curl_client'
-   example program is one way to run such a client.
+   This is like the 'ssl_server' example, except that it requires
+   authentication, which means it is much harder to use - you have to set up a
+   certificate, private key, DSA parameters, and Diffie-Hellman parameters.
 
    Example:
 
-     $ ./ssl_server 8080 &
+     $ ./ssl_secure_server 8080 &
      $ ./curl_client https://localhost:8080/RPC2
+
+   Before the above will work, you have to create a variety of files and put
+   them where this program expects to find them.  Example:
+
+     $ mkdir /tmp/ssltest
+     $ cd /tmp/ssltest
+     $ openssl genpkey -genparam -algorithm DSA >dsap.pem
+     $ openssl genpkey -paramfile dsap.pem >dsakey.pem
+     $ openssl req -new dsakey.pem >csr.csr
+     $ openssl x509 -req -in csr.csr -signkey dsakey.pem >certificate.pem
+     $ openssl dhparam -in dsap.pem -dsaparam -outform PEM >dhparam.pem
+
 
    You can drive the most difficult part of this example (initial SSL
    handshake) with the 'openssl' program that comes with OpenSSL, as follows.
    
-      $ ./ssl_server 8080 &
-      $ openssl -connect localhost:8080 -cipher ALL:aNULL:eNULL -state 
+      $ ./ssl_secure_server 8080 &
+      $ openssl -connect localhost:8080 -state 
 
    The 'openssl' command connects and handshakes with the server, then waits
    for you to type stuff to send to the server.  You would have to type a
    complete HTTP header followed by a valid XML-RPC call to complete the
    demonstration.
-
-   Note that the examples above do no authentication, so you don't have to
-   supply certificates and keys to the server.  See the 'ssl_secure_server'
-   example for that.
 
    This uses the "provide your own Abyss server" mode of operation, 
    as opposed to other Xmlrpc-c facilities that create an Abyss server under
@@ -168,6 +175,7 @@ main(int           const argc,
     };
 
     SSL_CTX * sslCtxP;
+    FILE * certFileP;
     TChanSwitch * chanSwitchP;
     TServer abyssServer;
     xmlrpc_registry * registryP;
@@ -187,16 +195,20 @@ main(int           const argc,
 
     sslCtxP = SSL_CTX_new(SSLv23_server_method());
 
-    SSL_CTX_set_cipher_list(sslCtxP, "ALL:aNULL:eNULL");
+    SSL_CTX_set_cipher_list(sslCtxP, "ALL:!aNULL");
 
-    EC_KEY * const ecdhP = EC_KEY_new_by_curve_name(NID_sect163r2);
+    SSL_CTX_use_certificate_chain_file(sslCtxP,
+                                       "/tmp/ssltest/certificate.pem");
+            
+    SSL_CTX_use_PrivateKey_file(sslCtxP, "/tmp/ssltest/dsakey.pem",
+                                SSL_FILETYPE_PEM);
 
-    // The following makes ECDH ciphers available.  Without it (or some
-    // alternative), no ciphers are available
-    SSL_CTX_set_tmp_ecdh(sslCtxP, ecdhP);
-    EC_KEY_free(ecdhP);
+    certFileP = fopen("/tmp/ssltest/dhparam.pem", "r");
 
-    // Provide handy tracing to Standard Error of the SSL handshake
+    DH * const dhP = PEM_read_DHparams(certFileP, NULL, NULL, NULL);
+
+    SSL_CTX_set_tmp_dh(sslCtxP, dhP);
+
     SSL_CTX_set_info_callback(sslCtxP, sslInfoCallback);
 
     ChanSwitchOpenSslCreateIpV4Port(atoi(argv[1]), sslCtxP,

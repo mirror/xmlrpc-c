@@ -53,7 +53,7 @@ ifneq ($(MSVCRT),yes)
 endif
 
 ifeq ($(HAVE_OPENSSL),yes)
-  SERVERPROGS_ABYSS += ssl_server
+  SERVERPROGS_ABYSS += ssl_server ssl_secure_server
 endif
 
 BASIC_PROGS = \
