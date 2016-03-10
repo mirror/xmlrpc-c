@@ -28,6 +28,9 @@ ifeq ($(findstring mingw,$(HOST_OS)),mingw)
   LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchWin
 else
   LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchUnix
+  ifeq ($(HAVE_OPENSSL),yes)
+    LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchOpenSsl
+  endif
 endif
 
 TARGET_MODS_PP = \
@@ -65,10 +68,10 @@ all: \
 
 
 #-----------------------------------------------------------------------------
-#  RULE TO LINK LIBRARIES
+#  RULES TO LINK LIBRARIES
 #-----------------------------------------------------------------------------
 
-# The actual rules for this is in common.mk, courtesy of TARGET_LIB_NAMES_PP
+# The actual rules for this are in common.mk, courtesy of TARGET_LIB_NAMES_PP
 
 # shlibfn generates e.g. libxmlrpc.so.3.1
 # shliblefn generates e.g. libxmlrpc.so
