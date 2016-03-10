@@ -2,7 +2,7 @@
 
 using namespace std;
 
-#include <xmlrpc-c/abyss.h>
+#include "xmlrpc-c/abyss.h"
 
 #include "xmlrpc-c/AbyssChanSwitch.hpp"
 

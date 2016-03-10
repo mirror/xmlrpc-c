@@ -2,10 +2,10 @@
 
 using namespace std;
 
-#include <xmlrpc-c/girerr.hpp>
+#include "xmlrpc-c/girerr.hpp"
 using girerr::throwf;
-#include <xmlrpc-c/string_int.h>
-#include <xmlrpc-c/abyss.h>
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/abyss.h"
 
 #include "xmlrpc-c/AbyssEnvironment.hpp"
 
