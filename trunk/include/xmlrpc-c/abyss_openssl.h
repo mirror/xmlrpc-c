@@ -6,10 +6,14 @@
   Declarations to be used with an Abyss server that can server HTTPS URLs
   via OpenSSL.
 
-  Note that there is no equivalent of this for the original two Abyss channel
-  types, "Unix" and "Windows".  Those are built into <xmlrpc-c/abyss.h>, for
-  historical reasons.
+  Note that there is no equivalent of this file for the original two Abyss
+  channel types, "Unix" and "Windows".  Those are built into
+  <xmlrpc-c/abyss.h>, for historical reasons.
 =============================================================================*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <sys/socket.h>
 #include <xmlrpc-c/abyss.h>
 #include <openssl/ssl.h>
@@ -55,5 +59,9 @@ ChannelOpenSslCreateSsl(SSL *                            const sslP,
                         TChannel **                      const channelPP,
                         struct abyss_openSsl_chaninfo ** const channelInfoPP,
                         const char **                    const errorP);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
