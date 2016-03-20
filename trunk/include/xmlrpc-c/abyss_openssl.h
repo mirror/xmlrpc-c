@@ -19,13 +19,28 @@ extern "C" {
 #include <openssl/ssl.h>
 
 struct abyss_openSsl_chaninfo {
-    /* TODO: figure out useful information to put in here.
-       Maybe authenticated host name.
-       Maybe authentication level.
-       Maybe a certificate.
-    */
     size_t peerAddrLen;
+        /* Length of 'peerAddr' (which is effectively polymorphic, so could
+           have any of various lengths depending upon the type of socket
+           address
+        */
     struct sockaddr peerAddr;
+
+    SSL * sslP;
+        /* The handle of the OpenSSL connection object underlying this channel.
+           
+           You can use this to get all sort of neat information about the
+           connection, such as the verified certification the client
+           presented, using the OpenSSL library.  (For example, to find out
+           the authenticated name of the client, use
+           SSL_get_peer_certificate(), and use X509_get_subject name() with
+           the result of that).
+
+           This is kind of a modularity violation, which we don't mind because
+           it is so easy and flexible.  But note that it is the Abyss design
+           intent that you use the SSL object _only_ to get information about
+           the channel.
+        */
 };
 
 void

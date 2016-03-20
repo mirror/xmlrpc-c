@@ -391,6 +391,38 @@ static struct TChannelVtbl const channelVtbl = {
 
 
 static void
+getPeerAddrFromSsl(SSL *             const sslP,
+                   struct sockaddr * const peerAddrRetP,
+                   size_t *          const peerAddrLenRetP,
+                   const char **     const errorP) {
+/*----------------------------------------------------------------------------
+   From the SSL connection with handle 'sslP', get the address (IP address,
+   normally) of the peer (the Abyss client).
+-----------------------------------------------------------------------------*/
+    int const sockFd = SSL_get_fd(sslP);
+
+    struct sockaddr * peerAddrP;
+    size_t peerAddrLen;
+    const char * error;
+
+    sockutil_getPeerName(sockFd, &peerAddrP, &peerAddrLen, &error);
+
+    if (error) {
+        xmlrpc_asprintf(errorP, "Could not get identity of client.  %s",
+                        error);
+        xmlrpc_strfree(error);
+    } else {
+        *errorP = NULL;
+        *peerAddrLenRetP = peerAddrLen;
+        *peerAddrRetP    = *peerAddrP;
+
+        free(peerAddrP);
+    }
+}
+
+
+
+static void
 makeChannelInfo(struct abyss_openSsl_chaninfo ** const channelInfoPP,
                 SSL *                            const sslP,
                 const char **                    const errorP) {
@@ -402,24 +434,12 @@ makeChannelInfo(struct abyss_openSsl_chaninfo ** const channelInfoPP,
     if (channelInfoP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory");
     else {
-        int const sockFd = SSL_get_fd(sslP);
-        struct sockaddr * peerAddrP;
-        size_t peerAddrLen;
-        const char * error;
+        channelInfoP->sslP = sslP;
 
-        sockutil_getPeerName(sockFd, &peerAddrP, &peerAddrLen, &error);
-
-        if (error) {
-            xmlrpc_asprintf(errorP, "Could not get identity of client.  %s",
-                            error);
-            xmlrpc_strfree(error);
-        } else {
-            *errorP = NULL;
-            channelInfoP->peerAddrLen = peerAddrLen;
-            channelInfoP->peerAddr    = *peerAddrP;
-
-            free(peerAddrP);
-        }
+        getPeerAddrFromSsl(sslP,
+                           &channelInfoP->peerAddr,
+                           &channelInfoP->peerAddrLen,
+                           errorP);
 
         if (*errorP)
             free(channelInfoP);
