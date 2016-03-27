@@ -19,20 +19,92 @@
 #include "xmlrpc-c/abyss.h"
 #if MSVCRT
   #include "socket_win.h"
-#else
+#endif
+#if !MSVCRT
   #include "socket_unix.h"
 #endif
+#if HAVE_OPENSSL
+  #include "socket_openssl.h"
+#endif
 #include "chanswitch.h"
+
+
+
+static void
+socketWinInit(const char ** const errorP) {
+#if MSVCRT
+    SocketWinInit(errorP);
+#else
+    *errorP = NULL;
+#endif
+}
+
+
+
+static void
+socketWinTerm(void) {
+#if MSVCRT
+    SocketWinTerm();
+#endif
+}
+
+
+
+static void
+socketUnixInit(const char ** const errorP) {
+#if !MSVCRT
+    SocketUnixInit(errorP);
+#else
+    *errorP = NULL;
+#endif
+}
+
+
+
+static void
+socketUnixTerm(void) {
+#if !MSVCRT
+    SocketUnixTerm();
+#endif
+}
+
+
+
+static void
+socketOpenSslTerm(void) {
+#if HAVE_OPENSSL
+    SocketOpenSslTerm();
+#endif
+}
+
+
+
+static void
+socketOpenSslInit(const char ** const errorP) {
+#if HAVE_OPENSSL
+    SocketOpenSslInit(errorP);
+#else
+    *errorP = NULL;
+#endif
+}
+
 
 
 static void
 socketOsInit(const char ** const errorP) {
 
-#if MSVCRT
-    SocketWinInit(errorP);
-#else
-    SocketUnixInit(errorP);
-#endif
+    socketWinInit(errorP);
+    if (!*errorP) {
+        socketUnixInit(errorP);
+        if (!*errorP) {
+            socketOpenSslInit(errorP);
+
+            if (*errorP)
+                socketUnixTerm();
+        }
+        if (*errorP)
+            socketWinTerm();
+    }
 }
 
 
@@ -40,11 +112,11 @@ socketOsInit(const char ** const errorP) {
 static void
 socketOsTerm(void) {
 
-#if MSVCRT
-    SocketWinTerm();
-#else
-    SocketUnixTerm();
-#endif
+    socketOpenSslTerm();
+
+    socketUnixTerm();
+
+    socketWinTerm();
 }
     
 
@@ -160,7 +232,7 @@ ChanSwitchAccept(TChanSwitch * const chanSwitchP,
         (*chanSwitchP->vtbl.accept)(chanSwitchP,
                                     channelPP, channelInfoPP, errorP);
 
-        if (SwitchTraceIsActive)
+        if (SwitchTraceIsActive && *errorP == NULL)
             fprintf(stderr, "Got connection from channel switch.  "
                     "Channel = %p\n", *channelPP);
     }

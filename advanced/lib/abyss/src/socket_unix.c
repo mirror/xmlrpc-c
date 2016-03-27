@@ -40,45 +40,9 @@
 #include "netinet/in.h"
 #include "xmlrpc-c/abyss.h"
 
+#include "sockutil.h"
+
 #include "socket_unix.h"
-
-
-
-typedef struct {
-    int interruptorFd;
-    int interrupteeFd;
-} interruptPipe;
-
-
-
-static void
-initInterruptPipe(interruptPipe * const pipeP,
-                  const char **   const errorP) {
-
-    int pipeFd[2];
-    int rc;
-
-    rc = pipe(pipeFd);
-
-    if (rc != 0)
-        xmlrpc_asprintf(errorP, "Unable to create a pipe to use to interrupt "
-                        "waits.  pipe() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else {
-        *errorP = NULL;
-        pipeP->interruptorFd = pipeFd[1];
-        pipeP->interrupteeFd = pipeFd[0];
-    }
-}
-
-
-
-static void
-termInterruptPipe(interruptPipe const pipe) {
-
-    close(pipe.interruptorFd);
-    close(pipe.interrupteeFd);
-}
 
 
 
@@ -95,36 +59,8 @@ struct socketUnix {
         /* The file descriptor and associated POSIX socket belong to the
            user; we did not create it.
         */
-    interruptPipe interruptPipe;
+    sockutil_InterruptPipe interruptPipe;
 };
-
-
-
-static bool
-connected(int const fd) {
-/*----------------------------------------------------------------------------
-   Return TRUE iff the socket on file descriptor 'fd' is in the connected
-   state.
-
-   If 'fd' does not identify a stream socket or we are unable to determine
-   the state of the stream socket, the answer is "false".
------------------------------------------------------------------------------*/
-    bool connected;
-    struct sockaddr sockaddr;
-    socklen_t nameLen;
-    int rc;
-
-    nameLen = sizeof(sockaddr);
-
-    rc = getpeername(fd, &sockaddr, &nameLen);
-
-    if (rc == 0)
-        connected = true;
-    else
-        connected = false;
-
-    return connected;
-}
 
 
 
@@ -152,7 +88,7 @@ channelDestroy(TChannel * const channelP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
-    termInterruptPipe(socketUnixP->interruptPipe);
+    sockutil_interruptPipeTerm(socketUnixP->interruptPipe);
 
     if (!socketUnixP->userSuppliedFd)
         close(socketUnixP->fd);
@@ -282,12 +218,13 @@ channelWait(TChannel * const channelP,
    for most purposes).
 
    Return *readyToReadP == true if the reason for returning is that
-   the channel is immediately readable.  *readyToWriteP is analogous
+   the channel is immediately readable.  But only if 'readyToReadP' is
+   non-null.  *readyToWriteP is analogous
    for writable.  Both may be true.
 
-   Return *failedP true iff we fail to wait for the requested
-   condition because of some unusual problem.  Being interrupted by a
-   signal is not a failure.
+   Return *failedP true iff we fail to wait for the requested condition
+   because of some unusual problem and 'failedP' is non-null.  Being
+   interrupted by a signal is not a failure.
 
    If one of these return value pointers is NULL, don't return that
    value.
@@ -356,9 +293,8 @@ channelInterrupt(TChannel * const channelP) {
   again wait.
 -----------------------------------------------------------------------------*/
     struct socketUnix * const socketUnixP = channelP->implP;
-    unsigned char const zero[1] = {0u};
 
-    write(socketUnixP->interruptPipe.interruptorFd, &zero, sizeof(zero));
+    sockutil_interruptPipeInterrupt(socketUnixP->interruptPipe);
 }
 
 
@@ -371,97 +307,7 @@ ChannelUnixGetPeerName(TChannel *         const channelP,
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
-    unsigned char * peerName;
-    socklen_t nameSize;
-
-    nameSize = sizeof(struct sockaddr) + 1;
-    
-    peerName = malloc(nameSize);
-
-    if (peerName == NULL)
-        xmlrpc_asprintf(errorP, "Unable to allocate space for peer name");
-    else {
-        int rc;
-        socklen_t nameLen;
-        nameLen = nameSize;  /* initial value */
-        rc = getpeername(socketUnixP->fd, (struct sockaddr *)peerName,
-                         &nameLen);
-
-        if (rc < 0)
-            xmlrpc_asprintf(errorP, "getpeername() failed.  errno=%d (%s)",
-                            errno, strerror(errno));
-        else {
-            if (nameLen > nameSize-1)
-                xmlrpc_asprintf(errorP,
-                                "getpeername() says the socket name is "
-                                "larger than %u bytes, which means it is "
-                                "not in the expected format.",
-                                nameSize-1);
-            else {
-                *sockaddrPP = (struct sockaddr *)peerName;
-                *sockaddrLenP = nameLen;
-                *errorP = NULL;
-            }
-        }
-        if (*errorP)
-            free(peerName);
-    }
-}
-
-
-
-static void
-formatPeerInfoInet(const struct sockaddr_in * const sockaddrInP,
-                   socklen_t                  const sockaddrLen,
-                   const char **              const peerStringP) {
-
-    if (sockaddrLen < sizeof(*sockaddrInP))
-        xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
-                        "the wrong size");
-    else {
-        unsigned char * const ipaddr = (unsigned char *)
-            &sockaddrInP->sin_addr.s_addr;
-        xmlrpc_asprintf(peerStringP, "%u.%u.%u.%u:%hu",
-                        ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
-                        ntohs(sockaddrInP->sin_port));
-    }
-}
-
-
-
-static void
-formatPeerInfoInet6(const struct sockaddr_in6 * const sockaddrIn6P,
-                    socklen_t                   const sockaddrLen,
-                    const char **               const peerStringP) {
-
-    if (sockaddrLen < sizeof(*sockaddrIn6P))
-        xmlrpc_asprintf(peerStringP, "??? getpeername() returned "
-                        "the wrong size");
-    else {
-        /* Gcc on Debian 6 gives a bewildering error message about aliasing
-           if we try to dereference sockaddrIn6P in various ways, regardless
-           of casts to void * or anything else.  So we copy the data structure
-           as raw memory contents and then access the copy.  12.02.05.
-        */
-        struct sockaddr_in6 sockaddr;
-
-        MEMSCPY(&sockaddr, sockaddrIn6P);
-
-        {
-            char buffer[256];
-            const char * rc;
-
-            rc = inet_ntop(AF_INET6, &sockaddr.sin6_addr,
-                           buffer, sizeof(buffer));
-
-            /* Punt the supposedly impossible error */
-            if (rc == NULL)
-                STRSCPY(buffer, "???");
-
-            xmlrpc_asprintf(peerStringP, "[%s]:%hu",
-                            buffer, sockaddr.sin6_port);
-        }
-    }
+    sockutil_getPeerName(socketUnixP->fd, sockaddrPP, sockaddrLenP, errorP);
 }
 
 
@@ -474,33 +320,7 @@ channelFormatPeerInfo(TChannel *    const channelP,
 
     struct socketUnix * const socketUnixP = channelP->implP;
 
-    struct sockaddr sockaddr;
-    socklen_t sockaddrLen;
-    int rc;
-
-    sockaddrLen = sizeof(sockaddr);
-    
-    rc = getpeername(socketUnixP->fd, &sockaddr, &sockaddrLen);
-    
-    if (rc < 0)
-        xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  errno=%d (%s)",
-                        errno, strerror(errno));
-    else {
-        switch (sockaddr.sa_family) {
-        case AF_INET:
-            formatPeerInfoInet((const struct sockaddr_in *) &sockaddr,
-                               sockaddrLen,
-                               peerStringP);
-            break;
-        case AF_INET6:
-            formatPeerInfoInet6((const struct sockaddr_in6 *) &sockaddr,
-                                sockaddrLen,
-                                peerStringP);
-            break;
-        default:
-            xmlrpc_asprintf(peerStringP, "??? AF=%u", sockaddr.sa_family);
-        }
-    }
+    sockutil_formatPeerInfo(socketUnixP->fd, peerStringP);
 }
 
 
@@ -557,7 +377,7 @@ makeChannelFromFd(int           const fd,
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = true;
 
-        initInterruptPipe(&socketUnixP->interruptPipe, errorP);
+        sockutil_interruptPipeInit(&socketUnixP->interruptPipe, errorP);
 
         if (!*errorP) {
             ChannelCreate(&channelVtbl, socketUnixP, &channelP);
@@ -570,7 +390,7 @@ makeChannelFromFd(int           const fd,
                 *errorP = NULL;
             }
             if (*errorP)
-                termInterruptPipe(socketUnixP->interruptPipe);
+                sockutil_interruptPipeTerm(socketUnixP->interruptPipe);
         }
         if (*errorP)
             free(socketUnixP);
@@ -585,28 +405,29 @@ ChannelUnixCreateFd(int                           const fd,
                     struct abyss_unix_chaninfo ** const channelInfoPP,
                     const char **                 const errorP) {
 
-    struct sockaddr peerAddr;
-    socklen_t peerAddrLen;
-    int rc;
+    if (!sockutil_connected(fd))
+        xmlrpc_asprintf(errorP, "Socket on file descriptor %d is not in "
+                        "connected state.", fd);
+    else {
+        struct sockaddr * peerAddrP;
+        size_t peerAddrLen;
+        const char * error;
 
-    peerAddrLen = sizeof(peerAddr);
+        sockutil_getPeerName(fd, &peerAddrP, &peerAddrLen, &error);
 
-    rc = getpeername(fd, &peerAddr, &peerAddrLen);
+        if (error) {
+            xmlrpc_asprintf(errorP, "Failed to get identity of client.  %s",
+                            error);
+            xmlrpc_strfree(error);
+        } else {
+            makeChannelInfo(channelInfoPP, *peerAddrP, peerAddrLen, errorP);
+            if (!*errorP) {
+                makeChannelFromFd(fd, channelPP, errorP);
 
-    if (rc != 0) {
-        if (errno == ENOTCONN)
-            xmlrpc_asprintf(errorP, "Socket on file descriptor %d is not in "
-                            "connected state.", fd);
-        else
-            xmlrpc_asprintf(errorP, "getpeername() failed on fd %d.  "
-                            "errno=%d (%s)", fd, errno, strerror(errno));
-    } else {
-        makeChannelInfo(channelInfoPP, peerAddr, peerAddrLen, errorP);
-        if (!*errorP) {
-            makeChannelFromFd(fd, channelPP, errorP);
-
-            if (*errorP)
-                free(*channelInfoPP);
+                if (*errorP)
+                    free(*channelInfoPP);
+            }
+            free(peerAddrP);
         }
     }
 }
@@ -624,7 +445,7 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
 
     struct socketUnix * const socketUnixP = chanSwitchP->implP;
 
-    termInterruptPipe(socketUnixP->interruptPipe);
+    sockutil_interruptPipeTerm(socketUnixP->interruptPipe);
 
     if (!socketUnixP->userSuppliedFd)
         close(socketUnixP->fd);
@@ -643,78 +464,7 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 
     struct socketUnix * const socketUnixP = chanSwitchP->implP;
 
-    int32_t const minus1 = -1;
-
-    int rc;
-
-    /* Disable the Nagle algorithm to make persistant connections faster */
-
-    setsockopt(socketUnixP->fd, IPPROTO_TCP, TCP_NODELAY,
-               &minus1, sizeof(minus1));
-
-    rc = listen(socketUnixP->fd, backlog);
-
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "listen() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
-
-
-
-static void
-waitForConnection(struct socketUnix * const listenSocketP,
-                  bool *              const interruptedP,
-                  const char **       const errorP) {
-/*----------------------------------------------------------------------------
-   Wait for the listening socket to have a connection ready to accept.
-
-   We return before the requested condition holds if the process receives
-   (and catches) a signal, but only if it receives that signal a certain
-   time after we start running.  (That means this behavior isn't useful
-   for most purposes).
-
-   We furthermore return before the requested condition holds if someone sends
-   a byte through the listening socket's interrupt pipe (or has sent one
-   previously since the most recent time the pipe was drained).
-
-   Return *interruptedP == true if we return before there is a connection
-   ready to accept.
------------------------------------------------------------------------------*/
-    struct pollfd pollfds[2];
-    int rc;
-
-    pollfds[0].fd = listenSocketP->fd;
-    pollfds[0].events = POLLIN;
-
-    pollfds[1].fd = listenSocketP->interruptPipe.interrupteeFd;
-    pollfds[1].events = POLLIN;
-    
-    rc = poll(pollfds, ARRAY_SIZE(pollfds), -1);
-
-    if (rc < 0) {
-        if (errno == EINTR) {
-            *errorP       = NULL;
-            *interruptedP = true;
-        } else {
-            xmlrpc_asprintf(errorP, "poll() failed, errno = %d (%s)",
-                            errno, strerror(errno));
-            *interruptedP = false; /* quiet compiler warning */
-        }
-    } else if (pollfds[0].revents & POLLHUP) {
-        xmlrpc_asprintf(errorP, "INTERNAL ERROR: listening socket "
-                        "is not listening");
-    } else if (pollfds[1].revents & POLLHUP) {
-        xmlrpc_asprintf(errorP, "INTERNAL ERROR: interrupt socket hung up");
-    } else if (pollfds[0].revents & POLLERR) {
-        xmlrpc_asprintf(errorP, "listening socket is in POLLERR status");
-    } else if (pollfds[1].revents & POLLHUP) {
-        xmlrpc_asprintf(errorP, "interrupt socket is in POLLERR status");
-    } else {
-        *errorP       = NULL;
-        *interruptedP = !(pollfds[0].revents & POLLIN);
-    }
+    sockutil_listen(socketUnixP->fd, backlog, errorP);
 }
 
 
@@ -747,7 +497,8 @@ createChannelForAccept(int             const acceptedFd,
             acceptedSocketP->fd = acceptedFd;
             acceptedSocketP->userSuppliedFd = false;
 
-            initInterruptPipe(&acceptedSocketP->interruptPipe, errorP);
+            sockutil_interruptPipeInit(
+                &acceptedSocketP->interruptPipe, errorP);
 
             if (!*errorP) {
                 TChannel * channelP;
@@ -762,7 +513,7 @@ createChannelForAccept(int             const acceptedFd,
                     *channelInfoPP = channelInfoP;
                 }
                 if (*errorP)
-                    termInterruptPipe(acceptedSocketP->interruptPipe);
+                    sockutil_interruptPipeTerm(acceptedSocketP->interruptPipe);
             }
             if (*errorP)
                 free(acceptedSocketP);
@@ -801,14 +552,18 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
 
     while (!channelP && !*errorP && !interrupted) {
 
-        waitForConnection(listenSocketP, &interrupted, errorP);
+        sockutil_waitForConnection(listenSocketP->fd,
+                                   listenSocketP->interruptPipe,
+                                   &interrupted, errorP);
 
         if (!*errorP && !interrupted) {
             struct sockaddr peerAddr;
-            socklen_t size = sizeof(peerAddr);
+            socklen_t peerAddrLen;
             int rc;
 
-            rc = accept(listenSocketP->fd, &peerAddr, &size);
+            peerAddrLen = sizeof(peerAddr);  /* initial value */
+
+            rc = accept(listenSocketP->fd, &peerAddr, &peerAddrLen);
 
             if (rc >= 0) {
                 int const acceptedFd = rc;
@@ -867,7 +622,7 @@ createChanSwitch(int            const fd,
 
     struct socketUnix * socketUnixP;
 
-    assert(!connected(fd));
+    assert(!sockutil_connected(fd));
 
     if (SwitchTraceIsActive)
         fprintf(stderr, "Creating Unix listen-socket based channel switch\n");
@@ -883,12 +638,12 @@ createChanSwitch(int            const fd,
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = userSuppliedFd;
             
-        initInterruptPipe(&socketUnixP->interruptPipe, errorP);
+        sockutil_interruptPipeInit(&socketUnixP->interruptPipe, errorP);
 
         if (!*errorP) {
             ChanSwitchCreate(&chanSwitchVtbl, socketUnixP, &chanSwitchP);
             if (*errorP)
-                termInterruptPipe(socketUnixP->interruptPipe);
+                sockutil_interruptPipeTerm(socketUnixP->interruptPipe);
 
             if (chanSwitchP == NULL)
                 xmlrpc_asprintf(errorP, "Unable to allocate memory for "
@@ -901,124 +656,6 @@ createChanSwitch(int            const fd,
         if (*errorP)
             free(socketUnixP);
     }
-}
-
-
-
-static void
-setSocketOptions(int           const fd,
-                 const char ** const errorP) {
-
-    int32_t n = 1;
-    int rc;
-
-    rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n));
-
-    if (rc < 0)
-        xmlrpc_asprintf(errorP, "Failed to set socket options.  "
-                        "setsockopt() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
-
-
-
-static void
-traceSocketBound(const struct sockaddr * const sockAddrP,
-                 socklen_t               const sockAddrLen) {
-
-    if (sockAddrP->sa_family == AF_INET &&
-        sockAddrLen >= sizeof(struct sockaddr_in)) {
-        const struct sockaddr_in * const sockAddrInP =
-            (const struct sockaddr_in *)sockAddrP;
-
-        unsigned char * const ipaddr = (unsigned char *)
-            &sockAddrInP->sin_addr.s_addr;
-
-        fprintf(stderr, "Bound socket for channel switch to "
-                "AF_INET port %u.%u.%u.%u:%hu\n",
-                ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3],
-                ntohs(sockAddrInP->sin_port));
-    } else {
-        fprintf(stderr, "Bound socket for channel switch to address of "
-                "family %d\n", sockAddrP->sa_family);
-    }
-}
-
-
-
-static void
-bindSocketToPort(int                     const fd,
-                 const struct sockaddr * const sockAddrP,
-                 socklen_t               const sockAddrLen,
-                 const char **           const errorP) {
-    
-    int rc;
-
-    rc = bind(fd, sockAddrP, sockAddrLen);
-
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "Unable to bind socket "
-                        "to the socket address.  "
-                        "bind() failed with errno %d (%s)",
-                        errno, strerror(errno));
-    else {
-        *errorP = NULL;
-
-        if (SwitchTraceIsActive)
-            traceSocketBound(sockAddrP, sockAddrLen);
-    }
-}
-
-
-
-static void
-bindSocketToPortInet(int           const fd,
-                     uint16_t      const portNumber,
-                     const char ** const errorP) {
-    
-    struct sockaddr_in name;
-    int rc;
-
-    name.sin_family = AF_INET;
-    name.sin_port   = htons(portNumber);
-    name.sin_addr.s_addr = INADDR_ANY;
-
-    rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
-
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "Unable to bind IPv4 socket "
-                        "to port number %hu.  "
-                        "bind() failed with errno %d (%s)",
-                        portNumber, errno, strerror(errno));
-    else
-        *errorP = NULL;
-}
-
-
-
-static void
-bindSocketToPortInet6(int                     const fd,
-                      uint16_t                const portNumber,
-                      const char **           const errorP) {
-
-    struct sockaddr_in6 name;
-    int rc;
-
-    name.sin6_family = AF_INET6;
-    name.sin6_port   = htons(portNumber);
-    name.sin6_addr = in6addr_any;
-
-    rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
-
-    if (rc == -1)
-        xmlrpc_asprintf(errorP, "Unable to bind IPv6 socket "
-                        "to port number %hu.  "
-                        "bind() failed with errno %d (%s)",
-                        portNumber, errno, strerror(errno));
-    else
-        *errorP = NULL;
 }
 
 
@@ -1041,9 +678,9 @@ switchCreateIpV4Port(unsigned short          const portNumber,
     else {
         int const socketFd = rc;
 
-        setSocketOptions(socketFd, errorP);
+        sockutil_setSocketOptions(socketFd, errorP);
         if (!*errorP) {
-            bindSocketToPortInet(socketFd, portNumber, errorP);
+            sockutil_bindSocketToPortInet(socketFd, portNumber, errorP);
 
             if (!*errorP) {
                 bool const userSupplied = false;
@@ -1072,9 +709,9 @@ switchCreateIpV6Port(unsigned short          const portNumber,
     else {
         int const socketFd = rc;
 
-        setSocketOptions(socketFd, errorP);
+        sockutil_setSocketOptions(socketFd, errorP);
         if (!*errorP) {
-            bindSocketToPortInet6(socketFd, portNumber, errorP);
+            sockutil_bindSocketToPortInet6(socketFd, portNumber, errorP);
 
             if (!*errorP) {
                 bool const userSupplied = false;
@@ -1117,9 +754,10 @@ ChanSwitchUnixCreate2(int                     const protocolFamily,
             fprintf(stderr, "Created socket for protocol family %d\n",
                     protocolFamily);
 
-        setSocketOptions(socketFd, errorP);
+        sockutil_setSocketOptions(socketFd, errorP);
         if (!*errorP) {
-            bindSocketToPort(socketFd, sockAddrP, sockAddrLen, errorP);
+            sockutil_bindSocketToPort(socketFd, sockAddrP, sockAddrLen,
+                                      errorP);
 
             if (!*errorP) {
                 bool const userSupplied = false;
@@ -1149,7 +787,7 @@ ChanSwitchUnixCreateFd(int            const fd,
                        TChanSwitch ** const chanSwitchPP,
                        const char **  const errorP) {
 
-    if (connected(fd))
+    if (sockutil_connected(fd))
         xmlrpc_asprintf(errorP,
                         "Socket (file descriptor %d) is in connected "
                         "state.", fd);
@@ -1173,7 +811,7 @@ SocketUnixCreateFd(int        const fd,
     TSocket * socketP;
     const char * error;
 
-    if (connected(fd)) {
+    if (sockutil_connected(fd)) {
         TChannel * channelP;
         struct abyss_unix_chaninfo * channelInfoP;
         ChannelUnixCreateFd(fd, &channelP, &channelInfoP, &error);

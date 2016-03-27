@@ -2,6 +2,10 @@
 #define HTTP_H_INCLUDED
 
 #include <sys/types.h>
+#include "xmlrpc-c/abyss.h"
+
+const char *
+HTTPMethodName(TMethod const method);
 
 bool
 HTTPRequestHasValidUri(TSession * const sessionP);

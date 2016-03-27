@@ -657,11 +657,8 @@ abyss_bool DateInit(void);
 XMLRPC_ABYSS_EXPORTED
 abyss_bool SessionLog(TSession * const s);
 
-
 #ifdef __cplusplus
 }
-
-
 #endif
 
 /*****************************************************************************
@@ -695,4 +692,4 @@ abyss_bool SessionLog(TSession * const s);
 ** SUCH DAMAGE.
 **
 ******************************************************************************/
-#endif  /* _ABYSS_H_ */
+#endif

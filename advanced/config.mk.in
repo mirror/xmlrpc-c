@@ -437,3 +437,7 @@ DESTDIR =
 # the read-only directory /usr/src/mypkg .
 
 VPATH := .:$(SRCDIR)/$(SUBDIR)
+
+HAVE_OPENSSL = @HAVE_OPENSSL@
+OPENSSL_LDADD = @OPENSSL_LDADD@
+OPENSSL_CFLAGS = @OPENSSL_CFLAGS@

@@ -564,6 +564,28 @@ fi # MUST_BUILD_CURL_CLIENT
 
 
 dnl =======================================================================
+dnl Finding OpenSSL
+dnl =======================================================================
+
+AC_MSG_CHECKING(for OpenSSL library)
+
+if pkg-config openssl; then
+  HAVE_OPENSSL=yes
+  HAVE_OPENSSL_DEFINE=1
+  OPENSSL_LDADD=$(pkg-config openssl --libs)
+  AC_SUBST(OPENSSL_LDADD)
+  OPENSSL_CFLAGS=$(pkg-config openssl --cflags)
+  AC_SUBST(OPENSSL_CFLAGS)
+else
+  HAVE_OPENSSL=no
+  HAVE_OPENSSL_DEFINE=0
+fi
+AC_SUBST(HAVE_OPENSSL)
+AC_SUBST(HAVE_OPENSSL_DEFINE)
+
+AC_MSG_RESULT($HAVE_OPENSSL)
+
+dnl =======================================================================
 dnl Checks for build options.
 dnl =======================================================================
 

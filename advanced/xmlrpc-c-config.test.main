@@ -55,6 +55,10 @@ while test $# -gt 0; do
       the_libs="${BLDDIR}/lib/libutil++/libxmlrpc_util++.a $the_libs"
       the_libs="${BLDDIR}/src/cpp/lib$LIBXMLRPCPP_NAME.a $the_libs"
       ;;
+    openssl)
+      the_libs="${OPENSSL_LDADD} $the_libs"
+      the_libs="${BLDDIR}/lib/openssl/libxmlrpc_openssl.a $the_libs"
+      ;;
     server-util)
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       if test "${needCpp}" = "yes"; then
@@ -72,6 +76,10 @@ while test $# -gt 0; do
       ;;
     abyss-server)
       the_libs="${SOCKETLIBOPT} $the_libs"
+      if test "${HAVE_OPENSSL}" = "yes"; then
+        the_libs="${OPENSSL_LDADD} $the_libs"
+        cflags="${cflags} ${OPENSSL_CFLAGS}"
+        fi
       the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
       the_libs="${BLDDIR}/src/libxmlrpc_server_abyss.a $the_libs"

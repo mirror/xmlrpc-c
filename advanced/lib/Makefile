@@ -32,6 +32,10 @@ ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   SUBDIRS += expat
 endif
 
+ifeq ($(HAVE_OPENSSL),Y)
+  SUBDIRS += openssl
+endif
+
 default: all
 
 .PHONY: all clean distclean tags distdir install check dep

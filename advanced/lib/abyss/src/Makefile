@@ -20,9 +20,15 @@ SHARED_LIBS_TO_INSTALL := libxmlrpc_abyss
 
 ifeq ($(findstring mingw,$(HOST_OS)),mingw)
   THREAD_MODULE = thread_windows
-  SOCKET_MODULE = socket_win
+  SOCKET_MODS = socket_win
 else
-  SOCKET_MODULE = socket_unix
+  SOCKET_MODS = socket_unix
+  ifeq ($(HAVE_OPENSSL),yes)
+    SOCKET_MODS += socket_openssl
+  endif
+
+  SOCKET_MODS += sockutil
+
   ifeq ($(ENABLE_ABYSS_THREADS),yes)
     THREAD_MODULE = thread_pthread
   else
@@ -46,10 +52,12 @@ TARGET_MODS = \
   session \
   sessionReadRequest \
   socket \
-  $(SOCKET_MODULE) \
+  $(SOCKET_MODS) \
   token \
   $(THREAD_MODULE) \
   trace \
+
+
 
 PKGCONFIG_FILES_TO_INSTALL := xmlrpc_abyss.pc
 
@@ -87,6 +95,9 @@ $(ABYSS_SHLIB): LIBDEP = $(LIBXMLRPC_UTIL_LIBDEP) $(SOCKETLIBOPT)
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
   $(ABYSS_SHLIB):  LIBDEP += $(THREAD_LIBS)
 endif
+ifeq ($(HAVE_OPENSSL),yes)
+$(ABYSS_SHLIB): LIBDEP += $(OPENSSL_LDADD)
+endif
 
 # Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:
 
@@ -99,6 +110,8 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 
 # Rules to compile object modules from which to build the static and shared
 # Abyss library are in common.mk, courtesy of TARGET_MODS.
+
+socket_openssl.o: CFLAGS_TARGET=$(OPENSSL_CFLAGS)
 
 
 #-----------------------------------------------------------------------------

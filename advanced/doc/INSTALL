@@ -11,6 +11,10 @@ Essentially, it's just the conventional
   $ make
   $ make install
 
+And on Linux systems, you'll usually also need:
+
+  $ ldconfig
+
 To build handy tools such as the 'xmlrpc' command line XML-RPC client:
 
   $ cd tools
@@ -50,6 +54,36 @@ libwww facilities, must attach all those libraries, and that can take
 a significant amount of time.
 
 See './configure --help' for the options that disable certain transports.
+
+
+LDCONFIG
+--------
+
+On systems that use the GNU C Library (usually Linux), you often have to run
+the program 'ldconfig' after installing the shared libraries of Xmlrpc-c.  If
+you don't, when you try to run a program that uses an Xmlrpc-c library, you
+get an error message telling you it can't find the library.
+
+This is because the usual way that the dynamic (shared) library loader finds
+libraries is through the file /etc/ld.so.cache, which is a directory of most
+of the shared libraries on the system.  'ldconfig' is what updates that
+directory.  It searches various places that shared libraries might be,
+including the place you probably installed the Xmlrpc-c shared libraries, and
+records all their locations, indexed by the library's soname.
+
+If you suspect a problem with your shared library lookup, you can use the
+command
+
+  $ ldconfig -p
+
+to list out the directory (i.e. the information in /etc/ld.so.cache).
+
+But this directory is not the only way the OS can find a shared library, so
+'ldconfig' may not be required or helpful in your circumstance.  Another way
+to tell the OS how to find shared libraries is through the environment
+variable LD_LIBRARY_PATH.  If that value includes the directory in which you
+installed the Xmlrpc-c libraries, the OS should be able to find them
+regardless of what is in the directory.
 
 
 SEPARATE BUILD TREE

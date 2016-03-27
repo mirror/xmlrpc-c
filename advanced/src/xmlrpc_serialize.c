@@ -620,7 +620,7 @@ xmlrpc_serialize_call2(xmlrpc_env *       const envP,
    Serialize an XML-RPC call of method named 'methodName' with parameter
    list *paramArrayP.  Use XML-RPC dialect 'dialect'.
 
-   Append the call XML ot *outputP.
+   Append the call XML to *outputP.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(outputP != NULL);

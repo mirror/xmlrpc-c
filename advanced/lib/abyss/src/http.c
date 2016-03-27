@@ -39,6 +39,24 @@ RequestHeaderValue(TSession *   const sessionP,
 
 
 
+const char *
+HTTPMethodName(TMethod const method) {
+
+    switch (method) {
+    case m_unknown: return "UNKNOWN";
+    case m_get:     return "GET";
+    case m_put:     return "PUT";
+    case m_head:    return "HEAD";
+    case m_post:    return "POST";
+    case m_delete:  return "DELETE";
+    case m_trace:   return "TRACE";
+    case m_options: return "OPTIONS";
+    }
+    assert(false);  /* Compiler ought to know this, but doesn't */
+}
+
+
+
 bool
 HTTPRequestHasValidUri(TSession * const sessionP) {
 
