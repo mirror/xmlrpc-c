@@ -96,6 +96,10 @@ public:
     ~serverAbyss();
     
     void
+    getListenName(struct sockaddr ** const sockaddrPP,
+                  size_t  *          const sockaddrLenP);
+
+    void
     run();
 
     void

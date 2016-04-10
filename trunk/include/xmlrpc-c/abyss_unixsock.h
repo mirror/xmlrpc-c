@@ -31,6 +31,12 @@ ChanSwitchUnixCreateFd(int            const fd,
                        const char **  const errorP);
 
 void
+ChanSwitchUnixGetListenName(TChanSwitch *      const chanSwitchP,
+                            struct sockaddr ** const sockaddrPP,
+                            size_t  *          const sockaddrLenP,
+                            const char **      const errorP);
+
+void
 ChannelUnixCreateFd(int                           const fd,
                     TChannel **                   const channelPP,
                     struct abyss_unix_chaninfo ** const channelInfoPP,

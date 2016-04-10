@@ -335,9 +335,13 @@ struct serverAbyss_impl {
         // switch and create a server based on it; otherwise, we don't.
 
     serverAbyss_impl(serverAbyss::constrOpt_impl const& opt,
-                     serverAbyss *               const serverAbyssP);
+                     serverAbyss *               const  serverAbyssP);
 
     ~serverAbyss_impl();
+
+    void
+    getListenName(struct sockaddr ** const sockaddrPP,
+                  size_t  *          const sockaddrLenP);
 
     void
     run();
@@ -742,6 +746,28 @@ serverAbyss_impl::~serverAbyss_impl() {
 
 
 
+void
+serverAbyss_impl::getListenName(struct sockaddr ** const sockaddrPP,
+                                size_t  *          const sockaddrLenP) {
+
+    if (!this->chanSwitchP)
+        throwf("%s",
+               "Server is not configured to listen for client connections");
+
+    const char * error;
+
+    ChanSwitchUnixGetListenName(this->chanSwitchP,
+                                sockaddrPP, sockaddrLenP, &error);
+
+    if (error) {
+        string const e(error);
+        xmlrpc_strfree(error);
+        throwf("%s", e.c_str());
+    } 
+}
+
+
+
 static void
 setupSignalsAndRunAbyss(TServer * const abyssServerP) {
 
@@ -869,6 +895,15 @@ serverAbyss::serverAbyss(
 serverAbyss::~serverAbyss() {
 
     delete(this->implP);
+}
+
+
+
+void
+serverAbyss::getListenName(struct sockaddr ** const sockaddrPP,
+                           size_t  *          const sockaddrLenP) {
+
+    this->implP->getListenName(sockaddrPP, sockaddrLenP);
 }
 
 

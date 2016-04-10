@@ -23,6 +23,12 @@ bool
 sockutil_connected(int const fd);
 
 void
+sockutil_getSockName(int                const sockFd,
+                     struct sockaddr ** const sockaddrPP,
+                     size_t  *          const sockaddrLenP,
+                     const char **      const errorP);
+
+void
 sockutil_getPeerName(int                const sockFd,
                      struct sockaddr ** const sockaddrPP,
                      size_t  *          const sockaddrLenP,

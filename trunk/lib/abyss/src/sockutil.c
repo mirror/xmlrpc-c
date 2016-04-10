@@ -112,6 +112,50 @@ sockutil_connected(int const fd) {
 
 
 void
+sockutil_getSockName(int                const sockFd,
+                     struct sockaddr ** const sockaddrPP,
+                     size_t  *          const sockaddrLenP,
+                     const char **      const errorP) {
+
+    unsigned char * sockName;
+    socklen_t nameSize;
+
+    nameSize = sizeof(struct sockaddr) + 1;
+    
+    sockName = malloc(nameSize);
+
+    if (sockName == NULL)
+        xmlrpc_asprintf(errorP, "Unable to allocate space for socket name");
+    else {
+        int rc;
+        socklen_t nameLen;
+        nameLen = nameSize;  /* initial value */
+        rc = getsockname(sockFd, (struct sockaddr *)sockName, &nameLen);
+
+        if (rc < 0)
+            xmlrpc_asprintf(errorP, "getsockname() failed.  errno=%d (%s)",
+                            errno, strerror(errno));
+        else {
+            if (nameLen > nameSize-1)
+                xmlrpc_asprintf(errorP,
+                                "getsockname() says the socket name is "
+                                "larger than %u bytes, which means it is "
+                                "not in the expected format.",
+                                nameSize-1);
+            else {
+                *sockaddrPP = (struct sockaddr *)sockName;
+                *sockaddrLenP = nameLen;
+                *errorP = NULL;
+            }
+        }
+        if (*errorP)
+            free(sockName);
+    }
+}
+
+
+
+void
 sockutil_getPeerName(int                const sockFd,
                      struct sockaddr ** const sockaddrPP,
                      size_t  *          const sockaddrLenP,
@@ -247,7 +291,7 @@ sockutil_formatPeerInfo(int           const sockFd,
 
 
 void
-sockutil_listen(int          const sockFd,
+sockutil_listen(int           const sockFd,
                 uint32_t      const backlog,
                 const char ** const errorP) {
 

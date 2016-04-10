@@ -60,6 +60,9 @@ struct socketUnix {
            user; we did not create it.
         */
     sockutil_InterruptPipe interruptPipe;
+
+    bool isListening;
+        /* We've done a 'listen' on the socket */
 };
 
 
@@ -455,7 +458,7 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
 
 
 
-static SwitchListenImpl  chanSwitchListen;
+static SwitchListenImpl chanSwitchListen;
 
 static void
 chanSwitchListen(TChanSwitch * const chanSwitchP,
@@ -464,7 +467,14 @@ chanSwitchListen(TChanSwitch * const chanSwitchP,
 
     struct socketUnix * const socketUnixP = chanSwitchP->implP;
 
-    sockutil_listen(socketUnixP->fd, backlog, errorP);
+    if (socketUnixP->isListening)
+        xmlrpc_asprintf(errorP, "Channel switch is already listening");
+    else {
+        sockutil_listen(socketUnixP->fd, backlog, errorP);
+
+        if (!*errorP)
+            socketUnixP->isListening = true;
+    }
 }
 
 
@@ -619,7 +629,15 @@ createChanSwitch(int            const fd,
                  bool           const userSuppliedFd,
                  TChanSwitch ** const chanSwitchPP,
                  const char **  const errorP) {
+/*----------------------------------------------------------------------------
+   Create a channel switch from the bound, but not yet listening, socket
+   with file descriptor 'fd'.
 
+   Return the handle of the new channel switch as *chanSwitchPP.
+
+   'userSuppliedFd' means the file descriptor (socket) shall _not_ belong to
+   the channel switch, so destroying the channel switch does not close it.
+-----------------------------------------------------------------------------*/
     struct socketUnix * socketUnixP;
 
     assert(!sockutil_connected(fd));
@@ -637,6 +655,7 @@ createChanSwitch(int            const fd,
 
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = userSuppliedFd;
+        socketUnixP->isListening = false;
             
         sockutil_interruptPipeInit(&socketUnixP->interruptPipe, errorP);
 
@@ -795,6 +814,27 @@ ChanSwitchUnixCreateFd(int            const fd,
         bool const userSupplied = true;
         createChanSwitch(fd, userSupplied, chanSwitchPP, errorP);
     }
+}
+
+
+
+void
+ChanSwitchUnixGetListenName(TChanSwitch *      const chanSwitchP,
+                            struct sockaddr ** const sockaddrPP,
+                            size_t  *          const sockaddrLenP,
+                            const char **      const errorP) {
+/*----------------------------------------------------------------------------
+   The primary case where this is useful is where the user created the channel
+   switch with a parameters telling the OS to pick the TCP port.  In that
+   case, this is the only way the user can find out what port the OS picked.
+-----------------------------------------------------------------------------*/
+    struct socketUnix * const socketUnixP = chanSwitchP->implP;
+    
+    if (!socketUnixP->isListening)
+        xmlrpc_asprintf(errorP, "Channel Switch is not listening");
+    else
+        sockutil_getSockName(socketUnixP->fd,
+                             sockaddrPP, sockaddrLenP, errorP);
 }
 
 
