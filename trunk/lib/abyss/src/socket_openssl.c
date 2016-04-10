@@ -42,6 +42,17 @@
 
 
 
+/* We've seen Openssl from the year 2002 not have SSL_ERROR_WANT_ACCEPT.
+   In 2016, it is defined as a macro.
+*/
+#ifdef SSL_ERROR_WANT_ACCEPT
+#define HAVE_SSL_ERROR_WANT_ACCEPT 1
+#else
+#define HAVE_SSL_ERROR_WANT_ACCEPT 0
+#endif
+
+
+
 static const char *
 sslErrorMsg(void) {
 /*----------------------------------------------------------------------------
@@ -93,7 +104,9 @@ sslResultMsg(int const resultCode) {
     case SSL_ERROR_SYSCALL:          return "Syscall";
     case SSL_ERROR_ZERO_RETURN:      return "Zero Return";
     case SSL_ERROR_WANT_CONNECT:     return "Want Connect";
+#if HAVE_SSL_ERROR_WANT_ACCEPT
     case SSL_ERROR_WANT_ACCEPT:      return "Want Accept";
+#endif
     default:                         return "???";
     }
 }
