@@ -646,7 +646,7 @@ traceReceivedPacket(const unsigned char * const data,
 
 
 
-void
+void  // private
 packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
                                      size_t                const length,
                                      size_t *              const bytesTakenP) {
@@ -701,7 +701,7 @@ packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
 
 
 
-void
+void  // private
 packetSocket_impl::takeSomePacket(const unsigned char * const buffer,
                                   size_t                const length,
                                   size_t *              const bytesTakenP) {
@@ -737,7 +737,7 @@ packetSocket_impl::takeSomePacket(const unsigned char * const buffer,
 
 
 
-void
+void  // private
 packetSocket_impl::verifyNothingAccumulated() {
 /*----------------------------------------------------------------------------
    Throw an error if there is a partial packet accumulated.
@@ -754,7 +754,7 @@ packetSocket_impl::verifyNothingAccumulated() {
 
 
 
-void
+void  // private
 packetSocket_impl::processBytesRead(const unsigned char * const buffer,
                                     size_t                const bytesRead) {
 
@@ -801,11 +801,11 @@ traceBytesRead(const unsigned char * const buffer,
 
 
 
-void
+void  //private
 packetSocket_impl::readFromFile() {
 /*----------------------------------------------------------------------------
    Read some data from the underlying stream socket.  Read as much as is
-   available right now, up to 4K.  Update 'this' to reflect the data read.
+   available right now, up to 4K.  Update *this to reflect the data read.
 
    E.g. if we read an entire packet, we add it to the packet buffer
    (this->readBuffer).  If we read the first part of a packet, we add
@@ -850,7 +850,7 @@ packetSocket_impl::read(bool *      const eofP,
    return *gotPacketP true.  Otherwise, return *gotPacketP false.
 
    Iff the socket has no more data coming (it is shut down) and there
-   is no complete packet in the packet buffer, return *eofP.
+   is no complete packet in the packet buffer, return *eofP true.
 
    This leaves one other possibility: there is no full packet immediately
    available, but there may be in the future because the socket is still
@@ -981,5 +981,7 @@ packetSocket::readWait(bool *      const eofP,
 
     this->readWait(&interrupt, eofP, packetPP);
 }
+
+
 
 } // namespace
