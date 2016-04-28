@@ -502,6 +502,13 @@ public:
                                          &responseXml););
                 // Error: no response
         }
+        {
+            clientXmlTransport_pstream transport2(
+                clientXmlTransport_pstream::constrOpt()
+                .fd(devNullFd)
+                .useBrokenConnEx(true)
+                );
+        }
         clientXmlTransportPtr transport1P(new clientXmlTransport_pstream(
             clientXmlTransport_pstream::constrOpt()
             .fd(devNullFd)

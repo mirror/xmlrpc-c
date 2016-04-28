@@ -80,6 +80,9 @@ using namespace std;
 #define ESC 0x1B   //  ASCII Escape character
 #define ESC_STR "\x1B"
 
+class BrokenConnectionEx {
+};
+
 class XMLRPC_DLLEXPORT socketx {
 
 public:
@@ -224,6 +227,23 @@ wouldBlock() {
 
 
 
+static bool
+lastErrorIsBrokenConn() {
+
+    bool retval;
+
+#if MSVCRT
+    // We don't know how to determine this on Windows, so we just punt
+    retval = false;
+#else
+    retval = (errno == EPIPE);
+#endif
+
+    return retval;
+}
+
+
+
 static string const
 lastErrorDesc() {
 /*----------------------------------------------------------------------------
@@ -292,9 +312,13 @@ writeFd(int                   const fd,
         if (rc < 0) {
             if (wouldBlock())
                 full = true;
-            else
-                throwf("write() of socket failed with %s",
-                       lastErrorDesc().c_str());
+            else {
+                if (lastErrorIsBrokenConn())
+                    throw BrokenConnectionEx();
+                else
+                    throwf("write() of socket failed with %s",
+                           lastErrorDesc().c_str());
+            }
         } else if (rc == 0)
             throwf("Zero byte short write.");
         else {
@@ -586,7 +610,13 @@ escapePos(const unsigned char * const start,
 
 void
 packetSocket_impl::writeWait(packetPtr const& packetP) const {
+/*----------------------------------------------------------------------------
+   Write the packet to the socket, waiting for the recipient to take it as
+   necessary.
 
+   Throw a BrokenConnectionEx exception if we can't send because of a broken
+   connection.
+-----------------------------------------------------------------------------*/
     const unsigned char * const packetStart(
         reinterpret_cast<const unsigned char *>(ESC_STR "PKT"));
     const unsigned char * const packetEnd(
@@ -597,6 +627,7 @@ packetSocket_impl::writeWait(packetPtr const& packetP) const {
     if (this->mustTrace)
         traceWrite(packetP->getBytes(), packetP->getLength());
 
+    
     this->sock.writeWait(packetStart, 4);
 
     const unsigned char * const end(
@@ -932,7 +963,25 @@ packetSocket::~packetSocket() {
 void
 packetSocket::writeWait(packetPtr const& packetP) const {
 
-    implP->writeWait(packetP);
+    try {
+        implP->writeWait(packetP);
+    } catch (BrokenConnectionEx) {
+        throwf("Recipient hung up or connection broke");
+    }
+}
+
+
+
+void
+packetSocket::writeWait(packetPtr const& packetP,
+                        bool *    const  brokenConnP) const {
+
+    try {
+        implP->writeWait(packetP);
+        *brokenConnP = false;
+    } catch (BrokenConnectionEx) {
+        *brokenConnP = true;
+    }
 }
 
 
