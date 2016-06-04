@@ -229,14 +229,39 @@ wouldBlock() {
 
 static bool
 lastErrorIsBrokenConn() {
+/*----------------------------------------------------------------------------
+   The last system call failure in this process, assuming the system call was
+   to read or write a steram socket, indicates the problem was that the
+   connection broke, e.g. because a network cable was cut, the peer powered
+   off, or the peer just got tired of talking to us and closed down the
+   connection.
 
+   The underlying signficance of this distinction is that when a connection
+   has broken, the caller might reasonably respond by trying to establish a
+   new connection, and possibly doing so with a different network path or a
+   different peer.
+-----------------------------------------------------------------------------*/
     bool retval;
 
 #if MSVCRT
     // We don't know how to determine this on Windows, so we just punt
     retval = false;
 #else
-    retval = (errno == EPIPE);
+    switch (errno) {
+        // Some of these are probably not defined on some systems; we will
+        // need some build system magic to deal with that as error reports
+        // come in.
+    case EPIPE:
+    case ETIMEDOUT:
+    case ECONNRESET:
+    case ENOTCONN:
+    case ESHUTDOWN:
+        retval = true;
+        break;
+    default:
+        retval = false;
+    }
+
 #endif
 
     return retval;
