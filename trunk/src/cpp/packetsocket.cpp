@@ -1041,7 +1041,7 @@ packetSocket::readWait(volatile const int * const interruptP,
 
     this->implP->readWait(interruptP, eofP, &gotPacket, packetPP);
 
-    if (!gotPacket)
+    if (!gotPacket && !*eofP)
         throwf("Packet read was interrupted");
 }
 
