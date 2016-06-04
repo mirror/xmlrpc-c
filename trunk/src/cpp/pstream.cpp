@@ -118,7 +118,7 @@ private:
     bool usingBrokenConnEx;
         // We're throwing a Broken Connection object when something fails
         // because the connection to the server is broken.  When this is false,
-        // We throw an ordinary error when that happens.
+        // we throw an ordinary error when that happens.
 
     void
     sendCall(std::string const& callXml);
