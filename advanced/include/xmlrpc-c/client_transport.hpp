@@ -422,6 +422,7 @@ public:
         constrOpt(constrOpt&);
 
         constrOpt & fd                (int         const& arg);
+        constrOpt & useBrokenConnEx   (bool        const& arg);
 
     private:
         struct constrOpt_impl * implP;
@@ -437,8 +438,10 @@ public:
          std::string              const& callXml,
          std::string *            const  responseXmlP);
 
+    class BrokenConnectionEx {};
+
 private:
-    packetSocket * packetSocketP;
+    struct clientXmlTransport_pstream_impl * const implP;
 };
 
 

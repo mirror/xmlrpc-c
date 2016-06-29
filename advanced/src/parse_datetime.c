@@ -200,8 +200,8 @@ parseDtRegex(xmlrpc_env *      const envP,
                 
                 parserP = thisParserP;
             }
-            regfree(&re);
         }
+        regfree(&re);
     }
 
     if (parserP) {

@@ -185,9 +185,8 @@ testMemBlockPool(void) {
 
     {
         xmlrpc_env env2;
-        xmlrpc_mem_block * blockP;
         xmlrpc_env_init(&env2);
-        blockP = xmlrpc_mem_block_new_pool(&env2, 900, poolP);
+        xmlrpc_mem_block_new_pool(&env2, 900, poolP);
         TEST_FAULT(&env2, XMLRPC_LIMIT_EXCEEDED_ERROR);
         xmlrpc_env_clean(&env2);
     }
@@ -205,9 +204,8 @@ testMemBlockPool(void) {
 
     {
         xmlrpc_env env2;
-        xmlrpc_mem_block * blockP;
         xmlrpc_env_init(&env2);
-        blockP = xmlrpc_mem_block_new_pool(&env2, 600, poolP);
+        xmlrpc_mem_block_new_pool(&env2, 600, poolP);
         TEST_FAULT(&env2, XMLRPC_LIMIT_EXCEEDED_ERROR);
         xmlrpc_env_clean(&env2);
     }
