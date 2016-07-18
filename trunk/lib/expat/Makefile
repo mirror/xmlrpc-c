@@ -57,7 +57,7 @@ DISTFILES =
 distdir: distdir-common
 
 .PHONY: install
-install: $(SUBDIRS:%=%/install)
+install: install-common $(SUBDIRS:%=%/install)
 
 .PHONY: check
 check:
