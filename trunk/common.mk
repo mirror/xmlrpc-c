@@ -589,32 +589,29 @@ RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
 
 install-static-libraries: $(STATIC_LIBRARIES_TO_INSTALL)
 	$(MKINSTALLDIRS) $(LIBDESTDIR)
-	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; for p in $$list; do \
-	  if test -f $$p; then \
+	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; \
+	 for p in $$list; do \
 	    echo " $(INSTALL_LIB_CMD)"; \
 	    $(INSTALL_LIB_CMD); \
-	  else :; fi; \
-	done
+	 done
 	@$(POST_INSTALL)
-	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; for p in $$list; do \
-	  if test -f $$p; then \
+	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; \
+	 for p in $$list; do \
 	    echo " $(RANLIB_CMD)"; \
 	    $(RANLIB_CMD); \
-	  else :; fi; \
-	done
+	 done
 
 HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
-INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(HEADERDESTDIR)/$$p 
+INSTALL_HDR_CMD = $(INSTALL_DATA) $$p $(HEADERDESTDIR)/$$p 
 
 install-headers: $(HEADERS_TO_INSTALL)
 	$(MKINSTALLDIRS) $(HEADERDESTDIR)
 	$(MKINSTALLDIRS) $(HEADERDESTDIR)/xmlrpc-c
-	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
-	  if test -f "$$p"; then d= ; else d="$(SRCDIR)/$(SUBDIR)/"; fi; \
-	  echo " $(INSTALL_HDR_CMD)"; \
-	  $(INSTALL_HDR_CMD); \
-	done
-
+	@list='$(HEADERS_TO_INSTALL)'; \
+	 for p in $$list; do \
+	   echo " $(INSTALL_HDR_CMD)"; \
+	   $(INSTALL_HDR_CMD); \
+	 done
 
 INSTALL_PROGRAM_CMD = $(INSTALL_PROGRAM) $$p $(DESTDIR)$(PROGRAMINST_DIR)/$$p
 
