@@ -60,6 +60,8 @@ distdir: distdir-common
 
 install: $(SUBDIRS:%=%/install)
 
+uninstall: $(SUBDIRS:%=%/uninstall)
+
 check:
 
 dep: $(SUBDIRS:%=%/dep)

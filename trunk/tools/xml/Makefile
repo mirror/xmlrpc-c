@@ -54,6 +54,12 @@ include depend.mk
 .PHONY: dep
 dep: dep-common
 
+.PHONY: install
+install: install-common
+
+.PHONY: uninstall
+uninstall: uninstall-common
+
 .PHONY: clean
 clean: clean-common
 	rm -f $(PROGS)

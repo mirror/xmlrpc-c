@@ -161,6 +161,12 @@ distdir: distdir-common
 .PHONY: install
 install: $(DEFAULT_SUBDIRS:%=%/install) install-common
 
+HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
+
+.PHONY: uninstall
+uninstall: $(DEFAULT_SUBDIRS:%=%/uninstall) uninstall-common
+	-rmdir $(HEADERDESTDIR)/xmlrpc-c
+
 .PHONY: dep
 dep: version.h $(BLDDIR)/include/xmlrpc-c/config.h $(SUBDIRS:%=%/dep)
 

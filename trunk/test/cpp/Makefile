@@ -118,6 +118,9 @@ runtests: test
 .PHONY: install
 install:
 
+.PHONY: uninstall
+uninstall:
+
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local
 clean-local:

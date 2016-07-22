@@ -45,6 +45,9 @@
 # install-shared-libraries: install all shared libraries and the necessary
 # symbolic links.
 
+# uninstall-shared-libraries: remove what would be installed by
+# install-shared-libraries
+
 # SONAME is to be referenced by $(LDFLAGS_SHLIB) in the rule to make
 # a shared library (in common.mk).  I.e. $@ is the name of the shared
 # library file.
@@ -77,12 +80,25 @@ SHLIB_INSTALL_TARGETS = $(SHARED_LIBS_TO_INSTALL:%=%/install)
 
 install-shared-libraries: $(SHLIB_INSTALL_TARGETS)
 
+LIBDESTDIR = $(DESTDIR)$(LIBINST_DIR)
+
 $(SHLIB_INSTALL_TARGETS):%/install:%.$(SHLIB_SUFFIX).$(MAJ).$(MIN)
 # $< is a library file name, e.g. libfoo.so.3.1 .
-	$(INSTALL_SHLIB) $< $(DESTDIR)$(LIBINST_DIR)/$<
-	cd $(DESTDIR)$(LIBINST_DIR); \
+	$(INSTALL_SHLIB) $< $(LIBDESTDIR)/$<
+	cd $(LIBDESTDIR); \
 	  rm -f $(<:%.$(MIN)=%); \
           $(LN_S) $< $(<:%.$(MIN)=%)
-	cd $(DESTDIR)$(LIBINST_DIR); \
+	cd $(LIBDESTDIR); \
 	  rm -f $(<:%.$(MAJ).$(MIN)=%); \
           $(LN_S) $(<:%.$(MIN)=%) $(<:%.$(MAJ).$(MIN)=%)
+
+.PHONY: uninstall-shared-libraries
+uninstall-shared-libraries:
+	@list='$(SHARED_LIBS_TO_INSTALL)'; \
+	 for p in $$list; do \
+	   echo "Uninstalling $$p shared library"; \
+	   cd $(LIBDESTDIR); \
+	   rm -f $$p.$(SHLIB_SUFFIX); \
+	   rm -f $$p.$(SHLIB_SUFFIX).$(MAJ); \
+	   rm -f $$p.$(SHLIB_SUFFIX).$(MAJ).$(MIN); \
+	 done

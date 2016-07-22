@@ -146,8 +146,19 @@ install-compat-hdr: install-headers
 	        XmlRpcCpp.h; \
 	  $(COMPAT_LINK_CMDS)
 
+.PHONY: uninstall-compat-hdr
+uninstall-compat-hdr:
+	cd $(DESTDIR)$(HEADERINST_DIR); \
+	  rm -f xmlrpc.h xmlrpc_client.h xmlrpc_server.h xmlrpc_cgi.h \
+                xmlrpc_server_abyss.h xmlrpc_abyss.h \
+		xmlrpc_server_w32httpsys.h \
+	        XmlRpcCpp.h; \
+
 .PHONY: install
 install: install-common install-compat-hdr
+
+.PHONY: uninstall
+uninstall: uninstall-common uninstall-compat-hdr
 
 .PHONY: clean
 clean:

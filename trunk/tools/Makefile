@@ -25,7 +25,7 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
   endif
 endif
 
-.PHONY: all clean distclean install check dep
+.PHONY: all clean distclean install uninstall check dep
 
 all: $(SUBDIRS:%=%/all)
 
@@ -34,6 +34,8 @@ clean: $(SUBDIRS:%=%/clean)
 distclean: $(SUBDIRS:%=%/distclean)
 
 install: $(SUBDIRS:%=%/install)
+
+uninstall: $(SUBDIRS:%=%/uninstall)
 
 check:
 

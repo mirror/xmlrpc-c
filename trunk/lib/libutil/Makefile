@@ -123,6 +123,9 @@ xmlrpc_util.pc:
 .PHONY: install
 install: install-common
 
+.PHONY: uninstall
+uninstall: uninstall-common
+
 .PHONY: clean distclean
 clean: clean-common
 
