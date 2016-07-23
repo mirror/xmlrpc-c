@@ -160,6 +160,21 @@ how (without using Automake), tell the Xmlrpc-c maintainer and he will change
 the build system to use it).
 
 
+SKIPPING SHARED LIBRARY BUILD/INSTALL
+-------------------------------------
+
+To build just the static libraries, not the shared (dynamically linked)
+libraries, set make variable MUST_BUILD_SHLIB to "N":
+
+  $ make MUST_BUILD_SHLIB=N
+
+You can add this setting to the bottom of the 'config.mk' file that
+'configure' generates if that is more convenient.
+
+Alternatively, you could just build and install normally and delete the shared
+libraries afterward.  That normally works.
+
+
 COMMON PROBLEMS
 ---------------
 
