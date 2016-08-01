@@ -46,6 +46,6 @@ sdup(const char * const input) {
 
 /* Concatenate string B onto string in array A with size checking */
 #define STRSCAT(A,B) \
-    (strncat((A), (B), sizeof(A)-strlen(A)), *((A)+sizeof(A)-1) = '\0')
+    (strncat((A), (B), sizeof(A)-strlen(A)-1))
 
 #endif
