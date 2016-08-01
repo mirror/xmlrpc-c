@@ -122,7 +122,7 @@ xmlrpc_makePrintableChar(char const input);
 #define STRSCMP(A,B) \
 	(strncmp((A), (B), sizeof(A)))
 #define STRSCAT(A,B) \
-    (strncat((A), (B), sizeof(A)-strlen(A)), *((A)+sizeof(A)-1) = '\0')
+    (strncat((A), (B), sizeof(A)-strlen(A)-1))
 
 /* We could do this, but it works only in GNU C 
 #define SSPRINTF(TARGET, REST...) \
