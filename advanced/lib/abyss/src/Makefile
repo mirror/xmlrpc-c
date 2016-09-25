@@ -153,6 +153,9 @@ distdir:
 .PHONY: install
 install: install-common
 
+.PHONY: uninstall
+uninstall: uninstall-common
+
 .PHONY: dep
 dep: dep-common
 

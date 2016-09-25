@@ -380,6 +380,11 @@ $(SUBDIRS:%=%/install): %/install: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
 	    $(notdir $@) 
 
+.PHONY: $(SUBDIRS:%=%/uninstall)
+$(SUBDIRS:%=%/uninstall): %/uninstall: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
 .PHONY: $(SUBDIRS:%=%/clean)
 $(SUBDIRS:%=%/clean): %/clean: $(CURDIR)/%
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
@@ -567,6 +572,13 @@ $(SUBDIRS:%=$(CURDIR)/%):
 	mkdir $@
 
 
+LIBDESTDIR       = $(DESTDIR)$(LIBINST_DIR)
+HEADERDESTDIR    = $(DESTDIR)$(HEADERINST_DIR)
+PROGRAMDESTDIR   = $(DESTDIR)$(PROGRAMINST_DIR)
+MANDESTDIR       = $(DESTDIR)$(MANINST_DIR)
+PKGCONFIGDESTDIR = $(DESTDIR)$(PKGCONFIGINST_DIR)
+
+
 ##############################################################################
 #                           INSTALL RULES                                    #
 #                      (except shared libraries)                             #
@@ -583,40 +595,35 @@ install-common: \
   install-man \
   install-pkgconfig \
 
-LIBDESTDIR = $(DESTDIR)$(LIBINST_DIR)
 INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(LIBDESTDIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
 
 install-static-libraries: $(STATIC_LIBRARIES_TO_INSTALL)
 	$(MKINSTALLDIRS) $(LIBDESTDIR)
-	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; for p in $$list; do \
-	  if test -f $$p; then \
+	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; \
+	 for p in $$list; do \
 	    echo " $(INSTALL_LIB_CMD)"; \
 	    $(INSTALL_LIB_CMD); \
-	  else :; fi; \
-	done
+	 done
 	@$(POST_INSTALL)
-	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; for p in $$list; do \
-	  if test -f $$p; then \
+	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; \
+	 for p in $$list; do \
 	    echo " $(RANLIB_CMD)"; \
 	    $(RANLIB_CMD); \
-	  else :; fi; \
-	done
+	 done
 
-HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
-INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(HEADERDESTDIR)/$$p 
+INSTALL_HDR_CMD = $(INSTALL_DATA) $$p $(HEADERDESTDIR)/$$p 
 
 install-headers: $(HEADERS_TO_INSTALL)
 	$(MKINSTALLDIRS) $(HEADERDESTDIR)
 	$(MKINSTALLDIRS) $(HEADERDESTDIR)/xmlrpc-c
-	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
-	  if test -f "$$p"; then d= ; else d="$(SRCDIR)/$(SUBDIR)/"; fi; \
-	  echo " $(INSTALL_HDR_CMD)"; \
-	  $(INSTALL_HDR_CMD); \
-	done
+	@list='$(HEADERS_TO_INSTALL)'; \
+	 for p in $$list; do \
+	   echo " $(INSTALL_HDR_CMD)"; \
+	   $(INSTALL_HDR_CMD); \
+	 done
 
-
-INSTALL_PROGRAM_CMD = $(INSTALL_PROGRAM) $$p $(DESTDIR)$(PROGRAMINST_DIR)/$$p
+INSTALL_PROGRAM_CMD = $(INSTALL_PROGRAM) $$p $(PGROGRAMDESTDIR)/$$p
 
 install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
 	@list='$(PROGRAMS_TO_INSTALL)'; \
@@ -628,7 +635,6 @@ install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
 $(DESTDIR)$(PROGRAMINST_DIR):
 	$(MKINSTALLDIRS) $@
 
-MANDESTDIR = $(DESTDIR)$(MANINST_DIR)
 INSTALL_MAN_CMD = $(INSTALL_DATA) $$p $(MANDESTDIR)/$$p
 
 install-man: $(MAN_FILES_TO_INSTALL)
@@ -639,7 +645,6 @@ install-man: $(MAN_FILES_TO_INSTALL)
 	   $(INSTALL_MAN_CMD); \
 	 done
 
-PKGCONFIGDESTDIR = $(DESTDIR)$(PKGCONFIGINST_DIR)
 INSTALL_PKGCONFIG_CMD = $(INSTALL_DATA) $$p $(PKGCONFIGDESTDIR)/$$p
 
 install-pkgconfig: $(PKGCONFIG_FILES_TO_INSTALL)
@@ -649,6 +654,68 @@ install-pkgconfig: $(PKGCONFIG_FILES_TO_INSTALL)
 	   echo "$(INSTALL_PKGCONFIG_CMD)"; \
 	   $(INSTALL_PKGCONFIG_CMD); \
 	 done
+
+
+##############################################################################
+#                          UNINSTALL RULES                                   #
+##############################################################################
+
+RM = rm -f
+
+.PHONY: uninstall-common uninstall-headers uninstall-bin uninstall-man
+uninstall-common: \
+  uninstall-pkgconfig \
+  uninstall-man \
+  uninstall-bin \
+  uninstall-headers \
+  uninstall-shared-libraries \
+  uninstall-static-libraries \
+
+UNINSTALL_LIB_CMD = $(RM) $(LIBDESTDIR)/$$p
+
+uninstall-static-libraries:
+	@list='$(STATIC_LIBRARIES_TO_INSTALL)'; \
+	 for p in $$list; do \
+	    echo " $(UNINSTALL_LIB_CMD)"; \
+	    $(UNINSTALL_LIB_CMD); \
+	 done
+
+UNINSTALL_HDR_CMD = rm -f $(HEADERDESTDIR)/$$p 
+
+uninstall-headers:
+	@list='$(HEADERS_TO_INSTALL)'; \
+	 for p in $$list; do \
+	   echo " $(UNINSTALL_HDR_CMD)"; \
+	   $(UNINSTALL_HDR_CMD); \
+	 done;
+
+UNINSTALL_PROGRAM_CMD = rm -f $(PROGRAMDESTDIR)/$$p
+
+uninstall-bin:
+	@list='$(PROGRAMS_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(UNINSTALL_PROGRAM_CMD)"; \
+	   $(UNINSTALL_PROGRAM_CMD); \
+	   done
+
+UNINSTALL_MAN_CMD = rm -f $(MANDESTDIR)/$$p
+
+uninstall-man:
+	@list='$(MAN_FILES_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(UNINSTALL_MAN_CMD)"; \
+	   $(UNINSTALL_MAN_CMD); \
+	 done
+
+UNINSTALL_PKGCONFIG_CMD = rm -f $(PKGCONFIGDESTDIR)/$$p
+
+uninstall-pkgconfig:
+	@list='$(PKGCONFIG_FILES_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(UNINSTALL_PKGCONFIG_CMD)"; \
+	   $(UNINSTALL_PKGCONFIG_CMD); \
+	 done
+
 
 ##############################################################################
 #                           MISCELLANEOUS RULES                              #

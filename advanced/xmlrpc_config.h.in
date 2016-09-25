@@ -26,68 +26,29 @@
 #ifndef XMLRPC_CONFIG_H_INCLUDED
 #define XMLRPC_CONFIG_H_INCLUDED
 
-/* We hope to replace xmlrpc_amconfig.h some day with something that 
-   doesn't require a whole special set of software to build, to make
-   Xmlrpc-c approachable by dumber developers.
-*/
-#include "xmlrpc_amconfig.h"
-
-#ifndef HAVE_SETGROUPS
-#define HAVE_SETGROUPS 0
-#endif
-#ifndef HAVE_ASPRINTF
-#define HAVE_ASPRINTF 0
-#endif
-#ifndef HAVE_SETENV
-#define HAVE_SETENV 0
-#endif
-#ifndef HAVE_PSELECT
-#define HAVE_PSELECT 0
-#endif
-#ifndef HAVE_WCSNCMP
-#define HAVE_WCSNCMP 1
-#endif
-#ifndef HAVE_GETTIMEOFDAY
-#define HAVE_GETTIMEOFDAY 0
-#endif
-#ifndef HAVE_LOCALTIME_R
-#define HAVE_LOCALTIME_R 0
-#endif
-#ifndef HAVE_GMTIME_R
-#define HAVE_GMTIME_R 0
-#endif
-#ifndef HAVE_STRCASECMP
-#define HAVE_STRCASECMP 0
-#endif
-#ifndef HAVE_STRICMP
-#define HAVE_STRICMP 0
-#endif
-#ifndef HAVE__STRICMP
-#define HAVE__STRICMP 0
-#endif
-#ifndef HAVE_STRTOLL
-#define HAVE_STRTOLL 0
-#endif
-#ifndef HAVE_STRTOQ
-#define HAVE_STRTOQ 0
-#endif
-#ifndef HAVE___STRTOLL
-#define HAVE___STRTOLL 0
-#endif
-#ifndef HAVE_STRTOUQ
-#define HAVE_STRTOUQ 0
-#endif
-#ifndef HAVE___STRTOULL
-#define HAVE___STRTOULL 0
-#endif
-#ifndef HAVE__STRTOUI64
-#define HAVE__STRTOUI64 0
-#endif
-
 #define HAVE_WCHAR_H @HAVE_WCHAR_H_DEFINE@
 #define HAVE_SYS_FILIO_H @HAVE_SYS_FILIO_H_DEFINE@
 #define HAVE_SYS_IOCTL_H @HAVE_SYS_IOCTL_H_DEFINE@
 #define HAVE_SYS_SELECT_H @HAVE_SYS_SELECT_H_DEFINE@
+
+#define HAVE_WCSNCMP @HAVE_WCSNCMP_DEFINE@
+#define HAVE_SETGROUPS @HAVE_SETGROUPS_DEFINE@
+#define HAVE_ASPRINTF @HAVE_ASPRINTF_DEFINE@
+#define HAVE_SETENV @HAVE_SETENV_DEFINE@
+#define HAVE_STRTOLL @HAVE_STRTOLL_DEFINE@
+#define HAVE_STRTOULL @HAVE_STRTOULL_DEFINE@
+#define HAVE_STRTOQ @HAVE_STRTOQ_DEFINE@
+#define HAVE_STRTOUQ @HAVE_STRTOUQ_DEFINE@
+#define HAVE___STRTOLL @HAVE___STRTOLL_DEFINE@
+#define HAVE___STRTOULL @HAVE___STRTOULL_DEFINE@
+#define HAVE__STRTOUI64 @HAVE__STRTOUI64_DEFINE@
+#define HAVE_PSELECT @HAVE_PSELECT_DEFINE@
+#define HAVE_GETTIMEOFDAY @HAVE_GETTIMEOFDAY_DEFINE@
+#define HAVE_LOCALTIME_R @HAVE_LOCALTIME_R_DEFINE@
+#define HAVE_GMTIME_R @HAVE_GMTIME_R_DEFINE@
+#define HAVE_STRCASECMP @HAVE_STRCASECMP_DEFINE@
+#define HAVE_STRICMP @HAVE_STRICMP_DEFINE@
+#define HAVE__STRICMP @HAVE__STRICMP_DEFINE@
 
 #define VA_LIST_IS_ARRAY @VA_LIST_IS_ARRAY_DEFINE@
 
@@ -122,7 +83,7 @@
    msvcrt.dll.  Note that there are other DLLs in the suite, but only the
    basic msvcrt.dll comes with Windows.
 
-   _WIN32, defined by the compiler, means we're using som Microsoft C runtime
+   _WIN32, defined by the compiler, means we're using some Microsoft C runtime
    library - it could be either the Microsoft Visual C++ runtime library or an
    older one.  Note that Xmlrpc-c is not supposed to be buildable with an
    older one, so we have no use for _WIN32.

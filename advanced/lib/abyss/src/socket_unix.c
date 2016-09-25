@@ -29,7 +29,6 @@
 
 #include "c_util.h"
 #include "int.h"
-#include "girstring.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "mallocvar.h"

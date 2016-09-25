@@ -59,6 +59,9 @@ distdir: distdir-common
 .PHONY: install
 install: install-common $(SUBDIRS:%=%/install)
 
+.PHONY: uninstall
+uninstall: uninstall-common $(SUBDIRS:%=%/uninstall)
+
 .PHONY: check
 check:
 

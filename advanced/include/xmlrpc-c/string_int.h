@@ -124,6 +124,12 @@ xmlrpc_makePrintableChar(char const input);
 #define STRSCAT(A,B) \
     (strncat((A), (B), sizeof(A)-strlen(A)-1))
 
+#define MEMSSET(a,b) (memset(a, b, sizeof(*a)))
+
+#define MEMSCPY(a,b) (memcpy(a, b, sizeof(*a)))
+
+#define MEMSZERO(a) (MEMSSET(a, 0))
+
 /* We could do this, but it works only in GNU C 
 #define SSPRINTF(TARGET, REST...) \
   (snprintf(TARGET, sizeof(TARGET) , ## REST)) 

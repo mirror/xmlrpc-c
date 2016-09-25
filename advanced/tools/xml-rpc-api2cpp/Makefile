@@ -56,6 +56,12 @@ $(SRCDIR)/tools/common.mk: srcdir blddir
 
 include depend.mk
 
+.PHONY: install
+install: install-common
+
+.PHONY: uninstall
+uninstall: uninstall-common
+
 .PHONY: clean
 clean: clean-common
 	rm -f $(PROGS)
