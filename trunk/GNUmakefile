@@ -170,7 +170,7 @@ uninstall: $(DEFAULT_SUBDIRS:%=%/uninstall) uninstall-common
 .PHONY: dep
 dep: version.h $(BLDDIR)/include/xmlrpc-c/config.h $(SUBDIRS:%=%/dep)
 
-xmlrpc_config.h xmlrpc_amconfig.h \
+xmlrpc_config.h \
 	:%:%.in $(SRCDIR)/configure
 	$(SRCDIR)/configure
 

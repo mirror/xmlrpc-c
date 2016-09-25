@@ -123,22 +123,19 @@ OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
 $(OBJECTS):%.o:%.c
 	$(CC) -c $(INCLUDES) $(CFLAGS_ALL) $<
 
-# config.h and xmlrpc_amconfig.h just describe the build environment.
-# We use them so that the example programs will build in users'
-# various environments.  If you're copying these examples, you can
-# just remove these headers from the programs and hardcode whatever is
-# right for your build environment.
+# config.h just describes the build environment.  We use it so that the
+# example programs will build in users' various environments.  If you're
+# copying these examples, you can just remove this header from the programs
+# and hardcode whatever is right for your build environment.
 
-$(OBJECTS): config.h xmlrpc_amconfig.h
+$(OBJECTS): config.h
 
 config.h:
 	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
-xmlrpc_amconfig.h:
-	$(LN_S) $(BLDDIR)/$@ .
 
 .PHONY: clean
 clean:
-	rm -f $(PROGS) *.o config.h xmlrpc_amconfig.h
+	rm -f $(PROGS) *.o config.h
 	$(MAKE) -C cpp clean
 
 .PHONY: distclean

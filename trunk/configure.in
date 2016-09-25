@@ -1,7 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT(include/xmlrpc-c/base.h)
-AM_CONFIG_HEADER(xmlrpc_amconfig.h)
 
 dnl =======================================================================
 dnl Define PACKAGE, VERSION, @PACKAGE@, @VERSION@
@@ -359,26 +358,152 @@ AC_MSG_ERROR(your C library does not provide vsnprintf)
 
 dnl Unicode function needed by test suites.
 AC_CHECK_FUNCS(wcsncmp)
+if test "x$ac_cv_func_wcsncmp" = x""yes; then
+  HAVE_WCSNCMP_DEFINE=1
+else
+  HAVE_WCSNCMP_DEFINE=0
+fi
+AC_SUBST(HAVE_WCSNCMP_DEFINE)
 
 dnl CygWin doesn't provide setgroups.
 AC_CHECK_FUNCS(setgroups)
+if test "x$ac_cv_func_setgroups" = x""yes; then
+  HAVE_SETGROUPS_DEFINE=1
+else
+  HAVE_SETGROUPS_DEFINE=0
+fi
+AC_SUBST(HAVE_SETGROUPS_DEFINE)
 
 AC_CHECK_FUNCS(asprintf)
+if test "x$ac_cv_func_asprintf" = x""yes; then
+  HAVE_ASPRINTF_DEFINE=1
+else
+  HAVE_ASPRINTF_DEFINE=0
+fi
+AC_SUBST(HAVE_ASPRINTF_DEFINE)
 
-AC_CHECK_FUNCS(setenv strtoll strtoull strtoq strtouq __strtoll __strtoull)
+AC_CHECK_FUNCS(setenv)
+if test "x$ac_cv_func_setenv" = x""yes; then
+  HAVE_SETENV_DEFINE=1
+else
+  HAVE_SETENV_DEFINE=0
+fi
+AC_SUBST(HAVE_SETENV_DEFINE)
+
+AC_CHECK_FUNCS(strtoll)
+if test "x$ac_cv_func_strtoll" = x""yes; then
+  HAVE_STRTOLL_DEFINE=1
+else
+  HAVE_STRTOLL_DEFINE=0
+fi
+AC_SUBST(HAVE_STRTOLL_DEFINE)
+
+AC_CHECK_FUNCS(strtoull)
+if test "x$ac_cv_func_strtoull" = x""yes; then
+  HAVE_STRTOULL_DEFINE=1
+else
+  HAVE_STRTOULL_DEFINE=0
+fi
+AC_SUBST(HAVE_STRTOULL_DEFINE)
+
+AC_CHECK_FUNCS(strtoq)
+if test "x$ac_cv_func_strtoq" = x""yes; then
+  HAVE_STRTOQ_DEFINE=1
+else
+  HAVE_STRTOQ_DEFINE=0
+fi
+AC_SUBST(HAVE_STRTOQ_DEFINE)
+
+AC_CHECK_FUNCS(strtouq)
+if test "x$ac_cv_func_strtouq" = x""yes; then
+  HAVE_STRTOUQ_DEFINE=1
+else
+  HAVE_STRTOUQ_DEFINE=0
+fi
+AC_SUBST(HAVE_STRTOUQ_DEFINE)
+
+AC_CHECK_FUNCS(__strtoll)
+if test "x$ac_cv_func___strtoll" = x""yes; then
+  HAVE___STRTOLL_DEFINE=1
+else
+  HAVE___STRTOLL_DEFINE=0
+fi
+AC_SUBST(HAVE___STRTOLL_DEFINE)
+
+AC_CHECK_FUNCS(__strtoull)
+if test "x$ac_cv_func___strtoull" = x""yes; then
+  HAVE___STRTOULL_DEFINE=1
+else
+  HAVE___STRTOULL_DEFINE=0
+fi
+AC_SUBST(HAVE___STRTOULL_DEFINE)
+
+AC_CHECK_FUNCS(_strtoui64)
+if test "x$ac_cv_func__strtoui64" = x""yes; then
+  HAVE__STRTOUI64_DEFINE=1
+else
+  HAVE__STRTOUI64_DEFINE=0
+fi
+AC_SUBST(HAVE__STRTOUI64_DEFINE)
 
 dnl uclib doesn't have pselect
 AC_CHECK_FUNCS(pselect)
+if test "x$ac_cv_func_pselect" = x""yes; then
+  HAVE_PSELECT_DEFINE=1
+else
+  HAVE_PSELECT_DEFINE=0
+fi
+AC_SUBST(HAVE_PSELECT_DEFINE)
 
 dnl Windows doesn't have gettimeofday, localtime_r, or gmtime_r
 AC_CHECK_FUNCS(gettimeofday)
+if test "x$ac_cv_func_gettimeofday" = x""yes; then
+  HAVE_GETTIMEOFDAY_DEFINE=1
+else
+  HAVE_GETTIMEOFDAY_DEFINE=0
+fi
+AC_SUBST(HAVE_GETTIMEOFDAY_DEFINE)
+
 AC_CHECK_FUNCS(localtime_r)
+if test "x$ac_cv_func_localtime_r" = x""yes; then
+  HAVE_LOCALTIME_R_DEFINE=1
+else
+  HAVE_LOCALTIME_R_DEFINE=0
+fi
+AC_SUBST(HAVE_LOCALTIME_R_DEFINE)
+
 AC_CHECK_FUNCS(gmtime_r)
+if test "x$ac_cv_func_gmtime_r" = x""yes; then
+  HAVE_GMTIME_R_DEFINE=1
+else
+  HAVE_GMTIME_R_DEFINE=0
+fi
+AC_SUBST(HAVE_GMTIME_R_DEFINE)
 
 dnl Windows doesn't have strcasecmp;
 AC_CHECK_FUNCS(strcasecmp)
+if test "x$ac_cv_func_strcasecmp" = x""yes; then
+  HAVE_STRCASECMP_DEFINE=1
+else
+  HAVE_STRCASECMP_DEFINE=0
+fi
+AC_SUBST(HAVE_STRCASECMP_DEFINE)
+
 AC_CHECK_FUNCS(stricmp)
+if test "x$ac_cv_func_stricmp" = x""yes; then
+  HAVE_STRICMP_DEFINE=1
+else
+  HAVE_STRICMP_DEFINE=0
+fi
+AC_SUBST(HAVE_STRICMP_DEFINE)
+
 AC_CHECK_FUNCS(_stricmp)
+if test "x$ac_cv_func__stricmp" = x""yes; then
+  HAVE__STRICMP_DEFINE=1
+else
+  HAVE__STRICMP_DEFINE=0
+fi
+AC_SUBST(HAVE__STRICMP_DEFINE)
 
 dnl =======================================================================
 dnl Checks for operating system features.
