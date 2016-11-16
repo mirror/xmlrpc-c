@@ -435,7 +435,7 @@ xml_parse(xmlrpc_env *      const envP,
           xml_element **    const resultPP) {
 /*----------------------------------------------------------------------------
   This is an implementation of the interface declared in xmlparser.h.  This
-  implementation uses Xmlrpc-c's private fork of Expat.
+  implementation uses Libxml2.
 -----------------------------------------------------------------------------*/
     ParseContext context;
     xmlParserCtxt * parserP;
