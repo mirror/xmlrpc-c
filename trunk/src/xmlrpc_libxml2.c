@@ -427,6 +427,52 @@ static xmlSAXHandler const saxHandler = {
 
 
 
+static void
+removeDocSizeLimit(xmlParserCtx * const parserP ATTR_UNUSED) {
+/*----------------------------------------------------------------------------
+   Set up *parserP to accept a document of any size.
+
+   Newer Libxml2 by default fails any attempt to parse a document larger than
+   10 MiB, because it wants to avoid running the system out of resources.
+   This is not an appropriate role for the library, and 10 MiB is a completely
+   arbitrary number anyway, so we don't use this feature.
+-----------------------------------------------------------------------------*/
+#if LIBXML_VERSION > 20700
+
+    xmlCtxtUseOptions(parserP, XML_PARSE_HUGE);
+
+#else
+
+    /* There's never a size limit */
+
+#endif
+}
+
+
+
+static void
+createParser(xmlrpc_env *    const envP,
+             ParseContext *  const contextP,
+             xmlParserCtx ** const parserPP) {
+/*----------------------------------------------------------------------------
+   Create an appropriate Libxml2 parser for our purpose.
+-----------------------------------------------------------------------------*/
+    xmlParserCtx * parserP;
+
+    parserP = xmlCreatePushParserCtxt((xmlSAXHandler *)&saxHandler, contextP,
+                                        NULL, 0, NULL);
+
+    if (!parserP)
+        xmlrpc_faultf(envP, "Failed to create libxml2 parser.");
+    else {
+        removeDocSizeLimit(parserP);
+
+        *parserPP = parserP;
+    }
+}
+
+
+
 void
 xml_parse(xmlrpc_env *      const envP,
           const char *      const xmlData,
@@ -447,11 +493,9 @@ xml_parse(xmlrpc_env *      const envP,
     context.rootP    = NULL;
     context.currentP = NULL;
 
-    parserP = xmlCreatePushParserCtxt((xmlSAXHandler *)&saxHandler, &context,
-                                      NULL, 0, NULL);
-    if (!parserP)
-        xmlrpc_faultf(envP, "Failed to create libxml2 parser.");
-    else {
+    createParser(envP, &context, &parserP);
+
+    if (!envP->fault_occurred) {
         int rc;
 
         rc = xmlParseChunk(parserP, xmlData, xmlDataLen, 1);
