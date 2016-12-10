@@ -355,17 +355,28 @@ endif
 #                     MISCELLANEOUS
 ##############################################################################
 
-# BUILDTOOL_CC is the compiler to use to generate build tools, which we
+# CC_FOR_BUILD is the compiler to use to generate build tools, which we
 # will then run to build the product.  The typical reason this would be
 # different from CC is that you're cross-compiling: the product will run
 # in Environment A, but you're building in Environment B, so you must
 # build the build tools for Environment B.
 
-# The cross compiling user can update config.mk or override
-# BUILDTOOL_CC on a make command.
+# The build system uses CC_FOR_BUILD for linking as well.
 
-BUILDTOOL_CC = $(CC)
-BUILDTOOL_CCLD = $(CCLD)
+# The build system use CFLAGS_FOR_BUILD and LDFLAGS_FOR_BUILD when compiling
+# and linking, respectively, build tools.
+
+# The cross compiling user can update config.mk or override
+# CC_FOR_BUILD on a make command.
+
+# LDFLAGS_FOR_BUILD is similar
+
+# These variable names are conventional.
+
+CC_FOR_BUILD = $(CC)
+CFLAGS_FOR_BUILD = $(CFLAGS)
+LDFLAGS_FOR_BUILD = $(LDFLAGS)
+
 
 ifeq ($(C_COMPILER_GNU),yes)
   CFLAGS_NO_INLINE_WARNING = -Wno-inline
