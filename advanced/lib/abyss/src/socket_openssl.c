@@ -257,6 +257,8 @@ channelDestroy(TChannel * const channelP) {
     if (!channelOpenSslP->userSuppliedSsl)
         SSL_shutdown(channelOpenSslP->sslP);
 
+    close(channelOpenSslP->fd);
+
     free(channelOpenSslP);
 }
 
@@ -481,6 +483,7 @@ makeChannelFromSsl(SSL *         const sslP,
         
         channelOpenSslP->sslP = sslP;
         channelOpenSslP->userSuppliedSsl = userSuppliedSsl;
+        channelOpenSslP->fd = SSL_get_fd(sslP);
         
         /* This should be ok as far as I can tell */
         ChannelCreate(&channelVtbl, channelOpenSslP, &channelP);
