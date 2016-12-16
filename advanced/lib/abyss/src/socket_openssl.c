@@ -254,9 +254,10 @@ channelDestroy(TChannel * const channelP) {
 
     struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
 
-    if (!channelOpenSslP->userSuppliedSsl)
+    if (!channelOpenSslP->userSuppliedSsl){
         SSL_shutdown(channelOpenSslP->sslP);
-
+        SSL_free(channelOpenSslP->sslP);
+    }
     close(channelOpenSslP->fd);
 
     free(channelOpenSslP);
