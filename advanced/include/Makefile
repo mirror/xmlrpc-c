@@ -128,8 +128,11 @@ ifeq ($(ENABLE_CGI_SERVER),yes)
   COMPAT_LINK_CMDS += $(LN_S) xmlrpc-c/server_cgi.h xmlrpc_cgi.h;
 endif
 
-ifeq ($(HAVE_OPENSSL),Y)
-  HEADERS_TO_INSTALL += xmlrpc-c/openssl_thread.h
+ifeq ($(HAVE_OPENSSL),yes)
+  HEADERS_TO_INSTALL += \
+    xmlrpc-c/openssl_thread.h \
+    xmlrpc-c/abyss_openssl.h \
+
 endif
 
 default: all
