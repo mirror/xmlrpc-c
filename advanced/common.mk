@@ -96,6 +96,9 @@ endif
 
 LDFLAGS_ALL = $(LDFLAGS_PTHREAD) $(LDFLAGS_PERSONAL) $(LDFLAGS)
 
+LDFLAGS_FOR_BUILD_ALL = \
+  $(LDFLAGS_PTHREAD) $(LDFLAGS_PERSONAL) $(LDFLAGS_FOR_BUILD)
+
 ##############################################################################
 #                        STATIC LINK LIBRARY RULES                           #
 ##############################################################################
@@ -327,6 +330,9 @@ endif
 
 CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS_TARGET) \
   $(INCLUDES) $(CFLAGS_PERSONAL) $(CFLAGS)
+
+CFLAGS_ALL_FOR_BUILD = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS_TARGET) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CFLAGS_FOR_BUILD)
 
 CXXFLAGS_ALL = $(CXXFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS_TARGET) \
   $(INCLUDES) $(CFLAGS_PERSONAL) $(CXXFLAGS)

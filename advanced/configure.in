@@ -766,10 +766,8 @@ AC_SUBST(CPP_WARN_FLAGS)
 BUILDDIR=$(pwd)
 AC_SUBST(BUILDDIR)
 
-AR=${ac_tool_prefix}ar
-AC_SUBST([AR])
-RANLIB=${ac_tool_prefix}ranlib
-AC_SUBST([RANLIB])
+AC_CHECK_TOOL([AR], [ar])
+AC_PROG_RANLIB
 
 dnl =======================================================================
 dnl Output our results.
