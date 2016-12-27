@@ -217,7 +217,11 @@ releaseDecomposition(const struct decompTreeNode * const decompRootP) {
         xmlrpc_strfree(*decompRootP->store.Tstring.valueP);
         break;
     case 'w':
+#if HAVE_UNICODE_WCHAR
         free((void*)*decompRootP->store.TwideString.valueP);
+#else
+	XMLRPC_ASSERT(false);
+#endif
         break;
     case '6':
         free((void*)*decompRootP->store.TbitString.valueP);

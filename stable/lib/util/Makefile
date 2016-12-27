@@ -41,10 +41,20 @@ $(SRCDIR)/common.mk: srcdir blddir
 LIBOBJS = \
   casprintf.o \
   cmdline_parser.o \
-  cmdline_parser_cpp.o \
   getoptx.o \
   string_parser.o \
   stripcaseeq.o \
+
+# If the overall build is not building C++ libraries, then it isn't building
+# any tools that use them, and it's a good assumption that it isn't building
+# any program written in C++.  Since the main reason for not building C++
+# libraries is that your build system can't compile C++, it makes sense not to
+# attempt to compile any C++ code if we're not building C++ libraries.  Hence,
+# we don't build any C++ code here if ENABLE_CPLUSPLUS is "no".
+
+ifeq ($(ENABLE_CPLUSPLUS),yes)
+  LIBOBJS += cmdline_parser_cpp.o
+endif
 
 .PHONY: all
 all: $(LIBOBJS)
