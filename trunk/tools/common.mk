@@ -15,6 +15,23 @@ CLIENTPP_LDLIBS = \
   -Lblddir/lib/libutil++ \
   -lxmlrpc_util++ \
 
+SERVER_ABYSS_LDLIBS = \
+  $(LIBXMLRPC_SERVER_ABYSS) \
+  $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC_SERVER) \
+  $(LIBXMLRPC) \
+  $(LIBXMLRPC_XML) \
+  $(LIBXMLRPC_UTIL) \
+  $(LDLIBS_XML) \
+
+SERVER_ABYSS_LIBS_DEP = \
+  $(LIBXMLRPC_SERVER_ABYSS) \
+  $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC_SERVER) \
+  $(LIBXMLRPC) \
+  $(LIBXMLRPC_XML) \
+  $(LIBXMLRPC_UTIL) \
+
 include $(SRCDIR)/common.mk
 
 ifneq ($(OMIT_LIB_RULE),Y)
