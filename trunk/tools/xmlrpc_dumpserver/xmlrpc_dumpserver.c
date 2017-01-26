@@ -62,10 +62,13 @@ parseCommandLine(int                  const argc,
         casprintf(errorP, "Command syntax error.  %s", error);
         strfree(error);
     } else {
+        *errorP = NULL;  /* initial assumption */
+
         if (cmd_argumentCount(cp) > 0)
             casprintf(errorP, "No non-option arguments are possible.  "
                       "You specified %u", cmd_argumentCount(cp));
-        else {
+
+        if (!*errorP) {
             if (cmd_optionIsPresent(cp, "port")) {
                 cmdlineP->port = cmd_getOptionValueUint(cp, "port");
             } else {
@@ -165,10 +168,33 @@ defaultMethod(xmlrpc_env *   const envP,
 
 
 static void
+setServerParm(xmlrpc_server_abyss_parms * const serverparmP,
+              xmlrpc_registry *           const registryP,
+              unsigned int                const portNum,
+              size_t *                    const lengthP) {
+
+    serverparmP->config_file_name   = NULL;
+    serverparmP->registryP          = registryP;
+    serverparmP->port_number        = portNum;
+    serverparmP->log_file_name      = NULL;
+    serverparmP->keepalive_timeout  = 0;
+    serverparmP->keepalive_max_conn = 0;
+    serverparmP->timeout            = 0;
+    serverparmP->dont_advertise     = false;
+    serverparmP->socket_bound       = false;
+    serverparmP->uri_path           = NULL;
+    serverparmP->chunk_response     = false;
+    serverparmP->enable_shutdown    = true;
+
+    *lengthP = XMLRPC_APSIZE(enable_shutdown);
+}
+
+
+
+static void
 runServer(unsigned int  const portNum,
           const char ** const errorP) {
 
-    xmlrpc_server_abyss_parms serverparm;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
 
@@ -186,15 +212,14 @@ runServer(unsigned int  const portNum,
             casprintf(errorP, "xmlrpc_registry_add_method3() failed.  %s",
                       env.fault_string);
         else {
-            serverparm.config_file_name = NULL;
-            serverparm.registryP        = registryP;
-            serverparm.port_number      = portNum;
-            serverparm.log_file_name    = NULL;
+            xmlrpc_server_abyss_parms serverparm;
+            size_t parmLength;
 
-            printf("Running XML-RPC server...\n");
+            setServerParm(&serverparm, registryP, portNum, &parmLength);
 
-            xmlrpc_server_abyss(&env,
-                                &serverparm, XMLRPC_APSIZE(log_file_name));
+            printf("Running XML-RPC server on TCP Port %u...\n", portNum);
+
+            xmlrpc_server_abyss(&env, &serverparm, parmLength);
 
             if (env.fault_occurred)
                 casprintf(errorP, "xmlrpc_server_abyss() failed.  %s",
@@ -219,7 +244,7 @@ main(int           const argc,
     parseCommandLine(argc, argv, &cmdline, &error);
 
     if (error) {
-        fprintf(stderr, "Command syntax error.  %s", error);
+        fprintf(stderr, "Command syntax error.  %s\n", error);
         strfree(error);
         exitCode = 10;
     } else {
@@ -228,7 +253,7 @@ main(int           const argc,
         runServer(cmdline.port, &error);
 
         if (error) {
-            fprintf(stderr, "Server on port %u failed.  %s",
+            fprintf(stderr, "Server on port %u failed.  %s\n",
                     cmdline.port, error);
             strfree(error);
             exitCode = 1;
@@ -239,3 +264,6 @@ main(int           const argc,
     }
     return exitCode;
 }
+
+
+

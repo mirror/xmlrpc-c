@@ -25,6 +25,10 @@ ifeq ($(MUST_BUILD_CLIENT),yes)
   endif
 endif
 
+ifeq ($(ENABLE_CPLUSPLUS),yes)
+  SUBDIRS += xmlrpc_dumpserver
+endif
+
 .PHONY: all clean distclean install uninstall check dep
 
 all: $(SUBDIRS:%=%/all)
