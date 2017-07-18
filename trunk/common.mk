@@ -42,7 +42,7 @@ GCC_CXX_WARNINGS = $(GCC_WARNINGS)  -Wsynth
 # execute() methods and not the other (as cpp/test/registry.cpp does), but the
 # code works fine.
 
-# The NDEBUG macro says not to build code that assumes there are no bugs.
+# The NDEBUG macro says not build the code to assume there are no bugs.
 # This makes the code go faster.  The main thing it does is tell the C library
 # to make assert() a no-op as opposed to generating code to check the
 # assertion and crash the program if it isn't really true.  You can add
