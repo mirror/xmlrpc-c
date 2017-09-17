@@ -756,9 +756,14 @@ serverAbyss_impl::getListenName(struct sockaddr ** const sockaddrPP,
 
     const char * error;
 
+#ifdef WIN32    
+    ChanSwitchWinGetListenName(this->chanSwitchP,
+                               sockaddrPP, sockaddrLenP, &error);
+#else
     ChanSwitchUnixGetListenName(this->chanSwitchP,
                                 sockaddrPP, sockaddrLenP, &error);
-
+#endif
+    
     if (error) {
         string const e(error);
         xmlrpc_strfree(error);
