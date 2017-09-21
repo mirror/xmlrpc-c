@@ -265,21 +265,16 @@ htmlTail(void) {
 
 
 static void
-sendDirectoryDocument(TList *      const listP,
-                      bool         const ascending,
-                      uint16_t     const sort,
-                      bool         const text,
-                      const char * const uri,
-                      MIMEType *   const mimeTypeP,
-                      TSession *   const sessionP) {
+sendDirectoryDocumentHeading(TSession *   const sessionP,
+                             const char * const uri,
+                             bool         const text) {
 
     char z[4096];
-    char *p,z1[26],z2[20],z3[9],u;
-    const char * z4;
-    int16_t i;
-    uint32_t k;
-
+    
     if (text) {
+        size_t i;
+        char * p;
+        
         sprintf(z, "Index of %s\r\n", uri);
         i = strlen(z)-2;
         p = z + i + 2;
@@ -304,6 +299,26 @@ sendDirectoryDocument(TList *      const listP,
     }
 
     HTTPWriteBodyChunk(sessionP, z, strlen(z));
+}
+
+
+
+static void
+sendDirectoryDocument(TList *      const listP,
+                      bool         const ascending,
+                      uint16_t     const sort,
+                      bool         const text,
+                      const char * const uri,
+                      MIMEType *   const mimeTypeP,
+                      TSession *   const sessionP) {
+
+    char z[4096];
+    char *p,z1[26],z2[20],z3[9],u;
+    const char * z4;
+    int16_t i;
+    uint32_t k;
+
+    sendDirectoryDocumentHeading(sessionP, uri, text);
 
     /* Sort the files */
     qsort(listP->item, listP->size, sizeof(void *),
