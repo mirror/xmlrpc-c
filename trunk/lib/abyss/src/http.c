@@ -53,6 +53,7 @@ HTTPMethodName(TMethod const method) {
     case m_options: return "OPTIONS";
     }
     assert(false);  /* Compiler ought to know this, but doesn't */
+    return 0; /* quiet compiler warning */
 }
 
 
