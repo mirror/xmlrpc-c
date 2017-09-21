@@ -8,20 +8,21 @@
 
 #define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 
+#include "xmlrpc_config.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#ifdef _WIN32
+#if MSVCRT
   #include <io.h>
 #else
   #include <unistd.h>
 #endif
 #include <fcntl.h>
 
-#include "xmlrpc_config.h"
 #include "bool.h"
 #include "int.h"
 #include "girmath.h"
