@@ -52,7 +52,7 @@ statusCallback(HINTERNET     const hInternet,
 
 
 struct xmlrpc_client_transport {
-    lock * listLockP;
+    struct lock * listLockP;
     struct list_head rpcList;
         /* List of all RPCs that exist for this transport.  An RPC exists
            from the time the user requests it until the time the user 
