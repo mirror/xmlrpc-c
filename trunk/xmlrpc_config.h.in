@@ -223,6 +223,12 @@
   #define XMLRPC_CHDIR chdir
 #endif
 
+#if MSVCRT
+  #define XMLRPC_GETPID _getpid
+#else
+  #define XMLRPC_GETPID getpid
+#endif
+
 #define HAVE_OPENSSL @HAVE_OPENSSL_DEFINE@
 
 

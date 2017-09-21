@@ -8,6 +8,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#if MSVCRT
+  #include <process.h>
+#endif
 #include <string.h>
 #include <time.h>
 #include <errno.h>
@@ -812,7 +816,7 @@ serverFunc(void * const userHandle) {
 
     trace(&srvP->tracer,
           "Thread starting to handle requests on a new connection.  "
-          "PID = %d", getpid());
+          "PID = %d", XMLRPC_GETPID());
 
     requestCount = 0;
     connectionDone = false;
@@ -865,7 +869,7 @@ serverFunc(void * const userHandle) {
             ConnReadInit(connectionP);
         }
     }
-    trace(&srvP->tracer, "PID %d done with connection", getpid());
+    trace(&srvP->tracer, "PID %d done with connection", XMLRPC_GETPID());
 }
 
 
@@ -1619,7 +1623,7 @@ ServerDaemonize(TServer * const serverP) {
     if (srvP->pidfileP) {
         char z[16];
     
-        sprintf(z, "%d", getpid());
+        sprintf(z, "%d", XMLRPC_GETPID());
         FileWrite(srvP->pidfileP, z, strlen(z));
         FileClose(srvP->pidfileP);
     }
