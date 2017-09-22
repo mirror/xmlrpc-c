@@ -441,7 +441,7 @@ public:
     class BrokenConnectionEx {};
 
 private:
-    struct clientXmlTransport_pstream_impl * const implP;
+    class clientXmlTransport_pstream_impl * const implP;
 };
 
 
