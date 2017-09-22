@@ -231,6 +231,12 @@
 
 #define HAVE_OPENSSL @HAVE_OPENSSL_DEFINE@
 
+#if MSVCRT
+  #define XMLRPC_FINITE _finite
+#else
+  #define XMLRPC_FINITE finite
+#endif
+
 
 
 #endif
