@@ -104,7 +104,7 @@ processArguments(xmlrpc_env *         const envP,
         cmdlineP->url        = cmd_getArgument(cp, 0);
         cmdlineP->methodName = cmd_getArgument(cp, 1);
         cmdlineP->paramCount = cmd_argumentCount(cp) - 2;
-        MALLOCARRAY(cmdlineP->params, cmdlineP->paramCount);
+        MALLOCARRAY_NOFAIL(cmdlineP->params, cmdlineP->paramCount);
         for (i = 0; i < cmdlineP->paramCount; ++i)
             cmdlineP->params[i] = cmd_getArgument(cp, i+2);
     }
@@ -285,39 +285,52 @@ getCdata(xmlrpc_env *  const envP,
          const char ** const cursorP,
          const char ** const cdataP) {
 
-    char text[strlen(*cursorP)+1];
-    unsigned int textCursor;
-    bool end;
-    const char * cursor;
+    size_t const cdataSizeBound = strlen(*cursorP) + 1;
 
-    cursor = *cursorP;  /* initial value */
+    char * text;
 
-    for (textCursor = 0, end = false; !end; ) {
-        switch (*cursor) {
-        case ',': 
-        case ':': 
-        case '(': 
-        case ')': 
-        case '{': 
-        case '}': 
-        case '\0':
-            end = true;
-            break;
-        case '\\': {
-            ++cursor;  // skip backslash escape character
-            if (!*cursor)
-                setError(envP, "Nothing after escape character ('\\')");
-            else
-                text[textCursor++] = *cursor++;
-        }; break;
-        default:
-            text[textCursor++]= *cursor++;
+    MALLOCARRAY(text, cdataSizeBound);
+
+    if (text == NULL)
+        setError(envP, "Failed to allocate a buffer of size %u "
+                 "to compute cdata", (unsigned)cdataSizeBound);
+    else {
+        unsigned int textCursor;
+        bool end;
+        const char * cursor;
+
+        cursor = *cursorP;  /* initial value */
+
+        for (textCursor = 0, end = false; !end; ) {
+            switch (*cursor) {
+            case ',': 
+            case ':': 
+            case '(': 
+            case ')': 
+            case '{': 
+            case '}': 
+            case '\0':
+                end = true;
+                break;
+            case '\\': {
+                ++cursor;  // skip backslash escape character
+                if (!*cursor)
+                    setError(envP, "Nothing after escape character ('\\')");
+                else
+                    text[textCursor++] = *cursor++;
+            }; break;
+            default:
+                text[textCursor++]= *cursor++;
+            }
+            assert(textCursor <= cdataSizeBound);
         }
-    }
-    text[textCursor++] = '\0';
+        text[textCursor++] = '\0';
 
-    *cdataP = strdup(text);
-    *cursorP = cursor;
+        assert(textCursor <= cdataSizeBound);
+    
+        *cdataP  = text;
+        *cursorP = cursor;
+    }
 }
 
 
