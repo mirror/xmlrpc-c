@@ -190,13 +190,19 @@ test_value_double(void) {
     TEST(d == -3.25);
     xmlrpc_DECREF(v2);
 
-    v = xmlrpc_double_new(&env, 1.0/0.0);
+    /* Older compilers don't have INFINITY and NAN, so we compute them here.
+       But newer compilers recognize an error if they see you dividing by
+       zero, so we have to make it nonobvious that we're doing that.
+    */
+    double const zero = sin(0);
+    
+    v = xmlrpc_double_new(&env, 1.0/zero);  /* +INFINITY */
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_double_new(&env, -1.0/0.0);
+    v = xmlrpc_double_new(&env, -1.0/zero); /* -INFINITY */
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_double_new(&env, 0.0/0.0);
+    v = xmlrpc_double_new(&env, 0.0/zero);  /* NAN */
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
