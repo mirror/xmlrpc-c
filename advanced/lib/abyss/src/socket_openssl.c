@@ -254,8 +254,11 @@ channelDestroy(TChannel * const channelP) {
 
     struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
 
-    if (!channelOpenSslP->userSuppliedSsl)
+    if (!channelOpenSslP->userSuppliedSsl){
         SSL_shutdown(channelOpenSslP->sslP);
+        SSL_free(channelOpenSslP->sslP);
+    }
+    close(channelOpenSslP->fd);
 
     free(channelOpenSslP);
 }
@@ -481,6 +484,7 @@ makeChannelFromSsl(SSL *         const sslP,
         
         channelOpenSslP->sslP = sslP;
         channelOpenSslP->userSuppliedSsl = userSuppliedSsl;
+        channelOpenSslP->fd = SSL_get_fd(sslP);
         
         /* This should be ok as far as I can tell */
         ChannelCreate(&channelVtbl, channelOpenSslP, &channelP);
@@ -636,44 +640,32 @@ createChannelFromAcceptedConn(int             const acceptedFd,
                               void **         const channelInfoPP,
                               const char **   const errorP) {
 
-    struct ChannelOpenSsl * channelOpenSslP;
+    SSL * sslP;
+    const char * error;
 
-    MALLOCVAR(channelOpenSslP);
-
-    if (!channelOpenSslP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory");
-    else {
-        SSL * sslP;
-        const char * error;
-
-        createSslFromAcceptedConn(acceptedFd, sslCtxP, &sslP, &error);
+    createSslFromAcceptedConn(acceptedFd, sslCtxP, &sslP, &error);
         
-        if (error) {
-            xmlrpc_asprintf(errorP, "Failed to create an OpenSSL connection "
-                            "from the accepted TCP connection.  %s", error);
-            xmlrpc_strfree(error);
-        } else {
-            struct abyss_openSsl_chaninfo * channelInfoP;
+    if (error) {
+        xmlrpc_asprintf(errorP, "Failed to create an OpenSSL connection "
+                        "from the accepted TCP connection.  %s", error);
+        xmlrpc_strfree(error);
+    } else {
+        struct abyss_openSsl_chaninfo * channelInfoP;
 
-            makeChannelInfo(&channelInfoP, sslP, errorP);
-            if (!*errorP) {
-                bool const userSuppliedFalse = false;
+        makeChannelInfo(&channelInfoP, sslP, errorP);
+        if (!*errorP) {
+            bool const userSuppliedFalse = false;
 
-                makeChannelFromSsl(sslP, userSuppliedFalse,
-                                   channelPP, errorP);
+            makeChannelFromSsl(sslP, userSuppliedFalse,
+                               channelPP, errorP);
 
-                if (*errorP)
-                    free(channelInfoP);
-                else
-                    *channelInfoPP = channelInfoP;
-            }
             if (*errorP)
-                SSL_free(sslP);
+                free(channelInfoP);
             else
-                channelOpenSslP->sslP = sslP;
+                *channelInfoPP = channelInfoP;
         }
         if (*errorP)
-            free(channelOpenSslP);
+            SSL_free(sslP);
     }
 }
 

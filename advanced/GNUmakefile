@@ -117,6 +117,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'FEATURE_LIST="$(FEATURE_LIST)"'				>>$@
 	@echo 'PREFIX="$(PREFIX)"'					>>$@
 	@echo 'HEADERINST_DIR="$(HEADERINST_DIR)"'                      >>$@
+	@echo 'PROGRAMINST_DIR="$(PROGRAMINST_DIR)"'                    >>$@
 	@echo 'LIBINST_DIR="$(LIBINST_DIR)"'                            >>$@
 	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
@@ -162,6 +163,7 @@ distdir: distdir-common
 install: $(DEFAULT_SUBDIRS:%=%/install) install-common
 
 HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
+PGROGRAMDESTDIR = $(DESTDIR)$(PROGRAMINST_DIR)
 
 .PHONY: uninstall
 uninstall: $(DEFAULT_SUBDIRS:%=%/uninstall) uninstall-common
