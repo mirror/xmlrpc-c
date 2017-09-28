@@ -38,4 +38,11 @@ ChannelWinCreateWinsock(SOCKET                       const fd,
                         struct abyss_win_chaninfo ** const channelInfoPP,
                         const char **                const errorP);
 
+XMLRPC_ABYSS_EXPORTED
+void
+ChanSwitchWinGetListenName(TChanSwitch *      const chanSwitchP,
+                           struct sockaddr ** const sockaddrPP,
+                           size_t  *          const sockaddrLenP,
+                           const char **      const errorP);
+
 typedef SOCKET TOsSocket;

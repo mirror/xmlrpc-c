@@ -1062,3 +1062,22 @@ ChanSwitchWinCreate2(int                     const protocolFamily,
 
 
 
+void
+ChanSwitchWinGetListenName(TChanSwitch *      const chanSwitchP,
+                           struct sockaddr ** const sockaddrPP,
+                           size_t  *          const sockaddrLenP,
+                           const char **      const errorP) {
+    
+    struct socketWin * const socketWinP = chanSwitchP->implP;
+
+    // Anyone who knows how to do this with Winsock, please submit a patch.
+    
+    xmlrpc_asprintf(errorP, "Code has not been written "
+                    "(ChanSwitchWinGetListenName in "
+                    "lib/abyss/src/socket_win.c) to determine the name of the "
+                    "socket on which the channel switch is listening for "
+                    "connections");
+}
+
+
+
