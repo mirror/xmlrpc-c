@@ -626,8 +626,8 @@ public:
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         client_xml client0(&transportc0);
-        carriageParm_http0 carriageParmHttp("http://suckthis.com");
-        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
+        carriageParm_http0 carriageParmHttp("http://nosuchserver8677.com");
+        carriageParm_curl0 carriageParmCurl("http://nosuchserver8677.com");
         connection connection0(&client0, &carriageParmHttp);
 
         paramList paramList0;

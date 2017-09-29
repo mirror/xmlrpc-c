@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
-#ifdef _WIN32
+#if MSVCRT
 #  include <io.h>
 #  pragma comment(lib, "Ws2_32.lib")
 #else
@@ -523,7 +523,7 @@ chanSwitchCreateOsSocket(TOsSocket      const socketFd,
                          TChanSwitch ** const chanSwitchPP,
                          const char **  const errorP) {
 
-#ifdef _WIN32
+#if MSVCRT
     ChanSwitchWinCreateWinsock(socketFd, chanSwitchPP, errorP);
 #else
     ChanSwitchUnixCreateFd(socketFd, chanSwitchPP, errorP);
@@ -558,7 +558,7 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
                          TChanSwitch **          const chanSwitchPP,
                          const char **           const errorP) {
 
-#ifdef _WIN32
+#if MSVCRT
     ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen, 
                           chanSwitchPP, errorP);
 #else
@@ -949,7 +949,7 @@ sigchld(int const signalClass ATTR_UNUSED) {
    forking as a threading mechanism), so we respond by passing the
    signal on to the Abyss server.  And reaping the dead child.
 -----------------------------------------------------------------------------*/
-#ifndef _WIN32
+#if !MSVCRT
     /* Reap zombie children / report to Abyss until there aren't any more. */
 
     bool childrenLeft;
@@ -976,7 +976,7 @@ sigchld(int const signalClass ATTR_UNUSED) {
         } else
             ServerHandleSigchld(pid);
     }
-#endif /* _WIN32 */
+#endif /* MSVCRT */
 }
 
 
@@ -986,11 +986,11 @@ struct xmlrpc_server_abyss_sig {
        functions in this library messed with them; useful for restoring
        them later.
     */
-#ifndef _WIN32
+#if MSVCRT
+    int dummy;
+#else
     struct sigaction pipe;
     struct sigaction chld;
-#else
-    int dummy;
 #endif
 };
 
@@ -998,7 +998,7 @@ struct xmlrpc_server_abyss_sig {
 
 static void
 setupSignalHandlers(xmlrpc_server_abyss_sig * const oldHandlersP) {
-#ifndef _WIN32
+#if !MSVCRT
     struct sigaction mysigaction;
     
     sigemptyset(&mysigaction.sa_mask);
@@ -1018,8 +1018,7 @@ setupSignalHandlers(xmlrpc_server_abyss_sig * const oldHandlersP) {
 
 static void
 restoreSignalHandlers(const xmlrpc_server_abyss_sig * const oldHandlersP) {
-#ifndef _WIN32
-
+#if !MSVCRT
     sigaction(SIGPIPE, &oldHandlersP->pipe, NULL);
     sigaction(SIGCHLD, &oldHandlersP->chld, NULL);
 

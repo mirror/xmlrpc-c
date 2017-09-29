@@ -522,7 +522,7 @@ waitForWorkInt(xmlrpc_env *       const envP,
    waitForWork() will suffice.
 -----------------------------------------------------------------------------*/
     sigset_t callerBlockSet;
-#ifdef _WIN32
+#if MSVCRT
     waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
 #else
     sigset_t allSignals;

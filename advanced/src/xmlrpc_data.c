@@ -537,7 +537,7 @@ xmlrpc_double_new(xmlrpc_env * const envP,
 
     xmlrpc_value * valP;
 
-    if (!finite(value))
+    if (!XMLRPC_FINITE(value))
         xmlrpc_faultf(envP, "Value is not a finite number, "
                       "so cannot be represented in XML-RPC");
     else {

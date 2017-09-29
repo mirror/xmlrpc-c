@@ -109,7 +109,7 @@ getLineInBuffer(TConn *       const connectionP,
 
     assert(lineStart <= connectionP->buffer.t + connectionP->buffersize);
 
-    for (*errorP = false, lfPos = NULL, timedOut = false;
+    for (*errorP = NULL, lfPos = NULL, timedOut = false;
          !*errorP && !lfPos && !timedOut;
         ) {
         int const timeLeft = (int)(deadline - time(NULL));
@@ -207,7 +207,7 @@ getRestOfField(TConn *       const connectionP,
 
     fieldEnd = lineEnd;  /* initial value - end of 1st line */
         
-    for (gotWholeField = false, timedOut = false, *errorP = false;
+    for (gotWholeField = false, timedOut = false, *errorP = NULL;
          !gotWholeField && !timedOut && !*errorP;) {
 
         char * nextLineEnd;

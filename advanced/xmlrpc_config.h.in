@@ -87,6 +87,12 @@
    library - it could be either the Microsoft Visual C++ runtime library or an
    older one.  Note that Xmlrpc-c is not supposed to be buildable with an
    older one, so we have no use for _WIN32.
+
+   WIN32 is a macro that some older compilers predefine (compilers aren't
+   supposed to because it doesn't start with an underscore, hence the change).
+   Many build systems (project files, etc.) set WIN32 explicitly for backward
+   compatibility.  Xmlrpc-c has some vestigial uses of it, but we should
+   remove those.
 */
 
 #if defined(_MSC_VER)
@@ -217,7 +223,19 @@
   #define XMLRPC_CHDIR chdir
 #endif
 
+#if MSVCRT
+  #define XMLRPC_GETPID _getpid
+#else
+  #define XMLRPC_GETPID getpid
+#endif
+
 #define HAVE_OPENSSL @HAVE_OPENSSL_DEFINE@
+
+#if MSVCRT
+  #define XMLRPC_FINITE _finite
+#else
+  #define XMLRPC_FINITE finite
+#endif
 
 
 

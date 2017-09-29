@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <bitset>
+#include <algorithm>     // min
 
 using namespace std;
 
