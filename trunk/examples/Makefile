@@ -52,7 +52,7 @@ ifneq ($(MSVCRT),yes)
   SERVERPROGS_ABYSS += interrupted_server
 endif
 
-ifeq ($(HAVE_OPENSSL),yes)
+ifeq ($(MUST_BUILD_ABYSS_OPENSSL),yes)
   SERVERPROGS_ABYSS += ssl_server ssl_secure_server
 endif
 
