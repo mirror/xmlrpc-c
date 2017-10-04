@@ -24,7 +24,7 @@ xmlrpc_init(xmlrpc_env * const envP) {
     */
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    
+
     if (globallyInitialized == 0) {
         xml_init(envP);  /* Initialize the XML parser library */
     }
