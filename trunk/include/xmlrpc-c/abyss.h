@@ -437,6 +437,7 @@ typedef struct {
     abyss_bool keepalive;
 } TRequestInfo;
 
+XMLRPC_ABYSS_EXPORTED
 void
 SessionGetBody(TSession *    const sessionP, 
                size_t        const max, 
