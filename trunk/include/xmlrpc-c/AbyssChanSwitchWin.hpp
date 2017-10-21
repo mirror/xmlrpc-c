@@ -14,7 +14,13 @@
 
 namespace xmlrpc_c {
 
-class AbyssChanSwitchWin : public AbyssChanSwitch {
+#ifdef XMLRPC_BUILDING_ABYSSPP
+#define XMLRPC_ABYSSPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_ABYSSPP_EXPORTED
+#endif
+
+class XMLRPC_ABYSSPP_EXPORTED AbyssChanSwitchWin : public AbyssChanSwitch {
 
 public:
     AbyssChanSwitchWin(unsigned short const listenPortNum);
