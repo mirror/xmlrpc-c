@@ -541,9 +541,6 @@ xmlrpc_double_new(xmlrpc_env * const envP,
         xmlrpc_faultf(envP, "Value is not a finite number, "
                       "so cannot be represented in XML-RPC");
         valP = NULL;
-            /* Actually meaningless.  This defeats a bogus warning from a
-               runtime access-to-uninitialized-memory check
-            */
     } else {
         xmlrpc_createXmlrpcValue(envP, &valP);
 
