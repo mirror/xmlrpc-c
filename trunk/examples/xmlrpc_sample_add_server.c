@@ -73,8 +73,8 @@ sample_add(xmlrpc_env *   const envP,
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     struct xmlrpc_method_info3 const methodInfo = {
@@ -92,7 +92,7 @@ main(int           const argc,
                 "You specified %d arguments.\n",  argc-1);
         exit(1);
     }
-    
+
     xmlrpc_env_init(&env);
 
     registryP = xmlrpc_registry_new(&env);
@@ -124,6 +124,5 @@ main(int           const argc,
 
     return 0;
 }
-
 
 
