@@ -21,7 +21,7 @@
 #define NAME "Xmlrpc-c Test Client"
 #define VERSION "1.0"
 
-static void 
+static void
 dieIfFaultOccurred (xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
         fprintf(stderr, "ERROR: %s (%d)\n",
@@ -32,8 +32,8 @@ dieIfFaultOccurred (xmlrpc_env * const envP) {
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     xmlrpc_env env;
@@ -62,21 +62,23 @@ main(int           const argc,
     resultP = xmlrpc_client_call(&env, serverUrl, methodName,
                                  "(ii)", (xmlrpc_int32) 5, (xmlrpc_int32) 7);
     dieIfFaultOccurred(&env);
-    
+
     /* Get our sum and print it out. */
     xmlrpc_read_int(&env, resultP, &sum);
     dieIfFaultOccurred(&env);
     printf("The sum is %d\n", sum);
-    
+
     /* Dispose of our result value. */
     xmlrpc_DECREF(resultP);
 
     /* Clean up our error-handling environment. */
     xmlrpc_env_clean(&env);
-    
+
     /* Shutdown our XML-RPC client library. */
     xmlrpc_client_cleanup();
 
     return 0;
 }
+
+
 
