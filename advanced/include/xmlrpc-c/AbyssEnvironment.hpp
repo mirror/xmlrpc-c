@@ -9,7 +9,13 @@
 
 namespace xmlrpc_c {
 
-class AbyssEnvironment {
+#ifdef XMLRPC_BUILDING_ABYSSPP
+#define XMLRPC_ABYSSPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_ABYSSPP_EXPORTED
+#endif
+
+class XMLRPC_ABYSSPP_EXPORTED AbyssEnvironment {
 /*----------------------------------------------------------------------------
    A program that uses libxmlrpc_abyss++ should contain exactly one object
    of this class, as a global static object.

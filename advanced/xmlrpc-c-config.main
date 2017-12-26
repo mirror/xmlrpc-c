@@ -96,7 +96,7 @@ while test $# -gt 0; do
       ;;
     abyss-server)
       the_libs="${SOCKETLIBOPT} $the_libs"
-      if test "${HAVE_OPENSSL}" = "yes"; then
+      if test "${ABYSS_DOES_OPENSSL}" = "yes"; then
         the_libs="${OPENSSL_LDADD} $the_libs"
         cflags="${cflags} ${OPENSSL_CFLAGS}"
         fi

@@ -4,9 +4,15 @@
 #include "xmlrpc-c/c_util.h"
 #include "xmlrpc-c/util.h"
 
+#ifdef XMLRPC_BUILDING_LIBUTILPP
+#define XMLRPC_LIBUTILPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_LIBUTILPP_EXPORTED
+#endif
+
 namespace xmlrpc_c {
 
-class XMLRPC_DLLEXPORT env_wrap {
+class XMLRPC_LIBUTILPP_EXPORTED env_wrap {
 /*----------------------------------------------------------------------------
    A wrapper to assist in using the Xmlrpc-c C libraries in
    Xmlrpc-c C++ code.

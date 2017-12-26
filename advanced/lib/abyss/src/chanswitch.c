@@ -23,7 +23,7 @@
 #if !MSVCRT
   #include "socket_unix.h"
 #endif
-#if HAVE_OPENSSL
+#if HAVE_ABYSS_OPENSSL
   #include "socket_openssl.h"
 #endif
 #include "chanswitch.h"
@@ -72,7 +72,7 @@ socketUnixTerm(void) {
 
 static void
 socketOpenSslTerm(void) {
-#if HAVE_OPENSSL
+#if HAVE_ABYSS_OPENSSL
     SocketOpenSslTerm();
 #endif
 }
@@ -81,7 +81,7 @@ socketOpenSslTerm(void) {
 
 static void
 socketOpenSslInit(const char ** const errorP) {
-#if HAVE_OPENSSL
+#if HAVE_ABYSS_OPENSSL
     SocketOpenSslInit(errorP);
 #else
     *errorP = NULL;

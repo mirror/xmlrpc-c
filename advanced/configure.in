@@ -696,19 +696,51 @@ AC_MSG_CHECKING(for OpenSSL library)
 
 if pkg-config openssl; then
   HAVE_OPENSSL=yes
-  HAVE_OPENSSL_DEFINE=1
   OPENSSL_LDADD=$(pkg-config openssl --libs)
   AC_SUBST(OPENSSL_LDADD)
   OPENSSL_CFLAGS=$(pkg-config openssl --cflags)
   AC_SUBST(OPENSSL_CFLAGS)
 else
   HAVE_OPENSSL=no
-  HAVE_OPENSSL_DEFINE=0
 fi
-AC_SUBST(HAVE_OPENSSL)
-AC_SUBST(HAVE_OPENSSL_DEFINE)
 
 AC_MSG_RESULT($HAVE_OPENSSL)
+
+# One really annoying case where the user needs to disable building of
+# Openssl-based parts explicitly is where there is no Openssl for the target
+# platform but there is for the native platform.  In that case, Pkg-config
+# finds the openssl.pc in /usr/lib, ignoring the fact that /usr/lib is not in
+# the search path specified by the PKG_CONFIG environment variable.  This is
+# a major design flaw in Pkg-config.
+
+AC_ARG_ENABLE(abyss-openssl,
+  [  --disable-abyss-openssl     Don't build Abyss Openssl channel function],
+  , 
+  enable_abyss_openssl=maybe)
+
+if test $enable_abyss_openssl = maybe; then
+  if test $HAVE_OPENSSL = no; then
+    AC_MSG_NOTICE([You don't appear to Openssl installed (no pkg-config file for it in your pkg-config search path), so we will not build the Abyss Openssl channel module])
+    MUST_BUILD_ABYSS_OPENSSL=no
+  else
+    MUST_BUILD_ABYSS_OPENSSL=yes
+  fi
+else
+  MUST_BUILD_ABYSS_OPENSSL=$enable_abyss_openssl
+fi
+
+AC_MSG_CHECKING(whether to build Abyss Openssl channel module)
+AC_MSG_RESULT($MUST_BUILD_ABYSS_OPENSSL)
+AC_SUBST(MUST_BUILD_ABYSS_OPENSSL)
+
+if test $MUST_BUILD_ABYSS_OPENSSL = yes; then
+  HAVE_ABYSS_OPENSSL_DEFINE=1
+else
+  HAVE_ABYSS_OPENSSL_DEFINE=0
+fi  
+
+AC_SUBST(HAVE_ABYSS_OPENSSL_DEFINE)
+
 
 dnl =======================================================================
 dnl Checks for build options.

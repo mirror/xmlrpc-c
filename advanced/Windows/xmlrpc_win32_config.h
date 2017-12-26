@@ -260,4 +260,16 @@
   #define XMLRPC_CHDIR chdir
 #endif
 
+#if MSVCRT
+  #define XMLRPC_FINITE _finite
+#else
+  #define XMLRPC_FINITE finite
+#endif
+
+#if MSVCRT
+  #define XMLRPC_GETPID _getpid
+#else
+  #define XMLRPC_GETPID getpid
+#endif
+
 #endif

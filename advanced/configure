@@ -631,8 +631,8 @@ C_COMPILER_GNU
 ENABLE_LIBXML2_BACKEND
 have_xml2_config
 HAVE_LIBWWW_SSL_DEFINE
-HAVE_OPENSSL_DEFINE
-HAVE_OPENSSL
+HAVE_ABYSS_OPENSSL_DEFINE
+MUST_BUILD_ABYSS_OPENSSL
 OPENSSL_CFLAGS
 OPENSSL_LDADD
 CURL_LIBDIR
@@ -780,6 +780,7 @@ enable_abyss_server
 enable_cgi_server
 enable_cplusplus
 enable_abyss_threads
+enable_abyss_openssl
 with_libwww_ssl
 enable_libxml2_backend
 '
@@ -1418,6 +1419,7 @@ Optional Features:
   --disable-cgi-server      Don't build the CGI server module
   --disable-cplusplus       Don't build the C++ wrapper classes or tools
   --disable-abyss-threads   Use fork in Abyss instead of pthreads
+  --disable-abyss-openssl     Don't build Abyss Openssl channel function
   --enable-libxml2-backend  Use libxml2 instead of built-in expat
 
 Optional Packages:
@@ -5974,20 +5976,58 @@ $as_echo_n "checking for OpenSSL library... " >&6; }
 
 if pkg-config openssl; then
   HAVE_OPENSSL=yes
-  HAVE_OPENSSL_DEFINE=1
   OPENSSL_LDADD=$(pkg-config openssl --libs)
 
   OPENSSL_CFLAGS=$(pkg-config openssl --cflags)
 
 else
   HAVE_OPENSSL=no
-  HAVE_OPENSSL_DEFINE=0
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_OPENSSL" >&5
+$as_echo "$HAVE_OPENSSL" >&6; }
+
+# One really annoying case where the user needs to disable building of
+# Openssl-based parts explicitly is where there is no Openssl for the target
+# platform but there is for the native platform.  In that case, Pkg-config
+# finds the openssl.pc in /usr/lib, ignoring the fact that /usr/lib is not in
+# the search path specified by the PKG_CONFIG environment variable.  This is
+# a major design flaw in Pkg-config.
+
+# Check whether --enable-abyss-openssl was given.
+if test "${enable_abyss_openssl+set}" = set; then :
+  enableval=$enable_abyss_openssl;
+else
+  enable_abyss_openssl=maybe
+fi
+
+
+if test $enable_abyss_openssl = maybe; then
+  if test $HAVE_OPENSSL = no; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: You don't appear to Openssl installed (no pkg-config file for it in your pkg-config search path), so we will not build the Abyss Openssl channel module" >&5
+$as_echo "$as_me: You don't appear to Openssl installed (no pkg-config file for it in your pkg-config search path), so we will not build the Abyss Openssl channel module" >&6;}
+    MUST_BUILD_ABYSS_OPENSSL=no
+  else
+    MUST_BUILD_ABYSS_OPENSSL=yes
+  fi
+else
+  MUST_BUILD_ABYSS_OPENSSL=$enable_abyss_openssl
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build Abyss Openssl channel module" >&5
+$as_echo_n "checking whether to build Abyss Openssl channel module... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MUST_BUILD_ABYSS_OPENSSL" >&5
+$as_echo "$MUST_BUILD_ABYSS_OPENSSL" >&6; }
+
+
+if test $MUST_BUILD_ABYSS_OPENSSL = yes; then
+  HAVE_ABYSS_OPENSSL_DEFINE=1
+else
+  HAVE_ABYSS_OPENSSL_DEFINE=0
 fi
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_OPENSSL" >&5
-$as_echo "$HAVE_OPENSSL" >&6; }
 
 
 
@@ -6086,9 +6126,189 @@ CPP_WARN_FLAGS=
 BUILDDIR=$(pwd)
 
 
-AR=${ac_tool_prefix}ar
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ar", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AR"; then
+  ac_cv_prog_AR="$AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AR="${ac_tool_prefix}ar"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
 
-RANLIB=${ac_tool_prefix}ranlib
+fi
+fi
+AR=$ac_cv_prog_AR
+if test -n "$AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AR" >&5
+$as_echo "$AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_AR"; then
+  ac_ct_AR=$AR
+  # Extract the first word of "ar", so it can be a program name with args.
+set dummy ar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_AR"; then
+  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_AR="ar"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_AR=$ac_cv_prog_ac_ct_AR
+if test -n "$ac_ct_AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_AR" >&5
+$as_echo "$ac_ct_AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_AR" = x; then
+    AR=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    AR=$ac_ct_AR
+  fi
+else
+  AR="$ac_cv_prog_AR"
+fi
+
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_RANLIB+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$RANLIB"; then
+  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+RANLIB=$ac_cv_prog_RANLIB
+if test -n "$RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
+$as_echo "$RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_RANLIB"; then
+  ac_ct_RANLIB=$RANLIB
+  # Extract the first word of "ranlib", so it can be a program name with args.
+set dummy ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_RANLIB+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_RANLIB"; then
+  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_RANLIB="ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
+if test -n "$ac_ct_RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_RANLIB" >&5
+$as_echo "$ac_ct_RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_RANLIB" = x; then
+    RANLIB=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    RANLIB=$ac_ct_RANLIB
+  fi
+else
+  RANLIB="$ac_cv_prog_RANLIB"
+fi
 
 
 

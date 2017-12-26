@@ -23,7 +23,7 @@ ifeq ($(findstring mingw,$(HOST_OS)),mingw)
   SOCKET_MODS = socket_win
 else
   SOCKET_MODS = socket_unix
-  ifeq ($(HAVE_OPENSSL),yes)
+  ifeq ($(MUST_BUILD_ABYSS_OPENSSL),yes)
     SOCKET_MODS += socket_openssl
   endif
 
@@ -95,7 +95,7 @@ $(ABYSS_SHLIB): LIBDEP = $(LIBXMLRPC_UTIL_LIBDEP) $(SOCKETLIBOPT)
 ifeq ($(ENABLE_ABYSS_THREADS),yes)
   $(ABYSS_SHLIB):  LIBDEP += $(THREAD_LIBS)
 endif
-ifeq ($(HAVE_OPENSSL),yes)
+ifeq ($(MUST_BUILD_ABYSS_OPENSSL),yes)
 $(ABYSS_SHLIB): LIBDEP += $(OPENSSL_LDADD)
 endif
 
@@ -111,7 +111,7 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 # Rules to compile object modules from which to build the static and shared
 # Abyss library are in common.mk, courtesy of TARGET_MODS.
 
-socket_openssl.o: CFLAGS_TARGET=$(OPENSSL_CFLAGS)
+socket_openssl.o socket_openssl.osh: CFLAGS_TARGET=$(OPENSSL_CFLAGS)
 
 
 #-----------------------------------------------------------------------------

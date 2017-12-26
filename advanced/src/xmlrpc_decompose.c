@@ -114,7 +114,7 @@ struct structValDecomp {
 struct arrayDecomp {
     unsigned int itemCnt;
     bool ignoreExcess;
-        /* If there are more that 'itemCnt' items in the array, just
+        /* If there are more than 'itemCnt' items in the array, just
            extract the first 'itemCnt' and ignore the rest, rather than
            fail the decomposition.
         */

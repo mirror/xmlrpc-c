@@ -229,7 +229,7 @@
   #define XMLRPC_GETPID getpid
 #endif
 
-#define HAVE_OPENSSL @HAVE_OPENSSL_DEFINE@
+#define HAVE_ABYSS_OPENSSL @HAVE_ABYSS_OPENSSL_DEFINE@
 
 #if MSVCRT
   #define XMLRPC_FINITE _finite

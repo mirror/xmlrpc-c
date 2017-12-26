@@ -28,7 +28,7 @@ ifeq ($(findstring mingw,$(HOST_OS)),mingw)
   LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchWin
 else
   LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchUnix
-  ifeq ($(HAVE_OPENSSL),yes)
+  ifeq ($(MUST_BUILD_OPENSSL),yes)
     LIBXMLRPC_ABYSSPP_MODS += AbyssChanSwitchOpenSsl
   endif
 endif

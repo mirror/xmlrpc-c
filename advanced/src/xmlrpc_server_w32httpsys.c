@@ -36,6 +36,7 @@
 #include <strsafe.h>
 
 #include "xmlrpc_config.h"
+#include "xmlrpc-c/util.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/server_w32httpsys.h"
@@ -433,11 +434,11 @@ DoReceiveRequests(
                                     char *pColon;
                                     
                                     pDecodedStr = (char*)
-                                        malloc(decoded->_size+1);
+                                        malloc(xmlrpc_mem_block_size(decoded)+1);
                                     memcpy(pDecodedStr,
-                                           decoded->_block,
-                                           decoded->_size);
-                                    pDecodedStr[decoded->_size]='\0';
+                                        xmlrpc_mem_block_contents(decoded),
+                                        xmlrpc_mem_block_size(decoded));
+                                    pDecodedStr[xmlrpc_mem_block_size(decoded)]='\0';
                                     pUser = pPass = pDecodedStr;
                                     pColon=strchr(pDecodedStr,':');
                                     if(pColon)

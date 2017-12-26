@@ -120,7 +120,7 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'LIBINST_DIR="$(LIBINST_DIR)"'                            >>$@
 	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
-	@echo 'HAVE_OPENSSL="$(HAVE_OPENSSL)"'                          >>$@
+	@echo 'ABYSS_DOES_OPENSSL="$(MUST_BUILD_ABYSS_OPENSSL)"'        >>$@
 	@echo 'OPENSSL_LDADD="$(OPENSSL_LDADD)"'                        >>$@
 	@echo '#######################################################' >>$@
 

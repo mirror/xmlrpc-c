@@ -13,7 +13,13 @@
 
 namespace xmlrpc_c {
 
-class AbyssChanSwitch {
+#ifdef XMLRPC_BUILDING_ABYSSPP
+#define XMLRPC_ABYSSPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_ABYSSPP_EXPORTED
+#endif
+
+class XMLRPC_ABYSSPP_EXPORTED AbyssChanSwitch {
 /*----------------------------------------------------------------------------
    An object of this class is a channel switch for use with an AbyssServer
    object, which means it listens for and accepts requests from clients to

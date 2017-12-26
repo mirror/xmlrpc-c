@@ -8,9 +8,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #if MSVCRT
   #include <process.h>
+#else
+  #include <unistd.h>
 #endif
 #include <string.h>
 #include <time.h>

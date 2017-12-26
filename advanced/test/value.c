@@ -1506,6 +1506,8 @@ test_value_parse_value(void) {
 
     xmlrpc_env env;
     xmlrpc_value * valueP;
+    const char * base64_data = "base64 data";
+    size_t base64_data_length = strlen(base64_data);
     const char * datestring = "19980717T14:08:55";
 
     xmlrpc_env_init(&env);
@@ -1513,7 +1515,7 @@ test_value_parse_value(void) {
     valueP = xmlrpc_build_value(&env, "(idb8ss#6(i){s:i}np(i))",
                                 7, 3.14, (xmlrpc_bool)1, datestring,
                                 "hello world", "a\0b", (size_t)3,
-                                "base64 data", strlen("base64 data"),
+                                base64_data, base64_data_length,
                                 15, "member9", 9, &valueP, -5);
     
     TEST_NO_FAULT(&env);
