@@ -1,3 +1,4 @@
+#include <stdio.h>
 /*=============================================================================
                               xmlrpc_string
 ===============================================================================
@@ -745,12 +746,15 @@ stringNew(xmlrpc_env *     const envP,
           enum crTreatment const crTreatment,
           xmlrpc_value **  const valPP) {
 
+    fprintf(stderr, "stringNew entered\n");
     xmlrpc_value * valP;
 
     xmlrpc_validate_utf8(envP, value, length);
 
     if (!envP->fault_occurred) {
+        fprintf(stderr, "Going to xmlrpc_createXmlrpcValue\n");
         xmlrpc_createXmlrpcValue(envP, &valP);
+        fprintf(stderr, "Back from createXmlrpcValue\n");
 
         if (!envP->fault_occurred) {
             valP->_type = XMLRPC_TYPE_STRING;
@@ -770,6 +774,7 @@ stringNew(xmlrpc_env *     const envP,
                 *valPP = valP;
         }
     }
+    fprintf(stderr, "stringNew exiting\n");
 }
 
 

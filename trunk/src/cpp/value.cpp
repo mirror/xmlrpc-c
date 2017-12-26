@@ -1,3 +1,4 @@
+#include <iostream>
 /*****************************************************************************
                                 value.cpp
 ******************************************************************************
@@ -621,9 +622,13 @@ public:
 
         switch (nlCode) {
         case value_string::nlCode_all:
+            cerr << "Going to call xmlrpc_string_new_lp" << endl;
+            cerr << "length = " << cppvalue.length() << ", value = "
+                 << cppvalue.c_str() << endl;
             this->valueP = xmlrpc_string_new_lp(&env.env_c,
                                                 cppvalue.length(),
                                                 cppvalue.c_str());
+            cerr << "Back from xmlrpc_string_new_lp" << endl;
             break;
         case value_string::nlCode_lf:
             this->valueP = xmlrpc_string_new_lp_cr(&env.env_c,
@@ -656,9 +661,12 @@ value_string::value_string(std::string          const& cppvalue,
 
 value_string::value_string(std::string const& cppvalue) {
 
+    cerr << "value_string constructor entered" << endl;
     cNewStringWrapper wrapper(cppvalue, nlCode_all);
+    cerr << "wrapper constructed" << endl;
 
     this->instantiate(wrapper.valueP);
+    cerr << "value_string constructor exiting" << endl;
 }
 
 
