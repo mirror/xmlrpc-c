@@ -42,20 +42,20 @@ public:
     void
     execute(xmlrpc_c::paramList const& paramList,
             xmlrpc_c::value *   const  retvalP) {
-        
+
         int const addend(paramList.getInt(0));
         int const adder(paramList.getInt(1));
-        
+
         paramList.verifyEnd(2);
-        
+
         *retvalP = xmlrpc_c::value_int(addend + adder);
     }
 };
 
 
 
-int 
-main(int           const, 
+int
+main(int           const,
      const char ** const) {
 
 #ifndef _WIN32
