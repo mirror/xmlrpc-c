@@ -69,7 +69,12 @@ include $(SRCDIR)/common.mk
 
 CFLAGS_LOCAL = -D_UNIX
 
-INCLUDES = -Iblddir -Isrcdir -Isrcdir/include -Isrcdir/lib/util/include
+INCLUDES = \
+  -Iblddir \
+  -Iblddir/include \
+  -Isrcdir \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include
 
 ABYSS_SHLIB = $(call shlibfn,libxmlrpc_abyss)
 #ABYSS_SHLIB is e.g. libxmlrpc_abyss.so.3.1
