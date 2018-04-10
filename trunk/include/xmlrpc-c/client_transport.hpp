@@ -86,7 +86,7 @@ public:
     xmlTransactionPtr();
 
     xmlTransactionPtr(xmlTransaction * xmlTransP);
- 
+
     xmlrpc_c::xmlTransaction *
     operator->() const;
 };
@@ -133,7 +133,7 @@ public:
 };
 
 class XMLRPC_CLIENTPP_EXPORTED clientXmlTransportPtr : public girmem::autoObjectPtr {
-    
+
 public:
     clientXmlTransportPtr();
 
@@ -166,25 +166,25 @@ public:
 
     void
     disallowAuthBasic();
-            
+
     void
     allowAuthDigest();
 
     void
     disallowAuthDigest();
-            
+
     void
     allowAuthNegotiate();
 
     void
     disallowAuthNegotiate();
-            
+
     void
     allowAuthNtlm();
 
     void
     disallowAuthNtlm();
-            
+
     void
     setBasicAuth(std::string const userid,
                  std::string const password);
@@ -219,17 +219,17 @@ class XMLRPC_CLIENTPP_EXPORTED clientXmlTransport_http : public xmlrpc_c::client
 -----------------------------------------------------------------------------*/
 public:
     virtual ~clientXmlTransport_http();
-    
+
     void
     call(xmlrpc_c::carriageParm * const  carriageParmP,
          std::string              const& callXml,
          std::string *            const  responseXmlP);
-    
+
     void
     start(xmlrpc_c::carriageParm *    const  carriageParmP,
           std::string                 const& callXml,
           xmlrpc_c::xmlTransactionPtr const& xmlTranP);
-        
+
     virtual void
     finishAsync(xmlrpc_c::timeout const timeout);
 
@@ -350,7 +350,7 @@ public:
 };
 
 class XMLRPC_CLIENTPP_EXPORTED clientXmlTransport_libwww : public xmlrpc_c::clientXmlTransport_http {
-    
+
 public:
     clientXmlTransport_libwww(std::string const appname = "",
                               std::string const appversion = "");
