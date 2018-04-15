@@ -46,7 +46,7 @@ xmlrpc_expat.pc:
 clean: $(SUBDIRS:%=%/clean) clean-common
 
 .PHONY: distclean
-distclean: $(SUBDIRS:%=%/distclean) distclean-common
+distclean: $(SUBDIRS:%=%/distclean) clean distclean-common
 
 .PHONY: tags
 tags: $(SUBDIRS:%=%/tags) TAGS
