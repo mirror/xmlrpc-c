@@ -33,7 +33,7 @@
      A stream is all the data transmitted during a single socket
      connection.
 
-     End of stream in the middle of a packet is a protocol error.  
+     End of stream in the middle of a packet is a protocol error.
 
      All bytes not part of a control word are literal bytes of a packet.
 
@@ -119,7 +119,7 @@ private:
 */
 
 socketx::socketx(int const sockFd) {
-#if MSVCRT        
+#if MSVCRT
     // We don't have any way to duplicate; we'll just have to borrow.
     this->fdIsBorrowed = true;
     this->fd = sockFd;
@@ -196,10 +196,10 @@ socketx::waitForWritable() const {
     select(this->fd + 1, 0, &wr_set, 0, 0);
 #else
     struct pollfd pollfds[1];
-        
+
     pollfds[0].fd = this->fd;
     pollfds[0].events = POLLOUT;
-        
+
     poll(pollfds, ARRAY_SIZE(pollfds), -1);
 #endif
 }
@@ -302,7 +302,7 @@ socketx::read(unsigned char * const buffer,
   arrive later.
 
   Return as *bytesReadP the number of bytes put into 'buffer'.
-   
+
   Throw a BrokenConnectionEx exception if the connection has been broken.
 -----------------------------------------------------------------------------*/
     int rc;
@@ -410,7 +410,7 @@ namespace xmlrpc_c {
 
 packet::packet() :
     bytes(NULL), length(0), allocSize(0) {}
- 
+
 
 
 void
@@ -673,7 +673,7 @@ packetSocket_impl::writeWait(packetPtr const& packetP) const {
     if (this->mustTrace)
         traceWrite(packetP->getBytes(), packetP->getLength());
 
-    
+
     this->sock.writeWait(packetStart, 4);
 
     const unsigned char * const end(
@@ -769,7 +769,7 @@ packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
                    this->escAccum.bytes[0],
                    this->escAccum.bytes[1],
                    this->escAccum.bytes[2]);
-        
+
         this->inEscapeSeq = false;
         this->escAccum.len = 0;
     }
@@ -822,7 +822,7 @@ packetSocket_impl::verifyNothingAccumulated() {
     if (this->inEscapeSeq)
         throwf("Streams socket closed in the middle of an "
                "escape sequence");
-    
+
     if (this->inPacket)
         throwf("Stream socket closed in the middle of a packet "
                "(%u bytes of packet received; no END marker to mark "
@@ -855,7 +855,7 @@ packetSocket_impl::processBytesRead(const unsigned char * const buffer,
             throwf("Byte 0x%02x is not in a packet or escape sequence.  "
                    "Sender is probably not using packet socket protocol",
                    buffer[cursor]);
-        
+
         cursor += bytesTaken;
     }
 }
