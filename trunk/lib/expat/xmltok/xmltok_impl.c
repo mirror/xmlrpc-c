@@ -167,7 +167,9 @@ int PREFIX(scanDecl)(const ENCODING *enc, const char *ptr, const char *end,
         *nextTokPtr = ptr;
         return XML_TOK_INVALID;
       }
-      /* fall through */
+      *nextTokPtr = ptr;
+      return XML_TOK_DECL_OPEN;
+      break;
     case BT_S: case BT_CR: case BT_LF:
       *nextTokPtr = ptr;
       return XML_TOK_DECL_OPEN;
@@ -283,7 +285,9 @@ int PREFIX(scanPi)(const ENCODING *enc, const char *ptr, const char *end,
         *nextTokPtr = ptr + MINBPC(enc);
         return tok;
       }
-      /* fall through */
+      *nextTokPtr = ptr;
+      return XML_TOK_INVALID;
+      break;
     default:
       *nextTokPtr = ptr;
       return XML_TOK_INVALID;
@@ -927,8 +931,9 @@ PREFIX(contentTok)(const ENCODING * const enc,
                     *nextTokPtr = ptr;
                     return XML_TOK_INVALID;
                 }
-            }
-            /* fall through */
+                *nextTokPtr = ptr;
+                return XML_TOK_DATA_CHARS;
+            } break;
             case BT_AMP:
             case BT_LT:
             case BT_NONXML:
@@ -1099,9 +1104,11 @@ int PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
         break;
       case BT_CR:
         /* don't split CR/LF pair */
-        if (ptr + MINBPC(enc) != end)
-          break;
-        /* fall through */
+        if (ptr + MINBPC(enc) == end) {
+          *nextTokPtr = ptr;
+          return XML_TOK_PROLOG_S;
+        }
+        break;
       default:
         *nextTokPtr = ptr;
         return XML_TOK_PROLOG_S;
@@ -1196,16 +1203,18 @@ int PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
     break;
   case BT_NONASCII:
     if (IS_NMSTRT_CHAR_MINBPC(enc, ptr)) {
-    ptr += MINBPC(enc);
-    tok = XML_TOK_NAME;
-    break;
-  }
+      ptr += MINBPC(enc);
+      tok = XML_TOK_NAME;
+      break;
+    }
     if (IS_NAME_CHAR_MINBPC(enc, ptr)) {
-    ptr += MINBPC(enc);
-    tok = XML_TOK_NMTOKEN;
+      ptr += MINBPC(enc);
+      tok = XML_TOK_NMTOKEN;
+    } else {
+      *nextTokPtr = ptr;
+      return XML_TOK_INVALID;
+    }
     break;
-  }
-    /* fall through */
   default:
     *nextTokPtr = ptr;
     return XML_TOK_INVALID;
