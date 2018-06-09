@@ -1431,6 +1431,20 @@ int PREFIX(ignoreSectionTok)(const ENCODING *enc, const char *ptr, const char *e
 
 
 
+static bool
+PREFIX(isSpecialChar)(char const c) {
+
+  switch (c) {
+  case 0x24: /* $ */
+  case 0x40: /* @ */
+    return true;
+  default:
+    return false;
+  }
+}
+
+
+
 static
 int PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
                const char **badPtr)
@@ -1467,18 +1481,18 @@ int PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
       break;
     case BT_NAME:
     case BT_NMSTRT:
-      if (!(BYTE_TO_ASCII(enc, ptr) & ~0x7f))
-        break;
+      if (BYTE_TO_ASCII(enc, ptr) & ~0x7f) {
+        if (!PREFIX(isSpecialChar)(BYTE_TO_ASCII(enc, ptr))) {
+          *badPtr = ptr;
+          return 0;
+        }
+      }
+      break;
     default:
-      switch (BYTE_TO_ASCII(enc, ptr)) {
-      case 0x24: /* $ */
-      case 0x40: /* @ */
-        break;
-      default:
+      if (!PREFIX(isSpecialChar)(BYTE_TO_ASCII(enc, ptr))) {
         *badPtr = ptr;
         return 0;
       }
-      break;
     }
   }
   return 1;
@@ -1681,13 +1695,27 @@ int PREFIX(sameName)(const ENCODING *enc, const char *ptr1, const char *ptr2)
 {
   for (;;) {
     switch (BYTE_TYPE(enc, ptr1)) {
-#define LEAD_CASE(n) \
-    case BT_LEAD ## n: \
-      if (*ptr1++ != *ptr2++) \
-    return 0;
-    LEAD_CASE(4) LEAD_CASE(3) LEAD_CASE(2)
-#undef LEAD_CASE
-      /* fall through */
+    case BT_LEAD4:
+      if (*ptr1++ != *ptr2++)
+        return 0;
+      if (*ptr1++ != *ptr2++)
+        return 0;
+      if (*ptr1++ != *ptr2++)
+        return 0;
+      if (*ptr1++ != *ptr2++)
+        return 0;
+      break;
+    case BT_LEAD3:
+      if (*ptr1++ != *ptr2++)
+        return 0;
+      if (*ptr1++ != *ptr2++)
+        return 0;
+      if (*ptr1++ != *ptr2++)
+        return 0;
+      break;
+    case BT_LEAD2:
+      if (*ptr1++ != *ptr2++)
+        return 0;
       if (*ptr1++ != *ptr2++)
         return 0;
       break;
