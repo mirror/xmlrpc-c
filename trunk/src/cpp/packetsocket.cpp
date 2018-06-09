@@ -909,10 +909,11 @@ packetSocket_impl::readFromFile() {
                     fprintf(stderr, "EOF on read\n");
                 this->eof = true;
                 this->verifyNothingAccumulated();
-            } else
+            } else {
                 if (this->mustTrace)
                     traceBytesRead(buffer, bytesRead);
                 this->processBytesRead(buffer, bytesRead);
+            }
         }
     }
 }
