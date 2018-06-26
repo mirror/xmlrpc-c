@@ -3,7 +3,7 @@
 ===============================================================================
    WinInet-based client transport for Xmlrpc-c.  Copyright information at
    the bottom of this file.
-   
+
 =============================================================================*/
 
 #include "xmlrpc_config.h"
@@ -55,14 +55,14 @@ struct xmlrpc_client_transport {
     struct lock * listLockP;
     struct list_head rpcList;
         /* List of all RPCs that exist for this transport.  An RPC exists
-           from the time the user requests it until the time the user 
+           from the time the user requests it until the time the user
            acknowledges it is done.
         */
     int allowInvalidSSLCerts;
         /* Flag to specify if we ignore invalid SSL Certificates.  If this
            is set to zero, calling a XMLRPC server with an invalid SSL
            certificate will fail.  This is the default behavior of the other
-           transports, but invalid certificates were allowed in pre 1.2 
+           transports, but invalid certificates were allowed in pre 1.2
            wininet xmlrpc-c transports.
         */
 };
@@ -72,7 +72,7 @@ typedef struct {
     HINTERNET hHttpRequest;
     HINTERNET hURL;
     INTERNET_PORT nPort;
-    char szHostName[255];   
+    char szHostName[255];
     char szUrlPath[255];
     BOOL bUseSSL;
     char * headerList;
@@ -115,7 +115,7 @@ createWinInetHeaderList(xmlrpc_env *               const envP,
         /* NOTE: A newline is required between each added header */
         szHeaderList = malloc(strlen(szContentType) + 17 +
                               strlen(serverP->basicAuthHdrValue) + 1);
-        
+
         if (szHeaderList == NULL)
             xmlrpc_faultf(envP,
                           "Couldn't allocate memory for authorization header");
@@ -130,11 +130,11 @@ createWinInetHeaderList(xmlrpc_env *               const envP,
     } else {
         /* Just the content type header is needed */
         szHeaderList = malloc(strlen(szContentType) + 1);
-        
+
         if (szHeaderList == NULL)
             xmlrpc_faultf(envP,
                           "Couldn't allocate memory for standard header");
-        else 
+        else
             memcpy(szHeaderList, szContentType, strlen(szContentType) + 1);
     }
     *headerListP = szHeaderList;
@@ -201,7 +201,7 @@ createWinInetTransaction(xmlrpc_env *               const envP,
                     XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP);
             }
         }
-            
+
         if (envP->fault_occurred)
             free(winInetTransactionP);
     }
@@ -236,7 +236,7 @@ get_wininet_response(xmlrpc_env *         const envP,
     unsigned long dwLen;
     INTERNET_BUFFERS inetBuffer;
     unsigned long dwFlags;
-    unsigned long dwErr; 
+    unsigned long dwErr;
     unsigned long nExpected;
     void * body;
     BOOL bOK;
@@ -260,14 +260,14 @@ get_wininet_response(xmlrpc_env *         const envP,
        required by XML-RPC.  Following fails if server didn't send it.
     */
 
-    bOK = HttpQueryInfo(winInetTransactionP->hHttpRequest, 
-                        HTTP_QUERY_CONTENT_LENGTH|HTTP_QUERY_FLAG_NUMBER, 
+    bOK = HttpQueryInfo(winInetTransactionP->hHttpRequest,
+                        HTTP_QUERY_CONTENT_LENGTH|HTTP_QUERY_FLAG_NUMBER,
                         &inetBuffer.dwBufferTotal, &dwLen, NULL);
     if (!bOK) {
         LPTSTR pMsg;
         dwErr = GetLastError ();
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                      FORMAT_MESSAGE_FROM_SYSTEM, 
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                      FORMAT_MESSAGE_FROM_SYSTEM,
                       NULL,
                       dwErr,
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -288,7 +288,7 @@ get_wininet_response(xmlrpc_env *         const envP,
     inetBuffer.dwBufferLength = nExpected;
     InternetQueryDataAvailable(winInetTransactionP->hHttpRequest,
                                &inetBuffer.dwBufferLength, 0, 0);
-    
+
     /* Read Response from InternetFile */
     do {
         if (inetBuffer.dwBufferLength != 0)
@@ -306,8 +306,8 @@ get_wininet_response(xmlrpc_env *         const envP,
                 dwErr = 0;
             } else {
                 LPTSTR pMsg;
-                FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                               FORMAT_MESSAGE_FROM_SYSTEM, 
+                FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                               FORMAT_MESSAGE_FROM_SYSTEM,
                                NULL,
                                dwErr,
                                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -318,7 +318,7 @@ get_wininet_response(xmlrpc_env *         const envP,
                 XMLRPC_FAIL(envP, XMLRPC_NETWORK_ERROR, pMsg);
             }
         }
-        
+
         if (inetBuffer.dwBufferLength) {
             TCHAR * const oldBufptr = inetBuffer.lpvBuffer;
 
@@ -327,14 +327,14 @@ get_wininet_response(xmlrpc_env *         const envP,
             /* Adjust inetBuffer.dwBufferLength when it is greater than the */
             /* expected end of file */
             if (inetBuffer.dwBufferLength > nExpected)
-                inetBuffer.dwBufferLength = nExpected; 
+                inetBuffer.dwBufferLength = nExpected;
 
         } else
             inetBuffer.dwBufferLength = nExpected;
         dwErr = 0;
     } while (nExpected != 0);
 
-    /* Add to the response buffer. */ 
+    /* Add to the response buffer. */
     xmlrpc_mem_block_append(envP, winInetTransactionP->pResponseData, body,
                             inetBuffer.dwBufferTotal);
     XMLRPC_FAIL_IF_FAULT(envP);
@@ -369,11 +369,11 @@ performWinInetTransaction(
     pMsgMem = NULL;  /* initial value */
 
     reqFlags = INTERNET_FLAG_NO_UI;  /* initial value */
-    
+
     winInetTransactionP->hURL =
-        InternetConnect(hSyncInternetSession, 
+        InternetConnect(hSyncInternetSession,
                         winInetTransactionP->szHostName,
-                        winInetTransactionP->nPort, 
+                        winInetTransactionP->nPort,
                         NULL, NULL, INTERNET_SERVICE_HTTP, 0, 1);
 
     /* Start our request running. */
@@ -386,14 +386,14 @@ performWinInetTransaction(
                         winInetTransactionP->szUrlPath, "HTTP/1.1", NULL,
                         (const char **)&acceptTypes,
                         reqFlags, 1);
-    
+
     XMLRPC_FAIL_IF_NULL(winInetTransactionP->hHttpRequest, envP,
                         XMLRPC_INTERNAL_ERROR,
                         "Unable to open the requested URL.");
 
     succeeded =
         HttpAddRequestHeaders(winInetTransactionP->hHttpRequest,
-                              winInetTransactionP->headerList, 
+                              winInetTransactionP->headerList,
                               strlen (winInetTransactionP->headerList),
                               HTTP_ADDREQ_FLAG_ADD | HTTP_ADDREQ_FLAG_REPLACE);
 
@@ -411,9 +411,9 @@ performWinInetTransaction(
                           &dwTimeOut, sizeof(dwTimeOut));
     }
 Again:
-    /* Send the requested XML remote procedure command */ 
-    succeeded = HttpSendRequest(winInetTransactionP->hHttpRequest, NULL, 0, 
-                                winInetTransactionP->pSendData, 
+    /* Send the requested XML remote procedure command */
+    succeeded = HttpSendRequest(winInetTransactionP->hHttpRequest, NULL, 0,
+                                winInetTransactionP->pSendData,
                                 strlen(winInetTransactionP->pSendData));
     if (!succeeded) {
         LPTSTR pMsg;
@@ -422,7 +422,7 @@ Again:
 
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
                       FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                      FORMAT_MESSAGE_IGNORE_INSERTS, 
+                      FORMAT_MESSAGE_IGNORE_INSERTS,
                       NULL,
                       lastErr,
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -473,13 +473,13 @@ Again:
                         "for example, if you entered www.server.com "
                         "and the common name "
                         "on the certificate says www.different.com. ");
-                    
+
                     reqFlags |= INTERNET_FLAG_IGNORE_CERT_CN_INVALID;
 
                     InternetSetOption(winInetTransactionP->hHttpRequest,
                                       INTERNET_OPTION_SECURITY_FLAGS,
                                       &reqFlags, sizeof(reqFlags));
-                    
+
                     goto Again;
                 } else
                     pMsg = "The SSL certificate common name "
@@ -533,14 +533,14 @@ Again:
 
             }
         } else
-            pMsg = (LPTSTR)pMsgMem; 
+            pMsg = (LPTSTR)pMsgMem;
 
         XMLRPC_FAIL(envP, XMLRPC_NETWORK_ERROR, pMsg);
     }
 
     queryLen = sizeof(unsigned long);  /* initial value */
 
-    succeeded = HttpQueryInfo(winInetTransactionP->hHttpRequest, 
+    succeeded = HttpQueryInfo(winInetTransactionP->hHttpRequest,
                               HTTP_QUERY_FLAG_NUMBER | HTTP_QUERY_STATUS_CODE,
                               &winInetTransactionP->http_status,
                               &queryLen, NULL);
@@ -548,8 +548,8 @@ Again:
         LPTSTR pMsg;
 
         lastErr = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                      FORMAT_MESSAGE_FROM_SYSTEM, 
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                      FORMAT_MESSAGE_FROM_SYSTEM,
                       NULL,
                       lastErr,
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -576,7 +576,7 @@ Again:
             winInetTransactionP->http_status, errMsg);
         goto cleanup;
     }
-    /* Read the response. */    
+    /* Read the response. */
     get_wininet_response(envP, winInetTransactionP);
     XMLRPC_FAIL_IF_FAULT(envP);
 
@@ -618,7 +618,7 @@ createRpcThread(xmlrpc_env * const envP,
 
     rc = pthread_create(threadP, NULL, doAsyncRpc, rpcP);
     switch (rc) {
-    case 0: 
+    case 0:
         break;
     case EAGAIN:
         xmlrpc_faultf(envP, "pthread_create() failed:  "
@@ -647,7 +647,7 @@ rpcCreate(xmlrpc_env *                     const envP,
           const xmlrpc_server_info *       const serverP,
           xmlrpc_mem_block *               const callXmlP,
           xmlrpc_mem_block *               const responseXmlP,
-          xmlrpc_transport_asynch_complete       complete, 
+          xmlrpc_transport_asynch_complete       complete,
           struct xmlrpc_call_info *        const callInfoP,
           rpc **                           const rpcPP) {
 
@@ -662,7 +662,7 @@ rpcCreate(xmlrpc_env *                     const envP,
         rpcP->responseXmlP = responseXmlP;
         rpcP->threadExists = FALSE;
 
-        createWinInetTransaction(envP, serverP, callXmlP, responseXmlP, 
+        createWinInetTransaction(envP, serverP, callXmlP, responseXmlP,
                                  &rpcP->winInetTransactionP);
         if (!envP->fault_occurred) {
             if (complete) {
@@ -689,7 +689,7 @@ rpcCreate(xmlrpc_env *                     const envP,
 
 
 
-static void 
+static void
 rpcDestroy(rpc * const rpcP) {
 
     XMLRPC_ASSERT_PTR_OK(rpcP);
@@ -704,10 +704,10 @@ rpcDestroy(rpc * const rpcP) {
 
 
 
-static void * 
-finishRpc(struct list_head * const headerP, 
+static void *
+finishRpc(struct list_head * const headerP,
           void *             const context ATTR_UNUSED) {
-    
+
     rpc * const rpcP = headerP->itemP;
 
     if (rpcP->threadExists) {
@@ -715,7 +715,7 @@ finishRpc(struct list_head * const headerP,
         int result;
 
         result = pthread_join(rpcP->thread, &status);
-        
+
         rpcP->threadExists = FALSE;
     }
 
@@ -807,7 +807,7 @@ statusCallback (HINTERNET     const hInternet,
 
 
 
-static void 
+static void
 create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
        const char *                      const appname ATTR_UNUSED,
@@ -818,7 +818,7 @@ create(xmlrpc_env *                      const envP,
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a WinInet client transport.
 -----------------------------------------------------------------------------*/
-    const struct xmlrpc_wininet_xportparms * const wininetXportParmsP = 
+    const struct xmlrpc_wininet_xportparms * const wininetXportParmsP =
         transportparmsP;
 
     struct xmlrpc_client_transport * transportP;
@@ -828,7 +828,7 @@ create(xmlrpc_env *                      const envP,
         xmlrpc_faultf(envP, "Unable to allocate transport descriptor.");
     else {
         transportP->listLockP = xmlrpc_lock_create();
-        
+
         list_make_empty(&transportP->rpcList);
 
         if (hSyncInternetSession == NULL)
@@ -849,7 +849,7 @@ create(xmlrpc_env *                      const envP,
 
 
 
-static void 
+static void
 destroy(struct xmlrpc_client_transport * const clientTransportP) {
 /*----------------------------------------------------------------------------
    This does the 'destroy' operation for a WinInet client transport.
@@ -869,8 +869,8 @@ destroy(struct xmlrpc_client_transport * const clientTransportP) {
 
 
 
-static void 
-sendRequest(xmlrpc_env *                     const envP, 
+static void
+sendRequest(xmlrpc_env *                     const envP,
             struct xmlrpc_client_transport * const clientTransportP,
             const xmlrpc_server_info *       const serverP,
             xmlrpc_mem_block *               const callXmlP,
@@ -905,7 +905,7 @@ sendRequest(xmlrpc_env *                     const envP,
 
 
 
-static void 
+static void
 finishAsynch(struct xmlrpc_client_transport * const clientTransportP,
              xmlrpc_timeoutType               const timeoutType ATTR_UNUSED,
              xmlrpc_timeout                   const timeout ATTR_UNUSED) {
@@ -950,9 +950,9 @@ call(xmlrpc_env *                     const envP,
         if (!envP->fault_occurred) {
             performWinInetTransaction(envP, rpcP->winInetTransactionP,
                                       clientTransportP);
-            
+
             *responsePP = responseXmlP;
-            
+
             rpcDestroy(rpcP);
         }
         if (envP->fault_occurred)
@@ -986,8 +986,8 @@ struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops = {
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
