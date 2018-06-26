@@ -102,18 +102,16 @@ OBJECTS = $(patsubst %,%.o,$(patsubst %.cgi,%_cgi,$(PROGS)))
 $(OBJECTS):%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $<
 
-# See example/Makefile for an explanation of config.h and xmlrpc_amconfig.h
+# See example/Makefile for an explanation of config.h
 
-$(OBJECTS): config.h xmlrpc_amconfig.h
+$(OBJECTS): config.h
 
 config.h:
 	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
-xmlrpc_amconfig.h:
-	$(LN_S) $(BLDDIR)/$@ .
 
 .PHONY: clean
 clean:
-	rm -f $(PROGS) *.o config.h xmlrpc_amconfig.h
+	rm -f $(PROGS) *.o config.h
 
 .PHONY: distclean
 distclean: clean

@@ -290,6 +290,11 @@ toValue(int const x) {
     return xmlrpc_c::value_int(x);
 }
 
+inline xmlrpc_c::value_i8
+toValue(xmlrpc_int64 const x) {
+    return xmlrpc_c::value_i8(x);
+}
+
 inline xmlrpc_c::value_boolean
 toValue(bool const x) {
     return xmlrpc_c::value_boolean(x);
@@ -362,6 +367,11 @@ fromValue(std::string & y, xmlrpc_c::value const& x) {
 inline void
 fromValue(int & y, xmlrpc_c::value const& x) {
     y = xmlrpc_c::value_int(x);
+}
+
+inline void
+fromValue(xmlrpc_int64 & y, xmlrpc_c::value const& x) {
+    y = xmlrpc_c::value_i8(x);
 }
 
 inline void

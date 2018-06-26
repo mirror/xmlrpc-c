@@ -74,7 +74,7 @@
 #include "linklist.h"
 #include "girstring.h"
 
-#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/select_int.h"
 #include "xmlrpc-c/client_int.h"
@@ -522,7 +522,7 @@ waitForWorkInt(xmlrpc_env *       const envP,
    waitForWork() will suffice.
 -----------------------------------------------------------------------------*/
     sigset_t callerBlockSet;
-#ifdef _WIN32
+#if MSVCRT
     waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
 #else
     sigset_t allSignals;

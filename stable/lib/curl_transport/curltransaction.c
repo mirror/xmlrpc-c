@@ -10,7 +10,7 @@
 
 #include "mallocvar.h"
 
-#include "xmlrpc-c/util.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/client_int.h"
@@ -514,18 +514,23 @@ assertConstantsMatch(void) {
    make curl option setting work.  This function asserts such
    formally.
 -----------------------------------------------------------------------------*/
-    assert(XMLRPC_SSLVERSION_DEFAULT == CURL_SSLVERSION_DEFAULT);
-    assert(XMLRPC_SSLVERSION_TLSv1   == CURL_SSLVERSION_TLSv1  );
-    assert(XMLRPC_SSLVERSION_SSLv2   == CURL_SSLVERSION_SSLv2  );
-    assert(XMLRPC_SSLVERSION_SSLv3   == CURL_SSLVERSION_SSLv3  );
+#define assertMatch(xmlrpc_name, curl_name) \
+  assert((unsigned)xmlrpc_name == (unsigned)curl_name)
 
-    assert(XMLRPC_HTTPAUTH_BASIC        == CURLAUTH_BASIC       );
-    assert(XMLRPC_HTTPAUTH_DIGEST       == CURLAUTH_DIGEST      );
-    assert(XMLRPC_HTTPAUTH_GSSNEGOTIATE == CURLAUTH_GSSNEGOTIATE);
-    assert(XMLRPC_HTTPAUTH_NTLM         == CURLAUTH_NTLM        );
+    assertMatch(XMLRPC_SSLVERSION_DEFAULT , CURL_SSLVERSION_DEFAULT);
+    assertMatch(XMLRPC_SSLVERSION_TLSv1   , CURL_SSLVERSION_TLSv1  );
+    assertMatch(XMLRPC_SSLVERSION_SSLv2   , CURL_SSLVERSION_SSLv2  );
+    assertMatch(XMLRPC_SSLVERSION_SSLv3   , CURL_SSLVERSION_SSLv3  );
 
-    assert(XMLRPC_HTTPPROXY_HTTP   == CURLPROXY_HTTP   );
-    assert(XMLRPC_HTTPPROXY_SOCKS5 == CURLPROXY_SOCKS5 );
+    assertMatch(XMLRPC_HTTPAUTH_BASIC        , CURLAUTH_BASIC       );
+    assertMatch(XMLRPC_HTTPAUTH_DIGEST       , CURLAUTH_DIGEST      );
+    assertMatch(XMLRPC_HTTPAUTH_GSSNEGOTIATE , CURLAUTH_GSSNEGOTIATE);
+    assertMatch(XMLRPC_HTTPAUTH_NTLM         , CURLAUTH_NTLM        );
+
+    assertMatch(XMLRPC_HTTPPROXY_HTTP   , CURLPROXY_HTTP   );
+    assertMatch(XMLRPC_HTTPPROXY_SOCKS5 , CURLPROXY_SOCKS5 );
+
+#undef assertMatch
 }
 
 

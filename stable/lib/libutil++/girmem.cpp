@@ -41,8 +41,7 @@ autoObject::Impl::Impl() {
 
 autoObject::Impl::~Impl() {
 
-    if (this->refcount > 0)
-        throw(error("Destroying referenced object"));
+    assert(this->refcount == 0);
 }
 
 

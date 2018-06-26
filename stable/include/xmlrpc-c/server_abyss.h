@@ -100,6 +100,7 @@ typedef struct {
     socklen_t         sockaddrlen;
     unsigned int      max_conn;
     unsigned int      max_conn_backlog;
+    size_t            max_rpc_mem;
 } xmlrpc_server_abyss_parms;
 
 

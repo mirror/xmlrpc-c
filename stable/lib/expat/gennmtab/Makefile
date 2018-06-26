@@ -34,13 +34,16 @@ distdir:
 .PHONY: install
 install:
 
+.PHONY: uninstall
+uninstall:
+
 .PHONY: dep
 dep: dep-common
 
 gennmtab.o:%.o:%.c
-	$(BUILDTOOL_CC) -c $< -o $@ $(CFLAGS_ALL) $(INCLUDES)
+	$(CC_FOR_BUILD) -c $< -o $@ $(CFLAGS_ALL_FOR_BUILD)
 
 gennmtab:%:%.o
-	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS_ALL) $^
+	$(CC_FOR_BUILD) -o $@ $(LDFLAGS_ALL_FOR_BUILD) $^
 
 include depend.mk

@@ -2,7 +2,7 @@
 #define PARSE_VALUE_H_INCLUDED
 
 #include "xmlrpc-c/base.h"
-#include "xmlrpc-c/xmlparser.h"
+#include "xmlparser.h"
 
 void
 xmlrpc_parseValue(xmlrpc_env *    const envP,

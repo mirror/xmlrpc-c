@@ -391,6 +391,9 @@ check:
 .PHONY: install
 install: install-common $(SUBDIRS:%=%/install)
 
+.PHONY: uninstall
+uninstall: uninstall-common $(SUBDIRS:%=%/uninstall)
+
 .PHONY: clean clean-local distclean distclean-local 
 clean:  $(SUBDIRS:%=%/clean) clean-common clean-local
 clean-local:

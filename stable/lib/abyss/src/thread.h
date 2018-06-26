@@ -49,7 +49,7 @@ ThreadForks(void);
 void
 ThreadUpdateStatus(TThread * const threadP);
 
-#ifndef WIN32
+#if !MSVCRT
 void
 ThreadHandleSigchld(pid_t const pid);
 #endif

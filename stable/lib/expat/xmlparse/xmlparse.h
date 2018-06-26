@@ -368,7 +368,8 @@ or XML_ParseBuffer. */
 
 XMLRPC_DLLEXPORT
 int
-xmlrpc_XML_SetEncoding(XML_Parser parser, const XML_Char *encoding);
+xmlrpc_XML_SetEncoding(XML_Parser       const xmlParserP,
+                       const XML_Char * const encodingName);
 
 /* If this function is called, then the parser will be passed
    as the first argument to callbacks instead of userData.

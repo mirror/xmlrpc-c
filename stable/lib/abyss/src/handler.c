@@ -8,20 +8,21 @@
 
 #define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 
+#include "xmlrpc_config.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#ifdef _WIN32
+#if MSVCRT
   #include <io.h>
 #else
   #include <unistd.h>
 #endif
 #include <fcntl.h>
 
-#include "xmlrpc_config.h"
 #include "bool.h"
 #include "int.h"
 #include "girmath.h"
@@ -264,21 +265,16 @@ htmlTail(void) {
 
 
 static void
-sendDirectoryDocument(TList *      const listP,
-                      bool         const ascending,
-                      uint16_t     const sort,
-                      bool         const text,
-                      const char * const uri,
-                      MIMEType *   const mimeTypeP,
-                      TSession *   const sessionP) {
+sendDirectoryDocumentHeading(TSession *   const sessionP,
+                             const char * const uri,
+                             bool         const text) {
 
     char z[4096];
-    char *p,z1[26],z2[20],z3[9],u;
-    const char * z4;
-    int16_t i;
-    uint32_t k;
-
+    
     if (text) {
+        size_t i;
+        char * p;
+        
         sprintf(z, "Index of %s\r\n", uri);
         i = strlen(z)-2;
         p = z + i + 2;
@@ -303,6 +299,26 @@ sendDirectoryDocument(TList *      const listP,
     }
 
     HTTPWriteBodyChunk(sessionP, z, strlen(z));
+}
+
+
+
+static void
+sendDirectoryDocument(TList *      const listP,
+                      bool         const ascending,
+                      uint16_t     const sort,
+                      bool         const text,
+                      const char * const uri,
+                      MIMEType *   const mimeTypeP,
+                      TSession *   const sessionP) {
+
+    char z[4096];
+    char *p,z1[26],z2[20],z3[9],u;
+    const char * z4;
+    int16_t i;
+    uint32_t k;
+
+    sendDirectoryDocumentHeading(sessionP, uri, text);
 
     /* Sort the files */
     qsort(listP->item, listP->size, sizeof(void *),
@@ -702,7 +718,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
 
     endingslash = false;  /* initial value */
 
-    if (!RequestValidURIPath(sessionP)) {
+    if (!HTTPRequestHasValidUriPath(sessionP)) {
         ResponseStatus(sessionP, 400);
         return true;
     }

@@ -190,13 +190,19 @@ test_value_double(void) {
     TEST(d == -3.25);
     xmlrpc_DECREF(v2);
 
-    v = xmlrpc_double_new(&env, 1.0/0.0);
+    /* Older compilers don't have INFINITY and NAN, so we compute them here.
+       But newer compilers recognize an error if they see you dividing by
+       zero, so we have to make it nonobvious that we're doing that.
+    */
+    double const zero = sin(0);
+    
+    v = xmlrpc_double_new(&env, 1.0/zero);  /* +INFINITY */
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_double_new(&env, -1.0/0.0);
+    v = xmlrpc_double_new(&env, -1.0/zero); /* -INFINITY */
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_double_new(&env, 0.0/0.0);
+    v = xmlrpc_double_new(&env, 0.0/zero);  /* NAN */
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1384,14 +1390,13 @@ test_value_type_mismatch(void) {
 static void
 test_value_invalid_type(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
 
     /* Test invalid type specifier in format string */
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "Q");
+    xmlrpc_build_value(&env, "Q");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1402,17 +1407,16 @@ test_value_invalid_type(void) {
 static void
 test_value_missing_array_delim(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
 
     /* Test missing close parenthesis on array */
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "(");
+    xmlrpc_build_value(&env, "(");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "(i");
+    xmlrpc_build_value(&env, "(i");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1423,20 +1427,19 @@ test_value_missing_array_delim(void) {
 static void
 test_value_missing_struct_delim(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
     
     /* Test missing closing brace on struct */
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "{");
+    xmlrpc_build_value(&env, "{");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{s:i", "key1", 7);
+    xmlrpc_build_value(&env, "{s:i", "key1", 7);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{s:i,s:i", "key1", 9, "key2", -4);
+    xmlrpc_build_value(&env, "{s:i,s:i", "key1", 9, "key2", -4);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1447,7 +1450,6 @@ test_value_missing_struct_delim(void) {
 static void
 test_value_invalid_struct(void) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
 
     /* Note that even though the format strings are invalid, we have
@@ -1458,13 +1460,13 @@ test_value_invalid_struct(void) {
     
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_build_value(&env, "{s:ii", "key1", 9, 9);
+    xmlrpc_build_value(&env, "{s:ii", "key1", 9, 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{si:", "key1", 9);
+    xmlrpc_build_value(&env, "{si:", "key1", 9);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
-    v = xmlrpc_build_value(&env, "{s", "key1");
+    xmlrpc_build_value(&env, "{s", "key1");
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);
@@ -1504,6 +1506,8 @@ test_value_parse_value(void) {
 
     xmlrpc_env env;
     xmlrpc_value * valueP;
+    const char * base64_data = "base64 data";
+    size_t base64_data_length = strlen(base64_data);
     const char * datestring = "19980717T14:08:55";
 
     xmlrpc_env_init(&env);
@@ -1511,7 +1515,7 @@ test_value_parse_value(void) {
     valueP = xmlrpc_build_value(&env, "(idb8ss#6(i){s:i}np(i))",
                                 7, 3.14, (xmlrpc_bool)1, datestring,
                                 "hello world", "a\0b", (size_t)3,
-                                "base64 data", strlen("base64 data"),
+                                base64_data, base64_data_length,
                                 15, "member9", 9, &valueP, -5);
     
     TEST_NO_FAULT(&env);

@@ -17,7 +17,11 @@ using girerr::throwf;
 #include "xmlrpc-c/AbyssServer.hpp"
 #include "xmlrpc-c/AbyssEnvironment.hpp"
 #include "xmlrpc-c/AbyssChanSwitch.hpp"
+#ifdef _WIN32
+#include "xmlrpc-c/AbyssChanSwitchWin.hpp"
+#else
 #include "xmlrpc-c/AbyssChanSwitchUnix.hpp"
+#endif
 
 using namespace xmlrpc_c;
 
@@ -54,7 +58,11 @@ public:
                           bool *                 const ) {}
         };
 
+#ifdef _WIN32
+        AbyssChanSwitchWin chanSwitch(8080);
+#else
         AbyssChanSwitchUnix chanSwitch(8080);
+#endif
 
         AbyssServer abyssServer(&chanSwitch);
 
@@ -73,9 +81,11 @@ public:
         return "createTestSuite";
     }
     virtual void runtests(unsigned int const) {
-        
+#ifdef _WIN32
+        AbyssChanSwitchWin chanSwitch(8080);
+#else
         AbyssChanSwitchUnix chanSwitch(8080);
-
+#endif
         AbyssServer abyssServer(&chanSwitch);
 
     }

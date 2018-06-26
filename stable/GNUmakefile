@@ -120,6 +120,8 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'LIBINST_DIR="$(LIBINST_DIR)"'                            >>$@
 	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
+	@echo 'ABYSS_DOES_OPENSSL="$(MUST_BUILD_ABYSS_OPENSSL)"'        >>$@
+	@echo 'OPENSSL_LDADD="$(OPENSSL_LDADD)"'                        >>$@
 	@echo '#######################################################' >>$@
 
 xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config
@@ -159,10 +161,16 @@ distdir: distdir-common
 .PHONY: install
 install: $(DEFAULT_SUBDIRS:%=%/install) install-common
 
+HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
+
+.PHONY: uninstall
+uninstall: $(DEFAULT_SUBDIRS:%=%/uninstall) uninstall-common
+	-rmdir $(HEADERDESTDIR)/xmlrpc-c
+
 .PHONY: dep
 dep: version.h $(BLDDIR)/include/xmlrpc-c/config.h $(SUBDIRS:%=%/dep)
 
-xmlrpc_config.h xmlrpc_amconfig.h \
+xmlrpc_config.h \
 	:%:%.in $(SRCDIR)/configure
 	$(SRCDIR)/configure
 

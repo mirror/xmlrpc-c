@@ -32,6 +32,9 @@ distdir: distdir-common
 .PHONY: install
 install: $(SUBDIRS:%=%/install)
 
+.PHONY: uninstall
+uninstall: $(SUBDIRS:%=%/uninstall)
+
 .PHONY: dep
 dep: $(SUBDIRS:%=%/dep)
 

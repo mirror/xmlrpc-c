@@ -502,6 +502,13 @@ public:
                                          &responseXml););
                 // Error: no response
         }
+        {
+            clientXmlTransport_pstream transport2(
+                clientXmlTransport_pstream::constrOpt()
+                .fd(devNullFd)
+                .useBrokenConnEx(true)
+                );
+        }
         clientXmlTransportPtr transport1P(new clientXmlTransport_pstream(
             clientXmlTransport_pstream::constrOpt()
             .fd(devNullFd)
@@ -575,7 +582,7 @@ public:
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         client_xml client0(&transportc0);
-        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
+        carriageParm_curl0 carriageParmCurl("http://nosuchserver8677.com");
 
         paramList paramList0;
         
@@ -619,8 +626,8 @@ public:
 #if MUST_BUILD_CURL_CLIENT
         clientXmlTransport_curl transportc0;
         client_xml client0(&transportc0);
-        carriageParm_http0 carriageParmHttp("http://suckthis.com");
-        carriageParm_curl0 carriageParmCurl("http://suckthis.com");
+        carriageParm_http0 carriageParmHttp("http://nosuchserver8677.com");
+        carriageParm_curl0 carriageParmCurl("http://nosuchserver8677.com");
         connection connection0(&client0, &carriageParmHttp);
 
         paramList paramList0;

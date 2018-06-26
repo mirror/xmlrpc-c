@@ -106,9 +106,9 @@ requestShutdown(xmlrpc_env * const faultP,
                 const char * const comment,
                 void *       const callInfo) {
 
-    /* You make this run by executing the system method
-       'system.shutdown'.  This function is registered in the method
-       registry as the thing to call for that.
+    /* You make this run by executing the system method 'system.shutdown'.
+       This function is registered in the method registry as the thing to call
+       for that.
     */
     int * const terminationRequestedP = context;
     TSession * const abyssSessionP = callInfo;

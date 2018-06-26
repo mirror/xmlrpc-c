@@ -14,7 +14,7 @@
 #define NAME_MAX    1024
 #endif
 
-#ifdef WIN32
+#if MSVCRT
 #ifndef __BORLANDC__
 #define O_APPEND    _O_APPEND
 #define O_CREAT     _O_CREAT 
@@ -35,28 +35,12 @@
 #define A_SUBDIR    1
 #define O_BINARY    0
 #define O_TEXT      0
-#endif  /* WIN32 */
-
-#ifdef WIN32
+#endif  /* MSVCRT */
 
 #if MSVCRT
 typedef struct _stati64 TFileStat;
 typedef struct _finddatai64_t TFileInfo;
-
-#else  /* MSVCRT */
-
-typedef struct stat TFileStat;
-typedef struct finddata_t {
-    char name[NAME_MAX+1];
-    int attrib;
-    uint64_t size;
-    time_t time_write;
-    WIN32_FIND_DATA data;
-} TFileInfo;
-
-#endif /* MSVCRT */
-
-#else /* WIN32 */
+#else /* MSVCRT */
 
 #include <unistd.h>
 #include <dirent.h>
@@ -70,7 +54,7 @@ typedef struct finddata_t {
     time_t time_write;
 } TFileInfo;
 
-#endif
+#endif  /* MSVCRT */
 
 typedef struct TFileFind TFileFind;
 

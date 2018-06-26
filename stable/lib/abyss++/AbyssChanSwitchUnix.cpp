@@ -7,7 +7,7 @@ using namespace std;
   #error This module does not compile for a Windows target.
 #endif
 
-#include <xmlrpc-c/abyss.h>
+#include "xmlrpc-c/abyss.h"
 
 #include "xmlrpc-c/AbyssChanSwitchUnix.hpp"
 

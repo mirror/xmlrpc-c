@@ -17,7 +17,7 @@
 static lockAcquireFn acquire;
 
 static void
-acquire(struct lock * const lockP) {
+acquire(struct lock * lockP) {
 
     CRITICAL_SECTION * const criticalSectionP = lockP->implementationP;
 
@@ -29,7 +29,7 @@ acquire(struct lock * const lockP) {
 static lockReleaseFn release;
 
 static void
-release(struct lock * const lockP) {
+release(struct lock * lockP) {
 
     CRITICAL_SECTION * const criticalSectionP = lockP->implementationP;
 
