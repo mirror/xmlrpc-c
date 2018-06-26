@@ -133,7 +133,7 @@ getLineInBuffer(TConn *       const connectionP,
                 }
             }
         }
-    }    
+    }
     *lineEndP = lfPos + 1;
     *timedOutP = timedOut;
 }
@@ -206,7 +206,7 @@ getRestOfField(TConn *       const connectionP,
     bool timedOut;
 
     fieldEnd = lineEnd;  /* initial value - end of 1st line */
-        
+
     for (gotWholeField = false, timedOut = false, *errorP = NULL;
          !gotWholeField && !timedOut && !*errorP;) {
 
@@ -214,7 +214,7 @@ getRestOfField(TConn *       const connectionP,
 
         /* Note that we are guaranteed, assuming the HTTP stream is
            valid, that there is at least one more line in it.  Worst
-           case, it's the empty line that marks the end of the headers.
+           case, it's the empty line that marks the end of the header.
         */
         getLineInBuffer(connectionP, fieldEnd, deadline,
                         &nextLineEnd, &timedOut, errorP);
@@ -258,7 +258,7 @@ readField(TConn *       const connectionP,
    call that empty line the EOH mark.
 
    We assume the connection is positioned to a header or EOH mark.
-   
+
    In the course of reading, we read at least one character past the
    line delimiter at the end of the field or EOH mark; we may read
    much more.  But we leave everything after the field or EOH (and
@@ -340,7 +340,7 @@ skipToNonemptyLine(TConn *       const connectionP,
 
     bool gotNonEmptyLine;
     char * lineStart;
-    
+
     for (lineStart = bufferStart, gotNonEmptyLine = false, *timedOutP = false,
              *errorP = NULL;
          !gotNonEmptyLine && !*timedOutP && !*errorP; ) {
@@ -380,7 +380,7 @@ readRequestField(TSession *    const sessionP,
 
    We assume the connection is presently positioned to the beginning of
    the HTTP document.  We leave it positioned after the request field.
-   
+
    We ignore any empty lines at the beginning of the stream, per
    RFC2616 Section 4.1.
 
@@ -418,7 +418,7 @@ readRequestField(TSession *    const sessionP,
                    encountered EOH:
                 */
                 assert(!endOfHeader);
-            
+
                 *requestLineP = line;
             }
         }
@@ -475,15 +475,15 @@ parsePerCentEscape(const char ** const srcP,
         *errorP = NULL;  /* initial assumption */
 
         hexDigitValue(*src++, &digit0, errorP);
-        
+
         if (!*errorP) {
             unsigned int digit1;
-            
+
             if (!*src)
                 xmlrpc_asprintf(errorP, "URI ends after the first digit");
             else {
                 hexDigitValue(*src++, &digit1, errorP);
-                
+
                 if (!*errorP)
                     *unescapedP = ((digit0 << 4) | digit1);
             }
@@ -516,7 +516,7 @@ unescapeUri(const char *  const uriComponent,
         char * dst;
 
         src = dst = buffer;
-    
+
         *errorP = NULL;  /* initial value */
 
         while (*src && !*errorP) {
@@ -588,7 +588,7 @@ parseHostPort(const char *     const hostport,
             for (p = colonPos + 1, port = 0;
                  isdigit(*p) && port < 65535;
                  (port = port * 10 + (*p - '0')), ++p);
-            
+
             if (*p || port == 0) {
                 xmlrpc_asprintf(errorP, "There is nothing, or something "
                                 "non-numeric for the port number after the "
@@ -626,7 +626,7 @@ splitUriQuery(const char *  const requestUri,
         xmlrpc_asprintf(errorP, "Couldn't get memory for URI buffer");
     else {
         char * const qmark = strchr(buffer, '?');
-            
+
         if (qmark) {
             *qmark = '\0';
             *queryP = xmlrpc_strdupsol(qmark + 1);
@@ -660,7 +660,7 @@ parseHttpHostPortPath(const char *    const hostportpath,
         char * const slashPos = strchr(buffer, '/');
 
         char * hostport;
-                
+
         if (slashPos) {
             path = xmlrpc_strdupsol(slashPos); /* Includes the initial slash */
 
@@ -897,9 +897,9 @@ parseRequestLine(char *           const requestLine,
                     const char * httpVersion;
 
                     NextToken((const char **)&p);
-        
+
                     /* HTTP Version Decoding */
-                
+
                     httpVersion = GetToken(&p);
                     if (httpVersion) {
                         const char * error;
@@ -972,7 +972,7 @@ getFieldNameToken(char **       const pP,
     char * fieldName;
 
     NextToken((const char **)pP);
-    
+
     fieldName = GetToken(pP);
     if (!fieldName) {
         xmlrpc_asprintf(errorP, "The header has no field name token");
@@ -987,7 +987,7 @@ getFieldNameToken(char **       const pP,
             fieldName[strlen(fieldName)-1] = '\0';  /* remove trailing colon */
 
             strtolower(fieldName);
-            
+
             *errorP = NULL;
         }
     }
@@ -1112,14 +1112,14 @@ readAndProcessHeaderFields(TSession *    const sessionP,
                 getFieldNameToken(&p, &fieldName, errorP, httpErrorCodeP);
                 if (!*errorP) {
                     char * fieldValue;
-                    
+
                     NextToken((const char **)&p);
-                    
+
                     fieldValue = p;
 
                     TableAdd(&sessionP->requestHeaderFields,
                              fieldName, fieldValue);
-                    
+
                     processField(fieldName, fieldValue, sessionP, errorP,
                                  httpErrorCodeP);
                 }
@@ -1136,19 +1136,19 @@ SessionReadRequest(TSession *    const sessionP,
                    const char ** const errorP,
                    uint16_t *    const httpErrorCodeP) {
 /*----------------------------------------------------------------------------
-   Read the headers of a new HTTP request (assuming nothing has yet been
+   Read the header of a new HTTP request (assuming nothing has yet been
    read on the session).
 
-   Update *sessionP with the information from the headers.
+   Update *sessionP with the information from the header.
 
    Leave the connection positioned to the body of the request, ready
    to be read by an HTTP request handler (via SessionRefillBuffer() and
    SessionGetReadData()).
 
-   If we are unable to read the headers, we return a text description as
+   If we are unable to read the header, we return a text description as
    *errorP and a suitable HTTP status code as *httpErrorCodeP.
 
-   If we successfully read the headers, we return *errorP == NULL and
+   If we successfully read the header, we return *errorP == NULL and
    nothing as *httpErrorCodeP.
 -----------------------------------------------------------------------------*/
     time_t const deadline = time(NULL) + timeout;
