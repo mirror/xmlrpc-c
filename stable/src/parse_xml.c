@@ -58,8 +58,14 @@ describeXmlElement(const xml_element * const elemP,
     printf("%sXML element type:         '%s'\n",
            prefix, xml_element_name(elemP));
 
+    printf("%sCdata:                    '%s'\n",
+           prefix, xml_element_cdata(elemP));
+
     printf("%sNumber of child elements: %u\n",
            prefix, xml_element_children_size(elemP));
+
+    if (xml_element_children_size(elemP) == 0)
+        printf("\n");
 
     for (i = 0; i < xml_element_children_size(elemP); ++i) {
         char * const newPrefix = malloc(strlen(prefix) + 2);

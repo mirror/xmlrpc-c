@@ -282,12 +282,11 @@ test_value_datetime_str_invalid1(const char * const datestring) {
 static void
 test_value_datetime_str_invalid2(const char * const datestring) {
 
-    xmlrpc_value * v;
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
 
-    v = xmlrpc_datetime_new_str(&env, datestring);
+    xmlrpc_datetime_new_str(&env, datestring);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
 
     xmlrpc_env_clean(&env);

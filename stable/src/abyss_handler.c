@@ -361,6 +361,11 @@ processCall(TSession *            const abyssSessionP,
    RPC, i.e. turn the XML-RPC call into an XML-RPC response.
 
    'wantChunk' means Caller wants the HTTP reponse chunked.
+
+   We use the Abyss session's memory pool for some memory allocations -
+   essentially those that aren't predictable because they depend upon the data
+   from the client.  We do this because the session's memory pool has a size
+   limit designed to keep the client from monopolizing the server's memory.
 -----------------------------------------------------------------------------*/
     xmlrpc_env env;
 
@@ -469,6 +474,11 @@ handleXmlRpcCallReq(TSession *           const abyssSessionP,
 
    Handle it by feeding the XML which is its content to 'xmlProcessor'
    along with argument 'xmlProcessorArg'.
+
+   (There doesn't seem to be any way 'xmlProcessor' could ever be anything but
+   'processXmlrpcCall' in xmlrpc_server_abyss.c (with 'xmlProcessorArg' being
+   the handle of a method registry), so I'm not sure why we didn't just put
+   that in this module and call it explicitly).
 -----------------------------------------------------------------------------*/
     /* We used to reject the call if content-type was not present and
        text/xml, on some security theory (a firewall may block text/xml with

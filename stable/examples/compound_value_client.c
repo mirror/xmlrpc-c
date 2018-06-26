@@ -20,7 +20,6 @@
      Argument 0: Integer.  Version number of this argument protocol.  Must
                  be 1.
 
-
      Argument 1: Array.  One element for each pair of numbers you want the
                  server to divide.  Each element is structure, with these
                  members:

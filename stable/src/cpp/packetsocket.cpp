@@ -80,6 +80,9 @@ using namespace std;
 #define ESC 0x1B   //  ASCII Escape character
 #define ESC_STR "\x1B"
 
+class BrokenConnectionEx {
+};
+
 class XMLRPC_DLLEXPORT socketx {
 
 public:
@@ -224,6 +227,48 @@ wouldBlock() {
 
 
 
+static bool
+lastErrorIsBrokenConn() {
+/*----------------------------------------------------------------------------
+   The last system call failure in this process, assuming the system call was
+   to read or write a steram socket, indicates the problem was that the
+   connection broke, e.g. because a network cable was cut, the peer powered
+   off, or the peer just got tired of talking to us and closed down the
+   connection.
+
+   The underlying signficance of this distinction is that when a connection
+   has broken, the caller might reasonably respond by trying to establish a
+   new connection, and possibly doing so with a different network path or a
+   different peer.
+-----------------------------------------------------------------------------*/
+    bool retval;
+
+#if MSVCRT
+    // We don't know how to determine this on Windows, so we just punt
+    retval = false;
+#else
+    switch (errno) {
+        // Some of these are probably not defined on some systems; we will
+        // need some build system magic to deal with that as error reports
+        // come in.
+    case EPIPE:
+    case ETIMEDOUT:
+    case ECONNRESET:
+    case ENOTCONN:
+    case ESHUTDOWN:
+        retval = true;
+        break;
+    default:
+        retval = false;
+    }
+
+#endif
+
+    return retval;
+}
+
+
+
 static string const
 lastErrorDesc() {
 /*----------------------------------------------------------------------------
@@ -249,7 +294,17 @@ socketx::read(unsigned char * const buffer,
               size_t          const bufferSize,
               bool *          const wouldblockP,
               size_t *        const bytesReadP) const {
-    
+/*----------------------------------------------------------------------------
+  Put any bytes that are in the OS buffer waiting to be read in 'buffer',
+  up to 'bufferSize'.
+
+  Return *wouldblockP == true iff the buffer is empty now, but more could
+  arrive later.
+
+  Return as *bytesReadP the number of bytes put into 'buffer'.
+   
+  Throw a BrokenConnectionEx exception if the connection has been broken.
+-----------------------------------------------------------------------------*/
     int rc;
 
     // We've seen a Windows library whose recv() expects a char * buffer
@@ -261,7 +316,9 @@ socketx::read(unsigned char * const buffer,
         if (wouldBlock()) {
             *wouldblockP = true;
             *bytesReadP  = 0;
-        } else
+        } else if (lastErrorIsBrokenConn())
+            throw BrokenConnectionEx();
+        else
             throwf("read() of socket failed with %s", lastErrorDesc().c_str());
     } else {
         *wouldblockP = false;
@@ -276,7 +333,14 @@ writeFd(int                   const fd,
         const unsigned char * const data,
         size_t                const size,
         size_t *              const bytesWrittenP) {
+/*----------------------------------------------------------------------------
+  Write as much of the 'size' bytes at 'data' to socket 'fd' as can be
+  written immediately (i.e. into the OS buffer).
 
+  Return as *bytesWrittenP the number of bytes written.
+
+  Throw a BrokenConnectionEx exception if the connection has been broken.
+-----------------------------------------------------------------------------*/
     size_t totalBytesWritten;
     bool full;  // File image is "full" for now - won't take any more data
 
@@ -292,9 +356,13 @@ writeFd(int                   const fd,
         if (rc < 0) {
             if (wouldBlock())
                 full = true;
-            else
-                throwf("write() of socket failed with %s",
-                       lastErrorDesc().c_str());
+            else {
+                if (lastErrorIsBrokenConn())
+                    throw BrokenConnectionEx();
+                else
+                    throwf("write() of socket failed with %s",
+                           lastErrorDesc().c_str());
+            }
         } else if (rc == 0)
             throwf("Zero byte short write.");
         else {
@@ -311,8 +379,10 @@ void
 socketx::writeWait(const unsigned char * const data,
                    size_t                const size) const {
 /*----------------------------------------------------------------------------
-   Write the 'size' bytes at 'data' to the socket.  Wait as long
-   as it takes for the file image to be able to take all the data.
+  Write the 'size' bytes at 'data' to the socket.  Wait as long
+  as it takes for the file image to be able to take all the data.
+
+  Throw a BrokenConnectionEx exception if the connection has been broken.
 -----------------------------------------------------------------------------*/
     size_t totalBytesWritten;
 
@@ -586,7 +656,13 @@ escapePos(const unsigned char * const start,
 
 void
 packetSocket_impl::writeWait(packetPtr const& packetP) const {
+/*----------------------------------------------------------------------------
+   Write the packet to the socket, waiting for the recipient to take it as
+   necessary.
 
+   Throw a BrokenConnectionEx exception if we can't send because of a broken
+   connection.
+-----------------------------------------------------------------------------*/
     const unsigned char * const packetStart(
         reinterpret_cast<const unsigned char *>(ESC_STR "PKT"));
     const unsigned char * const packetEnd(
@@ -597,6 +673,7 @@ packetSocket_impl::writeWait(packetPtr const& packetP) const {
     if (this->mustTrace)
         traceWrite(packetP->getBytes(), packetP->getLength());
 
+    
     this->sock.writeWait(packetStart, 4);
 
     const unsigned char * const end(
@@ -646,7 +723,7 @@ traceReceivedPacket(const unsigned char * const data,
 
 
 
-void
+void  // private
 packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
                                      size_t                const length,
                                      size_t *              const bytesTakenP) {
@@ -701,7 +778,7 @@ packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
 
 
 
-void
+void  // private
 packetSocket_impl::takeSomePacket(const unsigned char * const buffer,
                                   size_t                const length,
                                   size_t *              const bytesTakenP) {
@@ -737,7 +814,7 @@ packetSocket_impl::takeSomePacket(const unsigned char * const buffer,
 
 
 
-void
+void  // private
 packetSocket_impl::verifyNothingAccumulated() {
 /*----------------------------------------------------------------------------
    Throw an error if there is a partial packet accumulated.
@@ -754,7 +831,7 @@ packetSocket_impl::verifyNothingAccumulated() {
 
 
 
-void
+void  // private
 packetSocket_impl::processBytesRead(const unsigned char * const buffer,
                                     size_t                const bytesRead) {
 
@@ -801,17 +878,20 @@ traceBytesRead(const unsigned char * const buffer,
 
 
 
-void
+void  //private
 packetSocket_impl::readFromFile() {
 /*----------------------------------------------------------------------------
    Read some data from the underlying stream socket.  Read as much as is
-   available right now, up to 4K.  Update 'this' to reflect the data read.
+   available right now, up to 4K.  Update *this to reflect the data read.
 
    E.g. if we read an entire packet, we add it to the packet buffer
    (this->readBuffer).  If we read the first part of a packet, we add
    it to the packet accumulator (*this->packetAccumP).  If we read the end
    of a packet, we add the full packet to the packet buffer and empty
    the packet accumulator.  Etc.
+
+   Throw a BrokenConnectionEx exception if we can't read because of a broken
+   connection.
 -----------------------------------------------------------------------------*/
     bool wouldblock;
 
@@ -850,13 +930,16 @@ packetSocket_impl::read(bool *      const eofP,
    return *gotPacketP true.  Otherwise, return *gotPacketP false.
 
    Iff the socket has no more data coming (it is shut down) and there
-   is no complete packet in the packet buffer, return *eofP.
+   is no complete packet in the packet buffer, return *eofP true.
 
    This leaves one other possibility: there is no full packet immediately
    available, but there may be in the future because the socket is still
    alive.  In that case, we return *eofP == false and *gotPacketP == false.
 
    Any packet we return belongs to caller; Caller must delete it.
+
+   Throw a BrokenConnectionEx exception if we can't read because of a broken
+   connection.
 -----------------------------------------------------------------------------*/
     // Move any packets now waiting to be read in the underlying stream
     // socket into our packet buffer (this->readBuffer).
@@ -896,6 +979,9 @@ packetSocket_impl::readWait(volatile const int * const interruptP,
    Return *gotPacketP true iff we return a packet.
 
    Return *eofP true iff we hit EOF.
+
+   Throw a BrokenConnectionEx exception if we can't read because of a broken
+   connection.
 -----------------------------------------------------------------------------*/
     bool gotPacket;
     bool eof;
@@ -932,7 +1018,25 @@ packetSocket::~packetSocket() {
 void
 packetSocket::writeWait(packetPtr const& packetP) const {
 
-    implP->writeWait(packetP);
+    try {
+        implP->writeWait(packetP);
+    } catch (BrokenConnectionEx) {
+        throwf("Recipient hung up or connection broke");
+    }
+}
+
+
+
+void
+packetSocket::writeWait(packetPtr const& packetP,
+                        bool *    const  brokenConnP) const {
+
+    try {
+        implP->writeWait(packetP);
+        *brokenConnP = false;
+    } catch (BrokenConnectionEx) {
+        *brokenConnP = true;
+    }
 }
 
 
@@ -942,7 +1046,12 @@ packetSocket::read(bool *      const eofP,
                    bool *      const gotPacketP,
                    packetPtr * const packetPP) {
 
-    this->implP->read(eofP, gotPacketP, packetPP);
+    try {
+        this->implP->read(eofP, gotPacketP, packetPP);
+    } catch (BrokenConnectionEx) {
+        *gotPacketP = false;
+        *eofP = true;
+    }
 }
 
 
@@ -953,7 +1062,12 @@ packetSocket::readWait(volatile const int * const interruptP,
                        bool *               const gotPacketP,
                        packetPtr *          const packetPP) {
 
-    this->implP->readWait(interruptP, eofP, gotPacketP, packetPP);
+    try {
+        this->implP->readWait(interruptP, eofP, gotPacketP, packetPP);
+    } catch (BrokenConnectionEx) {
+        *gotPacketP = false;
+        *eofP = true;
+    }
 }
 
 
@@ -963,12 +1077,16 @@ packetSocket::readWait(volatile const int * const interruptP,
                        bool *               const eofP,
                        packetPtr *          const packetPP) {
 
-    bool gotPacket;
+    try {
+        bool gotPacket;
 
-    this->implP->readWait(interruptP, eofP, &gotPacket, packetPP);
+        this->implP->readWait(interruptP, eofP, &gotPacket, packetPP);
 
-    if (!gotPacket && !*eofP)
-        throwf("Packet read was interrupted");
+        if (!gotPacket && !*eofP)
+            throwf("Packet read was interrupted");
+    } catch (BrokenConnectionEx) {
+        *eofP = true;
+    }
 }
 
 
@@ -981,5 +1099,7 @@ packetSocket::readWait(bool *      const eofP,
 
     this->readWait(&interrupt, eofP, packetPP);
 }
+
+
 
 } // namespace

@@ -2,9 +2,11 @@
 #define SESSION_H_INCLUDED
 
 #include "xmlrpc-c/abyss.h"
+#include "xmlrpc-c/util_int.h"
 #include "bool.h"
 #include "date.h"
 #include "data.h"
+#include "conn.h"
 
 typedef struct {
     uint8_t major;
@@ -27,6 +29,16 @@ struct _TSession {
            This is false when the session is new.  If and when the server
            reads the request from the client and finds it to be valid HTTP,
            it becomes true.
+        */
+    xmlrpc_mem_pool * memPoolP;
+        /* The memory pool from which various memory needed for our processing
+           comes.  We don't allocate all memory from here; just parts that
+           have unpredictable size that might allow a client to get more than
+           its share of system meomry if we didn't limit it.  This pool has a
+           limited size.
+
+           NULL means all memory comes from the general system pool and there
+           is therefore no protection of clients from each other.
         */
     const char * failureReason;
         /* This is non-null to indicate that we have encountered a protocol
@@ -113,5 +125,22 @@ struct _TSession {
     } chunkState;
 };
 
+/*----------------------------------------------------------------------------
+   Following are methods of a TSession object private to Abyss.  Other
+   methods are for use by user Uri handlers and are declared in the
+   external abyss.h header file.
+-----------------------------------------------------------------------------*/
+
+void
+SessionInit(TSession * const sessionP,
+            TConn *    const c);
+
+void
+SessionTerm(TSession * const sessionP);
+
+void
+SessionMakeMemPool(TSession *    const sessionP,
+                   size_t        const size,
+                   const char ** const errorP);
 
 #endif

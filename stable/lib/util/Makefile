@@ -77,4 +77,8 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
+.PHONY: install
 install:
+
+.PHONY: uninstall
+uninstall:

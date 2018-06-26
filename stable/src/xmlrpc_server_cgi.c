@@ -31,11 +31,12 @@
 #include <string.h>
 
 /* Windows NT stdout binary mode fix. */
-#ifdef _WIN32 
+#if MSVCRT
 #include <io.h> 
 #include <fcntl.h> 
 #endif 
 
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/string_int.h"
@@ -51,7 +52,7 @@
 static void 
 send_xml(const char * const xml_data,
          size_t       const xml_len) {
-#ifdef _WIN32 
+#if MSVCRT
     _setmode(_fileno(stdout), _O_BINARY); 
 #endif 
     /* Send our CGI headers back to the server.
@@ -75,7 +76,7 @@ send_error(int          const code,
            const char * const message,
            xmlrpc_env * const env) {
 
-#ifdef _WIN32 
+#if MSVCRT
     _setmode(_fileno(stdout), _O_BINARY); 
 #endif 
     /* Send an error header. */
@@ -140,7 +141,7 @@ get_body(xmlrpc_env * const env,
     /* Error-handling preconditions. */
     result = NULL;
 
-#ifdef _WIN32 
+#if MSVCRT
     /* Fix from Jeff Stewart: NT opens stdin and stdout in text mode
        by default, badly confusing our length calculations.  So we need
        to set the file handle to binary. 

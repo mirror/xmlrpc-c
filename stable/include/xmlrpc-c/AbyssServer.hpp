@@ -22,7 +22,13 @@
 
 namespace xmlrpc_c {
 
-class AbyssServer {
+#ifdef XMLRPC_BUILDING_ABYSSPP
+#define XMLRPC_ABYSSPP_EXPORTED XMLRPC_DLLEXPORT
+#else
+#define XMLRPC_ABYSSPP_EXPORTED
+#endif
+
+class XMLRPC_ABYSSPP_EXPORTED AbyssServer {
 /*----------------------------------------------------------------------------
    An object of this class represents an Abyss HTTP server.
 
@@ -34,7 +40,7 @@ class AbyssServer {
 -----------------------------------------------------------------------------*/
 public:
 
-    class Exception : public std::runtime_error {
+    class XMLRPC_ABYSSPP_EXPORTED Exception : public std::runtime_error {
     public:
         Exception(unsigned short const  httpStatusCode,
                   std::string    const& explanation);
@@ -46,7 +52,7 @@ public:
         unsigned short _httpStatusCode;
     };
 
-    class Session {
+    class XMLRPC_ABYSSPP_EXPORTED Session {
     public:
         class Impl;
 
@@ -182,7 +188,7 @@ public:
         Impl * const implP;
     };
 
-    class ReqHandler {
+    class XMLRPC_ABYSSPP_EXPORTED ReqHandler {
     /*------------------------------------------------------------------------
       An object of this class handles HTTP requests, which essentially means
       it provides responses to them.  An AbyssServer object calls methods of
@@ -239,6 +245,7 @@ private:
 
 }  // namespace
 
+XMLRPC_ABYSSPP_EXPORTED
 std::ostream& operator<<(std::ostream                                & out,
                          xmlrpc_c::AbyssServer::Session::Method const& method);
 

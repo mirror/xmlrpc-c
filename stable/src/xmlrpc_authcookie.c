@@ -31,6 +31,7 @@
 
 #include "mallocvar.h"
 #include "xmlrpc-c/base.h"
+#include "xmlrpc-c/util_int.h"
 
 /*****************************************************************************
   I don't see how these were expected to be used.  And I probably

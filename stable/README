@@ -48,6 +48,10 @@ In the simplest case, it's just a conventional
   $ make
   $ make install
 
+And then, if Linux:
+
+  $ ldconfig
+
 
 ADDITIONAL INFORMATION
 ----------------------

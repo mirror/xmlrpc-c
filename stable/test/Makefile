@@ -26,6 +26,7 @@ TEST_OBJS = \
   testtool.o \
   test.o \
   cgi.o \
+  memblock.o \
   method_registry.o \
   parse_xml.o \
   serialize.o \
@@ -104,6 +105,9 @@ cpp/runtests: FORCE
 
 .PHONY: install
 install:
+
+.PHONY: uninstall
+uninstall:
 
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local

@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include <xmlrpc-c/json.h>
+#include <xmlrpc-c/util.h>
 
 
 
@@ -28,23 +29,23 @@ void
 printAsXml(xmlrpc_value * const valP) {
 
     xmlrpc_env env;
-    xmlrpc_mem_block out;
+    xmlrpc_mem_block * outP;
 
     xmlrpc_env_init(&env);
     
-    XMLRPC_MEMBLOCK_INIT(char, &env, &out, 0);
+    outP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
 
     dieIfFaultOccurred(&env);
 
-    xmlrpc_serialize_value(&env, &out, valP);
+    xmlrpc_serialize_value(&env, outP, valP);
 
     printf("XML-RPC XML:\n");
 
     printf("%.*s\n",
-           XMLRPC_MEMBLOCK_SIZE(char, &out),
-           XMLRPC_MEMBLOCK_CONTENTS(char, &out));
+           XMLRPC_MEMBLOCK_SIZE(char, outP),
+           XMLRPC_MEMBLOCK_CONTENTS(char, outP));
 
-    XMLRPC_MEMBLOCK_CLEAN(char, &out);
+    XMLRPC_MEMBLOCK_FREE(char, outP);
     xmlrpc_env_clean(&env);
 }
 
@@ -54,26 +55,26 @@ void
 printAsJson(xmlrpc_value * const valP) {
 
     xmlrpc_env env;
-    xmlrpc_mem_block out;
+    xmlrpc_mem_block * outP;
     xmlrpc_value * val2P;
 
     xmlrpc_env_init(&env);
 
-    XMLRPC_MEMBLOCK_INIT(char, &env, &out, 0);
+    outP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
 
     dieIfFaultOccurred(&env);
 
-    xmlrpc_serialize_json(&env, valP, &out);
+    xmlrpc_serialize_json(&env, valP, outP);
 
     dieIfFaultOccurred(&env);
 
     printf("JSON:\n");
 
     printf("%.*s\n",
-           XMLRPC_MEMBLOCK_SIZE(char, &out),
-           XMLRPC_MEMBLOCK_CONTENTS(char, &out));
+           XMLRPC_MEMBLOCK_SIZE(char, outP),
+           XMLRPC_MEMBLOCK_CONTENTS(char, outP));
 
-    XMLRPC_MEMBLOCK_CLEAN(char, &out);
+    XMLRPC_MEMBLOCK_FREE(char, outP);
     xmlrpc_env_clean(&env);
 }
 

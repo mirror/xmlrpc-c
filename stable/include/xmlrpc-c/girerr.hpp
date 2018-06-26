@@ -7,23 +7,23 @@
 #include <xmlrpc-c/c_util.h>
 
 /*
-  XMLRPC_LIBPP_EXPORTED marks a symbol in this file that is exported from
-  libxmlrpc++.
+XMLRPC_LIBUTILPP_EXPORTED marks a symbol in this file that is exported from
+libxmlrpc_util++.
 
-  XMLRPC_BUILDING_LIBPP says this compilation is part of libxmlrpc++, as
-  opposed to something that _uses_ libxmlrpc++.
+XMLRPC_BUILDING_LIBUTILPP says this compilation is part of libxmlrpc_util++, as
+opposed to something that _uses_ libxmlrpc_util++.
 */
-#ifdef XMLRPC_BUILDING_LIBPP
-#define XMLRPC_LIBPP_EXPORTED XMLRPC_DLLEXPORT
+#ifdef XMLRPC_BUILDING_LIBUTILPP
+#define XMLRPC_LIBUTILPP_EXPORTED XMLRPC_DLLEXPORT
 #else
-#define XMLRPC_LIBPP_EXPORTED
+#define XMLRPC_LIBUTILPP_EXPORTED
 #endif
 
 #define HAVE_GIRERR_ERROR
 
 namespace girerr {
 
-class XMLRPC_LIBPP_EXPORTED error : public std::exception {
+class XMLRPC_LIBUTILPP_EXPORTED error : public std::exception {
 public:
     error(std::string const& what_arg) : _what(what_arg) {}
 
@@ -38,7 +38,7 @@ private:
 
 // throwf() always throws a girerr::error .
 
-XMLRPC_LIBPP_EXPORTED
+XMLRPC_LIBUTILPP_EXPORTED
 void
 throwf(const char * const format, ...)
   XMLRPC_PRINTF_ATTR(1,2)

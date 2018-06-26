@@ -252,6 +252,12 @@ void
 ServerSetMaxConnBacklog(TServer *    const serverP,
                         unsigned int const maxConnBacklog);
 
+#define HAVE_SERVER_SET_MAX_SESSION_MEM 1
+XMLRPC_ABYSS_EXPORTED
+void
+ServerSetMaxSessionMem(TServer * const serverP,
+                       size_t    const size);
+
 XMLRPC_ABYSS_EXPORTED
 void
 ServerInit2(TServer *     const serverP,
@@ -431,6 +437,7 @@ typedef struct {
     abyss_bool keepalive;
 } TRequestInfo;
 
+XMLRPC_ABYSS_EXPORTED
 void
 SessionGetBody(TSession *    const sessionP, 
                size_t        const max, 
@@ -651,11 +658,8 @@ abyss_bool DateInit(void);
 XMLRPC_ABYSS_EXPORTED
 abyss_bool SessionLog(TSession * const s);
 
-
 #ifdef __cplusplus
 }
-
-
 #endif
 
 /*****************************************************************************
@@ -689,4 +693,4 @@ abyss_bool SessionLog(TSession * const s);
 ** SUCH DAMAGE.
 **
 ******************************************************************************/
-#endif  /* _ABYSS_H_ */
+#endif

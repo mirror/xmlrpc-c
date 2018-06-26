@@ -26,17 +26,18 @@
 
 #include <memory>
 
+using namespace std;
+
 #include "xmlrpc-c/girerr.hpp"
 using girerr::throwf;
 #include "xmlrpc-c/packetsocket.hpp"
 
 #include "xmlrpc-c/client_transport.hpp"
 
-using namespace std;
+typedef xmlrpc_c::clientXmlTransport_pstream::BrokenConnectionEx
+    BrokenConnectionEx;
 
 namespace xmlrpc_c {
-
-
 
 struct clientXmlTransport_pstream::constrOpt_impl {
 
@@ -44,9 +45,11 @@ struct clientXmlTransport_pstream::constrOpt_impl {
 
     struct {
         int         fd;
+        bool        useBrokenConnEx;
     } value;
     struct {
         bool fd;
+        bool useBrokenConnEx;
     } present;
 };
 
@@ -54,7 +57,8 @@ struct clientXmlTransport_pstream::constrOpt_impl {
 
 clientXmlTransport_pstream::constrOpt_impl::constrOpt_impl() {
 
-    this->present.fd = false;
+    this->present.fd              = false;
+    this->present.useBrokenConnEx = false;
 }
 
 
@@ -68,6 +72,7 @@ clientXmlTransport_pstream::constrOpt::OPTION_NAME(TYPE const& arg) { \
 }
 
 DEFINE_OPTION_SETTER(fd, xmlrpc_socket);
+DEFINE_OPTION_SETTER(useBrokenConnEx, bool);
 
 #undef DEFINE_OPTION_SETTER
 
@@ -94,10 +99,38 @@ clientXmlTransport_pstream::constrOpt::constrOpt(constrOpt& arg) {
 
 
 
-clientXmlTransport_pstream::clientXmlTransport_pstream(
-    constrOpt const& optExt) {
+class clientXmlTransport_pstream_impl {
 
-    constrOpt_impl const opt(*optExt.implP);
+public:
+    clientXmlTransport_pstream_impl(
+        clientXmlTransport_pstream::constrOpt_impl const& opt);
+
+    ~clientXmlTransport_pstream_impl();
+
+    void
+    call(xmlrpc_c::carriageParm * const  carriageParmP,
+         std::string              const& callXml,
+         std::string *            const  responseXmlP);
+
+private:
+    packetSocket * packetSocketP;
+
+    bool usingBrokenConnEx;
+        // We're throwing a Broken Connection object when something fails
+        // because the connection to the server is broken.  When this is false,
+        // we throw an ordinary error when that happens.
+
+    void
+    sendCall(std::string const& callXml);
+
+    void
+    recvResp(std::string * const responseXmlP);
+};
+
+
+
+clientXmlTransport_pstream_impl::clientXmlTransport_pstream_impl(
+    clientXmlTransport_pstream::constrOpt_impl const& opt) {
 
     if (!opt.present.fd)
         throwf("You must provide a 'fd' constructor option.");
@@ -111,20 +144,96 @@ clientXmlTransport_pstream::clientXmlTransport_pstream(
         throwf("Unable to create packet socket out of file descriptor %d.  %s",
                opt.value.fd, e.what());
     }
-    this->packetSocketP = packetSocketAP.get();
-    packetSocketAP.release();
+
+    if (opt.present.useBrokenConnEx)
+        this->usingBrokenConnEx = opt.value.useBrokenConnEx;
+    else
+        this->usingBrokenConnEx = false;
+
+    this->packetSocketP = packetSocketAP.release();
+}
+
+
+
+clientXmlTransport_pstream::clientXmlTransport_pstream(
+    constrOpt const& optExt) :
+
+    implP(new clientXmlTransport_pstream_impl(*optExt.implP))
+{}
+
+
+
+clientXmlTransport_pstream_impl::~clientXmlTransport_pstream_impl() {
+
+    delete(this->packetSocketP);
 }
 
 
 
 clientXmlTransport_pstream::~clientXmlTransport_pstream() {
 
-    delete(this->packetSocketP);
+    delete(this->implP);
 }
 
 
+
+void  // private
+clientXmlTransport_pstream_impl::sendCall(string const& callXml) {
+/*----------------------------------------------------------------------------
+   Send the text 'callXml' down the pipe as a packet which is the RPC call.
+-----------------------------------------------------------------------------*/
+    packetPtr const callPacketP(new packet(callXml.c_str(), callXml.length()));
+
+    try {
+        bool brokenConn;
+
+        this->packetSocketP->writeWait(callPacketP, &brokenConn);
+
+        if (brokenConn) {
+            if (this->usingBrokenConnEx)
+                throw BrokenConnectionEx();
+            else
+                throwf("Server hung up or connection broke");
+        }
+    } catch (exception const& e) {
+        throwf("Failed to write the call to the packet socket.  %s", e.what());
+    }
+}
+
+
+
 void
-clientXmlTransport_pstream::call(
+clientXmlTransport_pstream_impl::recvResp(string * const responseXmlP) {
+/*----------------------------------------------------------------------------
+   Receive a packet which is the RPC response and return its contents
+   as the text *responseXmlP.
+-----------------------------------------------------------------------------*/
+    packetPtr responsePacketP;
+
+    try {
+        bool eof;
+        this->packetSocketP->readWait(&eof, &responsePacketP);
+
+        if (eof) {
+            if (this->usingBrokenConnEx)
+                throw BrokenConnectionEx();
+            else
+                throwf("The other end closed the socket before sending "
+                       "the response.");
+        }
+    } catch (exception const& e) {
+        throwf("We sent the call, but couldn't get the response.  %s",
+               e.what());
+    }
+    *responseXmlP = 
+        string(reinterpret_cast<char *>(responsePacketP->getBytes()),
+               responsePacketP->getLength());
+}
+
+
+
+void
+clientXmlTransport_pstream_impl::call(
     carriageParm * const  carriageParmP,
     string         const& callXml,
     string *       const  responseXmlP) {
@@ -136,31 +245,20 @@ clientXmlTransport_pstream::call(
         throwf("Pstream client XML transport called with carriage "
                "parameter object not of class carriageParm_pstream");
 
-    packetPtr const callPacketP(new packet(callXml.c_str(), callXml.length()));
+    this->sendCall(callXml);
 
-    try {
-        this->packetSocketP->writeWait(callPacketP);
-    } catch (exception const& e) {
-        throwf("Failed to write the call to the packet socket.  %s", e.what());
-    }
-    packetPtr responsePacketP;
-
-    try {
-        bool eof;
-        this->packetSocketP->readWait(&eof, &responsePacketP);
-
-        if (eof)
-            throwf("The other end closed the socket before sending "
-                   "the response.");
-    } catch (exception const& e) {
-        throwf("We sent the call, but couldn't get the response.  %s",
-               e.what());
-    }
-    *responseXmlP = 
-        string(reinterpret_cast<char *>(responsePacketP->getBytes()),
-               responsePacketP->getLength());
+    this->recvResp(responseXmlP);
 }
 
 
+
+void
+clientXmlTransport_pstream::call(
+    carriageParm * const  carriageParmP,
+    string         const& callXml,
+    string *       const  responseXmlP) {
+
+    this->implP->call(carriageParmP, callXml, responseXmlP);
+}
 
 } // namespace

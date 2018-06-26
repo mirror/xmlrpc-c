@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <bitset>
+#include <algorithm>     // min
 
 using namespace std;
 
@@ -221,9 +222,6 @@ bytesFromBase64(string const& base64) {
 
     vector<unsigned char> retval;
     bitBuffer buffer;
-    unsigned int npad;
-
-    npad = 0;  // No pad characters seen yet
 
     for (unsigned int cursor = 0; cursor < base64.length(); ++cursor) {
         char const thisChar(base64[cursor] & 0x7f);

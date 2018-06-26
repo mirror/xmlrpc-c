@@ -44,7 +44,7 @@ changeMemberValue(xmlrpc_value * const structP,
   calls!)
 -----------------------------------------------------------------------------*/
     _struct_member * const members =
-        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, structP->blockP);
     _struct_member * const memberP = &members[mbrIndex];
     xmlrpc_value * const oldValueP = memberP->value;
 
@@ -65,9 +65,9 @@ addNewMember(xmlrpc_env *   const envP,
    Add a new member.  Assume no member already exists with this key.
 -----------------------------------------------------------------------------*/
     const char * const key =
-        XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+        XMLRPC_MEMBLOCK_CONTENTS(char, keyvalP->blockP);
     size_t const keyLen =
-        XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
+        XMLRPC_MEMBLOCK_SIZE(char, keyvalP->blockP) - 1;
 
     _struct_member newMember;
 
@@ -75,7 +75,7 @@ addNewMember(xmlrpc_env *   const envP,
     newMember.key     = keyvalP;
     newMember.value   = valueP;
 
-    XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &structP->_block,
+    XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, structP->blockP,
                            &newMember, 1);
 
     if (!envP->fault_occurred) {
@@ -93,9 +93,9 @@ xmlrpc_destroyStruct(xmlrpc_value * const structP) {
    itself).  The value is not valid after this.
 -----------------------------------------------------------------------------*/
     _struct_member * const members = 
-        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+        XMLRPC_MEMBLOCK_CONTENTS(_struct_member, structP->blockP);
     size_t const size = 
-        XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
+        XMLRPC_MEMBLOCK_SIZE(_struct_member, structP->blockP);
 
     unsigned int i;
 
@@ -103,7 +103,7 @@ xmlrpc_destroyStruct(xmlrpc_value * const structP) {
         xmlrpc_DECREF(members[i].key);
         xmlrpc_DECREF(members[i].value);
     }
-    XMLRPC_MEMBLOCK_CLEAN(_struct_member, &structP->_block);
+    XMLRPC_MEMBLOCK_FREE(_struct_member, structP->blockP);
 }
 
 
@@ -130,7 +130,7 @@ xmlrpc_struct_new(xmlrpc_env * const envP) {
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_STRUCT;
 
-        XMLRPC_MEMBLOCK_INIT(_struct_member, envP, &valP->_block, 0);
+        valP->blockP = XMLRPC_MEMBLOCK_NEW(_struct_member, envP, 0);
 
         if (envP->fault_occurred)
             free(valP);
@@ -153,19 +153,19 @@ xmlrpc_struct_new_value(xmlrpc_env *   const envP,
         structP = NULL;
     } else {
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &structP->_block);
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, structP->blockP);
 
         xmlrpc_createXmlrpcValue(envP, &structP);
         if (!envP->fault_occurred) {
             structP->_type = XMLRPC_TYPE_STRUCT;
 
-            XMLRPC_MEMBLOCK_INIT(xmlrpc_value*, envP, &structP->_block, 0);
+            structP->blockP = XMLRPC_MEMBLOCK_NEW(xmlrpc_value *, envP, 0);
 
             if (envP->fault_occurred)
                 free(structP);
             else {
                 _struct_member * const srcMemberList =
-                    XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &valueP->_block);
+                    XMLRPC_MEMBLOCK_CONTENTS(_struct_member, valueP->blockP);
                 
                 unsigned int i;
             
@@ -223,7 +223,7 @@ xmlrpc_struct_size(xmlrpc_env *   const envP,
         retval = -1;
     } else {
         size_t const size =
-            XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
+            XMLRPC_MEMBLOCK_SIZE(_struct_member, structP->blockP);
 
         assert((size_t)(int)size == size);
             /* Because structs are defined to have few enough members */
@@ -254,15 +254,15 @@ findMember(xmlrpc_value * const structP,
 
     /* Look for our key. */
     searchHash = hashStructKey(key, keyLen);
-    size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
-    contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+    size = XMLRPC_MEMBLOCK_SIZE(_struct_member, structP->blockP);
+    contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, structP->blockP);
     for (i = 0, found = false; i < size && !found; ++i) {
         if (contents[i].keyHash == searchHash) {
             xmlrpc_value * const keyvalP = contents[i].key;
             const char * const keystr =
-                XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+                XMLRPC_MEMBLOCK_CONTENTS(char, keyvalP->blockP);
             size_t const keystrSize =
-                XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block)-1;
+                XMLRPC_MEMBLOCK_SIZE(char, keyvalP->blockP)-1;
             if (keystrSize == keyLen && memcmp(key, keystr, keyLen) == 0) {
                 found = true;
                 foundIndex = i;
@@ -365,7 +365,7 @@ xmlrpc_struct_find_value(xmlrpc_env *    const envP,
             *valuePP = NULL;
         else {
             _struct_member * const members =
-                XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+                XMLRPC_MEMBLOCK_CONTENTS(_struct_member, structP->blockP);
             *valuePP = members[index].value;
             
             XMLRPC_ASSERT_VALUE_OK(*valuePP);
@@ -406,14 +406,14 @@ xmlrpc_struct_find_value_v(xmlrpc_env *    const envP,
 
             /* Get our member index. */
             findMember(structP, 
-                       XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block),
-                       XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block)-1,
+                       XMLRPC_MEMBLOCK_CONTENTS(char, keyP->blockP),
+                       XMLRPC_MEMBLOCK_SIZE(char, keyP->blockP)-1,
                        &found, &index);
             if (!found)
                 *valuePP = NULL;
             else {
                 _struct_member * const members =
-                    XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+                    XMLRPC_MEMBLOCK_CONTENTS(_struct_member, structP->blockP);
                 *valuePP = members[index].value;
                 
                 XMLRPC_ASSERT_VALUE_OK(*valuePP);
@@ -445,8 +445,8 @@ xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
         if (*valuePP == NULL) {
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
-                (int)XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
-                XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block));
+                (int)XMLRPC_MEMBLOCK_SIZE(char, keyP->blockP),
+                XMLRPC_MEMBLOCK_CONTENTS(char, keyP->blockP));
         }
     }
 }
@@ -589,9 +589,9 @@ xmlrpc_struct_set_value_v(xmlrpc_env *   const envP,
                              "Key value is not a string");
     else {
         const char * const key =
-            XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(char, keyvalP->blockP);
         size_t const keyLen =
-            XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block) - 1;
+            XMLRPC_MEMBLOCK_SIZE(char, keyvalP->blockP) - 1;
 
         bool found;
         unsigned int index;
@@ -629,9 +629,9 @@ xmlrpc_struct_read_member(xmlrpc_env *    const envP,
             "of something that is not a struct");
     else {
         _struct_member * const members =
-            XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &structP->_block);
+            XMLRPC_MEMBLOCK_CONTENTS(_struct_member, structP->blockP);
         size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
+            XMLRPC_MEMBLOCK_SIZE(_struct_member, structP->blockP);
 
         if (index >= size)
             xmlrpc_env_set_fault_formatted(

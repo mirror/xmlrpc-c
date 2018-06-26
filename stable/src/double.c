@@ -1,3 +1,5 @@
+#include "xmlrpc_config.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <float.h>
@@ -261,7 +263,7 @@ xmlrpc_formatFloat(xmlrpc_env *  const envP,
     double absvalue;
     buffer formatted;
 
-    assert(finite(value));
+    assert(XMLRPC_FINITE(value));
 
     bufferInit(&formatted);
 

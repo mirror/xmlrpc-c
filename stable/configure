@@ -631,6 +631,10 @@ C_COMPILER_GNU
 ENABLE_LIBXML2_BACKEND
 have_xml2_config
 HAVE_LIBWWW_SSL_DEFINE
+HAVE_ABYSS_OPENSSL_DEFINE
+MUST_BUILD_ABYSS_OPENSSL
+OPENSSL_CFLAGS
+OPENSSL_LDADD
 CURL_LIBDIR
 CURL_LDADD
 CURL_CONFIG
@@ -643,6 +647,24 @@ WININET_CFLAGS
 WININET_CONFIG
 ENABLE_ABYSS_THREADS
 DIRECTORY_SEPARATOR
+HAVE__STRICMP_DEFINE
+HAVE_STRICMP_DEFINE
+HAVE_STRCASECMP_DEFINE
+HAVE_GMTIME_R_DEFINE
+HAVE_LOCALTIME_R_DEFINE
+HAVE_GETTIMEOFDAY_DEFINE
+HAVE_PSELECT_DEFINE
+HAVE__STRTOUI64_DEFINE
+HAVE___STRTOULL_DEFINE
+HAVE___STRTOLL_DEFINE
+HAVE_STRTOUQ_DEFINE
+HAVE_STRTOQ_DEFINE
+HAVE_STRTOULL_DEFINE
+HAVE_STRTOLL_DEFINE
+HAVE_SETENV_DEFINE
+HAVE_ASPRINTF_DEFINE
+HAVE_SETGROUPS_DEFINE
+HAVE_WCSNCMP_DEFINE
 ATTR_UNUSED
 VA_LIST_IS_ARRAY_DEFINE
 HAVE_SYS_SELECT_H_DEFINE
@@ -758,6 +780,7 @@ enable_abyss_server
 enable_cgi_server
 enable_cplusplus
 enable_abyss_threads
+enable_abyss_openssl
 with_libwww_ssl
 enable_libxml2_backend
 '
@@ -1396,6 +1419,7 @@ Optional Features:
   --disable-cgi-server      Don't build the CGI server module
   --disable-cplusplus       Don't build the C++ wrapper classes or tools
   --disable-abyss-threads   Use fork in Abyss instead of pthreads
+  --disable-abyss-openssl     Don't build Abyss Openssl channel function
   --enable-libxml2-backend  Use libxml2 instead of built-in expat
 
 Optional Packages:
@@ -2286,11 +2310,6 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-
-ac_config_headers="$ac_config_headers xmlrpc_amconfig.h"
-
-ac_config_commands="$ac_config_commands default-1"
 
 
 
@@ -5344,6 +5363,12 @@ _ACEOF
 fi
 done
 
+if test "x$ac_cv_func_wcsncmp" = x""yes; then
+  HAVE_WCSNCMP_DEFINE=1
+else
+  HAVE_WCSNCMP_DEFINE=0
+fi
+
 
 for ac_func in setgroups
 do :
@@ -5355,6 +5380,12 @@ _ACEOF
 
 fi
 done
+
+if test "x$ac_cv_func_setgroups" = x""yes; then
+  HAVE_SETGROUPS_DEFINE=1
+else
+  HAVE_SETGROUPS_DEFINE=0
+fi
 
 
 for ac_func in asprintf
@@ -5368,18 +5399,155 @@ _ACEOF
 fi
 done
 
+if test "x$ac_cv_func_asprintf" = x""yes; then
+  HAVE_ASPRINTF_DEFINE=1
+else
+  HAVE_ASPRINTF_DEFINE=0
+fi
 
-for ac_func in setenv strtoll strtoull strtoq strtouq __strtoll __strtoull
+
+for ac_func in setenv
 do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  ac_fn_c_check_func "$LINENO" "setenv" "ac_cv_func_setenv"
+if test "x$ac_cv_func_setenv" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+#define HAVE_SETENV 1
 _ACEOF
 
 fi
 done
+
+if test "x$ac_cv_func_setenv" = x""yes; then
+  HAVE_SETENV_DEFINE=1
+else
+  HAVE_SETENV_DEFINE=0
+fi
+
+
+for ac_func in strtoll
+do :
+  ac_fn_c_check_func "$LINENO" "strtoll" "ac_cv_func_strtoll"
+if test "x$ac_cv_func_strtoll" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STRTOLL 1
+_ACEOF
+
+fi
+done
+
+if test "x$ac_cv_func_strtoll" = x""yes; then
+  HAVE_STRTOLL_DEFINE=1
+else
+  HAVE_STRTOLL_DEFINE=0
+fi
+
+
+for ac_func in strtoull
+do :
+  ac_fn_c_check_func "$LINENO" "strtoull" "ac_cv_func_strtoull"
+if test "x$ac_cv_func_strtoull" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STRTOULL 1
+_ACEOF
+
+fi
+done
+
+if test "x$ac_cv_func_strtoull" = x""yes; then
+  HAVE_STRTOULL_DEFINE=1
+else
+  HAVE_STRTOULL_DEFINE=0
+fi
+
+
+for ac_func in strtoq
+do :
+  ac_fn_c_check_func "$LINENO" "strtoq" "ac_cv_func_strtoq"
+if test "x$ac_cv_func_strtoq" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STRTOQ 1
+_ACEOF
+
+fi
+done
+
+if test "x$ac_cv_func_strtoq" = x""yes; then
+  HAVE_STRTOQ_DEFINE=1
+else
+  HAVE_STRTOQ_DEFINE=0
+fi
+
+
+for ac_func in strtouq
+do :
+  ac_fn_c_check_func "$LINENO" "strtouq" "ac_cv_func_strtouq"
+if test "x$ac_cv_func_strtouq" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STRTOUQ 1
+_ACEOF
+
+fi
+done
+
+if test "x$ac_cv_func_strtouq" = x""yes; then
+  HAVE_STRTOUQ_DEFINE=1
+else
+  HAVE_STRTOUQ_DEFINE=0
+fi
+
+
+for ac_func in __strtoll
+do :
+  ac_fn_c_check_func "$LINENO" "__strtoll" "ac_cv_func___strtoll"
+if test "x$ac_cv_func___strtoll" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE___STRTOLL 1
+_ACEOF
+
+fi
+done
+
+if test "x$ac_cv_func___strtoll" = x""yes; then
+  HAVE___STRTOLL_DEFINE=1
+else
+  HAVE___STRTOLL_DEFINE=0
+fi
+
+
+for ac_func in __strtoull
+do :
+  ac_fn_c_check_func "$LINENO" "__strtoull" "ac_cv_func___strtoull"
+if test "x$ac_cv_func___strtoull" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE___STRTOULL 1
+_ACEOF
+
+fi
+done
+
+if test "x$ac_cv_func___strtoull" = x""yes; then
+  HAVE___STRTOULL_DEFINE=1
+else
+  HAVE___STRTOULL_DEFINE=0
+fi
+
+
+for ac_func in _strtoui64
+do :
+  ac_fn_c_check_func "$LINENO" "_strtoui64" "ac_cv_func__strtoui64"
+if test "x$ac_cv_func__strtoui64" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE__STRTOUI64 1
+_ACEOF
+
+fi
+done
+
+if test "x$ac_cv_func__strtoui64" = x""yes; then
+  HAVE__STRTOUI64_DEFINE=1
+else
+  HAVE__STRTOUI64_DEFINE=0
+fi
 
 
 for ac_func in pselect
@@ -5393,6 +5561,12 @@ _ACEOF
 fi
 done
 
+if test "x$ac_cv_func_pselect" = x""yes; then
+  HAVE_PSELECT_DEFINE=1
+else
+  HAVE_PSELECT_DEFINE=0
+fi
+
 
 for ac_func in gettimeofday
 do :
@@ -5405,6 +5579,13 @@ _ACEOF
 fi
 done
 
+if test "x$ac_cv_func_gettimeofday" = x""yes; then
+  HAVE_GETTIMEOFDAY_DEFINE=1
+else
+  HAVE_GETTIMEOFDAY_DEFINE=0
+fi
+
+
 for ac_func in localtime_r
 do :
   ac_fn_c_check_func "$LINENO" "localtime_r" "ac_cv_func_localtime_r"
@@ -5416,6 +5597,13 @@ _ACEOF
 fi
 done
 
+if test "x$ac_cv_func_localtime_r" = x""yes; then
+  HAVE_LOCALTIME_R_DEFINE=1
+else
+  HAVE_LOCALTIME_R_DEFINE=0
+fi
+
+
 for ac_func in gmtime_r
 do :
   ac_fn_c_check_func "$LINENO" "gmtime_r" "ac_cv_func_gmtime_r"
@@ -5426,6 +5614,12 @@ _ACEOF
 
 fi
 done
+
+if test "x$ac_cv_func_gmtime_r" = x""yes; then
+  HAVE_GMTIME_R_DEFINE=1
+else
+  HAVE_GMTIME_R_DEFINE=0
+fi
 
 
 for ac_func in strcasecmp
@@ -5439,6 +5633,13 @@ _ACEOF
 fi
 done
 
+if test "x$ac_cv_func_strcasecmp" = x""yes; then
+  HAVE_STRCASECMP_DEFINE=1
+else
+  HAVE_STRCASECMP_DEFINE=0
+fi
+
+
 for ac_func in stricmp
 do :
   ac_fn_c_check_func "$LINENO" "stricmp" "ac_cv_func_stricmp"
@@ -5450,6 +5651,13 @@ _ACEOF
 fi
 done
 
+if test "x$ac_cv_func_stricmp" = x""yes; then
+  HAVE_STRICMP_DEFINE=1
+else
+  HAVE_STRICMP_DEFINE=0
+fi
+
+
 for ac_func in _stricmp
 do :
   ac_fn_c_check_func "$LINENO" "_stricmp" "ac_cv_func__stricmp"
@@ -5460,6 +5668,12 @@ _ACEOF
 
 fi
 done
+
+if test "x$ac_cv_func__stricmp" = x""yes; then
+  HAVE__STRICMP_DEFINE=1
+else
+  HAVE__STRICMP_DEFINE=0
+fi
 
 
 
@@ -5757,6 +5971,65 @@ fi # MUST_BUILD_CURL_CLIENT
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenSSL library" >&5
+$as_echo_n "checking for OpenSSL library... " >&6; }
+
+if pkg-config openssl; then
+  HAVE_OPENSSL=yes
+  OPENSSL_LDADD=$(pkg-config openssl --libs)
+
+  OPENSSL_CFLAGS=$(pkg-config openssl --cflags)
+
+else
+  HAVE_OPENSSL=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_OPENSSL" >&5
+$as_echo "$HAVE_OPENSSL" >&6; }
+
+# One really annoying case where the user needs to disable building of
+# Openssl-based parts explicitly is where there is no Openssl for the target
+# platform but there is for the native platform.  In that case, Pkg-config
+# finds the openssl.pc in /usr/lib, ignoring the fact that /usr/lib is not in
+# the search path specified by the PKG_CONFIG environment variable.  This is
+# a major design flaw in Pkg-config.
+
+# Check whether --enable-abyss-openssl was given.
+if test "${enable_abyss_openssl+set}" = set; then :
+  enableval=$enable_abyss_openssl;
+else
+  enable_abyss_openssl=maybe
+fi
+
+
+if test $enable_abyss_openssl = maybe; then
+  if test $HAVE_OPENSSL = no; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: You don't appear to Openssl installed (no pkg-config file for it in your pkg-config search path), so we will not build the Abyss Openssl channel module" >&5
+$as_echo "$as_me: You don't appear to Openssl installed (no pkg-config file for it in your pkg-config search path), so we will not build the Abyss Openssl channel module" >&6;}
+    MUST_BUILD_ABYSS_OPENSSL=no
+  else
+    MUST_BUILD_ABYSS_OPENSSL=yes
+  fi
+else
+  MUST_BUILD_ABYSS_OPENSSL=$enable_abyss_openssl
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build Abyss Openssl channel module" >&5
+$as_echo_n "checking whether to build Abyss Openssl channel module... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MUST_BUILD_ABYSS_OPENSSL" >&5
+$as_echo "$MUST_BUILD_ABYSS_OPENSSL" >&6; }
+
+
+if test $MUST_BUILD_ABYSS_OPENSSL = yes; then
+  HAVE_ABYSS_OPENSSL_DEFINE=1
+else
+  HAVE_ABYSS_OPENSSL_DEFINE=0
+fi
+
+
+
+
+
 
 # Check whether --with-libwww-ssl was given.
 if test "${with_libwww_ssl+set}" = set; then :
@@ -5853,9 +6126,189 @@ CPP_WARN_FLAGS=
 BUILDDIR=$(pwd)
 
 
-AR=${ac_tool_prefix}ar
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ar", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AR"; then
+  ac_cv_prog_AR="$AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AR="${ac_tool_prefix}ar"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
 
-RANLIB=${ac_tool_prefix}ranlib
+fi
+fi
+AR=$ac_cv_prog_AR
+if test -n "$AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AR" >&5
+$as_echo "$AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_AR"; then
+  ac_ct_AR=$AR
+  # Extract the first word of "ar", so it can be a program name with args.
+set dummy ar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_AR"; then
+  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_AR="ar"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_AR=$ac_cv_prog_ac_ct_AR
+if test -n "$ac_ct_AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_AR" >&5
+$as_echo "$ac_ct_AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_AR" = x; then
+    AR=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    AR=$ac_ct_AR
+  fi
+else
+  AR="$ac_cv_prog_AR"
+fi
+
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_RANLIB+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$RANLIB"; then
+  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+RANLIB=$ac_cv_prog_RANLIB
+if test -n "$RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
+$as_echo "$RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_RANLIB"; then
+  ac_ct_RANLIB=$RANLIB
+  # Extract the first word of "ranlib", so it can be a program name with args.
+set dummy ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_RANLIB+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_RANLIB"; then
+  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_RANLIB="ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
+if test -n "$ac_ct_RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_RANLIB" >&5
+$as_echo "$ac_ct_RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_RANLIB" = x; then
+    RANLIB=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    RANLIB=$ac_ct_RANLIB
+  fi
+else
+  RANLIB="$ac_cv_prog_RANLIB"
+fi
 
 
 
@@ -5952,7 +6405,43 @@ test "x$prefix" = xNONE && prefix=$ac_default_prefix
 # Let make expand exec_prefix.
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
-DEFS=-DHAVE_CONFIG_H
+# Transform confdefs.h into DEFS.
+# Protect against shell expansion while executing Makefile rules.
+# Protect against Makefile macro expansion.
+#
+# If the first sed substitution is executed (which looks for macros that
+# take arguments), then branch to the quote section.  Otherwise,
+# look for a macro that doesn't take arguments.
+ac_script='
+:mline
+/\\$/{
+ N
+ s,\\\n,,
+ b mline
+}
+t clear
+:clear
+s/^[	 ]*#[	 ]*define[	 ][	 ]*\([^	 (][^	 (]*([^)]*)\)[	 ]*\(.*\)/-D\1=\2/g
+t quote
+s/^[	 ]*#[	 ]*define[	 ][	 ]*\([^	 ][^	 ]*\)[	 ]*\(.*\)/-D\1=\2/g
+t quote
+b any
+:quote
+s/[	 `~#$^&*(){}\\|;'\''"<>?]/\\&/g
+s/\[/\\&/g
+s/\]/\\&/g
+s/\$/$$/g
+H
+:any
+${
+	g
+	s/^\n//
+	s/\n/ /g
+	p
+}
+'
+DEFS=`sed -n "$ac_script" confdefs.h`
+
 
 ac_libobjs=
 ac_ltlibobjs=
@@ -6386,16 +6875,11 @@ case $ac_config_files in *"
 "*) set x $ac_config_files; shift; ac_config_files=$*;;
 esac
 
-case $ac_config_headers in *"
-"*) set x $ac_config_headers; shift; ac_config_headers=$*;;
-esac
 
 
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
-config_headers="$ac_config_headers"
-config_commands="$ac_config_commands"
 
 _ACEOF
 
@@ -6416,17 +6900,9 @@ Usage: $0 [OPTION]... [TAG]...
       --recheck    update $as_me by reconfiguring in the same conditions
       --file=FILE[:TEMPLATE]
                    instantiate the configuration file FILE
-      --header=FILE[:TEMPLATE]
-                   instantiate the configuration header FILE
 
 Configuration files:
 $config_files
-
-Configuration headers:
-$config_headers
-
-Configuration commands:
-$config_commands
 
 Report bugs to the package provider."
 
@@ -6489,18 +6965,7 @@ do
     esac
     as_fn_append CONFIG_FILES " '$ac_optarg'"
     ac_need_defaults=false;;
-  --header | --heade | --head | --hea )
-    $ac_shift
-    case $ac_optarg in
-    *\'*) ac_optarg=`$as_echo "$ac_optarg" | sed "s/'/'\\\\\\\\''/g"` ;;
-    esac
-    as_fn_append CONFIG_HEADERS " '$ac_optarg'"
-    ac_need_defaults=false;;
-  --he | --h)
-    # Conflict between --help and --header
-    as_fn_error $? "ambiguous option: \`$1'
-Try \`$0 --help' for more information.";;
-  --help | --hel | -h )
+  --he | --h |  --help | --hel | -h )
     $as_echo "$ac_cs_usage"; exit ;;
   -q | -quiet | --quiet | --quie | --qui | --qu | --q \
   | -silent | --silent | --silen | --sile | --sil | --si | --s)
@@ -6548,11 +7013,6 @@ _ASBOX
 
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
-#
-# INIT-COMMANDS
-#
-
-
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -6561,8 +7021,6 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "xmlrpc_amconfig.h") CONFIG_HEADERS="$CONFIG_HEADERS xmlrpc_amconfig.h" ;;
-    "default-1") CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
     "srcdir.mk") CONFIG_FILES="$CONFIG_FILES srcdir.mk" ;;
     "config.mk") CONFIG_FILES="$CONFIG_FILES config.mk" ;;
     "xmlrpc_config.h") CONFIG_FILES="$CONFIG_FILES xmlrpc_config.h" ;;
@@ -6578,8 +7036,6 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
-  test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
-  test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
 # Have a temporary directory for convenience.  Make it in the build tree
@@ -6767,116 +7223,8 @@ fi
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
-# Set up the scripts for CONFIG_HEADERS section.
-# No need to generate them if there are no CONFIG_HEADERS.
-# This happens for instance with `./config.status Makefile'.
-if test -n "$CONFIG_HEADERS"; then
-cat >"$ac_tmp/defines.awk" <<\_ACAWK ||
-BEGIN {
-_ACEOF
 
-# Transform confdefs.h into an awk script `defines.awk', embedded as
-# here-document in config.status, that substitutes the proper values into
-# config.h.in to produce config.h.
-
-# Create a delimiter string that does not exist in confdefs.h, to ease
-# handling of long lines.
-ac_delim='%!_!# '
-for ac_last_try in false false :; do
-  ac_tt=`sed -n "/$ac_delim/p" confdefs.h`
-  if test -z "$ac_tt"; then
-    break
-  elif $ac_last_try; then
-    as_fn_error $? "could not make $CONFIG_HEADERS" "$LINENO" 5
-  else
-    ac_delim="$ac_delim!$ac_delim _$ac_delim!! "
-  fi
-done
-
-# For the awk script, D is an array of macro values keyed by name,
-# likewise P contains macro parameters if any.  Preserve backslash
-# newline sequences.
-
-ac_word_re=[_$as_cr_Letters][_$as_cr_alnum]*
-sed -n '
-s/.\{148\}/&'"$ac_delim"'/g
-t rset
-:rset
-s/^[	 ]*#[	 ]*define[	 ][	 ]*/ /
-t def
-d
-:def
-s/\\$//
-t bsnl
-s/["\\]/\\&/g
-s/^ \('"$ac_word_re"'\)\(([^()]*)\)[	 ]*\(.*\)/P["\1"]="\2"\
-D["\1"]=" \3"/p
-s/^ \('"$ac_word_re"'\)[	 ]*\(.*\)/D["\1"]=" \2"/p
-d
-:bsnl
-s/["\\]/\\&/g
-s/^ \('"$ac_word_re"'\)\(([^()]*)\)[	 ]*\(.*\)/P["\1"]="\2"\
-D["\1"]=" \3\\\\\\n"\\/p
-t cont
-s/^ \('"$ac_word_re"'\)[	 ]*\(.*\)/D["\1"]=" \2\\\\\\n"\\/p
-t cont
-d
-:cont
-n
-s/.\{148\}/&'"$ac_delim"'/g
-t clear
-:clear
-s/\\$//
-t bsnlc
-s/["\\]/\\&/g; s/^/"/; s/$/"/p
-d
-:bsnlc
-s/["\\]/\\&/g; s/^/"/; s/$/\\\\\\n"\\/p
-b cont
-' <confdefs.h | sed '
-s/'"$ac_delim"'/"\\\
-"/g' >>$CONFIG_STATUS || ac_write_fail=1
-
-cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
-  for (key in D) D_is_set[key] = 1
-  FS = ""
-}
-/^[\t ]*#[\t ]*(define|undef)[\t ]+$ac_word_re([\t (]|\$)/ {
-  line = \$ 0
-  split(line, arg, " ")
-  if (arg[1] == "#") {
-    defundef = arg[2]
-    mac1 = arg[3]
-  } else {
-    defundef = substr(arg[1], 2)
-    mac1 = arg[2]
-  }
-  split(mac1, mac2, "(") #)
-  macro = mac2[1]
-  prefix = substr(line, 1, index(line, defundef) - 1)
-  if (D_is_set[macro]) {
-    # Preserve the white space surrounding the "#".
-    print prefix "define", macro P[macro] D[macro]
-    next
-  } else {
-    # Replace #undef with comments.  This is necessary, for example,
-    # in the case of _POSIX_SOURCE, which is predefined and required
-    # on some systems where configure will not decide to define it.
-    if (defundef == "undef") {
-      print "/*", prefix defundef, macro, "*/"
-      next
-    }
-  }
-}
-{ print }
-_ACAWK
-_ACEOF
-cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
-  as_fn_error $? "could not setup config headers machinery" "$LINENO" 5
-fi # test -n "$CONFIG_HEADERS"
-
-
-eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES      "
 shift
 for ac_tag
 do
@@ -7089,41 +7437,11 @@ which seems to be undefined.  Please make sure it is defined" >&2;}
   esac \
   || as_fn_error $? "could not create $ac_file" "$LINENO" 5
  ;;
-  :H)
-  #
-  # CONFIG_HEADER
-  #
-  if test x"$ac_file" != x-; then
-    {
-      $as_echo "/* $configure_input  */" \
-      && eval '$AWK -f "$ac_tmp/defines.awk"' "$ac_file_inputs"
-    } >"$ac_tmp/config.h" \
-      || as_fn_error $? "could not create $ac_file" "$LINENO" 5
-    if diff "$ac_file" "$ac_tmp/config.h" >/dev/null 2>&1; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: $ac_file is unchanged" >&5
-$as_echo "$as_me: $ac_file is unchanged" >&6;}
-    else
-      rm -f "$ac_file"
-      mv "$ac_tmp/config.h" "$ac_file" \
-	|| as_fn_error $? "could not create $ac_file" "$LINENO" 5
-    fi
-  else
-    $as_echo "/* $configure_input  */" \
-      && eval '$AWK -f "$ac_tmp/defines.awk"' "$ac_file_inputs" \
-      || as_fn_error $? "could not create -" "$LINENO" 5
-  fi
- ;;
-
-  :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
-$as_echo "$as_me: executing $ac_file commands" >&6;}
- ;;
-  esac
 
 
-  case $ac_file$ac_mode in
-    "default-1":C) test -z "$CONFIG_HEADERS" || echo timestamp > stamp-h ;;
 
   esac
+
 done # for ac_tag
 
 

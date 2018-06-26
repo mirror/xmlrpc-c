@@ -103,6 +103,10 @@ public:
     writeWait(packetPtr const& packetPtr) const;
 
     void
+    writeWait(packetPtr const& packetPtr,
+              bool *    const  brokenConnP) const;
+
+    void
     read(bool *      const eofP,
          bool *      const gotPacketP,
          packetPtr * const packetPP);
@@ -121,6 +125,9 @@ public:
     void
     readWait(bool *      const eofP,
              packetPtr * const packetPP);
+
+    void
+    useBrokenConnEx();
 
 private:
     packetSocket_impl * implP;

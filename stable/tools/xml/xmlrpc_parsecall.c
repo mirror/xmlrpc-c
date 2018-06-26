@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <xmlrpc-c/util_int.h>
 #include <xmlrpc-c/base.h>
 
 #include "casprintf.h"
