@@ -485,6 +485,38 @@ public:
 };
 
 
+class arrayArrayTestSuite : public testSuite {
+public:
+    virtual string suiteName() {
+        return "arrayArrayTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+
+        /* Empty array of arrays */
+        vector<vector<string> > arrayArrayDataVec;
+
+        value const arrayArray1(toValue(arrayArrayDataVec));
+        TEST(arrayArray1.type() == value::TYPE_ARRAY);
+        TEST(value_array(arrayArray1).size() == 0);
+
+        /* Array of 1 empty array */
+        vector<string> innerArray;
+        arrayArrayDataVec.push_back(innerArray);
+        value const arrayArray2(toValue(arrayArrayDataVec));
+
+        TEST(arrayArray2.type() == value::TYPE_ARRAY);
+        TEST(value_array(arrayArray2).size() == 1);
+        vector<value> dataReadBackx(
+            value_array(arrayArray2).vectorValueValue());
+        TEST(dataReadBackx.size() == 1);
+        TEST(dataReadBackx[0].type() == value::TYPE_ARRAY);
+        vector<value> dataReadBackx2(
+            value_array(dataReadBackx[0]).vectorValueValue());
+        TEST(dataReadBackx2.size() == 0);
+    }
+};
+
+
 } // unnamed namespace
 
 
@@ -508,4 +540,5 @@ valueTestSuite::runtests(unsigned int const indentation) {
         i8TestSuite().run(indentation+1);
         structTestSuite().run(indentation+1);
         arrayTestSuite().run(indentation+1);
+        arrayArrayTestSuite().run(indentation+1);
 }
