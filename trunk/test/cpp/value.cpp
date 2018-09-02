@@ -91,7 +91,7 @@ public:
         return "booleanTestSuite";
     }
     virtual void runtests(unsigned int const) {
-        value_boolean boolean1(true); 
+        value_boolean boolean1(true);
         TEST(static_cast<bool>(boolean1) == true);
         value_boolean boolean2(false);
         TEST(static_cast<bool>(boolean2) == false);
@@ -291,7 +291,7 @@ public:
             badString.validate();
             TEST_FAILED("'validate' of string containging a control "
                         "character succeeded");
-        } catch (error const&) {}        
+        } catch (error const&) {}
     }
 };
 
@@ -397,7 +397,7 @@ public:
         cstruct structData;
         pair<string, value> member("the_integer", value_int(9));
         structData.insert(member);
-        
+
         value_struct struct1(structData);
 
         map<string, value> dataReadBack(struct1);
@@ -450,7 +450,7 @@ public:
         TEST(dataReadBack1[1].type() ==  value::TYPE_DOUBLE);
         TEST(static_cast<double>(value_double(dataReadBack1[1])) == 2.78);
         TEST(dataReadBack1[2].type() ==  value::TYPE_STRING);
-        TEST(static_cast<string>(value_string(dataReadBack1[2])) == 
+        TEST(static_cast<string>(value_string(dataReadBack1[2])) ==
              "hello world");
 
         value val1(array1);
