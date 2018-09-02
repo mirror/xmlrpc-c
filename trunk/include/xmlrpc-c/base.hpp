@@ -320,6 +320,16 @@ toValue(xmlrpc_c::value const& v) {
     return v;
 }
 
+/* Forward declarations to make it possible to do 'toValue' of a vector of
+   vectors, map of vectors, etc.
+*/
+
+template<class T> inline xmlrpc_c::value_array
+toValue(std::vector<T> const& in);
+
+template<class K, class V> xmlrpc_c::value_struct
+toValue(std::map<K, V> const& in);
+
 template<class K, class V> xmlrpc_c::value_struct
 toValue(std::map<K, V> const& in) {
 /*----------------------------------------------------------------------------
