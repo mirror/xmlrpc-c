@@ -169,7 +169,7 @@ static void
 addMilliseconds(xmlrpc_timespec   const addend,
                 unsigned int      const adder,
                 xmlrpc_timespec * const sumP) {
-    
+
     unsigned int const million = 1000000;
     unsigned int const billion = 1000000000;
 
@@ -211,7 +211,7 @@ struct xmlrpc_client_transport {
            the transaction with proper interruptibility.  The only Curl
            transaction ever attached to this multi manager is
            'syncCurlSessionP'.
-           
+
            This is constant (the handle, not the object).
         */
     curlMulti * asyncCurlMultiP;
@@ -220,7 +220,7 @@ struct xmlrpc_client_transport {
            interface.  Note that there may be multiple such Curl transactions
            simultaneously and one can't wait for a particular one to finish;
            the collection of asynchronous RPCs are an indivisible mass.
-           
+
            This is constant (the handle, not the object).
         */
     bool dontAdvertise;
@@ -234,7 +234,7 @@ struct xmlrpc_client_transport {
         */
     const char * userAgent;
         /* Information to include in a User-Agent HTTP header, reflecting
-           facilities outside of Xmlrpc-c.  
+           facilities outside of Xmlrpc-c.
 
            Null means none.
 
@@ -307,7 +307,7 @@ initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
 
 #if MSVCRT
     /* This is CRITICAL so that cURL-Win32 works properly! */
-    
+
     /* So this commenter says, but I wonder why.  libcurl should do the
        required WSAStartup() itself, and it looks to me like it does.
        -Bryan 06.01.01
@@ -316,7 +316,7 @@ initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
     WSADATA wsaData;
     int err;
     wVersionRequested = MAKEWORD(1, 1);
-    
+
     err = WSAStartup(wVersionRequested, &wsaData);
     if (err)
         xmlrpc_env_set_fault_formatted(
@@ -324,8 +324,8 @@ initWindowsStuff(xmlrpc_env * const envP ATTR_UNUSED) {
             "Winsock startup failed.  WSAStartup returned rc %d", err);
     else {
         if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
-            /* Tell the user that we couldn't find a useable */ 
-            /* winsock.dll. */ 
+            /* Tell the user that we couldn't find a useable */
+            /* winsock.dll. */
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_INTERNAL_ERROR, "Winsock reported that "
                 "it does not implement the requested version 1.1.");
@@ -402,14 +402,14 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
     retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * million);
 
     return retval;
-}        
+}
 
 
 
 static void
 processCurlMessages(xmlrpc_env * const envP,
                     curlMulti *  const curlMultiP) {
-        
+
     bool endOfMessages;
 
     endOfMessages = false;   /* initial assumption */
@@ -457,7 +457,7 @@ waitForWork(xmlrpc_env *       const envP,
    checked, we will return immediately and if it arrives while we're waiting,
    we will return then.  Note that we can provide this service only because
    pselect() has the same atomic unblock/wait feature.
-   
+
    If sigmaskP is NULL, wait under whatever the current signal mask is.
 -----------------------------------------------------------------------------*/
     fd_set readFdSet;
@@ -487,7 +487,7 @@ waitForWork(xmlrpc_env *       const envP,
 
             rc = xmlrpc_pselect(maxFd+1, &readFdSet, &writeFdSet, &exceptFdSet,
                                 &pselectTimeoutArg, sigmaskP);
-            
+
             if (rc < 0 && errno != EINTR)
                 xmlrpc_faultf(envP, "Impossible failure of pselect() "
                               "with errno %d (%s)",
@@ -532,7 +532,7 @@ waitForWorkInt(xmlrpc_env *       const envP,
     sigfillset(&allSignals);
 
     sigprocmask(SIG_BLOCK, &allSignals, &callerBlockSet);
-    
+
     if (*interruptP == 0)
         waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
     else
@@ -637,13 +637,13 @@ finishCurlMulti(xmlrpc_env *       const envP,
     rpcStillRunning = true;  /* initial assumption */
     timedOut = false;
     curlCalledSinceInterrupt = false;
-    
+
     while (rpcStillRunning && !timedOut && !envP->fault_occurred) {
 
         if (interruptP && !curlCalledSinceInterrupt) {
             waitForWorkInt(envP, curlMultiP, timeoutType, deadline,
                            interruptP);
-        } else 
+        } else
             waitForWork(envP, curlMultiP, timeoutType, deadline, NULL);
 
         if (!envP->fault_occurred) {
@@ -660,7 +660,7 @@ finishCurlMulti(xmlrpc_env *       const envP,
             doCurlWork(envP, curlMultiP, &rpcStillRunning);
 
             xmlrpc_gettimeofday(&nowTime);
-            
+
             timedOut = (timeoutType == timeout_yes &&
                         timeIsAfter(nowTime, deadline));
         }
@@ -674,7 +674,7 @@ getTimeoutParm(xmlrpc_env *                          const envP,
                const struct xmlrpc_curl_xportparms * const curlXportParmsP,
                size_t                                const parmSize,
                unsigned int *                        const timeoutP) {
-               
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(timeout))
         *timeoutP = 0;
     else {
@@ -702,7 +702,7 @@ getConnectTimeoutParm(
     const struct xmlrpc_curl_xportparms * const curlXportParmsP,
     size_t                                const parmSize,
     unsigned int *                        const timeoutP) {
-               
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(connect_timeout))
         *timeoutP = 0;
     else {
@@ -777,12 +777,12 @@ getXportParms(xmlrpc_env *                          const envP,
         transportP->userAgent = NULL;
     else
         transportP->userAgent = strdup(curlXportParmsP->user_agent);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(dont_advertise))
         transportP->dontAdvertise = false;
     else
         transportP->dontAdvertise = curlXportParmsP->dont_advertise;
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(network_interface))
         curlSetupP->networkInterface = NULL;
     else if (curlXportParmsP->network_interface == NULL)
@@ -795,8 +795,8 @@ getXportParms(xmlrpc_env *                          const envP,
         curlSetupP->sslVerifyPeer = true;
     else
         curlSetupP->sslVerifyPeer = !curlXportParmsP->no_ssl_verifypeer;
-        
-    if (!curlXportParmsP || 
+
+    if (!curlXportParmsP ||
         parmSize < XMLRPC_CXPSIZE(no_ssl_verifyhost))
         curlSetupP->sslVerifyHost = true;
     else
@@ -808,87 +808,87 @@ getXportParms(xmlrpc_env *                          const envP,
         curlSetupP->sslCert = NULL;
     else
         curlSetupP->sslCert = strdup(curlXportParmsP->ssl_cert);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslcerttype))
         curlSetupP->sslCertType = NULL;
     else if (curlXportParmsP->sslcerttype == NULL)
         curlSetupP->sslCertType = NULL;
     else
         curlSetupP->sslCertType = strdup(curlXportParmsP->sslcerttype);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslcertpasswd))
         curlSetupP->sslCertPasswd = NULL;
     else if (curlXportParmsP->sslcertpasswd == NULL)
         curlSetupP->sslCertPasswd = NULL;
     else
         curlSetupP->sslCertPasswd = strdup(curlXportParmsP->sslcertpasswd);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkey))
         curlSetupP->sslKey = NULL;
     else if (curlXportParmsP->sslkey == NULL)
         curlSetupP->sslKey = NULL;
     else
         curlSetupP->sslKey = strdup(curlXportParmsP->sslkey);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeytype))
         curlSetupP->sslKeyType = NULL;
     else if (curlXportParmsP->sslkeytype == NULL)
         curlSetupP->sslKeyType = NULL;
     else
         curlSetupP->sslKeyType = strdup(curlXportParmsP->sslkeytype);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslkeypasswd))
         curlSetupP->sslKeyPasswd = NULL;
     else if (curlXportParmsP->sslkeypasswd == NULL)
         curlSetupP->sslKeyPasswd = NULL;
     else
         curlSetupP->sslKeyPasswd = strdup(curlXportParmsP->sslkeypasswd);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslengine))
         curlSetupP->sslEngine = NULL;
     else if (curlXportParmsP->sslengine == NULL)
         curlSetupP->sslEngine = NULL;
     else
         curlSetupP->sslEngine = strdup(curlXportParmsP->sslengine);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslengine_default))
         curlSetupP->sslEngineDefault = false;
     else
         curlSetupP->sslEngineDefault = !!curlXportParmsP->sslengine_default;
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(sslversion))
         curlSetupP->sslVersion = XMLRPC_SSLVERSION_DEFAULT;
     else
         curlSetupP->sslVersion = curlXportParmsP->sslversion;
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(cainfo))
         curlSetupP->caInfo = NULL;
     else if (curlXportParmsP->cainfo == NULL)
         curlSetupP->caInfo = NULL;
     else
         curlSetupP->caInfo = strdup(curlXportParmsP->cainfo);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(capath))
         curlSetupP->caPath = NULL;
     else if (curlXportParmsP->capath == NULL)
         curlSetupP->caPath = NULL;
     else
         curlSetupP->caPath = strdup(curlXportParmsP->capath);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(randomfile))
         curlSetupP->randomFile = NULL;
     else if (curlXportParmsP->randomfile == NULL)
         curlSetupP->randomFile = NULL;
     else
         curlSetupP->randomFile = strdup(curlXportParmsP->randomfile);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(egdsocket))
         curlSetupP->egdSocket = NULL;
     else if (curlXportParmsP->egdsocket == NULL)
         curlSetupP->egdSocket = NULL;
     else
         curlSetupP->egdSocket = strdup(curlXportParmsP->egdsocket);
-    
+
     if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(ssl_cipher_list))
         curlSetupP->sslCipherList = NULL;
     else if (curlXportParmsP->ssl_cipher_list == NULL)
@@ -1054,7 +1054,7 @@ makeSyncCurlSession(xmlrpc_env *                     const envP,
         if (!envP->fault_occurred) {
             /* We'll need a multi manager to actually execute this session: */
             transportP->syncCurlMultiP = curlMulti_create();
-        
+
             if (transportP->syncCurlMultiP == NULL)
                 xmlrpc_faultf(envP, "Unable to create Curl multi manager for "
                               "synchronous RPCs");
@@ -1064,7 +1064,7 @@ makeSyncCurlSession(xmlrpc_env *                     const envP,
         }
         if (envP->fault_occurred)
             transportP->syncCurlSessionLockP->destroy(
-                transportP->syncCurlSessionLockP); 
+                transportP->syncCurlSessionLockP);
     }
 }
 
@@ -1078,12 +1078,12 @@ unmakeSyncCurlSession(struct xmlrpc_client_transport * const transportP) {
     destroySyncCurlSession(transportP->syncCurlSessionP);
 
     transportP->syncCurlSessionLockP->destroy(
-        transportP->syncCurlSessionLockP); 
+        transportP->syncCurlSessionLockP);
 }
 
 
 
-static void 
+static void
 create(xmlrpc_env *                      const envP,
        int                               const flags ATTR_UNUSED,
        const char *                      const appname ATTR_UNUSED,
@@ -1094,7 +1094,7 @@ create(xmlrpc_env *                      const envP,
 /*----------------------------------------------------------------------------
    This does the 'create' operation for a Curl client transport.
 -----------------------------------------------------------------------------*/
-    const struct xmlrpc_curl_xportparms * const curlXportParmsP = 
+    const struct xmlrpc_curl_xportparms * const curlXportParmsP =
         transportparmsP;
 
     struct xmlrpc_client_transport * transportP;
@@ -1108,16 +1108,16 @@ create(xmlrpc_env *                      const envP,
         transportP->interruptP = NULL;
 
         transportP->asyncCurlMultiP = curlMulti_create();
-        
+
         if (transportP->asyncCurlMultiP == NULL)
             xmlrpc_faultf(envP, "Unable to create Curl multi manager for "
                           "asynchronous RPCs");
         else {
             getXportParms(envP, curlXportParmsP, parm_size, transportP);
-            
+
             if (!envP->fault_occurred) {
                 makeSyncCurlSession(envP, transportP);
-                
+
                 if (envP->fault_occurred)
                     freeXportParms(transportP);
             }
@@ -1147,11 +1147,11 @@ assertNoOutstandingCurlWork(curlMulti * const curlMultiP) {
     xmlrpc_env env;
     bool immediateWorkToDo;
     int runningHandles;
-    
+
     xmlrpc_env_init(&env);
-    
+
     curlMulti_perform(&env, curlMultiP, &immediateWorkToDo, &runningHandles);
-    
+
     /* We know the above was a no-op, since we're asserting that there
        is no outstanding work.
     */
@@ -1163,7 +1163,7 @@ assertNoOutstandingCurlWork(curlMulti * const curlMultiP) {
 
 
 
-static void 
+static void
 destroy(struct xmlrpc_client_transport * const clientTransportP) {
 /*----------------------------------------------------------------------------
    This does the 'destroy' operation for a Curl client transport.
@@ -1265,7 +1265,7 @@ createRpc(xmlrpc_env *                     const envP,
           const xmlrpc_server_info *       const serverP,
           xmlrpc_mem_block *               const callXmlP,
           xmlrpc_mem_block *               const responseXmlP,
-          xmlrpc_transport_asynch_complete       complete, 
+          xmlrpc_transport_asynch_complete       complete,
           xmlrpc_transport_progress              progress,
           struct xmlrpc_call_info *        const callInfoP,
           rpc **                           const rpcPP) {
@@ -1296,7 +1296,7 @@ createRpc(xmlrpc_env *                     const envP,
         curlTransaction_create(envP,
                                curlSessionP,
                                serverP,
-                               callXmlP, responseXmlP, 
+                               callXmlP, responseXmlP,
                                clientTransportP->dontAdvertise,
                                clientTransportP->userAgent,
                                &clientTransportP->curlSetupStuff,
@@ -1316,7 +1316,7 @@ createRpc(xmlrpc_env *                     const envP,
 
 
 
-static void 
+static void
 destroyRpc(rpc * const rpcP) {
 
     XMLRPC_ASSERT_PTR_OK(rpcP);
@@ -1397,7 +1397,7 @@ curlTransactionProgress(void * const context,
 
    The curlTransaction calls this once a second telling us how much
    data has transferred.  If the transport user has set up a progress
-   function, we call that with this progress information.  That 
+   function, we call that with this progress information.  That
    function might e.g. display a progress bar.
 
    Additionally, the curlTransaction gives us the opportunity to tell it
@@ -1436,8 +1436,8 @@ curlTransactionProgress(void * const context,
 
 
 
-static void 
-sendRequest(xmlrpc_env *                     const envP, 
+static void
+sendRequest(xmlrpc_env *                     const envP,
             struct xmlrpc_client_transport * const clientTransportP,
             const xmlrpc_server_info *       const serverP,
             xmlrpc_mem_block *               const callXmlP,
@@ -1459,7 +1459,7 @@ sendRequest(xmlrpc_env *                     const envP,
     responseXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
     if (!envP->fault_occurred) {
         CURL * const curlSessionP = curl_easy_init();
-    
+
         if (curlSessionP == NULL)
             xmlrpc_faultf(envP, "Could not create Curl session.  "
                           "curl_easy_init() failed.");
@@ -1467,10 +1467,10 @@ sendRequest(xmlrpc_env *                     const envP,
             createRpc(envP, clientTransportP, curlSessionP, serverP,
                       callXmlP, responseXmlP, complete, progress, callInfoP,
                       &rpcP);
-            
+
             if (!envP->fault_occurred) {
                 startRpc(envP, rpcP);
-                
+
                 if (envP->fault_occurred)
                     destroyRpc(rpcP);
             }
@@ -1489,7 +1489,7 @@ sendRequest(xmlrpc_env *                     const envP,
 
 
 
-static void 
+static void
 finishAsynch(
     struct xmlrpc_client_transport * const clientTransportP,
     xmlrpc_timeoutType               const timeoutType,
@@ -1524,7 +1524,7 @@ finishAsynch(
         /* The datetime after which we should quit waiting */
 
     xmlrpc_env_init(&env);
-    
+
     if (timeoutType == timeout_yes) {
         xmlrpc_timespec waitStartTime;
         xmlrpc_gettimeofday(&waitStartTime);
@@ -1545,7 +1545,7 @@ finishAsynch(
 
        Note that a failure of finish_curlMulti() does not mean that
        a session completed with an error or an RPC completed with an
-       error.  Those things are reported up through the user's 
+       error.  Those things are reported up through the user's
        xmlrpc_transport_asynch_complete routine.  A failure here is
        something that stopped us from calling that.
 
@@ -1619,7 +1619,7 @@ setupGlobalConstants(xmlrpc_env * const envP) {
         CURLcode rc;
 
         rc = curl_global_init(CURL_GLOBAL_ALL);
-        
+
         if (rc != CURLE_OK)
             xmlrpc_faultf(envP, "curl_global_init() failed with code %d", rc);
     }
