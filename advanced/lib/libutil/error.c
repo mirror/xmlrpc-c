@@ -28,14 +28,16 @@ xmlrpc_assertion_failed(const char * const fileName,
 static const char * const default_fault_string =
     "Not enough memory for error message";
 
-void xmlrpc_env_init (xmlrpc_env* env)
-{
+void
+xmlrpc_env_init (xmlrpc_env* env) {
     XMLRPC_ASSERT(env != NULL);
 
     env->fault_occurred = 0;
     env->fault_code     = 0;
     env->fault_string   = NULL;
 }
+
+
 
 void
 xmlrpc_env_clean(xmlrpc_env * const envP) {
@@ -55,14 +57,14 @@ xmlrpc_env_clean(xmlrpc_env * const envP) {
 
 
 
-void 
+void
 xmlrpc_env_set_fault(xmlrpc_env * const envP,
-                     int          const faultCode, 
+                     int          const faultCode,
                      const char * const faultDescription) {
 
     char * buffer;
 
-    XMLRPC_ASSERT(envP != NULL); 
+    XMLRPC_ASSERT(envP != NULL);
     XMLRPC_ASSERT(faultDescription != NULL);
 
     /* Clean up any leftover pointers. */
@@ -101,10 +103,10 @@ xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
 
 
 
-void 
-xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP, 
+void
+xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP,
                                int          const code,
-                               const char * const format, 
+                               const char * const format,
                                ...) {
     va_list args;
 
@@ -149,8 +151,8 @@ xmlrpc_faultf(xmlrpc_env * const envP,
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
