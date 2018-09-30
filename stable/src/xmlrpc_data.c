@@ -379,6 +379,11 @@ xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
                           "xmlrpc_value");
         else
             valP->refcount = 1;
+
+        if (envP->fault_occurred) {
+            free(valP);
+            valP = NULL;
+        }
     }
     *valPP = valP;
 }
