@@ -676,6 +676,8 @@ if test $MUST_BUILD_CURL_CLIENT = yes; then
     dnl So we don't do any check now.  If we find out there's a problem with
     dnl older Curls, we will revisit that.
 
+    AC_SUBST(CURL_CONFIG)
+
     CURL_LDADD=$($CURL_CONFIG --libs)
     AC_SUBST(CURL_LDADD)
 
