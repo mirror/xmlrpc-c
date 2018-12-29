@@ -29,7 +29,7 @@ include $(SRCDIR)/common.mk
 
 $(SRCDIR)/common.mk: srcdir blddir
 
-CURL_VERSION := $(shell curl-config --vernum)
+CURL_VERSION := $(shell $(CURL_CONFIG) --vernum)
 
 # Some time at or before Curl 7.12, <curl/types.h> became an empty file
 # (no-op).  Some time after Curl 7.18, <curl/types.h> ceased to exist.
@@ -43,7 +43,7 @@ ifeq ($(NEED_CURL_TYPES_H),Y)
   CFLAGS_LOCAL += -DNEED_CURL_TYPES_H
 endif
 
-CURL_INCLUDES := $(shell curl-config --cflags)
+CURL_INCLUDES := $(shell $(CURL_CONFIG) --cflags)
 # We expect that curl-config --cflags just gives us -I options, because
 # we need just the -I options for 'make dep'.  Plus, it's scary to think
 # of what any other compiler flag would do to our compile.
