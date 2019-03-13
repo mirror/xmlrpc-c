@@ -108,7 +108,7 @@ computeQuotients(xmlrpc_env *    const envP,
                     if (!envP->fault_occurred) {
                         xmlrpc_array_append_item(envP, quotientArrayP,
                                                  quotientP);
-        
+
                         xmlrpc_DECREF(quotientP);
                     }
                 }
@@ -156,8 +156,8 @@ example_divide(xmlrpc_env *   const envP,
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     struct xmlrpc_method_info3 const methodInfo = {
@@ -175,7 +175,7 @@ main(int           const argc,
                 "You specified %d arguments.\n",  argc-1);
         exit(1);
     }
-    
+
     xmlrpc_env_init(&env);
 
     registryP = xmlrpc_registry_new(&env);
@@ -184,7 +184,7 @@ main(int           const argc,
 
     /* In the modern form of the Abyss API, we supply parameters in memory
        like a normal API.  We select the modern form by setting
-       config_file_name to NULL: 
+       config_file_name to NULL:
     */
     serverparm.config_file_name = NULL;
     serverparm.registryP        = registryP;
