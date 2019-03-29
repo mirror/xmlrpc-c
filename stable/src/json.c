@@ -203,7 +203,7 @@ finishStringToken(xmlrpc_env * const envP,
 
                 while (isxdigit(*cur) && cur - tokP->end < 4)
                     ++cur;
-                
+
                 if (cur - tokP->end < 4)
                     setParseErr(envP, tokP,
                                 "hex unicode must contain 4 digits.  "
@@ -268,7 +268,7 @@ isFloat(const char * const token,
    point number.
 
    N.B. This is true of any integer.
-   
+
    We don't accept plus signs.
 
    Examples of valid floating point:  0, 32, 32.5, , 32.500,
@@ -385,7 +385,7 @@ advanceToNextToken(Tokenizer * const tokP) {
 
     while (*tokP->begin != '\0' &&
            (isspace(*tokP->begin) || atComment(tokP))) {
-        
+
         advancePastWhiteSpace(tokP);
 
         advancePastComments(tokP);
@@ -410,7 +410,7 @@ getToken(xmlrpc_env * const envP,
         tokP->size = tokP->end - tokP->begin;
     } else {
         tokP->end = tokP->begin;  /* initial value */
-    
+
         if (*tokP->begin == '{') {
             finishDelimiterToken(tokP);
             tokP->type = typeOpenBrace;
@@ -550,7 +550,7 @@ getBackslashSequence(xmlrpc_env *       const envP,
         buffer[0] = '\t';
         tsize = 1;
         *nBytesConsumedP = 1;
-        break;    
+        break;
     case 'u': {
         long digit;
         strncpy(buffer, cur + 1, 4);
@@ -587,7 +587,7 @@ unescapeString(xmlrpc_env *        const envP,
 
         cur = begin;
         last = cur;
-            
+
         while (cur != end && !envP->fault_occurred) {
             if (*cur == '\\') {
                 if (cur != last) {
@@ -634,7 +634,7 @@ static xmlrpc_value *
 makeUtf8String(xmlrpc_env * const envP,
                const char * const begin,
                const char * const end) {
-/*---------------------------------------------------------------------------- 
+/*----------------------------------------------------------------------------
     Copy a json string directly into a string value, and convert any json
     escaping (\uXXXX) to something acceptable to the internal string handling.
 
@@ -671,7 +671,7 @@ stringTokenValue(xmlrpc_env * const envP,
     assert(tokP->end >= tokP->begin + 2);
     assert(*tokP->begin == '"');
     assert(*(tokP->end-1) == '"');
-    
+
     valP = makeUtf8String(&env, tokP->begin + 1, tokP->end - 1);
 
     if (env.fault_occurred) {
@@ -706,7 +706,7 @@ integerTokenValue(xmlrpc_env * const envP,
                     tokP->begin, env.fault_string);
     else
         valP = xmlrpc_i8_new(envP, value);
-    
+
     xmlrpc_env_clean(&env);
 
     return valP;
@@ -772,7 +772,7 @@ parseList(xmlrpc_env *   const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
 
     retval = xmlrpc_array_new(envP);
-    
+
     if (!envP->fault_occurred) {
         bool endOfList;
         for (endOfList = false; !endOfList && !envP->fault_occurred; ) {
@@ -833,9 +833,9 @@ parseObjectMember(xmlrpc_env *   const envP,
     assert(tokP->end >= tokP->begin + 2);
     assert(*tokP->begin == '"');
     assert(*(tokP->end-1) == '"');
-                      
+
     keyP = makeUtf8String(&env, tokP->begin + 1, tokP->end - 1);
-                
+
     if (env.fault_occurred)
         setParseErr(envP, tokP, "Error in what is supposed to be "
                     "the key of a member of an object: %s",
@@ -858,7 +858,7 @@ parseObjectMember(xmlrpc_env *   const envP,
 }
 
 
- 
+
 static xmlrpc_value *
 parseObject(xmlrpc_env *   const envP,
             Tokenizer * const tokP) {
@@ -884,7 +884,7 @@ parseObject(xmlrpc_env *   const envP,
 
                     if (!envP->fault_occurred) {
                         getToken(envP, tokP);
-                        
+
                         if (!envP->fault_occurred) {
                             if (tokP->type == typeComma) {
                                 /* member separator; keep going */
@@ -924,9 +924,9 @@ parseValue(xmlrpc_env * const envP,
            Tokenizer *  const tokP) {
 
     xmlrpc_value * retval;
-    
+
     XMLRPC_ASSERT_ENV_OK(envP);
-        
+
     switch (tokP->type) {
 
     case typeOpenBracket:
@@ -936,7 +936,7 @@ parseValue(xmlrpc_env * const envP,
     case typeOpenBrace:
         retval = parseObject(envP, tokP);
         break;
-            
+
     case typeNull:
         retval = xmlrpc_nil_new(envP);
         break;
@@ -956,7 +956,7 @@ parseValue(xmlrpc_env * const envP,
     case typeInteger:
         retval = integerTokenValue(envP, tokP);
         break;
-        
+
     case typeFloat:
         retval = xmlrpc_double_new(envP, strtod(tokP->begin, NULL));
         break;
@@ -964,7 +964,7 @@ parseValue(xmlrpc_env * const envP,
     case typeString:
         retval = stringTokenValue(envP, tokP);
         break;
-            
+
     default:
         retval = NULL;
         setParseErr(envP, tokP, "Invalid token "
@@ -984,9 +984,9 @@ xmlrpc_parse_json(xmlrpc_env * const envP,
 
     xmlrpc_value * retval = retval;
     Tokenizer tok;
-    
+
     XMLRPC_ASSERT_ENV_OK(envP);
-    
+
     initializeTokenizer(&tok, str);
 
     getToken(envP, &tok);
@@ -1093,7 +1093,7 @@ appendEscapeSeq(xmlrpc_env *       const envP,
     char buffer[6+1];
     char slashChar;
         /* Character that goes after the backslash, including 'u' for \uHHHH */
-    
+
     switch (c) {
     case '"' : slashChar = '"';  break; /* U+0022 */
     case '\\': slashChar = '\\'; break; /* U+005C */
@@ -1108,7 +1108,7 @@ appendEscapeSeq(xmlrpc_env *       const envP,
 
     buffer[0] = '\\';
     buffer[1] = slashChar;
-    
+
     if (slashChar == 'u') {
         sprintf(&buffer[2], "%04x", c);
         size = 6;  /* \u1234 */
@@ -1135,7 +1135,7 @@ makeJsonString(xmlrpc_env *       const envP,
     const char * last;
 
     last = cur = begin;
-    
+
     while (cur != end && !envP->fault_occurred) {
         unsigned char const c = *cur;
 
@@ -1145,7 +1145,7 @@ makeJsonString(xmlrpc_env *       const envP,
                the characters before it to the output.
             */
             XMLRPC_MEMBLOCK_APPEND(char, envP, outP, last, cur - last);
-            
+
             if (!envP->fault_occurred) {
                 appendEscapeSeq(envP, outP, c);
 
@@ -1205,7 +1205,7 @@ serializeI8(xmlrpc_env *       const envP,
     xmlrpc_int64 value;
 
     xmlrpc_read_i8(envP, valP, &value);
-            
+
     formatOut(envP, outP, "%" XMLRPC_PRId64, value);
 }
 
@@ -1215,7 +1215,7 @@ static void
 serializeBool(xmlrpc_env *       const envP,
               xmlrpc_value *     const valP,
               xmlrpc_mem_block * const outP) {
-    
+
     xmlrpc_bool value;
     xmlrpc_read_bool(envP, valP, &value);
 
@@ -1228,7 +1228,7 @@ static void
 serializeDouble(xmlrpc_env *       const envP,
                 xmlrpc_value *     const valP,
                 xmlrpc_mem_block * const outP) {
-    
+
     xmlrpc_double value;
     xmlrpc_read_double(envP, valP, &value);
 
@@ -1254,16 +1254,16 @@ serializeDatetime(xmlrpc_env *       const envP,
 }
 
 
-        
+
 static void
 serializeString(xmlrpc_env * const envP,
                 xmlrpc_value *     const valP,
                 xmlrpc_mem_block * const outP) {
-    
+
     formatOut(envP, outP, "\"");
-    
+
     makeJsonStringFromXmlRpc(envP, valP, outP);
-    
+
     formatOut(envP, outP, "\"");
 }
 
@@ -1289,12 +1289,12 @@ serializeBitstring(xmlrpc_env *       const envP,
         if (!envP->fault_occurred) {
 
             formatOut(envP, outP, "\"");
-            
+
             XMLRPC_MEMBLOCK_APPEND(
                 char, envP, outP,
                 XMLRPC_MEMBLOCK_CONTENTS(char, base64P),
                 XMLRPC_MEMBLOCK_SIZE(char, base64P));
-            
+
             if (!envP->fault_occurred)
                 formatOut(envP, outP, "\"");
 
@@ -1322,7 +1322,7 @@ serializeArray(xmlrpc_env *       const envP,
         for (i = 0; i < size && !envP->fault_occurred; ++i) {
             xmlrpc_value * const itemP =
                 xmlrpc_array_get_item(envP, valP, i);
-                    
+
             if (!envP->fault_occurred) {
                 if (!envP->fault_occurred) {
                     serializeValue(envP, itemP, level + 1, outP);
@@ -1340,7 +1340,7 @@ serializeArray(xmlrpc_env *       const envP,
             }
         }
     }
-} 
+}
 
 
 
@@ -1352,17 +1352,17 @@ serializeStructMember(xmlrpc_env *       const envP,
                       xmlrpc_mem_block * const outP) {
 
     serializeValue(envP, memberKeyP, level, outP);
-                    
+
     if (!envP->fault_occurred) {
         formatOut(envP, outP, ":");
-        
+
         if (!envP->fault_occurred)
             serializeValue(envP, memberValueP, level, outP);
     }
 }
 
 
- 
+
 static void
 serializeStruct(xmlrpc_env *       const envP,
                 xmlrpc_value *     const valP,
@@ -1373,7 +1373,7 @@ serializeStruct(xmlrpc_env *       const envP,
         formatOut(envP, outP, "{\n");
         if (!envP->fault_occurred) {
             unsigned int const size = xmlrpc_struct_size(envP, valP);
-            
+
             if (!envP->fault_occurred) {
                 unsigned int i;
                 for (i = 0; i < size && !envP->fault_occurred; ++i) {
@@ -1386,7 +1386,7 @@ serializeStruct(xmlrpc_env *       const envP,
                     if (!envP->fault_occurred) {
                         serializeStructMember(envP, memberKeyP, memberValueP,
                                               level + 1, outP);
-                        
+
                         if (!envP->fault_occurred && i < size - 1)
                             XMLRPC_MEMBLOCK_APPEND(char, envP, outP, ",\n", 2);
                     }
@@ -1416,7 +1416,7 @@ serializeValue(xmlrpc_env *       const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
 
     indent(envP, level, outP);
-        
+
     switch (xmlrpc_value_type(valP)) {
     case XMLRPC_TYPE_INT:
         serializeInt(envP, valP, outP);
@@ -1444,7 +1444,7 @@ serializeValue(xmlrpc_env *       const envP,
 
     case XMLRPC_TYPE_BASE64:
         serializeBitstring(envP, valP, outP);
-        break;      
+        break;
 
     case XMLRPC_TYPE_ARRAY:
         serializeArray(envP, valP, level, outP);

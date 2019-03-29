@@ -5956,6 +5956,8 @@ test -n "$CURL_CONFIG" || CURL_CONFIG="no"
     fi
 
 
+
+
     CURL_LDADD=$($CURL_CONFIG --libs)
 
 

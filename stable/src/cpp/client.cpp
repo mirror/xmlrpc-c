@@ -48,7 +48,7 @@ throwIfError(env_wrap const& env) {
 
 class memblockStringWrapper {
 
-public:    
+public:
     memblockStringWrapper(string const value) {
 
         env_wrap env;
@@ -60,7 +60,7 @@ public:
                                value.c_str(), value.size());
         throwIfError(env);
     }
-    
+
     memblockStringWrapper(xmlrpc_mem_block * const memblockP) :
         memblockP(memblockP) {};
 
@@ -96,7 +96,7 @@ struct client_xml_impl {
         transportPtr(transportPtr),
         dialect(dialect) {}
 };
-     
+
 
 
 carriageParm::carriageParm() {}
@@ -160,7 +160,7 @@ carriageParm_http0::instantiate(string const serverUrl) {
 
     if (c_serverInfoP)
         throw(error("object already instantiated"));
-    
+
     env_wrap env;
 
     this->c_serverInfoP =
@@ -323,7 +323,7 @@ carriageParm_http0::setBasicAuth(string const username,
 
     if (!this->c_serverInfoP)
         throw(error("object not instantiated"));
-    
+
     env_wrap env;
 
     xmlrpc_server_info_set_basic_auth(
@@ -388,7 +388,7 @@ xmlTransactionPtr::xmlTransactionPtr() {}
 
 xmlTransactionPtr::xmlTransactionPtr(xmlTransaction * xmlTransP) :
     autoObjectPtr(xmlTransP) {}
- 
+
 
 
 xmlTransaction *
@@ -428,7 +428,7 @@ struct xmlTranCtl {
                                callXml.c_str(), callXml.size());
         throwIfError(env);
     }
-    
+
     ~xmlTranCtl() {
         XMLRPC_MEMBLOCK_FREE(char, this->callXmlP);
     }
@@ -455,7 +455,7 @@ clientXmlTransport::start(carriageParm *    const  carriageParmP,
 
     // Note: derived class clientXmlTransport_http overrides this,
     // so it doesn't normally get used.
-    
+
     string responseXml;
 
     this->call(carriageParmP, callXml, &responseXml);
@@ -593,7 +593,7 @@ clientXmlTransport_http::call(
 
     memblockStringWrapper responseHolder(responseXmlMP);
         // Makes responseXmlMP get freed at end of scope
-    
+
     *responseXmlP = string(XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlMP),
                            XMLRPC_MEMBLOCK_SIZE(char, responseXmlMP));
 }
@@ -869,7 +869,7 @@ client_xml::call(carriageParm * const  carriageParmP,
     string responseXml;
 
     xml::generateCall(methodName, paramList, this->implP->dialect, &callXml);
-    
+
     xml::trace("XML-RPC CALL", callXml);
 
     try {
@@ -879,7 +879,7 @@ client_xml::call(carriageParm * const  carriageParmP,
                "get XML response back.  %s", e.what());
     }
     xml::trace("XML-RPC RESPONSE", responseXml);
-        
+
     try {
         xml::parseResponse(responseXml, outcomeP);
     } catch (exception const& e) {
@@ -887,7 +887,7 @@ client_xml::call(carriageParm * const  carriageParmP,
                e.what());
     }
 }
- 
+
 
 
 void
@@ -899,14 +899,14 @@ client_xml::start(carriageParm *       const  carriageParmP,
     string callXml;
 
     xml::generateCall(methodName, paramList, this->implP->dialect, &callXml);
-    
+
     xml::trace("XML-RPC CALL", callXml);
 
     xmlTransaction_clientPtr const xmlTranP(tranP);
 
     this->implP->transportP->start(carriageParmP, callXml, xmlTranP);
 }
- 
+
 
 
 void
@@ -1008,14 +1008,14 @@ struct rpc_impl {
 
 rpc::rpc(string    const  methodName,
          paramList const& paramList) {
-    
+
     this->implP = new rpc_impl(methodName, paramList);
 }
 
 
 
 rpc::~rpc() {
-    
+
     if (this->implP->state == rpc_impl::STATE_ERROR)
         delete(this->implP->errorP);
 
@@ -1051,11 +1051,11 @@ rpc::call(connection const& connection) {
 }
 
 
- 
+
 void
 rpc::start(client       * const clientP,
            carriageParm * const carriageParmP) {
-    
+
     if (this->implP->state != rpc_impl::STATE_UNFINISHED)
         throw(error("Attempt to execute an RPC that has already been "
                     "executed"));
@@ -1067,10 +1067,10 @@ rpc::start(client       * const clientP,
 }
 
 
- 
+
 void
 rpc::start(xmlrpc_c::connection const& connection) {
-    
+
     this->start(connection.clientP, connection.carriageParmP);
 }
 
@@ -1129,7 +1129,7 @@ rpc::progress(struct xmlrpc_progress_data const&) const {
 -----------------------------------------------------------------------------*/
 
 }
-    
+
 
 
 value
@@ -1230,7 +1230,7 @@ xmlTransaction_client::finish(string const& responseXml) const {
 
     try {
         rpcOutcome outcome;
-    
+
         xml::parseResponse(responseXml, &outcome);
 
         this->tranP->finish(outcome);
