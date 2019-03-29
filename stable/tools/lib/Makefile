@@ -26,7 +26,7 @@ LIBOBJS = \
 .PHONY: all
 all: $(LIBOBJS)
 
-%.o:%.c
+%.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
 	$(CC) -c $(CFLAGS_ALL) $<
 
 # This common.mk dependency makes sure the symlinks get built before

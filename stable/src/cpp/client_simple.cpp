@@ -36,7 +36,7 @@ public:
 
 
 clientSimple::clientSimple() {
-    
+
     clientXmlTransportPtr const transportP(clientXmlTransport_http::create());
 
     this->clientP = clientPtr(new client_xml(transportP));
@@ -54,7 +54,7 @@ clientSimple::call(string  const serverUrl,
     rpcPtr rpcPtr(methodName, paramList());
 
     rpcPtr->call(this->clientP.get(), &carriageParm);
-    
+
     *resultP = rpcPtr->getResult();
 }
 
@@ -65,7 +65,7 @@ void
 makeParamArray(string          const format,
                xmlrpc_value ** const paramArrayPP,
                va_list               args) {
-    
+
     env_wrap env;
 
     /* The format is a sequence of parameter specifications, such as
@@ -120,10 +120,10 @@ clientSimple::call(string  const serverUrl,
         cValueWrapper paramArrayWrapper(paramArrayP); // ensure destruction
         unsigned int const paramCount(
             xmlrpc_array_size(&env.env_c, paramArrayP));
-        
+
         if (env.env_c.fault_occurred)
             throw(error(env.env_c.fault_string));
-        
+
         paramList paramList;
         for (unsigned int i = 0; i < paramCount; ++i) {
             xmlrpc_value * paramP;
@@ -148,13 +148,13 @@ clientSimple::call(string    const  serverUrl,
                    string    const  methodName,
                    paramList const& paramList,
                    value *   const  resultP) {
-    
+
     carriageParm_http0 carriageParm(serverUrl);
-    
+
     rpcPtr rpcPtr(methodName, paramList);
 
     rpcPtr->call(this->clientP.get(), &carriageParm);
-    
+
     *resultP = rpcPtr->getResult();
 }
 
