@@ -59,6 +59,8 @@ struct cmdlineInfo {
     xmlrpc_bool   curlnoverifypeer;
     xmlrpc_bool   curlnoverifyhost;
     const char *  curluseragent;
+    bool          xmlsizelimitSpec;
+    unsigned int  xmlsizelimit;
 };
 
 
@@ -152,6 +154,7 @@ parseCommandLine(xmlrpc_env *         const envP,
     cmd_defineOption(cp, "curlnoverifypeer", OPTTYPE_STRING);
     cmd_defineOption(cp, "curlnoverifyhost", OPTTYPE_STRING);
     cmd_defineOption(cp, "curluseragent",    OPTTYPE_STRING);
+    cmd_defineOption(cp, "xmlsizelimit",     OPTTYPE_UINT);
 
     cmd_processOptions(cp, argc, argv, &error);
 
@@ -159,6 +162,13 @@ parseCommandLine(xmlrpc_env *         const envP,
         setError(envP, "Command syntax error.  %s", error);
         strfree(error);
     } else {
+        if (cmd_optionIsPresent(cp, "xmlsizelimit")) {
+            cmdlineP->xmlsizelimitSpec = true;
+            cmdlineP->xmlsizelimit =
+                cmd_getOptionValueUint(cp, "xmlsizelimit");
+        } else
+            cmdlineP->xmlsizelimitSpec = false;
+
         cmdlineP->username  = cmd_getOptionValueString(cp, "username");
         cmdlineP->password  = cmd_getOptionValueString(cp, "password");
 
@@ -900,6 +910,9 @@ main(int           const argc,
 
     parseCommandLine(&env, argc, argv, &cmdline);
     die_if_fault_occurred(&env);
+
+    if (cmdline.xmlsizelimitSpec)
+        xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, cmdline.xmlsizelimit);
 
     computeUrl(cmdline.url, &url);
 
