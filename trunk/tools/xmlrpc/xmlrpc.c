@@ -154,7 +154,7 @@ parseCommandLine(xmlrpc_env *         const envP,
     cmd_defineOption(cp, "curlnoverifypeer", OPTTYPE_STRING);
     cmd_defineOption(cp, "curlnoverifyhost", OPTTYPE_STRING);
     cmd_defineOption(cp, "curluseragent",    OPTTYPE_STRING);
-    cmd_defineOption(cp, "xmlsizelimit",     OPTTYPE_UINT);
+    cmd_defineOption(cp, "xmlsizelimit",     OPTTYPE_BINUINT);
 
     cmd_processOptions(cp, argc, argv, &error);
 
