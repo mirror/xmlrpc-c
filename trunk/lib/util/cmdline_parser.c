@@ -47,7 +47,7 @@ static struct optionx *
 createLongOptsArray(struct optionDesc * const optionDescArray,
                     unsigned int        const numOptions) {
 
-    struct optionx * longopts; 
+    struct optionx * longopts;
 
     MALLOCARRAY(longopts, numOptions+1);
     if (longopts != NULL) {
@@ -62,8 +62,8 @@ createLongOptsArray(struct optionDesc * const optionDescArray,
                We prefer to generate a meaningful error message when
                the user omits a required option value.
             */
-            longopts[i].has_arg = 
-                optionDescArray[i].type == OPTTYPE_FLAG ? 
+            longopts[i].has_arg =
+                optionDescArray[i].type == OPTTYPE_FLAG ?
                 no_argument : optional_argument;
             longopts[i].flag = NULL;
             longopts[i].val = i;
@@ -98,7 +98,7 @@ parseInt(enum optiontype const type,
                       "for numeric option value: '%s'", optarg);
         else if (errno == ERANGE || longvalue > INT_MAX)
             casprintf(errorP, "Numeric value out of range: %s", optarg);
-        else { 
+        else {
             if (type == OPTTYPE_UINT) {
                 if (longvalue < 0)
                     casprintf(errorP, "Unsigned numeric value is "
@@ -158,7 +158,7 @@ parseFloat(const char *  const optarg,
                       "for numeric option value: '%s'", optarg);
         else if (errno == ERANGE)
             casprintf(errorP, "Numeric value out of range: %s", optarg);
-        else { 
+        else {
             *errorP = NULL;
             *valueP = doublevalue;
         }
@@ -168,16 +168,16 @@ parseFloat(const char *  const optarg,
 
 
 static void
-parseOptionValue(const char *        const optarg, 
+parseOptionValue(const char *        const optarg,
                  struct optionDesc * const optionP,
                  const char **       const errorP) {
-    
+
     switch (optionP->type) {
     case OPTTYPE_FLAG:
         *errorP = NULL;
         break;
     case OPTTYPE_INT:
-    case OPTTYPE_UINT: 
+    case OPTTYPE_UINT:
         parseInt(optionP->type, optarg, &optionP->value.u, &optionP->value.i,
                  errorP);
         break;
@@ -206,7 +206,7 @@ processOption(struct optionDesc * const optionP,
               const char **       const errorP) {
 
     const char * error;
-    
+
     parseOptionValue(optarg, optionP, &error);
     if (error)
         casprintf(errorP, "Error in '%s' option: %s", optionP->name, error);
@@ -220,7 +220,7 @@ static void
 extractArguments(struct cmdlineParserCtl * const cpP,
                  unsigned int              const argc,
                  const char **             const argv) {
-    
+
     cpP->numArguments = argc - getopt_argstart();
     MALLOCARRAY(cpP->argumentArray, cpP->numArguments);
 
@@ -247,14 +247,14 @@ extractArguments(struct cmdlineParserCtl * const cpP,
 void
 cmd_processOptions(cmdlineParser   const cpP,
                    int             const argc,
-                   const char **   const argv, 
+                   const char **   const argv,
                    const char **   const errorP) {
 
     struct optionx * longopts;
 
     longopts = createLongOptsArray(cpP->optionDescArray, cpP->numOptions);
 
-    if (longopts == NULL) 
+    if (longopts == NULL)
         casprintf(errorP, "Unable to get memory for longopts array");
     else {
         int endOfOptions;
@@ -268,20 +268,20 @@ cmd_processOptions(cmdlineParser   const cpP,
             cpP->optionDescArray[i].present = false;
 
         endOfOptions = false;  /* initial value */
-            
+
         while (!endOfOptions && !*errorP) {
             int const opterr0 = 0;
                 /* Don't let getopt_long_only() print an error message */
             unsigned int longoptsIndex;
             const char * unrecognizedOption;
             const char * optarg;
-            
-            getopt_long_onlyx(argc, (char**) argv, "", longopts, 
+
+            getopt_long_onlyx(argc, (char**) argv, "", longopts,
                               &longoptsIndex, opterr0,
                               &endOfOptions, &optarg, &unrecognizedOption);
-                              
+
             if (unrecognizedOption)
-                casprintf(errorP, "Unrecognized option: '%s'", 
+                casprintf(errorP, "Unrecognized option: '%s'",
                           unrecognizedOption);
             else {
                 if (!endOfOptions)
@@ -313,7 +313,7 @@ cmd_createOptionParser(void) {
         if (optionDescArray == NULL) {
             free(cpP);
             cpP = NULL;
-        } else 
+        } else
             cpP->optionDescArray = optionDescArray;
     }
     return cpP;
@@ -323,7 +323,7 @@ cmd_createOptionParser(void) {
 
 void
 cmd_destroyOptionParser(cmdlineParser const cpP) {
-    
+
     unsigned int i;
 
     for (i = 0; i < cpP->numOptions; ++i) {
@@ -344,13 +344,13 @@ cmd_destroyOptionParser(cmdlineParser const cpP) {
 
 void
 cmd_defineOption(cmdlineParser   const cpP,
-                 const char *    const name, 
+                 const char *    const name,
                  enum optiontype const type) {
-    
+
     if (cpP->numOptions < MAXOPTS) {
         cpP->optionDescArray[cpP->numOptions].name = strdup(name);
         cpP->optionDescArray[cpP->numOptions].type = type;
-        
+
         ++cpP->numOptions;
     }
 }
@@ -388,7 +388,7 @@ cmd_optionIsPresent(cmdlineParser const cpP,
                 "optionIsPresent() called for undefined option '%s'\n",
                 name);
         abort();
-    } else 
+    } else
         present = optionDescP->present;
 
     return present;
@@ -416,7 +416,7 @@ cmd_getOptionValueUint(cmdlineParser const cpP,
                     "option '%s'\n", optionDescP->name);
             abort();
         } else {
-            if (optionDescP->present) 
+            if (optionDescP->present)
                 retval = optionDescP->value.u;
             else
                 retval = 0;
@@ -447,7 +447,7 @@ cmd_getOptionValueInt(cmdlineParser const cpP,
                     "option '%s'\n", optionDescP->name);
             abort();
         } else {
-            if (optionDescP->present) 
+            if (optionDescP->present)
                 retval = optionDescP->value.i;
             else
                 retval = 0;
@@ -469,7 +469,7 @@ cmd_getOptionValueString(cmdlineParser const cpP,
 
     if (!optionDescP) {
         fprintf(stderr, "cmdlineParser called incorrectly.  "
-                "cmd_getOptionValueString() called for " 
+                "cmd_getOptionValueString() called for "
                 "undefined option '%s'\n",
                 name);
         abort();
@@ -483,7 +483,7 @@ cmd_getOptionValueString(cmdlineParser const cpP,
             if (optionDescP->present) {
                 retval = strdup(optionDescP->value.s);
                 if (retval == NULL) {
-                    fprintf(stderr, 
+                    fprintf(stderr,
                             "out of memory in cmd_getOptionValueString()\n");
                     abort();
                 }
@@ -517,7 +517,7 @@ cmd_getOptionValueBinUint(cmdlineParser const cpP,
                     "option '%s'\n", optionDescP->name);
             abort();
         } else {
-            if (optionDescP->present) 
+            if (optionDescP->present)
                 retval = optionDescP->value.llu;
             else
                 retval = 0;
@@ -548,7 +548,7 @@ cmd_getOptionValueFloat(cmdlineParser const cpP,
                     "option '%s'\n", optionDescP->name);
             abort();
         } else {
-            if (optionDescP->present) 
+            if (optionDescP->present)
                 retval = optionDescP->value.d;
             else
                 retval = 0.0;
@@ -559,28 +559,28 @@ cmd_getOptionValueFloat(cmdlineParser const cpP,
 
 
 
-unsigned int 
+unsigned int
 cmd_argumentCount(cmdlineParser const cpP) {
 
     return cpP->numArguments;
 
 }
-                  
 
 
-const char * 
-cmd_getArgument(cmdlineParser const cpP, 
-                unsigned int  const argNumber) { 
+
+const char *
+cmd_getArgument(cmdlineParser const cpP,
+                unsigned int  const argNumber) {
 
     const char * retval;
- 
+
     if (argNumber >= cpP->numArguments)
         retval = NULL;
     else {
         retval = strdup(cpP->argumentArray[argNumber]);
 
         if (retval == NULL) {
-            fprintf(stderr, 
+            fprintf(stderr,
                     "out of memory in cmd_getArgument()\n");
             abort();
         }
