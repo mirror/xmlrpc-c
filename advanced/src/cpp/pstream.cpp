@@ -4,7 +4,7 @@
 
    Client XML transport for Xmlrpc-c based on a very simple byte
    stream.
-   
+
    The protocol we use is the "packet socket" protocol, which
    is an Xmlrpc-c invention.  It is an almost trivial representation of
    a sequence of packets on a byte stream.
