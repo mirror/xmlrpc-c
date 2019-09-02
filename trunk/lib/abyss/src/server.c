@@ -1460,7 +1460,7 @@ ServerRunConn(TServer * const serverP,
     createChannelFromOsSocket(connectedOsSocket,
                               &channelP, &channelInfoP, &error);
     if (error) {
-        TraceExit("Unable to use supplied socket");
+        TraceExit("Unable to use supplied socket.  %s", error);
         xmlrpc_strfree(error);
     } else {
         const char * error;
