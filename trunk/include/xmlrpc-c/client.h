@@ -180,7 +180,7 @@ struct xmlrpc_clientparms {
 */
 
 XMLRPC_CLIENT_EXPORTED
-const char * 
+const char *
 xmlrpc_client_get_default_transport(xmlrpc_env * const env);
 
 /* A user's function to handle the response to an asynchronous call.
@@ -222,7 +222,7 @@ xmlrpc_server_info_new(xmlrpc_env * const envP,
 
 /* Create a new server info record, with a copy of the old server. */
 XMLRPC_CLIENT_EXPORTED
-extern xmlrpc_server_info * 
+extern xmlrpc_server_info *
 xmlrpc_server_info_copy(xmlrpc_env *         const envP,
                         xmlrpc_server_info * const srcP);
 
@@ -232,14 +232,14 @@ xmlrpc_server_info_free(xmlrpc_server_info * const serverP);
 
 
 XMLRPC_CLIENT_EXPORTED
-void 
+void
 xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
                             xmlrpc_server_info * const serverInfoP,
                             const char *         const username,
                             const char *         const password);
 
 XMLRPC_CLIENT_EXPORTED
-void 
+void
 xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   xmlrpc_server_info * const serverP,
                                   const char *         const username,
@@ -307,7 +307,7 @@ void
 xmlrpc_client_teardown_global_const(void);
 
 XMLRPC_CLIENT_EXPORTED
-void 
+void
 xmlrpc_client_create(xmlrpc_env *                      const envP,
                      int                               const flags,
                      const char *                      const appname,
@@ -317,7 +317,7 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
                      xmlrpc_client **                  const clientPP);
 
 XMLRPC_CLIENT_EXPORTED
-void 
+void
 xmlrpc_client_destroy(xmlrpc_client * const clientP);
 
 XMLRPC_CLIENT_EXPORTED
@@ -359,11 +359,11 @@ xmlrpc_client_call2f_va(xmlrpc_env *               const envP,
                         va_list                          args);
 
 XMLRPC_CLIENT_EXPORTED
-void 
+void
 xmlrpc_client_event_loop_finish(xmlrpc_client * const clientP);
 
 XMLRPC_CLIENT_EXPORTED
-void 
+void
 xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
                                         unsigned long   const milliseconds);
 
@@ -378,7 +378,7 @@ xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
                         void *                     const userData);
 
 XMLRPC_CLIENT_EXPORTED
-void 
+void
 xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          xmlrpc_client * const clientP,
                          const char *    const serverUrl,
@@ -417,8 +417,8 @@ xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
