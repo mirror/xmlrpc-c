@@ -431,6 +431,39 @@ validateListenOptions(serverAbyss::constrOpt_impl const& opt) {
 
 
 
+#ifdef WIN32
+  typedef struct abyss_win_chaninfo  platform_chaninfo;
+  #define CHANNEL_CREATE_FUNCTION ChannelWinCreateWinsock
+#else
+  typedef struct abyss_unix_chaninfo platform_chaninfo;
+  #define CHANNEL_CREATE_FUNCTION ChannelUnixCreateFd
+#endif
+
+
+
+static TChannel *
+newChannelOsSocket(int const socketFd) {
+
+    platform_chaninfo * channelInfoP;
+    TChannel * channelP;
+    const char * error;
+
+    CHANNEL_CREATE_FUNCTION(socketFd, &channelP, &channelInfoP, &error);
+
+    if (error) {
+        string const errorS(error);
+        xmlrpc_strfree(error);
+
+        throwf("Abyss failed to create a channel from the "
+               "supplied connected (supposedly) socket.  %s", errorS.c_str());
+    } else
+        free(channelInfoP);
+
+    return channelP;
+}
+
+
+
 static void
 createServerFromSwitch(TServer *     const serverP,
                        TChanSwitch * const chanSwitchP) {
@@ -932,7 +965,19 @@ serverAbyss::runOnce() {
 void
 serverAbyss::runConn(int const socketFd) {
 
-    ServerRunConn(&this->implP->cServer, socketFd);
+    TChannel * const channelP = newChannelOsSocket(socketFd);
+
+    const char * error;
+
+    ServerRunChannel(&this->implP->cServer, channelP, NULL, &error);
+
+    if (error) {
+        string const errorS(error);
+        xmlrpc_strfree(error);
+
+        throwf("%s", errorS.c_str());
+    }
+    ChannelDestroy(channelP);
 }
 
 
