@@ -1335,7 +1335,7 @@ ServerRun(TServer * const serverP) {
     if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
-                 "Try ServerRunConn()");
+                 "Try ServerRunConn2()");
     else if (!srvP->readyToAccept)
         TraceMsg("You cannot run this server until you initialize it to "
                  "accept connections, with ServerInit()");
@@ -1495,7 +1495,7 @@ ServerRunOnce(TServer * const serverP) {
     if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
-                 "Try ServerRunConn()");
+                 "Try ServerRunConn2()");
     else if (!srvP->readyToAccept)
         TraceMsg("You cannot run this server until you initialize it to "
                  "accept connections, with ServerInit()");
