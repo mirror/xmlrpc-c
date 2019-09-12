@@ -96,7 +96,7 @@ endif
 
 LDFLAGS_ALL = $(LDFLAGS_PTHREAD) $(LDFLAGS_PERSONAL) $(LDFLAGS)
 
-LDFLAGS_FOR_BUILD_ALL = \
+LDFLAGS_ALL_FOR_BUILD = \
   $(LDFLAGS_PTHREAD) $(LDFLAGS_PERSONAL) $(LDFLAGS_FOR_BUILD)
 
 ##############################################################################
