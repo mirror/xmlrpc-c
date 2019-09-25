@@ -47,7 +47,9 @@ struct cmdlineInfo {
     const char *  methodName;
     unsigned int  paramCount;
     const char ** params;
-        /* Array of parameters, in order.  Has 'paramCount' entries. */
+        /* Array of parameters, in order.  Has 'paramCount' entries.
+           Each of these is as it appears on the command line, e.g. "i/4"
+        */
     const char *  transport;
         /* Name of XML transport he wants to use.  NULL if he has no
            preference.
