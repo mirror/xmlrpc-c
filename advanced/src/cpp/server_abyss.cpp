@@ -33,7 +33,7 @@ namespace xmlrpc_c {
 namespace {
 
 
-static void 
+static void
 sigterm(int const signalClass) {
 
     cerr << "Signal of Class " << signalClass << " received.  Exiting" << endl;
@@ -43,7 +43,7 @@ sigterm(int const signalClass) {
 
 
 
-static void 
+static void
 sigchld(int const ASSERT_ONLY_ARG(signalClass)) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
@@ -61,13 +61,13 @@ sigchld(int const ASSERT_ONLY_ARG(signalClass)) {
     bool error;
 
     assert(signalClass == SIGCHLD);
-    
+
     zombiesExist = true;  // initial assumption
     error = false;  // no error yet
     while (zombiesExist && !error) {
         int status;
         pid_t const pid = waitpid((pid_t) -1, &status, WNOHANG);
-    
+
         if (pid == 0)
             zombiesExist = false;
         else if (pid < 0) {
@@ -103,7 +103,7 @@ void
 setupSignalHandlers(struct signalHandlers * const oldHandlersP) {
 #ifndef _WIN32
     struct sigaction mysigaction;
-   
+
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
 
@@ -117,12 +117,12 @@ setupSignalHandlers(struct signalHandlers * const oldHandlersP) {
     /* This signal indicates connection closed in the middle */
     mysigaction.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
-   
+
     /* This signal indicates a child process (request handler) has died */
     mysigaction.sa_handler = sigchld;
     sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
 #endif
-}    
+}
 
 
 
@@ -246,7 +246,7 @@ serverAbyss::constrOpt_impl::constrOpt_impl() {
     present.sockAddrLen       = false;
     present.serverOwnsSignals = false;
     present.expectSigchld     = false;
-    
+
     // Set default values
     value.dontAdvertise     = false;
     value.uriPath           = string("/RPC2");
@@ -324,7 +324,7 @@ struct serverAbyss_impl {
         // creator of the serverAbyss is managing lifetime himself,
         // this is a null pointer.  'registryP' is what you really use
         // to access the registry.
-    
+
     const registry * registryP;
 
     TServer cServer;
@@ -365,7 +365,7 @@ processXmlrpcCall(xmlrpc_env *        const envP,
                   void *              const arg,
                   const char *        const callXml,
                   size_t              const callXmlLen,
-                  TSession *          const abyssSessionP,                  
+                  TSession *          const abyssSessionP,
                   xmlrpc_mem_block ** const responseXmlPP) {
 /*----------------------------------------------------------------------------
    This is an XML-RPC XML call processor, as called by the HTTP request
@@ -407,7 +407,7 @@ processXmlrpcCall(xmlrpc_env *        const envP,
 
 static void
 validateListenOptions(serverAbyss::constrOpt_impl const& opt) {
-    
+
     if ((opt.present.portNumber ? 1 : 0) +
         (opt.present.socketFd ? 1 : 0) +
         (opt.present.sockAddrP ? 1 : 0) > 1)
@@ -427,6 +427,39 @@ validateListenOptions(serverAbyss::constrOpt_impl const& opt) {
             throwf("Port number %u exceeds the maximum possible port number "
                    "(65535)", opt.value.portNumber);
     }
+}
+
+
+
+#ifdef WIN32
+  typedef struct abyss_win_chaninfo  platform_chaninfo;
+  #define CHANNEL_CREATE_FUNCTION ChannelWinCreateWinsock
+#else
+  typedef struct abyss_unix_chaninfo platform_chaninfo;
+  #define CHANNEL_CREATE_FUNCTION ChannelUnixCreateFd
+#endif
+
+
+
+static TChannel *
+newChannelOsSocket(int const socketFd) {
+
+    platform_chaninfo * channelInfoP;
+    TChannel * channelP;
+    const char * error;
+
+    CHANNEL_CREATE_FUNCTION(socketFd, &channelP, &channelInfoP, &error);
+
+    if (error) {
+        string const errorS(error);
+        xmlrpc_strfree(error);
+
+        throwf("Abyss failed to create a channel from the "
+               "supplied connected (supposedly) socket.  %s", errorS.c_str());
+    } else
+        free(channelInfoP);
+
+    return channelP;
 }
 
 
@@ -480,10 +513,10 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
     const char * error;
 
 #ifdef WIN32
-    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen,
                           chanSwitchPP, &error);
 #else
-    ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+    ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen,
                           chanSwitchPP, &error);
 #endif
     if (error) {
@@ -498,7 +531,7 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
 
 static TChanSwitch *
 newChanSwitchSockAddr(SockAddr const& sockAddr) {
-    
+
     int protocolFamily;
 
     switch (sockAddr.sockAddrP->sa_family) {
@@ -527,7 +560,7 @@ newChanSwitchSockAddr(SockAddr const& sockAddr) {
 
 static TChanSwitch *
 newChanSwitchIpV4Port(unsigned int const portNumber) {
-    
+
     struct sockaddr_in sockAddr;
 
     sockAddr.sin_family      = AF_INET;
@@ -563,8 +596,8 @@ createServerBare(bool           const  logFileNameGiven,
 
         TChanSwitch * const chanSwitchP(
             socketFdGiven ?
-                newChanSwitchOsSocket(socketFd) : 
-            sockAddrPGiven ? 
+                newChanSwitchOsSocket(socketFd) :
+            sockAddrPGiven ?
                 newChanSwitchSockAddr(sockAddr) :
             portNumberGiven ?
                 newChanSwitchIpV4Port(portNumber) :
@@ -590,9 +623,9 @@ createServerBare(bool           const  logFileNameGiven,
         }
         *chanSwitchPP = chanSwitchP;
     } else {
-        const char * const logfileArg(logFileNameGiven ? 
+        const char * const logfileArg(logFileNameGiven ?
                                       logFileName.c_str() : NULL);
-        
+
         ServerCreateNoAccept(serverP, serverName,
                              DEFAULT_DOCS, logfileArg);
 
@@ -651,7 +684,7 @@ setHttpReqHandlers(TServer *    const  serverP,
     xmlrpc_server_abyss_set_handler3(
         &env.env_c, serverP,
         &parms, XMLRPC_AHPSIZE(access_ctl_max_age));
-    
+
     if (env.env_c.fault_occurred)
         throwf("Failed to register the HTTP handler for XML-RPC "
                "with the underlying Abyss HTTP server.  "
@@ -660,7 +693,7 @@ setHttpReqHandlers(TServer *    const  serverP,
 
     xmlrpc_server_abyss_set_default_handler(serverP);
 }
-        
+
 
 
 static void
@@ -671,14 +704,14 @@ createServer(serverAbyss::constrOpt_impl const& opt,
              TChanSwitch **              const  chanSwitchPP) {
 
     validateListenOptions(opt);
-    
+
     createServerBare(opt.present.logFileName, opt.value.logFileName,
                      opt.present.socketFd,    opt.value.socketFd,
                      opt.present.portNumber,  opt.value.portNumber,
                      opt.present.sockAddrP,
                      SockAddr(opt.value.sockAddrP, opt.value.sockAddrLen),
                      serverP, chanSwitchPP);
-    
+
     try {
         setAdditionalServerParms(serverP, opt);
 
@@ -723,7 +756,7 @@ serverAbyss_impl::serverAbyss_impl(
     }
 
     this->serverOwnsSignals = opt.value.serverOwnsSignals;
-    
+
     if (opt.value.serverOwnsSignals && opt.value.expectSigchld)
         throwf("You can't specify both expectSigchld "
                "and serverOwnsSignals options");
@@ -756,19 +789,19 @@ serverAbyss_impl::getListenName(struct sockaddr ** const sockaddrPP,
 
     const char * error;
 
-#ifdef WIN32    
+#ifdef WIN32
     ChanSwitchWinGetListenName(this->chanSwitchP,
                                sockaddrPP, sockaddrLenP, &error);
 #else
     ChanSwitchUnixGetListenName(this->chanSwitchP,
                                 sockaddrPP, sockaddrLenP, &error);
 #endif
-    
+
     if (error) {
         string const e(error);
         xmlrpc_strfree(error);
         throwf("%s", e.c_str());
-    } 
+    }
 }
 
 
@@ -918,7 +951,7 @@ serverAbyss::run() {
 
     this->implP->run();
 }
- 
+
 
 
 void
@@ -932,7 +965,19 @@ serverAbyss::runOnce() {
 void
 serverAbyss::runConn(int const socketFd) {
 
-    ServerRunConn(&this->implP->cServer, socketFd);
+    TChannel * const channelP = newChannelOsSocket(socketFd);
+
+    const char * error;
+
+    ServerRunChannel(&this->implP->cServer, channelP, NULL, &error);
+
+    if (error) {
+        string const errorS(error);
+        xmlrpc_strfree(error);
+
+        throwf("%s", errorS.c_str());
+    }
+    ChannelDestroy(channelP);
 }
 
 
@@ -974,7 +1019,7 @@ processXmlrpcCall2(xmlrpc_env *        const envP,
                    void *              const arg,
                    const char *        const callXml,
                    size_t              const callXmlLen,
-                   TSession *          const abyssSessionP,                  
+                   TSession *          const abyssSessionP,
                    xmlrpc_mem_block ** const responseXmlPP) {
 /*----------------------------------------------------------------------------
    This is an XML-RPC XML call processor, as called by the HTTP request

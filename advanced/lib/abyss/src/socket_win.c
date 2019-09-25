@@ -226,13 +226,13 @@ static const char *
 getWSAError(int const wsaErrno) {
 
     SOCKERR * pseP;
-  
+
     pseP = &sSockErr[0];  // initial value
-   
+
     while (pseP->desc) {
         if (pseP->err == wsaErrno)
             return pseP->desc;
-        
+
         ++pseP;
     }
 
@@ -285,9 +285,9 @@ SocketWinInit(const char ** const errorP) {
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
- 
+
     wVersionRequested = MAKEWORD(1, 0);
- 
+
     err = WSAStartup(wVersionRequested, &wsaData);
 
     if (err != 0) {
@@ -302,7 +302,7 @@ SocketWinInit(const char ** const errorP) {
 
 void
 SocketWinTerm(void) {
-    
+
     WSACleanup();
 }
 
@@ -350,7 +350,7 @@ channelWrite(TChannel *            const channelP,
         size_t const maxSend = (size_t)(-1) >> 1;
 
         int rc;
-        
+
         rc = send(socketWinP->winsock, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
 
@@ -368,8 +368,8 @@ channelWrite(TChannel *            const channelP,
 static ChannelReadImpl channelRead;
 
 static void
-channelRead(TChannel *   const channelP, 
-            unsigned char * const buffer, 
+channelRead(TChannel *   const channelP,
+            unsigned char * const buffer,
             uint32_t     const bufferSize,
             uint32_t *   const bytesReceivedP,
             bool * const failedP) {
@@ -417,7 +417,7 @@ channelWait(TChannel * const channelP,
 
     tv.tv_sec  = timems / 1000;
     tv.tv_usec = timems % 1000;
- 
+
     for (failed = FALSE, readRdy = FALSE, writeRdy = FALSE, timedOut = FALSE;
          !failed && !readRdy && !writeRdy && !timedOut;
         ) {
@@ -427,7 +427,7 @@ channelWait(TChannel * const channelP,
         rc = select(socketWinP->winsock + 1, &rfds, &wfds, NULL,
                     (timems == TIME_INFINITE ? NULL : &tv));
 
-        switch(rc) {   
+        switch(rc) {
         case 0:
             timedOut = TRUE;
             break;
@@ -483,7 +483,7 @@ ChannelWinGetPeerName(TChannel *           const channelP,
     struct sockaddr sockAddr;
 
     addrlen = sizeof(sockAddr);
-    
+
     rc = getpeername(socketWinP->winsock, &sockAddr, &addrlen);
 
     if (rc != 0) {
@@ -525,9 +525,9 @@ channelFormatPeerInfo(TChannel *    const channelP,
     int rc;
 
     sockaddrLen = sizeof(sockaddr);
-    
+
     rc = getpeername(socketWinP->winsock, &sockaddr, &sockaddrLen);
-    
+
     if (rc != 0) {
         int const lastError = WSAGetLastError();
         xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  "
@@ -576,19 +576,19 @@ makeChannelFromWinsock(SOCKET        const winsock,
     struct socketWin * socketWinP;
 
     MALLOCVAR(socketWinP);
-    
+
     if (socketWinP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for Windows "
                         "socket descriptor");
     else {
         TChannel * channelP;
-        
+
         socketWinP->winsock = winsock;
         socketWinP->userSuppliedWinsock = TRUE;
         socketWinP->interruptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
         ChannelCreate(&channelVtbl, socketWinP, &channelP);
-        
+
         if (channelP == NULL)
             xmlrpc_asprintf(errorP, "Unable to allocate memory for "
                             "channel descriptor.");
@@ -614,13 +614,13 @@ makeChannelInfo(struct abyss_win_chaninfo ** const channelInfoPP,
     struct abyss_win_chaninfo * channelInfoP;
 
     MALLOCVAR(channelInfoP);
-    
+
     if (channelInfoP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory");
     else {
         channelInfoP->peerAddrLen = peerAddrLen;
         channelInfoP->peerAddr    = peerAddr;
-        
+
         *channelInfoPP = channelInfoP;
 
         *errorP = NULL;
@@ -880,7 +880,7 @@ bindSocketToPort(SOCKET           const winsock,
                  struct in_addr * const addrP,
                  uint16_t         const portNumber,
                  const char **    const errorP) {
-    
+
     struct sockaddr_in name;
     int rc;
 
@@ -933,7 +933,7 @@ ChanSwitchWinCreate(uint16_t       const portNumber,
             socketWinP->winsock = winsock;
             socketWinP->userSuppliedWinsock = FALSE;
             socketWinP->interruptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-            
+
             setSocketOptions(socketWinP->winsock, errorP);
             if (!*errorP) {
                 bindSocketToPort(socketWinP->winsock, NULL, portNumber,
@@ -999,7 +999,7 @@ bindSocketToAddr(SOCKET                     const winsock,
                  const struct sockaddr *    const addrP,
                  socklen_t                  const sockAddrLen,
                  const char **              const errorP) {
-    
+
     int rc;
 
     rc = bind(winsock, (struct sockaddr *)addrP, sockAddrLen);
@@ -1040,7 +1040,7 @@ ChanSwitchWinCreate2(int                     const protocolFamily,
             socketWinP->winsock = winsock;
             socketWinP->userSuppliedWinsock = FALSE;
             socketWinP->interruptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-            
+
             setSocketOptions(socketWinP->winsock, errorP);
             if (!*errorP) {
                 bindSocketToAddr(socketWinP->winsock, sockAddrP, sockAddrLen,
@@ -1067,11 +1067,11 @@ ChanSwitchWinGetListenName(TChanSwitch *      const chanSwitchP,
                            struct sockaddr ** const sockaddrPP,
                            size_t  *          const sockaddrLenP,
                            const char **      const errorP) {
-    
+
     struct socketWin * const socketWinP = chanSwitchP->implP;
 
     // Anyone who knows how to do this with Winsock, please submit a patch.
-    
+
     xmlrpc_asprintf(errorP, "Code has not been written "
                     "(ChanSwitchWinGetListenName in "
                     "lib/abyss/src/socket_win.c) to determine the name of the "
