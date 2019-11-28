@@ -40,7 +40,7 @@ struct curlSetup {
            use for the session.  It is an ASCIIZ string in the form
            that the Curl recognizes for setting its CURLOPT_INTERFACE
            option (also the --interface option of the Curl program).
-           E.g. "9.1.72.189" or "giraffe-data.com" or "eth0".  
+           E.g. "9.1.72.189" or "giraffe-data.com" or "eth0".
 
            It isn't necessarily valid, but it does have a terminating NUL.
 
