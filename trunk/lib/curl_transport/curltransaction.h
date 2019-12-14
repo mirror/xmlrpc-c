@@ -91,6 +91,10 @@ struct curlSetup {
     unsigned int connectTimeout;
         /* 0 = no Curl timeout on connect.  This is in milliseconds. */
 
+    bool         tcpKeepalive;
+    unsigned int tcpKeepidle;
+    unsigned int tcpKeepintvl;
+
     bool verbose;
 };
 

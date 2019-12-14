@@ -359,6 +359,9 @@ public:
             .gssapi_delegation(true)
             .timeout(0)
             .connect_timeout(0)
+            .tcp_keepalive(true)
+            .tcp_keepidle_sec(5)
+            .tcp_keepintvl_sec(4)
             );
 
         clientXmlTransport_curl transport5(

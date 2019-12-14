@@ -629,6 +629,43 @@ requestGssapiDelegation(CURL * const curlSessionP ATTR_UNUSED,
 
 
 static void
+setupKeepalive(const struct curlSetup * const curlSetupP,
+               CURL *                   const curlSessionP,
+               xmlrpc_env *             const envP) {
+/*----------------------------------------------------------------------------
+   We fail if our libcurl is too old to have the keepalive capability.
+
+   We really ought to have something the user can call to find out whether the
+   transport can do keepalive so he can know not to attempt to set up
+   keepalive and thereby avoid this failure, but today there is no mechanism
+   in place for the user to get any information specific to a Curl transport.
+-----------------------------------------------------------------------------*/
+#if HAVE_CURL_KEEPALIVE
+    if (curlSetupP->tcpKeepalive) {
+        curl_easy_setopt(curlSessionP, CURLOPT_TCP_KEEPALIVE, 1);
+    }
+    if (curlSetupP->tcpKeepidle) {
+        curl_easy_setopt(curlSessionP,
+                         CURLOPT_TCP_KEEPIDLE, curlSetupP->tcpKeepidle);
+    }
+    if (curlSetupP->tcpKeepintvl) {
+        curl_easy_setopt(curlSessionP,
+                         CURLOPT_TCP_KEEPINTVL, curlSetupP->tcpKeepintvl);
+    }
+    envP->fault_occurred = false;
+#else
+    if (curlSetupP->tcpKeepalive ||
+        curlSetupP->tcpKeepidle || curlSetupP->tcpKeepintvl) {
+        xmlrpc_faultf(envP,
+                      "Attempt to control TCP keepalive with a Curl "
+                      "library that is too old to have that capability");
+    }
+#endif
+}
+
+
+
+static void
 setupCurlSession(xmlrpc_env *               const envP,
                  curlTransaction *          const transP,
                  const xmlrpc_server_info * const serverInfoP,
@@ -815,6 +852,10 @@ setupCurlSession(xmlrpc_env *               const envP,
             }
         }
     }
+
+    if (!envP->fault_occurred)
+        setupKeepalive(curlSetupP, curlSessionP, envP);
+
 }
 
 
