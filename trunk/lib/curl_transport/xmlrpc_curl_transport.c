@@ -941,6 +941,20 @@ getXportParms(xmlrpc_env *                          const envP,
 
     getConnectTimeoutParm(envP, curlXportParmsP, parmSize,
                           &curlSetupP->connectTimeout);
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepalive))
+        curlSetupP->tcpKeepalive = false;
+    else
+        curlSetupP->tcpKeepalive = curlXportParmsP->tcp_keepalive;
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepidle_sec))
+        curlSetupP->tcpKeepidle = 0;
+    else
+        curlSetupP->tcpKeepidle = curlXportParmsP->tcp_keepidle_sec;
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepintvl_sec))
+        curlSetupP->tcpKeepintvl = 0;
+    else
+        curlSetupP->tcpKeepintvl = curlXportParmsP->tcp_keepintvl_sec;
 }
 
 

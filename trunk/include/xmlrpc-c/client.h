@@ -124,6 +124,9 @@ struct xmlrpc_curl_xportparms {
     xmlrpc_bool  gssapi_delegation;
     const char * referer;
     unsigned int connect_timeout;
+    xmlrpc_bool  tcp_keepalive;
+    unsigned int tcp_keepidle_sec;
+    unsigned int tcp_keepintvl_sec;
 };
 
 

@@ -138,8 +138,11 @@ testCreateCurlParms(void) {
     curlTransportParms1.gssapi_delegation = 1;
     curlTransportParms1.referer           = "myreferer";
     curlTransportParms1.connect_timeout   = 0;
+    curlTransportParms1.tcp_keepalive     = 1;
+    curlTransportParms1.tcp_keepidle_sec  = 5;
+    curlTransportParms1.tcp_keepintvl_sec = 4;
 
-    clientParms1.transportparm_size = XMLRPC_CXPSIZE(referer);
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(tcp_keepintvl_sec);
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
                          &clientParms1, XMLRPC_CPSIZE(transportparm_size),
                          &clientP);
