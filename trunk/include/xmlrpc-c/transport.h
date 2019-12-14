@@ -29,7 +29,7 @@ typedef void (*xmlrpc_transport_create)(
     const void *                      const transportparmsP,
     size_t                            const transportparm_size,
     struct xmlrpc_client_transport ** const handlePP);
-    
+
 typedef void (*xmlrpc_transport_destroy)(
     struct xmlrpc_client_transport * const clientTransportP);
 
@@ -43,7 +43,7 @@ typedef void (*xmlrpc_transport_progress)(
     struct xmlrpc_progress_data const data);
 
 typedef void (*xmlrpc_transport_send_request)(
-    xmlrpc_env *                     const envP, 
+    xmlrpc_env *                     const envP,
     struct xmlrpc_client_transport * const clientTransportP,
     const xmlrpc_server_info *       const serverP,
     xmlrpc_mem_block *               const xmlP,
