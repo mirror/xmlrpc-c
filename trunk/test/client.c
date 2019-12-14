@@ -23,7 +23,7 @@ testVersion(void) {
 
     xmlrpc_client_version(&major, &minor, &point);
 
-#ifndef _WIN32    
+#ifndef _WIN32
     /* xmlrpc_client_version_major, etc. are not exported from a Windows DLL */
 
     TEST(major == xmlrpc_client_version_major);
@@ -76,7 +76,7 @@ myProgress(void *                      const userHandle,
 
 static void
 testCreateCurlParms(void) {
-    
+
 #if MUST_BUILD_CURL_CLIENT
 
     xmlrpc_env env;
@@ -175,7 +175,7 @@ testCreateSeparateXport(void) {
     clientParms1.transportparm_size = 0;
     clientParms1.transportOpsP      = NULL;
     clientParms1.transportP         = NULL;
-    
+
     xmlrpc_client_create(&env, 0, "", "",
                          &clientParms1, XMLRPC_CPSIZE(transportP),
                          &clientP);
@@ -188,7 +188,7 @@ testCreateSeparateXport(void) {
     clientParms1.transportparm_size = 0;
     clientParms1.transportOpsP = NULL;
     clientParms1.transportP = NULL;
-    
+
     xmlrpc_client_create(&env, 0, "", "",
                          &clientParms1, XMLRPC_CPSIZE(transportP),
                          &clientP);
@@ -348,7 +348,7 @@ testSynchCall(void) {
     xmlrpc_client_destroy(clientP);
 
     xmlrpc_DECREF(emptyArrayP);
-    
+
     xmlrpc_client_teardown_global_const();
 
     xmlrpc_env_clean(&env);
@@ -451,7 +451,7 @@ testServerInfo(void) {
     /* Fails because we haven't set user/password yet: */
     xmlrpc_server_info_allow_auth_basic(&env, serverInfoP);
     TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-    
+
     xmlrpc_server_info_set_basic_auth(&env, serverInfoP,
                                       "username", "password");
     TEST_NO_FAULT(&env);
@@ -461,36 +461,36 @@ testServerInfo(void) {
 
     xmlrpc_server_info_allow_auth_basic(&env, serverInfoP);
     TEST_NO_FAULT(&env);
-    
+
     xmlrpc_server_info_disallow_auth_basic(&env, serverInfoP);
     TEST_NO_FAULT(&env);
-    
+
     xmlrpc_server_info_allow_auth_digest(&env, serverInfoP);
     TEST_NO_FAULT(&env);
-    
+
     xmlrpc_server_info_disallow_auth_digest(&env, serverInfoP);
     TEST_NO_FAULT(&env);
-    
+
     xmlrpc_server_info_allow_auth_negotiate(&env, serverInfoP);
     TEST_NO_FAULT(&env);
-    
+
     xmlrpc_server_info_disallow_auth_negotiate(&env, serverInfoP);
     TEST_NO_FAULT(&env);
-    
+
     xmlrpc_server_info_allow_auth_ntlm(&env, serverInfoP);
     TEST_NO_FAULT(&env);
-    
+
     xmlrpc_server_info_disallow_auth_ntlm(&env, serverInfoP);
     TEST_NO_FAULT(&env);
 
     xmlrpc_server_info_free(serverInfoP);
-    
+
     xmlrpc_env_clean(&env);
 }
 
 
 
-void 
+void
 test_client(void) {
 
     printf("Running client tests.");
