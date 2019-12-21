@@ -247,16 +247,6 @@ xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* const env, size_t const size
 XMLRPC_UTIL_EXPORTED
 void xmlrpc_mem_block_free (xmlrpc_mem_block* const block);
 
-/* Initialize the contents of the provided xmlrpc_mem_block. */
-XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_init
-    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
-
-/* Deallocate the contents of the provided xmlrpc_mem_block, but not the
-** block itself. */
-XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_clean (xmlrpc_mem_block* const block);
-
 /* Get the size and contents of the xmlrpc_mem_block. */
 XMLRPC_UTIL_EXPORTED
 size_t
