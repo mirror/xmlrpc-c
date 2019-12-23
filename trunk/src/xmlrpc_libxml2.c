@@ -414,7 +414,7 @@ static xmlSAXHandler const saxHandler = {
 
 
 static void
-removeDocSizeLimit(xmlParserCtx * const parserP ATTR_UNUSED) {
+removeDocSizeLimit(xmlParserCtxt * const parserP ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    Set up *parserP to accept a document of any size.
 
@@ -437,13 +437,13 @@ removeDocSizeLimit(xmlParserCtx * const parserP ATTR_UNUSED) {
 
 
 static void
-createParser(xmlrpc_env *    const envP,
-             ParseContext *  const contextP,
-             xmlParserCtx ** const parserPP) {
+createParser(xmlrpc_env *     const envP,
+             ParseContext *   const contextP,
+             xmlParserCtxt ** const parserPP) {
 /*----------------------------------------------------------------------------
    Create an appropriate Libxml2 parser for our purpose.
 -----------------------------------------------------------------------------*/
-    xmlParserCtx * parserP;
+    xmlParserCtxt * parserP;
 
     parserP = xmlCreatePushParserCtxt((xmlSAXHandler *)&saxHandler, contextP,
                                         NULL, 0, NULL);
