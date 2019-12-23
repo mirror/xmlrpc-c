@@ -49,8 +49,8 @@
 struct _xml_element {
     xml_element * parentP;
     const char * name;
-    xmlrpc_mem_block cdata;    /* char */
-    xmlrpc_mem_block children; /* xml_element* */
+    xmlrpc_mem_block * cdataP;    /* char */
+    xmlrpc_mem_block * childrenP; /* xml_element* */
 };
 
 #define XMLRPC_ASSERT_ELEM_OK(elem) \
@@ -97,51 +97,40 @@ xmlElementNew(xmlrpc_env * const envP,
 -----------------------------------------------------------------------------*/
 
     xml_element * retval;
-    bool nameIsValid;
-    bool cdataIsValid;
-    bool childrenAreValid;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     assert(name != NULL);
 
-    /* Set up our error-handling preconditions. */
-    retval = NULL;
-    nameIsValid = cdataIsValid = childrenAreValid = false;
-
     MALLOCVAR(retval);
-    XMLRPC_FAIL_IF_NULL(retval, envP, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for XML element");
 
-    retval->parentP = NULL;
+    if (!retval)
+        xmlrpc_faultf(envP, "Couldn't allocate memory for XML element");
+    else {
+        retval->parentP = NULL;
     
-    /* Copy over the element name. */
-    retval->name = strdup(name);
-    XMLRPC_FAIL_IF_NULL(retval->name, envP, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for XML element");
-    nameIsValid = true;
+        retval->name = strdup(name);
 
-    /* Initialize a block to hold our CDATA. */
-    XMLRPC_TYPED_MEM_BLOCK_INIT(char, envP, &retval->cdata, 0);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    cdataIsValid = true;
+        if (!retval->name)
+            xmlrpc_faultf(envP, "Couldn't allocate memory for name field "
+                          "of XML element");
+        else {
+            retval->cdataP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
 
-    /* Initialize a block to hold our child elements. */
-    XMLRPC_TYPED_MEM_BLOCK_INIT(xml_element *, envP, &retval->children, 0);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    childrenAreValid = true;
-
-cleanup:
-    if (envP->fault_occurred) {
-        if (retval) {
-            if (nameIsValid)
+            if (!envP->fault_occurred) {
+                retval->childrenP =
+                    XMLRPC_MEMBLOCK_NEW(xml_element, envP, 0);
+                if (!envP->fault_occurred) {
+                    if (envP->fault_occurred)
+                        xmlrpc_mem_block_free(retval->childrenP);
+                }
+                if (envP->fault_occurred)
+                    xmlrpc_mem_block_free(retval->cdataP);
+            }
+            if (envP->fault_occurred)
                 xmlrpc_strfree(retval->name);
-            if (cdataIsValid)
-                xmlrpc_mem_block_clean(&retval->cdata);
-            if (childrenAreValid)
-                xmlrpc_mem_block_clean(&retval->children);
-            free(retval);
         }
-        retval = NULL;
+        if (envP->fault_occurred)
+            free(retval);
     }
     return retval;
 }
@@ -151,9 +140,8 @@ cleanup:
 void
 xml_element_free(xml_element * const elemP) {
 /*----------------------------------------------------------------------------
-  Blow away an existing element & all of its child elements.
+  Blow away an existing element and all of its child elements.
 -----------------------------------------------------------------------------*/
-    xmlrpc_mem_block * children;
     unsigned int size;
     unsigned int i;
     xml_element ** contents;
@@ -162,16 +150,15 @@ xml_element_free(xml_element * const elemP) {
 
     xmlrpc_strfree(elemP->name);
     elemP->name = XMLRPC_BAD_POINTER;
-    xmlrpc_mem_block_clean(&elemP->cdata);
+    xmlrpc_mem_block_free(elemP->cdataP);
 
     /* Deallocate all of our children recursively. */
-    children = &elemP->children;
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xml_element *, children);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(xml_element *, children);
+    contents = XMLRPC_MEMBLOCK_CONTENTS(xml_element *, elemP->childrenP);
+    size = XMLRPC_MEMBLOCK_SIZE(xml_element *, elemP->childrenP);
     for (i = 0; i < size; ++i)
         xml_element_free(contents[i]);
 
-    xmlrpc_mem_block_clean(&elemP->children);
+    xmlrpc_mem_block_free(elemP->childrenP);
 
     free(elemP);
 }
@@ -198,7 +185,7 @@ xml_element_cdata_size(const xml_element * const elemP) {
        has been called!
     */
     XMLRPC_ASSERT_ELEM_OK(elemP);
-    return XMLRPC_TYPED_MEM_BLOCK_SIZE(char, &elemP->cdata) - 1;
+    return XMLRPC_MEMBLOCK_SIZE(char, elemP->cdataP) - 1;
 }
 
 
@@ -206,7 +193,7 @@ xml_element_cdata_size(const xml_element * const elemP) {
 const char *
 xml_element_cdata(const xml_element * const elemP) {
     XMLRPC_ASSERT_ELEM_OK(elemP);
-    return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &elemP->cdata);
+    return XMLRPC_MEMBLOCK_CONTENTS(char, elemP->cdataP);
 }
 
 
@@ -214,7 +201,7 @@ xml_element_cdata(const xml_element * const elemP) {
 unsigned int
 xml_element_children_size(const xml_element * const elemP) {
     XMLRPC_ASSERT_ELEM_OK(elemP);
-    return XMLRPC_TYPED_MEM_BLOCK_SIZE(xml_element *, &elemP->children);
+    return XMLRPC_MEMBLOCK_SIZE(xml_element *, elemP->childrenP);
 }
 
 
@@ -222,7 +209,7 @@ xml_element_children_size(const xml_element * const elemP) {
 xml_element **
 xml_element_children(const xml_element * const elemP) {
     XMLRPC_ASSERT_ELEM_OK(elemP);
-    return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xml_element *, &elemP->children);
+    return XMLRPC_MEMBLOCK_CONTENTS(xml_element *, elemP->childrenP);
 }
 
 
@@ -241,7 +228,7 @@ xmlElementAppendCdata(xmlrpc_env *  const envP,
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_ELEM_OK(elemP);    
 
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(char, envP, &elemP->cdata, cdata, size);
+    XMLRPC_MEMBLOCK_APPEND(char, envP, elemP->cdataP, cdata, size);
 }
 
 
@@ -261,8 +248,7 @@ xmlElementAppendChild(xmlrpc_env *  const envP,
     XMLRPC_ASSERT_ELEM_OK(childP);
     assert(childP->parentP == NULL);
 
-    XMLRPC_TYPED_MEM_BLOCK_APPEND(xml_element *, envP, &elemP->children,
-                                  &childP, 1);
+    XMLRPC_MEMBLOCK_APPEND(xml_element *, envP, elemP->childrenP, &childP, 1);
     if (!envP->fault_occurred)
         childP->parentP = elemP;
     else
@@ -428,7 +414,7 @@ static xmlSAXHandler const saxHandler = {
 
 
 static void
-removeDocSizeLimit(xmlParserCtx * const parserP ATTR_UNUSED) {
+removeDocSizeLimit(xmlParserCtxt * const parserP ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    Set up *parserP to accept a document of any size.
 
@@ -451,13 +437,13 @@ removeDocSizeLimit(xmlParserCtx * const parserP ATTR_UNUSED) {
 
 
 static void
-createParser(xmlrpc_env *    const envP,
-             ParseContext *  const contextP,
-             xmlParserCtx ** const parserPP) {
+createParser(xmlrpc_env *     const envP,
+             ParseContext *   const contextP,
+             xmlParserCtxt ** const parserPP) {
 /*----------------------------------------------------------------------------
    Create an appropriate Libxml2 parser for our purpose.
 -----------------------------------------------------------------------------*/
-    xmlParserCtx * parserP;
+    xmlParserCtxt * parserP;
 
     parserP = xmlCreatePushParserCtxt((xmlSAXHandler *)&saxHandler, contextP,
                                         NULL, 0, NULL);
