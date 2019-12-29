@@ -11,8 +11,8 @@
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -107,7 +107,7 @@ xmlElementNew(xmlrpc_env * const envP,
         xmlrpc_faultf(envP, "Couldn't allocate memory for XML element");
     else {
         retval->parentP = NULL;
-    
+
         retval->name = strdup(name);
 
         if (!retval->name)
@@ -226,7 +226,7 @@ xmlElementAppendCdata(xmlrpc_env *  const envP,
 				      size_t        const size) {
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_ELEM_OK(elemP);    
+    XMLRPC_ASSERT_ELEM_OK(elemP);
 
     XMLRPC_MEMBLOCK_APPEND(char, envP, elemP->cdataP, cdata, size);
 }
@@ -308,7 +308,7 @@ startElement_(void *           const userData,
             XMLRPC_FAIL_IF_FAULT(&contextP->env);
             contextP->currentP = newCurrentP;
         }
-        
+
     cleanup:
         if (elemP)
             xml_element_free(elemP);
@@ -352,12 +352,12 @@ characterData(void *          const userData,
     ParseContext * contextP;
 
     assert(userData != NULL && s != NULL);
-    
+
     /* Get our context and see if an error has already occured. */
     contextP = (ParseContext*)userData;
     if (!contextP->env.fault_occurred) {
         assert(contextP->currentP != NULL);
-	
+
         xmlElementAppendCdata(&contextP->env,
                               contextP->currentP,
                               (char *)s,
@@ -402,8 +402,8 @@ static xmlSAXHandler const saxHandler = {
     NULL,      /* cdataBlock */
     NULL,      /* externalSubset */
     1          /* initialized */
-    
-    /* Following are SAX2 fields. Any ifdef here? */ 
+
+    /* Following are SAX2 fields. Any ifdef here? */
 
     ,NULL,     /* _private */
     NULL,      /* startElementNs */

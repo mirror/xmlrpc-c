@@ -20,6 +20,12 @@
 #define HAVE_CURL_GSSAPI_DELEGATION 0
 #endif
 
+#if CMAJOR > 7 || (CMAJOR == 7 && CMINOR >= 25)
+  #define HAVE_CURL_KEEPALIVE 1
+#else
+  #define HAVE_CURL_KEEPALIVE 0
+#endif
+
 #undef CMAJOR
 #undef CMINOR
 
