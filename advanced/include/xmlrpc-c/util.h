@@ -149,9 +149,9 @@ void xmlrpc_env_clean (xmlrpc_env* const env);
 ** fault_occurred flag. This function will make a private copy of 'string',
 ** so you retain responsibility for your copy. */
 XMLRPC_UTIL_EXPORTED
-void 
-xmlrpc_env_set_fault(xmlrpc_env * const env, 
-                     int          const faultCode, 
+void
+xmlrpc_env_set_fault(xmlrpc_env * const env,
+                     int          const faultCode,
                      const char * const faultDescription);
 
 /* The same as the above, but using varargs */
@@ -164,10 +164,10 @@ xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
 
 /* The same as the above, but using a printf-style format string. */
 XMLRPC_UTIL_EXPORTED
-void 
-xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP, 
+void
+xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP,
                                int          const code,
-                               const char * const format, 
+                               const char * const format,
                                ...) XMLRPC_PRINTF_ATTR(3,4);
 
 /* This one infers XMLRPC_INTERNAL_ERROR and has a shorter name.
@@ -247,23 +247,13 @@ xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* const env, size_t const size
 XMLRPC_UTIL_EXPORTED
 void xmlrpc_mem_block_free (xmlrpc_mem_block* const block);
 
-/* Initialize the contents of the provided xmlrpc_mem_block. */
-XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_init
-    (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
-
-/* Deallocate the contents of the provided xmlrpc_mem_block, but not the
-** block itself. */
-XMLRPC_UTIL_EXPORTED
-void xmlrpc_mem_block_clean (xmlrpc_mem_block* const block);
-
 /* Get the size and contents of the xmlrpc_mem_block. */
 XMLRPC_UTIL_EXPORTED
-size_t 
+size_t
 xmlrpc_mem_block_size(const xmlrpc_mem_block * const block);
 
 XMLRPC_UTIL_EXPORTED
-void * 
+void *
 xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block);
 
 /* Resize an xmlrpc_mem_block, preserving as much of the contents as
@@ -313,7 +303,7 @@ void xmlrpc_mem_block_append
 **=======================================================================*/
 
 XMLRPC_UTIL_EXPORTED
-void 
+void
 xmlrpc_validate_utf8(xmlrpc_env * const envP,
                      const char * const utf8Data,
                      size_t       const utf8Len);

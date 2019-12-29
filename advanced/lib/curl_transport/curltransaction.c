@@ -60,7 +60,7 @@
    for ARES, the DNS lookup will not time out.  For consistency, we also set
    CURLOPT_CONNECTTIMEOUT to infinite.  That way, users see the same behavior
    with ARES.
-   
+
    It wasn't always this way, Before Xmlrpc-c 1.41, we set CURLOPT_NOSIGNAL
    only when the user specified the 'timeout' curl transport option, and we
    never set CURLOPT_CONNECTTIMEOUT.  This means programs that have a nice 5
@@ -138,7 +138,7 @@ addHeader(xmlrpc_env *         const envP,
 static void
 addContentTypeHeader(xmlrpc_env *         const envP,
                      struct curl_slist ** const headerListP) {
-    
+
     addHeader(envP, headerListP, "Content-Type: text/xml");
 }
 
@@ -148,12 +148,12 @@ static const char *
 xmlrpcUserAgentPart(bool const reportIt) {
 
     const char * retval;
-    
+
     if (reportIt) {
         curl_version_info_data * const curlInfoP =
             curl_version_info(CURLVERSION_NOW);
         char curlVersion[32];
-        
+
         XMLRPC_SNPRINTF(curlVersion, sizeof(curlVersion), "%u.%u.%u",
                         (curlInfoP->version_num >> 16) & 0xff,
                         (curlInfoP->version_num >>  8) & 0xff,
@@ -179,7 +179,7 @@ addUserAgentHeader(xmlrpc_env *         const envP,
 /*----------------------------------------------------------------------------
    Add a User-Agent HTTP header to the Curl header list *headerListP,
    if appropriate.
-   
+
    'reportXmlrpc' means we want to tell the client what XML-RPC agent
    is being used -- Xmlrpc-c and layers below.
 
@@ -210,13 +210,13 @@ addUserAgentHeader(xmlrpc_env *         const envP,
             xmlrpc_asprintf(&userAgentHeader,
                             "User-Agent: %s%s%s",
                             userPart, space, xmlrpcPart);
-        
+
             if (xmlrpc_strnomem(userAgentHeader))
                 xmlrpc_faultf(envP, "Couldn't allocate memory for "
                               "User-Agent header");
             else {
                 addHeader(envP, headerListP, userAgentHeader);
-            
+
                 xmlrpc_strfree(userAgentHeader);
             }
             xmlrpc_strfree(xmlrpcPart);
@@ -232,15 +232,15 @@ addAuthorizationHeader(xmlrpc_env *         const envP,
                        const char *         const hdrValue) {
 
     const char * authorizationHeader;
-            
+
     xmlrpc_asprintf(&authorizationHeader, "Authorization: %s", hdrValue);
-    
+
     if (xmlrpc_strnomem(authorizationHeader))
         xmlrpc_faultf(envP, "Couldn't allocate memory for "
                       "Authorization header");
     else {
         addHeader(envP, headerListP, authorizationHeader);
-        
+
         xmlrpc_strfree(authorizationHeader);
     }
 }
@@ -318,10 +318,10 @@ createCurlHeaderList(xmlrpc_env *               const envP,
 
 
 
-static size_t 
-collect(void *  const ptr, 
-        size_t  const size, 
-        size_t  const nmemb,  
+static size_t
+collect(void *  const ptr,
+        size_t  const size,
+        size_t  const nmemb,
         void  * const streamP) {
 /*----------------------------------------------------------------------------
    This is a Curl write function.  Curl calls this to deliver the
@@ -348,7 +348,7 @@ collect(void *  const ptr,
                but Curl does expect the byte count.
             */
     }
-    
+
     return retval;
 }
 
@@ -441,7 +441,7 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
        Note that curl_easy_setopt(CURLOPT_HTTPAUTH) succeeds even if there are
        flags in it argument that weren't defined when it was written.
     */
-    
+
     if (serverInfoP->userNamePw)
         curl_easy_setopt(curlSessionP, CURLOPT_USERPWD,
                          serverInfoP->userNamePw);
@@ -452,7 +452,7 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
         (serverInfoP->allowedAuth.digest       ? CURLAUTH_DIGEST       : 0) |
         (serverInfoP->allowedAuth.gssnegotiate ? CURLAUTH_GSSNEGOTIATE : 0) |
         (serverInfoP->allowedAuth.ntlm         ? CURLAUTH_NTLM         : 0));
-    
+
     if (rc != CURLE_OK) {
         /* Curl is too old to do authentication, so we do it ourselves
            with an explicit header if we have to.
@@ -462,7 +462,7 @@ setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
             if (*authHdrValueP == NULL)
                 xmlrpc_faultf(envP, "Unable to allocate memory for basic "
                               "authentication header");
-        } else        
+        } else
             *authHdrValueP = NULL;
     } else
         *authHdrValueP = NULL;
@@ -557,7 +557,7 @@ assertConstantsMatch(void) {
 
    So Xmlrpc-c gives the same choice to its own user, via its
    'gssapi_delegation' Curl transport option.
-   
+
    Current Xmlrpc-c can be linked with, and compiled with, any version of
    Curl, so it has to carefully consider all the possibilities.
 */
@@ -629,6 +629,43 @@ requestGssapiDelegation(CURL * const curlSessionP ATTR_UNUSED,
 
 
 static void
+setupKeepalive(const struct curlSetup * const curlSetupP,
+               CURL *                   const curlSessionP,
+               xmlrpc_env *             const envP) {
+/*----------------------------------------------------------------------------
+   We fail if our libcurl is too old to have the keepalive capability.
+
+   We really ought to have something the user can call to find out whether the
+   transport can do keepalive so he can know not to attempt to set up
+   keepalive and thereby avoid this failure, but today there is no mechanism
+   in place for the user to get any information specific to a Curl transport.
+-----------------------------------------------------------------------------*/
+#if HAVE_CURL_KEEPALIVE
+    if (curlSetupP->tcpKeepalive) {
+        curl_easy_setopt(curlSessionP, CURLOPT_TCP_KEEPALIVE, 1);
+    }
+    if (curlSetupP->tcpKeepidle) {
+        curl_easy_setopt(curlSessionP,
+                         CURLOPT_TCP_KEEPIDLE, curlSetupP->tcpKeepidle);
+    }
+    if (curlSetupP->tcpKeepintvl) {
+        curl_easy_setopt(curlSessionP,
+                         CURLOPT_TCP_KEEPINTVL, curlSetupP->tcpKeepintvl);
+    }
+    envP->fault_occurred = false;
+#else
+    if (curlSetupP->tcpKeepalive ||
+        curlSetupP->tcpKeepidle || curlSetupP->tcpKeepintvl) {
+        xmlrpc_faultf(envP,
+                      "Attempt to control TCP keepalive with a Curl "
+                      "library that is too old to have that capability");
+    }
+#endif
+}
+
+
+
+static void
 setupCurlSession(xmlrpc_env *               const envP,
                  curlTransaction *          const transP,
                  const xmlrpc_server_info * const serverInfoP,
@@ -639,10 +676,11 @@ setupCurlSession(xmlrpc_env *               const envP,
    Set up the Curl session for the transaction *transP so that
    a subsequent curl_easy_perform() would perform said transaction.
 
-   *serverInfoP tells what sort of authentication to set up.  This is
-   an embarassment, as the xmlrpc_server_info type is part of the
-   Xmlrpc-c interface.  Some day, we need to replace this with a type
-   (probably identical) not tied to Xmlrpc-c.
+   *serverInfoP tells what sort of authentication to set up.  This is an
+   embarassment, as the xmlrpc_server_info type is part of the Xmlrpc-c
+   interface, whereas this module is supposed to be for generic TCP via Curl.
+   Some day, we need to replace this with a type (probably identical) not tied
+   to Xmlrpc-c.
 -----------------------------------------------------------------------------*/
     CURL * const curlSessionP = transP->curlSessionP;
 
@@ -673,7 +711,7 @@ setupCurlSession(xmlrpc_env *               const envP,
 
     XMLRPC_MEMBLOCK_APPEND(char, envP, transP->postDataP, "\0", 1);
     if (!envP->fault_occurred) {
-        curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS, 
+        curl_easy_setopt(curlSessionP, CURLOPT_POSTFIELDS,
                          XMLRPC_MEMBLOCK_CONTENTS(char, transP->postDataP));
         curl_easy_setopt(curlSessionP, CURLOPT_WRITEFUNCTION, collect);
         curl_easy_setopt(curlSessionP, CURLOPT_FILE, transP->responseDataP);
@@ -687,7 +725,7 @@ setupCurlSession(xmlrpc_env *               const envP,
             curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
         } else
             curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
-        
+
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
                          curlSetupP->sslVerifyPeer);
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYHOST,
@@ -770,7 +808,7 @@ setupCurlSession(xmlrpc_env *               const envP,
 
         if (curlSetupP->connectTimeout)
             setCurlConnectTimeout(curlSessionP, curlSetupP->connectTimeout);
-        else 
+        else
             curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT,
                              LONG_MAX/1000);
                 /* Some documentation says 0 means indefinite and other says 0
@@ -814,6 +852,10 @@ setupCurlSession(xmlrpc_env *               const envP,
             }
         }
     }
+
+    if (!envP->fault_occurred)
+        setupKeepalive(curlSetupP, curlSessionP, envP);
+
 }
 
 
@@ -858,7 +900,7 @@ curlTransaction_create(xmlrpc_env *               const envP,
             setupCurlSession(envP, curlTransactionP,
                              serverP, dontAdvertise, userAgent,
                              curlSetupStuffP);
-            
+
             if (envP->fault_occurred)
                 xmlrpc_strfree(curlTransactionP->serverUrl);
         }
@@ -966,17 +1008,17 @@ curlTransaction_getError(curlTransaction * const curlTransactionP,
     } else {
         CURLcode res;
         long http_result;
-        
+
         res = curl_easy_getinfo(curlTransactionP->curlSessionP,
                                 CURLINFO_HTTP_CODE, &http_result);
             /* CURLINFO_HTTP_CODE is the old name for CURLINFO_RESPONSE_CODE */
-    
+
         if (res != CURLE_OK)
             xmlrpc_env_set_fault_formatted(
-                &env, XMLRPC_INTERNAL_ERROR, 
+                &env, XMLRPC_INTERNAL_ERROR,
                 "Curl performed the HTTP transaction, but was "
                 "unable to say what the HTTP result code was.  "
-                "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s", 
+                "curl_easy_getinfo(CURLINFO_HTTP_CODE) says: %s",
                 curlTransactionP->curlError);
         else {
             if (http_result == 0) {
