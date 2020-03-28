@@ -39,7 +39,7 @@ TARGET_MODS_PP = \
 PKGCONFIG_FILES_TO_INSTALL := xmlrpc_abyss++.pc
 
 OMIT_ABYSSPP_LIB_RULE = Y
-MAJ = 8
+MAJ = 9
   # Major number of shared libraries in this directory
 
 include $(SRCDIR)/common.mk
