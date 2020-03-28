@@ -29,7 +29,7 @@ using namespace std;
 #include "xmlrpc-c/girerr.hpp"
 using girerr::throwf;
 #include "xmlrpc-c/server_cgi.hpp"
-
+#include "xmlrpc-c/util_int.h"
 
 
 namespace {
@@ -224,7 +224,7 @@ getHttpBody(FILE * const fileP,
 
     setModeBinary(fileP);
     char * const buffer(new char[length]);
-    auto_ptr<char> p(buffer);  // To make it go away when we leave
+    UNIQUE_PTR<char> p(buffer);  // To make it go away when we leave
 
     size_t count;
 
