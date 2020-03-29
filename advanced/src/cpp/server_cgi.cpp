@@ -29,7 +29,7 @@ using namespace std;
 #include "xmlrpc-c/girerr.hpp"
 using girerr::throwf;
 #include "xmlrpc-c/server_cgi.hpp"
-
+#include "xmlrpc-c/util_int.h"
 
 
 namespace {
@@ -98,7 +98,7 @@ public:
 
     int    const code;
     string const msg;
-    
+
     HttpError(int    const code,
               string const& msg) :
         code(code),
@@ -207,13 +207,13 @@ serverCgi::~serverCgi() {
 static void
 setModeBinary(FILE * const FILEVAR) {
 
-#if MSVCRT 
+#if MSVCRT
     /* Fix from Jeff Stewart: NT opens stdin and stdout in text mode
        by default, badly confusing our length calculations.  So we need
-       to set the file handle to binary. 
+       to set the file handle to binary.
     */
-    _setmode(_fileno(FILEVAR), _O_BINARY); 
-#endif 
+    _setmode(_fileno(FILEVAR), _O_BINARY);
+#endif
 }
 
 
@@ -224,7 +224,7 @@ getHttpBody(FILE * const fileP,
 
     setModeBinary(fileP);
     char * const buffer(new char[length]);
-    auto_ptr<char> p(buffer);  // To make it go away when we leave
+    UNIQUE_PTR<char> p(buffer);  // To make it go away when we leave
 
     size_t count;
 
@@ -238,7 +238,7 @@ getHttpBody(FILE * const fileP,
 
 
 
-static void 
+static void
 writeNormalHttpResp(FILE * const  fileP,
                     bool   const  sendCookie,
                     string const& authCookie,
@@ -285,7 +285,7 @@ processCall2(const registry * const  registryP,
         } catch (exception const& e) {
             throw(HttpError(500, e.what()));
         }
-        
+
         writeNormalHttpResp(respFileP, sendCookie, authCookie, responseXml);
     }
 }
@@ -304,7 +304,7 @@ sendHttpErrorResp(FILE *    const  fileP,
     fprintf(fileP, "Status: %d %s\n", e.code, e.msg.c_str());
     fprintf(fileP, "Content-type: text/html\n");
     fprintf(fileP, "\n");
-    
+
     // HTTP body: HTML error message
 
     fprintf(fileP, "<title>%d %s</title>\n", e.code, e.msg.c_str());
@@ -330,10 +330,10 @@ serverCgi_impl::tryToProcessCall() {
     if (httpInfo.contentType != string("text/xml"))
         throw(HttpError(400, string("ContentType must be 'text/xml', not '") +
                         httpInfo.contentType + string("'")));
-    
+
     if (!httpInfo.contentLengthPresent)
         throw(HttpError(411, "Content-length required"));
-              
+
     processCall2(this->registryP, stdin, httpInfo.contentLength,
                  httpInfo.authCookiePresent, httpInfo.authCookie, stdout);
 }
