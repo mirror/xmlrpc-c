@@ -29,7 +29,7 @@ TARGET_MODS_PP = \
 PKGCONFIG_FILES_TO_INSTALL := xmlrpc_util++.pc
 
 OMIT_LIBXMLRPC_UTILPP_RULE = Y
-MAJ = 8
+MAJ = 9
   # Major number of shared libraries in this directory
 
 include $(SRCDIR)/common.mk
