@@ -688,7 +688,7 @@ setupCurlSession(xmlrpc_env *               const envP,
 
     /* A Curl session is serial -- it processes zero or one transaction
        at a time.  We use the "private" attribute of the Curl session to
-       indicate which transaction it is presently processing.  This is
+       indicate which transaction it is currently processing.  This is
        important when the transaction finishes, because libcurl will just
        tell us that something finished on a particular session, not that
        a particular transaction finished.
