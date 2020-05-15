@@ -41,25 +41,25 @@ addAuthCookie(xmlrpc_env * const envP,
               const char * const authCookie) {
 
     const char * cookieResponse;
-    
+
     xmlrpc_asprintf(&cookieResponse, "auth=%s", authCookie);
-    
+
     if (xmlrpc_strnomem(cookieResponse))
         xmlrpc_faultf(envP, "Insufficient memory to generate cookie "
                       "response header.");
     else {
         ResponseAddField(abyssSessionP, "Set-Cookie", cookieResponse);
-    
+
         xmlrpc_strfree(cookieResponse);
     }
-}   
-    
+}
 
 
-static void 
+
+static void
 sendResponse(xmlrpc_env *      const envP,
-             TSession *        const abyssSessionP, 
-             const char *      const body, 
+             TSession *        const abyssSessionP,
+             const char *      const body,
              size_t            const len,
              bool              const chunked,
              ResponseAccessCtl const accessControl) {
@@ -107,7 +107,7 @@ sendResponse(xmlrpc_env *      const envP,
         ResponseContentType(abyssSessionP, "text/xml; charset=utf-8");
         ResponseContentLength(abyssSessionP, abyssLen);
         ResponseAccessControl(abyssSessionP, accessControl);
-        
+
         ResponseWriteStart(abyssSessionP);
         ResponseWriteBody(abyssSessionP, body, abyssLen);
         ResponseWriteEnd(abyssSessionP);
@@ -134,7 +134,7 @@ sendResponse(xmlrpc_env *      const envP,
 
 
 static void
-sendError(TSession *   const abyssSessionP, 
+sendError(TSession *   const abyssSessionP,
           unsigned int const status,
           const char * const explanation) {
 /*----------------------------------------------------------------------------
@@ -207,7 +207,7 @@ getBody(xmlrpc_env *        const envP,
             const char * chunkPtr;
             size_t chunkLen;
 
-            SessionGetReadData(abyssSessionP, contentSize - bytesRead, 
+            SessionGetReadData(abyssSessionP, contentSize - bytesRead,
                                &chunkPtr, &chunkLen);
             bytesRead += chunkLen;
 
@@ -234,7 +234,7 @@ storeCookies(TSession *     const httpRequestP,
 -----------------------------------------------------------------------------*/
     const char * const cookie = RequestHeaderValue(httpRequestP, "cookie");
     if (cookie) {
-        /* 
+        /*
            Setting the value in an environment variable doesn't make
            any sense.  So for now, cookie code is disabled.
            -Bryan 04.10.03.
@@ -261,7 +261,7 @@ processContentLength(TSession *    const httpRequestP,
   don't want to figure out how to safely handle HTTP < 1.1 requests
   without it.
 -----------------------------------------------------------------------------*/
-    const char * const content_length = 
+    const char * const content_length =
         RequestHeaderValue(httpRequestP, "content-length");
 
     if (content_length == NULL) {
@@ -276,9 +276,9 @@ processContentLength(TSession *    const httpRequestP,
         else {
             unsigned long contentLengthValue;
             char * tail;
-        
+
             contentLengthValue = strtoul(content_length, &tail, 10);
-        
+
             if (*tail != '\0')
                 xmlrpc_asprintf(errorP, "There's non-numeric crap in "
                                 "the value of your content-length "
@@ -287,7 +287,7 @@ processContentLength(TSession *    const httpRequestP,
                 xmlrpc_asprintf(errorP, "According to your content-length "
                                 "HTTP header, your request is empty (zero "
                                 "length)");
-            else if ((unsigned long)(size_t)contentLengthValue 
+            else if ((unsigned long)(size_t)contentLengthValue
                      != contentLengthValue)
                 xmlrpc_asprintf(errorP, "According to your content-length "
                                 "HTTP header, your request is too big to "
@@ -305,7 +305,7 @@ processContentLength(TSession *    const httpRequestP,
 
 static void
 traceHandlerCalled(TSession * const abyssSessionP) {
-    
+
     const char * methodDesc;
     const TRequestInfo * requestInfoP;
 
@@ -395,11 +395,11 @@ processCall(TSession *            const abyssSessionP,
                 &output);
             if (!env.fault_occurred) {
                 /* Send out the result. */
-                sendResponse(&env, abyssSessionP, 
+                sendResponse(&env, abyssSessionP,
                              XMLRPC_MEMBLOCK_CONTENTS(char, output),
                              XMLRPC_MEMBLOCK_SIZE(char, output),
                              wantChunk, accessControl);
-                
+
                 XMLRPC_MEMBLOCK_FREE(char, output);
             }
             XMLRPC_MEMBLOCK_FREE(char, body);
@@ -498,7 +498,7 @@ handleXmlRpcCallReq(TSession *           const abyssSessionP,
         bool missing;
         size_t contentSize;
 
-        processContentLength(abyssSessionP, 
+        processContentLength(abyssSessionP,
                              &contentSize, &missing, &error);
         if (error) {
             sendError(abyssSessionP, 400, error);
@@ -524,7 +524,7 @@ handleXmlRpcOptionsReq(TSession *        const abyssSessionP,
                        ResponseAccessCtl const accessControl) {
 
     ResponseAddField(abyssSessionP, "Allow", "POST");
-    
+
     ResponseAccessControl(abyssSessionP, accessControl);
     ResponseContentLength(abyssSessionP, 0);
     ResponseStatus(abyssSessionP, 200);
