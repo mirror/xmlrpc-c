@@ -306,7 +306,7 @@ serializeDatetime(xmlrpc_env *       const envP,
                         valueP->_value.dt.s);
 
         if (valueP->_value.dt.u != 0) {
-            char usecString[64];
+            char usecString[32];
             assert(valueP->_value.dt.u < 1000000);
             XMLRPC_SNPRINTF(usecString, sizeof(usecString), ".%06u",
                             valueP->_value.dt.u);
