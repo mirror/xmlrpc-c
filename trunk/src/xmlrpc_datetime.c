@@ -157,7 +157,7 @@ xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
                      &brokenTime);
 
             if (usecs != 0) {
-                char usecString[64];
+                char usecString[32];
                 assert(usecs < 1000000);
                 XMLRPC_SNPRINTF(usecString, sizeof(usecString),
                                 ".%06u", usecs);
