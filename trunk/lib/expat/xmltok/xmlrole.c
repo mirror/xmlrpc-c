@@ -92,6 +92,7 @@ int prolog0(PROLOG_STATE *state,
     return XML_ROLE_NONE;
   case XML_TOK_COMMENT:
     state->handler = prolog1;
+    return XML_ROLE_NONE;
   case XML_TOK_BOM:
     return XML_ROLE_NONE;
   case XML_TOK_DECL_OPEN:

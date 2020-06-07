@@ -14,6 +14,9 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #ifndef IS_INVALID_CHAR
 #define IS_INVALID_CHAR(enc, ptr, n) (0)
 #endif
