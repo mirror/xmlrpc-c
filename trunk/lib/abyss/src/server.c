@@ -1592,6 +1592,7 @@ ServerDaemonize(TServer * const serverP) {
         break;
     case -1:
         TraceExit("Unable to become a daemon");
+        break;
     default:
         /* We are the parent */
         exit(0);
