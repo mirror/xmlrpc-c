@@ -829,7 +829,7 @@ parseObjectMember(xmlrpc_env *   const envP,
     xmlrpc_env_init(&env);
 
     /* The current token is the string which is the member name: */
-    assert(tokP->type = typeString);
+    assert(tokP->type == typeString);
     assert(tokP->end >= tokP->begin + 2);
     assert(*tokP->begin == '"');
     assert(*(tokP->end-1) == '"');
