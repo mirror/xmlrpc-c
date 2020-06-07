@@ -60,14 +60,14 @@ UnixTimeToSystemTime(time_t const t,
 static void
 UnixTimeFromFileTime(xmlrpc_env *  const envP,
                      LPFILETIME    const pft,
-                     time_t *      const timeValueP) { 
+                     time_t *      const timeValueP) {
 
     int64_t const WinEpoch100Ns =
         ((int64_t)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
     int64_t const unixEpoch100Ns =
         WinEpoch100Ns - (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
     int64_t const unixEpochSeconds =
-        unixEpoch100Ns / SECS_TO_100NS; 
+        unixEpoch100Ns / SECS_TO_100NS;
 
     if ((time_t)unixEpochSeconds != unixEpochSeconds) {
         /* Value is too big for a time_t; fail. */
@@ -85,8 +85,8 @@ UnixTimeFromSystemTime(xmlrpc_env * const envP,
                        time_t *     const timeValueP) {
     FILETIME filetime;
 
-    SystemTimeToFileTime(pst, &filetime); 
-    UnixTimeFromFileTime(envP, &filetime, timeValueP); 
+    SystemTimeToFileTime(pst, &filetime);
+    UnixTimeFromFileTime(envP, &filetime, timeValueP);
 }
 
 #endif  /* MSVCRT */
@@ -100,8 +100,8 @@ validateDatetimeType(xmlrpc_env *         const envP,
     if (valueP->_type != XMLRPC_TYPE_DATETIME) {
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
-            "type %s was expected.", 
-            xmlrpc_type_name(valueP->_type), 
+            "type %s was expected.",
+            xmlrpc_type_name(valueP->_type),
             xmlrpc_type_name(XMLRPC_TYPE_DATETIME));
     }
 }
@@ -153,7 +153,7 @@ xmlrpc_read_datetime_str(xmlrpc_env *         const envP,
             /* Note that this format is NOT ISO 8601 -- it's a bizarre
                hybrid of two ISO 8601 formats.
             */
-            strftime(dtString, sizeof(dtString), "%Y%m%dT%H:%M:%S", 
+            strftime(dtString, sizeof(dtString), "%Y%m%dT%H:%M:%S",
                      &brokenTime);
 
             if (usecs != 0) {
@@ -180,7 +180,7 @@ xmlrpc_read_datetime_str_old(xmlrpc_env *         const envP,
                              const char **        const stringValueP) {
 
     assert(valueP->_cache);
-    
+
     validateDatetimeType(envP, valueP);
     if (!envP->fault_occurred) {
         const char ** const readBufferP = valueP->_cache;
@@ -200,7 +200,7 @@ xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
                           const xmlrpc_value * const valueP,
                           time_t *             const secsP,
                           unsigned int *       const usecsP) {
-    
+
     validateDatetimeType(envP, valueP);
 
     if (!envP->fault_occurred) {
@@ -211,14 +211,14 @@ xmlrpc_read_datetime_usec(xmlrpc_env *         const envP,
         else {
             struct tm brokenTime;
             const char * error;
-                
+
             brokenTime.tm_sec  = valueP->_value.dt.s;
             brokenTime.tm_min  = valueP->_value.dt.m;
             brokenTime.tm_hour = valueP->_value.dt.h;
             brokenTime.tm_mday = valueP->_value.dt.D;
             brokenTime.tm_mon  = valueP->_value.dt.M - 1;
             brokenTime.tm_year = valueP->_value.dt.Y - 1900;
-                
+
             xmlrpc_timegm(&brokenTime, secsP, &error);
 
             if (error) {
@@ -251,7 +251,7 @@ void
 xmlrpc_read_datetime_sec(xmlrpc_env *         const envP,
                          const xmlrpc_value * const valueP,
                          time_t *             const timeValueP) {
-    
+
     unsigned int usecs;
 
     xmlrpc_read_datetime_usec(envP, valueP, timeValueP, &usecs);
@@ -265,7 +265,7 @@ void
 xmlrpc_read_datetime_timeval(xmlrpc_env *         const envP,
                              const xmlrpc_value * const valueP,
                              struct timeval *     const timeValueP) {
-    
+
     time_t secs;
     unsigned int usecs;
 
@@ -284,7 +284,7 @@ void
 xmlrpc_read_datetime_timespec(xmlrpc_env *         const envP,
                               const xmlrpc_value * const valueP,
                               struct timespec *    const timeValueP) {
-    
+
     time_t secs;
     unsigned int usecs;
 
@@ -334,7 +334,7 @@ xmlrpc_read_datetime_8601(xmlrpc_env *         const envP,
                     xmlrpc_faultf(envP,
                                   "Unable to allocate memory "
                                   "for datetime string");
-                
+
                 if (envP->fault_occurred)
                     xmlrpc_strfree(*iso8601ValueP);
             }
@@ -345,13 +345,13 @@ xmlrpc_read_datetime_8601(xmlrpc_env *         const envP,
 
 
 xmlrpc_value *
-xmlrpc_datetime_new(xmlrpc_env *    const envP, 
+xmlrpc_datetime_new(xmlrpc_env *    const envP,
                     xmlrpc_datetime const dt) {
 
     xmlrpc_value * valP;
 
     const char ** readBufferP;
-        
+
     MALLOCVAR(readBufferP);
 
     if (!readBufferP)
@@ -365,7 +365,7 @@ xmlrpc_datetime_new(xmlrpc_env *    const envP,
 
         if (!envP->fault_occurred) {
             valP->_type = XMLRPC_TYPE_DATETIME;
-            
+
             valP->_value.dt = dt;
 
             valP->_cache = readBufferP;
@@ -540,7 +540,7 @@ validateFormat(xmlrpc_env * const envP,
 
 
 xmlrpc_value *
-xmlrpc_datetime_new_str(xmlrpc_env * const envP, 
+xmlrpc_datetime_new_str(xmlrpc_env * const envP,
                         const char * const datetimeString) {
 /*----------------------------------------------------------------------------
    This exists only for backward compatibility.  Originally, this was the
@@ -609,7 +609,7 @@ xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
 
 
 xmlrpc_value *
-xmlrpc_datetime_new_sec(xmlrpc_env * const envP, 
+xmlrpc_datetime_new_sec(xmlrpc_env * const envP,
                         time_t       const value) {
 
     return xmlrpc_datetime_new_usec(envP, value, 0);
@@ -620,7 +620,7 @@ xmlrpc_datetime_new_sec(xmlrpc_env * const envP,
 #if XMLRPC_HAVE_TIMEVAL
 
 xmlrpc_value *
-xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP, 
+xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP,
                             struct timeval const value) {
 
     return xmlrpc_datetime_new_usec(envP, value.tv_sec, value.tv_usec);
@@ -632,7 +632,7 @@ xmlrpc_datetime_new_timeval(xmlrpc_env *   const envP,
 #if XMLRPC_HAVE_TIMESPEC
 
 xmlrpc_value *
-xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP, 
+xmlrpc_datetime_new_timespec(xmlrpc_env *    const envP,
                              struct timespec const value) {
 
     return xmlrpc_datetime_new_usec(envP, value.tv_sec, value.tv_nsec/1000);
