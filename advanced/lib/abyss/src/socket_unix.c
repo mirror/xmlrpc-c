@@ -127,7 +127,7 @@ channelWrite(TChannel *            const channelP,
         // MSG_NOSIGNAL is not standard enough.  An SO_NOSIGPIPE socket
         // option is another way, but even less standard.  So instead, the
         // thread simply must be set to ignore SIGPIPE.
-        
+
         rc = send(socketUnixP->fd, &buffer[len-bytesLeft],
                   MIN(maxSend, bytesLeft), 0);
 
@@ -160,8 +160,8 @@ channelWrite(TChannel *            const channelP,
 static ChannelReadImpl channelRead;
 
 static void
-channelRead(TChannel *      const channelP, 
-            unsigned char * const buffer, 
+channelRead(TChannel *      const channelP,
+            unsigned char * const buffer,
             uint32_t        const bufferSize,
             uint32_t *      const bytesReceivedP,
             bool *          const failedP) {
@@ -253,7 +253,7 @@ channelWait(TChannel * const channelP,
 
     pollfds[1].fd = socketUnixP->interruptPipe.interrupteeFd;
     pollfds[1].events = POLLIN;
-    
+
     rc = poll(pollfds, ARRAY_SIZE(pollfds),
               timeoutMs == TIME_INFINITE ? -1 : (int)timeoutMs);
 
@@ -347,13 +347,13 @@ makeChannelInfo(struct abyss_unix_chaninfo ** const channelInfoPP,
     struct abyss_unix_chaninfo * channelInfoP;
 
     MALLOCVAR(channelInfoP);
-    
+
     if (channelInfoP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory");
     else {
         channelInfoP->peerAddrLen = peerAddrLen;
         channelInfoP->peerAddr    = peerAddr;
-        
+
         *errorP = NULL;
     }
     *channelInfoPP = channelInfoP;
@@ -369,13 +369,13 @@ makeChannelFromFd(int           const fd,
     struct socketUnix * socketUnixP;
 
     MALLOCVAR(socketUnixP);
-    
+
     if (socketUnixP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
                         "channel descriptor");
     else {
         TChannel * channelP;
-        
+
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = true;
 
@@ -383,7 +383,7 @@ makeChannelFromFd(int           const fd,
 
         if (!*errorP) {
             ChannelCreate(&channelVtbl, socketUnixP, &channelP);
-        
+
             if (channelP == NULL)
                 xmlrpc_asprintf(errorP, "Unable to allocate memory for "
                                 "channel descriptor.");
@@ -655,7 +655,7 @@ createChanSwitch(int            const fd,
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = userSuppliedFd;
         socketUnixP->isListening = false;
-            
+
         sockutil_interruptPipeInit(&socketUnixP->interruptPipe, errorP);
 
         if (!*errorP) {
@@ -828,7 +828,7 @@ ChanSwitchUnixGetListenName(TChanSwitch *      const chanSwitchP,
    case, this is the only way the user can find out what port the OS picked.
 -----------------------------------------------------------------------------*/
     struct socketUnix * const socketUnixP = chanSwitchP->implP;
-    
+
     if (!socketUnixP->isListening)
         xmlrpc_asprintf(errorP, "Channel Switch is not listening");
     else

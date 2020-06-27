@@ -379,7 +379,7 @@ readRequestField(TSession *    const sessionP,
    through the session's internal buffer; i.e. we may get data that was
    previously read from the network, or we may read more from the network.
 
-   We assume the connection is presently positioned to the beginning of
+   We assume the connection is currently positioned to the beginning of
    the HTTP document.  We leave it positioned after the request field.
 
    We ignore any empty lines at the beginning of the stream, per
