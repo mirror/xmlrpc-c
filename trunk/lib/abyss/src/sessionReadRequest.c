@@ -389,22 +389,31 @@ readRequestField(TSession *    const sessionP,
 
    Return as *requestLineP the request field read.  This ASCIIZ string is
    in the session's internal buffer.
+
+   If we fail to get a field and fail to time out, we return as *errorP
+   a text description of the failure in newly malloced storage.  Otherwise,
+   we return *errorP == NULL.
 -----------------------------------------------------------------------------*/
     char * line;
     bool endOfHeader;
+    bool timedOut;
     const char * skipError;
 
-    skipToNonemptyLine(sessionP->connP, deadline, timedOutP, &skipError);
+    skipToNonemptyLine(sessionP->connP, deadline, &timedOut, &skipError);
 
     if (skipError) {
         xmlrpc_asprintf(errorP, "Failed to find the request field, "
                         "i.e. a non-empty line.  %s", skipError);
         xmlrpc_strfree(skipError);
-    } else if (!*timedOutP) {
+    } else if (timedOut) {
+        *errorP = NULL;
+        *timedOutP = true;
+    } else {
         const char * error;
+        bool timedOut;
 
         readField(sessionP->connP, deadline, &endOfHeader, &line,
-                  timedOutP, &error);
+                  &timedOut, &error);
 
         if (error) {
             xmlrpc_asprintf(errorP, "Got beginning of the request field, "
@@ -413,13 +422,16 @@ readRequestField(TSession *    const sessionP,
         } else {
             *errorP = NULL;
 
-            if (!*timedOutP) {
+            if (timedOut)
+                *timedOutP = true;
+            else {
                 /* End of header is delimited by an empty line, and we skipped
                    all the empty lines above, so readField() could not have
                    encountered EOH:
                 */
                 assert(!endOfHeader);
 
+                *timedOutP = false;
                 *requestLineP = line;
             }
         }
@@ -1145,6 +1157,9 @@ SessionReadRequest(TSession *    const sessionP,
    Leave the connection positioned to the body of the request, ready
    to be read by an HTTP request handler (via SessionRefillBuffer() and
    SessionGetReadData()).
+
+   We wait no longer than 'timeout' seconds from the time we are called for
+   the complete header to arrive.
 
    If we are unable to read the header, we return a text description as
    *errorP and a suitable HTTP status code as *httpErrorCodeP.
