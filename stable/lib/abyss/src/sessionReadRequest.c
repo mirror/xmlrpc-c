@@ -422,7 +422,8 @@ readRequestField(TSession *    const sessionP,
                 *requestLineP = line;
             }
         }
-    }
+    } else
+        *errorP = NULL;
 }
 
 
