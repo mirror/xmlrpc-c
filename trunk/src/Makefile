@@ -57,7 +57,7 @@ ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
   TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport
   TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curltransaction
   TRANSPORT_MODS += $(BLDDIR)/lib/curl_transport/curlmulti
-  TRANSPORT_LIBDEP += $(shell $CURL_CONFIG --libs)
+  TRANSPORT_LIBDEP += $(shell $(CURL_CONFIG) --libs)
   TRANSPORT_INCLUDES += -Isrcdir/lib/curl_transport
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
