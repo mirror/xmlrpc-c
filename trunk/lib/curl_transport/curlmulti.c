@@ -107,7 +107,7 @@ void
 curlMulti_destroy(curlMulti * const curlMultiP) {
 
     curl_multi_cleanup(curlMultiP->curlMultiP);
-    
+
     curlMultiP->lockP->destroy(curlMultiP->lockP);
 
     free(curlMultiP);
@@ -153,7 +153,7 @@ curlMulti_perform(xmlrpc_env * const envP,
             xmlrpc_strfree(reason);
         }
     }
-}        
+}
 
 
 
@@ -167,7 +167,7 @@ curlMulti_addHandle(xmlrpc_env *       const envP,
     curlMultiP->lockP->acquire(curlMultiP->lockP);
 
     rc = curl_multi_add_handle(curlMultiP->curlMultiP, curlSessionP);
-    
+
     curlMultiP->lockP->release(curlMultiP->lockP);
 
     /* Old libcurl (e.g. 7.12) actually returns CURLM_CALL_MULTI_PERFORM
@@ -193,7 +193,7 @@ curlMulti_removeHandle(curlMulti *       const curlMultiP,
     curlMultiP->lockP->acquire(curlMultiP->lockP);
 
     curl_multi_remove_handle(curlMultiP->curlMultiP, curlSessionP);
-    
+
     curlMultiP->lockP->release(curlMultiP->lockP);
 }
 
@@ -218,16 +218,16 @@ curlMulti_getMessage(curlMulti * const curlMultiP,
         */
 
     curlMultiP->lockP->acquire(curlMultiP->lockP);
-    
+
     privateCurlMsgP = curl_multi_info_read(curlMultiP->curlMultiP,
                                            &remainingMsgCount);
-        
+
     if (privateCurlMsgP == NULL)
         *endOfMessagesP = true;
     else {
         *endOfMessagesP = false;
         *curlMsgP = *privateCurlMsgP;
-    }    
+    }
     curlMultiP->lockP->release(curlMultiP->lockP);
 }
 
@@ -251,7 +251,7 @@ curlMulti_fdset(xmlrpc_env * const envP,
    for work with select().
 -----------------------------------------------------------------------------*/
     CURLMcode rc;
-    
+
     curlMultiP->lockP->acquire(curlMultiP->lockP);
 
     /* curl_multi_fdset() doesn't _set_ the fdsets.  It adds to existing
@@ -316,5 +316,5 @@ curlMulti_updateFdSet(curlMulti * const curlMultiP,
     curlMultiP->exceptFdSet = exceptFdSet;
 }
 
-                      
+
 
