@@ -9,6 +9,26 @@
       requires the user to maintain them separately.
 =============================================================================*/
 
+/* Engineering note: Modern Curl has an easier interface for waiting for
+   there to be something for libcurl to do: 'curl_multi_poll'.  Besides
+   being easier to code, it handles all file descriptors, whereas
+   the code here doesn't work for file descriptors > FD_SET (typically
+   1023).  For those, the user of this code ends up busywaiting for there
+   to be work to do on them.
+
+   'curl_multi_poll' is awkwardly nonmodular in the way it deals with programs
+   that need to wait simultaneously for libcurl to have work to do and for
+   other things, but our only user doesn't need to wait for anything but
+   libcurl to have work to do, so that is not a practical problem.
+
+   One thing 'curl_multi_poll' lacks that the current implementation has is
+   the ability to reliably stop waiting when a signal is received.
+   I.e. 'curl_multi_poll' does 'poll', not 'ppoll'.
+
+   But we ought to use 'curl_multi_poll' if we can.  We could use
+   HAVE_CURL_MULTI_POLL (set in Makefile, but not used today) for that.
+*/
+
 #define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 
 #include "xmlrpc_config.h"
