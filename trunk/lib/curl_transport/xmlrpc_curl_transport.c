@@ -474,6 +474,12 @@ waitForWork(xmlrpc_env *       const envP,
             /* There are no Curl file descriptors on which to wait.
                So either there's work to do right now or all transactions
                are already complete.
+
+               It may also be the case that there are Curl file descriptors on
+               which Caller should wait, but they are too high (> FD_SETSIZE)
+               to use with 'pselect'.  Libcurl doesn't provide a way to deal
+               with this case gracefully, so Caller will unfortunately end up
+               busywaiting for there to be work for libcurl to do.
             */
         } else {
             xmlrpc_timespec const pselectTimeoutArg =
