@@ -7,7 +7,7 @@
    A major goal of this file is to reduce conditional compilation in
    the other source files as much as possible.  Even more, we want to avoid
    having to generate source code particular to a build environment
-   except in this file.   
+   except in this file.
 
    This file is NOT meant to be used by any code outside of the
    Xmlrpc-c source tree.  There is a similar file that gets installed
@@ -73,7 +73,7 @@
   #if (!defined(__inline__))
     #if (defined(__sgi) || defined(_AIX) || defined(_MSC_VER))
       #define __inline__ __inline
-    #else   
+    #else
       #define __inline__
     #endif
   #endif
