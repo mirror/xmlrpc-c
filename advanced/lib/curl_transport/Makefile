@@ -43,6 +43,14 @@ ifeq ($(NEED_CURL_TYPES_H),Y)
   CFLAGS_LOCAL += -DNEED_CURL_TYPES_H
 endif
 
+# 074100 means 7.65.0
+HAVE_CURL_MULTI_POLL := $(shell if test $(CURL_VERSION) '>' 074100; then echo Y; fi)
+
+ifeq ($(HAVE_CURL_MULTI_POLL),Y)
+  CFLAGS_LOCAL += -DHAVE_CURL_MULTI_POLL
+endif
+
+
 CURL_INCLUDES := $(shell $(CURL_CONFIG) --cflags)
 # We expect that curl-config --cflags just gives us -I options, because
 # we need just the -I options for 'make dep'.  Plus, it's scary to think
