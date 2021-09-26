@@ -360,7 +360,7 @@ sockutil_waitForConnection(int                    const listenSockFd,
         xmlrpc_asprintf(errorP, "INTERNAL ERROR: interrupt socket hung up");
     } else if (pollfds[0].revents & POLLERR) {
         xmlrpc_asprintf(errorP, "listening socket is in POLLERR status");
-    } else if (pollfds[1].revents & POLLHUP) {
+    } else if (pollfds[1].revents & POLLERR) {
         xmlrpc_asprintf(errorP, "interrupt socket is in POLLERR status");
     } else {
         *errorP       = NULL;
