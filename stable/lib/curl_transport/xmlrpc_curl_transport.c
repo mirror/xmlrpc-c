@@ -474,6 +474,12 @@ waitForWork(xmlrpc_env *       const envP,
             /* There are no Curl file descriptors on which to wait.
                So either there's work to do right now or all transactions
                are already complete.
+
+               It may also be the case that there are Curl file descriptors on
+               which Caller should wait, but they are too high (> FD_SETSIZE)
+               to use with 'pselect'.  Libcurl doesn't provide a way to deal
+               with this case gracefully, so Caller will unfortunately end up
+               busywaiting for there to be work for libcurl to do.
             */
         } else {
             xmlrpc_timespec const pselectTimeoutArg =
@@ -941,6 +947,20 @@ getXportParms(xmlrpc_env *                          const envP,
 
     getConnectTimeoutParm(envP, curlXportParmsP, parmSize,
                           &curlSetupP->connectTimeout);
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepalive))
+        curlSetupP->tcpKeepalive = false;
+    else
+        curlSetupP->tcpKeepalive = curlXportParmsP->tcp_keepalive;
+
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepidle_sec))
+        curlSetupP->tcpKeepidle = 0;
+    else
+        curlSetupP->tcpKeepidle = curlXportParmsP->tcp_keepidle_sec;
+    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepintvl_sec))
+        curlSetupP->tcpKeepintvl = 0;
+    else
+        curlSetupP->tcpKeepintvl = curlXportParmsP->tcp_keepintvl_sec;
 }
 
 

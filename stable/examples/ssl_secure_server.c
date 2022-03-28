@@ -24,16 +24,16 @@
 
    You can drive the most difficult part of this example (initial SSL
    handshake) with the 'openssl' program that comes with OpenSSL, as follows.
-   
+
       $ ./ssl_secure_server 8080 &
-      $ openssl -connect localhost:8080 -state 
+      $ openssl -connect localhost:8080 -state
 
    The 'openssl' command connects and handshakes with the server, then waits
    for you to type stuff to send to the server.  You would have to type a
    complete HTTP header followed by a valid XML-RPC call to complete the
    demonstration.
 
-   This uses the "provide your own Abyss server" mode of operation, 
+   This uses the "provide your own Abyss server" mode of operation,
    as opposed to other Xmlrpc-c facilities that create an Abyss server under
    the covers, because this is the only way to get SSL.
 
@@ -89,7 +89,7 @@ sslInfoCallback(const SSL * const sslP,
                 SSL_alert_desc_string_long(ret));
     } else if (where & SSL_CB_EXIT) {
         if (ret == 0)
-            fprintf(stderr, "%s:failed in %s\n", 
+            fprintf(stderr, "%s:failed in %s\n",
                     str, SSL_state_string_long(sslP));
         else if (ret < 0) {
             fprintf(stderr, "%s:error in %s\n",
@@ -130,7 +130,7 @@ shutdownAbyss(xmlrpc_env * const faultP,
               void *       const context,
               const char * const comment,
               void *       const callInfo) {
-    
+
     TServer * const abyssServerP = context;
 
     xmlrpc_env_init(faultP);
@@ -141,11 +141,11 @@ shutdownAbyss(xmlrpc_env * const faultP,
 
 
 static xmlrpc_value *
-sample_add(xmlrpc_env *   const envP, 
+sample_add(xmlrpc_env *   const envP,
            xmlrpc_value * const paramArrayP,
            void *         const serverInfo,
            void *         const channelInfo) {
-    
+
     xmlrpc_int x, y, z;
 
     printPeerIpAddr(channelInfo);
@@ -164,8 +164,8 @@ sample_add(xmlrpc_env *   const envP,
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     struct xmlrpc_method_info3 const methodInfo = {
@@ -190,7 +190,7 @@ main(int           const argc,
     }
 
     AbyssInit(&error);
-    
+
     xmlrpc_env_init(&env);
 
     sslCtxP = SSL_CTX_new(SSLv23_server_method());
@@ -199,7 +199,7 @@ main(int           const argc,
 
     SSL_CTX_use_certificate_chain_file(sslCtxP,
                                        "/tmp/ssltest/certificate.pem");
-            
+
     SSL_CTX_use_PrivateKey_file(sslCtxP, "/tmp/ssltest/dsakey.pem",
                                 SSL_FILETYPE_PEM);
 

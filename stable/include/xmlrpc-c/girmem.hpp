@@ -42,7 +42,7 @@ protected:
 private:
     class Impl;
 
-    std::auto_ptr<Impl> const implP;
+    Impl * const implP;
 
     // Because of 'implP', we cannot allow copy construction, so this is
     // private:

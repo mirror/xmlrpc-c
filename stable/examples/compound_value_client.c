@@ -50,7 +50,7 @@
 #define NAME "Xmlrpc-c Test Client"
 #define VERSION "1.0"
 
-static void 
+static void
 dieIfFaultOccurred (xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
         fprintf(stderr, "ERROR: %s (%d)\n",
@@ -68,8 +68,8 @@ struct ratio {
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     const char * const serverUrl = "http://localhost:8080/RPC2";
@@ -114,21 +114,21 @@ main(int           const argc,
         dieIfFaultOccurred(&env);
         xmlrpc_struct_set_value(&env, ratioP, "DIVISOR",  divisorP);
         dieIfFaultOccurred(&env);
-        
+
         xmlrpc_array_append_item(&env, ratioArrayP, ratioP);
         dieIfFaultOccurred(&env);
 
         xmlrpc_DECREF(ratioP);
         xmlrpc_DECREF(divisorP);
         xmlrpc_DECREF(dividendP);
-    }        
+    }
 
     /* Make the call */
 
     resultP = xmlrpc_client_call(&env, serverUrl, methodName, "(iA)",
                                  (xmlrpc_int32) argVersion, ratioArrayP);
     dieIfFaultOccurred(&env);
-    
+
     /* Print out the quotients returned */
 
     quotientCt = xmlrpc_array_size(&env, resultP);
@@ -152,7 +152,7 @@ main(int           const argc,
     xmlrpc_DECREF(resultP);
 
     xmlrpc_env_clean(&env);
-    
+
     xmlrpc_client_cleanup();
 
     return 0;

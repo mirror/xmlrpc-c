@@ -2,7 +2,7 @@
                                   testclient
 ===============================================================================
   Test the client C++ facilities of XML-RPC for C/C++.
-  
+
   Contrary to what you might expect, we use the server facilities too
   because we test much of the client using a simulated server, via the
   "direct" client XML transport we define herein.
@@ -43,12 +43,12 @@ public:
     void
     execute(xmlrpc_c::paramList const& paramList,
             value *             const  retvalP) {
-        
+
         int const addend(paramList.getInt(0));
         int const adder(paramList.getInt(1));
-        
+
         paramList.verifyEnd(2);
-        
+
         *retvalP = value_int(addend + adder);
     }
 };
@@ -60,11 +60,11 @@ public:
     void
     execute(xmlrpc_c::paramList const& paramList,
             value *             const  retvalP) {
-        
+
         paramList.getNil(0);
-        
+
         paramList.verifyEnd(1);
-        
+
         *retvalP = value_i8(7ll);
     }
 };
@@ -89,7 +89,7 @@ class clientXmlTransport_direct : public clientXmlTransport {
    Part of a carriage parameter for a transport of this class is the handle
    of a method registry, so the transport knows how to execute the method.
 -----------------------------------------------------------------------------*/
-public:    
+public:
     void
     call(xmlrpc_c::carriageParm * const  carriageParmP,
          string                   const& callXml,
@@ -126,11 +126,11 @@ public:
         return "clientDirectAsyncTestSuite";
     }
     virtual void runtests(unsigned int const) {
-        
+
         registry myRegistry;
-        
+
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-        
+
         carriageParm_direct carriageParmDirect(&myRegistry);
         clientXmlTransport_direct transportDirect;
         client_xml clientDirect(&transportDirect);
@@ -158,7 +158,7 @@ public:
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result1(rpcSampleAdd1P->getResult());
         TEST(static_cast<int>(result1) == 12);
-        
+
         TEST(rpcSampleAdd2P->isFinished());
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result2(rpcSampleAdd2P->getResult());
@@ -203,9 +203,9 @@ public:
     }
     virtual void runtests(unsigned int const ) {
         registry myRegistry;
-        
+
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-        
+
         carriageParm_direct carriageParmDirect(&myRegistry);
         clientXmlTransport_direct transportDirect;
         client_xml clientDirect(&transportDirect);
@@ -242,9 +242,9 @@ public:
     }
     virtual void runtests(unsigned int const indentation) {
         registry myRegistry;
-        
+
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-        
+
         carriageParm_direct carriageParmDirect(&myRegistry);
         clientXmlTransport_direct transportDirect;
         client_xml clientDirect(&transportDirect);
@@ -307,7 +307,7 @@ public:
             // This transport class isn't interruptible
         EXPECT_ERROR(clientDirect.setInterrupt(&interruptFlag););
             // Same as above
-        
+
         clientDirectAsyncTestSuite().run(indentation+1);
 
         clientDerivedRpcTestSuite().run(indentation+1);
@@ -359,7 +359,10 @@ public:
             .gssapi_delegation(true)
             .timeout(0)
             .connect_timeout(0)
-            );            
+            .tcp_keepalive(true)
+            .tcp_keepidle_sec(5)
+            .tcp_keepintvl_sec(4)
+            );
 
         clientXmlTransport_curl transport5(
             clientXmlTransport_curl::constrOpt()
@@ -456,7 +459,7 @@ public:
             clientXmlTransport_http::create());
         carriageParm_http0 carriageParm0("http://whatsamatta.edux");
         client_xml client0(transportP);
-        
+
         rpcOutcome outcome;
 
         // Fails because there's no such server
@@ -493,7 +496,7 @@ public:
                 clientXmlTransport_pstream::constrOpt()
                 .fd(devNullFd)
                 );
-            
+
             string callXml("hello");
             string responseXml;
             EXPECT_ERROR(transport2.call(NULL, callXml, &responseXml););
@@ -564,7 +567,7 @@ public:
             );
     }
 };
-        
+
 
 
 class clientCurlIntTestSuite : public testSuite {
@@ -585,7 +588,7 @@ public:
         carriageParm_curl0 carriageParmCurl("http://nosuchserver8677.com");
 
         paramList paramList0;
-        
+
         rpcOutcome outcome0;
 
         int interruptFlag;
@@ -596,7 +599,7 @@ public:
         EXPECT_ERROR(
             client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
                 );
-        interruptFlag = 0; 
+        interruptFlag = 0;
         // This fails because server doesn't exist
         EXPECT_ERROR(
             client0.call(&carriageParmCurl, "blowme", paramList0, &outcome0);
@@ -631,7 +634,7 @@ public:
         connection connection0(&client0, &carriageParmHttp);
 
         paramList paramList0;
-        
+
         rpcOutcome outcome0;
 
         // This fails because server doesn't exist
@@ -744,9 +747,9 @@ public:
     virtual void runtests(unsigned int) {
 
         registry myRegistry;
-        
+
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
-        
+
         carriageParm_direct carriageParm0(&myRegistry);
         clientXmlTransport_direct transportDirect;
         client_xml client0(&transportDirect);
@@ -761,7 +764,7 @@ public:
             TEST(!rpcSampleAddP->isFinished());
             // This fails because RPC has not been executed
             EXPECT_ERROR(value result(rpcSampleAddP->getResult()););
-            
+
             rpcSampleAddP->call(&client0, &carriageParm0);
 
             TEST(rpcSampleAddP->isFinished());
@@ -820,11 +823,11 @@ public:
     }
     virtual void runtests(unsigned int) {
         registry myRegistry;
-        
+
         myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
         carriageParm_direct carriageParmDirect(&myRegistry);
         clientXmlTransport_direct transportDirect;
-        
+
         clientPtr clientP(new client_xml(&transportDirect));
 
         clientPtr client2P(clientP);
@@ -936,13 +939,13 @@ clientTestSuite::runtests(unsigned int const indentation) {
     clientDirectTestSuite().run(indentation+1);
 
     clientXmlTransportTestSuite().run(indentation+1);
-    
+
     carriageParmTestSuite().run(indentation+1);
-    
+
     clientCurlTestSuite().run(indentation+1);
 
     clientRpcTestSuite().run(indentation+1);
-    
+
     clientPtrTestSuite().run(indentation+1);
 
     clientSimpleTestSuite().run(indentation+1);

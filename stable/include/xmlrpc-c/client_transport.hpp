@@ -308,6 +308,9 @@ public:
         constrOpt & proxy_type        (xmlrpc_httpproxytype const& arg);
         constrOpt & gssapi_delegation (bool         const& arg);
         constrOpt & connect_timeout   (unsigned int const& arg);
+        constrOpt & tcp_keepalive     (bool         const& arg);
+        constrOpt & tcp_keepidle_sec  (unsigned int const& arg);
+        constrOpt & tcp_keepintvl_sec (unsigned int const& arg);
 
     private:
         struct constrOpt_impl * implP;

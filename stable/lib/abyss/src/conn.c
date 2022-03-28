@@ -82,7 +82,7 @@ static void
 threadDone(void * const userHandle) {
 
     TConn * const connectionP = userHandle;
-    
+
     connDone(connectionP);
 }
 
@@ -94,7 +94,7 @@ makeThread(TConn *             const connectionP,
            bool                const useSigchld,
            size_t              const jobStackSize,
            const char **       const errorP) {
-           
+
     switch (foregroundBackground) {
     case ABYSS_FOREGROUND:
         connectionP->hasOwnThread = false;
@@ -117,7 +117,7 @@ makeThread(TConn *             const connectionP,
     } /* switch */
 }
 
-    
+
 
 void
 ConnCreate(TConn **            const connectionPP,
@@ -297,7 +297,7 @@ nextLineSize(const char * const string,
    string 'string', which is 'stringSize' characters long.
 
    'string' in not NUL-terminated.
-   
+
    A line begins at beginning of string or after a newline character and
    runs through the next newline character or end of string.  The line
    includes the newline character at the end, if any.
@@ -331,7 +331,7 @@ traceBuffer(const char *          const label,
         size_t const lineSize = nextLineSize(buffer_t, cursor, size);
         const char * const printableLine =
             xmlrpc_makePrintable_lp(&buffer_t[cursor], lineSize);
-        
+
         fprintf(stderr, "%s\n", printableLine);
 
         cursor += lineSize;
@@ -369,7 +369,7 @@ traceChannelWrite(TConn *      const connectionP,
                   const char * const buffer,
                   unsigned int const size,
                   bool         const failed) {
-    
+
     if (connectionP->trace) {
         const char * const label =
             failed ? "FAILED TO WRITE TO CHANNEL" : "WROTE TO CHANNEL";
@@ -501,10 +501,10 @@ ConnRead(TConn *       const connectionP,
 
         bool readyForRead;
         bool failed;
-            
+
         ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
                     timeoutMs, &readyForRead, NULL, &failed);
-            
+
         if (failed)
             xmlrpc_asprintf(errorP,
                             "Wait for stuff to arrive from client failed.");
@@ -529,7 +529,7 @@ ConnRead(TConn *       const connectionP,
 }
 
 
-            
+
 bool
 ConnWrite(TConn *      const connectionP,
           const void * const buffer,
@@ -591,19 +591,19 @@ ConnWriteFromFile(TConn *       const connectionP,
             uint64_t const bytesLeft     = totalBytesToRead - bytesread;
             uint64_t const bytesToRead64 = MIN(readChunkSize, bytesLeft);
             uint32_t const bytesToRead   = (uint32_t)bytesToRead64;
-            
+
             uint32_t bytesReadThisTime;
 
             assert(bytesToRead == bytesToRead64); /* readChunkSize is uint32 */
 
             bytesReadThisTime = FileRead(fileP, buffer, bytesToRead);
             bytesread += bytesReadThisTime;
-            
+
             if (bytesReadThisTime > 0)
                 ConnWrite(connectionP, buffer, bytesReadThisTime);
             else
                 break;
-            
+
             if (waittime > 0)
                 xmlrpc_millisecond_sleep(waittime);
         }
@@ -649,7 +649,7 @@ ConnFormatClientAddr(TConn *       const connectionP,
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
 **    derived from this software without specific prior written permission.
-** 
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE

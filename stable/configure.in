@@ -722,7 +722,7 @@ AC_ARG_ENABLE(abyss-openssl,
 
 if test $enable_abyss_openssl = maybe; then
   if test $HAVE_OPENSSL = no; then
-    AC_MSG_NOTICE([You don't appear to Openssl installed (no pkg-config file for it in your pkg-config search path), so we will not build the Abyss Openssl channel module])
+    AC_MSG_NOTICE([You don't appear to have Openssl installed (no pkg-config file for it in your pkg-config search path), so we will not build the Abyss Openssl channel module])
     MUST_BUILD_ABYSS_OPENSSL=no
   else
     MUST_BUILD_ABYSS_OPENSSL=yes

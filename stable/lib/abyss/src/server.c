@@ -1,5 +1,6 @@
 /* Copyright information is at end of file */
 
+#define _DEFAULT_SOURCE /* New name for SVID & BSD source defines */
 #define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 #define _BSD_SOURCE  /* Make sure setgroups()is in <grp.h> */
 
@@ -106,7 +107,7 @@ logOpen(struct _TServer * const srvP,
         *errorP = NULL;
 
         srvP->logfileisopen = true;
-            
+
         if (*errorP)
             FileClose(srvP->logfileP);
     } else
@@ -174,7 +175,7 @@ initChanSwitchStuff(struct _TServer * const srvP,
                     bool              const userChanSwitch,
                     unsigned short    const port,
                     const char **     const errorP) {
-    
+
 
     if (chanSwitchP) {
         *errorP = NULL;
@@ -203,7 +204,7 @@ createServer(struct _TServer ** const srvPP,
              bool               const noAccept,
              TChanSwitch *      const chanSwitchP,
              bool               const userChanSwitch,
-             unsigned short     const portNumber,             
+             unsigned short     const portNumber,
              const char **      const errorP) {
 /*----------------------------------------------------------------------------
    Create a server object and return it as *srvPP.
@@ -249,13 +250,13 @@ createServer(struct _TServer ** const srvPP,
                 ListInitAutoFree(&srvP->handlers);
 
                 srvP->logfileisopen = false;
-                
+
                 *errorP = NULL;
 
                 if (*errorP)
                     HandlerDestroy(srvP->builtinHandlerP);
             }
-        }        
+        }
         if (*errorP)
             free(srvP);
     }
@@ -315,7 +316,7 @@ ServerCreate(TServer *       const serverP,
         success = false;
     } else {
         success = true;
-    
+
         setNamePathLog(serverP, name, filesPath, logFileName);
     }
 
@@ -395,7 +396,7 @@ ServerCreateSocket(TServer *    const serverP,
             xmlrpc_strfree(error);
         } else {
             success = true;
-            
+
             setNamePathLog(serverP, name, filesPath, logFileName);
         }
         if (!success)
@@ -435,7 +436,7 @@ ServerCreateNoAccept(TServer *    const serverP,
         xmlrpc_strfree(error);
     } else {
         success = true;
-        
+
         setNamePathLog(serverP, name, filesPath, logFileName);
     }
     return success;
@@ -472,7 +473,7 @@ void
 ServerCreateSocket2(TServer *     const serverP,
                     TSocket *     const socketP,
                     const char ** const errorP) {
-    
+
     TChanSwitch * const chanSwitchP = SocketGetChanSwitch(socketP);
 
     assert(socketP);
@@ -521,7 +522,7 @@ ServerFree(TServer * const serverP) {
     ListFree(&srvP->handlers);
 
     HandlerDestroy(srvP->builtinHandlerP);
-    
+
     logClose(srvP);
 
     if (srvP->logfilename)
@@ -537,7 +538,7 @@ ServerSetName(TServer *    const serverP,
               const char * const name) {
 
     xmlrpc_strfree(serverP->srvP->name);
-    
+
     serverP->srvP->name = strdup(name);
 }
 
@@ -555,12 +556,12 @@ ServerSetFilesPath(TServer *    const serverP,
 void
 ServerSetLogFileName(TServer *    const serverP,
                      const char * const logFileName) {
-    
+
     struct _TServer * const srvP = serverP->srvP;
 
     if (srvP->logfilename)
         xmlrpc_strfree(srvP->logfilename);
-    
+
     srvP->logfilename = strdup(logFileName);
 }
 
@@ -605,7 +606,7 @@ ServerSetAdvertise(TServer *  const serverP,
 void
 ServerSetMimeType(TServer *  const serverP,
                   MIMEType * const mimeTypeP) {
-    
+
     HandlerSetMimeType(serverP->srvP->builtinHandlerP, mimeTypeP);
 }
 
@@ -665,12 +666,12 @@ runUserHandler(TSession *        const sessionP,
 
     abyss_bool handled;
     int i;
-    
+
     for (i = srvP->handlers.size-1, handled = false;
          i >= 0 && !handled;
          --i) {
         const struct uriHandler * const handlerP = srvP->handlers.item[i];
-        
+
         if (handlerP->handleReq3)
             handlerP->handleReq3(handlerP->userdata, sessionP, &handled);
         if (handlerP->handleReq2) {
@@ -681,7 +682,7 @@ runUserHandler(TSession *        const sessionP,
     }
 
     assert(srvP->defaultHandler);
-    
+
     if (!handled)
         srvP->defaultHandler(sessionP);
 }
@@ -698,9 +699,9 @@ handleReqTooNewHttpVersion(TSession * const sessionP) {
     xmlrpc_asprintf(&msg, "Request is in HTTP Version %u"
                     "We understand only HTTP 1",
                     sessionP->version.major);
-    
+
     ResponseError2(sessionP, msg);
-    
+
     xmlrpc_strfree(msg);
 }
 
@@ -766,7 +767,7 @@ processRequestFromClient(TConn *         const connectionP,
     SessionInit(&session, connectionP);
 
     session.serverDeniesKeepalive = lastReqOnConn;
-        
+
     SessionReadRequest(&session, timeout, &error, &httpErrorCode);
 
     if (error) {
@@ -825,7 +826,7 @@ serverFunc(void * const userHandle) {
     while (!connectionDone) {
         bool timedOut, eof;
         const char * readError;
-        
+
         /* Wait for and get beginning (at least ) of next request.  We do
            this separately from getting the rest of the request because we
            treat dead time between requests differently from dead time in
@@ -853,19 +854,19 @@ serverFunc(void * const userHandle) {
             trace(&srvP->tracer,
                   "HTTP request %u at least partially received.  "
                   "Receiving the rest and processing", requestCount);
-            
+
             processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
                                      &srvP->tracer, &keepalive);
 
             trace(&srvP->tracer,
                   "Done processing the HTTP request.  Keepalive = %s",
                   keepalive ? "YES" : "NO");
-            
+
             ++requestCount;
 
             if (!keepalive)
                 connectionDone = true;
-            
+
             /**************** Must adjust the read buffer *****************/
             ConnReadInit(connectionP);
         }
@@ -893,7 +894,7 @@ createSwitchFromPortNum(unsigned short const portNumber,
 #else
     ChanSwitchUnixCreate(portNumber, chanSwitchPP, errorP);
 #endif
-}    
+}
 
 
 
@@ -903,7 +904,7 @@ createChanSwitch(struct _TServer * const srvP,
 
     TChanSwitch * chanSwitchP;
     const char * error;
-    
+
     /* Not valid to call this when channel switch already exists: */
     assert(srvP->chanSwitchP == NULL);
 
@@ -915,7 +916,7 @@ createChanSwitch(struct _TServer * const srvP,
         xmlrpc_strfree(error);
     } else {
         *errorP = NULL;
-        
+
         srvP->weCreatedChanSwitch = true;
         srvP->chanSwitchP         = chanSwitchP;
     }
@@ -935,7 +936,7 @@ ServerInit2(TServer *     const serverP,
    user supplies the channels (TCP connections)).
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
-    
+
     if (!srvP->serverAcceptsConnections)
         xmlrpc_asprintf(errorP,
                         "ServerInit() is not valid on a server that doesn't "
@@ -991,7 +992,7 @@ ServerInit(TServer * const serverP) {
 
 
 
-/* We don't do any locking on the outstanding connections list, so 
+/* We don't do any locking on the outstanding connections list, so
    we must make sure that only the master thread (the one that listens
    for connections) ever accesses it.
 
@@ -1062,12 +1063,12 @@ freeFinishedConns(outstandingConnList * const listP) {
         TConn * const connectionP = (*pp);
 
         ThreadUpdateStatus(connectionP->threadP);
-        
+
         if (connectionP->finished) {
             /* Take it out of the list */
             *pp = connectionP->nextOutstandingP;
             --listP->count;
-            
+
             ConnWaitAndRelease(connectionP);
         } else {
             /* Move to next connection in list */
@@ -1103,7 +1104,7 @@ waitForNoConnections(outstandingConnList * const outstandingConnListP) {
 
     while (outstandingConnListP->firstP) {
         freeFinishedConns(outstandingConnListP);
-    
+
         if (outstandingConnListP->firstP)
             waitForConnectionFreed(outstandingConnListP);
     }
@@ -1141,7 +1142,7 @@ interruptChannels(outstandingConnList * const outstandingConnListP) {
             /* The connection couldn't be waiting on the channel, and the
                channel probably doesn't even exit anymore.
             */
-        } else 
+        } else
             ChannelInterrupt(connP->channelP);
     }
 }
@@ -1162,7 +1163,7 @@ void
 ServerUseSigchld(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
-    
+
     srvP->useSigchld = true;
 }
 
@@ -1199,18 +1200,18 @@ processNewChannel(TServer *             const serverP,
                   const char **         const errorP) {
 
     struct _TServer * const srvP = serverP->srvP;
-                      
+
     TConn * connectionP;
     const char * error;
 
     freeFinishedConns(outstandingConnListP);
-            
+
     trace(&srvP->tracer, "Waiting for there to be fewer than the maximum "
           "%u sessions in progress",
           srvP->maxConn);
 
     waitForConnectionCapacity(outstandingConnListP, srvP->maxConn);
-            
+
     ConnCreate(&connectionP, serverP, channelP, channelInfoP,
                &serverFunc,
                SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
@@ -1249,9 +1250,9 @@ acceptAndProcessNextConnection(
 
     assert(srvP->readyToAccept);
     assert(srvP->chanSwitchP);
-        
+
     ChanSwitchAccept(srvP->chanSwitchP, &channelP, &channelInfoP, &error);
-    
+
     if (error) {
         xmlrpc_asprintf(errorP,
                         "Failed to accept the next connection from a client "
@@ -1289,7 +1290,7 @@ acceptAndProcessNextConnection(
 
 
 
-static void 
+static void
 serverRun2(TServer *     const serverP,
            const char ** const errorP) {
 
@@ -1301,7 +1302,7 @@ serverRun2(TServer *     const serverP,
     *errorP = NULL;  /* initial value */
 
     trace(&srvP->tracer, "Starting main connection accepting loop");
-    
+
     while (!srvP->terminationRequested && !*errorP)
         acceptAndProcessNextConnection(serverP, outstandingConnListP, errorP);
 
@@ -1316,7 +1317,7 @@ serverRun2(TServer *     const serverP,
         interruptChannels(outstandingConnListP);
 
         waitForNoConnections(outstandingConnListP);
-    
+
         trace(&srvP->tracer, "No connections left");
 
         destroyOutstandingConnList(outstandingConnListP);
@@ -1325,7 +1326,7 @@ serverRun2(TServer *     const serverP,
 
 
 
-void 
+void
 ServerRun(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
@@ -1335,7 +1336,7 @@ ServerRun(TServer * const serverP) {
     if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
-                 "Try ServerRunConn()");
+                 "Try ServerRunConn2()");
     else if (!srvP->readyToAccept)
         TraceMsg("You cannot run this server until you initialize it to "
                  "accept connections, with ServerInit()");
@@ -1376,7 +1377,7 @@ serverRunChannel(TServer *     const serverP,
 
     srvP->keepalivemaxconn = 1;
 
-    ConnCreate(&connectionP, 
+    ConnCreate(&connectionP,
                serverP, channelP, channelInfoP,
                &serverFunc, SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
                NULL, ABYSS_FOREGROUND, srvP->useSigchld,
@@ -1460,7 +1461,7 @@ ServerRunConn(TServer * const serverP,
     createChannelFromOsSocket(connectedOsSocket,
                               &channelP, &channelInfoP, &error);
     if (error) {
-        TraceExit("Unable to use supplied socket");
+        TraceExit("Unable to use supplied socket.  %s", error);
         xmlrpc_strfree(error);
     } else {
         const char * error;
@@ -1485,7 +1486,7 @@ ServerRunOnce(TServer * const serverP) {
    Accept a connection from the channel switch and do the HTTP transaction
    that comes over it.
 
-   If no connection is presently waiting at the switch, wait for one.  But
+   If no connection is currently waiting at the switch, wait for one.  But
    return immediately if we receive a signal during the wait.
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = serverP->srvP;
@@ -1495,7 +1496,7 @@ ServerRunOnce(TServer * const serverP) {
     if (!srvP->serverAcceptsConnections)
         TraceMsg("This server is not set up to accept connections "
                  "on its own, so you can't use ServerRun().  "
-                 "Try ServerRunConn()");
+                 "Try ServerRunConn2()");
     else if (!srvP->readyToAccept)
         TraceMsg("You cannot run this server until you initialize it to "
                  "accept connections, with ServerInit()");
@@ -1503,7 +1504,7 @@ ServerRunOnce(TServer * const serverP) {
         const char * error;
         TChannel *   channelP;
         void *       channelInfoP;
-    
+
         srvP->keepalivemaxconn = 1;
 
         assert(srvP->chanSwitchP);
@@ -1558,7 +1559,7 @@ ServerRunOnce2(TServer *           const serverP,
 static void
 setGroups(const char ** const errorP) {
 
-#if HAVE_SETGROUPS   
+#if HAVE_SETGROUPS
     if (setgroups(0, NULL) == -1)
         xmlrpc_asprintf(errorP, "setgroups() errno = %d (%s)",
                         errno, strerror(errno));
@@ -1591,11 +1592,12 @@ ServerDaemonize(TServer * const serverP) {
         break;
     case -1:
         TraceExit("Unable to become a daemon");
+        break;
     default:
         /* We are the parent */
         exit(0);
     }
-    
+
     setsid();
 
     /* Change the current user if we are root */
@@ -1616,14 +1618,14 @@ ServerDaemonize(TServer * const serverP) {
         if (srvP->gid != (gid_t)-1)
             if (setgid(srvP->gid)==(-1))
                 TraceExit("Failed to change the group.");
-        
+
         if (setuid(srvP->uid) == -1)
             TraceExit("Failed to change the user.");
     }
-    
+
     if (srvP->pidfileP) {
         char z[16];
-    
+
         sprintf(z, "%d", XMLRPC_GETPID());
         FileWrite(srvP->pidfileP, z, strlen(z));
         FileClose(srvP->pidfileP);
@@ -1663,7 +1665,7 @@ serverAddHandler(TServer *     const serverP,
 
         srvP->uriHandlerStackSize =
             MAX(srvP->uriHandlerStackSize, handleReqStackSize);
-        
+
         if (handlerP->init == NULL)
             *successP = true;
         else {
@@ -1706,7 +1708,7 @@ ServerAddHandler2(TServer *     const serverP,
        one which is our argument, but it isn't the same one.  User can
        discard *handlerArgP as soon as we return.
     */
-    
+
     serverAddHandler(serverP,
                      handlerArgP->init,
                      handlerArgP->term,
@@ -1789,7 +1791,7 @@ LogWrite(TServer *    const serverP,
         srvP->logLockP->acquire(srvP->logLockP);
         FileWrite(srvP->logfileP, msg, strlen(msg));
         FileWrite(srvP->logfileP, lbr, strlen(lbr));
-        
+
         srvP->logLockP->release(srvP->logLockP);
     }
 }
@@ -1812,7 +1814,7 @@ LogWrite(TServer *    const serverP,
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
 **    derived from this software without specific prior written permission.
-** 
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE

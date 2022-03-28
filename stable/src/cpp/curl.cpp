@@ -160,6 +160,9 @@ struct clientXmlTransport_curl::constrOpt_impl {
         xmlrpc_httpproxytype proxy_type;
         bool         gssapi_delegation;
         unsigned int connect_timeout;
+        bool         tcp_keepalive;
+        unsigned int tcp_keepidle_sec;
+        unsigned int tcp_keepintvl_sec;
     } value;
     struct {
         bool network_interface;
@@ -190,6 +193,9 @@ struct clientXmlTransport_curl::constrOpt_impl {
         bool proxy_type;
         bool gssapi_delegation;
         bool connect_timeout;
+        bool tcp_keepalive;
+        bool tcp_keepidle_sec;
+        bool tcp_keepintvl_sec;
     } present;
 };
 
@@ -223,6 +229,9 @@ clientXmlTransport_curl::constrOpt_impl::constrOpt_impl() {
     present.proxy_type        = false;
     present.gssapi_delegation = false;
     present.connect_timeout   = false;
+    present.tcp_keepalive     = false;
+    present.tcp_keepidle_sec  = false;
+    present.tcp_keepintvl_sec = false;
 }
 
 
@@ -263,6 +272,9 @@ DEFINE_OPTION_SETTER(proxy_userpwd, string);
 DEFINE_OPTION_SETTER(proxy_type, xmlrpc_httpproxytype);
 DEFINE_OPTION_SETTER(gssapi_delegation, bool);
 DEFINE_OPTION_SETTER(connect_timeout, unsigned int);
+DEFINE_OPTION_SETTER(tcp_keepalive, bool);
+DEFINE_OPTION_SETTER(tcp_keepidle_sec, unsigned int);
+DEFINE_OPTION_SETTER(tcp_keepintvl_sec, unsigned int);
 
 #undef DEFINE_OPTION_SETTER
 
@@ -351,6 +363,10 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
         opt.value.gssapi_delegation         : false;
     transportParms.connect_timeout   = opt.present.connect_timeout ? 
         opt.value.connect_timeout           : 0;
+    transportParms.tcp_keepalive     = opt.present.tcp_keepalive ?
+        opt.value.tcp_keepalive             : false;
+    transportParms.tcp_keepidle_sec  = opt.present.tcp_keepidle_sec ?
+        opt.value.tcp_keepidle_sec          : 0;
 
     this->c_transportOpsP = &xmlrpc_curl_transport_ops;
 
@@ -358,7 +374,7 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
 
     xmlrpc_curl_transport_ops.create(
         &env.env_c, 0, "", "",
-        &transportParms, XMLRPC_CXPSIZE(gssapi_delegation),
+        &transportParms, XMLRPC_CXPSIZE(tcp_keepalive),
         &this->c_transportP);
 
     if (env.env_c.fault_occurred)

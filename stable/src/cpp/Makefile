@@ -78,7 +78,7 @@ PKGCONFIG_FILES_TO_INSTALL := \
   xmlrpc_server_pstream++.pc \
 
 OMIT_CPP_LIB_RULES = Y
-MAJ = 8
+MAJ = 9
   # Major number of shared libraries in this directory
 
 include $(SRCDIR)/common.mk

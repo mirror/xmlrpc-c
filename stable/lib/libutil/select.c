@@ -14,7 +14,7 @@
 #include <sys/select.h>
 #include <time.h>  /* For struct timespec on some systems */
 #endif
-#endif 
+#endif
 #include <signal.h>
 
 #include "xmlrpc-c/select_int.h"
@@ -43,7 +43,7 @@ xmlrpc_pselect(int                     const n,
 #endif
 #else /* HAVE_PSELECT */
     struct timeval timeout;
-    
+
     timeout.tv_sec  = timeoutP->tv_sec;
     timeout.tv_usec = timeoutP->tv_nsec/1000;
 #if MSVCRT
@@ -60,3 +60,6 @@ xmlrpc_pselect(int                     const n,
 
     return retval;
 }
+
+
+
