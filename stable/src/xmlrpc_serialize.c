@@ -41,7 +41,7 @@ addString(xmlrpc_env *       const envP,
 
 
 
-static void 
+static void
 formatOut(xmlrpc_env *       const envP,
           xmlrpc_mem_block * const outputP,
           const char *       const formatString,
@@ -85,7 +85,7 @@ formatOut(xmlrpc_env *       const envP,
 
 
 
-static void 
+static void
 assertValidUtf8(const char * const str ATTR_UNUSED,
                 size_t       const len ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
@@ -112,7 +112,7 @@ assertValidUtf8(const char * const str ATTR_UNUSED,
 static size_t
 escapedSize(const char * const chars,
             size_t       const len) {
-    
+
     size_t size;
     size_t i;
 
@@ -135,7 +135,7 @@ escapedSize(const char * const chars,
 
 
 static void
-escapeForXml(xmlrpc_env *        const envP, 
+escapeForXml(xmlrpc_env *        const envP,
              const char *        const chars,
              size_t              const len,
              xmlrpc_mem_block ** const outputPP) {
@@ -148,7 +148,7 @@ escapeForXml(xmlrpc_env *        const envP,
    symmetry.
 
    &lt; etc. are known in XML as "entity references."
-   
+
    Also Escape CR as &#x0d; .  While raw CR _is_ allowed in the content
    of an XML element, it has a special meaning -- it means line ending.
    Our input uses LF for for line endings.  Since it also means line ending
@@ -214,7 +214,7 @@ escapeForXml(xmlrpc_env *        const envP,
 
 
 
-static void 
+static void
 serializeUtf8MemBlock(xmlrpc_env *       const envP,
                       xmlrpc_mem_block * const outputP,
                       xmlrpc_mem_block * const inputP) {
@@ -247,7 +247,7 @@ serializeUtf8MemBlock(xmlrpc_env *       const envP,
         const char * const contents =
             XMLRPC_MEMBLOCK_CONTENTS(const char, escapedP);
         size_t const size = XMLRPC_MEMBLOCK_SIZE(char, escapedP);
-    
+
         XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, contents, size);
 
         XMLRPC_MEMBLOCK_FREE(const char, escapedP);
@@ -256,10 +256,10 @@ serializeUtf8MemBlock(xmlrpc_env *       const envP,
 
 
 
-static void 
+static void
 xmlrpc_serialize_base64_data(xmlrpc_env *       const envP,
                              xmlrpc_mem_block * const output,
-                             unsigned char *    const data, 
+                             unsigned char *    const data,
                              size_t             const len) {
 /*----------------------------------------------------------------------------
    Encode the 'len' bytes at 'data' in base64 ASCII and append the result to
@@ -271,11 +271,11 @@ xmlrpc_serialize_base64_data(xmlrpc_env *       const envP,
     if (!envP->fault_occurred) {
         unsigned char * const contents =
             XMLRPC_MEMBLOCK_CONTENTS(unsigned char, encoded);
-        size_t const size = 
+        size_t const size =
             XMLRPC_MEMBLOCK_SIZE(unsigned char, encoded);
-        
+
         XMLRPC_MEMBLOCK_APPEND(char, envP, output, contents, size);
-        
+
         XMLRPC_MEMBLOCK_FREE(char, encoded);
     }
 }
@@ -306,7 +306,7 @@ serializeDatetime(xmlrpc_env *       const envP,
                         valueP->_value.dt.s);
 
         if (valueP->_value.dt.u != 0) {
-            char usecString[64];
+            char usecString[32];
             assert(valueP->_value.dt.u < 1000000);
             XMLRPC_SNPRINTF(usecString, sizeof(usecString), ".%06u",
                             valueP->_value.dt.u);
@@ -328,7 +328,7 @@ serializeStructMember(xmlrpc_env *       const envP,
                       xmlrpc_value *     const memberKeyP,
                       xmlrpc_value *     const memberValueP,
                       xmlrpc_dialect     const dialect) {
-    
+
     addString(envP, outputP, "<member><name>");
 
     if (!envP->fault_occurred) {
@@ -350,7 +350,7 @@ serializeStructMember(xmlrpc_env *       const envP,
 
 
 
-static void 
+static void
 serializeStruct(xmlrpc_env *       const envP,
                 xmlrpc_mem_block * const outputP,
                 xmlrpc_value *     const structP,
@@ -412,7 +412,7 @@ serializeArray(xmlrpc_env *       const envP,
     }
     if (!envP->fault_occurred)
         addString(envP, outputP, "</data></array>");
-} 
+}
 
 
 
@@ -482,7 +482,7 @@ formatValueContent(xmlrpc_env *       const envP,
             if (!envP->fault_occurred)
                 addString(envP, outputP, "</base64>");
         }
-    } break;      
+    } break;
 
     case XMLRPC_TYPE_ARRAY:
         serializeArray(envP, outputP, valueP, dialect);
@@ -513,7 +513,7 @@ formatValueContent(xmlrpc_env *       const envP,
 
 
 
-void 
+void
 xmlrpc_serialize_value2(xmlrpc_env *       const envP,
                         xmlrpc_mem_block * const outputP,
                         xmlrpc_value *     const valueP,
@@ -539,7 +539,7 @@ xmlrpc_serialize_value2(xmlrpc_env *       const envP,
 
 
 
-void 
+void
 xmlrpc_serialize_value(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
                        xmlrpc_value *     const valueP) {
@@ -549,7 +549,7 @@ xmlrpc_serialize_value(xmlrpc_env *       const envP,
 
 
 
-void 
+void
 xmlrpc_serialize_params2(xmlrpc_env *       const envP,
                          xmlrpc_mem_block * const outputP,
                          xmlrpc_value *     const paramArrayP,
@@ -591,7 +591,7 @@ xmlrpc_serialize_params2(xmlrpc_env *       const envP,
 
 
 
-void 
+void
 xmlrpc_serialize_params(xmlrpc_env *       const envP,
                         xmlrpc_mem_block * const outputP,
                         xmlrpc_value *     const paramArrayP) {
@@ -608,9 +608,9 @@ xmlrpc_serialize_params(xmlrpc_env *       const envP,
 **  xmlrpc_serialize_call
 **=========================================================================
 **  Serialize an XML-RPC call.
-*/                
+*/
 
-void 
+void
 xmlrpc_serialize_call2(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
                        const char *       const methodName,
@@ -626,7 +626,7 @@ xmlrpc_serialize_call2(xmlrpc_env *       const envP,
     XMLRPC_ASSERT(outputP != NULL);
     XMLRPC_ASSERT(methodName != NULL);
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
-    
+
     addString(envP, outputP, XML_PROLOGUE);
     if (!envP->fault_occurred) {
         const char * const xmlns =
@@ -657,7 +657,7 @@ xmlrpc_serialize_call2(xmlrpc_env *       const envP,
 
 
 
-void 
+void
 xmlrpc_serialize_call(xmlrpc_env *       const envP,
                       xmlrpc_mem_block * const outputP,
                       const char *       const methodName,
@@ -669,7 +669,7 @@ xmlrpc_serialize_call(xmlrpc_env *       const envP,
 
 
 
-void 
+void
 xmlrpc_serialize_response2(xmlrpc_env *       const envP,
                            xmlrpc_mem_block * const outputP,
                            xmlrpc_value *     const valueP,
@@ -699,12 +699,12 @@ xmlrpc_serialize_response2(xmlrpc_env *       const envP,
                           "</methodResponse>"CRLF);
             }
         }
-    }    
+    }
 }
 
 
 
-void 
+void
 xmlrpc_serialize_response(xmlrpc_env *       const envP,
                           xmlrpc_mem_block * const outputP,
                           xmlrpc_value *     const valueP) {
@@ -714,7 +714,7 @@ xmlrpc_serialize_response(xmlrpc_env *       const envP,
 
 
 
-void 
+void
 xmlrpc_serialize_fault(xmlrpc_env *       const envP,
                        xmlrpc_mem_block * const outputP,
                        const xmlrpc_env * const faultP) {
@@ -765,8 +765,8 @@ xmlrpc_serialize_fault(xmlrpc_env *       const envP,
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE

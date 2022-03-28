@@ -92,7 +92,7 @@ ThreadCreate(TThread **      const threadPP,
             pthread_attr_init(&attr);
 
             pthread_attr_setstacksize(&attr, MAX(MIN_STACK_SIZE, stackSize));
-        
+
             threadP->userHandle = userHandle;
             threadP->func       = func;
             threadP->threadDone = threadDone;
@@ -106,7 +106,7 @@ ThreadCreate(TThread **      const threadPP,
                 xmlrpc_asprintf(
                     errorP, "pthread_create() failed, errno = %d (%s)",
                     errno, strerror(errno));
-        
+
             pthread_attr_destroy(&attr);
 
             if (*errorP)
@@ -119,7 +119,7 @@ ThreadCreate(TThread **      const threadPP,
 
 bool
 ThreadRun(TThread * const threadP ATTR_UNUSED) {
-    return true;    
+    return true;
 }
 
 

@@ -55,7 +55,7 @@ xmlrpc_registry_new(xmlrpc_env * const envP) {
     xmlrpc_registry * registryP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    
+
     MALLOCVAR(registryP);
 
     if (registryP == NULL)
@@ -79,7 +79,7 @@ xmlrpc_registry_new(xmlrpc_env * const envP) {
 
 
 
-void 
+void
 xmlrpc_registry_free(xmlrpc_registry * const registryP) {
 
     XMLRPC_ASSERT_PTR_OK(registryP);
@@ -91,7 +91,7 @@ xmlrpc_registry_free(xmlrpc_registry * const registryP) {
 
 
 
-static void 
+static void
 registryAddMethod(xmlrpc_env *      const envP,
                   xmlrpc_registry * const registryP,
                   const char *      const methodName,
@@ -126,7 +126,7 @@ registryAddMethod(xmlrpc_env *      const envP,
 
 
 
-void 
+void
 xmlrpc_registry_add_method_w_doc(
     xmlrpc_env *      const envP,
     xmlrpc_registry * const registryP,
@@ -145,7 +145,7 @@ xmlrpc_registry_add_method_w_doc(
 
 
 
-void 
+void
 xmlrpc_registry_add_method(xmlrpc_env *      const envP,
                            xmlrpc_registry * const registryP,
                            const char *      const host,
@@ -189,7 +189,7 @@ xmlrpc_registry_add_method3(
 
 
 
-void 
+void
 xmlrpc_registry_set_default_method(
     xmlrpc_env *          const envP ATTR_UNUSED,
     xmlrpc_registry *     const registryP ATTR_UNUSED,
@@ -240,7 +240,7 @@ xmlrpc_registry_max_stackSize(xmlrpc_registry * const registryP) {
     for (p = registryP->methodListP->firstMethodP, stackSize = 0;
          p;
          p = p->nextP) {
-        
+
         stackSize = MAX(stackSize, methodStackSize(p->methodP));
     }
     return stackSize;
@@ -248,7 +248,7 @@ xmlrpc_registry_max_stackSize(xmlrpc_registry * const registryP) {
 
 
 
-void 
+void
 xmlrpc_registry_set_preinvoke_method(
     xmlrpc_env *            const envP ATTR_UNUSED,
     xmlrpc_registry *       const registryP ATTR_UNUSED,
@@ -316,9 +316,9 @@ callNamedMethod(xmlrpc_env *        const envP,
 
 
 void
-xmlrpc_dispatchCall(xmlrpc_env *      const envP, 
+xmlrpc_dispatchCall(xmlrpc_env *      const envP,
                     xmlrpc_registry * const registryP,
-                    const char *      const methodName, 
+                    const char *      const methodName,
                     xmlrpc_value *    const paramArrayP,
                     void *            const callInfoP,
                     xmlrpc_value **   const resultPP) {
@@ -345,7 +345,7 @@ xmlrpc_dispatchCall(xmlrpc_env *      const envP,
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_NO_SUCH_METHOD_ERROR,
                     "Method '%s' not defined", methodName);
-            } 
+            }
         }
     }
     /* For backward compatibility, for sloppy users: */
@@ -397,7 +397,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(callXml);
-    
+
     xmlrpc_traceXml("XML-RPC CALL", callXml, callXmlLen);
 
     /* Allocate our output buffer.
@@ -412,7 +412,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
         xmlrpc_env_init(&fault);
         xmlrpc_env_init(&parseEnv);
 
-        xmlrpc_parse_call(&parseEnv, callXml, callXmlLen, 
+        xmlrpc_parse_call(&parseEnv, callXml, callXmlLen,
                           &methodName, &paramArrayP);
 
         if (parseEnv.fault_occurred)
@@ -422,7 +422,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
                 parseEnv.fault_string);
         else {
             xmlrpc_value * resultP;
-            
+
             xmlrpc_dispatchCall(&fault, registryP, methodName, paramArrayP,
                                 callInfo, &resultP);
 
@@ -431,7 +431,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
                                            resultP, registryP->dialect);
 
                 xmlrpc_DECREF(resultP);
-            } 
+            }
             xmlrpc_strfree(methodName);
             xmlrpc_DECREF(paramArrayP);
         }
@@ -445,7 +445,7 @@ xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
             XMLRPC_MEMBLOCK_FREE(char, responseXmlP);
         else {
             *responseXmlPP = responseXmlP;
-            xmlrpc_traceXml("XML-RPC RESPONSE", 
+            xmlrpc_traceXml("XML-RPC RESPONSE",
                             XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlP),
                             XMLRPC_MEMBLOCK_SIZE(char, responseXmlP));
         }
@@ -484,8 +484,8 @@ xmlrpc_registry_process_call(xmlrpc_env *      const envP,
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE

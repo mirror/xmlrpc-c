@@ -32,6 +32,23 @@ extern "C" {
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
+#ifdef __cplusplus
+  #if __cplusplus >= 201103
+    /* GCC 4.7 implements a partial version of C++11 while saying that it
+       implements the standard, so we have to make an exception here.  There
+       are probably other versions with the same problem, but this is the only
+       one we know about.
+    */
+    #if __GNUC__ == 4 && __GNUC_MINOR__ == 7
+      #define UNIQUE_PTR auto_ptr
+    #else
+      #define UNIQUE_PTR unique_ptr
+    #endif
+  #else
+    #define UNIQUE_PTR auto_ptr
+  #endif
+#endif
+
 /* When we deallocate a pointer in a struct, we often replace it with
 ** this and throw in a few assertions here and there. */
 #define XMLRPC_BAD_POINTER ((void*) 0xDEADBEEF)
@@ -61,7 +78,7 @@ xmlrpc_mem_pool_free(xmlrpc_mem_pool * const poolP);
 
 XMLRPC_UTIL_EXPORTED
 void
-xmlrpc_mem_pool_alloc(xmlrpc_env *      const envP, 
+xmlrpc_mem_pool_alloc(xmlrpc_env *      const envP,
                       xmlrpc_mem_pool * const poolP,
                       size_t            const size);
 

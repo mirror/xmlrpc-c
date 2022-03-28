@@ -86,13 +86,13 @@ static unsigned int globallyInitialized = 0;
 
 void
 xmlrpc_server_abyss_global_init(xmlrpc_env * const envP) {
-    
+
     /* Note that this is specified as not thread safe; user calls it at
        the beginning of his program, when it is only one thread.
     */
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    
+
     if (globallyInitialized == 0)
         initAbyss(envP);
 
@@ -133,7 +133,7 @@ processXmlrpcCall(xmlrpc_env *        const envP,
                   void *              const arg,
                   const char *        const callXml,
                   size_t              const callXmlLen,
-                  TSession *          const abyssSessionP,                  
+                  TSession *          const abyssSessionP,
                   xmlrpc_mem_block ** const responseXmlPP) {
 
     xmlrpc_registry * const registryP = arg;
@@ -151,14 +151,14 @@ setHandler(xmlrpc_env *              const envP,
            TServer *                 const srvP,
            struct uriHandlerXmlrpc * const uriHandlerXmlrpcP,
            size_t                    const xmlProcessorMaxStackSize) {
-    
+
     abyss_bool success;
 
     xmlrpc_abyss_handler_trace(
         getenv("XMLRPC_TRACE_ABYSS"));
-                                 
+
     {
-        size_t const stackSize = 
+        size_t const stackSize =
             xmlrpc_abyss_handler_stacksize() + xmlProcessorMaxStackSize;
         struct ServerReqHandler3 const handlerDesc = {
             /* .term               = */ &xmlrpc_termUriHandler,
@@ -252,7 +252,7 @@ xmlrpc_server_abyss_set_handler3(
             uriHandlerXmlrpcP->chunkResponse = parmsP->chunk_response;
         else
             uriHandlerXmlrpcP->chunkResponse = false;
-        
+
         interpretHttpAccessControl(parmsP, parmSize,
                                    &uriHandlerXmlrpcP->accessControl);
 
@@ -290,7 +290,7 @@ xmlrpc_server_abyss_set_handler2(
 
     xmlrpc_server_abyss_set_handler3(&env, srvP,
                                      &parms, XMLRPC_AHPSIZE(chunk_response));
-    
+
     if (env.fault_occurred)
         abort();
 
@@ -316,14 +316,14 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                      &parms, XMLRPC_AHPSIZE(uri_path));
 }
 
-    
+
 
 void
 xmlrpc_server_abyss_set_default_handler(TServer * const srvP) {
 
     ServerDefaultHandler(srvP, xmlrpc_serverAbyssDefaultUriHandler);
 }
-    
+
 
 
 static void
@@ -351,7 +351,7 @@ setHandlersRegistry(TServer *         const srvP,
 
     xmlrpc_server_abyss_set_handler3(
         &env, srvP, &parms, XMLRPC_AHPSIZE(access_ctl_max_age));
-    
+
     if (env.fault_occurred)
         abort();
 
@@ -465,7 +465,7 @@ extractSockAddrParms(xmlrpc_env *                      const envP,
             portNumber = parmsP->port_number;
         else
             portNumber = 8080;
-        
+
         if (portNumber > 0xffff)
             xmlrpc_faultf(envP,
                           "TCP port number %u exceeds the maximum possible "
@@ -473,7 +473,7 @@ extractSockAddrParms(xmlrpc_env *                      const envP,
                           portNumber);
 
         *portNumberP = portNumber;
-    }        
+    }
 }
 
 
@@ -489,7 +489,7 @@ extractServerCreateParms(
     unsigned int *                    const portNumberP,
     TOsSocket *                       const socketFdP,
     const char **                     const logFileNameP) {
-                   
+
 
     if (parmSize >= XMLRPC_APSIZE(socket_bound))
         *socketBoundP = parmsP->socket_bound;
@@ -559,10 +559,10 @@ chanSwitchCreateSockAddr(int                     const protocolFamily,
                          const char **           const errorP) {
 
 #if MSVCRT
-    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+    ChanSwitchWinCreate2(protocolFamily, sockAddrP, sockAddrLen,
                           chanSwitchPP, errorP);
 #else
-    ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen, 
+    ChanSwitchUnixCreate2(protocolFamily, sockAddrP, sockAddrLen,
                           chanSwitchPP, errorP);
 #endif
 
@@ -624,7 +624,7 @@ createChanSwitchIpv4Port(xmlrpc_env *          const envP,
     chanSwitchCreateSockAddr(PF_INET, (const struct sockaddr *)&sockAddr,
                              sizeof(sockAddr),
                              chanSwitchPP, &error);
-    
+
     if (error) {
         xmlrpc_faultf(envP, "Unable to create Abyss channel switch "
                       "to listen on Port %u at any IPv4 address.  %s",
@@ -680,9 +680,9 @@ createServerBare(xmlrpc_env *                      const envP,
                 xmlrpc_strfree(error);
             } else {
                 *chanSwitchPP = chanSwitchP;
-                    
+
                 ServerSetName(serverP, "XmlRpcServer");
-            
+
                 if (logFileName)
                     ServerSetLogFileName(serverP, logFileName);
             }
@@ -699,7 +699,7 @@ createServerBare(xmlrpc_env *                      const envP,
 static const char *
 uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
             unsigned int                      const parmSize) {
-    
+
     const char * uriPath;
 
     if (parmSize >= XMLRPC_APSIZE(uri_path) && parmsP->uri_path)
@@ -719,7 +719,7 @@ chunkResponseParm(const xmlrpc_server_abyss_parms * const parmsP,
     return
         parmSize >= XMLRPC_APSIZE(chunk_response) &&
         parmsP->chunk_response;
-}    
+}
 
 
 
@@ -730,7 +730,7 @@ allowOriginParm(const xmlrpc_server_abyss_parms * const parmsP,
     return
         parmSize >= XMLRPC_APSIZE(allow_origin) ?
         parmsP->allow_origin : NULL;
-}    
+}
 
 
 
@@ -741,7 +741,7 @@ expiresParm(const xmlrpc_server_abyss_parms * const parmsP,
     return
         parmSize >= XMLRPC_APSIZE(access_ctl_expires) ?
         parmsP->access_ctl_expires : false;
-}    
+}
 
 
 
@@ -752,7 +752,7 @@ maxAgeParm(const xmlrpc_server_abyss_parms * const parmsP,
     return
         parmSize >= XMLRPC_APSIZE(access_ctl_max_age) ?
         parmsP->access_ctl_max_age : 0;
-}    
+}
 
 
 
@@ -769,14 +769,14 @@ createServer(xmlrpc_env *                      const envP,
         const char * error;
 
         setAdditionalServerParms(parmsP, parmSize, abyssServerP);
-        
+
         setHandlersRegistry(abyssServerP, uriPathParm(parmsP, parmSize),
                             parmsP->registryP,
                             chunkResponseParm(parmsP, parmSize),
                             allowOriginParm(parmsP, parmSize),
                             expiresParm(parmsP, parmSize),
                             maxAgeParm(parmsP, parmSize));
-        
+
         ServerInit2(abyssServerP, &error);
 
         if (error) {
@@ -822,7 +822,7 @@ shutdownAbyss(xmlrpc_env * const faultP,
     xmlrpc_server_abyss_t * const serverP = context;
 
     xmlrpc_env_init(faultP);
-    
+
     if (!serverP->shutdownEnabled)
         xmlrpc_env_set_fault_formatted(
             faultP, XMLRPC_REQUEST_REFUSED_ERROR,
@@ -866,14 +866,14 @@ xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
             else {
                 createServer(envP, parmsP, parmSize,
                              &serverP->abyssServer, &serverP->chanSwitchP);
-            
+
                 if (!envP->fault_occurred) {
                     serverP->shutdownEnabled =
                         enableShutdownParm(parmsP, parmSize);
 
                     xmlrpc_registry_set_shutdown(
                         parmsP->registryP, &shutdownAbyss, serverP);
-                
+
                     if (envP->fault_occurred)
                         free(serverP);
                     else
@@ -938,7 +938,7 @@ xmlrpc_server_abyss_reset_terminate(
 
 
 
-static void 
+static void
 sigchld(int const signalClass ATTR_UNUSED) {
 /*----------------------------------------------------------------------------
    This is a signal handler for a SIGCHLD signal (which informs us that
@@ -959,19 +959,19 @@ sigchld(int const signalClass ATTR_UNUSED) {
 
     error = false;
     childrenLeft = true;  /* initial assumption */
-    
+
     /* Reap defunct children until there aren't any more. */
     while (childrenLeft && !error) {
         int status;
         pid_t pid;
 
         pid = waitpid((pid_t) -1, &status, WNOHANG);
-    
+
         if (pid == 0)
             childrenLeft = false;
         else if (pid < 0) {
             /* because of ptrace */
-            if (errno != EINTR)   
+            if (errno != EINTR)
                 error = true;
         } else
             ServerHandleSigchld(pid);
@@ -1000,19 +1000,19 @@ static void
 setupSignalHandlers(xmlrpc_server_abyss_sig * const oldHandlersP) {
 #if !MSVCRT
     struct sigaction mysigaction;
-    
+
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
 
     /* This signal indicates connection closed in the middle */
     mysigaction.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &mysigaction, &oldHandlersP->pipe);
-    
+
     /* This signal indicates a child process (request handler) has died */
     mysigaction.sa_handler = sigchld;
     sigaction(SIGCHLD, &mysigaction, &oldHandlersP->chld);
 #endif
-}    
+}
 
 
 
@@ -1065,7 +1065,7 @@ xmlrpc_server_abyss_restore_sig(
 
     restoreSignalHandlers(oldHandlersP);
 }
-                                 
+
 
 
 static void
@@ -1080,7 +1080,7 @@ runServerDaemon(TServer *  const serverP,
     ServerUseSigchld(serverP);
 
     ServerDaemonize(serverP);
-    
+
     /* We run the user supplied runfirst after forking, but before accepting
        connections (helpful when running with threads)
     */
@@ -1099,7 +1099,7 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP,
                      const xmlrpc_server_abyss_parms * const parmsP,
                      unsigned int                      const parmSize) {
 /*----------------------------------------------------------------------------
-   This is the old deprecated interface, where the caller of the 
+   This is the old deprecated interface, where the caller of the
    xmlrpc_server_abyss API supplies an Abyss configuration file and
    we use it to daemonize (fork into the background, chdir, set uid, etc.)
    and run the Abyss server.
@@ -1121,16 +1121,16 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP,
         void * runfirstArg;
 
         assert(parmSize >= XMLRPC_APSIZE(config_file_name));
-    
+
         ConfReadServerFile(parmsP->config_file_name, &server);
-        
+
         assert(parmSize >= XMLRPC_APSIZE(registryP));
-    
+
         setHandlersRegistry(&server, "/RPC2", parmsP->registryP, false, NULL,
                             false, 0);
-        
+
         ServerInit(&server);
-    
+
         if (parmSize >= XMLRPC_APSIZE(runfirst_arg)) {
             runfirst    = parmsP->runfirst;
             runfirstArg = parmsP->runfirst_arg;
@@ -1150,7 +1150,7 @@ static void
 normalLevelAbyssRun(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parmsP,
                     unsigned int                      const parmSize) {
-    
+
     xmlrpc_server_abyss_t * serverP;
 
     xmlrpc_server_abyss_create(envP, parmsP, parmSize, &serverP);
@@ -1231,7 +1231,7 @@ static xmlrpc_registry * builtin_registryP;
 
 
 
-void 
+void
 xmlrpc_server_abyss_init_registry(void) {
 
     /* This used to just create the registry and Caller would be
@@ -1241,7 +1241,7 @@ xmlrpc_server_abyss_init_registry(void) {
        together; there's no sense in using the built-in registry and
        not the built-in handlers because if you're custom building
        something, you can just make your own regular registry.  So now
-       we tie them together, and we don't export our handlers.  
+       we tie them together, and we don't export our handlers.
     */
     xmlrpc_env env;
 
@@ -1269,7 +1269,7 @@ xmlrpc_server_abyss_registry(void) {
 
 
 /* A quick & easy shorthand for adding a method. */
-void 
+void
 xmlrpc_server_abyss_add_method(char *        const method_name,
                                xmlrpc_method const method,
                                void *        const user_data) {
@@ -1297,13 +1297,13 @@ xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
         &env, builtin_registryP, NULL, method_name,
         method, user_data, signature, help);
     dieIfFaultOccurred(&env);
-    xmlrpc_env_clean(&env);    
+    xmlrpc_env_clean(&env);
 }
 
 
 
-void 
-xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED, 
+void
+xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED,
                          const char * const config_file) {
 
     abyss_bool success;
@@ -1327,16 +1327,16 @@ xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED,
 
 
 
-void 
+void
 xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
                               void *     const runfirstArg) {
-    
+
     runServerDaemon(&globalSrv, runfirst, runfirstArg);
 }
 
 
 
-void 
+void
 xmlrpc_server_abyss_run(void) {
     runServerDaemon(&globalSrv, NULL, NULL);
 }
@@ -1355,8 +1355,8 @@ xmlrpc_server_abyss_run(void) {
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -1369,6 +1369,6 @@ xmlrpc_server_abyss_run(void) {
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE.
 **
-** There is more copyright information in the bottom half of this file. 
-** Please see it for more details. 
+** There is more copyright information in the bottom half of this file.
+** Please see it for more details.
 */

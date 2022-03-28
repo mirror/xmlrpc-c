@@ -120,7 +120,7 @@ sockutil_getSockName(int                const sockFd,
     socklen_t nameSize;
 
     nameSize = sizeof(struct sockaddr) + 1;
-    
+
     sockName = malloc(nameSize);
 
     if (sockName == NULL)
@@ -164,7 +164,7 @@ sockutil_getPeerName(int                const sockFd,
     socklen_t nameSize;
 
     nameSize = sizeof(struct sockaddr) + 1;
-    
+
     peerName = malloc(nameSize);
 
     if (peerName == NULL)
@@ -263,9 +263,9 @@ sockutil_formatPeerInfo(int           const sockFd,
     int rc;
 
     sockaddrLen = sizeof(sockaddr);
-    
+
     rc = getpeername(sockFd, &sockaddr, &sockaddrLen);
-    
+
     if (rc < 0)
         xmlrpc_asprintf(peerStringP, "?? getpeername() failed.  errno=%d (%s)",
                         errno, strerror(errno));
@@ -341,7 +341,7 @@ sockutil_waitForConnection(int                    const listenSockFd,
 
     pollfds[1].fd = interruptPipe.interrupteeFd;
     pollfds[1].events = POLLIN;
-    
+
     rc = poll(pollfds, ARRAY_SIZE(pollfds), -1);
 
     if (rc < 0) {
@@ -418,7 +418,7 @@ sockutil_bindSocketToPort(int                     const fd,
                           const struct sockaddr * const sockAddrP,
                           socklen_t               const sockAddrLen,
                           const char **           const errorP) {
-    
+
     int rc;
 
     rc = bind(fd, sockAddrP, sockAddrLen);
@@ -442,7 +442,7 @@ void
 sockutil_bindSocketToPortInet(int           const fd,
                               uint16_t      const portNumber,
                               const char ** const errorP) {
-    
+
     struct sockaddr_in name;
     int rc;
 
