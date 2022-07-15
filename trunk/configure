@@ -633,8 +633,7 @@ have_xml2_config
 HAVE_LIBWWW_SSL_DEFINE
 HAVE_ABYSS_OPENSSL_DEFINE
 MUST_BUILD_ABYSS_OPENSSL
-OPENSSL_CFLAGS
-OPENSSL_LDADD
+HAVE_OPENSSL
 CURL_LIBDIR
 CURL_LDADD
 CURL_CONFIG
@@ -5990,16 +5989,13 @@ $as_echo_n "checking for OpenSSL library... " >&6; }
 
 if pkg-config openssl; then
   HAVE_OPENSSL=yes
-  OPENSSL_LDADD=$(pkg-config openssl --libs)
-
-  OPENSSL_CFLAGS=$(pkg-config openssl --cflags)
-
 else
   HAVE_OPENSSL=no
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_OPENSSL" >&5
 $as_echo "$HAVE_OPENSSL" >&6; }
+
 
 # One really annoying case where the user needs to disable building of
 # Openssl-based parts explicitly is where there is no Openssl for the target

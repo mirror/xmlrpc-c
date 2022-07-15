@@ -24,6 +24,12 @@ static unsigned int maxLockCt;
 
 
 
+#pragma GCC diagnostic push
+/* Openssl library may define CRYPTO_set_locking_callback to expand to nothing,
+   in which case the following will be unreferenced.
+*/
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 static void
 lock(int          const mode,
      int          const lockId,
@@ -44,7 +50,15 @@ lock(int          const mode,
         pthread_mutex_unlock(mutexP);
 }
 
+#pragma GCC diagnostic pop
 
+
+
+#pragma GCC diagnostic push
+/* Openssl library may define CRYPTO_set_id_callback to expand to nothing,
+   in which case the following will be unreferenced.
+*/
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 static unsigned long
 id(void) {
@@ -54,6 +68,8 @@ id(void) {
 -----------------------------------------------------------------------------*/
     return ((unsigned long)pthread_self());
 }
+
+#pragma GCC diagnostic pop
 
 
 
