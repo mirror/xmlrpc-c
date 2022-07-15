@@ -698,15 +698,12 @@ AC_MSG_CHECKING(for OpenSSL library)
 
 if pkg-config openssl; then
   HAVE_OPENSSL=yes
-  OPENSSL_LDADD=$(pkg-config openssl --libs)
-  AC_SUBST(OPENSSL_LDADD)
-  OPENSSL_CFLAGS=$(pkg-config openssl --cflags)
-  AC_SUBST(OPENSSL_CFLAGS)
 else
   HAVE_OPENSSL=no
 fi
 
 AC_MSG_RESULT($HAVE_OPENSSL)
+AC_SUBST(HAVE_OPENSSL)
 
 # One really annoying case where the user needs to disable building of
 # Openssl-based parts explicitly is where there is no Openssl for the target
