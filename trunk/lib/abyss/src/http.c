@@ -136,7 +136,7 @@ RequestAuth(TSession *   const sessionP,
 
     authValue = RequestHeaderValue(sessionP, "authorization");
     if (authValue) {
-        char * const valueBuffer = malloc(strlen(authValue));
+        char * const valueBuffer = malloc(strlen(authValue) + 1);
             /* A buffer we can mangle as we parse the authorization: value */
 
         if (!authValue)
@@ -146,7 +146,7 @@ RequestAuth(TSession *   const sessionP,
             const char * authType;
             char * authHdrPtr;
 
-            strcpy(valueBuffer, authValue);
+            strcpy(valueBuffer, authValue);  /* initial value */
             authHdrPtr = &valueBuffer[0];
 
             NextToken((const char **)&authHdrPtr);
