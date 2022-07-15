@@ -19,9 +19,9 @@ static pthread_mutex_t * opensslMutex;
        has created.  opensslMutex[N] is the mutex for the lock known by
        OpenSSL with ID N.
     */
-      
+
 static unsigned int maxLockCt;
- 
+
 
 
 static void
@@ -83,7 +83,7 @@ xmlrpc_openssl_thread_setup(const char ** const errorP) {
                         "potential OpenSSL locks", maxLockCt);
     else {
         *errorP = NULL;
-        
+
         unsigned int i;
 
         for (i = 0;  i < maxLockCt;  ++i)
@@ -120,5 +120,6 @@ xmlrpc_openssl_thread_cleanup() {
     }
     free(opensslMutex);
 }
+
 
 
