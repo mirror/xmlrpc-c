@@ -101,7 +101,7 @@ ifeq ($(ENABLE_ABYSS_THREADS),yes)
   $(ABYSS_SHLIB):  LIBDEP += $(THREAD_LIBS)
 endif
 ifeq ($(MUST_BUILD_ABYSS_OPENSSL),yes)
-$(ABYSS_SHLIB): LIBDEP += $(shell pkg-config openssl --libs)
+$(ABYSS_SHLIB): LIBDEP += $(shell $(PKG_CONFIG) openssl --libs)
 endif
 
 # Rule for this is in common.mk, courtesy of TARGET_STATIC_LIBRARIES:
@@ -117,7 +117,8 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 # Abyss library are in common.mk, courtesy of TARGET_MODS.
 
 ifeq ($(MUST_BUILD_ABYSS_OPENSSL),yes)
-socket_openssl.o socket_openssl.osh: CFLAGS_TARGET+=$(shell pkg-config openssl --flags)
+socket_openssl.o socket_openssl.osh: \
+  CFLAGS_TARGET+=$(shell $(PKG_CONFIG) openssl --flags)
 endif
 
 #-----------------------------------------------------------------------------

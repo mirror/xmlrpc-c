@@ -59,6 +59,8 @@ INSTALL = $(SRCDIR)/install-sh
 C_COMPILER_GNU = @C_COMPILER_GNU@
 CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
 
+PKG_CONFIG ?= pkg-config
+
 # Stuff 'configure' figured out via AC_CANONICAL_HOST macro in configure.in
 # and config.guess program and 'configure' command options:
 
