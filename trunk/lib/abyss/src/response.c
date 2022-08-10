@@ -46,17 +46,17 @@ ResponseError2(TSession *   const sessionP,
     ResponseAddField(sessionP, "Content-type", "text/html");
 
     ResponseWriteStart(sessionP);
-    
+
     xmlrpc_asprintf(&errorDocument,
                     "<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
                     "<BODY>"
                     "<H1>Error %d</H1>"
-                    "<P>%s</P>" SERVER_HTML_INFO 
+                    "<P>%s</P>" SERVER_HTML_INFO
                     "</BODY>"
                     "</HTML>",
                     sessionP->status, sessionP->status, explanation);
-    
-    ConnWrite(sessionP->connP, errorDocument, strlen(errorDocument)); 
+
+    ConnWrite(sessionP->connP, errorDocument, strlen(errorDocument));
 
     xmlrpc_strfree(errorDocument);
 }
@@ -175,7 +175,7 @@ ResponseAddField(TSession *   const sessionP,
                  const char * const value) {
 
     abyss_bool succeeded;
-    
+
     if (!isValidHttpToken(name)) {
         TraceMsg("Supplied HTTP header field name is not a valid HTTP token");
         succeeded = false;
@@ -197,7 +197,7 @@ addConnectionHeaderFld(TSession * const sessionP) {
 
     if (HTTPKeepalive(sessionP)) {
         const char * keepaliveValue;
-        
+
         ResponseAddField(sessionP, "Connection", "Keep-Alive");
 
         xmlrpc_asprintf(&keepaliveValue, "timeout=%u, max=%u",
@@ -209,7 +209,7 @@ addConnectionHeaderFld(TSession * const sessionP) {
     } else
         ResponseAddField(sessionP, "Connection", "close");
 }
-    
+
 
 
 static void
@@ -371,7 +371,7 @@ ResponseWriteStart(TSession * const sessionP) {
     */
     sendHeader(sessionP->connP, sessionP->responseHeaderFields);
 
-    ConnWrite(sessionP->connP, "\r\n", 2);  
+    ConnWrite(sessionP->connP, "\r\n", 2);
 }
 
 
@@ -408,7 +408,7 @@ ResponseContentLength(TSession *      const sessionP,
                       xmlrpc_uint64_t const len) {
 
     char contentLengthValue[32];
-    
+
     sprintf(contentLengthValue, "%" PRIu64, len);
 
     return ResponseAddField(sessionP, "Content-length", contentLengthValue);
@@ -417,7 +417,7 @@ ResponseContentLength(TSession *      const sessionP,
 
 
 void
-ResponseAccessControl(TSession *        const abyssSessionP, 
+ResponseAccessControl(TSession *        const abyssSessionP,
                       ResponseAccessCtl const accessControl) {
 
     if (accessControl.allowOrigin) {
@@ -456,7 +456,7 @@ static MIMEType * globalMimeTypeP = NULL;
 
 MIMEType *
 MIMETypeCreate(void) {
- 
+
     MIMEType * MIMETypeP;
 
     MALLOCVAR(MIMETypeP);
@@ -510,7 +510,7 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
             const char * const type,
             const char * const ext,
             bool *       const successP) {
-    
+
     uint16_t index;
     void * mimeTypesItem;
     bool typeIsInList;
@@ -538,7 +538,7 @@ mimeTypeAdd(MIMEType *   const MIMETypeP,
                     ListAdd(&MIMETypeP->typeList, mimeTypesItem);
                 if (addedToMimeTypes) {
                     bool addedToExt;
-                    
+
                     addedToExt = ListAdd(&MIMETypeP->extList, extItem);
                     *successP = addedToExt;
                     if (!*successP)
@@ -568,7 +568,7 @@ MIMETypeAdd2(MIMEType *   const MIMETypeArg,
 
     if (MIMETypeP == NULL)
         success = false;
-    else 
+    else
         mimeTypeAdd(MIMETypeP, type, ext, &success);
 
     return success;
@@ -600,7 +600,7 @@ mimeTypeFromExt(MIMEType *   const MIMETypeP,
         retval = NULL;
     else
         retval = MIMETypeP->typeList.item[extindex];
-    
+
     return retval;
 }
 
@@ -644,7 +644,7 @@ findExtension(const char *  const fileName,
     /* We're looking for the last dot after the last slash */
     for (i = 0, extFound = false; fileName[i]; ++i) {
         char const c = fileName[i];
-        
+
         if (c == '.') {
             extFound = true;
             extPos = i + 1;
@@ -669,7 +669,7 @@ mimeTypeFromFileName(MIMEType *   const MIMETypeP,
     const char * ext;
 
     assert(MIMETypeP != NULL);
-    
+
     findExtension(fileName, &ext);
 
     if (ext)
@@ -687,7 +687,7 @@ MIMETypeFromFileName2(MIMEType *   const MIMETypeArg,
                       const char * const fileName) {
 
     const char * retval;
-    
+
     MIMEType * MIMETypeP = MIMETypeArg ? MIMETypeArg : globalMimeTypeP;
 
     if (MIMETypeP == NULL)
@@ -726,13 +726,13 @@ fileContainsText(const char * const fileName) {
         unsigned int i;
 
         readRc = FileRead(fileP, buffer, sizeof(buffer));
-       
+
         if (readRc >= 0) {
             unsigned int bytesRead = readRc;
             bool nonTextFound;
 
             nonTextFound = false;  /* initial value */
-    
+
             for (i = 0; i < bytesRead; ++i) {
                 char const c = buffer[i];
                 if (c < ' ' && !isspace(c) && c != ctlZ)
@@ -749,7 +749,7 @@ fileContainsText(const char * const fileName) {
 }
 
 
- 
+
 static const char *
 mimeTypeGuessFromFile(MIMEType *   const MIMETypeP,
                       const char * const fileName) {
@@ -763,12 +763,12 @@ mimeTypeGuessFromFile(MIMEType *   const MIMETypeP,
 
     if (ext && MIMETypeP)
         retval = MIMETypeFromExt2(MIMETypeP, ext);
-    
+
     if (!retval) {
         if (fileContainsText(fileName))
             retval = "text/plain";
         else
-            retval = "application/octet-stream";  
+            retval = "application/octet-stream";
     }
     return retval;
 }
@@ -791,7 +791,7 @@ MIMETypeGuessFromFile(const char * const fileName) {
     return mimeTypeGuessFromFile(globalMimeTypeP, fileName);
 }
 
-                                  
+
 
 /******************************************************************************
 **
@@ -810,7 +810,7 @@ MIMETypeGuessFromFile(const char * const fileName) {
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
 **    derived from this software without specific prior written permission.
-** 
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
