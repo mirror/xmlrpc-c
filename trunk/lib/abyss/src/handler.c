@@ -137,7 +137,7 @@ cmpfiledates(const TFileInfo ** const f1PP,
     else if (!(f1P->attrib & A_SUBDIR) && (f2P->attrib & A_SUBDIR))
         retval = 1;
     else {
-        assert((int)(f1P->time_write - f2P->time_write) == 
+        assert((int)(f1P->time_write - f2P->time_write) ==
                (f1P->time_write - f2P->time_write));
         retval = (int)(f1P->time_write - f2P->time_write);
     }
@@ -157,7 +157,7 @@ determineSortType(const char *  const query,
     *sortP = 1;
     *textP = false;
     *errorP = NULL;
-    
+
     if (query) {
         if (xmlrpc_streq(query, "plain"))
             *textP = true;
@@ -188,7 +188,7 @@ generateListing(TList *       const listP,
                 TPool *       const poolP,
                 const char ** const errorP,
                 uint16_t *    const responseStatusP) {
-    
+
     TFileInfo fileinfo;
     TFileFind * findhandleP;
 
@@ -225,7 +225,7 @@ generateListing(TList *       const listP,
         if (*errorP) {
             *responseStatusP = 500;
             ListFree(listP);
-        }            
+        }
         FileFindClose(findhandleP);
     }
 }
@@ -240,7 +240,7 @@ plainTail(void) {
     const char * retval;
 
     xmlrpc_asprintf(&retval, SERVER_PLAIN_INFO);
-    
+
     return retval;
 }
 
@@ -270,11 +270,11 @@ sendDirectoryDocumentHeading(TSession *   const sessionP,
                              bool         const text) {
 
     char z[4096];
-    
+
     if (text) {
         size_t i;
         char * p;
-        
+
         sprintf(z, "Index of %s\r\n", uri);
         i = strlen(z)-2;
         p = z + i + 2;
@@ -323,7 +323,7 @@ sendDirectoryDocument(TList *      const listP,
     /* Sort the files */
     qsort(listP->item, listP->size, sizeof(void *),
           (TQSortProc)(sort == 1 ? cmpfilenames : cmpfiledates));
-    
+
     /* Write the listing */
     if (ascending)
         i = 0;
@@ -340,7 +340,7 @@ sendDirectoryDocument(TList *      const listP,
             ++i;
         else
             --i;
-            
+
         strcpy(z, fi->name);
 
         k = strlen(z);
@@ -359,12 +359,12 @@ sendDirectoryDocument(TList *      const listP,
             p = z1 + 24;
         } else {
             strcpy(z1, z);
-            
+
             ++k;
             p = z1 + k;
             while (k < 25)
                 z1[k++] = ' ';
-            
+
             z1[25] = '\0';
         }
 
@@ -390,9 +390,9 @@ sendDirectoryDocument(TList *      const listP,
                         u = 'G';
                 }
             }
-                
+
             sprintf(z3, "%5" PRIu64 " %c", fi->size, u);
-            
+
             if (xmlrpc_streq(fi->name, ".."))
                 z4 = "";
             else
@@ -411,7 +411,7 @@ sendDirectoryDocument(TList *      const listP,
 
         HTTPWriteBodyChunk(sessionP, z, strlen(z));
     }
-        
+
     {
         const char * const tail = text ? plainTail() : htmlTail();
 
@@ -463,7 +463,7 @@ addLastModifiedHeader(TSession * const sessionP,
         xmlrpc_strfree(lastModifiedValue);
     }
 }
-    
+
 
 
 static void
@@ -476,7 +476,7 @@ handleDirectory(TSession *   const sessionP,
     bool ascending;
     uint16_t sort;    /* 1=by name, 2=by date */
     const char * error;
-    
+
     determineSortType(sessionP->requestInfo.query,
                       &ascending, &sort, &text, &error);
 
@@ -503,21 +503,21 @@ handleDirectory(TSession *   const sessionP,
                 xmlrpc_strfree(error);
             } else {
                 ResponseStatus(sessionP, 200);
-                ResponseContentType(sessionP, 
+                ResponseContentType(sessionP,
                                     text ? "text/plain" : "text/html");
-            
+
                 addLastModifiedHeader(sessionP, fileModTime);
-            
+
                 ResponseChunked(sessionP);
                 ResponseWriteStart(sessionP);
-            
+
                 if (sessionP->requestInfo.method!=m_head)
                     sendDirectoryDocument(&list, ascending, sort, text,
                                           sessionP->requestInfo.uri, mimeTypeP,
                                           sessionP);
-            
+
                 ResponseWriteEnd(sessionP);
-            
+
                 ListFree(&list);
             }
             PoolFree(&pool);
@@ -533,8 +533,8 @@ composeEntityHeader(const char ** const entityHeaderP,
                     uint64_t      const start,
                     uint64_t      const end,
                     uint64_t      const filesize) {
-                         
-    xmlrpc_asprintf(entityHeaderP, "Content-type: %s\r\n" 
+
+    xmlrpc_asprintf(entityHeaderP, "Content-type: %s\r\n"
                     "Content-range: "
                     "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64 "\r\n"
                     "Content-length: %" PRIu64 "\r\n\r\n",
@@ -574,14 +574,14 @@ sendBody(TSession *      const sessionP,
                 uint64_t start;
                 uint64_t end;
                 bool decoded;
-                    
+
                 decoded = RangeDecode((char *)(sessionP->ranges.item[i]),
                                       filesize,
                                       &start, &end);
                 if (decoded) {
                     /* Entity header, not response header */
                     const char * entityHeader;
-                    
+
                     composeEntityHeader(&entityHeader, mediatype,
                                         start, end, filesize);
 
@@ -589,7 +589,7 @@ sendBody(TSession *      const sessionP,
                               entityHeader, strlen(entityHeader));
 
                     xmlrpc_strfree(entityHeader);
-                    
+
                     ConnWriteFromFile(sessionP->connP, fileP, start, end,
                                       buffer, sizeof(buffer), 0);
                 }
@@ -644,19 +644,19 @@ sendFileAsResponse(TSession *   const sessionP,
         ResponseStatus(sessionP, 206);
         break;
     }
-    
+
     if (sessionP->ranges.size == 0) {
         ResponseContentLength(sessionP, filesize);
         ResponseContentType(sessionP, mediatype);
     }
-    
+
     addLastModifiedHeader(sessionP, fileModTime);
 
     ResponseWriteStart(sessionP);
 
     if (sessionP->requestInfo.method != m_head)
         sendBody(sessionP, fileP, filesize, mediatype, start, end);
-}        
+}
 
 
 
@@ -671,7 +671,7 @@ handleFile(TSession *   const sessionP,
 -----------------------------------------------------------------------------*/
     TFile * fileP;
     bool success;
-    
+
     success = FileOpen(&fileP, fileName, O_BINARY | O_RDONLY);
     if (!success)
         ResponseStatusErrno(sessionP);
@@ -775,7 +775,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
             unsigned int i;
             i = handlerP->defaultFileNames.size;
             while (i-- > 0) {
-                *p = '\0';        
+                *p = '\0';
                 strcat(z, (handlerP->defaultFileNames.item[i]));
                 if (FileStat(z, &fs)) {
                     if (!(fs.st_mode & S_IFDIR))
@@ -786,7 +786,7 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
         }
 
         *(p-1) = '\0';
-        
+
         if (!FileStat(z, &fs)) {
             ResponseStatusErrno(sessionP);
             return true;
@@ -822,7 +822,7 @@ size_t const HandlerDefaultBuiltinStack = 1024;
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
 **    derived from this software without specific prior written permission.
-** 
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
