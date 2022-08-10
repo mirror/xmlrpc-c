@@ -48,7 +48,7 @@ socketOsTerm(void) {
     SocketUnixTerm();
 #endif
 }
-    
+
 
 
 bool ChannelTraceIsActive;
@@ -141,12 +141,12 @@ ChannelWrite(TChannel *            const channelP,
 
 
 void
-ChannelRead(TChannel *      const channelP, 
-            unsigned char * const buffer, 
+ChannelRead(TChannel *      const channelP,
+            unsigned char * const buffer,
             uint32_t        const len,
             uint32_t *      const bytesReceivedP,
             bool *          const failedP) {
-    
+
     if (ChannelTraceIsActive)
         fprintf(stderr, "Reading %u bytes from channel %p\n", len, channelP);
 
@@ -195,4 +195,6 @@ ChannelFormatPeerInfo(TChannel *    const channelP,
 
     (*channelP->vtbl.formatPeerInfo)(channelP, peerStringP);
 }
+
+
 
