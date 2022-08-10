@@ -87,8 +87,8 @@ ChannelWrite(TChannel *            const channelP,
              bool *                const failedP);
 
 void
-ChannelRead(TChannel *      const channelP, 
-            unsigned char * const buffer, 
+ChannelRead(TChannel *      const channelP,
+            unsigned char * const buffer,
             uint32_t        const len,
             uint32_t *      const bytesReceivedP,
             bool *          const failedP);
