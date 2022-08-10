@@ -140,7 +140,7 @@ sslSetFd(SSL *         const sslP,
     int succeeded;
 
     succeeded = SSL_set_fd(sslP, acceptedFd);
-        
+
     if (!succeeded) {
         const char * sslMsg;
 
@@ -281,7 +281,7 @@ channelWrite(TChannel *            const channelP,
         uint32_t const maxSend = (uint32_t)(-1) >> 1;
 
         int rc;
-        
+
         rc = SSL_write(channelOpenSslP->sslP, &buffer[len-bytesLeft],
                        MIN(maxSend, bytesLeft));
 
@@ -308,8 +308,8 @@ channelWrite(TChannel *            const channelP,
 static ChannelReadImpl channelRead;
 
 static void
-channelRead(TChannel *      const channelP, 
-            unsigned char * const buffer, 
+channelRead(TChannel *      const channelP,
+            unsigned char * const buffer,
             uint32_t        const bufferSize,
             uint32_t *      const bytesReceivedP,
             bool *          const failedP) {
@@ -443,7 +443,7 @@ makeChannelInfo(struct abyss_openSsl_chaninfo ** const channelInfoPP,
     struct abyss_openSsl_chaninfo * channelInfoP;
 
     MALLOCVAR(channelInfoP);
-    
+
     if (channelInfoP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory");
     else {
@@ -472,19 +472,19 @@ makeChannelFromSsl(SSL *         const sslP,
     struct ChannelOpenSsl * channelOpenSslP;
 
     MALLOCVAR(channelOpenSslP);
-    
+
     if (channelOpenSslP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for OpenSSL "
                         "socket descriptor");
     else {
         TChannel * channelP;
-        
+
         channelOpenSslP->sslP = sslP;
         channelOpenSslP->userSuppliedSsl = userSuppliedSsl;
-        
+
         /* This should be ok as far as I can tell */
         ChannelCreate(&channelVtbl, channelOpenSslP, &channelP);
-        
+
         if (channelP == NULL)
             xmlrpc_asprintf(errorP, "Unable to allocate memory for "
                             "channel descriptor.");
@@ -512,7 +512,7 @@ ChannelOpenSslCreateSsl(SSL *                            const sslP,
         bool const userSuppliedTrue = true;
 
         makeChannelFromSsl(sslP, userSuppliedTrue, channelPP, errorP);
-        
+
         if (*errorP) {
             free(*channelInfoPP);
         }
@@ -557,7 +557,7 @@ static void
 chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
 
     struct ChanSwitchOpenSsl * const chanSwitchOpenSslP = chanSwitchP->implP;
- 
+
     sockutil_interruptPipeTerm(chanSwitchOpenSslP->interruptPipe);
 
     if (!chanSwitchOpenSslP->userSuppliedFd)
@@ -587,7 +587,7 @@ createSslFromAcceptedConn(int           const acceptedFd,
                           SSL_CTX *     const sslCtxP,
                           SSL **        const sslPP,
                           const char ** const errorP) {
-          
+
     SSL * sslP;
     const char * error;
 
@@ -608,7 +608,7 @@ createSslFromAcceptedConn(int           const acceptedFd,
             xmlrpc_strfree(error);
         } else {
             const char * error;
-           
+
             sslAccept(sslP, &error);
 
             if (error) {
@@ -647,7 +647,7 @@ createChannelFromAcceptedConn(int             const acceptedFd,
         const char * error;
 
         createSslFromAcceptedConn(acceptedFd, sslCtxP, &sslP, &error);
-        
+
         if (error) {
             xmlrpc_asprintf(errorP, "Failed to create an OpenSSL connection "
                             "from the accepted TCP connection.  %s", error);
@@ -800,7 +800,7 @@ createChanSwitch(int            const fd,
 
         chanSwitchOpenSslP->listenFd = fd;
         chanSwitchOpenSslP->userSuppliedFd = userSuppliedFd;
-            
+
         sockutil_interruptPipeInit(&chanSwitchOpenSslP->interruptPipe, errorP);
 
         if (!*errorP) {
@@ -969,5 +969,6 @@ ChanSwitchOpenSslCreateFd(int            const fd,
         createChanSwitch(fd, userSupplied, sslCtxP, chanSwitchPP, errorP);
     }
 }
+
 
 
