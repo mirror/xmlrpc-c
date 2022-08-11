@@ -566,9 +566,10 @@ sendBody(TSession *      const sessionP,
     else {
         uint64_t i;
         for (i = 0; i <= sessionP->ranges.size; ++i) {
-            ConnWrite(sessionP->connP, "--", 2);
-            ConnWrite(sessionP->connP, BOUNDARY, strlen(BOUNDARY));
-            ConnWrite(sessionP->connP, "\r\n", 2);
+            ConnWrite(sessionP->connP, "--", 2, CONN_EXPECT_MORE);
+            ConnWrite(sessionP->connP, BOUNDARY, strlen(BOUNDARY),
+                      CONN_EXPECT_MORE);
+            ConnWrite(sessionP->connP, "\r\n", 2, CONN_EXPECT_NOTHING);
 
             if (i < sessionP->ranges.size) {
                 uint64_t start;
@@ -586,7 +587,8 @@ sendBody(TSession *      const sessionP,
                                         start, end, filesize);
 
                     ConnWrite(sessionP->connP,
-                              entityHeader, strlen(entityHeader));
+                              entityHeader, strlen(entityHeader),
+                              CONN_EXPECT_NOTHING);
 
                     xmlrpc_strfree(entityHeader);
 

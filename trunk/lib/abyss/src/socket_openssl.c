@@ -264,10 +264,14 @@ channelDestroy(TChannel * const channelP) {
 
 static ChannelWriteImpl channelWrite;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
+             TChanWriteExpect      const expectation,
              bool *                const failedP) {
 
     struct ChannelOpenSsl * const channelOpenSslP = channelP->implP;
@@ -302,6 +306,7 @@ channelWrite(TChannel *            const channelP,
     }
     *failedP = error;
 }
+#pragma GCC diagnostic pop
 
 
 

@@ -100,12 +100,23 @@ channelDestroy(TChannel * const channelP) {
 
 
 
+static int const msgMore =
+#if defined(MSG_MORE)
+    MSG_MORE
+#else
+    0
+#endif
+    ;
+
+
+
 static ChannelWriteImpl channelWrite;
 
 static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
+             TChanWriteExpect      const expectation,
              bool *                const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
@@ -119,6 +130,8 @@ channelWrite(TChannel *            const channelP,
          bytesLeft > 0 && !error;
         ) {
         size_t const maxSend = (size_t)(-1) >> 1;
+        int    const sendFlags =
+            expectation == CHAN_EXPECT_MORE ? msgMore : 0;
 
         ssize_t rc;
 
@@ -129,7 +142,7 @@ channelWrite(TChannel *            const channelP,
         // thread simply must be set to ignore SIGPIPE.
 
         rc = send(socketUnixP->fd, &buffer[len-bytesLeft],
-                  MIN(maxSend, bytesLeft), 0);
+                  MIN(maxSend, bytesLeft), sendFlags);
 
         if (ChannelTraceIsActive) {
             if (rc < 0)

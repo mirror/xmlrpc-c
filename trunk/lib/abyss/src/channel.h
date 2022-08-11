@@ -22,11 +22,14 @@ ChannelCreate(const struct TChannelVtbl * const vtblP,
               void *                      const implP,
               TChannel **                 const channelPP);
 
+typedef enum { CHAN_EXPECT_NOTHING, CHAN_EXPECT_MORE } TChanWriteExpect;
+
 typedef void ChannelDestroyImpl(TChannel * const channelP);
 
 typedef void ChannelWriteImpl(TChannel *            const channelP,
                               const unsigned char * const buffer,
                               uint32_t              const len,
+                              TChanWriteExpect      const expectation,
                               bool *                const failedP);
 
 typedef void ChannelReadImpl(TChannel *      const channelP,
@@ -84,6 +87,7 @@ void
 ChannelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
+             TChanWriteExpect      const expectation,
              bool *                const failedP);
 
 void
