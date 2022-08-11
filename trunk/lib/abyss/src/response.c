@@ -56,7 +56,8 @@ ResponseError2(TSession *   const sessionP,
                     "</HTML>",
                     sessionP->status, sessionP->status, explanation);
 
-    ConnWrite(sessionP->connP, errorDocument, strlen(errorDocument));
+    ConnWrite(sessionP->connP, errorDocument, strlen(errorDocument),
+              CONN_EXPECT_NOTHING);
 
     xmlrpc_strfree(errorDocument);
 }
@@ -308,6 +309,8 @@ sendHeader(TConn * const connP,
    fields[] contains syntactically valid HTTP header field names and values.
    But to the extent that int contains undefined field names or semantically
    invalid values, the header we send is invalid.
+
+   Tell connection to expect more data for the same logical message.
 -----------------------------------------------------------------------------*/
     unsigned int i;
 
@@ -318,7 +321,7 @@ sendHeader(TConn * const connP,
         const char * line;
 
         xmlrpc_asprintf(&line, "%s: %s\r\n", fieldP->name, fieldValue);
-        ConnWrite(connP, line, strlen(line));
+        ConnWrite(connP, line, strlen(line), CONN_EXPECT_MORE);
         xmlrpc_strfree(line);
         xmlrpc_strfree(fieldValue);
     }
@@ -351,7 +354,7 @@ ResponseWriteStart(TSession * const sessionP) {
         const char * const reason = HTTPReasonByStatus(sessionP->status);
         const char * line;
         xmlrpc_asprintf(&line,"HTTP/1.1 %u %s\r\n", sessionP->status, reason);
-        ConnWrite(sessionP->connP, line, strlen(line));
+        ConnWrite(sessionP->connP, line, strlen(line), CONN_EXPECT_MORE);
         xmlrpc_strfree(line);
     }
 
@@ -371,7 +374,7 @@ ResponseWriteStart(TSession * const sessionP) {
     */
     sendHeader(sessionP->connP, sessionP->responseHeaderFields);
 
-    ConnWrite(sessionP->connP, "\r\n", 2);
+    ConnWrite(sessionP->connP, "\r\n", 2, CONN_EXPECT_NOTHING);
 }
 
 

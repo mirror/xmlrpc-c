@@ -313,14 +313,18 @@ HTTPWriteBodyChunk(TSession *   const sessionP,
         sprintf(chunkHeader, "%x\r\n", len);
 
         succeeded =
-            ConnWrite(sessionP->connP, chunkHeader, strlen(chunkHeader));
+            ConnWrite(sessionP->connP, chunkHeader, strlen(chunkHeader),
+                CONN_EXPECT_MORE);
         if (succeeded) {
-            succeeded = ConnWrite(sessionP->connP, buffer, len);
+            succeeded = ConnWrite(sessionP->connP, buffer, len,
+                CONN_EXPECT_MORE);
             if (succeeded)
-                succeeded = ConnWrite(sessionP->connP, "\r\n", 2);
+                succeeded = ConnWrite(sessionP->connP, "\r\n", 2,
+                    CONN_EXPECT_NOTHING);
         }
     } else
-        succeeded = ConnWrite(sessionP->connP, buffer, len);
+        succeeded = ConnWrite(sessionP->connP, buffer, len,
+            CONN_EXPECT_NOTHING);
 
     return succeeded;
 }
@@ -335,7 +339,8 @@ HTTPWriteEndChunk(TSession * const sessionP) {
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode) {
         /* May be one day trailer dumping will be added */
         sessionP->chunkedwritemode = false;
-        retval = ConnWrite(sessionP->connP, "0\r\n\r\n", 5);
+        retval = ConnWrite(sessionP->connP, "0\r\n\r\n", 5,
+                           CONN_EXPECT_NOTHING);
     } else
         retval = true;
 
@@ -363,7 +368,8 @@ HTTPWriteContinue(TSession * const sessionP) {
     char const continueStatus[] = "HTTP/1.1 100 continue\r\n\r\n";
         /* This is a status line plus an end-of-header empty line */
 
-    return ConnWrite(sessionP->connP, continueStatus, strlen(continueStatus));
+    return ConnWrite(sessionP->connP, continueStatus, strlen(continueStatus),
+                     CONN_EXPECT_NOTHING);
 }
 
 
