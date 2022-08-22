@@ -18,7 +18,7 @@
     "<value><array><data>\r\n" \
     "</data></array></value>\r\n" \
     "</data></array></value>"
-    
+
 char const serialized_data[] = RAW_STRING_DATA;
 
 char const serialized_call[] =
@@ -51,23 +51,23 @@ char const expat_error_data[] =
     /* Invalid because there's no closing </foo> */
 
 
-char const good_response_xml[] = 
-    XML_PROLOGUE 
-    "<methodResponse><params><param>\r\n" 
-    "<value><array><data>\r\n" 
-    RAW_STRING_DATA "\r\n" 
-    "<value><int>1</int></value>\r\n" 
-    "<value><double>-1.0</double></value>\r\n" 
-    "<value><double>0.0</double></value>\r\n" 
-    "<value><double>1.0</double></value>\r\n" 
-    "<value><struct>\r\n" 
-    "<member><name>ten &lt;&amp;&gt;</name>\r\n" 
-    "<value><i4>10</i4></value></member>\r\n" 
-    "<member><name>twenty</name>\r\n" 
-    "<value><i4>20</i4></value></member>\r\n" 
-    "</struct></value>\r\n" 
-    "<value>Untagged string</value>\r\n" 
-    "</data></array></value>\r\n" 
+char const good_response_xml[] =
+    XML_PROLOGUE
+    "<methodResponse><params><param>\r\n"
+    "<value><array><data>\r\n"
+    RAW_STRING_DATA "\r\n"
+    "<value><int>1</int></value>\r\n"
+    "<value><double>-1.0</double></value>\r\n"
+    "<value><double>0.0</double></value>\r\n"
+    "<value><double>1.0</double></value>\r\n"
+    "<value><struct>\r\n"
+    "<member><name>ten &lt;&amp;&gt;</name>\r\n"
+    "<value><i4>10</i4></value></member>\r\n"
+    "<member><name>twenty</name>\r\n"
+    "<value><i4>20</i4></value></member>\r\n"
+    "</struct></value>\r\n"
+    "<value>Untagged string</value>\r\n"
+    "</data></array></value>\r\n"
     "</param></params></methodResponse>\r\n";
 
 #define VALUE_HEADER \
@@ -154,7 +154,7 @@ const char * bad_responses[] = {
     PARAMS_RESP_HEADER
     "<param>"ARBITRARY_VALUE ARBITRARY_VALUE"</param>"
     PARAMS_RESP_FOOTER,
-    
+
     /* Basic fault tests. */
     FAULT_HEADER FAULT_FOOTER,
     FAULT_HEADER"<foo></foo>"FAULT_FOOTER,
@@ -192,9 +192,7 @@ const char * bad_responses[] = {
 const char * bad_calls[] = {
     XML_PROLOGUE"<foo></foo>\r\n",
     CALL_HEADER CALL_FOOTER,
-    CALL_HEADER"<methodName>m</methodName><foo></foo>"CALL_FOOTER, 
-    CALL_HEADER"<foo></foo><params></params>"CALL_FOOTER, 
-    CALL_HEADER"<methodName><f></f></methodName><params></params>"CALL_FOOTER, 
+    CALL_HEADER"<methodName>m</methodName><foo></foo>"CALL_FOOTER,
+    CALL_HEADER"<foo></foo><params></params>"CALL_FOOTER,
+    CALL_HEADER"<methodName><f></f></methodName><params></params>"CALL_FOOTER,
     NULL};
-
-
