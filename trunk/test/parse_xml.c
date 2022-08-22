@@ -108,6 +108,12 @@ char const xmldata[] =
     "<param><value>"
        "<dateTime.iso8601>19980717T14:08:55.123456</dateTime.iso8601>"
        "</value></param>\r\n"
+    "<param><value>"
+       "<dateTime.iso8601>19980717T14:08:55Z</dateTime.iso8601>"
+       "</value></param>\r\n"
+    "<param><value>"
+       "<dateTime.iso8601>19980717T14:08:55.123456Z</dateTime.iso8601>"
+       "</value></param>\r\n"
     "<param><value><base64>YmFzZTY0IGRhdGE=</base64></value></param>\r\n"
     "<param><value><nil/></value></param>\r\n"
     "<param><value><ex:nil/></value></param>\r\n"
@@ -122,6 +128,8 @@ char const xmldata[] =
     xmlrpc_bool b_false, b_true;
     const char * datetime_sec;
     const char * datetime_usec;
+    const char * datetime_secZ;
+    const char * datetime_usecZ;
     unsigned char * b64_data;
     size_t b64_len;
 
@@ -134,11 +142,12 @@ char const xmldata[] =
     arraySize = xmlrpc_array_size(&env, paramArrayP);
     TEST_NO_FAULT(&env);
 
-    TEST(arraySize == 8);
+    TEST(arraySize == 10);
 
     xmlrpc_decompose_value(
-        &env, paramArrayP, "(sbb886nn)",
-        &str_hello, &b_false, &b_true, &datetime_sec, &datetime_usec,
+        &env, paramArrayP, "(sbb88886nn)",
+        &str_hello, &b_false, &b_true,
+        &datetime_sec, &datetime_usec, &datetime_secZ, &datetime_usecZ,
         &b64_data, &b64_len);
 
     TEST_NO_FAULT(&env);
@@ -148,6 +157,8 @@ char const xmldata[] =
     TEST(b_true);
     TEST(streq(datetime_sec, "19980717T14:08:55"));
     TEST(streq(datetime_usec, "19980717T14:08:55.123456"));
+    TEST(streq(datetime_secZ, "19980717T14:08:55"));
+    TEST(streq(datetime_usecZ, "19980717T14:08:55.123456"));
     TEST(b64_len == 11);
     TEST(memcmp(b64_data, "base64 data", b64_len) == 0);
 
