@@ -78,7 +78,7 @@ digitStringMillionths(const char * const string,
 
 #if HAVE_REGEX
 
-static void 
+static void
 subParseDtRegex_standard(regmatch_t *      const matches,
                          const char *      const datetimeString,
                          xmlrpc_datetime * const dtP) {
@@ -89,7 +89,7 @@ subParseDtRegex_standard(regmatch_t *      const matches,
     dtP->h = digitStringValue(datetimeString, matches[4]);
     dtP->m = digitStringValue(datetimeString, matches[5]);
     dtP->s = digitStringValue(datetimeString, matches[6]);
-    
+
     if (matches[7].rm_so == -1)
         dtP->u = 0;
     else
@@ -98,7 +98,7 @@ subParseDtRegex_standard(regmatch_t *      const matches,
 
 
 
-static void 
+static void
 subParseDtRegex_standardtzd(regmatch_t *      const matches,
                             const char *      const datetimeString,
                             xmlrpc_datetime * const dtP) {
@@ -124,7 +124,7 @@ typedef  void (*regparsefunc_t)(regmatch_t *      const matches,
 
 struct regexParser {
     const char * const regex;
-    regparsefunc_t func; 
+    regparsefunc_t func;
 };
 
 static const struct regexParser iso8601Regex[]
@@ -148,8 +148,8 @@ static const struct regexParser iso8601Regex[]
                "([0-9]{2}):?([0-9]{2}):?([0-9]{2})\\.?([0-9]+)?$",
                subParseDtRegex_standard
            },
-           
-           { 
+
+           {
                /* Examples:
                   YYYYMMDD[T]HHMMSS[Z]
                   YYYYMMDD[T]HHMMSS[+-]hh
@@ -191,13 +191,13 @@ parseDtRegex(xmlrpc_env *      const envP,
         assert(status == 0); if (status){};  /* quiet compiler warning */
         {
             int status;
-    
-            status = regexec(&re, datetimeString, ARRAY_SIZE(matches), 
+
+            status = regexec(&re, datetimeString, ARRAY_SIZE(matches),
                              matches, 0);
-    
+
             if (status == 0) {
                 assert(matches[0].rm_so != -1);  /* Match of whole regex */
-                
+
                 parserP = thisParserP;
             }
         }
@@ -375,7 +375,7 @@ validateFormatNoRegex(xmlrpc_env * const envP,
 
     if (strlen(dt) < 17)
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_PARSE_ERROR, 
+            envP, XMLRPC_PARSE_ERROR,
             "Invalid length of %u of datetime.  "
             "Must be at least 17 characters",
             (unsigned)strlen(dt));
@@ -432,7 +432,7 @@ xmlrpc_parseDatetime(xmlrpc_env *    const envP,
                      const char *    const datetimeString,
                      xmlrpc_value ** const valuePP) {
 /*----------------------------------------------------------------------------
-   Parse the content of a <datetime.iso8601> XML-RPC XML element, e.g. 
+   Parse the content of a <datetime.iso8601> XML-RPC XML element, e.g.
    "20000301T00:00:00".
 
    'str' is that content.
@@ -465,3 +465,6 @@ xmlrpc_parseDatetime(xmlrpc_env *    const envP,
             *valuePP = xmlrpc_datetime_new(envP, dt);
     }
 }
+
+
+
