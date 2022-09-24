@@ -335,7 +335,8 @@ static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             bool *          const failedP) {
+             ChanWriteExpect       const expectation,
+             bool *                const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
 

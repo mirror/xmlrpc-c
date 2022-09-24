@@ -59,6 +59,8 @@ INSTALL = $(SRCDIR)/install-sh
 C_COMPILER_GNU = @C_COMPILER_GNU@
 CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
 
+PKG_CONFIG ?= pkg-config
+
 # Stuff 'configure' figured out via AC_CANONICAL_HOST macro in configure.in
 # and config.guess program and 'configure' command options:
 
@@ -309,8 +311,11 @@ ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
   SHLIB_SUFFIX = dylib
   shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB = -dynamiclib -undefined suppress -single_module \
-	-flat_namespace -install_name $(LIBINST_DIR)/$(SONAME) $(SHLIB_CLIB)
+  # We used to use -flat_namespace and -undefined suppress instead of
+  # dynamic_lookup.  On 22.02.03, we changed it on the advice of
+  # Homebrew maintainer Carlo Cabrera.
+  LDFLAGS_SHLIB = -dynamiclib -undefined dynamic_lookup -single_module \
+	-install_name $(LIBINST_DIR)/$(SONAME) $(SHLIB_CLIB)
 endif
 
 ifeq ($(patsubst irix%,irix,$(HOST_OS)),irix)
@@ -453,5 +458,3 @@ DESTDIR =
 VPATH := .:$(SRCDIR)/$(SUBDIR)
 
 HAVE_OPENSSL = @HAVE_OPENSSL@
-OPENSSL_LDADD = @OPENSSL_LDADD@
-OPENSSL_CFLAGS = @OPENSSL_CFLAGS@

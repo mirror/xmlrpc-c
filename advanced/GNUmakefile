@@ -121,7 +121,6 @@ shell_config: $(BLDDIR)/config.mk
 	@echo 'BLDDIR="$(BLDDIR)"'                                      >>$@
 	@echo 'ABS_SRCDIR="$(ABS_SRCDIR)"'                              >>$@
 	@echo 'ABYSS_DOES_OPENSSL="$(MUST_BUILD_ABYSS_OPENSSL)"'        >>$@
-	@echo 'OPENSSL_LDADD="$(OPENSSL_LDADD)"'                        >>$@
 	@echo '#######################################################' >>$@
 
 xmlrpc-c-config xmlrpc-c-config.test:%: %.main shell_config

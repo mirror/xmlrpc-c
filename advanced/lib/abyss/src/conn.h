@@ -27,7 +27,7 @@ struct _TConn {
         /* Index into the connection buffer (buffer[], below) where
            the next byte to be delivered to the user is.
         */
-    uint32_t inbytes,outbytes;  
+    uint32_t inbytes,outbytes;
     TChannel * channelP;
     void * channelInfoP;
         /* Information about the channel, such as who is on the other end.
@@ -92,10 +92,13 @@ ConnKill(TConn * const connectionP);
 void
 ConnWaitAndRelease(TConn * const connectionP);
 
+typedef enum { CONN_EXPECT_NOTHING, CONN_EXPECT_MORE } TConnWriteExpect;
+
 bool
-ConnWrite(TConn *      const connectionP,
-          const void * const buffer,
-          uint32_t     const size);
+ConnWrite(TConn *          const connectionP,
+          const void *     const buffer,
+          uint32_t         const size,
+          TConnWriteExpect const expectation);
 
 void
 ConnRead(TConn *       const connectionP,
