@@ -32,7 +32,7 @@ ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   SUBDIRS += expat
 endif
 
-ifeq ($(HAVE_OPENSSL),Y)
+ifeq ($(HAVE_OPENSSL),yes)
   SUBDIRS += openssl
 endif
 

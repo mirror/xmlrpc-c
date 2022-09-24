@@ -48,7 +48,7 @@ socketOsTerm(void) {
     SocketUnixTerm();
 #endif
 }
-    
+
 
 
 bool ChannelTraceIsActive;
@@ -130,23 +130,31 @@ void
 ChannelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
+             TChanWriteExpect      const expectation,
              bool *                const failedP) {
+/*----------------------------------------------------------------------------
+  Write the 'len' bytes in 'buffer' to channel *channelP.
 
+  'expectation' is CHAN_EXPECT_MORE to say the system should expect more
+  data logically part of the same message to come in a future ChanWrite call.
+  (Some systems will choose to wait for that data and send it together with
+  'buffer').
+-----------------------------------------------------------------------------*/
     if (ChannelTraceIsActive)
         fprintf(stderr, "Writing %u bytes to channel %p\n", len, channelP);
 
-    (*channelP->vtbl.write)(channelP, buffer, len, failedP);
+    (*channelP->vtbl.write)(channelP, buffer, len, expectation, failedP);
 }
 
 
 
 void
-ChannelRead(TChannel *      const channelP, 
-            unsigned char * const buffer, 
+ChannelRead(TChannel *      const channelP,
+            unsigned char * const buffer,
             uint32_t        const len,
             uint32_t *      const bytesReceivedP,
             bool *          const failedP) {
-    
+
     if (ChannelTraceIsActive)
         fprintf(stderr, "Reading %u bytes from channel %p\n", len, channelP);
 
@@ -195,4 +203,6 @@ ChannelFormatPeerInfo(TChannel *    const channelP,
 
     (*channelP->vtbl.formatPeerInfo)(channelP, peerStringP);
 }
+
+
 
