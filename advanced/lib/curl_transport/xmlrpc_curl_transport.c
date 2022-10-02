@@ -366,46 +366,6 @@ curlHasNosignal(void) {
 
 
 
-static xmlrpc_timespec
-pselectTimeout(xmlrpc_timeoutType const timeoutType,
-               xmlrpc_timespec    const timeoutDt) {
-/*----------------------------------------------------------------------------
-   Return the value that should be used in the select() call to wait for
-   there to be work for the Curl multi manager to do, given that the user
-   wants to timeout according to 'timeoutType' and 'timeoutDt'.
------------------------------------------------------------------------------*/
-    unsigned int const million = 1000000;
-    unsigned int selectTimeoutMillisec;
-    xmlrpc_timespec retval;
-
-    /* We assume there is work to do at least every 3 seconds, because
-       the Curl multi manager often has retries and other scheduled work
-       that doesn't involve file handles on which we can select().
-       One thing that might cause work to do without any file handle becoming
-       ready is Curl timing out a request.
-    */
-    switch (timeoutType) {
-    case timeout_no:
-        selectTimeoutMillisec = 3000;
-        break;
-    case timeout_yes: {
-        xmlrpc_timespec nowTime;
-        int timeLeft;
-
-        xmlrpc_gettimeofday(&nowTime);
-        timeLeft = timeDiffMillisec(timeoutDt, nowTime);
-
-        selectTimeoutMillisec = MIN(3000, MAX(0, timeLeft));
-    } break;
-    }
-    retval.tv_sec = selectTimeoutMillisec / 1000;
-    retval.tv_nsec = (uint32_t)((selectTimeoutMillisec % 1000) * million);
-
-    return retval;
-}
-
-
-
 static void
 processCurlMessages(xmlrpc_env * const envP,
                     curlMulti *  const curlMultiP) {
@@ -436,121 +396,6 @@ processCurlMessages(xmlrpc_env * const envP,
 
 
 static void
-waitForWork(xmlrpc_env *       const envP,
-            curlMulti *        const curlMultiP,
-            xmlrpc_timeoutType const timeoutType,
-            xmlrpc_timespec    const deadline,
-            sigset_t *         const sigmaskP) {
-/*----------------------------------------------------------------------------
-   Wait for the Curl multi manager to have work to do, time to run out,
-   or a signal to be received (and caught), whichever comes first.
-
-   Update the Curl multi manager's file descriptor sets to indicate what
-   work we found for it to do.
-
-   Wait under signal mask *sigmaskP.  The point of this is that Caller can
-   make sure that arrival of a signal of a certain class interrupts our wait,
-   even if the signal arrives shortly before we begin waiting.  Caller blocks
-   that signal class, then checks whether a signal of that class has already
-   been received.  If not, he calls us with *sigmaskP indicating that class
-   NOT blocked.  Thus, if a signal of that class arrived any time after Caller
-   checked, we will return immediately and if it arrives while we're waiting,
-   we will return then.  Note that we can provide this service only because
-   pselect() has the same atomic unblock/wait feature.
-
-   If sigmaskP is NULL, wait under whatever the current signal mask is.
------------------------------------------------------------------------------*/
-    fd_set readFdSet;
-    fd_set writeFdSet;
-    fd_set exceptFdSet;
-    int maxFd;
-
-    trace("Waiting for work");
-
-    curlMulti_fdset(envP, curlMultiP,
-                    &readFdSet, &writeFdSet, &exceptFdSet, &maxFd);
-    if (!envP->fault_occurred) {
-        if (maxFd == -1) {
-            /* There are no Curl file descriptors on which to wait.
-               So either there's work to do right now or all transactions
-               are already complete.
-
-               It may also be the case that there are Curl file descriptors on
-               which Caller should wait, but they are too high (> FD_SETSIZE)
-               to use with 'pselect'.  Libcurl doesn't provide a way to deal
-               with this case gracefully, so Caller will unfortunately end up
-               busywaiting for there to be work for libcurl to do.
-            */
-        } else {
-            xmlrpc_timespec const pselectTimeoutArg =
-                pselectTimeout(timeoutType, deadline);
-
-            int rc;
-
-            trace("No work available; waiting for a Curl file descriptor to "
-                  "be ready or %u.%03u sec",
-                  pselectTimeoutArg.tv_sec, pselectTimeoutArg.tv_nsec/1000000);
-
-            rc = xmlrpc_pselect(maxFd+1, &readFdSet, &writeFdSet, &exceptFdSet,
-                                &pselectTimeoutArg, sigmaskP);
-
-            if (rc < 0 && errno != EINTR)
-                xmlrpc_faultf(envP, "Impossible failure of pselect() "
-                              "with errno %d (%s)",
-                              errno, strerror(errno));
-            else {
-                /* Believe it or not, the Curl multi manager needs the
-                   results of our pselect().  So hand them over:
-                */
-                curlMulti_updateFdSet(curlMultiP,
-                                      readFdSet, writeFdSet, exceptFdSet);
-            }
-        }
-        trace("Wait is over");
-    }
-}
-
-
-
-static void
-waitForWorkInt(xmlrpc_env *       const envP,
-               curlMulti *        const curlMultiP,
-               xmlrpc_timeoutType const timeoutType,
-               xmlrpc_timespec    const deadline,
-               int *              const interruptP) {
-/*----------------------------------------------------------------------------
-   Same as waitForWork(), except we guarantee to return if a signal handler
-   sets or has set *interruptP, whereas waitForWork() can miss a signal
-   that happens before or just after it starts.
-
-   We mess with global state -- the signal mask -- so we might mess up
-   a multithreaded program.  Therefore, don't call this if
-   waitForWork() will suffice.
------------------------------------------------------------------------------*/
-    sigset_t callerBlockSet;
-#if MSVCRT
-    waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
-#else
-    sigset_t allSignals;
-
-    assert(interruptP != NULL);
-
-    sigfillset(&allSignals);
-
-    sigprocmask(SIG_BLOCK, &allSignals, &callerBlockSet);
-
-    if (*interruptP == 0)
-        waitForWork(envP, curlMultiP, timeoutType, deadline, &callerBlockSet);
-    else
-        trace("Not waiting because interrupt flag is set\n");
-
-    sigprocmask(SIG_SETMASK, &callerBlockSet, NULL);
-#endif
-}
-
-
-
-static void
 doCurlWork(xmlrpc_env * const envP,
            curlMulti *  const curlMultiP,
            bool *       const transStillRunningP) {
@@ -567,17 +412,11 @@ doCurlWork(xmlrpc_env * const envP,
    manager's transactions so that there is no reason to call us ever
    again.
 -----------------------------------------------------------------------------*/
-    bool immediateWorkToDo;
     int runningHandleCt;
 
     trace("Calling libcurl to perform all immediate work");
-
-    immediateWorkToDo = true;  /* initial assumption */
-
-    while (immediateWorkToDo && !envP->fault_occurred) {
-        curlMulti_perform(envP, curlMultiP,
-                          &immediateWorkToDo, &runningHandleCt);
-    }
+	
+    curlMulti_perform(envP, curlMultiP, &runningHandleCt);
 
     /* We either did all the work that's ready to do or hit an error. */
 
@@ -615,62 +454,27 @@ finishCurlMulti(xmlrpc_env *       const envP,
    if 'interruptP' is non-null, it points to a value which is normally zero,
    but is nonzero when Caller wants us to abort all the transactions and
    return ASAP.
-
-   The *interruptP flag alone will not interrupt us.  We will wait in
-   spite of it for all Curl transactions to complete.  *interruptP
-   just gives us a hint that the Curl transactions are being
-   interrupted, so we know there is work to do for them.  (The way it
-   works is Caller sets up a "progress" function that checks the same
-   interrupt flag and reports "kill me."  When we see the interrupt
-   flag, we tell libcurl to do whatever work there is to do, and as part of
-   that, libcurl calls the progress function, gets the "kill me" message,
-   and passes that on to us).
 -----------------------------------------------------------------------------*/
-    /* For integrity, we make sure we don't let *interruptP interrupt our
-       wait for work more than once.  That way, if for any reason libcurl
-       fails to call the progress function, or the progress function fails
-       to notice the interrupt flag and tell libcurl to abort, or libcurl
-       does abort as told, we don't have a busy loop of calls to
-       doCurlWork().
 
-       'curlCalledSinceInterrupt' is part of this logic.
-    */
+    bool rpcStillRunning = true;
+    bool timedOut = false;
+	
+	do
+	{		
+		xmlrpc_timespec nowTime;
 
-    bool rpcStillRunning;
-    bool timedOut;
-    bool curlCalledSinceInterrupt;
+        doCurlWork(envP, curlMultiP, &rpcStillRunning);
 
-    rpcStillRunning = true;  /* initial assumption */
-    timedOut = false;
-    curlCalledSinceInterrupt = false;
+        xmlrpc_gettimeofday(&nowTime);
 
-    while (rpcStillRunning && !timedOut && !envP->fault_occurred) {
-
-        if (interruptP && !curlCalledSinceInterrupt) {
-            waitForWorkInt(envP, curlMultiP, timeoutType, deadline,
-                           interruptP);
-        } else
-            waitForWork(envP, curlMultiP, timeoutType, deadline, NULL);
-
-        if (!envP->fault_occurred) {
-            xmlrpc_timespec nowTime;
-
-            /* doCurlWork() (among other things) finds Curl transactions that
-               user wants to abort and finishes them.  (This is by virtue
-               of libcurl calling its progress function when we tell it to do
-               all available work).
-            */
-            if (interruptP && *interruptP)
-                curlCalledSinceInterrupt = true;
-
-            doCurlWork(envP, curlMultiP, &rpcStillRunning);
-
-            xmlrpc_gettimeofday(&nowTime);
-
-            timedOut = (timeoutType == timeout_yes &&
-                        timeIsAfter(nowTime, deadline));
-        }
-    }
+        timedOut = (timeoutType == timeout_yes &&
+                    timeIsAfter(nowTime, deadline));
+		
+		/* Abort all transactions and exit ASAP if interrupt is sent */
+		if (interruptP && *interruptP) {
+			break;
+		}
+	} while (rpcStillRunning && !timedOut && !envP->fault_occurred);
 }
 
 
@@ -947,20 +751,6 @@ getXportParms(xmlrpc_env *                          const envP,
 
     getConnectTimeoutParm(envP, curlXportParmsP, parmSize,
                           &curlSetupP->connectTimeout);
-
-    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepalive))
-        curlSetupP->tcpKeepalive = false;
-    else
-        curlSetupP->tcpKeepalive = curlXportParmsP->tcp_keepalive;
-
-    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepidle_sec))
-        curlSetupP->tcpKeepidle = 0;
-    else
-        curlSetupP->tcpKeepidle = curlXportParmsP->tcp_keepidle_sec;
-    if (!curlXportParmsP || parmSize < XMLRPC_CXPSIZE(tcp_keepintvl_sec))
-        curlSetupP->tcpKeepintvl = 0;
-    else
-        curlSetupP->tcpKeepintvl = curlXportParmsP->tcp_keepintvl_sec;
 }
 
 
@@ -1165,18 +955,16 @@ static void
 assertNoOutstandingCurlWork(curlMulti * const curlMultiP) {
 
     xmlrpc_env env;
-    bool immediateWorkToDo;
     int runningHandles;
 
     xmlrpc_env_init(&env);
 
-    curlMulti_perform(&env, curlMultiP, &immediateWorkToDo, &runningHandles);
+    curlMulti_perform(&env, curlMultiP, &runningHandles);
 
     /* We know the above was a no-op, since we're asserting that there
        is no outstanding work.
     */
     XMLRPC_ASSERT(!env.fault_occurred);
-    XMLRPC_ASSERT(!immediateWorkToDo);
     XMLRPC_ASSERT(runningHandles == 0);
     xmlrpc_env_clean(&env);
 }
