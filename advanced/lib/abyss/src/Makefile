@@ -118,7 +118,7 @@ libxmlrpc_abyss.a: LIBOBJECTS = $(TARGET_MODS:%=%.o)
 
 ifeq ($(MUST_BUILD_ABYSS_OPENSSL),yes)
 socket_openssl.o socket_openssl.osh: \
-  CFLAGS_TARGET+=$(shell $(PKG_CONFIG) openssl --flags)
+  CFLAGS_TARGET+=$(shell $(PKG_CONFIG) openssl --cflags)
 endif
 
 #-----------------------------------------------------------------------------
