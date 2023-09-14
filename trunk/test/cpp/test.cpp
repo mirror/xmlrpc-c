@@ -1,3 +1,9 @@
+/*=============================================================================
+                                  test
+===============================================================================
+  Exercise all of the C++ facilities of XML-RPC For C/C++.  Report failures.
+=============================================================================*/
+
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -26,37 +32,7 @@ using girerr::error;
 using namespace xmlrpc_c;
 using namespace std;
 
-//=========================================================================
-//  Test Harness
-//=========================================================================
-//
-//  There are two styles of test in here.  The older ones are vaguely
-//  inspired by Kent Beck's book on eXtreme Programming (XP) and use
-//  the TEST...() macros.
-//
-//  But this style is not really appropriate for C++.  It's based on
-//  code that explicitly tests for errors, as one would do in C.  In C++,
-//  it is cumbersome to catch exceptions on every call, so we don't in
-//  the new style.
 
-//  And there's not much point in trying to count test successes and
-//  failures.  Any failure is a problem, so in the new style, we just
-//  quit after we recognize one (again, more in line with regular exception
-//  throwing).  With exception throwing, you can't count what _didn't_
-//  cause an exception, so there's no meaningful count of test successes.
-//
-//  To run the tests, type './cpptest'.
-//  To check for memory leaks, install RedHat's 'memprof' utility, and
-//  type 'memprof cpptest'.
-//
-//  If you add new tests to this file, please deallocate any data
-//  structures you use in the appropriate fashion. This allows us to test
-//  various destructor code for memory leaks.
-
-
-//=========================================================================
-//  Test Suites
-//=========================================================================
 
 void
 test_fault (void) {
