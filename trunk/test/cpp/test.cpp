@@ -34,8 +34,8 @@ using namespace std;
 
 
 
-void
-test_fault (void) {
+static void
+testFault() {
 
     // Create a new fault and perform basic operations.
     XmlRpcFault fault1 = XmlRpcFault(6, "Sample fault");
@@ -78,7 +78,8 @@ test_fault (void) {
 
 
 
-void test_env (void) {
+static void
+testEnv() {
 
     // Declare these here to prevent silly compiler warnings about
     // potentially uninitialized variables.
@@ -121,7 +122,11 @@ void test_env (void) {
     }
 }
 
-void test_value (void) {
+
+
+static void
+testValue() {
+
     XmlRpcEnv env;
 
     // Test basic reference counting behavior.
@@ -213,16 +218,16 @@ testXmlRpcCpp() {
 -----------------------------------------------------------------------------*/
     cout << "Testing XmlRpcCpp library..." << endl;
 
-    test_fault();
-    test_env();
-    test_value();
+    testFault();
+    testEnv();
+    testValue();
 }
 
 
 
 static void
 buildParamListWithAdd(paramList * const paramListP,
-                      time_t    const  timeFuture) {
+                      time_t      const  timeFuture) {
 
     paramListP->add(value_int(7));
     paramListP->add(value_boolean(true)).add(value_double(3.14));
@@ -311,9 +316,7 @@ public:
     }
 };
 
-//=========================================================================
-//  Test Driver
-//=========================================================================
+
 
 int
 main(int argc, char**) {
@@ -364,3 +367,6 @@ main(int argc, char**) {
     }
     return retval;
 }
+
+
+
