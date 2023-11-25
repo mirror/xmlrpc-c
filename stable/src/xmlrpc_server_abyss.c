@@ -780,7 +780,7 @@ createServer(xmlrpc_env *                      const envP,
         ServerInit2(abyssServerP, &error);
 
         if (error) {
-            xmlrpc_faultf(envP, error);
+            xmlrpc_faultf(envP, "%s", error);
             xmlrpc_strfree(error);
         }
     }
