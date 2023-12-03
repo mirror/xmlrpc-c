@@ -666,6 +666,33 @@ setupKeepalive(const struct curlSetup * const curlSetupP,
 
 
 static void
+setupProgressFunction(curlTransaction * const transP) {
+
+    /* CURLOPT_PROGRESSFUNCTION is a deprecated feature of Curl.  The
+       replacement is CURLOPT_XFERINFOFUNCTION.  The latter sets up a function
+       of type 'curl_xferinfo_callback' instead of 'curl_progress_callback',
+       which gets called with arguments of type 'curl_off_t' instead of
+       'double'.
+
+       We need to figure out how to detect that CURLOPT_XFERINFOFUNCTION
+       exists and use that instead if it does.
+    */
+
+    CURL * const curlSessionP = transP->curlSessionP;
+
+    if (transP->progress) {
+        curl_progress_callback const progFnOpt = &curlProgress;
+
+        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION, progFnOpt);
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
+    } else
+        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
+}
+
+
+
+static void
 setupCurlSession(xmlrpc_env *               const envP,
                  curlTransaction *          const transP,
                  const xmlrpc_server_info * const serverInfoP,
@@ -718,13 +745,8 @@ setupCurlSession(xmlrpc_env *               const envP,
             /* CURLOPT_FILE is the older name for CURLOPT_WRITEDATA */
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, transP->curlError);
-        if (transP->progress) {
-            curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
-            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION,
-                             curlProgress);
-            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
-        } else
-            curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
+
+        setupProgressFunction(transP);
 
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
                          curlSetupP->sslVerifyPeer);
