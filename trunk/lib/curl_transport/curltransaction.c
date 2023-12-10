@@ -718,6 +718,31 @@ setupProgressFunction(curlTransaction * const transP) {
 
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+static void
+setupOldOpenSslOpts(CURL *                   const curlSessionP,
+                    const struct curlSetup * const curlSetupP) {
+/*----------------------------------------------------------------------------
+   Set Curl's RANDOM_FILE and EGDSOCKET options.  These are meaningful only if
+   we're using the OpenSSL library, before version 1.1, and current Curl
+   libraries don't even work with those old libraries, so they just ignore
+   these options.  Since Curl 7.84, Curl documentation deprecates these
+   options.
+-----------------------------------------------------------------------------*/
+#if defined(CURL_DOES_OLD_OPENSSL)
+    if (curlSetupP->randomFile)
+        curl_easy_setopt(curlSessionP, CURLOPT_RANDOM_FILE,
+                         curlSetupP->randomFile);
+    if (curlSetupP->egdSocket)
+        curl_easy_setopt(curlSessionP, CURLOPT_EGDSOCKET,
+                         curlSetupP->egdSocket);
+#endif
+}
+#pragma GCC diagnostic pop
+
+
+
 static void
 setupCurlSession(xmlrpc_env *               const envP,
                  curlTransaction *          const transP,
@@ -818,12 +843,8 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->caPath)
             curl_easy_setopt(curlSessionP, CURLOPT_CAPATH,
                              curlSetupP->caPath);
-        if (curlSetupP->randomFile)
-            curl_easy_setopt(curlSessionP, CURLOPT_RANDOM_FILE,
-                             curlSetupP->randomFile);
-        if (curlSetupP->egdSocket)
-            curl_easy_setopt(curlSessionP, CURLOPT_EGDSOCKET,
-                             curlSetupP->egdSocket);
+        setupOldOpenSslOpts(curlSessionP, curlSetupP);
+
         if (curlSetupP->sslCipherList)
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);

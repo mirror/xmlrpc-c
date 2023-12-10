@@ -51,11 +51,18 @@ ifeq ($(HAVE_CURL_MULTI_POLL),Y)
   CFLAGS_LOCAL += -DHAVE_CURL_MULTI_POLL
 endif
 
-# Version 072000 means 7.32.0
-HAVE_CURL_XFERINFOFUNCTION := $(shell if test $(CURL_VERSION) '>' 072000; then echo Y; fi)
+# Version 071F00 means 7.31.0
+HAVE_CURL_XFERINFOFUNCTION := $(shell if test $(CURL_VERSION) '>' 071F00; then echo Y; fi)
 
 ifeq ($(HAVE_CURL_XFERINFOFUNCTION),Y)
   CFLAGS_LOCAL += -DHAVE_CURL_XFERINFOFUNCTION
+endif
+
+# Version 075400 means 7.84.0
+CURL_DOES_OLD_OPENSSL := $(shell if test $(CURL_VERSION) '<' 075400; then echo Y; fi)
+
+ifeq ($(CURL_DOES_OLD_OPENSSL),Y)
+  CFLAGS_LOCAL += -DCURL_DOES_OLD_OPENSSL
 endif
 
 CURL_INCLUDES := $(shell $(CURL_CONFIG) --cflags)
