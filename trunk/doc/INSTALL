@@ -29,6 +29,8 @@ to run a battery of tests before you install.  But note that it's as common
 for the tests to fail because the tests are broken as because the product
 is broken, so consider the results carefully.
 
+The tests use TCP Port 8080, so won't work if you are already using that port.
+
 To see it work, build and run a simple server like this:
 
   $ cd examples
