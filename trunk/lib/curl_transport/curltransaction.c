@@ -17,7 +17,7 @@
 #include "version.h"
 
 #include <curl/curl.h>
-#ifdef NEED_CURL_TYPES_H
+#if defined(NEED_CURL_TYPES_H)
 #include <curl/types.h>
 #endif
 #include <curl/easy.h>
@@ -410,6 +410,33 @@ curlProgress(void * const contextP,
 
 
 
+static int
+curlXferinfo(void *     const contextP,
+             curl_off_t const dltotal,
+             curl_off_t const dlnow,
+             curl_off_t const ultotal,
+             curl_off_t const ulnow) {
+/*----------------------------------------------------------------------------
+   This is a curl "transfer information" callback function, to be called
+   back from certain libcurl data transfer calls.
+
+   In old Curl, one would set up Curl to call a function of type
+   'curl_progress_callback', with arguments of type 'double'.  In later
+   versions of Curl, that facility was replaced with one in which you set
+   up Curl to call a function of type 'curl_xferinfo_callback', with
+   arguments of type 'curl_off_t', instead.  Xmlrpc-c was written for the
+   older version and its interface to its own user is patterned after
+   it (so it uses 'double' arguments).
+
+   This function isan adapter for use with newer Curl libraries.  We
+   just make the call that an older Curl library would have made itself.
+-----------------------------------------------------------------------------*/
+
+    return curlProgress(contextP, dltotal, dlnow, ultotal, ulnow);
+}
+
+
+
 static void
 setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
           CURL *                     const curlSessionP,
@@ -668,24 +695,23 @@ setupKeepalive(const struct curlSetup * const curlSetupP,
 static void
 setupProgressFunction(curlTransaction * const transP) {
 
-    /* CURLOPT_PROGRESSFUNCTION is a deprecated feature of Curl.  The
-       replacement is CURLOPT_XFERINFOFUNCTION.  The latter sets up a function
-       of type 'curl_xferinfo_callback' instead of 'curl_progress_callback',
-       which gets called with arguments of type 'curl_off_t' instead of
-       'double'.
-
-       We need to figure out how to detect that CURLOPT_XFERINFOFUNCTION
-       exists and use that instead if it does.
-    */
-
     CURL * const curlSessionP = transP->curlSessionP;
 
     if (transP->progress) {
-        curl_progress_callback const progFnOpt = &curlProgress;
-
-        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
+#if defined(HAVE_CURL_XFERINFOFUNCTION)
+        curl_xferinfo_callback const progFnOpt = &curlXferinfo;
         curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION, progFnOpt);
         curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
+#else
+        if (false) {
+             /* Defeat unused function compiler warning */
+            curlXferinfo(NULL, 0, 0, 0, 0);
+        }
+        curl_progress_callback const progFnOpt = &curlProgress;
+        curl_easy_setopt(curlSessionP, CURLOPT_XFERINFOFUNCTION, progFnOpt);
+        curl_easy_setopt(curlSessionP, CURLOPT_XFERINFODATA, transP);
+#endif
+        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
     } else
         curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
 }
