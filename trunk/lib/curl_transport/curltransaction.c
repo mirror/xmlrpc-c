@@ -699,10 +699,6 @@ setupProgressFunction(curlTransaction * const transP) {
 
     if (transP->progress) {
 #if defined(HAVE_CURL_XFERINFOFUNCTION)
-        curl_xferinfo_callback const progFnOpt = &curlXferinfo;
-        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION, progFnOpt);
-        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
-#else
         if (false) {
              /* Defeat unused function compiler warning */
             curlXferinfo(NULL, 0, 0, 0, 0);
@@ -710,6 +706,10 @@ setupProgressFunction(curlTransaction * const transP) {
         curl_progress_callback const progFnOpt = &curlProgress;
         curl_easy_setopt(curlSessionP, CURLOPT_XFERINFOFUNCTION, progFnOpt);
         curl_easy_setopt(curlSessionP, CURLOPT_XFERINFODATA, transP);
+#else
+        curl_xferinfo_callback const progFnOpt = &curlXferinfo;
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION, progFnOpt);
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
 #endif
         curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
     } else
