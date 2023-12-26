@@ -697,9 +697,9 @@ public:
         return "carriageParmTestSuite";
     }
     virtual void runtests(unsigned int) {
-        carriageParm_http0 carriageParm1("http://suckthis.com");
-        carriageParm_curl0 carriageParm2("http://suckthis.com");
-        carriageParm_libwww0 carriageParm3("http://suckthis.com");
+        carriageParm_http0    carriageParm1("http://suckthis.com");
+        carriageParm_curl0    carriageParm2("http://suckthis.com");
+        carriageParm_libwww0  carriageParm3("http://suckthis.com");
         carriageParm_wininet0 carriageParm4("http://suckthis.com");
 
         carriageParm_http0Ptr carriageParm_http1P(

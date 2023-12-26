@@ -17,7 +17,7 @@
 #include "version.h"
 
 #include <curl/curl.h>
-#ifdef NEED_CURL_TYPES_H
+#if defined(NEED_CURL_TYPES_H)
 #include <curl/types.h>
 #endif
 #include <curl/easy.h>
@@ -410,6 +410,33 @@ curlProgress(void * const contextP,
 
 
 
+static int
+curlXferinfo(void *     const contextP,
+             curl_off_t const dltotal,
+             curl_off_t const dlnow,
+             curl_off_t const ultotal,
+             curl_off_t const ulnow) {
+/*----------------------------------------------------------------------------
+   This is a curl "transfer information" callback function, to be called
+   back from certain libcurl data transfer calls.
+
+   In old Curl, one would set up Curl to call a function of type
+   'curl_progress_callback', with arguments of type 'double'.  In later
+   versions of Curl, that facility was replaced with one in which you set
+   up Curl to call a function of type 'curl_xferinfo_callback', with
+   arguments of type 'curl_off_t', instead.  Xmlrpc-c was written for the
+   older version and its interface to its own user is patterned after
+   it (so it uses 'double' arguments).
+
+   This function isan adapter for use with newer Curl libraries.  We
+   just make the call that an older Curl library would have made itself.
+-----------------------------------------------------------------------------*/
+
+    return curlProgress(contextP, dltotal, dlnow, ultotal, ulnow);
+}
+
+
+
 static void
 setupAuth(xmlrpc_env *               const envP ATTR_UNUSED,
           CURL *                     const curlSessionP,
@@ -666,6 +693,57 @@ setupKeepalive(const struct curlSetup * const curlSetupP,
 
 
 static void
+setupProgressFunction(curlTransaction * const transP) {
+
+    CURL * const curlSessionP = transP->curlSessionP;
+
+    if (transP->progress) {
+#if defined(HAVE_CURL_XFERINFOFUNCTION)
+        if (false) {
+             /* Defeat unused function compiler warning */
+            curlXferinfo(NULL, 0, 0, 0, 0);
+        }
+        curl_progress_callback const progFnOpt = &curlProgress;
+        curl_easy_setopt(curlSessionP, CURLOPT_XFERINFOFUNCTION, progFnOpt);
+        curl_easy_setopt(curlSessionP, CURLOPT_XFERINFODATA, transP);
+#else
+        curl_xferinfo_callback const progFnOpt = &curlXferinfo;
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION, progFnOpt);
+        curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
+#endif
+        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
+    } else
+        curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
+}
+
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+static void
+setupOldOpenSslOpts(CURL *                   const curlSessionP,
+                    const struct curlSetup * const curlSetupP) {
+/*----------------------------------------------------------------------------
+   Set Curl's RANDOM_FILE and EGDSOCKET options.  These are meaningful only if
+   we're using the OpenSSL library, before version 1.1, and current Curl
+   libraries don't even work with those old libraries, so they just ignore
+   these options.  Since Curl 7.84, Curl documentation deprecates these
+   options.
+-----------------------------------------------------------------------------*/
+#if defined(CURL_DOES_OLD_OPENSSL)
+    if (curlSetupP->randomFile)
+        curl_easy_setopt(curlSessionP, CURLOPT_RANDOM_FILE,
+                         curlSetupP->randomFile);
+    if (curlSetupP->egdSocket)
+        curl_easy_setopt(curlSessionP, CURLOPT_EGDSOCKET,
+                         curlSetupP->egdSocket);
+#endif
+}
+#pragma GCC diagnostic pop
+
+
+
+static void
 setupCurlSession(xmlrpc_env *               const envP,
                  curlTransaction *          const transP,
                  const xmlrpc_server_info * const serverInfoP,
@@ -718,13 +796,8 @@ setupCurlSession(xmlrpc_env *               const envP,
             /* CURLOPT_FILE is the older name for CURLOPT_WRITEDATA */
         curl_easy_setopt(curlSessionP, CURLOPT_HEADER, 0);
         curl_easy_setopt(curlSessionP, CURLOPT_ERRORBUFFER, transP->curlError);
-        if (transP->progress) {
-            curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 0);
-            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSFUNCTION,
-                             curlProgress);
-            curl_easy_setopt(curlSessionP, CURLOPT_PROGRESSDATA, transP);
-        } else
-            curl_easy_setopt(curlSessionP, CURLOPT_NOPROGRESS, 1);
+
+        setupProgressFunction(transP);
 
         curl_easy_setopt(curlSessionP, CURLOPT_SSL_VERIFYPEER,
                          curlSetupP->sslVerifyPeer);
@@ -770,12 +843,8 @@ setupCurlSession(xmlrpc_env *               const envP,
         if (curlSetupP->caPath)
             curl_easy_setopt(curlSessionP, CURLOPT_CAPATH,
                              curlSetupP->caPath);
-        if (curlSetupP->randomFile)
-            curl_easy_setopt(curlSessionP, CURLOPT_RANDOM_FILE,
-                             curlSetupP->randomFile);
-        if (curlSetupP->egdSocket)
-            curl_easy_setopt(curlSessionP, CURLOPT_EGDSOCKET,
-                             curlSetupP->egdSocket);
+        setupOldOpenSslOpts(curlSessionP, curlSetupP);
+
         if (curlSetupP->sslCipherList)
             curl_easy_setopt(curlSessionP, CURLOPT_SSL_CIPHER_LIST,
                              curlSetupP->sslCipherList);

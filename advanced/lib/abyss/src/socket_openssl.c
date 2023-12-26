@@ -53,11 +53,37 @@
 
 
 
+static void
+sslGetErrorLine(int *         const errCodeP,
+                const char ** const sourceFileNmP,
+                int *         const lineNumP) {
+
+/* In OpenSSL 3, 'ERR_get_error_line' was deprecated in favor of
+   'ERR_get_error_all', according to the OpenSSL manual.  We don't know when
+   'ERR_get_error_all' was introduced, but it was present at least by OpenSSL
+   3.
+*/
+#if OPENSSL_VERSION_NUMBER < 0x30000000
+    *errCodeP = ERR_get_error_line(sourceFileNmP, lineNumP);
+#else
+    *errCodeP = ERR_get_error_all(sourceFileNmP, lineNumP, NULL, NULL, NULL);
+#endif
+}
+
+
+
 static const char *
 sslErrorMsg(void) {
 /*----------------------------------------------------------------------------
    The information on the OpenSSL error stack, in human-readable (barely)
    form.
+
+   If there are no errors on the stack, this is a null string.
+
+   If there are multiple errors on the stack, this is the one on the bottom,
+   i.e. which happened first.
+
+   A side effect is that the stack is cleared.
 -----------------------------------------------------------------------------*/
     const char * retval;
     bool eof;
@@ -65,10 +91,11 @@ sslErrorMsg(void) {
     retval = xmlrpc_strdupsol("");
 
     for (eof = false; !eof; ) {
+        int errCode;
         const char * sourceFileName;
         int lineNum;
 
-        int const errCode = ERR_get_error_line(&sourceFileName, &lineNum);
+        sslGetErrorLine(&errCode, &sourceFileName, &lineNum);
 
         if (errCode == 0)
             eof = true;

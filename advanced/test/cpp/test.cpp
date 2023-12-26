@@ -1,3 +1,9 @@
+/*=============================================================================
+                                  test
+===============================================================================
+  Exercise all of the C++ facilities of XML-RPC For C/C++.  Report failures.
+=============================================================================*/
+
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -26,40 +32,10 @@ using girerr::error;
 using namespace xmlrpc_c;
 using namespace std;
 
-//=========================================================================
-//  Test Harness
-//=========================================================================
-// 
-//  There are two styles of test in here.  The older ones are vaguely
-//  inspired by Kent Beck's book on eXtreme Programming (XP) and use
-//  the TEST...() macros.
-//
-//  But this style is not really appropriate for C++.  It's based on
-//  code that explicitly tests for errors, as one would do in C.  In C++,
-//  it is cumbersome to catch exceptions on every call, so we don't in
-//  the new style.
-
-//  And there's not much point in trying to count test successes and
-//  failures.  Any failure is a problem, so in the new style, we just
-//  quit after we recognize one (again, more in line with regular exception
-//  throwing).  With exception throwing, you can't count what _didn't_
-//  cause an exception, so there's no meaningful count of test successes.
-//
-//  To run the tests, type './cpptest'.
-//  To check for memory leaks, install RedHat's 'memprof' utility, and
-//  type 'memprof cpptest'.
-//
-//  If you add new tests to this file, please deallocate any data
-//  structures you use in the appropriate fashion. This allows us to test
-//  various destructor code for memory leaks.
 
 
-//=========================================================================
-//  Test Suites
-//=========================================================================
-
-void 
-test_fault (void) {
+static void
+testFault() {
 
     // Create a new fault and perform basic operations.
     XmlRpcFault fault1 = XmlRpcFault(6, "Sample fault");
@@ -77,7 +53,7 @@ test_fault (void) {
     XmlRpcFault fault2 = fault1;
     TEST(fault2.getFaultCode() == 6);
     TEST(fault2.getFaultString() == "Sample fault");
-    
+
     // Construct a fault from a pre-existing xmlrpc_env structure.
     xmlrpc_env env3;
     xmlrpc_env_init(&env3);
@@ -86,7 +62,7 @@ test_fault (void) {
     xmlrpc_env_clean(&env3);
     TEST(fault3.getFaultCode() == 7);
     TEST(fault3.getFaultString() == "Another fault");
-    
+
     // Attempt to construct a fault from a fault-free xmlrpc_env.
     xmlrpc_env env4;
     xmlrpc_env_init(&env4);
@@ -102,7 +78,8 @@ test_fault (void) {
 
 
 
-void test_env (void) {
+static void
+testEnv() {
 
     // Declare these here to prevent silly compiler warnings about
     // potentially uninitialized variables.
@@ -123,7 +100,7 @@ void test_env (void) {
         TEST_PASSED();
     } catch (XmlRpcFault const&) {
         TEST_FAILED("We threw a fault when one hadn't occurred");
-    } 
+    }
     xmlrpc_env_set_fault(env2, 9, "Fault 9");
     try {
         env2.throwIfFaultOccurred();
@@ -132,8 +109,8 @@ void test_env (void) {
         TEST_PASSED();
         TEST(fault.getFaultCode() == 9);
         TEST(fault.getFaultString() == "Fault 9");
-    } 
-    
+    }
+
     // Make sure we can't get a fault if one hasn't occurred.
     XmlRpcEnv env3;
     try {
@@ -145,7 +122,11 @@ void test_env (void) {
     }
 }
 
-void test_value (void) {
+
+
+static void
+testValue() {
+
     XmlRpcEnv env;
 
     // Test basic reference counting behavior.
@@ -178,7 +159,7 @@ void test_value (void) {
 
     // Test our type introspection.
     TEST(XmlRpcValue::makeInt(0).getType() == XMLRPC_TYPE_INT);
-    
+
     // Test our basic data types.
     TEST(XmlRpcValue::makeInt(30).getInt() == 30);
     TEST(XmlRpcValue::makeInt(-30).getInt() == -30);
@@ -237,16 +218,16 @@ testXmlRpcCpp() {
 -----------------------------------------------------------------------------*/
     cout << "Testing XmlRpcCpp library..." << endl;
 
-    test_fault();
-    test_env();
-    test_value();
+    testFault();
+    testEnv();
+    testValue();
 }
 
 
 
 static void
 buildParamListWithAdd(paramList * const paramListP,
-                      time_t    const  timeFuture) {
+                      time_t      const  timeFuture) {
 
     paramListP->add(value_int(7));
     paramListP->add(value_boolean(true)).add(value_double(3.14));
@@ -255,7 +236,7 @@ buildParamListWithAdd(paramList * const paramListP,
     paramListP->add(value_datetime(timeFuture));
     paramListP->add(value_string("hello world"));
     unsigned char bytestringArray[] = {0x10, 0x11, 0x12, 0x13, 0x14};
-    vector<unsigned char> 
+    vector<unsigned char>
         bytestringData(&bytestringArray[0], &bytestringArray[4]);
     paramListP->add(value_bytestring(bytestringData));
     vector<value> arrayData;
@@ -289,7 +270,7 @@ verifyParamList(paramList const& paramList,
     time_t const timeZero(0);
     TEST(paramList.getDatetime_sec(3) == timeZero);
     TEST(paramList.getDatetime_sec(3, paramList::TC_ANY) == timeZero);
-    TEST(paramList.getDatetime_sec(3, paramList::TC_NO_FUTURE) 
+    TEST(paramList.getDatetime_sec(3, paramList::TC_NO_FUTURE)
          == timeZero);
     TEST(paramList.getDatetime_sec(4, paramList::TC_NO_PAST)
          == timeFuture);
@@ -335,13 +316,11 @@ public:
     }
 };
 
-//=========================================================================
-//  Test Driver
-//=========================================================================
 
-int 
+
+int
 main(int argc, char**) {
-    
+
     int retval;
 
     if (argc-1 > 0) {
@@ -388,3 +367,6 @@ main(int argc, char**) {
     }
     return retval;
 }
+
+
+

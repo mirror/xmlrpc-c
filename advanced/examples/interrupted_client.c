@@ -18,7 +18,7 @@ static int interrupt;
        doing.  It's global because we set it with a signal handler.
     */
 
-static void 
+static void
 die_if_fault_occurred (xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
@@ -29,7 +29,7 @@ die_if_fault_occurred (xmlrpc_env * const envP) {
 
 
 
-static void 
+static void
 interruptRpc(int const signalClass) {
 
     switch (signalClass) {
@@ -53,7 +53,7 @@ static void
 setupSignalHandlers(void) {
 
     struct sigaction mysigaction;
-    
+
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
 
@@ -95,12 +95,12 @@ addInterruptibly(xmlrpc_client * const clientP,
     die_if_fault_occurred(&env);
 
     alarm(0);  /* Cancel alarm, if it hasn't happened yet */
-    
+
     /* Get our sum and print it out. */
     xmlrpc_read_int(&env, resultP, &sum);
     die_if_fault_occurred(&env);
     printf("The sum is %d\n", sum);
-    
+
     /* Dispose of our result value. */
     xmlrpc_DECREF(resultP);
 
@@ -109,8 +109,8 @@ addInterruptibly(xmlrpc_client * const clientP,
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     const char * const serverUrl = "http://localhost:8080/RPC2";
@@ -162,4 +162,5 @@ main(int           const argc,
 
     return 0;
 }
+
 
