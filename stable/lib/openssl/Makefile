@@ -25,8 +25,8 @@ PKGCONFIG_FILES_TO_INSTALL := xmlrpc_openssl.pc
 
 MAJ := 1
 
-OPENSSL_INCLUDES := $(shell pkg-config openssl --cflags)
-OPENSSL_LIBS     := $(shell pkg-config openssl --libs)
+OPENSSL_INCLUDES := $(shell $(PKG_CONFIG) openssl --cflags)
+OPENSSL_LIBS     := $(shell $(PKG_CONFIG) openssl --libs)
 
 include $(SRCDIR)/common.mk
 

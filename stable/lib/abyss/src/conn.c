@@ -531,13 +531,25 @@ ConnRead(TConn *       const connectionP,
 
 
 bool
-ConnWrite(TConn *      const connectionP,
-          const void * const buffer,
-          uint32_t     const size) {
+ConnWrite(TConn *          const connectionP,
+          const void *     const buffer,
+          uint32_t         const size,
+          TConnWriteExpect const expectation) {
+/*----------------------------------------------------------------------------
+  Write the 'size' bytes in 'buffer' to connection *connectionP.
+
+  'expectation' is CONN_EXPECT_MORE to say the system should expect more
+  data logically part of the same message to come in a future ConnWrite call.
+  (Some systems will choose to wait for that data and send it together with
+  'buffer').
+-----------------------------------------------------------------------------*/
+    TChanWriteExpect const chanExpect =
+        expectation == CONN_EXPECT_MORE ?
+            CHAN_EXPECT_MORE : CHAN_EXPECT_NOTHING;
 
     bool failed;
 
-    ChannelWrite(connectionP->channelP, buffer, size, &failed);
+    ChannelWrite(connectionP->channelP, buffer, size, chanExpect, &failed);
 
     traceChannelWrite(connectionP, buffer, size, failed);
 
@@ -600,7 +612,8 @@ ConnWriteFromFile(TConn *       const connectionP,
             bytesread += bytesReadThisTime;
 
             if (bytesReadThisTime > 0)
-                ConnWrite(connectionP, buffer, bytesReadThisTime);
+                ConnWrite(connectionP, buffer, bytesReadThisTime,
+                          CONN_EXPECT_NOTHING);
             else
                 break;
 
