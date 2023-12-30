@@ -120,13 +120,15 @@ $(LIBXMLRPC_ABYSSPP_MODS:%=%.osh): \
 xmlrpc_abyss++.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_abyss++"                                >>$@
 	@echo "Description: Xmlrpc-c Abyss HTTP C++ library"               >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc_abyss xmlrpc_util++"                       >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_abyss++"                 >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_abyss++'                    >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

@@ -355,57 +355,67 @@ $(TRANSPORT_CONFIG_USERS:%=%.o) $(TRANSPORT_CONFIG_USERS:%=%.osh): \
 xmlrpc++.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc++"                                      >>$@
 	@echo "Description: Xmlrpc-c basic XML-RPC C++ library"            >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc++"                       >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc++'                          >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_client++.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_client++"                               >>$@
 	@echo "Description: Xmlrpc-c XML-RPC client C++ library"           >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc++ xmlrpc_client xmlrpc_util++ xmlrpc_util" >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_client++"                >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_client++'                   >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_server++.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_server++"                               >>$@
 	@echo "Description: Xmlrpc-c XML-RPC server C++ library"           >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server xmlrpc_util++ xmlrpc_util" >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server++"                >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_server++'                   >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_server_abyss++.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_server_abyss++"                         >>$@
 	@echo "Description: Xmlrpc-c Abyss XML-RPC server C++ library"     >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_abyss xmlrpc_util++ xmlrpc_util"    >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_abyss"            >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_abyss++'             >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_server_pstream++.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_server_pstream"                         >>$@
 	@echo "Description: Xmlrpc-c packet stream XML-RPC server library" >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
-	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_util++ xmlrpc_util"                 >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_pstream++ -lxmlrpc_packetsocket"              >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_util++ xmlrpc_util" >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_pstream++' -lxmlrpc_packetsocket >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

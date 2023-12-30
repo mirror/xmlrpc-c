@@ -333,57 +333,67 @@ libxmlrpc_client.ldflags:
 xmlrpc.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
-	@echo "Name:        xmlrpc"                                        >>$@
-	@echo "Description: Xmlrpc-c basic XML-RPC library"                >>$@
-	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
 	@echo	                                                           >>$@
-	@echo "Requires: xmlrpc_util $(XML_PKGCONFIG_REQ)"                 >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc"                         >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Name:        xmlrpc'                                        >>$@
+	@echo 'Description: Xmlrpc-c basic XML-RPC library'                >>$@
+	@echo 'Version:     $(XMLRPC_VERSION_STRING)'                      >>$@
+	@echo	                                                           >>$@
+	@echo 'Requires: xmlrpc_util $(XML_PKGCONFIG_REQ)'                 >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc'                            >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_client.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_client"                                 >>$@
 	@echo "Description: Xmlrpc-c XML-RPC client library"               >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_client"                  >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_client'                     >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_server.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_server"                                 >>$@
 	@echo "Description: Xmlrpc-c XML-RPC server library"               >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server"                  >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_server'                     >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_server_abyss.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_server_abyss"                           >>$@
 	@echo "Description: Xmlrpc-c Abyss XML-RPC server library"         >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_server xmlrpc_abyss xmlrpc_util"    >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_abyss"            >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_abyss'               >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 xmlrpc_server_cgi.pc:
 	rm -f $@
 	@echo "Echoes to '$@' suppressed here ..."
+	@echo -e '$(PKGCONFIG_VAR_SET)'                                    >>$@
+	@echo	                                                           >>$@
 	@echo "Name:        xmlrpc_server_cgi"                             >>$@
 	@echo "Description: Xmlrpc-c CGI XML-RPC server library"           >>$@
 	@echo "Version:     $(XMLRPC_VERSION_STRING)"                      >>$@
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_server xmlrpc_util"                 >>$@
-	@echo "Libs:     -L$(LIBDESTDIR) -lxmlrpc_server_cgi"              >>$@
-	@echo "Cflags:   -I$(HEADERDESTDIR)"                               >>$@
+	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_cgi'                 >>$@
+	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
 
 .PHONY: check
 check:
