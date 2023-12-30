@@ -584,6 +584,11 @@ PROGRAMDESTDIR   = $(DESTDIR)$(PROGRAMINST_DIR)
 MANDESTDIR       = $(DESTDIR)$(MANINST_DIR)
 PKGCONFIGDESTDIR = $(DESTDIR)$(PKGCONFIGINST_DIR)
 
+# The following value, in a pkg-config file, sets the conventional pkg-config
+# variables that the pkg-config user can override at pkg-config time.
+PKGCONFIG_VAR_SET = \
+  prefix=$(PREFIX)\nexec_prefix=$${prefix}\nincludedir=$${prefix}/include\nlibdir=$${exec_prefix}/lib
+
 
 ##############################################################################
 #                           INSTALL RULES                                    #
