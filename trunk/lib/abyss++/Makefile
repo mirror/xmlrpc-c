@@ -128,7 +128,7 @@ xmlrpc_abyss++.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc_abyss xmlrpc_util++"                       >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_abyss++'                    >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

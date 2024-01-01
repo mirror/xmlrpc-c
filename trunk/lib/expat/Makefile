@@ -42,7 +42,7 @@ xmlrpc_expat.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc_util"                                      >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_xmlparse -lxmlrpc_xmltok'   >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 .PHONY: clean
 clean: $(SUBDIRS:%=%/clean) clean-common

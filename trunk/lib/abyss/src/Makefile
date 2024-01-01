@@ -141,7 +141,7 @@ xmlrpc_abyss.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc_util"                                      >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_abyss $(SOCKLIB)'           >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 # Need this dependency for those who don't use depend.mk.
 # Without it, version.h doesn't get created.
