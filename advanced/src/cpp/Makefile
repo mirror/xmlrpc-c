@@ -363,7 +363,7 @@ xmlrpc++.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc++'                          >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_client++.pc:
 	rm -f $@
@@ -376,7 +376,7 @@ xmlrpc_client++.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc++ xmlrpc_client xmlrpc_util++ xmlrpc_util" >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_client++'                   >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_server++.pc:
 	rm -f $@
@@ -389,7 +389,7 @@ xmlrpc_server++.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server xmlrpc_util++ xmlrpc_util" >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_server++'                   >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_server_abyss++.pc:
 	rm -f $@
@@ -402,7 +402,7 @@ xmlrpc_server_abyss++.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_abyss xmlrpc_util++ xmlrpc_util"    >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_abyss++'             >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_server_pstream++.pc:
 	rm -f $@
@@ -415,7 +415,7 @@ xmlrpc_server_pstream++.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc++ xmlrpc xmlrpc_server++ xmlrpc_util++ xmlrpc_util" >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_pstream++' -lxmlrpc_packetsocket >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 #-----------------------------------------------------------------------------
 #  MISCELLANEOUS RULES

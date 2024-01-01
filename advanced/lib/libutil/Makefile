@@ -120,7 +120,7 @@ xmlrpc_util.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: "                                                 >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_util'                       >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 .PHONY: install
 install: install-common

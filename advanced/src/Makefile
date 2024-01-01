@@ -341,7 +341,7 @@ xmlrpc.pc:
 	@echo	                                                           >>$@
 	@echo 'Requires: xmlrpc_util $(XML_PKGCONFIG_REQ)'                 >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc'                            >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_client.pc:
 	rm -f $@
@@ -354,7 +354,7 @@ xmlrpc_client.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_client'                     >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_server.pc:
 	rm -f $@
@@ -367,7 +367,7 @@ xmlrpc_server.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_util"                               >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_server'                     >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_server_abyss.pc:
 	rm -f $@
@@ -380,7 +380,7 @@ xmlrpc_server_abyss.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_server xmlrpc_abyss xmlrpc_util"    >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_abyss'               >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 xmlrpc_server_cgi.pc:
 	rm -f $@
@@ -393,7 +393,7 @@ xmlrpc_server_cgi.pc:
 	@echo	                                                           >>$@
 	@echo "Requires: xmlrpc xmlrpc_server xmlrpc_util"                 >>$@
 	@echo 'Libs:     -L$${libdir} -lxmlrpc_server_cgi'                 >>$@
-	@echo 'Cflags:   -I$${includedir}/xmlrpc-c'                        >>$@
+	@echo 'Cflags:   -I$${includedir}'                                 >>$@
 
 .PHONY: check
 check:
