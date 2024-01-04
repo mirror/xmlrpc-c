@@ -56,14 +56,14 @@ translateTypeSpecifierToName(xmlrpc_env *  const envP,
     case 'n': *typeNameP = "nil";              break;
     case 'I': *typeNameP = "i8";               break;
     default:
-        xmlrpc_faultf(envP, 
+        xmlrpc_faultf(envP,
                       "Method registry contains invalid signature "
                       "data.  It contains the type specifier '%c'",
                       typeSpecifier);
         *typeNameP = NULL;  /* quiet compiler warning */
     }
 }
-                
+
 
 
 /* MSVC 8 complains that const char ** is incompatible with void * in the
@@ -119,7 +119,7 @@ parseArgumentTypeSpecifiers(xmlrpc_env *              const envP,
             ++cursorP;  /* Move past the signature and comma */
         }
     }
-    if (envP->fault_occurred) 
+    if (envP->fault_occurred)
         free((void*)signatureP->argList);
 
     *nextPP = cursorP;
@@ -177,7 +177,7 @@ parseOneSignature(xmlrpc_env *               const envP,
             free(signatureP);
     }
     *signaturePP = signatureP;
-}    
+}
 
 
 
@@ -199,24 +199,24 @@ static void
 listSignatures(xmlrpc_env *               const envP,
                const char *               const sigListString,
                struct xmlrpc_signature ** const firstSignaturePP) {
-    
+
     struct xmlrpc_signature ** p;
     const char * cursorP;
 
     *firstSignaturePP = NULL;  /* Start with empty list */
-    
+
     p = firstSignaturePP;
     cursorP = &sigListString[0];
-    
+
     while (!envP->fault_occurred && *cursorP != '\0') {
         struct xmlrpc_signature * signatureP;
-        
+
         parseOneSignature(envP, cursorP, &signatureP, &cursorP);
-        
+
         /* cursorP now points at next signature in the list or the
            terminating NUL.
         */
-        
+
         if (!envP->fault_occurred) {
             signatureP->nextP = NULL;
             *p = signatureP;
@@ -237,7 +237,7 @@ signatureListCreate(xmlrpc_env *            const envP,
     xmlrpc_signatureList * signatureListP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
-    
+
     MALLOCVAR(signatureListP);
 
     if (signatureListP == NULL)
@@ -339,7 +339,7 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
 
 void
 xmlrpc_methodDestroy(xmlrpc_methodInfo * const methodP) {
-    
+
     signatureListDestroy(methodP->signatureListP);
 
     xmlrpc_strfree(methodP->helpText);
@@ -420,13 +420,13 @@ xmlrpc_methodListAdd(xmlrpc_env *        const envP,
                      xmlrpc_methodList * const methodListP,
                      const char *        const methodName,
                      xmlrpc_methodInfo * const methodP) {
-    
+
     xmlrpc_methodInfo * existingMethodP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
 
     xmlrpc_methodListLookupByName(methodListP, methodName, &existingMethodP);
-    
+
     if (existingMethodP)
         xmlrpc_faultf(envP, "Method named '%s' already registered",
                       methodName);
@@ -434,14 +434,14 @@ xmlrpc_methodListAdd(xmlrpc_env *        const envP,
         xmlrpc_methodNode * methodNodeP;
 
         MALLOCVAR(methodNodeP);
-        
+
         if (methodNodeP == NULL)
             xmlrpc_faultf(envP, "Couldn't allocate method node");
         else {
             methodNodeP->methodName = strdup(methodName);
             methodNodeP->methodP = methodP;
             methodNodeP->nextP = NULL;
-            
+
             if (!methodListP->firstMethodP)
                 methodListP->firstMethodP = methodNodeP;
 
@@ -452,4 +452,5 @@ xmlrpc_methodListAdd(xmlrpc_env *        const envP,
         }
     }
 }
+
 
