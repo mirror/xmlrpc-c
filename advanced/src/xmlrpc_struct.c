@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "xmlrpc_config.h"
 
 #include <assert.h>
@@ -152,20 +153,19 @@ xmlrpc_struct_new_value(xmlrpc_env *   const envP,
                                        "It is type #%d", valueP->_type);
         structP = NULL;
     } else {
-        size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, structP->blockP);
-
         xmlrpc_createXmlrpcValue(envP, &structP);
         if (!envP->fault_occurred) {
             structP->_type = XMLRPC_TYPE_STRUCT;
 
-            structP->blockP = XMLRPC_MEMBLOCK_NEW(xmlrpc_value *, envP, 0);
+            structP->blockP = XMLRPC_MEMBLOCK_NEW(_struct_member, envP, 0);
 
             if (envP->fault_occurred)
                 free(structP);
             else {
                 _struct_member * const srcMemberList =
                     XMLRPC_MEMBLOCK_CONTENTS(_struct_member, valueP->blockP);
+                size_t const size =
+                    XMLRPC_MEMBLOCK_SIZE(_struct_member, valueP->blockP);
                 
                 unsigned int i;
             
