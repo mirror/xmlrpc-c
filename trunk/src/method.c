@@ -261,8 +261,8 @@ signatureListCreate(xmlrpc_env *            const envP,
         }
         if (envP->fault_occurred)
             free(signatureListP);
-
-        *signatureListPP = signatureListP;
+        else
+            *signatureListPP = signatureListP;
     }
 }
 
