@@ -215,9 +215,6 @@ xmlrpc_array_new_value(xmlrpc_env *   const envP,
                                        "It is type #%d", valueP->_type);
         arrayP = NULL;
     } else {
-        size_t const size = 
-            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, valueP->blockP);
-
         xmlrpc_createXmlrpcValue(envP, &arrayP);
         if (!envP->fault_occurred) {
             arrayP->_type = XMLRPC_TYPE_ARRAY;
@@ -229,6 +226,8 @@ xmlrpc_array_new_value(xmlrpc_env *   const envP,
             else {
                 xmlrpc_value ** const srcValuePList =
                     XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value *, valueP->blockP);
+                size_t const size =
+                    XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, valueP->blockP);
                 
                 unsigned int i;
             
