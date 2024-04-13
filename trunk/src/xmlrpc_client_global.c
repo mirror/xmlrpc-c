@@ -17,7 +17,7 @@ static struct xmlrpc_client * globalClientP;
 static bool globalClientExists = false;
 
 
-void 
+void
 xmlrpc_client_init2(xmlrpc_env *                      const envP,
                     int                               const flags,
                     const char *                      const appname,
@@ -60,7 +60,7 @@ xmlrpc_client_init(int          const flags,
     struct xmlrpc_clientparms clientparms;
 
     /* As our interface does not allow for failure, we just fail silently ! */
-    
+
     xmlrpc_env env;
     xmlrpc_env_init(&env);
 
@@ -76,7 +76,7 @@ xmlrpc_client_init(int          const flags,
 
 
 
-void 
+void
 xmlrpc_client_cleanup() {
 /*----------------------------------------------------------------------------
    This function is not thread-safe
@@ -108,7 +108,7 @@ validateGlobalClientExists(xmlrpc_env * const envP) {
 void
 xmlrpc_client_transport_call(
     xmlrpc_env *               const envP,
-    void *                     const reserved ATTR_UNUSED, 
+    void *                     const reserved ATTR_UNUSED,
         /* for client handle */
     const xmlrpc_server_info * const serverP,
     xmlrpc_mem_block *         const callXmlP,
@@ -122,7 +122,7 @@ xmlrpc_client_transport_call(
 
 
 
-xmlrpc_value * 
+xmlrpc_value *
 xmlrpc_client_call(xmlrpc_env * const envP,
                    const char * const serverUrl,
                    const char * const methodName,
@@ -137,7 +137,7 @@ xmlrpc_client_call(xmlrpc_env * const envP,
         va_list args;
 
         va_start(args, format);
-    
+
         xmlrpc_client_call2f_va(envP, globalClientP, serverUrl,
                                 methodName, format, &resultP, args);
 
@@ -148,11 +148,11 @@ xmlrpc_client_call(xmlrpc_env * const envP,
 
 
 
-xmlrpc_value * 
+xmlrpc_value *
 xmlrpc_client_call_server(xmlrpc_env *               const envP,
                           const xmlrpc_server_info * const serverInfoP,
                           const char *               const methodName,
-                          const char *               const format, 
+                          const char *               const format,
                           ...) {
 
     xmlrpc_value * resultP;
@@ -194,7 +194,7 @@ xmlrpc_client_call_server_params(
 
 
 
-xmlrpc_value * 
+xmlrpc_value *
 xmlrpc_client_call_params(xmlrpc_env *   const envP,
                           const char *   const serverUrl,
                           const char *   const methodName,
@@ -208,21 +208,21 @@ xmlrpc_client_call_params(xmlrpc_env *   const envP,
         xmlrpc_server_info * serverInfoP;
 
         serverInfoP = xmlrpc_server_info_new(envP, serverUrl);
-        
+
         if (!envP->fault_occurred) {
             xmlrpc_client_call2(envP, globalClientP,
                                 serverInfoP, methodName, paramArrayP,
                                 &resultP);
-            
+
             xmlrpc_server_info_free(serverInfoP);
         }
     }
     return resultP;
-}                            
+}
 
 
 
-void 
+void
 xmlrpc_client_call_server_asynch_params(
     xmlrpc_server_info * const serverInfoP,
     const char *         const methodName,
@@ -257,7 +257,7 @@ xmlrpc_client_call_server_asynch_params(
 
 
 
-void 
+void
 xmlrpc_client_call_asynch(const char * const serverUrl,
                           const char * const methodName,
                           xmlrpc_response_handler responseHandler,
@@ -275,7 +275,7 @@ xmlrpc_client_call_asynch(const char * const serverUrl,
         va_list args;
 
         va_start(args, format);
-    
+
         xmlrpc_client_start_rpcf_va(&env, globalClientP,
                                     serverUrl, methodName,
                                     responseHandler, userData,
@@ -307,7 +307,7 @@ xmlrpc_client_call_asynch_params(const char *   const serverUrl,
     if (!env.fault_occurred) {
         xmlrpc_client_call_server_asynch_params(
             serverInfoP, methodName, responseHandler, userData, paramArrayP);
-        
+
         xmlrpc_server_info_free(serverInfoP);
     }
     if (env.fault_occurred)
@@ -318,7 +318,7 @@ xmlrpc_client_call_asynch_params(const char *   const serverUrl,
 
 
 
-void 
+void
 xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverInfoP,
                                  const char *         const methodName,
                                  xmlrpc_response_handler    responseHandler,
@@ -332,7 +332,7 @@ xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverInfoP,
 
     if (!env.fault_occurred) {
         va_list args;
-    
+
         xmlrpc_env_init(&env);
 
         va_start(args, format);
@@ -352,7 +352,7 @@ xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverInfoP,
 
 
 
-void 
+void
 xmlrpc_client_event_loop_finish_asynch(void) {
 
     XMLRPC_ASSERT(globalClientExists);
@@ -361,10 +361,13 @@ xmlrpc_client_event_loop_finish_asynch(void) {
 
 
 
-void 
+void
 xmlrpc_client_event_loop_finish_asynch_timeout(
     unsigned long const milliseconds) {
 
     XMLRPC_ASSERT(globalClientExists);
     xmlrpc_client_event_loop_finish_timeout(globalClientP, milliseconds);
 }
+
+
+
