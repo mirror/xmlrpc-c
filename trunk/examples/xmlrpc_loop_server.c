@@ -1,5 +1,5 @@
 /* A simple standalone XML-RPC server program based on Abyss that contains a
-   simple one-thread request processing loop.  
+   simple one-thread request processing loop.
 
    This uses the "provide your own Abyss server" mode of operation.
 
@@ -41,7 +41,7 @@ setupSignalHandlers(void) {
     */
 #ifndef _WIN32
     struct sigaction mysigaction;
-    
+
     sigemptyset(&mysigaction.sa_mask);
     mysigaction.sa_flags = 0;
     mysigaction.sa_handler = SIG_IGN;
@@ -75,11 +75,11 @@ printPeerIpAddr(TSession * const abyssSessionP) {
 
 
 static xmlrpc_value *
-sample_add(xmlrpc_env *   const envP, 
+sample_add(xmlrpc_env *   const envP,
            xmlrpc_value * const paramArrayP,
            void *         const serverInfo,
            void *         const channelInfo) {
-    
+
     xmlrpc_int x, y, z;
 
     printPeerIpAddr(channelInfo);
@@ -118,14 +118,14 @@ requestShutdown(xmlrpc_env * const faultP,
     fprintf(stderr, "Termination requested: %s\n", comment);
 
     printPeerIpAddr(abyssSessionP);
-    
+
     *terminationRequestedP = 1;
 }
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     struct xmlrpc_method_info3 const methodInfo = {
@@ -147,7 +147,7 @@ main(int           const argc,
     }
 
     AbyssInit(&error);
-    
+
     xmlrpc_env_init(&env);
 
     registryP = xmlrpc_registry_new(&env);
@@ -158,7 +158,7 @@ main(int           const argc,
                                  &requestShutdown, &terminationRequested);
 
     ServerCreate(&abyssServer, "XmlRpcServer", atoi(argv[1]), NULL, NULL);
-    
+
     xmlrpc_server_abyss_set_handlers2(&abyssServer, "/RPC2", registryP);
 
     ServerInit(&abyssServer);
@@ -183,3 +183,5 @@ main(int           const argc,
 
     return 0;
 }
+
+
