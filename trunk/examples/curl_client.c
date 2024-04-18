@@ -11,7 +11,7 @@
    Example that works with 'ssl_server' example server:
 
      $ ./curl_client https::/localhost:8080/RPC2
-   
+
 */
 
 #define _XOPEN_SOURCE 600
@@ -26,7 +26,7 @@
 
 
 
-static void 
+static void
 die_if_fault_occurred (xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
@@ -65,7 +65,7 @@ add(xmlrpc_client * const clientP,
     xmlrpc_read_int(&env, resultP, &sum);
     die_if_fault_occurred(&env);
     printf("The sum is %d\n", sum);
-    
+
     /* Dispose of our result value. */
     xmlrpc_DECREF(resultP);
 
@@ -74,8 +74,8 @@ add(xmlrpc_client * const clientP,
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     const char * serverUrl;
@@ -148,4 +148,5 @@ main(int           const argc,
 
     return 0;
 }
+
 
