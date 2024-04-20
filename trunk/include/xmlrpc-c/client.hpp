@@ -36,7 +36,7 @@ class XMLRPC_CLIENTPP_EXPORTED clientTransaction : public girmem::autoObject {
 public:
     virtual void
     finish(xmlrpc_c::rpcOutcome const& outcome) = 0;
-    
+
     virtual void
     finishErr(girerr::error const& error) = 0;
 
@@ -48,7 +48,7 @@ protected:
 };
 
 class XMLRPC_CLIENTPP_EXPORTED clientTransactionPtr : public girmem::autoObjectPtr {
-    
+
 public:
     clientTransactionPtr();
 
@@ -89,7 +89,7 @@ public:
 
     void
     finishAsync(xmlrpc_c::timeout const timeout);
-    
+
     virtual void
     setInterrupt(int *);
 };
@@ -108,7 +108,7 @@ public:
 };
 
 class XMLRPC_CLIENTPP_EXPORTED serverAccessor : public girmem::autoObject {
-    
+
 public:
     serverAccessor(xmlrpc_c::clientPtr       const clientP,
                    xmlrpc_c::carriageParmPtr const carriageParmP);
@@ -218,7 +218,7 @@ private:
 class XMLRPC_CLIENTPP_EXPORTED xmlTransaction_clientPtr : public xmlTransactionPtr {
 public:
     xmlTransaction_clientPtr();
-    
+
     xmlTransaction_clientPtr(xmlrpc_c::clientTransactionPtr const& tranP);
 
     xmlrpc_c::xmlTransaction_client *
@@ -232,7 +232,7 @@ class XMLRPC_CLIENTPP_EXPORTED rpc : public clientTransaction {
    An RPC.  An RPC consists of method name, parameters, and result.  It
    does not specify in any way how the method name and parameters get
    turned into a result.  It does not presume XML or HTTP.
-  
+
    You don't normally create or reference an object of this class directly,
    but rather via an 'rpcPtr' object.  That takes care of deleting the object
    when you are done with it (but not before).  This is critical if you plan
@@ -241,7 +241,7 @@ class XMLRPC_CLIENTPP_EXPORTED rpc : public clientTransaction {
    is no way for you to guarantee you won't still access it after it finishes
    (because of accesses within Xmlrpc-c calls such as the call that finishes
    the RPC or just rpc::start).
- 
+
    In order to do asynchronous RPCs, you normally have to create a derived
    class that defines a useful notifyComplete().
 -----------------------------------------------------------------------------*/
@@ -258,10 +258,10 @@ public:
     void
     start(xmlrpc_c::client       * const clientP,
           xmlrpc_c::carriageParm * const carriageParmP);
-    
+
     void
     start(xmlrpc_c::connection const& connection);
-    
+
     void
     finish(xmlrpc_c::rpcOutcome const& outcome);
 
