@@ -486,6 +486,14 @@ testServerInfo(void) {
     xmlrpc_server_info_disallow_auth_ntlm(&env, serverInfoP);
     TEST_NO_FAULT(&env);
 
+    xmlrpc_server_info_set_unix_socket(&env, serverInfoP, "/tmp/mysocket");
+    TEST_NO_FAULT(&env);
+
+    serverInfo2P = xmlrpc_server_info_copy(&env, serverInfoP);
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_server_info_free(serverInfo2P);
+
     xmlrpc_server_info_free(serverInfoP);
 
     xmlrpc_env_clean(&env);

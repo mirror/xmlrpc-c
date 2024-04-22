@@ -48,6 +48,13 @@ struct _xmlrpc_server_info {
 
            This is NULL exactly when 'userNamePw' is NULL.
         */
+    const char * unixSocketPath;
+        /* The path name of the unix socket to be used to access the
+           server.  This is for a variation on HTTP that uses a unix
+           stream socket instead of TCP/IP.
+
+           NULL means use regular HTTP, i.e. no unix socket.
+        */
 };
 
 /*=========================================================================

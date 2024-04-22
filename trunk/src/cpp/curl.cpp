@@ -47,6 +47,15 @@ public:
 
 
 
+void
+throwIfError(env_wrap const& env) {
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
 globalConstant::globalConstant() {
 
     // Not thread safe
@@ -101,6 +110,21 @@ carriageParm_curl0::carriageParm_curl0(
     ) {
 
     this->instantiate(serverUrl);
+}
+
+
+
+void
+carriageParm_curl0::useUnixSocket(string const socketPath) {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_set_unix_socket(
+        &env.env_c, this->c_serverInfoP, socketPath.c_str());
+    throwIfError(env);
 }
 
 

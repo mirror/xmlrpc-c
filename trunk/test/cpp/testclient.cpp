@@ -722,6 +722,8 @@ public:
         carriageParm_curl1P->allowAuthNtlm();
         carriageParm_curl1P->disallowAuthNtlm();
 
+        carriageParm_curl1P->useUnixSocket("/tmp/mysocket");
+
         carriageParm_libwww0Ptr carriageParm_libwww1P(
             new carriageParm_libwww0("http://suckthis.com"));
 

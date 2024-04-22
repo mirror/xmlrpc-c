@@ -54,6 +54,7 @@ xmlrpc_server_info_new(xmlrpc_env * const envP,
             serverInfoP->allowedAuth.ntlm         = false;
             serverInfoP->userNamePw = NULL;
             serverInfoP->basicAuthHdrValue = NULL;
+            serverInfoP->unixSocketPath = NULL;
             if (envP->fault_occurred)
                 xmlrpc_strfree(serverInfoP->serverUrl);
         }
@@ -131,9 +132,16 @@ copyServerInfoContent(xmlrpc_env *               const envP,
                     srcP->allowedAuth.gssnegotiate;
                 dstP->allowedAuth.ntlm         =
                     srcP->allowedAuth.ntlm;
+                if (srcP->unixSocketPath)
+                    dstP->unixSocketPath =
+                        xmlrpc_strdupsol(srcP->unixSocketPath);
+                else
+                    dstP->unixSocketPath = NULL;
 
-                if (envP->fault_occurred)
+                if (envP->fault_occurred) {
                     freeIfNonNull(dstP->basicAuthHdrValue);
+                    freeIfNonNull(dstP->unixSocketPath);
+                }
             }
             if (envP->fault_occurred)
                 freeIfNonNull(dstP->userNamePw);
@@ -175,12 +183,13 @@ xmlrpc_server_info_free(xmlrpc_server_info * const serverInfoP) {
     XMLRPC_ASSERT_PTR_OK(serverInfoP);
     XMLRPC_ASSERT(serverInfoP->serverUrl != XMLRPC_BAD_POINTER);
 
-    if (serverInfoP->userNamePw)
-        xmlrpc_strfree(serverInfoP->userNamePw);
+    freeIfNonNull(serverInfoP->unixSocketPath);
+    serverInfoP->unixSocketPath = XMLRPC_BAD_POINTER;
+
+    freeIfNonNull(serverInfoP->userNamePw);
     serverInfoP->userNamePw = XMLRPC_BAD_POINTER;
 
-    if (serverInfoP->basicAuthHdrValue)
-        xmlrpc_strfree(serverInfoP->basicAuthHdrValue);
+    freeIfNonNull(serverInfoP->basicAuthHdrValue);
     serverInfoP->basicAuthHdrValue = XMLRPC_BAD_POINTER;
 
     xmlrpc_strfree(serverInfoP->serverUrl);
@@ -349,5 +358,15 @@ xmlrpc_server_info_disallow_auth_ntlm(
     sP->allowedAuth.ntlm = true;
 }
 
+
+
+void
+xmlrpc_server_info_set_unix_socket(
+    xmlrpc_env *         const envP ATTR_UNUSED,
+    xmlrpc_server_info * const sP,
+    const char *         const unixSocketPath) {
+
+    sP->unixSocketPath = xmlrpc_strdupsol(unixSocketPath);
+}
 
 

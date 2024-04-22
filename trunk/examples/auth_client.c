@@ -59,6 +59,11 @@ main(int           const argc,
     xmlrpc_server_info_set_basic_auth(&env, serverP, "jrandom", "secret");
     die_if_fault_occurred(&env);
 
+    /*
+    xmlrpc_server_info_set_unix_socket(&env, serverP, "/tmp/mysocket");
+    die_if_fault_occurred(&env);
+    */
+
     resultP =
         xmlrpc_client_call_server(
             &env, serverP, "sample.add", "(ii)",
