@@ -105,6 +105,7 @@ struct curlTransaction {
     struct curl_slist * headerList;
         /* The HTTP headers for the transaction */
     const char * serverUrl;  /* malloc'ed - belongs to this object */
+        /* The URL for the transaction */
     xmlrpc_mem_block * postDataP;
         /* The data to send for the POST method */
     xmlrpc_mem_block * responseDataP;
@@ -749,16 +750,21 @@ setupCurlSession(xmlrpc_env *               const envP,
                  const xmlrpc_server_info * const serverInfoP,
                  bool                       const dontAdvertise,
                  const char *               const userAgent,
+                 const char *               const unixSocketPath,
                  const struct curlSetup *   const curlSetupP) {
 /*----------------------------------------------------------------------------
    Set up the Curl session for the transaction *transP so that
    a subsequent curl_easy_perform() would perform said transaction.
 
-   *serverInfoP tells what sort of authentication to set up.  This is an
+   *serverInfoP tells what sort of authentication to set up etc.  This is an
    embarassment, as the xmlrpc_server_info type is part of the Xmlrpc-c
    interface, whereas this module is supposed to be for generic TCP via Curl.
    Some day, we need to replace this with a type (probably identical) not tied
    to Xmlrpc-c.
+
+   'unixSocketPath' is the path name of the unix socket to use for the session
+   (which determines the server, along with the URL -- this is a kludgy
+   variation on HTTP).  NULL means no unix socket is involved.
 -----------------------------------------------------------------------------*/
     CURL * const curlSessionP = transP->curlSessionP;
 
@@ -786,6 +792,10 @@ setupCurlSession(xmlrpc_env *               const envP,
 
     curl_easy_setopt(curlSessionP, CURLOPT_POST, 1);
     curl_easy_setopt(curlSessionP, CURLOPT_URL, transP->serverUrl);
+    if (unixSocketPath) {
+        curl_easy_setopt(curlSessionP,
+                         CURLOPT_UNIX_SOCKET_PATH, unixSocketPath);
+    }
 
     XMLRPC_MEMBLOCK_APPEND(char, envP, transP->postDataP, "\0", 1);
     if (!envP->fault_occurred) {
@@ -886,7 +896,6 @@ setupCurlSession(xmlrpc_env *               const envP,
                    in which anything larger than LONG_MAX/1000 results in an
                    instantaneous timeout.
                 */
-
         if (curlSetupP->gssapiDelegation) {
             bool gotIt;
             requestGssapiDelegation(curlSessionP, &gotIt);
@@ -959,22 +968,20 @@ curlTransaction_create(xmlrpc_env *               const envP,
         */
         curlTransactionP->curlError[0] = '\0';
 
-        curlTransactionP->serverUrl = strdup(serverP->serverUrl);
-        if (curlTransactionP->serverUrl == NULL)
-            xmlrpc_faultf(envP, "Out of memory to store server URL.");
-        else {
-            curlTransactionP->postDataP     = callXmlP;
-            curlTransactionP->responseDataP = responseXmlP;
+        curlTransactionP->serverUrl = xmlrpc_strdupsol(serverP->serverUrl);
 
-            setupCurlSession(envP, curlTransactionP,
-                             serverP, dontAdvertise, userAgent,
-                             curlSetupStuffP);
+        curlTransactionP->postDataP     = callXmlP;
+        curlTransactionP->responseDataP = responseXmlP;
 
-            if (envP->fault_occurred)
-                xmlrpc_strfree(curlTransactionP->serverUrl);
-        }
-        if (envP->fault_occurred)
+        setupCurlSession(envP, curlTransactionP,
+                         serverP, dontAdvertise, userAgent,
+                         serverP->unixSocketPath,
+                         curlSetupStuffP);
+
+        if (envP->fault_occurred) {
+            xmlrpc_strfree(curlTransactionP->serverUrl);
             free(curlTransactionP);
+        }
     }
     *curlTransactionPP = curlTransactionP;
 }

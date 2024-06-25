@@ -33,15 +33,15 @@ die_if_fault_occurred(xmlrpc_env * const envP) {
 
 
 
-int 
-main(int           const argc, 
+int
+main(int           const argc,
      const char ** const argv) {
 
     xmlrpc_env env;
     xmlrpc_server_info * serverP;
     xmlrpc_value * resultP;
     xmlrpc_int sum;
-    
+
     if (argc-1 > 0) {
         fprintf(stderr, "There are no arguments.  You specified %d", argc-1);
         exit(1);
@@ -59,20 +59,25 @@ main(int           const argc,
     xmlrpc_server_info_set_basic_auth(&env, serverP, "jrandom", "secret");
     die_if_fault_occurred(&env);
 
-    resultP = 
+    /*
+    xmlrpc_server_info_set_unix_socket(&env, serverP, "/tmp/mysocket");
+    die_if_fault_occurred(&env);
+    */
+
+    resultP =
         xmlrpc_client_call_server(
-            &env, serverP, "sample.add", "(ii)", 
+            &env, serverP, "sample.add", "(ii)",
             (xmlrpc_int32) 5, (xmlrpc_int32) 7);
     die_if_fault_occurred(&env);
 
     /* Dispose of our server object. */
     xmlrpc_server_info_free(serverP);
-    
+
     /* Get the result of the RPC and print it out. */
     xmlrpc_read_int(&env, resultP, &sum);
     die_if_fault_occurred(&env);
     printf("The sum is %d\n", sum);
-    
+
     /* Dispose of our result value. */
     xmlrpc_DECREF(resultP);
 
@@ -82,3 +87,5 @@ main(int           const argc,
 
     return 0;
 }
+
+

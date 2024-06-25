@@ -257,6 +257,9 @@ class XMLRPC_CLIENTPP_EXPORTED carriageParm_curl0 : public xmlrpc_c::carriagePar
 
 public:
     carriageParm_curl0(std::string const serverUrl);
+
+    void
+    useUnixSocket(std::string const socketPath);
 };
 
 class XMLRPC_CLIENTPP_EXPORTED carriageParm_curl0Ptr : public xmlrpc_c::carriageParm_http0Ptr {

@@ -47,6 +47,15 @@ public:
 
 
 
+void
+throwIfError(env_wrap const& env) {
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
 globalConstant::globalConstant() {
 
     // Not thread safe
@@ -62,7 +71,7 @@ globalConstant::globalConstant() {
         env_wrap env;
 
         setupFn(&env.env_c); // Not thread safe
-        
+
         if (env.env_c.fault_occurred)
             throwf("Failed to do global initialization "
                    "of Curl transport code.  %s", env.env_c.fault_string);
@@ -101,6 +110,21 @@ carriageParm_curl0::carriageParm_curl0(
     ) {
 
     this->instantiate(serverUrl);
+}
+
+
+
+void
+carriageParm_curl0::useUnixSocket(string const socketPath) {
+
+    if (!this->c_serverInfoP)
+        throw(error("object not instantiated"));
+
+    env_wrap env;
+
+    xmlrpc_server_info_set_unix_socket(
+        &env.env_c, this->c_serverInfoP, socketPath.c_str());
+    throwIfError(env);
 }
 
 
@@ -305,19 +329,19 @@ void
 clientXmlTransport_curl::initialize(constrOpt const& optExt) {
     constrOpt_impl const opt(*optExt.implP);
 
-    struct xmlrpc_curl_xportparms transportParms; 
+    struct xmlrpc_curl_xportparms transportParms;
 
     transportParms.network_interface = opt.present.network_interface ?
         opt.value.network_interface.c_str() : NULL;
-    transportParms.referer           = opt.present.referer ? 
+    transportParms.referer           = opt.present.referer ?
         opt.value.referer.c_str()     : NULL;
     transportParms.dont_advertise    = opt.present.dont_advertise ?
         opt.value.dont_advertise            : false;
     transportParms.user_agent        = opt.present.user_agent ?
         opt.value.user_agent.c_str()        : NULL;
-    transportParms.no_ssl_verifypeer = opt.present.no_ssl_verifypeer ? 
+    transportParms.no_ssl_verifypeer = opt.present.no_ssl_verifypeer ?
         opt.value.no_ssl_verifypeer         : false;
-    transportParms.no_ssl_verifyhost = opt.present.no_ssl_verifyhost ? 
+    transportParms.no_ssl_verifyhost = opt.present.no_ssl_verifyhost ?
         opt.value.no_ssl_verifyhost         : false;
     transportParms.ssl_cert          = opt.present.ssl_cert ?
         opt.value.ssl_cert.c_str()          : NULL;
@@ -333,35 +357,35 @@ clientXmlTransport_curl::initialize(constrOpt const& optExt) {
         opt.value.sslkeypasswd.c_str()      : NULL;
     transportParms.sslengine         = opt.present.sslengine ?
         opt.value.sslengine.c_str()         : NULL;
-    transportParms.sslengine_default = opt.present.sslengine_default ? 
+    transportParms.sslengine_default = opt.present.sslengine_default ?
         opt.value.sslengine_default         : false;
-    transportParms.sslversion        = opt.present.sslversion ? 
+    transportParms.sslversion        = opt.present.sslversion ?
         opt.value.sslversion                : XMLRPC_SSLVERSION_DEFAULT;
     transportParms.cainfo            = opt.present.cainfo ?
         opt.value.cainfo.c_str()            : NULL;
     transportParms.capath            = opt.present.capath ?
         opt.value.capath.c_str()            : NULL;
-    transportParms.randomfile        = opt.present.randomfile ? 
+    transportParms.randomfile        = opt.present.randomfile ?
         opt.value.randomfile.c_str()        : NULL;
     transportParms.egdsocket         = opt.present.egdsocket ?
         opt.value.egdsocket.c_str()         : NULL;
-    transportParms.ssl_cipher_list   = opt.present.ssl_cipher_list ? 
+    transportParms.ssl_cipher_list   = opt.present.ssl_cipher_list ?
         opt.value.ssl_cipher_list.c_str()   : NULL;
-    transportParms.timeout           = opt.present.timeout ? 
+    transportParms.timeout           = opt.present.timeout ?
         opt.value.timeout                   : 0;
-    transportParms.proxy             = opt.present.proxy ? 
+    transportParms.proxy             = opt.present.proxy ?
         opt.value.proxy.c_str()             : NULL;
-    transportParms.proxy_port        = opt.present.proxy_port ? 
+    transportParms.proxy_port        = opt.present.proxy_port ?
         opt.value.proxy_port                : 0;
-    transportParms.proxy_auth        = opt.present.proxy_auth ? 
+    transportParms.proxy_auth        = opt.present.proxy_auth ?
         opt.value.proxy_auth                : XMLRPC_HTTPAUTH_NONE;
-    transportParms.proxy_userpwd     = opt.present.proxy_userpwd ? 
+    transportParms.proxy_userpwd     = opt.present.proxy_userpwd ?
         opt.value.proxy_userpwd.c_str()     : NULL;
-    transportParms.proxy_type        = opt.present.proxy_type ? 
+    transportParms.proxy_type        = opt.present.proxy_type ?
         opt.value.proxy_type                : XMLRPC_HTTPPROXY_HTTP;
     transportParms.gssapi_delegation = opt.present.gssapi_delegation ?
         opt.value.gssapi_delegation         : false;
-    transportParms.connect_timeout   = opt.present.connect_timeout ? 
+    transportParms.connect_timeout   = opt.present.connect_timeout ?
         opt.value.connect_timeout           : 0;
     transportParms.tcp_keepalive     = opt.present.tcp_keepalive ?
         opt.value.tcp_keepalive             : false;
