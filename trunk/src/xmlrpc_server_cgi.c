@@ -9,8 +9,8 @@
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
+**    derived from this software without specific prior written permission.
+**
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,9 +32,9 @@
 
 /* Windows NT stdout binary mode fix. */
 #if MSVCRT
-#include <io.h> 
-#include <fcntl.h> 
-#endif 
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/base.h"
@@ -49,12 +49,12 @@
 **  These routines send various kinds of responses to the server.
 */
 
-static void 
+static void
 send_xml(const char * const xml_data,
          size_t       const xml_len) {
 #if MSVCRT
-    _setmode(_fileno(stdout), _O_BINARY); 
-#endif 
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
     /* Send our CGI headers back to the server.
     ** XXX - Coercing 'size_t' to 'unsigned long' might be unsafe under
     ** really weird circumstances. */
@@ -77,12 +77,12 @@ send_error(int          const code,
            xmlrpc_env * const env) {
 
 #if MSVCRT
-    _setmode(_fileno(stdout), _O_BINARY); 
-#endif 
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
     /* Send an error header. */
     fprintf(stdout, "Status: %d %s\n", code, message);
     fprintf(stdout, "Content-type: text/html\n\n");
-    
+
     /* Send an error message. */
     fprintf(stdout, "<title>%d %s</title>\n", code, message);
     fprintf(stdout, "<h1>%d %s</h1>\n", code, message);
@@ -144,10 +144,10 @@ get_body(xmlrpc_env * const env,
 #if MSVCRT
     /* Fix from Jeff Stewart: NT opens stdin and stdout in text mode
        by default, badly confusing our length calculations.  So we need
-       to set the file handle to binary. 
+       to set the file handle to binary.
     */
-    _setmode(_fileno(stdin), _O_BINARY); 
-#endif 
+    _setmode(_fileno(stdin), _O_BINARY);
+#endif
     /* XXX - Puke if length is too big. */
 
     /* Allocate our memory block. */
@@ -209,14 +209,16 @@ xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP) {
         XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, "Expected HTTP method POST");
     }
     if (!type || !xmlrpc_strneq(type, "text/xml", strlen("text/xml"))) {
-	char *template = "Expected content type: \"text/xml\", received: \"%s\"";
-	size_t err_len = strlen(template) + strlen(type) + 1;
-	char *err = malloc(err_len);
+        const char * err;
 
-	XMLRPC_SNPRINTF(err, err_len, template, type);
+        xmlrpc_asprintf(&err,
+                        "Expected content type: \"text/xml\", "
+                        "received: \"%s\"",
+                        type);
+
         code = 400; message = "Bad Request";
         XMLRPC_FAIL(&env, XMLRPC_INTERNAL_ERROR, err);
-	free(err);
+        xmlrpc_strfree(err);
     }
     if (!length_str) {
         code = 411; message = "Length Required";
@@ -253,13 +255,13 @@ xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP) {
 
     /* Send our data. */
     send_xml(output_data, output_size);
-    
+
  cleanup:
     if (input)
         xmlrpc_mem_block_free(input);
     if (output)
         xmlrpc_mem_block_free(output);
-    
+
     if (env.fault_occurred)
         send_error(code, message, &env);
 
@@ -275,7 +277,7 @@ xmlrpc_cgi_init(int const flags ATTR_UNUSED) {
     xmlrpc_env_init(&env);
     globalRegistryP = xmlrpc_registry_new(&env);
     die_if_fault_occurred(&env);
-    xmlrpc_env_clean(&env);    
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -303,7 +305,7 @@ xmlrpc_cgi_add_method(const char *  const method_name,
     xmlrpc_registry_add_method(&env, globalRegistryP, NULL, method_name,
                                method, user_data);
     die_if_fault_occurred(&env);
-    xmlrpc_env_clean(&env);    
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -319,13 +321,16 @@ xmlrpc_cgi_add_method_w_doc(const char *  const method_name,
     xmlrpc_registry_add_method_w_doc(&env, globalRegistryP, NULL, method_name,
                                      method, user_data, signature, help);
     die_if_fault_occurred(&env);
-    xmlrpc_env_clean(&env);    
+    xmlrpc_env_clean(&env);
 }
 
 
 
 void
 xmlrpc_cgi_process_call(void) {
-    
+
     xmlrpc_server_cgi_process_call(globalRegistryP);
 }
+
+
+
