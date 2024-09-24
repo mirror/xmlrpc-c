@@ -375,6 +375,7 @@ pselectTimeout(xmlrpc_timeoutType const timeoutType,
    wants to timeout according to 'timeoutType' and 'timeoutDt'.
 -----------------------------------------------------------------------------*/
     unsigned int const million = 1000000;
+
     unsigned int selectTimeoutMillisec;
     xmlrpc_timespec retval;
 
