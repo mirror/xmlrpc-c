@@ -47,7 +47,7 @@
    timeout (which defaults to 5 minutes and is user-settable) is effective
    against the DNS lookup, but you had better not have multiple threads.
 
-   For backward compatibilty, the default is to use SIGALRM.  That means
+   For backward compatibility, the default is to use SIGALRM.  That means
    single-threaded programs continue to enjoy DNS lookup timeouts even when
    using new Curl.
 
@@ -61,7 +61,7 @@
    CURLOPT_CONNECTTIMEOUT to infinite.  That way, users see the same behavior
    with ARES.
 
-   It wasn't always this way, Before Xmlrpc-c 1.41, we set CURLOPT_NOSIGNAL
+   It wasn't always this way.  Before Xmlrpc-c 1.41, we set CURLOPT_NOSIGNAL
    only when the user specified the 'timeout' curl transport option, and we
    never set CURLOPT_CONNECTTIMEOUT.  This means programs that have a nice 5
    minute (Curl default) DNS lookup timeout with old Xmlrpc-c, (and happen not
@@ -429,7 +429,7 @@ curlXferinfo(void *     const contextP,
    older version and its interface to its own user is patterned after
    it (so it uses 'double' arguments).
 
-   This function isan adapter for use with newer Curl libraries.  We
+   This function is an adapter for use with newer Curl libraries.  We
    just make the call that an older Curl library would have made itself.
 -----------------------------------------------------------------------------*/
 
@@ -508,6 +508,10 @@ setCurlTimeout(CURL *       const curlSessionP ATTR_UNUSED,
     assert((long)timeoutSec == (int)timeoutSec);
         /* Calling requirement */
     curl_easy_setopt(curlSessionP, CURLOPT_TIMEOUT, (long)timeoutSec);
+
+    /* Diagnostic note: You can use the --max-time option on the 'curl'
+       program to exercise CURLOPT_TIMEOUT.
+    */
 #else
     /* Caller should not have called us */
     abort();
@@ -526,6 +530,10 @@ setCurlConnectTimeout(CURL *       const curlSessionP ATTR_UNUSED,
     assert((long)timeoutSec == (int)timeoutSec);
         /* Calling requirement */
     curl_easy_setopt(curlSessionP, CURLOPT_CONNECTTIMEOUT, (long)timeoutSec);
+
+    /* Diagnostic note: You can use the --connect-timeout option on the 'curl'
+       program to exercise CURLOPT_CONNECTTIMEOUT.
+    */
 #else
     /* Caller should not have called us */
     abort();
