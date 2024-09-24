@@ -7,5 +7,5 @@
 #
 ###############################################################################
 XMLRPC_MAJOR_RELEASE = 1
-XMLRPC_MINOR_RELEASE = 63
-XMLRPC_POINT_RELEASE = 99
+XMLRPC_MINOR_RELEASE = 64
+XMLRPC_POINT_RELEASE = 0
