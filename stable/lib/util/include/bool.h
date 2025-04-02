@@ -9,10 +9,12 @@
 /* At least the GNU compiler defines __bool_true_false_are_defined */
 #ifndef __bool_true_false_are_defined
 #define __bool_true_false_are_defined
+#if defined __STDC__ && defined __STDC_VERSION__ && __STDC_VERSION__ <= 201710L
 typedef enum {
     false = 0,
     true = 1
 } bool;
+#endif
 #endif
 #endif
 
